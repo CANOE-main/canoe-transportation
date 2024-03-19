@@ -1,3 +1,8 @@
+"""
+Compiles Excel spreadsheets into Temoa sqlite format using the canoe_schema.sql 
+@author: Rashid Zetter
+"""
+
 import pandas as pd
 import sqlite3
 import numpy as np
@@ -7,13 +12,20 @@ import os
 dir_path = os.path.dirname(os.path.realpath('__file__')) + "/"
 database = dir_path + 'canoe_trn.sqlite'
 schema = dir_path + 'canoe_schema.sql'
-spreadsheet = '../Spreadsheets/CANOE_TRN_ON.xlsx'
+spreadsheet = dir_path + '../input_spreadsheets/CANOE_TRN_ON.xlsx'
 
 # Define the precision of the model parameters
 epsilon = 0.0001
 precision = 4
 
+# Rewrite database from scratch if it doesn't exist
 wipe_database = True
+
+"""
+##################################################
+    Initial setup
+##################################################
+"""
 
 def instantiate_database():
     
@@ -52,8 +64,6 @@ def quinquennial_mapping(vintage):
     else:
         return base_year + 5
 
-
-
 """
 ##################################################
     Techs and commodities
@@ -64,19 +74,20 @@ def compile_techs():
     """
     Reads technologies from the .xlsx file and compiles them into .sqlite format 
     """
-    sheet = 'Eff Calcs'
-    parameter = 'Efficiency'
+    sheet = 'Techs'
     if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel('../Spreadsheets/CANOE_TRN_ON.xlsx', sheet_name='Eff Calcs', header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
-    ncols = cols.index('Technological')
+    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, nrows=1).iloc[0].values.tolist()
+    ncols = cols.index('Category')
 
     # Imports the table on the excel sheet
-    df = pd.read_excel('../Spreadsheets/CANOE_TRN_ON.xlsx', sheet_name='Eff Calcs', skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(spreadsheet, sheet_name = sheet, usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
+
+    
 
 """
 ##################################################
