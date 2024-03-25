@@ -13,14 +13,14 @@ from datetime import datetime
 dir_path = os.path.dirname(os.path.realpath('__file__')) + "/"
 database = dir_path + 'output_database/canoe_trn.sqlite'
 schema = dir_path + 'data_aggregation/canoe_schema.sql'
-spreadsheet = dir_path + 'input_spreadsheets/CANOE_TRN_ON.xlsx'
+spreadsheet = dir_path + 'input_spreadsheets/CANOE_TRN_AB.xlsx'
 
 # Define the precision of the model parameters
 epsilon = 0.0001
 precision = 4
 
-# Rewrite database from scratch if it doesn't exist
-wipe_database = True
+# Rewrite database from scratch if it already exists
+wipe_database = False
 
 """
 ##################################################
@@ -435,20 +435,11 @@ def compile_acf():
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
-    # Melts the vintage columns into vintage and parameter colums and drops rows with empty parameters
-    vintages = [col for col in df.columns if col.isdigit()]
+    # Melts the period columns into period and parameter colums 
+    periods = [col for col in df.columns if col.isdigit()]
     params = [col for col in df.columns if not col.isdigit()]
-    df = pd.melt(df, id_vars=params, var_name='Vintage', value_name=parameter, value_vars=vintages)
+    df = pd.melt(df, id_vars=params, var_name='Period', value_name=parameter, value_vars=periods)
     df = df.dropna(subset=[parameter])
-
-    # Aggregates 2000-2020 vintages into 5-year vintages (e.g., 2002 -> 2000 and 2003 -> 2005)
-    df.Vintage = df.Vintage.astype(int)
-    df_ex = df[df.Vintage <= 2020]
-    df_new = df[df.Vintage > 2020]
-    df_ex['qVintage'] = df_ex.Vintage.apply(quinquennial_mapping)
-    df_ex_agg = df_ex.groupby([i for i in df_ex.columns.tolist() if i not in ['Vintage', parameter]]).agg({parameter: 'mean'}).reset_index()
-    df_ex_agg = df_ex_agg.rename(columns={'qVintage': 'Vintage'})
-    df = pd.concat([df_ex_agg, df_new], ignore_index=True).reset_index(drop=True)
 
     # Fill NaNs as empty values
     df = df.fillna('')
@@ -463,13 +454,13 @@ def compile_acf():
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO MaxAnnualCapacityFactor(regions, periods, tech, max_acf, max_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Vintage'], row['Technology'], row[parameter], row['Notes'], 
+                (row['Region'], row['Period'], row['Technology'], row[parameter], row['Notes'], 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
     
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO MinAnnualCapacityFactor(regions, periods, tech, min_acf, min_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Vintage'], row['Technology'], row[parameter]*0.99, f"99% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
+                (row['Region'], row['Period'], row['Technology'], row[parameter]*0.99, f"99% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
             
     conn.commit()
@@ -805,4 +796,4 @@ def compile_all():
 
 # instantiate_database()
 # compile_techinputsplit()
-# compile_all()
+compile_all()
