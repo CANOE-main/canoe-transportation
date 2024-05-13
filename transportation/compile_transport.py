@@ -15,10 +15,13 @@ import unicodedata
 dir_path = os.path.dirname(os.path.realpath('__file__')) + "/"
 database = dir_path + '../canoe_trn.sqlite'
 schema = dir_path + '../canoe_schema.sql'
-template = 'Template spreadsheet (make a copy).xlsx'
+template = 'canoe_template.xlsx'
 
 # Spreadsheet database to compile
-spreadsheet = dir_path + 'spreadsheets/CANOE_FUEL_TRN_ON.xlsx'
+spreadsheet = dir_path + 'spreadsheet_database/CANOE_FUEL_TRN_ON.xlsx'
+
+# RAMP-mobility simulation results to compile
+ldv_profile = dir_path + '../charging_profiles/ramp_mobility/results/ON-2016TTS_2018_no-we_v3_newsizes.csv'
 
 # Define the precision of the model parameters
 epsilon = 0.00001
@@ -157,7 +160,10 @@ def insert_template():
     "sector_labels",
     "technology_labels",
     "time_period_labels",
-    "time_periods"
+    "time_periods",
+    "time_season",
+    "time_of_day",
+    "tech_annual"
     ]
 
     # Read the specified sheets into a dictionary of dataframes
@@ -327,6 +333,87 @@ def compile_demand():
     conn.close()
 
     print(f"Demand data compiled into {os.path.basename(database)}\n")
+
+"""
+##################################################
+    Demand specific distribution (LDV demand)
+##################################################
+"""
+
+def compile_dsd():
+    """
+    Reads demand specific distribution RAMP-mobility simulation results and compiles them into the .sqlite format 
+    """
+    sheet = 'DemandDist'
+    last_col = 'Technological'
+    n_demands = 3
+
+    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+        return None
+    
+    # Reads excel sheet columns and limits the number of columns to the last DQI
+    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    ncols = cols.index(last_col) #    Last column to read
+
+    # Imports the metadata on the excel sheet
+    metadata = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1), nrows=n_demands) # Number of demands that are affected by the dsd
+
+    # Imports the template format of the DSD table
+    dsd_template = pd.read_excel(template, sheet_name = 'DemandSpecificDistribution', header=None, nrows=1).iloc[0].values.tolist()
+
+    # Imports the charging profiles from the RAMP-mobility results
+    cp = pd.read_csv(ldv_profile, index_col=0)
+    cp.index = pd.to_datetime(cp.index, utc=True)
+    
+    # Converts simulation results time series into ET time zone, resamples into hourly resolution, and normalizes distribution
+    cp = cp.set_index(cp.index.tz_convert('America/Toronto'))
+    cp = cp.resample('H').mean()
+    cp = cp/cp.sum()
+
+    # Labels time series into the desired format
+    cp['Day'] = cp.index.strftime('D%j')
+    cp['Hour'] = cp.index.strftime('H%H')
+    
+    # Creates DSD dataframe from the template and fills in the DSD from the RAMP-mobility results along with the metadata from the spreadsheet database
+    df = pd.DataFrame(columns=dsd_template)
+    df['dsd'] = cp['Charging Profile'].round(10).values # DSDs rounded to 10 decimals
+    df['season_name'] = cp['Day'].values
+    df['time_of_day_name'] = cp['Hour'].values
+
+    df['demand_name'] = metadata['Target Demand'].values[0]
+    df['regions'] = metadata['Region'].values[0]
+    df.loc[df['time_of_day_name'] == 'H00', 'dsd_notes'] = metadata['Notes'].values[0] #    Only shown every 24th hour to reduce database size
+    df.loc[df['time_of_day_name'] == 'H00', 'reference'] = metadata['Reference'].values[0] #    Only shown every 24th hour to reduce database size
+    df['data_year'] = metadata['Data Year'].astype(int).values[0]
+    df['dq_rel'] = metadata['Reliability'].astype(int).values[0]
+    df['dq_comp'] = metadata['Representativeness'].astype(int).values[0]
+    df['dq_time'] = metadata['Temporal'].astype(int).values[0]
+    df['dq_geog'] = metadata['Geographical'].astype(int).values[0]
+    df['dq_tech'] = metadata['Technological'].astype(int).values[0]
+
+    # Inserts the remaining affected demands into the dataframe
+    df_merge = pd.DataFrame(columns=dsd_template)
+
+    for i in range(1, n_demands):
+        df2 = df.copy()
+        df2['demand_name'] = metadata['Target Demand'].values[i]
+        df_merge = pd.concat([df_merge, df2], axis=0)
+
+    df_merged = pd.concat([df, df_merge], axis=0)
+
+    # Convert NaNs to None to handle SQL nulls properly
+    df_merged = df_merged.where(pd.notnull(df_merged), None)
+
+    # Connect with database and replace parameters
+    conn = sqlite3.connect(database)
+
+    # Insert the dataframe into the sqlite database
+    df_merged.to_sql('DemandSpecificDistribution', conn, if_exists='replace', index=False)
+            
+    conn.commit()
+    conn.close()
+
+    print(f"Demand specific distributions compiled into {os.path.basename(database)}\n")
 
 """
 ##################################################
@@ -919,6 +1006,7 @@ def compile_transport():
     compile_techs()
     compile_comms()
     compile_demand()
+    compile_dsd()
     compile_lifetime()
     compile_excap()
     compile_c2a()
