@@ -781,12 +781,8 @@ def compile_costvariable():
     df[parameter] = df[parameter].round(precision)
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
-    df.to_csv('var_costs.csv')
-
     # Reads technologies' lifetimes
     df_lifetime = pd.read_excel(spreadsheet, sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
-
-    df_lifetime.to_csv('life.csv')
 
     # Connect with database and replace parameters
     conn = sqlite3.connect(database)
