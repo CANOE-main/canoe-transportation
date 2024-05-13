@@ -372,7 +372,12 @@ def compile_dsd():
 
     # Labels time series into the desired format
     cp['Day'] = cp.index.strftime('D%j')
-    cp['Hour'] = cp.index.strftime('H%H')
+    # cp['Hour'] = cp.index.strftime('H%H')
+
+    cp.reset_index(inplace=True)
+    cp.rename(columns={'index': 'Timestamp'}, inplace=True)
+    cp['Hour'] = (cp['Timestamp'].dt.hour + 1).astype(str).str.zfill(2).apply(lambda x: f'H{x}') # Hour labels from H01 to H24
+    cp.set_index('Timestamp', inplace=True)    
     
     # Creates DSD dataframe from the template and fills in the DSD from the RAMP-mobility results along with the metadata from the spreadsheet database
     df = pd.DataFrame(columns=dsd_template)
@@ -382,8 +387,8 @@ def compile_dsd():
 
     df['demand_name'] = metadata['Target Demand'].values[0]
     df['regions'] = metadata['Region'].values[0]
-    df.loc[df['time_of_day_name'] == 'H00', 'dsd_notes'] = metadata['Notes'].values[0] #    Only shown every 24th hour to reduce database size
-    df.loc[df['time_of_day_name'] == 'H00', 'reference'] = metadata['Reference'].values[0] #    Only shown every 24th hour to reduce database size
+    df.loc[df['time_of_day_name'] == 'H01', 'dsd_notes'] = metadata['Notes'].values[0] #    Only shown every 24th hour to reduce database size
+    df.loc[df['time_of_day_name'] == 'H01', 'reference'] = metadata['Reference'].values[0] #    Only shown every 24th hour to reduce database size
     df['data_year'] = metadata['Data Year'].astype(int).values[0]
     df['dq_rel'] = metadata['Reliability'].astype(int).values[0]
     df['dq_comp'] = metadata['Representativeness'].astype(int).values[0]
