@@ -2,8 +2,8 @@ import sqlite3
 import shutil
 
 sql_file = 'temoa_v2_to_v3.txt'
-target = 'canoe_trn_v3.sqlite'
-source = '../../transportation/canoe_trn.sqlite'
+target = 'canoe_trn_v3_2024-05-27.sqlite'
+source = '../../transportation/canoe_trn_2024-05-27.sqlite'
 
 shutil.copyfile(source, target)
 
