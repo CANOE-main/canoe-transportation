@@ -12,16 +12,19 @@ import re
 import unicodedata
 
 # Update these paths according to your files' locations
-dir_path = os.path.dirname(os.path.realpath('__file__')) + "/"
-database = dir_path + '../canoe_trn.sqlite'
+dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
+database = dir_path + 'canoe_trn.sqlite'
 schema = dir_path + '../canoe_schema.sql'
-template = 'canoe_template.xlsx'
+template = dir_path + 'canoe_trn_template.xlsx'
 
 # Spreadsheet database to compile
 spreadsheet = dir_path + 'spreadsheet_database/CANOE_FUEL_TRN_ON.xlsx'
 
 # RAMP-mobility simulation results to compile
 ldv_profile = dir_path + '../charging_profiles/ramp_mobility/results/ON-2016TTS_2018_no-we_v3_newsizes.csv'
+
+# Rep days to keep in D000 format, leave empty if preserving all 365 days
+# rep_days = ['D114']
 
 # Define the precision of the model parameters
 epsilon = 0.00001
@@ -40,7 +43,6 @@ def instantiate_database():
     """
     Create sqlite database from schema sql file
     """
-    print(dir_path)
     # Check if database exists or needs to be built
     build_db = not os.path.exists(database)
 
@@ -148,22 +150,23 @@ def insert_template():
     """
 
     tables = [
-    "commodity_labels",
-    "currencies",
+    "commodity_labels", #   CommodityType
+    "currencies", # 
     "dq_estimate",
     "dq_reliability",
     "dq_completeness",
     "dq_time",
     "dq_geography",
     "dq_technology",
-    "regions",
-    "sector_labels",
-    "technology_labels",
-    "time_period_labels",
-    "time_periods",
-    "time_season",
-    "time_of_day",
-    "tech_annual"
+    "regions", #            Region
+    "sector_labels", #      SectorLabel
+    "technology_labels", #  TechnologyType
+    "time_period_labels", # TimePeriodType
+    "time_periods", #       TimePeriod
+    "time_season", #        TimeSeason
+    "time_of_day", #        TimeofDay
+    "tech_annual", #    Includes those technologies without DSDs | Dropped in v3
+    "StorageDuration" # Assumes 8760 hours of storage for H2 to simulate unlimited supply year-round
     ]
 
     # Read the specified sheets into a dictionary of dataframes
@@ -388,7 +391,7 @@ def compile_dsd():
     df['demand_name'] = metadata['Target Demand'].values[0]
     df['regions'] = metadata['Region'].values[0]
     df.loc[df['time_of_day_name'] == 'H01', 'dsd_notes'] = metadata['Notes'].values[0] #    Only shown every 24th hour to reduce database size
-    df.loc[df['time_of_day_name'] == 'H01', 'reference'] = metadata['Reference'].values[0] #    Only shown every 24th hour to reduce database size
+    df.loc[df['time_of_day_name'] == 'H01', 'reference'] = metadata['Reference'].apply(normalize_to_ascii).values[0] #    Only shown every 24th hour to reduce database size
     df['data_year'] = metadata['Data Year'].astype(int).values[0]
     df['dq_rel'] = metadata['Reliability'].astype(int).values[0]
     df['dq_comp'] = metadata['Representativeness'].astype(int).values[0]
@@ -564,7 +567,7 @@ def compile_c2a():
 
 """
 ##################################################
-    MaxAnnualCapacityFactor
+    Max/Min AnnualCapacityFactor
 ##################################################
 """
 
@@ -592,6 +595,7 @@ def compile_acf():
     periods = [col for col in df.columns if col.isdigit()]
     params = [col for col in df.columns if not col.isdigit()]
     df = pd.melt(df, id_vars=params, var_name='Period', value_name=parameter, value_vars=periods)
+    df.Period = df.Period.astype(int)
     df = df.dropna(subset=[parameter])
 
     # Fill NaNs as empty values
@@ -601,17 +605,33 @@ def compile_acf():
     df[parameter] = df[parameter].round(precision)
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
+     # Reads technologies' lifetimes and last period of exsiting technologies
+    df_lifetime = pd.read_excel(spreadsheet, sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
+    period_0 = pd.read_excel(template, sheet_name='time_periods')
+    period_0 = period_0[period_0['flag'] == 'e'].max().values[0]
+
     # Connect with database and replace parameters
     conn = sqlite3.connect(database)
     curs = conn.cursor()
-
+    
     for _idx, row in df.iterrows():
+
+        if row['Technology'].endswith('_R'): #  Applies only for residual technologies
+            
+            # Attempt to find the lifetime for the given technology
+            lifetime_rows = df_lifetime[df_lifetime.Technology == row['Technology']].Lifetime
+            if len(lifetime_rows) > 0:
+                lifetime = lifetime_rows.values[0]
+            else:
+                lifetime = 40  # Default lifetime if not specified
+            
+            if period_0 + lifetime <= row['Period']: continue # Checks for capacity factors outside existing technologies' lifetimes
+
         curs.execute("""REPLACE INTO MaxAnnualCapacityFactor(regions, periods, tech, output_comm, max_acf, max_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (row['Region'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter], row['Notes'], 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
     
-    for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO MinAnnualCapacityFactor(regions, periods, tech, output_comm, min_acf, min_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (row['Region'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.99, f"99% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
@@ -781,12 +801,8 @@ def compile_costvariable():
     df[parameter] = df[parameter].round(precision)
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
-    df.to_csv('var_costs.csv')
-
     # Reads technologies' lifetimes
     df_lifetime = pd.read_excel(spreadsheet, sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
-
-    df_lifetime.to_csv('life.csv')
 
     # Connect with database and replace parameters
     conn = sqlite3.connect(database)
@@ -996,6 +1012,27 @@ def compile_techinputsplit():
 
 """
 ##################################################
+    Filter representative days
+##################################################
+"""
+
+def filter_repdays():
+    """
+    Filters out days that are not included in the representative days list
+    """
+    conn = sqlite3.connect(database)
+    curs = conn.cursor()
+
+    # Delete rows that do not match the days in the list
+    placeholders = ', '.join('?' for _ in rep_days)
+    query = f"DELETE FROM DemandSpecificDistribution WHERE season_name NOT IN ({placeholders})"
+    curs.execute(query, rep_days)
+
+    conn.commit()
+    conn.close()
+
+"""
+##################################################
     Compile all parameters
 ##################################################
 """
@@ -1024,6 +1061,9 @@ def compile_transport():
     compile_techinputsplit()
 
     cleanup()
+
+    # if rep_days:
+    #     filter_repdays()
 
     print(f"All parameter data from {os.path.basename(spreadsheet)} compiled into {os.path.basename(database)}\n")
 
