@@ -1,0 +1,1297 @@
+id,region,year,policy,swb,ccs,hyd,oil,dac,lul,value,green_energy
+1728,on,2030,legislated,ref,ref,ref,ref,no,high,72.81025146,fossil fuel
+1732,on,2030,legislated,low,ref,ref,ref,no,high,71.98082874,fossil fuel
+1736,on,2030,legislated,low,ref,ref,ref,yes,high,71.98082874,fossil fuel
+1740,on,2030,legislated,low,high,ref,low,yes,high,73.47591782,fossil fuel
+1744,on,2030,legislated,high,high,ref,low,yes,high,73.4692895,fossil fuel
+1748,on,2030,legislated,ref,high,low,low,yes,high,73.10736891,fossil fuel
+1752,on,2030,legislated,low,high,low,low,yes,high,73.4840285,fossil fuel
+1756,on,2030,legislated,high,high,low,low,yes,high,73.43084586,fossil fuel
+1760,on,2030,legislated,ref,high,high,low,yes,high,73.11779904,fossil fuel
+1764,on,2030,legislated,low,high,high,low,yes,high,73.47876332,fossil fuel
+1768,on,2030,legislated,high,high,high,low,yes,high,73.49579421,fossil fuel
+1772,on,2030,legislated,high,ref,ref,ref,yes,high,72.9697071,fossil fuel
+1776,on,2030,legislated,ref,ref,low,ref,yes,high,72.78518301,fossil fuel
+1780,on,2030,legislated,low,ref,low,ref,yes,high,71.95426828,fossil fuel
+1784,on,2030,legislated,high,ref,low,ref,yes,high,72.95522984,fossil fuel
+1788,on,2030,legislated,ref,ref,high,ref,yes,high,72.81533816,fossil fuel
+1792,on,2030,legislated,low,ref,high,ref,yes,high,71.98430371,fossil fuel
+1796,on,2030,legislated,high,ref,high,ref,yes,high,72.96938653,fossil fuel
+1800,on,2030,legislated,ref,low,ref,ref,no,high,72.8235344,fossil fuel
+1804,on,2030,legislated,low,low,ref,ref,no,high,71.98501927,fossil fuel
+1808,on,2030,legislated,high,ref,ref,ref,no,high,72.9697071,fossil fuel
+1812,on,2030,legislated,high,low,ref,ref,no,high,74.02410502,fossil fuel
+1816,on,2030,legislated,ref,low,low,ref,no,high,72.79825797,fossil fuel
+1820,on,2030,legislated,low,low,low,ref,no,high,71.96074255,fossil fuel
+1824,on,2030,legislated,high,low,low,ref,no,high,73.96721003,fossil fuel
+1828,on,2030,legislated,ref,low,high,ref,no,high,72.82873836,fossil fuel
+1832,on,2030,legislated,low,low,high,ref,no,high,71.99002239,fossil fuel
+1836,on,2030,legislated,high,low,high,ref,no,high,74.06211476,fossil fuel
+1840,on,2030,legislated,ref,low,ref,ref,yes,high,72.8235344,fossil fuel
+1844,on,2030,legislated,low,low,ref,ref,yes,high,71.98501927,fossil fuel
+1848,on,2030,legislated,high,low,ref,ref,yes,high,74.02410502,fossil fuel
+1852,on,2030,legislated,ref,ref,low,ref,no,high,72.78518301,fossil fuel
+1856,on,2030,legislated,ref,low,low,ref,yes,high,72.79825797,fossil fuel
+1860,on,2030,legislated,low,low,low,ref,yes,high,71.96074255,fossil fuel
+1864,on,2030,legislated,high,low,low,ref,yes,high,73.96721003,fossil fuel
+1868,on,2030,legislated,ref,low,high,ref,yes,high,72.82873836,fossil fuel
+1872,on,2030,legislated,low,low,high,ref,yes,high,71.99002239,fossil fuel
+1876,on,2030,legislated,high,low,high,ref,yes,high,74.06211476,fossil fuel
+1880,on,2030,legislated,ref,high,ref,ref,no,high,72.61951359,fossil fuel
+1884,on,2030,legislated,low,high,ref,ref,no,high,71.98556105,fossil fuel
+1888,on,2030,legislated,high,high,ref,ref,no,high,72.26200258,fossil fuel
+1892,on,2030,legislated,ref,high,low,ref,no,high,72.62014873,fossil fuel
+1896,on,2030,legislated,low,ref,low,ref,no,high,71.95426828,fossil fuel
+1900,on,2030,legislated,low,high,low,ref,no,high,71.95484824,fossil fuel
+1904,on,2030,legislated,high,high,low,ref,no,high,72.33034738,fossil fuel
+1908,on,2030,legislated,ref,high,high,ref,no,high,72.61872304,fossil fuel
+1912,on,2030,legislated,low,high,high,ref,no,high,71.98597664,fossil fuel
+1916,on,2030,legislated,high,high,high,ref,no,high,72.24705752,fossil fuel
+1920,on,2030,legislated,ref,high,ref,ref,yes,high,72.61951359,fossil fuel
+1924,on,2030,legislated,low,high,ref,ref,yes,high,71.98556105,fossil fuel
+1928,on,2030,legislated,high,high,ref,ref,yes,high,72.26200258,fossil fuel
+1932,on,2030,legislated,ref,high,low,ref,yes,high,72.62014873,fossil fuel
+1936,on,2030,legislated,low,high,low,ref,yes,high,71.95484824,fossil fuel
+1940,on,2030,legislated,high,ref,low,ref,no,high,72.95522984,fossil fuel
+1944,on,2030,legislated,high,high,low,ref,yes,high,72.33034738,fossil fuel
+1948,on,2030,legislated,ref,high,high,ref,yes,high,72.61872304,fossil fuel
+1952,on,2030,legislated,low,high,high,ref,yes,high,71.98597664,fossil fuel
+1956,on,2030,legislated,high,high,high,ref,yes,high,72.24705752,fossil fuel
+1960,on,2030,legislated,ref,ref,ref,low,no,high,73.27787073,fossil fuel
+1964,on,2030,legislated,low,ref,ref,low,no,high,73.5426669,fossil fuel
+1968,on,2030,legislated,high,ref,ref,low,no,high,73.87068307,fossil fuel
+1972,on,2030,legislated,ref,ref,low,low,no,high,73.30101733,fossil fuel
+1976,on,2030,legislated,low,ref,low,low,no,high,73.55272344,fossil fuel
+1980,on,2030,legislated,high,ref,low,low,no,high,73.87025991,fossil fuel
+1984,on,2030,legislated,ref,ref,high,ref,no,high,72.81533816,fossil fuel
+1988,on,2030,legislated,ref,ref,high,low,no,high,73.270698,fossil fuel
+1992,on,2030,legislated,low,ref,high,low,no,high,73.54209559,fossil fuel
+1996,on,2030,legislated,high,ref,high,low,no,high,73.87912282,fossil fuel
+2000,on,2030,legislated,ref,ref,ref,low,yes,high,73.27787073,fossil fuel
+2004,on,2030,legislated,low,ref,ref,low,yes,high,73.5426669,fossil fuel
+2008,on,2030,legislated,high,ref,ref,low,yes,high,73.87068307,fossil fuel
+2012,on,2030,legislated,ref,ref,low,low,yes,high,73.30101733,fossil fuel
+2016,on,2030,legislated,low,ref,low,low,yes,high,73.55272344,fossil fuel
+2020,on,2030,legislated,high,ref,low,low,yes,high,73.87025991,fossil fuel
+2024,on,2030,legislated,ref,ref,high,low,yes,high,73.270698,fossil fuel
+2028,on,2030,legislated,low,ref,high,ref,no,high,71.98430371,fossil fuel
+2032,on,2030,legislated,low,ref,high,low,yes,high,73.54209559,fossil fuel
+2036,on,2030,legislated,high,ref,high,low,yes,high,73.87912282,fossil fuel
+2040,on,2030,legislated,ref,low,ref,low,no,high,74.39814688,fossil fuel
+2044,on,2030,legislated,low,low,ref,low,no,high,73.67236426,fossil fuel
+2048,on,2030,legislated,high,low,ref,low,no,high,74.79884607,fossil fuel
+2052,on,2030,legislated,ref,low,low,low,no,high,74.39964081,fossil fuel
+2056,on,2030,legislated,low,low,low,low,no,high,73.65380475,fossil fuel
+2060,on,2030,legislated,high,low,low,low,no,high,74.79349582,fossil fuel
+2064,on,2030,legislated,ref,low,high,low,no,high,74.40128551,fossil fuel
+2068,on,2030,legislated,low,low,high,low,no,high,73.6774321,fossil fuel
+2072,on,2030,legislated,high,ref,high,ref,no,high,72.96938653,fossil fuel
+2076,on,2030,legislated,high,low,high,low,no,high,74.80015476,fossil fuel
+2080,on,2030,legislated,ref,low,ref,low,yes,high,74.39814688,fossil fuel
+2084,on,2030,legislated,low,low,ref,low,yes,high,73.67236426,fossil fuel
+2088,on,2030,legislated,high,low,ref,low,yes,high,74.79884607,fossil fuel
+2092,on,2030,legislated,ref,low,low,low,yes,high,74.39964081,fossil fuel
+2096,on,2030,legislated,low,low,low,low,yes,high,73.65380475,fossil fuel
+2100,on,2030,legislated,high,low,low,low,yes,high,74.79349582,fossil fuel
+2104,on,2030,legislated,ref,low,high,low,yes,high,74.40128551,fossil fuel
+2108,on,2030,legislated,low,low,high,low,yes,high,73.6774321,fossil fuel
+2112,on,2030,legislated,high,low,high,low,yes,high,74.80015476,fossil fuel
+2116,on,2030,legislated,ref,ref,ref,ref,yes,high,72.81025146,fossil fuel
+2120,on,2030,legislated,ref,high,ref,low,no,high,73.10181682,fossil fuel
+2124,on,2030,legislated,low,high,ref,low,no,high,73.47591782,fossil fuel
+2128,on,2030,legislated,high,high,ref,low,no,high,73.4692895,fossil fuel
+2132,on,2030,legislated,ref,high,low,low,no,high,73.10736891,fossil fuel
+2136,on,2030,legislated,low,high,low,low,no,high,73.4840285,fossil fuel
+2140,on,2030,legislated,high,high,low,low,no,high,73.43084586,fossil fuel
+2144,on,2030,legislated,ref,high,high,low,no,high,73.11779904,fossil fuel
+2148,on,2030,legislated,low,high,high,low,no,high,73.47876332,fossil fuel
+2152,on,2030,legislated,high,high,high,low,no,high,73.49579421,fossil fuel
+2156,on,2030,legislated,ref,high,ref,low,yes,high,73.10181682,fossil fuel
+5184,on,2030,netzero,ref,ref,ref,ref,no,high,65.45624295,fossil fuel
+5188,on,2030,netzero,low,ref,ref,ref,no,high,67.49258194,fossil fuel
+5192,on,2030,netzero,low,ref,ref,ref,yes,high,67.49327177,fossil fuel
+5196,on,2030,netzero,low,high,ref,low,yes,high,73.61074006,fossil fuel
+5200,on,2030,netzero,high,high,ref,low,yes,high,73.68386611,fossil fuel
+5204,on,2030,netzero,ref,high,low,low,yes,high,74.21403696,fossil fuel
+5208,on,2030,netzero,low,high,low,low,yes,high,73.59016011,fossil fuel
+5212,on,2030,netzero,high,high,low,low,yes,high,73.74629236,fossil fuel
+5216,on,2030,netzero,ref,high,high,low,yes,high,74.19475297,fossil fuel
+5220,on,2030,netzero,low,high,high,low,yes,high,73.6135065,fossil fuel
+5224,on,2030,netzero,high,high,high,low,yes,high,73.67684981,fossil fuel
+5228,on,2030,netzero,high,ref,ref,ref,yes,high,65.20258579,fossil fuel
+5232,on,2030,netzero,ref,ref,low,ref,yes,high,65.39207959,fossil fuel
+5236,on,2030,netzero,low,ref,low,ref,yes,high,67.49555061,fossil fuel
+5240,on,2030,netzero,high,ref,low,ref,yes,high,65.18599524,fossil fuel
+5244,on,2030,netzero,ref,ref,high,ref,yes,high,65.4629094,fossil fuel
+5248,on,2030,netzero,low,ref,high,ref,yes,high,67.50077835,fossil fuel
+5252,on,2030,netzero,high,ref,high,ref,yes,high,65.20404113,fossil fuel
+5256,on,2030,netzero,ref,low,ref,ref,no,high,69.56949431,fossil fuel
+5260,on,2030,netzero,low,low,ref,ref,no,high,69.91672869,fossil fuel
+5264,on,2030,netzero,high,ref,ref,ref,no,high,65.20089565,fossil fuel
+5268,on,2030,netzero,high,low,ref,ref,no,high,68.05484899,fossil fuel
+5272,on,2030,netzero,ref,low,low,ref,no,high,69.53696876,fossil fuel
+5276,on,2030,netzero,low,low,low,ref,no,high,69.89459605,fossil fuel
+5280,on,2030,netzero,high,low,low,ref,no,high,68.20073638,fossil fuel
+5284,on,2030,netzero,ref,low,high,ref,no,high,69.34767429,fossil fuel
+5288,on,2030,netzero,low,low,high,ref,no,high,70.00718767,fossil fuel
+5292,on,2030,netzero,high,low,high,ref,no,high,68.20265506,fossil fuel
+5296,on,2030,netzero,ref,low,ref,ref,yes,high,69.3807661,fossil fuel
+5300,on,2030,netzero,low,low,ref,ref,yes,high,69.91695425,fossil fuel
+5304,on,2030,netzero,high,low,ref,ref,yes,high,68.15533069,fossil fuel
+5308,on,2030,netzero,ref,ref,low,ref,no,high,65.47294024,fossil fuel
+5312,on,2030,netzero,ref,low,low,ref,yes,high,69.58368445,fossil fuel
+5316,on,2030,netzero,low,low,low,ref,yes,high,69.88786998,fossil fuel
+5320,on,2030,netzero,high,low,low,ref,yes,high,68.17779167,fossil fuel
+5324,on,2030,netzero,ref,low,high,ref,yes,high,69.51191464,fossil fuel
+5328,on,2030,netzero,low,low,high,ref,yes,high,70.02030321,fossil fuel
+5332,on,2030,netzero,high,low,high,ref,yes,high,68.26280432,fossil fuel
+5336,on,2030,netzero,ref,high,ref,ref,no,high,64.55691699,fossil fuel
+5340,on,2030,netzero,low,high,ref,ref,no,high,65.64471645,fossil fuel
+5344,on,2030,netzero,high,high,ref,ref,no,high,65.70665842,fossil fuel
+5348,on,2030,netzero,ref,high,low,ref,no,high,64.4154447,fossil fuel
+5352,on,2030,netzero,low,ref,low,ref,no,high,67.48168241,fossil fuel
+5356,on,2030,netzero,low,high,low,ref,no,high,65.70638889,fossil fuel
+5360,on,2030,netzero,high,high,low,ref,no,high,65.59051507,fossil fuel
+5364,on,2030,netzero,ref,high,high,ref,no,high,64.57115576,fossil fuel
+5368,on,2030,netzero,low,high,high,ref,no,high,65.62921575,fossil fuel
+5372,on,2030,netzero,high,high,high,ref,no,high,65.71076927,fossil fuel
+5376,on,2030,netzero,ref,high,ref,ref,yes,high,64.55523963,fossil fuel
+5380,on,2030,netzero,low,high,ref,ref,yes,high,65.64369015,fossil fuel
+5384,on,2030,netzero,high,high,ref,ref,yes,high,65.62962184,fossil fuel
+5388,on,2030,netzero,ref,high,low,ref,yes,high,64.56983674,fossil fuel
+5392,on,2030,netzero,low,high,low,ref,yes,high,65.67811806,fossil fuel
+5396,on,2030,netzero,high,ref,low,ref,no,high,65.0441155,fossil fuel
+5400,on,2030,netzero,high,high,low,ref,yes,high,65.7153958,fossil fuel
+5404,on,2030,netzero,ref,high,high,ref,yes,high,64.57133588,fossil fuel
+5408,on,2030,netzero,low,high,high,ref,yes,high,65.65985572,fossil fuel
+5412,on,2030,netzero,high,high,high,ref,yes,high,65.70938091,fossil fuel
+5416,on,2030,netzero,ref,ref,ref,low,no,high,74.301852,fossil fuel
+5420,on,2030,netzero,low,ref,ref,low,no,high,73.76602451,fossil fuel
+5424,on,2030,netzero,high,ref,ref,low,no,high,73.92561804,fossil fuel
+5428,on,2030,netzero,ref,ref,low,low,no,high,74.348568,fossil fuel
+5432,on,2030,netzero,low,ref,low,low,no,high,73.75904412,fossil fuel
+5436,on,2030,netzero,high,ref,low,low,no,high,73.9974754,fossil fuel
+5440,on,2030,netzero,ref,ref,high,ref,no,high,65.36789186,fossil fuel
+5444,on,2030,netzero,ref,ref,high,low,no,high,74.30476739,fossil fuel
+5448,on,2030,netzero,low,ref,high,low,no,high,73.76520612,fossil fuel
+5452,on,2030,netzero,high,ref,high,low,no,high,73.90974924,fossil fuel
+5456,on,2030,netzero,ref,ref,ref,low,yes,high,74.31734971,fossil fuel
+5460,on,2030,netzero,low,ref,ref,low,yes,high,73.76604607,fossil fuel
+5464,on,2030,netzero,high,ref,ref,low,yes,high,73.92890381,fossil fuel
+5468,on,2030,netzero,ref,ref,low,low,yes,high,74.32251052,fossil fuel
+5472,on,2030,netzero,low,ref,low,low,yes,high,73.7592784,fossil fuel
+5476,on,2030,netzero,high,ref,low,low,yes,high,74.00429395,fossil fuel
+5480,on,2030,netzero,ref,ref,high,low,yes,high,74.29967723,fossil fuel
+5484,on,2030,netzero,low,ref,high,ref,no,high,67.49578973,fossil fuel
+5488,on,2030,netzero,low,ref,high,low,yes,high,73.76486484,fossil fuel
+5492,on,2030,netzero,high,ref,high,low,yes,high,73.87139551,fossil fuel
+5496,on,2030,netzero,ref,low,ref,low,no,high,74.82145929,fossil fuel
+5500,on,2030,netzero,low,low,ref,low,no,high,73.94490817,fossil fuel
+5504,on,2030,netzero,high,low,ref,low,no,high,75.58673887,fossil fuel
+5508,on,2030,netzero,ref,low,low,low,no,high,74.81069152,fossil fuel
+5512,on,2030,netzero,low,low,low,low,no,high,73.94026379,fossil fuel
+5516,on,2030,netzero,high,low,low,low,no,high,75.5695789,fossil fuel
+5520,on,2030,netzero,ref,low,high,low,no,high,74.82759993,fossil fuel
+5524,on,2030,netzero,low,low,high,low,no,high,73.95708,fossil fuel
+5528,on,2030,netzero,high,ref,high,ref,no,high,65.20445851,fossil fuel
+5532,on,2030,netzero,high,low,high,low,no,high,75.58881196,fossil fuel
+5536,on,2030,netzero,ref,low,ref,low,yes,high,74.81951494,fossil fuel
+5540,on,2030,netzero,low,low,ref,low,yes,high,73.95138838,fossil fuel
+5544,on,2030,netzero,high,low,ref,low,yes,high,75.59127272,fossil fuel
+5548,on,2030,netzero,ref,low,low,low,yes,high,74.80997614,fossil fuel
+5552,on,2030,netzero,low,low,low,low,yes,high,73.94083937,fossil fuel
+5556,on,2030,netzero,high,low,low,low,yes,high,75.56935846,fossil fuel
+5560,on,2030,netzero,ref,low,high,low,yes,high,74.81625879,fossil fuel
+5564,on,2030,netzero,low,low,high,low,yes,high,73.94205445,fossil fuel
+5568,on,2030,netzero,high,low,high,low,yes,high,75.58386989,fossil fuel
+5572,on,2030,netzero,ref,ref,ref,ref,yes,high,65.37416467,fossil fuel
+5576,on,2030,netzero,ref,high,ref,low,no,high,74.21647973,fossil fuel
+5580,on,2030,netzero,low,high,ref,low,no,high,73.6136307,fossil fuel
+5584,on,2030,netzero,high,high,ref,low,no,high,73.67239199,fossil fuel
+5588,on,2030,netzero,ref,high,low,low,no,high,74.20121745,fossil fuel
+5592,on,2030,netzero,low,high,low,low,no,high,73.59365679,fossil fuel
+5596,on,2030,netzero,high,high,low,low,no,high,73.75123694,fossil fuel
+5600,on,2030,netzero,ref,high,high,low,no,high,74.1933891,fossil fuel
+5604,on,2030,netzero,low,high,high,low,no,high,73.61331536,fossil fuel
+5608,on,2030,netzero,high,high,high,low,no,high,73.6579142,fossil fuel
+5612,on,2030,netzero,ref,high,ref,low,yes,high,74.18498658,fossil fuel
+8640,on,2030,netzero,ref,ref,ref,ref,no,low,65.45624295,fossil fuel
+8644,on,2030,netzero,low,ref,ref,ref,no,low,67.49258194,fossil fuel
+8648,on,2030,netzero,low,ref,ref,ref,yes,low,67.49327177,fossil fuel
+8652,on,2030,netzero,low,high,ref,low,yes,low,73.61074006,fossil fuel
+8656,on,2030,netzero,high,high,ref,low,yes,low,73.68386611,fossil fuel
+8660,on,2030,netzero,ref,high,low,low,yes,low,74.21403696,fossil fuel
+8664,on,2030,netzero,low,high,low,low,yes,low,73.59016011,fossil fuel
+8668,on,2030,netzero,high,high,low,low,yes,low,73.74629236,fossil fuel
+8672,on,2030,netzero,ref,high,high,low,yes,low,74.18804514,fossil fuel
+8676,on,2030,netzero,low,high,high,low,yes,low,73.6135065,fossil fuel
+8680,on,2030,netzero,high,high,high,low,yes,low,73.67684981,fossil fuel
+8684,on,2030,netzero,high,ref,ref,ref,yes,low,65.20258579,fossil fuel
+8688,on,2030,netzero,ref,ref,low,ref,yes,low,65.39207959,fossil fuel
+8692,on,2030,netzero,low,ref,low,ref,yes,low,67.49555061,fossil fuel
+8696,on,2030,netzero,high,ref,low,ref,yes,low,65.18599524,fossil fuel
+8700,on,2030,netzero,ref,ref,high,ref,yes,low,65.4629094,fossil fuel
+8704,on,2030,netzero,low,ref,high,ref,yes,low,67.50077835,fossil fuel
+8708,on,2030,netzero,high,ref,high,ref,yes,low,65.20404113,fossil fuel
+8712,on,2030,netzero,ref,low,ref,ref,no,low,69.56949431,fossil fuel
+8716,on,2030,netzero,low,low,ref,ref,no,low,69.91672869,fossil fuel
+8720,on,2030,netzero,high,ref,ref,ref,no,low,65.06616926,fossil fuel
+8724,on,2030,netzero,high,low,ref,ref,no,low,68.05484899,fossil fuel
+8728,on,2030,netzero,ref,low,low,ref,no,low,69.53696876,fossil fuel
+8732,on,2030,netzero,low,low,low,ref,no,low,69.89459605,fossil fuel
+8736,on,2030,netzero,high,low,low,ref,no,low,68.20073638,fossil fuel
+8740,on,2030,netzero,ref,low,high,ref,no,low,69.34767429,fossil fuel
+8744,on,2030,netzero,low,low,high,ref,no,low,70.00718767,fossil fuel
+8748,on,2030,netzero,high,low,high,ref,no,low,68.20265506,fossil fuel
+8752,on,2030,netzero,ref,low,ref,ref,yes,low,69.3807661,fossil fuel
+8756,on,2030,netzero,low,low,ref,ref,yes,low,69.91695425,fossil fuel
+8760,on,2030,netzero,high,low,ref,ref,yes,low,68.15533069,fossil fuel
+8764,on,2030,netzero,ref,ref,low,ref,no,low,65.47294024,fossil fuel
+8768,on,2030,netzero,ref,low,low,ref,yes,low,69.58368445,fossil fuel
+8772,on,2030,netzero,low,low,low,ref,yes,low,69.88786998,fossil fuel
+8776,on,2030,netzero,high,low,low,ref,yes,low,68.17779167,fossil fuel
+8780,on,2030,netzero,ref,low,high,ref,yes,low,69.51191464,fossil fuel
+8784,on,2030,netzero,low,low,high,ref,yes,low,70.02030321,fossil fuel
+8788,on,2030,netzero,high,low,high,ref,yes,low,68.26280432,fossil fuel
+8792,on,2030,netzero,ref,high,ref,ref,no,low,64.55691699,fossil fuel
+8796,on,2030,netzero,low,high,ref,ref,no,low,65.64471645,fossil fuel
+8800,on,2030,netzero,high,high,ref,ref,no,low,65.70665842,fossil fuel
+8804,on,2030,netzero,ref,high,low,ref,no,low,64.4154447,fossil fuel
+8808,on,2030,netzero,low,ref,low,ref,no,low,67.48168241,fossil fuel
+8812,on,2030,netzero,low,high,low,ref,no,low,65.70638889,fossil fuel
+8816,on,2030,netzero,high,high,low,ref,no,low,65.71178952,fossil fuel
+8820,on,2030,netzero,ref,high,high,ref,no,low,64.57115576,fossil fuel
+8824,on,2030,netzero,low,high,high,ref,no,low,65.62921575,fossil fuel
+8828,on,2030,netzero,high,high,high,ref,no,low,65.71076927,fossil fuel
+8832,on,2030,netzero,ref,high,ref,ref,yes,low,64.55523963,fossil fuel
+8836,on,2030,netzero,low,high,ref,ref,yes,low,65.64369015,fossil fuel
+8840,on,2030,netzero,high,high,ref,ref,yes,low,65.62962184,fossil fuel
+8844,on,2030,netzero,ref,high,low,ref,yes,low,64.56983674,fossil fuel
+8848,on,2030,netzero,low,high,low,ref,yes,low,65.67811806,fossil fuel
+8852,on,2030,netzero,high,ref,low,ref,no,low,65.0441155,fossil fuel
+8856,on,2030,netzero,high,high,low,ref,yes,low,65.7153958,fossil fuel
+8860,on,2030,netzero,ref,high,high,ref,yes,low,64.57133588,fossil fuel
+8864,on,2030,netzero,low,high,high,ref,yes,low,65.65985572,fossil fuel
+8868,on,2030,netzero,high,high,high,ref,yes,low,65.70938091,fossil fuel
+8872,on,2030,netzero,ref,ref,ref,low,no,low,74.301852,fossil fuel
+8876,on,2030,netzero,low,ref,ref,low,no,low,73.76602451,fossil fuel
+8880,on,2030,netzero,high,ref,ref,low,no,low,73.92561804,fossil fuel
+8884,on,2030,netzero,ref,ref,low,low,no,low,74.348568,fossil fuel
+8888,on,2030,netzero,low,ref,low,low,no,low,73.75904412,fossil fuel
+8892,on,2030,netzero,high,ref,low,low,no,low,73.9974754,fossil fuel
+8896,on,2030,netzero,ref,ref,high,ref,no,low,65.36789186,fossil fuel
+8900,on,2030,netzero,ref,ref,high,low,no,low,74.30476739,fossil fuel
+8904,on,2030,netzero,low,ref,high,low,no,low,73.76520612,fossil fuel
+8908,on,2030,netzero,high,ref,high,low,no,low,73.90974924,fossil fuel
+8912,on,2030,netzero,ref,ref,ref,low,yes,low,74.31734971,fossil fuel
+8916,on,2030,netzero,low,ref,ref,low,yes,low,73.76604607,fossil fuel
+8920,on,2030,netzero,high,ref,ref,low,yes,low,73.92890381,fossil fuel
+8924,on,2030,netzero,ref,ref,low,low,yes,low,74.32251052,fossil fuel
+8928,on,2030,netzero,low,ref,low,low,yes,low,73.7592784,fossil fuel
+8932,on,2030,netzero,high,ref,low,low,yes,low,74.00429395,fossil fuel
+8936,on,2030,netzero,ref,ref,high,low,yes,low,74.29967723,fossil fuel
+8940,on,2030,netzero,low,ref,high,ref,no,low,67.49578973,fossil fuel
+8944,on,2030,netzero,low,ref,high,low,yes,low,73.76486484,fossil fuel
+8948,on,2030,netzero,high,ref,high,low,yes,low,73.87139551,fossil fuel
+8952,on,2030,netzero,ref,low,ref,low,no,low,74.82145929,fossil fuel
+8956,on,2030,netzero,low,low,ref,low,no,low,73.94490817,fossil fuel
+8960,on,2030,netzero,high,low,ref,low,no,low,75.58673887,fossil fuel
+8964,on,2030,netzero,ref,low,low,low,no,low,74.81069152,fossil fuel
+8968,on,2030,netzero,low,low,low,low,no,low,73.94026379,fossil fuel
+8972,on,2030,netzero,high,low,low,low,no,low,75.5695789,fossil fuel
+8976,on,2030,netzero,ref,low,high,low,no,low,74.82759993,fossil fuel
+8980,on,2030,netzero,low,low,high,low,no,low,73.95708,fossil fuel
+8984,on,2030,netzero,high,ref,high,ref,no,low,65.20445851,fossil fuel
+8988,on,2030,netzero,high,low,high,low,no,low,75.58881196,fossil fuel
+8992,on,2030,netzero,ref,low,ref,low,yes,low,74.81951494,fossil fuel
+8996,on,2030,netzero,low,low,ref,low,yes,low,73.95138838,fossil fuel
+9000,on,2030,netzero,high,low,ref,low,yes,low,75.59127272,fossil fuel
+9004,on,2030,netzero,ref,low,low,low,yes,low,74.80997614,fossil fuel
+9008,on,2030,netzero,low,low,low,low,yes,low,73.94083937,fossil fuel
+9012,on,2030,netzero,high,low,low,low,yes,low,75.56935846,fossil fuel
+9016,on,2030,netzero,ref,low,high,low,yes,low,74.81625879,fossil fuel
+9020,on,2030,netzero,low,low,high,low,yes,low,73.94205445,fossil fuel
+9024,on,2030,netzero,high,low,high,low,yes,low,75.58386989,fossil fuel
+9028,on,2030,netzero,ref,ref,ref,ref,yes,low,65.37416467,fossil fuel
+9032,on,2030,netzero,ref,high,ref,low,no,low,74.21647973,fossil fuel
+9036,on,2030,netzero,low,high,ref,low,no,low,73.6136307,fossil fuel
+9040,on,2030,netzero,high,high,ref,low,no,low,73.67239199,fossil fuel
+9044,on,2030,netzero,ref,high,low,low,no,low,74.20121745,fossil fuel
+9048,on,2030,netzero,low,high,low,low,no,low,73.59365679,fossil fuel
+9052,on,2030,netzero,high,high,low,low,no,low,73.75123694,fossil fuel
+9056,on,2030,netzero,ref,high,high,low,no,low,74.1933891,fossil fuel
+9060,on,2030,netzero,low,high,high,low,no,low,73.61331536,fossil fuel
+9064,on,2030,netzero,high,high,high,low,no,low,73.65812375,fossil fuel
+9068,on,2030,netzero,ref,high,ref,low,yes,low,74.22520477,fossil fuel
+1729,on,2050,legislated,ref,ref,ref,ref,no,high,67.86012759,fossil fuel
+1733,on,2050,legislated,low,ref,ref,ref,no,high,64.48350458,fossil fuel
+1737,on,2050,legislated,low,ref,ref,ref,yes,high,64.48350458,fossil fuel
+1741,on,2050,legislated,low,high,ref,low,yes,high,65.49504735,fossil fuel
+1745,on,2050,legislated,high,high,ref,low,yes,high,73.71991662,fossil fuel
+1749,on,2050,legislated,ref,high,low,low,yes,high,68.60036194,fossil fuel
+1753,on,2050,legislated,low,high,low,low,yes,high,65.36412755,fossil fuel
+1757,on,2050,legislated,high,high,low,low,yes,high,73.65530732,fossil fuel
+1761,on,2050,legislated,ref,high,high,low,yes,high,68.68986704,fossil fuel
+1765,on,2050,legislated,low,high,high,low,yes,high,65.49423502,fossil fuel
+1769,on,2050,legislated,high,high,high,low,yes,high,73.73639738,fossil fuel
+1773,on,2050,legislated,high,ref,ref,ref,yes,high,72.97982379,fossil fuel
+1777,on,2050,legislated,ref,ref,low,ref,yes,high,67.64466346,fossil fuel
+1781,on,2050,legislated,low,ref,low,ref,yes,high,64.29883624,fossil fuel
+1785,on,2050,legislated,high,ref,low,ref,yes,high,72.88830795,fossil fuel
+1789,on,2050,legislated,ref,ref,high,ref,yes,high,67.91430263,fossil fuel
+1793,on,2050,legislated,low,ref,high,ref,yes,high,64.47291692,fossil fuel
+1797,on,2050,legislated,high,ref,high,ref,yes,high,73.0369932,fossil fuel
+1801,on,2050,legislated,ref,low,ref,ref,no,high,67.82034284,fossil fuel
+1805,on,2050,legislated,low,low,ref,ref,no,high,64.43592385,fossil fuel
+1809,on,2050,legislated,high,ref,ref,ref,no,high,72.97982379,fossil fuel
+1813,on,2050,legislated,high,low,ref,ref,no,high,72.98586088,fossil fuel
+1817,on,2050,legislated,ref,low,low,ref,no,high,67.52054691,fossil fuel
+1821,on,2050,legislated,low,low,low,ref,no,high,64.28131059,fossil fuel
+1825,on,2050,legislated,high,low,low,ref,no,high,72.64523779,fossil fuel
+1829,on,2050,legislated,ref,low,high,ref,no,high,67.88155104,fossil fuel
+1833,on,2050,legislated,low,low,high,ref,no,high,64.45761697,fossil fuel
+1837,on,2050,legislated,high,low,high,ref,no,high,72.89260011,fossil fuel
+1841,on,2050,legislated,ref,low,ref,ref,yes,high,67.82034284,fossil fuel
+1845,on,2050,legislated,low,low,ref,ref,yes,high,64.43592385,fossil fuel
+1849,on,2050,legislated,high,low,ref,ref,yes,high,72.98586088,fossil fuel
+1853,on,2050,legislated,ref,ref,low,ref,no,high,67.64466346,fossil fuel
+1857,on,2050,legislated,ref,low,low,ref,yes,high,67.52054691,fossil fuel
+1861,on,2050,legislated,low,low,low,ref,yes,high,64.28131059,fossil fuel
+1865,on,2050,legislated,high,low,low,ref,yes,high,72.64523779,fossil fuel
+1869,on,2050,legislated,ref,low,high,ref,yes,high,67.88155104,fossil fuel
+1873,on,2050,legislated,low,low,high,ref,yes,high,64.45761697,fossil fuel
+1877,on,2050,legislated,high,low,high,ref,yes,high,72.89260011,fossil fuel
+1881,on,2050,legislated,ref,high,ref,ref,no,high,67.84544691,fossil fuel
+1885,on,2050,legislated,low,high,ref,ref,no,high,64.48157579,fossil fuel
+1889,on,2050,legislated,high,high,ref,ref,no,high,72.99051829,fossil fuel
+1893,on,2050,legislated,ref,high,low,ref,no,high,67.59700568,fossil fuel
+1897,on,2050,legislated,low,ref,low,ref,no,high,64.29883624,fossil fuel
+1901,on,2050,legislated,low,high,low,ref,no,high,64.36570979,fossil fuel
+1905,on,2050,legislated,high,high,low,ref,no,high,72.90858467,fossil fuel
+1909,on,2050,legislated,ref,high,high,ref,no,high,67.90354235,fossil fuel
+1913,on,2050,legislated,low,high,high,ref,no,high,64.5122256,fossil fuel
+1917,on,2050,legislated,high,high,high,ref,no,high,73.0381144,fossil fuel
+1921,on,2050,legislated,ref,high,ref,ref,yes,high,67.84544691,fossil fuel
+1925,on,2050,legislated,low,high,ref,ref,yes,high,64.48157579,fossil fuel
+1929,on,2050,legislated,high,high,ref,ref,yes,high,72.99051829,fossil fuel
+1933,on,2050,legislated,ref,high,low,ref,yes,high,67.59700568,fossil fuel
+1937,on,2050,legislated,low,high,low,ref,yes,high,64.36570979,fossil fuel
+1941,on,2050,legislated,high,ref,low,ref,no,high,72.88830795,fossil fuel
+1945,on,2050,legislated,high,high,low,ref,yes,high,72.90858467,fossil fuel
+1949,on,2050,legislated,ref,high,high,ref,yes,high,67.90354235,fossil fuel
+1953,on,2050,legislated,low,high,high,ref,yes,high,64.5122256,fossil fuel
+1957,on,2050,legislated,high,high,high,ref,yes,high,73.0381144,fossil fuel
+1961,on,2050,legislated,ref,ref,ref,low,no,high,68.65822786,fossil fuel
+1965,on,2050,legislated,low,ref,ref,low,no,high,65.4046838,fossil fuel
+1969,on,2050,legislated,high,ref,ref,low,no,high,73.71821794,fossil fuel
+1973,on,2050,legislated,ref,ref,low,low,no,high,68.58333862,fossil fuel
+1977,on,2050,legislated,low,ref,low,low,no,high,65.34372258,fossil fuel
+1981,on,2050,legislated,high,ref,low,low,no,high,73.64069225,fossil fuel
+1985,on,2050,legislated,ref,ref,high,ref,no,high,67.91430263,fossil fuel
+1989,on,2050,legislated,ref,ref,high,low,no,high,68.68406823,fossil fuel
+1993,on,2050,legislated,low,ref,high,low,no,high,65.41251545,fossil fuel
+1997,on,2050,legislated,high,ref,high,low,no,high,73.73384621,fossil fuel
+2001,on,2050,legislated,ref,ref,ref,low,yes,high,68.65822786,fossil fuel
+2005,on,2050,legislated,low,ref,ref,low,yes,high,65.4046838,fossil fuel
+2009,on,2050,legislated,high,ref,ref,low,yes,high,73.71821794,fossil fuel
+2013,on,2050,legislated,ref,ref,low,low,yes,high,68.58333862,fossil fuel
+2017,on,2050,legislated,low,ref,low,low,yes,high,65.34372258,fossil fuel
+2021,on,2050,legislated,high,ref,low,low,yes,high,73.64069225,fossil fuel
+2025,on,2050,legislated,ref,ref,high,low,yes,high,68.68406823,fossil fuel
+2029,on,2050,legislated,low,ref,high,ref,no,high,64.47291692,fossil fuel
+2033,on,2050,legislated,low,ref,high,low,yes,high,65.41251545,fossil fuel
+2037,on,2050,legislated,high,ref,high,low,yes,high,73.73384621,fossil fuel
+2041,on,2050,legislated,ref,low,ref,low,no,high,68.65023364,fossil fuel
+2045,on,2050,legislated,low,low,ref,low,no,high,65.49351627,fossil fuel
+2049,on,2050,legislated,high,low,ref,low,no,high,73.64880624,fossil fuel
+2053,on,2050,legislated,ref,low,low,low,no,high,68.58543932,fossil fuel
+2057,on,2050,legislated,low,low,low,low,no,high,65.43826555,fossil fuel
+2061,on,2050,legislated,high,low,low,low,no,high,73.62579203,fossil fuel
+2065,on,2050,legislated,ref,low,high,low,no,high,68.73716672,fossil fuel
+2069,on,2050,legislated,low,low,high,low,no,high,65.5234964,fossil fuel
+2073,on,2050,legislated,high,ref,high,ref,no,high,73.0369932,fossil fuel
+2077,on,2050,legislated,high,low,high,low,no,high,73.65932262,fossil fuel
+2081,on,2050,legislated,ref,low,ref,low,yes,high,68.65023364,fossil fuel
+2085,on,2050,legislated,low,low,ref,low,yes,high,65.49351627,fossil fuel
+2089,on,2050,legislated,high,low,ref,low,yes,high,73.64880624,fossil fuel
+2093,on,2050,legislated,ref,low,low,low,yes,high,68.58543932,fossil fuel
+2097,on,2050,legislated,low,low,low,low,yes,high,65.43826555,fossil fuel
+2101,on,2050,legislated,high,low,low,low,yes,high,73.62579203,fossil fuel
+2105,on,2050,legislated,ref,low,high,low,yes,high,68.73716672,fossil fuel
+2109,on,2050,legislated,low,low,high,low,yes,high,65.5234964,fossil fuel
+2113,on,2050,legislated,high,low,high,low,yes,high,73.65932262,fossil fuel
+2117,on,2050,legislated,ref,ref,ref,ref,yes,high,67.86012759,fossil fuel
+2121,on,2050,legislated,ref,high,ref,low,no,high,68.66880166,fossil fuel
+2125,on,2050,legislated,low,high,ref,low,no,high,65.49504735,fossil fuel
+2129,on,2050,legislated,high,high,ref,low,no,high,73.71991662,fossil fuel
+2133,on,2050,legislated,ref,high,low,low,no,high,68.60036194,fossil fuel
+2137,on,2050,legislated,low,high,low,low,no,high,65.36412755,fossil fuel
+2141,on,2050,legislated,high,high,low,low,no,high,73.65530732,fossil fuel
+2145,on,2050,legislated,ref,high,high,low,no,high,68.68986704,fossil fuel
+2149,on,2050,legislated,low,high,high,low,no,high,65.49423502,fossil fuel
+2153,on,2050,legislated,high,high,high,low,no,high,73.73639738,fossil fuel
+2157,on,2050,legislated,ref,high,ref,low,yes,high,68.66880166,fossil fuel
+5185,on,2050,netzero,ref,ref,ref,ref,no,high,31.53105824,fossil fuel
+5189,on,2050,netzero,low,ref,ref,ref,no,high,24.6553077,fossil fuel
+5193,on,2050,netzero,low,ref,ref,ref,yes,high,54.06610423,fossil fuel
+5197,on,2050,netzero,low,high,ref,low,yes,high,56.69250934,fossil fuel
+5201,on,2050,netzero,high,high,ref,low,yes,high,60.78424362,fossil fuel
+5205,on,2050,netzero,ref,high,low,low,yes,high,54.22493592,fossil fuel
+5209,on,2050,netzero,low,high,low,low,yes,high,56.62366319,fossil fuel
+5213,on,2050,netzero,high,high,low,low,yes,high,60.44365137,fossil fuel
+5217,on,2050,netzero,ref,high,high,low,yes,high,54.57293753,fossil fuel
+5221,on,2050,netzero,low,high,high,low,yes,high,56.72071548,fossil fuel
+5225,on,2050,netzero,high,high,high,low,yes,high,60.80863811,fossil fuel
+5229,on,2050,netzero,high,ref,ref,ref,yes,high,58.76855617,fossil fuel
+5233,on,2050,netzero,ref,ref,low,ref,yes,high,52.57114536,fossil fuel
+5237,on,2050,netzero,low,ref,low,ref,yes,high,53.34898387,fossil fuel
+5241,on,2050,netzero,high,ref,low,ref,yes,high,58.13275829,fossil fuel
+5245,on,2050,netzero,ref,ref,high,ref,yes,high,52.80790047,fossil fuel
+5249,on,2050,netzero,low,ref,high,ref,yes,high,54.122584,fossil fuel
+5253,on,2050,netzero,high,ref,high,ref,yes,high,59.35535311,fossil fuel
+5257,on,2050,netzero,ref,low,ref,ref,no,high,25.56198262,fossil fuel
+5261,on,2050,netzero,low,low,ref,ref,no,high,22.93432941,fossil fuel
+5265,on,2050,netzero,high,ref,ref,ref,no,high,33.89436605,fossil fuel
+5269,on,2050,netzero,high,low,ref,ref,no,high,29.0218044,fossil fuel
+5273,on,2050,netzero,ref,low,low,ref,no,high,27.41665139,fossil fuel
+5277,on,2050,netzero,low,low,low,ref,no,high,19.40127879,fossil fuel
+5281,on,2050,netzero,high,low,low,ref,no,high,32.54206267,fossil fuel
+5285,on,2050,netzero,ref,low,high,ref,no,high,24.07154441,fossil fuel
+5289,on,2050,netzero,low,low,high,ref,no,high,19.34354285,fossil fuel
+5293,on,2050,netzero,high,low,high,ref,no,high,33.09789147,fossil fuel
+5297,on,2050,netzero,ref,low,ref,ref,yes,high,55.48288367,fossil fuel
+5301,on,2050,netzero,low,low,ref,ref,yes,high,48.89449429,fossil fuel
+5305,on,2050,netzero,high,low,ref,ref,yes,high,61.10410607,fossil fuel
+5309,on,2050,netzero,ref,ref,low,ref,no,high,31.46835452,fossil fuel
+5313,on,2050,netzero,ref,low,low,ref,yes,high,55.02548592,fossil fuel
+5317,on,2050,netzero,low,low,low,ref,yes,high,48.91906221,fossil fuel
+5321,on,2050,netzero,high,low,low,ref,yes,high,61.06114715,fossil fuel
+5325,on,2050,netzero,ref,low,high,ref,yes,high,54.72987281,fossil fuel
+5329,on,2050,netzero,low,low,high,ref,yes,high,50.2939617,fossil fuel
+5333,on,2050,netzero,high,low,high,ref,yes,high,61.93060704,fossil fuel
+5337,on,2050,netzero,ref,high,ref,ref,no,high,31.89442589,fossil fuel
+5341,on,2050,netzero,low,high,ref,ref,no,high,29.32765677,fossil fuel
+5345,on,2050,netzero,high,high,ref,ref,no,high,35.98476302,fossil fuel
+5349,on,2050,netzero,ref,high,low,ref,no,high,31.67377936,fossil fuel
+5353,on,2050,netzero,low,ref,low,ref,no,high,24.81390919,fossil fuel
+5357,on,2050,netzero,low,high,low,ref,no,high,29.74665069,fossil fuel
+5361,on,2050,netzero,high,high,low,ref,no,high,35.07629406,fossil fuel
+5365,on,2050,netzero,ref,high,high,ref,no,high,32.25524228,fossil fuel
+5369,on,2050,netzero,low,high,high,ref,no,high,29.12295198,fossil fuel
+5373,on,2050,netzero,high,high,high,ref,no,high,35.88228883,fossil fuel
+5377,on,2050,netzero,ref,high,ref,ref,yes,high,53.0302625,fossil fuel
+5381,on,2050,netzero,low,high,ref,ref,yes,high,51.21804119,fossil fuel
+5385,on,2050,netzero,high,high,ref,ref,yes,high,59.39464864,fossil fuel
+5389,on,2050,netzero,ref,high,low,ref,yes,high,52.79693245,fossil fuel
+5393,on,2050,netzero,low,high,low,ref,yes,high,51.28519393,fossil fuel
+5397,on,2050,netzero,high,ref,low,ref,no,high,34.67344521,fossil fuel
+5401,on,2050,netzero,high,high,low,ref,yes,high,58.48381622,fossil fuel
+5405,on,2050,netzero,ref,high,high,ref,yes,high,53.08581319,fossil fuel
+5409,on,2050,netzero,low,high,high,ref,yes,high,51.36943491,fossil fuel
+5413,on,2050,netzero,high,high,high,ref,yes,high,59.25799689,fossil fuel
+5417,on,2050,netzero,ref,ref,ref,low,no,high,36.2723724,fossil fuel
+5421,on,2050,netzero,low,ref,ref,low,no,high,34.75178448,fossil fuel
+5425,on,2050,netzero,high,ref,ref,low,no,high,38.33395413,fossil fuel
+5429,on,2050,netzero,ref,ref,low,low,no,high,36.5135291,fossil fuel
+5433,on,2050,netzero,low,ref,low,low,no,high,35.14108042,fossil fuel
+5437,on,2050,netzero,high,ref,low,low,no,high,38.94038592,fossil fuel
+5441,on,2050,netzero,ref,ref,high,ref,no,high,31.55760381,fossil fuel
+5445,on,2050,netzero,ref,ref,high,low,no,high,36.22721084,fossil fuel
+5449,on,2050,netzero,low,ref,high,low,no,high,34.434146,fossil fuel
+5453,on,2050,netzero,high,ref,high,low,no,high,37.86544098,fossil fuel
+5457,on,2050,netzero,ref,ref,ref,low,yes,high,54.39426854,fossil fuel
+5461,on,2050,netzero,low,ref,ref,low,yes,high,56.69263911,fossil fuel
+5465,on,2050,netzero,high,ref,ref,low,yes,high,60.39351746,fossil fuel
+5469,on,2050,netzero,ref,ref,low,low,yes,high,54.1340529,fossil fuel
+5473,on,2050,netzero,low,ref,low,low,yes,high,56.60723937,fossil fuel
+5477,on,2050,netzero,high,ref,low,low,yes,high,59.96891078,fossil fuel
+5481,on,2050,netzero,ref,ref,high,low,yes,high,54.51746845,fossil fuel
+5485,on,2050,netzero,low,ref,high,ref,no,high,24.63992706,fossil fuel
+5489,on,2050,netzero,low,ref,high,low,yes,high,56.71705876,fossil fuel
+5493,on,2050,netzero,high,ref,high,low,yes,high,60.45866434,fossil fuel
+5497,on,2050,netzero,ref,low,ref,low,no,high,35.48135428,fossil fuel
+5501,on,2050,netzero,low,low,ref,low,no,high,33.85817986,fossil fuel
+5505,on,2050,netzero,high,low,ref,low,no,high,38.07023637,fossil fuel
+5509,on,2050,netzero,ref,low,low,low,no,high,36.26334274,fossil fuel
+5513,on,2050,netzero,low,low,low,low,no,high,34.39954039,fossil fuel
+5517,on,2050,netzero,high,low,low,low,no,high,38.58396308,fossil fuel
+5521,on,2050,netzero,ref,low,high,low,no,high,35.41883244,fossil fuel
+5525,on,2050,netzero,low,low,high,low,no,high,33.84894403,fossil fuel
+5529,on,2050,netzero,high,ref,high,ref,no,high,35.44876389,fossil fuel
+5533,on,2050,netzero,high,low,high,low,no,high,37.45476903,fossil fuel
+5537,on,2050,netzero,ref,low,ref,low,yes,high,56.26190393,fossil fuel
+5541,on,2050,netzero,low,low,ref,low,yes,high,56.99165877,fossil fuel
+5545,on,2050,netzero,high,low,ref,low,yes,high,61.9593838,fossil fuel
+5549,on,2050,netzero,ref,low,low,low,yes,high,55.29440559,fossil fuel
+5553,on,2050,netzero,low,low,low,low,yes,high,56.91871528,fossil fuel
+5557,on,2050,netzero,high,low,low,low,yes,high,61.59402384,fossil fuel
+5561,on,2050,netzero,ref,low,high,low,yes,high,56.26011495,fossil fuel
+5565,on,2050,netzero,low,low,high,low,yes,high,57.02577238,fossil fuel
+5569,on,2050,netzero,high,low,high,low,yes,high,61.9023725,fossil fuel
+5573,on,2050,netzero,ref,ref,ref,ref,yes,high,52.7826934,fossil fuel
+5577,on,2050,netzero,ref,high,ref,low,no,high,36.04002043,fossil fuel
+5581,on,2050,netzero,low,high,ref,low,no,high,34.58816485,fossil fuel
+5585,on,2050,netzero,high,high,ref,low,no,high,38.19912544,fossil fuel
+5589,on,2050,netzero,ref,high,low,low,no,high,36.22949873,fossil fuel
+5593,on,2050,netzero,low,high,low,low,no,high,34.88998743,fossil fuel
+5597,on,2050,netzero,high,high,low,low,no,high,38.86354113,fossil fuel
+5601,on,2050,netzero,ref,high,high,low,no,high,35.13218623,fossil fuel
+5605,on,2050,netzero,low,high,high,low,no,high,34.44655239,fossil fuel
+5609,on,2050,netzero,high,high,high,low,no,high,37.66222791,fossil fuel
+5613,on,2050,netzero,ref,high,ref,low,yes,high,54.5461613,fossil fuel
+8641,on,2050,netzero,ref,ref,ref,ref,no,low,11.42132166,fossil fuel
+8645,on,2050,netzero,low,ref,ref,ref,no,low,11.4926482,fossil fuel
+8649,on,2050,netzero,low,ref,ref,ref,yes,low,47.87142056,fossil fuel
+8653,on,2050,netzero,low,high,ref,low,yes,low,50.96124915,fossil fuel
+8657,on,2050,netzero,high,high,ref,low,yes,low,60.79588304,fossil fuel
+8661,on,2050,netzero,ref,high,low,low,yes,low,54.44139629,fossil fuel
+8665,on,2050,netzero,low,high,low,low,yes,low,50.91341594,fossil fuel
+8669,on,2050,netzero,high,high,low,low,yes,low,60.43273682,fossil fuel
+8673,on,2050,netzero,ref,high,high,low,yes,low,54.81287912,fossil fuel
+8677,on,2050,netzero,low,high,high,low,yes,low,50.96888898,fossil fuel
+8681,on,2050,netzero,high,high,high,low,yes,low,60.82238262,fossil fuel
+8685,on,2050,netzero,high,ref,ref,ref,yes,low,58.85168865,fossil fuel
+8689,on,2050,netzero,ref,ref,low,ref,yes,low,52.79297762,fossil fuel
+8693,on,2050,netzero,low,ref,low,ref,yes,low,47.7891693,fossil fuel
+8697,on,2050,netzero,high,ref,low,ref,yes,low,58.31702741,fossil fuel
+8701,on,2050,netzero,ref,ref,high,ref,yes,low,52.97808478,fossil fuel
+8705,on,2050,netzero,low,ref,high,ref,yes,low,47.88818757,fossil fuel
+8709,on,2050,netzero,high,ref,high,ref,yes,low,59.3366542,fossil fuel
+8713,on,2050,netzero,ref,low,ref,ref,no,low,11.14714545,fossil fuel
+8717,on,2050,netzero,low,low,ref,ref,no,low,10.75403378,fossil fuel
+8721,on,2050,netzero,high,ref,ref,ref,no,low,14.97663282,fossil fuel
+8725,on,2050,netzero,high,low,ref,ref,no,low,18.15014025,fossil fuel
+8729,on,2050,netzero,ref,low,low,ref,no,low,12.30181301,fossil fuel
+8733,on,2050,netzero,low,low,low,ref,no,low,11.15423457,fossil fuel
+8737,on,2050,netzero,high,low,low,ref,no,low,17.75045245,fossil fuel
+8741,on,2050,netzero,ref,low,high,ref,no,low,10.79103451,fossil fuel
+8745,on,2050,netzero,low,low,high,ref,no,low,10.58438877,fossil fuel
+8749,on,2050,netzero,high,low,high,ref,no,low,15.60626471,fossil fuel
+8753,on,2050,netzero,ref,low,ref,ref,yes,low,55.34482447,fossil fuel
+8757,on,2050,netzero,low,low,ref,ref,yes,low,48.24714948,fossil fuel
+8761,on,2050,netzero,high,low,ref,ref,yes,low,61.87135678,fossil fuel
+8765,on,2050,netzero,ref,ref,low,ref,no,low,11.37661957,fossil fuel
+8769,on,2050,netzero,ref,low,low,ref,yes,low,54.15236102,fossil fuel
+8773,on,2050,netzero,low,low,low,ref,yes,low,49.01759129,fossil fuel
+8777,on,2050,netzero,high,low,low,ref,yes,low,61.86586548,fossil fuel
+8781,on,2050,netzero,ref,low,high,ref,yes,low,54.48985649,fossil fuel
+8785,on,2050,netzero,low,low,high,ref,yes,low,49.40884822,fossil fuel
+8789,on,2050,netzero,high,low,high,ref,yes,low,62.64663031,fossil fuel
+8793,on,2050,netzero,ref,high,ref,ref,no,low,10.98665205,fossil fuel
+8797,on,2050,netzero,low,high,ref,ref,no,low,11.52634125,fossil fuel
+8801,on,2050,netzero,high,high,ref,ref,no,low,14.26797583,fossil fuel
+8805,on,2050,netzero,ref,high,low,ref,no,low,11.3122035,fossil fuel
+8809,on,2050,netzero,low,ref,low,ref,no,low,11.03513112,fossil fuel
+8813,on,2050,netzero,low,high,low,ref,no,low,11.82104524,fossil fuel
+8817,on,2050,netzero,high,high,low,ref,no,low,15.54717745,fossil fuel
+8821,on,2050,netzero,ref,high,high,ref,no,low,10.98451317,fossil fuel
+8825,on,2050,netzero,low,high,high,ref,no,low,11.36934777,fossil fuel
+8829,on,2050,netzero,high,high,high,ref,no,low,12.94767044,fossil fuel
+8833,on,2050,netzero,ref,high,ref,ref,yes,low,53.24109858,fossil fuel
+8837,on,2050,netzero,low,high,ref,ref,yes,low,48.32970241,fossil fuel
+8841,on,2050,netzero,high,high,ref,ref,yes,low,59.47159836,fossil fuel
+8845,on,2050,netzero,ref,high,low,ref,yes,low,53.01502832,fossil fuel
+8849,on,2050,netzero,low,high,low,ref,yes,low,48.22431174,fossil fuel
+8853,on,2050,netzero,high,ref,low,ref,no,low,15.72223937,fossil fuel
+8857,on,2050,netzero,high,high,low,ref,yes,low,58.75836918,fossil fuel
+8861,on,2050,netzero,ref,high,high,ref,yes,low,53.28863604,fossil fuel
+8865,on,2050,netzero,low,high,high,ref,yes,low,48.3623532,fossil fuel
+8869,on,2050,netzero,high,high,high,ref,yes,low,59.54017719,fossil fuel
+8873,on,2050,netzero,ref,ref,ref,low,no,low,17.44113907,fossil fuel
+8877,on,2050,netzero,low,ref,ref,low,no,low,14.92073591,fossil fuel
+8881,on,2050,netzero,high,ref,ref,low,no,low,17.24860463,fossil fuel
+8885,on,2050,netzero,ref,ref,low,low,no,low,17.65607084,fossil fuel
+8889,on,2050,netzero,low,ref,low,low,no,low,15.66061377,fossil fuel
+8893,on,2050,netzero,high,ref,low,low,no,low,20.00625935,fossil fuel
+8897,on,2050,netzero,ref,ref,high,ref,no,low,11.10842824,fossil fuel
+8901,on,2050,netzero,ref,ref,high,low,no,low,16.92680615,fossil fuel
+8905,on,2050,netzero,low,ref,high,low,no,low,14.6574015,fossil fuel
+8909,on,2050,netzero,high,ref,high,low,no,low,14.80894702,fossil fuel
+8913,on,2050,netzero,ref,ref,ref,low,yes,low,54.71071968,fossil fuel
+8917,on,2050,netzero,low,ref,ref,low,yes,low,50.73826336,fossil fuel
+8921,on,2050,netzero,high,ref,ref,low,yes,low,60.44002476,fossil fuel
+8925,on,2050,netzero,ref,ref,low,low,yes,low,54.37768137,fossil fuel
+8929,on,2050,netzero,low,ref,low,low,yes,low,50.70406983,fossil fuel
+8933,on,2050,netzero,high,ref,low,low,yes,low,60.05014164,fossil fuel
+8937,on,2050,netzero,ref,ref,high,low,yes,low,54.72471489,fossil fuel
+8941,on,2050,netzero,low,ref,high,ref,no,low,11.31997351,fossil fuel
+8945,on,2050,netzero,low,ref,high,low,yes,low,50.75357968,fossil fuel
+8949,on,2050,netzero,high,ref,high,low,yes,low,60.49326612,fossil fuel
+8953,on,2050,netzero,ref,low,ref,low,no,low,14.69045797,fossil fuel
+8957,on,2050,netzero,low,low,ref,low,no,low,15.47588052,fossil fuel
+8961,on,2050,netzero,high,low,ref,low,no,low,15.74927407,fossil fuel
+8965,on,2050,netzero,ref,low,low,low,no,low,18.6865478,fossil fuel
+8969,on,2050,netzero,low,low,low,low,no,low,16.39610958,fossil fuel
+8973,on,2050,netzero,high,low,low,low,no,low,19.70986031,fossil fuel
+8977,on,2050,netzero,ref,low,high,low,no,low,14.38611681,fossil fuel
+8981,on,2050,netzero,low,low,high,low,no,low,14.41359044,fossil fuel
+8985,on,2050,netzero,high,ref,high,ref,no,low,13.89357939,fossil fuel
+8989,on,2050,netzero,high,low,high,low,no,low,14.69182055,fossil fuel
+8993,on,2050,netzero,ref,low,ref,low,yes,low,56.15845193,fossil fuel
+8997,on,2050,netzero,low,low,ref,low,yes,low,52.93332434,fossil fuel
+9001,on,2050,netzero,high,low,ref,low,yes,low,62.43336558,fossil fuel
+9005,on,2050,netzero,ref,low,low,low,yes,low,55.87447293,fossil fuel
+9009,on,2050,netzero,low,low,low,low,yes,low,52.36178846,fossil fuel
+9013,on,2050,netzero,high,low,low,low,yes,low,61.96040858,fossil fuel
+9017,on,2050,netzero,ref,low,high,low,yes,low,56.77621241,fossil fuel
+9021,on,2050,netzero,low,low,high,low,yes,low,52.70533045,fossil fuel
+9025,on,2050,netzero,high,low,high,low,yes,low,62.46283829,fossil fuel
+9029,on,2050,netzero,ref,ref,ref,ref,yes,low,53.03213784,fossil fuel
+9033,on,2050,netzero,ref,high,ref,low,no,low,16.62054678,fossil fuel
+9037,on,2050,netzero,low,high,ref,low,no,low,14.64593333,fossil fuel
+9041,on,2050,netzero,high,high,ref,low,no,low,17.30375104,fossil fuel
+9045,on,2050,netzero,ref,high,low,low,no,low,17.35350544,fossil fuel
+9049,on,2050,netzero,low,high,low,low,no,low,15.11082994,fossil fuel
+9053,on,2050,netzero,high,high,low,low,no,low,19.02233314,fossil fuel
+9057,on,2050,netzero,ref,high,high,low,no,low,16.42617587,fossil fuel
+9061,on,2050,netzero,low,high,high,low,no,low,14.24118703,fossil fuel
+9065,on,2050,netzero,high,high,high,low,no,low,14.73559446,fossil fuel
+9069,on,2050,netzero,ref,high,ref,low,yes,low,54.74187288,fossil fuel
+1730,on,2030,legislated,ref,ref,ref,ref,no,high,27.18974854,renewable
+1734,on,2030,legislated,low,ref,ref,ref,no,high,28.01917126,renewable
+1738,on,2030,legislated,low,ref,ref,ref,yes,high,28.01917126,renewable
+1742,on,2030,legislated,low,high,ref,low,yes,high,26.52408218,renewable
+1746,on,2030,legislated,high,high,ref,low,yes,high,26.5307105,renewable
+1750,on,2030,legislated,ref,high,low,low,yes,high,26.89263109,renewable
+1754,on,2030,legislated,low,high,low,low,yes,high,26.5159715,renewable
+1758,on,2030,legislated,high,high,low,low,yes,high,26.56915414,renewable
+1762,on,2030,legislated,ref,high,high,low,yes,high,26.88220096,renewable
+1766,on,2030,legislated,low,high,high,low,yes,high,26.52123668,renewable
+1770,on,2030,legislated,high,high,high,low,yes,high,26.50420579,renewable
+1774,on,2030,legislated,high,ref,ref,ref,yes,high,27.0302929,renewable
+1778,on,2030,legislated,ref,ref,low,ref,yes,high,27.21481699,renewable
+1782,on,2030,legislated,low,ref,low,ref,yes,high,28.04573172,renewable
+1786,on,2030,legislated,high,ref,low,ref,yes,high,27.04477016,renewable
+1790,on,2030,legislated,ref,ref,high,ref,yes,high,27.18466184,renewable
+1794,on,2030,legislated,low,ref,high,ref,yes,high,28.01569629,renewable
+1798,on,2030,legislated,high,ref,high,ref,yes,high,27.03061347,renewable
+1802,on,2030,legislated,ref,low,ref,ref,no,high,27.1764656,renewable
+1806,on,2030,legislated,low,low,ref,ref,no,high,28.01498073,renewable
+1810,on,2030,legislated,high,ref,ref,ref,no,high,27.0302929,renewable
+1814,on,2030,legislated,high,low,ref,ref,no,high,25.97589498,renewable
+1818,on,2030,legislated,ref,low,low,ref,no,high,27.20174203,renewable
+1822,on,2030,legislated,low,low,low,ref,no,high,28.03925745,renewable
+1826,on,2030,legislated,high,low,low,ref,no,high,26.03278997,renewable
+1830,on,2030,legislated,ref,low,high,ref,no,high,27.17126164,renewable
+1834,on,2030,legislated,low,low,high,ref,no,high,28.00997761,renewable
+1838,on,2030,legislated,high,low,high,ref,no,high,25.93788524,renewable
+1842,on,2030,legislated,ref,low,ref,ref,yes,high,27.1764656,renewable
+1846,on,2030,legislated,low,low,ref,ref,yes,high,28.01498073,renewable
+1850,on,2030,legislated,high,low,ref,ref,yes,high,25.97589498,renewable
+1854,on,2030,legislated,ref,ref,low,ref,no,high,27.21481699,renewable
+1858,on,2030,legislated,ref,low,low,ref,yes,high,27.20174203,renewable
+1862,on,2030,legislated,low,low,low,ref,yes,high,28.03925745,renewable
+1866,on,2030,legislated,high,low,low,ref,yes,high,26.03278997,renewable
+1870,on,2030,legislated,ref,low,high,ref,yes,high,27.17126164,renewable
+1874,on,2030,legislated,low,low,high,ref,yes,high,28.00997761,renewable
+1878,on,2030,legislated,high,low,high,ref,yes,high,25.93788524,renewable
+1882,on,2030,legislated,ref,high,ref,ref,no,high,27.38048641,renewable
+1886,on,2030,legislated,low,high,ref,ref,no,high,28.01443895,renewable
+1890,on,2030,legislated,high,high,ref,ref,no,high,27.73799742,renewable
+1894,on,2030,legislated,ref,high,low,ref,no,high,27.37985127,renewable
+1898,on,2030,legislated,low,ref,low,ref,no,high,28.04573172,renewable
+1902,on,2030,legislated,low,high,low,ref,no,high,28.04515176,renewable
+1906,on,2030,legislated,high,high,low,ref,no,high,27.66965262,renewable
+1910,on,2030,legislated,ref,high,high,ref,no,high,27.38127696,renewable
+1914,on,2030,legislated,low,high,high,ref,no,high,28.01402336,renewable
+1918,on,2030,legislated,high,high,high,ref,no,high,27.75294248,renewable
+1922,on,2030,legislated,ref,high,ref,ref,yes,high,27.38048641,renewable
+1926,on,2030,legislated,low,high,ref,ref,yes,high,28.01443895,renewable
+1930,on,2030,legislated,high,high,ref,ref,yes,high,27.73799742,renewable
+1934,on,2030,legislated,ref,high,low,ref,yes,high,27.37985127,renewable
+1938,on,2030,legislated,low,high,low,ref,yes,high,28.04515176,renewable
+1942,on,2030,legislated,high,ref,low,ref,no,high,27.04477016,renewable
+1946,on,2030,legislated,high,high,low,ref,yes,high,27.66965262,renewable
+1950,on,2030,legislated,ref,high,high,ref,yes,high,27.38127696,renewable
+1954,on,2030,legislated,low,high,high,ref,yes,high,28.01402336,renewable
+1958,on,2030,legislated,high,high,high,ref,yes,high,27.75294248,renewable
+1962,on,2030,legislated,ref,ref,ref,low,no,high,26.72212927,renewable
+1966,on,2030,legislated,low,ref,ref,low,no,high,26.4573331,renewable
+1970,on,2030,legislated,high,ref,ref,low,no,high,26.12931693,renewable
+1974,on,2030,legislated,ref,ref,low,low,no,high,26.69898267,renewable
+1978,on,2030,legislated,low,ref,low,low,no,high,26.44727656,renewable
+1982,on,2030,legislated,high,ref,low,low,no,high,26.12974009,renewable
+1986,on,2030,legislated,ref,ref,high,ref,no,high,27.18466184,renewable
+1990,on,2030,legislated,ref,ref,high,low,no,high,26.729302,renewable
+1994,on,2030,legislated,low,ref,high,low,no,high,26.45790441,renewable
+1998,on,2030,legislated,high,ref,high,low,no,high,26.12087718,renewable
+2002,on,2030,legislated,ref,ref,ref,low,yes,high,26.72212927,renewable
+2006,on,2030,legislated,low,ref,ref,low,yes,high,26.4573331,renewable
+2010,on,2030,legislated,high,ref,ref,low,yes,high,26.12931693,renewable
+2014,on,2030,legislated,ref,ref,low,low,yes,high,26.69898267,renewable
+2018,on,2030,legislated,low,ref,low,low,yes,high,26.44727656,renewable
+2022,on,2030,legislated,high,ref,low,low,yes,high,26.12974009,renewable
+2026,on,2030,legislated,ref,ref,high,low,yes,high,26.729302,renewable
+2030,on,2030,legislated,low,ref,high,ref,no,high,28.01569629,renewable
+2034,on,2030,legislated,low,ref,high,low,yes,high,26.45790441,renewable
+2038,on,2030,legislated,high,ref,high,low,yes,high,26.12087718,renewable
+2042,on,2030,legislated,ref,low,ref,low,no,high,25.60185312,renewable
+2046,on,2030,legislated,low,low,ref,low,no,high,26.32763574,renewable
+2050,on,2030,legislated,high,low,ref,low,no,high,25.20115393,renewable
+2054,on,2030,legislated,ref,low,low,low,no,high,25.60035919,renewable
+2058,on,2030,legislated,low,low,low,low,no,high,26.34619525,renewable
+2062,on,2030,legislated,high,low,low,low,no,high,25.20650418,renewable
+2066,on,2030,legislated,ref,low,high,low,no,high,25.59871449,renewable
+2070,on,2030,legislated,low,low,high,low,no,high,26.3225679,renewable
+2074,on,2030,legislated,high,ref,high,ref,no,high,27.03061347,renewable
+2078,on,2030,legislated,high,low,high,low,no,high,25.19984524,renewable
+2082,on,2030,legislated,ref,low,ref,low,yes,high,25.60185312,renewable
+2086,on,2030,legislated,low,low,ref,low,yes,high,26.32763574,renewable
+2090,on,2030,legislated,high,low,ref,low,yes,high,25.20115393,renewable
+2094,on,2030,legislated,ref,low,low,low,yes,high,25.60035919,renewable
+2098,on,2030,legislated,low,low,low,low,yes,high,26.34619525,renewable
+2102,on,2030,legislated,high,low,low,low,yes,high,25.20650418,renewable
+2106,on,2030,legislated,ref,low,high,low,yes,high,25.59871449,renewable
+2110,on,2030,legislated,low,low,high,low,yes,high,26.3225679,renewable
+2114,on,2030,legislated,high,low,high,low,yes,high,25.19984524,renewable
+2118,on,2030,legislated,ref,ref,ref,ref,yes,high,27.18974854,renewable
+2122,on,2030,legislated,ref,high,ref,low,no,high,26.89818318,renewable
+2126,on,2030,legislated,low,high,ref,low,no,high,26.52408218,renewable
+2130,on,2030,legislated,high,high,ref,low,no,high,26.5307105,renewable
+2134,on,2030,legislated,ref,high,low,low,no,high,26.89263109,renewable
+2138,on,2030,legislated,low,high,low,low,no,high,26.5159715,renewable
+2142,on,2030,legislated,high,high,low,low,no,high,26.56915414,renewable
+2146,on,2030,legislated,ref,high,high,low,no,high,26.88220096,renewable
+2150,on,2030,legislated,low,high,high,low,no,high,26.52123668,renewable
+2154,on,2030,legislated,high,high,high,low,no,high,26.50420579,renewable
+2158,on,2030,legislated,ref,high,ref,low,yes,high,26.89818318,renewable
+5186,on,2030,netzero,ref,ref,ref,ref,no,high,34.54375705,renewable
+5190,on,2030,netzero,low,ref,ref,ref,no,high,32.50741806,renewable
+5194,on,2030,netzero,low,ref,ref,ref,yes,high,32.50672823,renewable
+5198,on,2030,netzero,low,high,ref,low,yes,high,26.38925994,renewable
+5202,on,2030,netzero,high,high,ref,low,yes,high,26.31613389,renewable
+5206,on,2030,netzero,ref,high,low,low,yes,high,25.78596304,renewable
+5210,on,2030,netzero,low,high,low,low,yes,high,26.40983989,renewable
+5214,on,2030,netzero,high,high,low,low,yes,high,26.25370764,renewable
+5218,on,2030,netzero,ref,high,high,low,yes,high,25.80524703,renewable
+5222,on,2030,netzero,low,high,high,low,yes,high,26.3864935,renewable
+5226,on,2030,netzero,high,high,high,low,yes,high,26.32315019,renewable
+5230,on,2030,netzero,high,ref,ref,ref,yes,high,34.79741421,renewable
+5234,on,2030,netzero,ref,ref,low,ref,yes,high,34.60792041,renewable
+5238,on,2030,netzero,low,ref,low,ref,yes,high,32.50444939,renewable
+5242,on,2030,netzero,high,ref,low,ref,yes,high,34.81400476,renewable
+5246,on,2030,netzero,ref,ref,high,ref,yes,high,34.5370906,renewable
+5250,on,2030,netzero,low,ref,high,ref,yes,high,32.49922165,renewable
+5254,on,2030,netzero,high,ref,high,ref,yes,high,34.79595887,renewable
+5258,on,2030,netzero,ref,low,ref,ref,no,high,30.43050569,renewable
+5262,on,2030,netzero,low,low,ref,ref,no,high,30.08327131,renewable
+5266,on,2030,netzero,high,ref,ref,ref,no,high,34.79910435,renewable
+5270,on,2030,netzero,high,low,ref,ref,no,high,31.94515101,renewable
+5274,on,2030,netzero,ref,low,low,ref,no,high,30.46303124,renewable
+5278,on,2030,netzero,low,low,low,ref,no,high,30.10540395,renewable
+5282,on,2030,netzero,high,low,low,ref,no,high,31.79926362,renewable
+5286,on,2030,netzero,ref,low,high,ref,no,high,30.65232571,renewable
+5290,on,2030,netzero,low,low,high,ref,no,high,29.99281233,renewable
+5294,on,2030,netzero,high,low,high,ref,no,high,31.79734494,renewable
+5298,on,2030,netzero,ref,low,ref,ref,yes,high,30.6192339,renewable
+5302,on,2030,netzero,low,low,ref,ref,yes,high,30.08304575,renewable
+5306,on,2030,netzero,high,low,ref,ref,yes,high,31.84466931,renewable
+5310,on,2030,netzero,ref,ref,low,ref,no,high,34.52705976,renewable
+5314,on,2030,netzero,ref,low,low,ref,yes,high,30.41631555,renewable
+5318,on,2030,netzero,low,low,low,ref,yes,high,30.11213002,renewable
+5322,on,2030,netzero,high,low,low,ref,yes,high,31.82220833,renewable
+5326,on,2030,netzero,ref,low,high,ref,yes,high,30.48808536,renewable
+5330,on,2030,netzero,low,low,high,ref,yes,high,29.97969679,renewable
+5334,on,2030,netzero,high,low,high,ref,yes,high,31.73719568,renewable
+5338,on,2030,netzero,ref,high,ref,ref,no,high,35.44308301,renewable
+5342,on,2030,netzero,low,high,ref,ref,no,high,34.35528355,renewable
+5346,on,2030,netzero,high,high,ref,ref,no,high,34.29334158,renewable
+5350,on,2030,netzero,ref,high,low,ref,no,high,35.5845553,renewable
+5354,on,2030,netzero,low,ref,low,ref,no,high,32.51831759,renewable
+5358,on,2030,netzero,low,high,low,ref,no,high,34.29361111,renewable
+5362,on,2030,netzero,high,high,low,ref,no,high,34.40948493,renewable
+5366,on,2030,netzero,ref,high,high,ref,no,high,35.42884424,renewable
+5370,on,2030,netzero,low,high,high,ref,no,high,34.37078425,renewable
+5374,on,2030,netzero,high,high,high,ref,no,high,34.28923073,renewable
+5378,on,2030,netzero,ref,high,ref,ref,yes,high,35.44476037,renewable
+5382,on,2030,netzero,low,high,ref,ref,yes,high,34.35630985,renewable
+5386,on,2030,netzero,high,high,ref,ref,yes,high,34.37037816,renewable
+5390,on,2030,netzero,ref,high,low,ref,yes,high,35.43016326,renewable
+5394,on,2030,netzero,low,high,low,ref,yes,high,34.32188194,renewable
+5398,on,2030,netzero,high,ref,low,ref,no,high,34.9558845,renewable
+5402,on,2030,netzero,high,high,low,ref,yes,high,34.2846042,renewable
+5406,on,2030,netzero,ref,high,high,ref,yes,high,35.42866412,renewable
+5410,on,2030,netzero,low,high,high,ref,yes,high,34.34014428,renewable
+5414,on,2030,netzero,high,high,high,ref,yes,high,34.29061909,renewable
+5418,on,2030,netzero,ref,ref,ref,low,no,high,25.698148,renewable
+5422,on,2030,netzero,low,ref,ref,low,no,high,26.23397549,renewable
+5426,on,2030,netzero,high,ref,ref,low,no,high,26.07438196,renewable
+5430,on,2030,netzero,ref,ref,low,low,no,high,25.651432,renewable
+5434,on,2030,netzero,low,ref,low,low,no,high,26.24095588,renewable
+5438,on,2030,netzero,high,ref,low,low,no,high,26.0025246,renewable
+5442,on,2030,netzero,ref,ref,high,ref,no,high,34.63210814,renewable
+5446,on,2030,netzero,ref,ref,high,low,no,high,25.69523261,renewable
+5450,on,2030,netzero,low,ref,high,low,no,high,26.23479388,renewable
+5454,on,2030,netzero,high,ref,high,low,no,high,26.09025076,renewable
+5458,on,2030,netzero,ref,ref,ref,low,yes,high,25.68265029,renewable
+5462,on,2030,netzero,low,ref,ref,low,yes,high,26.23395393,renewable
+5466,on,2030,netzero,high,ref,ref,low,yes,high,26.07109619,renewable
+5470,on,2030,netzero,ref,ref,low,low,yes,high,25.67748948,renewable
+5474,on,2030,netzero,low,ref,low,low,yes,high,26.2407216,renewable
+5478,on,2030,netzero,high,ref,low,low,yes,high,25.99570605,renewable
+5482,on,2030,netzero,ref,ref,high,low,yes,high,25.70032277,renewable
+5486,on,2030,netzero,low,ref,high,ref,no,high,32.50421027,renewable
+5490,on,2030,netzero,low,ref,high,low,yes,high,26.23513516,renewable
+5494,on,2030,netzero,high,ref,high,low,yes,high,26.12860449,renewable
+5498,on,2030,netzero,ref,low,ref,low,no,high,25.17854071,renewable
+5502,on,2030,netzero,low,low,ref,low,no,high,26.05509183,renewable
+5506,on,2030,netzero,high,low,ref,low,no,high,24.41326113,renewable
+5510,on,2030,netzero,ref,low,low,low,no,high,25.18930848,renewable
+5514,on,2030,netzero,low,low,low,low,no,high,26.05973621,renewable
+5518,on,2030,netzero,high,low,low,low,no,high,24.4304211,renewable
+5522,on,2030,netzero,ref,low,high,low,no,high,25.17240007,renewable
+5526,on,2030,netzero,low,low,high,low,no,high,26.04292,renewable
+5530,on,2030,netzero,high,ref,high,ref,no,high,34.79554149,renewable
+5534,on,2030,netzero,high,low,high,low,no,high,24.41118804,renewable
+5538,on,2030,netzero,ref,low,ref,low,yes,high,25.18048506,renewable
+5542,on,2030,netzero,low,low,ref,low,yes,high,26.04861162,renewable
+5546,on,2030,netzero,high,low,ref,low,yes,high,24.40872728,renewable
+5550,on,2030,netzero,ref,low,low,low,yes,high,25.19002386,renewable
+5554,on,2030,netzero,low,low,low,low,yes,high,26.05916063,renewable
+5558,on,2030,netzero,high,low,low,low,yes,high,24.43064154,renewable
+5562,on,2030,netzero,ref,low,high,low,yes,high,25.18374121,renewable
+5566,on,2030,netzero,low,low,high,low,yes,high,26.05794555,renewable
+5570,on,2030,netzero,high,low,high,low,yes,high,24.41613011,renewable
+5574,on,2030,netzero,ref,ref,ref,ref,yes,high,34.62583533,renewable
+5578,on,2030,netzero,ref,high,ref,low,no,high,25.78352027,renewable
+5582,on,2030,netzero,low,high,ref,low,no,high,26.3863693,renewable
+5586,on,2030,netzero,high,high,ref,low,no,high,26.32760801,renewable
+5590,on,2030,netzero,ref,high,low,low,no,high,25.79878255,renewable
+5594,on,2030,netzero,low,high,low,low,no,high,26.40634321,renewable
+5598,on,2030,netzero,high,high,low,low,no,high,26.24876306,renewable
+5602,on,2030,netzero,ref,high,high,low,no,high,25.8066109,renewable
+5606,on,2030,netzero,low,high,high,low,no,high,26.38668464,renewable
+5610,on,2030,netzero,high,high,high,low,no,high,26.3420858,renewable
+5614,on,2030,netzero,ref,high,ref,low,yes,high,25.81501342,renewable
+8642,on,2030,netzero,ref,ref,ref,ref,no,low,34.54375705,renewable
+8646,on,2030,netzero,low,ref,ref,ref,no,low,32.50741806,renewable
+8650,on,2030,netzero,low,ref,ref,ref,yes,low,32.50672823,renewable
+8654,on,2030,netzero,low,high,ref,low,yes,low,26.38925994,renewable
+8658,on,2030,netzero,high,high,ref,low,yes,low,26.31613389,renewable
+8662,on,2030,netzero,ref,high,low,low,yes,low,25.78596304,renewable
+8666,on,2030,netzero,low,high,low,low,yes,low,26.40983989,renewable
+8670,on,2030,netzero,high,high,low,low,yes,low,26.25370764,renewable
+8674,on,2030,netzero,ref,high,high,low,yes,low,25.81195486,renewable
+8678,on,2030,netzero,low,high,high,low,yes,low,26.3864935,renewable
+8682,on,2030,netzero,high,high,high,low,yes,low,26.32315019,renewable
+8686,on,2030,netzero,high,ref,ref,ref,yes,low,34.79741421,renewable
+8690,on,2030,netzero,ref,ref,low,ref,yes,low,34.60792041,renewable
+8694,on,2030,netzero,low,ref,low,ref,yes,low,32.50444939,renewable
+8698,on,2030,netzero,high,ref,low,ref,yes,low,34.81400476,renewable
+8702,on,2030,netzero,ref,ref,high,ref,yes,low,34.5370906,renewable
+8706,on,2030,netzero,low,ref,high,ref,yes,low,32.49922165,renewable
+8710,on,2030,netzero,high,ref,high,ref,yes,low,34.79595887,renewable
+8714,on,2030,netzero,ref,low,ref,ref,no,low,30.43050569,renewable
+8718,on,2030,netzero,low,low,ref,ref,no,low,30.08327131,renewable
+8722,on,2030,netzero,high,ref,ref,ref,no,low,34.93383074,renewable
+8726,on,2030,netzero,high,low,ref,ref,no,low,31.94515101,renewable
+8730,on,2030,netzero,ref,low,low,ref,no,low,30.46303124,renewable
+8734,on,2030,netzero,low,low,low,ref,no,low,30.10540395,renewable
+8738,on,2030,netzero,high,low,low,ref,no,low,31.79926362,renewable
+8742,on,2030,netzero,ref,low,high,ref,no,low,30.65232571,renewable
+8746,on,2030,netzero,low,low,high,ref,no,low,29.99281233,renewable
+8750,on,2030,netzero,high,low,high,ref,no,low,31.79734494,renewable
+8754,on,2030,netzero,ref,low,ref,ref,yes,low,30.6192339,renewable
+8758,on,2030,netzero,low,low,ref,ref,yes,low,30.08304575,renewable
+8762,on,2030,netzero,high,low,ref,ref,yes,low,31.84466931,renewable
+8766,on,2030,netzero,ref,ref,low,ref,no,low,34.52705976,renewable
+8770,on,2030,netzero,ref,low,low,ref,yes,low,30.41631555,renewable
+8774,on,2030,netzero,low,low,low,ref,yes,low,30.11213002,renewable
+8778,on,2030,netzero,high,low,low,ref,yes,low,31.82220833,renewable
+8782,on,2030,netzero,ref,low,high,ref,yes,low,30.48808536,renewable
+8786,on,2030,netzero,low,low,high,ref,yes,low,29.97969679,renewable
+8790,on,2030,netzero,high,low,high,ref,yes,low,31.73719568,renewable
+8794,on,2030,netzero,ref,high,ref,ref,no,low,35.44308301,renewable
+8798,on,2030,netzero,low,high,ref,ref,no,low,34.35528355,renewable
+8802,on,2030,netzero,high,high,ref,ref,no,low,34.29334158,renewable
+8806,on,2030,netzero,ref,high,low,ref,no,low,35.5845553,renewable
+8810,on,2030,netzero,low,ref,low,ref,no,low,32.51831759,renewable
+8814,on,2030,netzero,low,high,low,ref,no,low,34.29361111,renewable
+8818,on,2030,netzero,high,high,low,ref,no,low,34.28821048,renewable
+8822,on,2030,netzero,ref,high,high,ref,no,low,35.42884424,renewable
+8826,on,2030,netzero,low,high,high,ref,no,low,34.37078425,renewable
+8830,on,2030,netzero,high,high,high,ref,no,low,34.28923073,renewable
+8834,on,2030,netzero,ref,high,ref,ref,yes,low,35.44476037,renewable
+8838,on,2030,netzero,low,high,ref,ref,yes,low,34.35630985,renewable
+8842,on,2030,netzero,high,high,ref,ref,yes,low,34.37037816,renewable
+8846,on,2030,netzero,ref,high,low,ref,yes,low,35.43016326,renewable
+8850,on,2030,netzero,low,high,low,ref,yes,low,34.32188194,renewable
+8854,on,2030,netzero,high,ref,low,ref,no,low,34.9558845,renewable
+8858,on,2030,netzero,high,high,low,ref,yes,low,34.2846042,renewable
+8862,on,2030,netzero,ref,high,high,ref,yes,low,35.42866412,renewable
+8866,on,2030,netzero,low,high,high,ref,yes,low,34.34014428,renewable
+8870,on,2030,netzero,high,high,high,ref,yes,low,34.29061909,renewable
+8874,on,2030,netzero,ref,ref,ref,low,no,low,25.698148,renewable
+8878,on,2030,netzero,low,ref,ref,low,no,low,26.23397549,renewable
+8882,on,2030,netzero,high,ref,ref,low,no,low,26.07438196,renewable
+8886,on,2030,netzero,ref,ref,low,low,no,low,25.651432,renewable
+8890,on,2030,netzero,low,ref,low,low,no,low,26.24095588,renewable
+8894,on,2030,netzero,high,ref,low,low,no,low,26.0025246,renewable
+8898,on,2030,netzero,ref,ref,high,ref,no,low,34.63210814,renewable
+8902,on,2030,netzero,ref,ref,high,low,no,low,25.69523261,renewable
+8906,on,2030,netzero,low,ref,high,low,no,low,26.23479388,renewable
+8910,on,2030,netzero,high,ref,high,low,no,low,26.09025076,renewable
+8914,on,2030,netzero,ref,ref,ref,low,yes,low,25.68265029,renewable
+8918,on,2030,netzero,low,ref,ref,low,yes,low,26.23395393,renewable
+8922,on,2030,netzero,high,ref,ref,low,yes,low,26.07109619,renewable
+8926,on,2030,netzero,ref,ref,low,low,yes,low,25.67748948,renewable
+8930,on,2030,netzero,low,ref,low,low,yes,low,26.2407216,renewable
+8934,on,2030,netzero,high,ref,low,low,yes,low,25.99570605,renewable
+8938,on,2030,netzero,ref,ref,high,low,yes,low,25.70032277,renewable
+8942,on,2030,netzero,low,ref,high,ref,no,low,32.50421027,renewable
+8946,on,2030,netzero,low,ref,high,low,yes,low,26.23513516,renewable
+8950,on,2030,netzero,high,ref,high,low,yes,low,26.12860449,renewable
+8954,on,2030,netzero,ref,low,ref,low,no,low,25.17854071,renewable
+8958,on,2030,netzero,low,low,ref,low,no,low,26.05509183,renewable
+8962,on,2030,netzero,high,low,ref,low,no,low,24.41326113,renewable
+8966,on,2030,netzero,ref,low,low,low,no,low,25.18930848,renewable
+8970,on,2030,netzero,low,low,low,low,no,low,26.05973621,renewable
+8974,on,2030,netzero,high,low,low,low,no,low,24.4304211,renewable
+8978,on,2030,netzero,ref,low,high,low,no,low,25.17240007,renewable
+8982,on,2030,netzero,low,low,high,low,no,low,26.04292,renewable
+8986,on,2030,netzero,high,ref,high,ref,no,low,34.79554149,renewable
+8990,on,2030,netzero,high,low,high,low,no,low,24.41118804,renewable
+8994,on,2030,netzero,ref,low,ref,low,yes,low,25.18048506,renewable
+8998,on,2030,netzero,low,low,ref,low,yes,low,26.04861162,renewable
+9002,on,2030,netzero,high,low,ref,low,yes,low,24.40872728,renewable
+9006,on,2030,netzero,ref,low,low,low,yes,low,25.19002386,renewable
+9010,on,2030,netzero,low,low,low,low,yes,low,26.05916063,renewable
+9014,on,2030,netzero,high,low,low,low,yes,low,24.43064154,renewable
+9018,on,2030,netzero,ref,low,high,low,yes,low,25.18374121,renewable
+9022,on,2030,netzero,low,low,high,low,yes,low,26.05794555,renewable
+9026,on,2030,netzero,high,low,high,low,yes,low,24.41613011,renewable
+9030,on,2030,netzero,ref,ref,ref,ref,yes,low,34.62583533,renewable
+9034,on,2030,netzero,ref,high,ref,low,no,low,25.78352027,renewable
+9038,on,2030,netzero,low,high,ref,low,no,low,26.3863693,renewable
+9042,on,2030,netzero,high,high,ref,low,no,low,26.32760801,renewable
+9046,on,2030,netzero,ref,high,low,low,no,low,25.79878255,renewable
+9050,on,2030,netzero,low,high,low,low,no,low,26.40634321,renewable
+9054,on,2030,netzero,high,high,low,low,no,low,26.24876306,renewable
+9058,on,2030,netzero,ref,high,high,low,no,low,25.8066109,renewable
+9062,on,2030,netzero,low,high,high,low,no,low,26.38668464,renewable
+9066,on,2030,netzero,high,high,high,low,no,low,26.34187625,renewable
+9070,on,2030,netzero,ref,high,ref,low,yes,low,25.77479523,renewable
+1731,on,2050,legislated,ref,ref,ref,ref,no,high,32.13987241,renewable
+1735,on,2050,legislated,low,ref,ref,ref,no,high,35.51649542,renewable
+1739,on,2050,legislated,low,ref,ref,ref,yes,high,35.51649542,renewable
+1743,on,2050,legislated,low,high,ref,low,yes,high,34.50495265,renewable
+1747,on,2050,legislated,high,high,ref,low,yes,high,26.28008338,renewable
+1751,on,2050,legislated,ref,high,low,low,yes,high,31.39963806,renewable
+1755,on,2050,legislated,low,high,low,low,yes,high,34.63587245,renewable
+1759,on,2050,legislated,high,high,low,low,yes,high,26.34469268,renewable
+1763,on,2050,legislated,ref,high,high,low,yes,high,31.31013296,renewable
+1767,on,2050,legislated,low,high,high,low,yes,high,34.50576498,renewable
+1771,on,2050,legislated,high,high,high,low,yes,high,26.26360262,renewable
+1775,on,2050,legislated,high,ref,ref,ref,yes,high,27.02017621,renewable
+1779,on,2050,legislated,ref,ref,low,ref,yes,high,32.35533654,renewable
+1783,on,2050,legislated,low,ref,low,ref,yes,high,35.70116376,renewable
+1787,on,2050,legislated,high,ref,low,ref,yes,high,27.11169205,renewable
+1791,on,2050,legislated,ref,ref,high,ref,yes,high,32.08569737,renewable
+1795,on,2050,legislated,low,ref,high,ref,yes,high,35.52708308,renewable
+1799,on,2050,legislated,high,ref,high,ref,yes,high,26.9630068,renewable
+1803,on,2050,legislated,ref,low,ref,ref,no,high,32.17965716,renewable
+1807,on,2050,legislated,low,low,ref,ref,no,high,35.56407615,renewable
+1811,on,2050,legislated,high,ref,ref,ref,no,high,27.02017621,renewable
+1815,on,2050,legislated,high,low,ref,ref,no,high,27.01413912,renewable
+1819,on,2050,legislated,ref,low,low,ref,no,high,32.47945309,renewable
+1823,on,2050,legislated,low,low,low,ref,no,high,35.71868941,renewable
+1827,on,2050,legislated,high,low,low,ref,no,high,27.35476221,renewable
+1831,on,2050,legislated,ref,low,high,ref,no,high,32.11844896,renewable
+1835,on,2050,legislated,low,low,high,ref,no,high,35.54238303,renewable
+1839,on,2050,legislated,high,low,high,ref,no,high,27.10739989,renewable
+1843,on,2050,legislated,ref,low,ref,ref,yes,high,32.17965716,renewable
+1847,on,2050,legislated,low,low,ref,ref,yes,high,35.56407615,renewable
+1851,on,2050,legislated,high,low,ref,ref,yes,high,27.01413912,renewable
+1855,on,2050,legislated,ref,ref,low,ref,no,high,32.35533654,renewable
+1859,on,2050,legislated,ref,low,low,ref,yes,high,32.47945309,renewable
+1863,on,2050,legislated,low,low,low,ref,yes,high,35.71868941,renewable
+1867,on,2050,legislated,high,low,low,ref,yes,high,27.35476221,renewable
+1871,on,2050,legislated,ref,low,high,ref,yes,high,32.11844896,renewable
+1875,on,2050,legislated,low,low,high,ref,yes,high,35.54238303,renewable
+1879,on,2050,legislated,high,low,high,ref,yes,high,27.10739989,renewable
+1883,on,2050,legislated,ref,high,ref,ref,no,high,32.15455309,renewable
+1887,on,2050,legislated,low,high,ref,ref,no,high,35.51842421,renewable
+1891,on,2050,legislated,high,high,ref,ref,no,high,27.00948171,renewable
+1895,on,2050,legislated,ref,high,low,ref,no,high,32.40299432,renewable
+1899,on,2050,legislated,low,ref,low,ref,no,high,35.70116376,renewable
+1903,on,2050,legislated,low,high,low,ref,no,high,35.63429021,renewable
+1907,on,2050,legislated,high,high,low,ref,no,high,27.09141533,renewable
+1911,on,2050,legislated,ref,high,high,ref,no,high,32.09645765,renewable
+1915,on,2050,legislated,low,high,high,ref,no,high,35.4877744,renewable
+1919,on,2050,legislated,high,high,high,ref,no,high,26.9618856,renewable
+1923,on,2050,legislated,ref,high,ref,ref,yes,high,32.15455309,renewable
+1927,on,2050,legislated,low,high,ref,ref,yes,high,35.51842421,renewable
+1931,on,2050,legislated,high,high,ref,ref,yes,high,27.00948171,renewable
+1935,on,2050,legislated,ref,high,low,ref,yes,high,32.40299432,renewable
+1939,on,2050,legislated,low,high,low,ref,yes,high,35.63429021,renewable
+1943,on,2050,legislated,high,ref,low,ref,no,high,27.11169205,renewable
+1947,on,2050,legislated,high,high,low,ref,yes,high,27.09141533,renewable
+1951,on,2050,legislated,ref,high,high,ref,yes,high,32.09645765,renewable
+1955,on,2050,legislated,low,high,high,ref,yes,high,35.4877744,renewable
+1959,on,2050,legislated,high,high,high,ref,yes,high,26.9618856,renewable
+1963,on,2050,legislated,ref,ref,ref,low,no,high,31.34177214,renewable
+1967,on,2050,legislated,low,ref,ref,low,no,high,34.5953162,renewable
+1971,on,2050,legislated,high,ref,ref,low,no,high,26.28178206,renewable
+1975,on,2050,legislated,ref,ref,low,low,no,high,31.41666138,renewable
+1979,on,2050,legislated,low,ref,low,low,no,high,34.65627742,renewable
+1983,on,2050,legislated,high,ref,low,low,no,high,26.35930775,renewable
+1987,on,2050,legislated,ref,ref,high,ref,no,high,32.08569737,renewable
+1991,on,2050,legislated,ref,ref,high,low,no,high,31.31593177,renewable
+1995,on,2050,legislated,low,ref,high,low,no,high,34.58748455,renewable
+1999,on,2050,legislated,high,ref,high,low,no,high,26.26615379,renewable
+2003,on,2050,legislated,ref,ref,ref,low,yes,high,31.34177214,renewable
+2007,on,2050,legislated,low,ref,ref,low,yes,high,34.5953162,renewable
+2011,on,2050,legislated,high,ref,ref,low,yes,high,26.28178206,renewable
+2015,on,2050,legislated,ref,ref,low,low,yes,high,31.41666138,renewable
+2019,on,2050,legislated,low,ref,low,low,yes,high,34.65627742,renewable
+2023,on,2050,legislated,high,ref,low,low,yes,high,26.35930775,renewable
+2027,on,2050,legislated,ref,ref,high,low,yes,high,31.31593177,renewable
+2031,on,2050,legislated,low,ref,high,ref,no,high,35.52708308,renewable
+2035,on,2050,legislated,low,ref,high,low,yes,high,34.58748455,renewable
+2039,on,2050,legislated,high,ref,high,low,yes,high,26.26615379,renewable
+2043,on,2050,legislated,ref,low,ref,low,no,high,31.34976636,renewable
+2047,on,2050,legislated,low,low,ref,low,no,high,34.50648373,renewable
+2051,on,2050,legislated,high,low,ref,low,no,high,26.35119376,renewable
+2055,on,2050,legislated,ref,low,low,low,no,high,31.41456068,renewable
+2059,on,2050,legislated,low,low,low,low,no,high,34.56173445,renewable
+2063,on,2050,legislated,high,low,low,low,no,high,26.37420797,renewable
+2067,on,2050,legislated,ref,low,high,low,no,high,31.26283328,renewable
+2071,on,2050,legislated,low,low,high,low,no,high,34.4765036,renewable
+2075,on,2050,legislated,high,ref,high,ref,no,high,26.9630068,renewable
+2079,on,2050,legislated,high,low,high,low,no,high,26.34067738,renewable
+2083,on,2050,legislated,ref,low,ref,low,yes,high,31.34976636,renewable
+2087,on,2050,legislated,low,low,ref,low,yes,high,34.50648373,renewable
+2091,on,2050,legislated,high,low,ref,low,yes,high,26.35119376,renewable
+2095,on,2050,legislated,ref,low,low,low,yes,high,31.41456068,renewable
+2099,on,2050,legislated,low,low,low,low,yes,high,34.56173445,renewable
+2103,on,2050,legislated,high,low,low,low,yes,high,26.37420797,renewable
+2107,on,2050,legislated,ref,low,high,low,yes,high,31.26283328,renewable
+2111,on,2050,legislated,low,low,high,low,yes,high,34.4765036,renewable
+2115,on,2050,legislated,high,low,high,low,yes,high,26.34067738,renewable
+2119,on,2050,legislated,ref,ref,ref,ref,yes,high,32.13987241,renewable
+2123,on,2050,legislated,ref,high,ref,low,no,high,31.33119834,renewable
+2127,on,2050,legislated,low,high,ref,low,no,high,34.50495265,renewable
+2131,on,2050,legislated,high,high,ref,low,no,high,26.28008338,renewable
+2135,on,2050,legislated,ref,high,low,low,no,high,31.39963806,renewable
+2139,on,2050,legislated,low,high,low,low,no,high,34.63587245,renewable
+2143,on,2050,legislated,high,high,low,low,no,high,26.34469268,renewable
+2147,on,2050,legislated,ref,high,high,low,no,high,31.31013296,renewable
+2151,on,2050,legislated,low,high,high,low,no,high,34.50576498,renewable
+2155,on,2050,legislated,high,high,high,low,no,high,26.26360262,renewable
+2159,on,2050,legislated,ref,high,ref,low,yes,high,31.33119834,renewable
+5187,on,2050,netzero,ref,ref,ref,ref,no,high,68.46894176,renewable
+5191,on,2050,netzero,low,ref,ref,ref,no,high,75.3446923,renewable
+5195,on,2050,netzero,low,ref,ref,ref,yes,high,45.93389577,renewable
+5199,on,2050,netzero,low,high,ref,low,yes,high,43.30749066,renewable
+5203,on,2050,netzero,high,high,ref,low,yes,high,39.21575638,renewable
+5207,on,2050,netzero,ref,high,low,low,yes,high,45.77506408,renewable
+5211,on,2050,netzero,low,high,low,low,yes,high,43.37633681,renewable
+5215,on,2050,netzero,high,high,low,low,yes,high,39.55634863,renewable
+5219,on,2050,netzero,ref,high,high,low,yes,high,45.42706247,renewable
+5223,on,2050,netzero,low,high,high,low,yes,high,43.27928452,renewable
+5227,on,2050,netzero,high,high,high,low,yes,high,39.19136189,renewable
+5231,on,2050,netzero,high,ref,ref,ref,yes,high,41.23144383,renewable
+5235,on,2050,netzero,ref,ref,low,ref,yes,high,47.42885464,renewable
+5239,on,2050,netzero,low,ref,low,ref,yes,high,46.65101613,renewable
+5243,on,2050,netzero,high,ref,low,ref,yes,high,41.86724171,renewable
+5247,on,2050,netzero,ref,ref,high,ref,yes,high,47.19209953,renewable
+5251,on,2050,netzero,low,ref,high,ref,yes,high,45.877416,renewable
+5255,on,2050,netzero,high,ref,high,ref,yes,high,40.64464689,renewable
+5259,on,2050,netzero,ref,low,ref,ref,no,high,74.43801738,renewable
+5263,on,2050,netzero,low,low,ref,ref,no,high,77.06567059,renewable
+5267,on,2050,netzero,high,ref,ref,ref,no,high,66.10563395,renewable
+5271,on,2050,netzero,high,low,ref,ref,no,high,70.9781956,renewable
+5275,on,2050,netzero,ref,low,low,ref,no,high,72.58334861,renewable
+5279,on,2050,netzero,low,low,low,ref,no,high,80.59872121,renewable
+5283,on,2050,netzero,high,low,low,ref,no,high,67.45793733,renewable
+5287,on,2050,netzero,ref,low,high,ref,no,high,75.92845559,renewable
+5291,on,2050,netzero,low,low,high,ref,no,high,80.65645715,renewable
+5295,on,2050,netzero,high,low,high,ref,no,high,66.90210853,renewable
+5299,on,2050,netzero,ref,low,ref,ref,yes,high,44.51711633,renewable
+5303,on,2050,netzero,low,low,ref,ref,yes,high,51.10550571,renewable
+5307,on,2050,netzero,high,low,ref,ref,yes,high,38.89589393,renewable
+5311,on,2050,netzero,ref,ref,low,ref,no,high,68.53164548,renewable
+5315,on,2050,netzero,ref,low,low,ref,yes,high,44.97451408,renewable
+5319,on,2050,netzero,low,low,low,ref,yes,high,51.08093779,renewable
+5323,on,2050,netzero,high,low,low,ref,yes,high,38.93885285,renewable
+5327,on,2050,netzero,ref,low,high,ref,yes,high,45.27012719,renewable
+5331,on,2050,netzero,low,low,high,ref,yes,high,49.7060383,renewable
+5335,on,2050,netzero,high,low,high,ref,yes,high,38.06939296,renewable
+5339,on,2050,netzero,ref,high,ref,ref,no,high,68.10557411,renewable
+5343,on,2050,netzero,low,high,ref,ref,no,high,70.67234323,renewable
+5347,on,2050,netzero,high,high,ref,ref,no,high,64.01523698,renewable
+5351,on,2050,netzero,ref,high,low,ref,no,high,68.32622064,renewable
+5355,on,2050,netzero,low,ref,low,ref,no,high,75.18609081,renewable
+5359,on,2050,netzero,low,high,low,ref,no,high,70.25334931,renewable
+5363,on,2050,netzero,high,high,low,ref,no,high,64.92370594,renewable
+5367,on,2050,netzero,ref,high,high,ref,no,high,67.74475772,renewable
+5371,on,2050,netzero,low,high,high,ref,no,high,70.87704802,renewable
+5375,on,2050,netzero,high,high,high,ref,no,high,64.11771117,renewable
+5379,on,2050,netzero,ref,high,ref,ref,yes,high,46.9697375,renewable
+5383,on,2050,netzero,low,high,ref,ref,yes,high,48.78195881,renewable
+5387,on,2050,netzero,high,high,ref,ref,yes,high,40.60535136,renewable
+5391,on,2050,netzero,ref,high,low,ref,yes,high,47.20306755,renewable
+5395,on,2050,netzero,low,high,low,ref,yes,high,48.71480607,renewable
+5399,on,2050,netzero,high,ref,low,ref,no,high,65.32655479,renewable
+5403,on,2050,netzero,high,high,low,ref,yes,high,41.51618378,renewable
+5407,on,2050,netzero,ref,high,high,ref,yes,high,46.91418681,renewable
+5411,on,2050,netzero,low,high,high,ref,yes,high,48.63056509,renewable
+5415,on,2050,netzero,high,high,high,ref,yes,high,40.74200311,renewable
+5419,on,2050,netzero,ref,ref,ref,low,no,high,63.7276276,renewable
+5423,on,2050,netzero,low,ref,ref,low,no,high,65.24821552,renewable
+5427,on,2050,netzero,high,ref,ref,low,no,high,61.66604587,renewable
+5431,on,2050,netzero,ref,ref,low,low,no,high,63.4864709,renewable
+5435,on,2050,netzero,low,ref,low,low,no,high,64.85891958,renewable
+5439,on,2050,netzero,high,ref,low,low,no,high,61.05961408,renewable
+5443,on,2050,netzero,ref,ref,high,ref,no,high,68.44239619,renewable
+5447,on,2050,netzero,ref,ref,high,low,no,high,63.77278916,renewable
+5451,on,2050,netzero,low,ref,high,low,no,high,65.565854,renewable
+5455,on,2050,netzero,high,ref,high,low,no,high,62.13455902,renewable
+5459,on,2050,netzero,ref,ref,ref,low,yes,high,45.60573146,renewable
+5463,on,2050,netzero,low,ref,ref,low,yes,high,43.30736089,renewable
+5467,on,2050,netzero,high,ref,ref,low,yes,high,39.60648254,renewable
+5471,on,2050,netzero,ref,ref,low,low,yes,high,45.8659471,renewable
+5475,on,2050,netzero,low,ref,low,low,yes,high,43.39276063,renewable
+5479,on,2050,netzero,high,ref,low,low,yes,high,40.03108922,renewable
+5483,on,2050,netzero,ref,ref,high,low,yes,high,45.48253155,renewable
+5487,on,2050,netzero,low,ref,high,ref,no,high,75.36007294,renewable
+5491,on,2050,netzero,low,ref,high,low,yes,high,43.28294124,renewable
+5495,on,2050,netzero,high,ref,high,low,yes,high,39.54133566,renewable
+5499,on,2050,netzero,ref,low,ref,low,no,high,64.51864572,renewable
+5503,on,2050,netzero,low,low,ref,low,no,high,66.14182014,renewable
+5507,on,2050,netzero,high,low,ref,low,no,high,61.92976363,renewable
+5511,on,2050,netzero,ref,low,low,low,no,high,63.73665726,renewable
+5515,on,2050,netzero,low,low,low,low,no,high,65.60045961,renewable
+5519,on,2050,netzero,high,low,low,low,no,high,61.41603692,renewable
+5523,on,2050,netzero,ref,low,high,low,no,high,64.58116756,renewable
+5527,on,2050,netzero,low,low,high,low,no,high,66.15105597,renewable
+5531,on,2050,netzero,high,ref,high,ref,no,high,64.55123611,renewable
+5535,on,2050,netzero,high,low,high,low,no,high,62.54523097,renewable
+5539,on,2050,netzero,ref,low,ref,low,yes,high,43.73809607,renewable
+5543,on,2050,netzero,low,low,ref,low,yes,high,43.00834123,renewable
+5547,on,2050,netzero,high,low,ref,low,yes,high,38.0406162,renewable
+5551,on,2050,netzero,ref,low,low,low,yes,high,44.70559441,renewable
+5555,on,2050,netzero,low,low,low,low,yes,high,43.08128472,renewable
+5559,on,2050,netzero,high,low,low,low,yes,high,38.40597616,renewable
+5563,on,2050,netzero,ref,low,high,low,yes,high,43.73988505,renewable
+5567,on,2050,netzero,low,low,high,low,yes,high,42.97422762,renewable
+5571,on,2050,netzero,high,low,high,low,yes,high,38.0976275,renewable
+5575,on,2050,netzero,ref,ref,ref,ref,yes,high,47.2173066,renewable
+5579,on,2050,netzero,ref,high,ref,low,no,high,63.95997957,renewable
+5583,on,2050,netzero,low,high,ref,low,no,high,65.41183515,renewable
+5587,on,2050,netzero,high,high,ref,low,no,high,61.80087456,renewable
+5591,on,2050,netzero,ref,high,low,low,no,high,63.77050127,renewable
+5595,on,2050,netzero,low,high,low,low,no,high,65.11001257,renewable
+5599,on,2050,netzero,high,high,low,low,no,high,61.13645887,renewable
+5603,on,2050,netzero,ref,high,high,low,no,high,64.86781377,renewable
+5607,on,2050,netzero,low,high,high,low,no,high,65.55344761,renewable
+5611,on,2050,netzero,high,high,high,low,no,high,62.33777209,renewable
+5615,on,2050,netzero,ref,high,ref,low,yes,high,45.4538387,renewable
+8643,on,2050,netzero,ref,ref,ref,ref,no,low,88.57867834,renewable
+8647,on,2050,netzero,low,ref,ref,ref,no,low,88.5073518,renewable
+8651,on,2050,netzero,low,ref,ref,ref,yes,low,52.12857944,renewable
+8655,on,2050,netzero,low,high,ref,low,yes,low,49.03875085,renewable
+8659,on,2050,netzero,high,high,ref,low,yes,low,39.20411696,renewable
+8663,on,2050,netzero,ref,high,low,low,yes,low,45.55860371,renewable
+8667,on,2050,netzero,low,high,low,low,yes,low,49.08658406,renewable
+8671,on,2050,netzero,high,high,low,low,yes,low,39.56726318,renewable
+8675,on,2050,netzero,ref,high,high,low,yes,low,45.18712088,renewable
+8679,on,2050,netzero,low,high,high,low,yes,low,49.03111102,renewable
+8683,on,2050,netzero,high,high,high,low,yes,low,39.17761738,renewable
+8687,on,2050,netzero,high,ref,ref,ref,yes,low,41.14831135,renewable
+8691,on,2050,netzero,ref,ref,low,ref,yes,low,47.20702238,renewable
+8695,on,2050,netzero,low,ref,low,ref,yes,low,52.2108307,renewable
+8699,on,2050,netzero,high,ref,low,ref,yes,low,41.68297259,renewable
+8703,on,2050,netzero,ref,ref,high,ref,yes,low,47.02191522,renewable
+8707,on,2050,netzero,low,ref,high,ref,yes,low,52.11181243,renewable
+8711,on,2050,netzero,high,ref,high,ref,yes,low,40.6633458,renewable
+8715,on,2050,netzero,ref,low,ref,ref,no,low,88.85285455,renewable
+8719,on,2050,netzero,low,low,ref,ref,no,low,89.24596622,renewable
+8723,on,2050,netzero,high,ref,ref,ref,no,low,85.02336718,renewable
+8727,on,2050,netzero,high,low,ref,ref,no,low,81.84985975,renewable
+8731,on,2050,netzero,ref,low,low,ref,no,low,87.69818699,renewable
+8735,on,2050,netzero,low,low,low,ref,no,low,88.84576543,renewable
+8739,on,2050,netzero,high,low,low,ref,no,low,82.24954755,renewable
+8743,on,2050,netzero,ref,low,high,ref,no,low,89.20896549,renewable
+8747,on,2050,netzero,low,low,high,ref,no,low,89.41561123,renewable
+8751,on,2050,netzero,high,low,high,ref,no,low,84.39373529,renewable
+8755,on,2050,netzero,ref,low,ref,ref,yes,low,44.65517553,renewable
+8759,on,2050,netzero,low,low,ref,ref,yes,low,51.75285052,renewable
+8763,on,2050,netzero,high,low,ref,ref,yes,low,38.12864322,renewable
+8767,on,2050,netzero,ref,ref,low,ref,no,low,88.62338043,renewable
+8771,on,2050,netzero,ref,low,low,ref,yes,low,45.84763898,renewable
+8775,on,2050,netzero,low,low,low,ref,yes,low,50.98240871,renewable
+8779,on,2050,netzero,high,low,low,ref,yes,low,38.13413452,renewable
+8783,on,2050,netzero,ref,low,high,ref,yes,low,45.51014351,renewable
+8787,on,2050,netzero,low,low,high,ref,yes,low,50.59115178,renewable
+8791,on,2050,netzero,high,low,high,ref,yes,low,37.35336969,renewable
+8795,on,2050,netzero,ref,high,ref,ref,no,low,89.01334795,renewable
+8799,on,2050,netzero,low,high,ref,ref,no,low,88.47365875,renewable
+8803,on,2050,netzero,high,high,ref,ref,no,low,85.73202417,renewable
+8807,on,2050,netzero,ref,high,low,ref,no,low,88.6877965,renewable
+8811,on,2050,netzero,low,ref,low,ref,no,low,88.96486888,renewable
+8815,on,2050,netzero,low,high,low,ref,no,low,88.17895476,renewable
+8819,on,2050,netzero,high,high,low,ref,no,low,84.45282255,renewable
+8823,on,2050,netzero,ref,high,high,ref,no,low,89.01548683,renewable
+8827,on,2050,netzero,low,high,high,ref,no,low,88.63065223,renewable
+8831,on,2050,netzero,high,high,high,ref,no,low,87.05232956,renewable
+8835,on,2050,netzero,ref,high,ref,ref,yes,low,46.75890142,renewable
+8839,on,2050,netzero,low,high,ref,ref,yes,low,51.67029759,renewable
+8843,on,2050,netzero,high,high,ref,ref,yes,low,40.52840164,renewable
+8847,on,2050,netzero,ref,high,low,ref,yes,low,46.98497168,renewable
+8851,on,2050,netzero,low,high,low,ref,yes,low,51.77568826,renewable
+8855,on,2050,netzero,high,ref,low,ref,no,low,84.27776063,renewable
+8859,on,2050,netzero,high,high,low,ref,yes,low,41.24163082,renewable
+8863,on,2050,netzero,ref,high,high,ref,yes,low,46.71136396,renewable
+8867,on,2050,netzero,low,high,high,ref,yes,low,51.6376468,renewable
+8871,on,2050,netzero,high,high,high,ref,yes,low,40.45982281,renewable
+8875,on,2050,netzero,ref,ref,ref,low,no,low,82.55886093,renewable
+8879,on,2050,netzero,low,ref,ref,low,no,low,85.07926409,renewable
+8883,on,2050,netzero,high,ref,ref,low,no,low,82.75139537,renewable
+8887,on,2050,netzero,ref,ref,low,low,no,low,82.34392916,renewable
+8891,on,2050,netzero,low,ref,low,low,no,low,84.33938623,renewable
+8895,on,2050,netzero,high,ref,low,low,no,low,79.99374065,renewable
+8899,on,2050,netzero,ref,ref,high,ref,no,low,88.89157176,renewable
+8903,on,2050,netzero,ref,ref,high,low,no,low,83.07319385,renewable
+8907,on,2050,netzero,low,ref,high,low,no,low,85.3425985,renewable
+8911,on,2050,netzero,high,ref,high,low,no,low,85.19105298,renewable
+8915,on,2050,netzero,ref,ref,ref,low,yes,low,45.28928032,renewable
+8919,on,2050,netzero,low,ref,ref,low,yes,low,49.26173664,renewable
+8923,on,2050,netzero,high,ref,ref,low,yes,low,39.55997524,renewable
+8927,on,2050,netzero,ref,ref,low,low,yes,low,45.62231863,renewable
+8931,on,2050,netzero,low,ref,low,low,yes,low,49.29593017,renewable
+8935,on,2050,netzero,high,ref,low,low,yes,low,39.94985836,renewable
+8939,on,2050,netzero,ref,ref,high,low,yes,low,45.27528511,renewable
+8943,on,2050,netzero,low,ref,high,ref,no,low,88.68002649,renewable
+8947,on,2050,netzero,low,ref,high,low,yes,low,49.24642032,renewable
+8951,on,2050,netzero,high,ref,high,low,yes,low,39.50673388,renewable
+8955,on,2050,netzero,ref,low,ref,low,no,low,85.30954203,renewable
+8959,on,2050,netzero,low,low,ref,low,no,low,84.52411948,renewable
+8963,on,2050,netzero,high,low,ref,low,no,low,84.25072593,renewable
+8967,on,2050,netzero,ref,low,low,low,no,low,81.3134522,renewable
+8971,on,2050,netzero,low,low,low,low,no,low,83.60389042,renewable
+8975,on,2050,netzero,high,low,low,low,no,low,80.29013969,renewable
+8979,on,2050,netzero,ref,low,high,low,no,low,85.61388319,renewable
+8983,on,2050,netzero,low,low,high,low,no,low,85.58640956,renewable
+8987,on,2050,netzero,high,ref,high,ref,no,low,86.10642061,renewable
+8991,on,2050,netzero,high,low,high,low,no,low,85.30817945,renewable
+8995,on,2050,netzero,ref,low,ref,low,yes,low,43.84154807,renewable
+8999,on,2050,netzero,low,low,ref,low,yes,low,47.06667566,renewable
+9003,on,2050,netzero,high,low,ref,low,yes,low,37.56663442,renewable
+9007,on,2050,netzero,ref,low,low,low,yes,low,44.12552707,renewable
+9011,on,2050,netzero,low,low,low,low,yes,low,47.63821154,renewable
+9015,on,2050,netzero,high,low,low,low,yes,low,38.03959142,renewable
+9019,on,2050,netzero,ref,low,high,low,yes,low,43.22378759,renewable
+9023,on,2050,netzero,low,low,high,low,yes,low,47.29466955,renewable
+9027,on,2050,netzero,high,low,high,low,yes,low,37.53716171,renewable
+9031,on,2050,netzero,ref,ref,ref,ref,yes,low,46.96786216,renewable
+9035,on,2050,netzero,ref,high,ref,low,no,low,83.37945322,renewable
+9039,on,2050,netzero,low,high,ref,low,no,low,85.35406667,renewable
+9043,on,2050,netzero,high,high,ref,low,no,low,82.69624896,renewable
+9047,on,2050,netzero,ref,high,low,low,no,low,82.64649456,renewable
+9051,on,2050,netzero,low,high,low,low,no,low,84.88917006,renewable
+9055,on,2050,netzero,high,high,low,low,no,low,80.97766686,renewable
+9059,on,2050,netzero,ref,high,high,low,no,low,83.57382413,renewable
+9063,on,2050,netzero,low,high,high,low,no,low,85.75881297,renewable
+9067,on,2050,netzero,high,high,high,low,no,low,85.26440554,renewable
+9071,on,2050,netzero,ref,high,ref,low,yes,low,45.25812712,renewable

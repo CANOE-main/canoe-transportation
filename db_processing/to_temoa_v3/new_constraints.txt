@@ -1,0 +1,55 @@
+CREATE TABLE IF NOT EXISTS MaxNewCapacityGroupShare
+(
+    region         TEXT,
+    period         INTEGER
+        REFERENCES TimePeriod (period),
+    sub_group_name     TEXT
+        REFERENCES TechGroup (group_name),
+    group_name     TEXT
+        REFERENCES TechGroup (group_name),
+    max_proportion REAL,
+    notes          TEXT,
+    PRIMARY KEY (region, period, sub_group_name, group_name)
+);
+
+CREATE TABLE IF NOT EXISTS MinNewCapacityGroupShare
+(
+    region         TEXT,
+    period         INTEGER
+        REFERENCES TimePeriod (period),
+    sub_group_name     TEXT
+        REFERENCES TechGroup (group_name),
+    group_name     TEXT
+        REFERENCES TechGroup (group_name),
+    min_proportion REAL,
+    notes          TEXT,
+    PRIMARY KEY (region, period, sub_group_name, group_name)
+);
+
+CREATE TABLE IF NOT EXISTS "GrowthRateMin" (
+	"region"	text,
+	"tech"	text,
+	"rate"	real,
+	"notes"	text,
+
+	"reference" text,
+	"data_year" integer,
+	"data_flags" text,
+	"dq_est" integer,
+	"dq_rel" integer,
+	"dq_comp" integer,
+	"dq_time" integer,
+	"dq_geog" integer,
+	"dq_tech" integer,
+	"additional_notes" text,
+	
+	PRIMARY KEY("region", "tech"),
+	FOREIGN KEY("reference") REFERENCES "references"("reference"),
+	FOREIGN KEY("dq_est") REFERENCES "dq_estimate"("data_quality_estimated"),
+	FOREIGN KEY("dq_rel") REFERENCES "dq_estimate"("data_quality_reliability"),
+	FOREIGN KEY("dq_comp") REFERENCES "dq_estimate"("data_quality_completeness"),
+	FOREIGN KEY("dq_time") REFERENCES "dq_estimate"("data_quality_time_related"),
+	FOREIGN KEY("dq_geog") REFERENCES "dq_estimate"("data_quality_geography"),
+	FOREIGN KEY("dq_tech") REFERENCES "dq_estimate"("data_quality_technology"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);

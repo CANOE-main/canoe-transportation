@@ -1,0 +1,467 @@
+﻿File,Column,Data Value or Column Name Indication,Description of Data Value or Column Name
+benchmark_prices_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+benchmark_prices_2023.csv,Scenario,Current Measures,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+benchmark_prices_2023.csv,Scenario,Canada Net-zero,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+benchmark_prices_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+benchmark_prices_2023.csv,Variable,Name of the Column,Variable that the data refers to
+benchmark_prices_2023.csv,Variable,Brent - 2022 US$/bbl,A key global crude oil benchmark price. It is a light sweet grade extracted from the North Sea.
+benchmark_prices_2023.csv,Variable,Canadian Light Sweet (CLS) - 2022 US$/bbl,"A light, sweet blend of conventionally produced crude oils in western Canada with an API gravity of around 40 degrees. It is typically priced at Edmonton, Alberta and is often called Edmonton Par Crude."
+benchmark_prices_2023.csv,Variable,Henry Hub - 2022 US$/MMBtu,Henry Hub is the pricing point for natural gas futures traded on the New York Mercantile Exchange. The hub is located in Louisiana at the interconnection of numerous natural gas pipelines.
+benchmark_prices_2023.csv,Variable,Nova Inventory Transfer (NIT) - 2022 US$/MMBtu,"The Nova Inventory Transfer, or NIT, is the pricing point used for natural gas sourced from the Western Canadian Sedimentary Basin (WCSB). As the natural gas trading hub located in Alberta, NIT is the commercial mechanism that overlays the Nova Gas Transmission Ltd. (NGTL) pipeline network, and is connected to several export markets and storage. "
+benchmark_prices_2023.csv,Variable,West Texas Intermediate (WTI) - 2022 US$/bbl,"A key North American benchmark crude oil price, it's a light sweet grade of crude oil produced in western Texas with an API gravity of 40 degrees."
+benchmark_prices_2023.csv,Variable,Western Canadian Select (WCS) - 2022 US$/bbl,"A blend of Canadian heavy and bitumen sour crude oils mixed with sweet synthetic and condensates with an API gravity of about 21 degrees. It is priced at Hardisty, Alberta and is often used as a representative price for Canadian heavy crude oils."
+benchmark_prices_2023.csv,Year,Name of the Column,Year that the data refers to
+benchmark_prices_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+benchmark_prices_2023.csv,Value,Name of the Column,Value for a given benchmark price
+benchmark_prices_2023.csv,Value,Real Number,Value for a given benchmark price
+butane_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+butane_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+butane_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+butane_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+butane_2023.csv,Unit,Name of the Column,Unit of measurement
+butane_2023.csv,Unit,Thousand Barrels per day,Thousand barrels per day
+butane_2023.csv,Unit,Thousand Cubic Meters per day,Thousand cubic meters per day
+butane_2023.csv,Variable,Name of the Column,Variable that the data refers to
+butane_2023.csv,Variable,Canada Other Demand,Other demand in Canada not covered by the other variables. 
+butane_2023.csv,Variable,Diluent Demand,Diluent Demand
+butane_2023.csv,Variable,Exports from AB to U.S.,Exports from AB to U.S.
+butane_2023.csv,Variable,Exports from ON to U.S.,Exports from ON to U.S.
+butane_2023.csv,Variable,Exports from ROC to U.S.,Exports from the rest of Canada (not AB or ON) to U.S.
+butane_2023.csv,Variable,Exports from westcoast BC to International,Exports from westcoast BC to International
+butane_2023.csv,Variable,Oil Sands Solvent Demand,Oil Sands Solvent Demand
+butane_2023.csv,Variable,ON Petrochemical Demand,ON Petrochemical Demand
+butane_2023.csv,Variable,Refinery Demand,Refinery demand
+butane_2023.csv,Variable,Total Disposition,Total disposition
+butane_2023.csv,Variable,Projected Exports,Projected Exports
+butane_2023.csv,Variable,Imports to AB from U.S.,Imports to AB from U.S.
+butane_2023.csv,Variable,Production from Gas Processing,Production from Gas Processing
+butane_2023.csv,Variable,Production from Oil Sands off-gas,Production from Oil Sands off-gas
+butane_2023.csv,Variable,Production from Refineries,Production from Refineries
+butane_2023.csv,Variable,Total Supply,"Sum of all production sources, imports, stock variations and adjustments"
+butane_2023.csv,Variable,AB Petrochemical Demand,AB Petrochemical Demand
+butane_2023.csv,Variable,Total Supply - Total Disposition,The difference between total supply minus total disposition.
+butane_2023.csv,Variable,Total Production,Sum of all domestic production
+butane_2023.csv,Type,Name of the Column,Source or use
+butane_2023.csv,Type,Demand,Demand
+butane_2023.csv,Type,Supply,Supply
+butane_2023.csv,Type,Balance (Adjustments),The difference between total supply minus total disposition.
+butane_2023.csv,Year,Name of the Column,Year that the data refers to
+butane_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+butane_2023.csv,Value,Name of the Column,Volume of butane
+butane_2023.csv,Value,Real Number,Volume of butane
+crude_oil_production_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+crude_oil_production_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+crude_oil_production_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+crude_oil_production_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+crude_oil_production_2023.csv,Unit,Name of the Column,Unit of measurement
+crude_oil_production_2023.csv,Unit,Thousand Barrels per day,Thousand barrels per day
+crude_oil_production_2023.csv,Unit,Thousand Cubic Meters per day,Thousand cubic meters per day
+crude_oil_production_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+crude_oil_production_2023.csv,Region,Alberta,Province of Alberta
+crude_oil_production_2023.csv,Region,Canada,Canada
+crude_oil_production_2023.csv,Region,British Columbia,Province of British Columbia
+crude_oil_production_2023.csv,Region,Nova Scotia,Province of Nova Scotia
+crude_oil_production_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+crude_oil_production_2023.csv,Region,Manitoba,Province of Manitoba
+crude_oil_production_2023.csv,Region,Newfoundland and Labrador,Province of Newfoundland and Labrador
+crude_oil_production_2023.csv,Region,Northwest Territories,Northwest Territories
+crude_oil_production_2023.csv,Region,Ontario,Province of Ontario
+crude_oil_production_2023.csv,Variable,Name of the Column,Variable that the data refers to
+crude_oil_production_2023.csv,Variable,(Upgraded Bitumen),Portion of raw bitumen production (in situ and mined) upgraded to synthetic crude oil
+crude_oil_production_2023.csv,Variable,C5+,Pentanes Plus
+crude_oil_production_2023.csv,Variable,Conventional Heavy,Conventional Heavy
+crude_oil_production_2023.csv,Variable,Conventional Light,Conventional Light
+crude_oil_production_2023.csv,Variable,Field Condensate,Light liquid hydrocarbons recovered from field facilities at natural gas wells
+crude_oil_production_2023.csv,Variable,In Situ Bitumen,In situ bitumen
+crude_oil_production_2023.csv,Variable,Mined Bitumen,Mined bitumen
+crude_oil_production_2023.csv,Variable,Total,Total
+crude_oil_production_2023.csv,Year,Name of the Column,Year that the data refers to
+crude_oil_production_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+crude_oil_production_2023.csv,Value,Name of the Column,Volume of Crude Oil Production
+crude_oil_production_2023.csv,Value,Real Number,Volume of Crude Oil Production
+electricity_capacity_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+electricity_capacity_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+electricity_capacity_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+electricity_capacity_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+electricity_capacity_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+electricity_capacity_2023.csv,Region,Alberta,Province of Alberta
+electricity_capacity_2023.csv,Region,British Columbia,Province of British Columbia
+electricity_capacity_2023.csv,Region,Manitoba,Province of Manitoba
+electricity_capacity_2023.csv,Region,New Brunswick,Province of New Brunswick
+electricity_capacity_2023.csv,Region,Newfoundland and Labrador,Province of Newfoundland and Labrador
+electricity_capacity_2023.csv,Region,Nova Scotia,Province of Nova Scotia
+electricity_capacity_2023.csv,Region,Northwest Territories,Northwest territories
+electricity_capacity_2023.csv,Region,Nunavut,Nunavut territory
+electricity_capacity_2023.csv,Region,Ontario,Province of Ontario
+electricity_capacity_2023.csv,Region,Prince Edward Island,Province of Prince Edward Island
+electricity_capacity_2023.csv,Region,Quebec,Province of Quebec
+electricity_capacity_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+electricity_capacity_2023.csv,Region,Yukon,Yukon territory
+electricity_capacity_2023.csv,Region,Canada,Canada
+electricity_capacity_2023.csv,Variable,Name of the Column,Type of plant or primary fuel
+electricity_capacity_2023.csv,Variable,Biomass / Geothermal,Biomass / geothermal
+electricity_capacity_2023.csv,Variable,Coal & Coke,Coal & coke
+electricity_capacity_2023.csv,Variable,Hydro / Wave / Tidal,Hydro / wave / tidal
+electricity_capacity_2023.csv,Variable,Natural Gas,Natural gas
+electricity_capacity_2023.csv,Variable,Oil,Oil
+electricity_capacity_2023.csv,Variable,Solar,Solar
+electricity_capacity_2023.csv,Variable,Uranium,Uranium
+electricity_capacity_2023.csv,Variable,Wind,Wind
+electricity_capacity_2023.csv,Type,Name of the Column,Plant type or primary fuel
+electricity_capacity_2023.csv,Type,Primary Fuel,Primary fuel
+electricity_capacity_2023.csv,Year,Name of the Column,Year that the data refers to
+electricity_capacity_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+electricity_capacity_2023.csv,Value,Name of the Column,Amount of generating capacity in megawatts
+electricity_capacity_2023.csv,Value,Real Number,Amount of generating capacity in megawatts
+electricity_generation_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+electricity_generation_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+electricity_generation_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+electricity_generation_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+electricity_generation_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+electricity_generation_2023.csv,Region,Alberta,Province of Alberta
+electricity_generation_2023.csv,Region,British Columbia,Province of British Columbia
+electricity_generation_2023.csv,Region,Manitoba,Province of Manitoba
+electricity_generation_2023.csv,Region,New Brunswick,Province of New Brunswick
+electricity_generation_2023.csv,Region,Newfoundland and Labrador,Province of Newfoundland and Labrador
+electricity_generation_2023.csv,Region,Nova Scotia,Province of Nova Scotia
+electricity_generation_2023.csv,Region,Northwest Territories,Northwest territories
+electricity_generation_2023.csv,Region,Nunavut,Nunavut territory
+electricity_generation_2023.csv,Region,Ontario,Province of Ontario
+electricity_generation_2023.csv,Region,Prince Edward Island,Province of Prince Edward Island
+electricity_generation_2023.csv,Region,Quebec,Province of Quebec
+electricity_generation_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+electricity_generation_2023.csv,Region,Yukon,Yukon territory
+electricity_generation_2023.csv,Region,Canada,Canada
+electricity_generation_2023.csv,Variable,Name of the Column,Type of plant or primary fuel
+electricity_generation_2023.csv,Variable,Biomass / Geothermal,Biomass / geothermal
+electricity_generation_2023.csv,Variable,Coal & Coke,Coal & coke
+electricity_generation_2023.csv,Variable,Hydro / Wave / Tidal,Hydro / wave / tidal
+electricity_generation_2023.csv,Variable,Natural Gas,Natural gas
+electricity_generation_2023.csv,Variable,Oil,Oil
+electricity_generation_2023.csv,Variable,Solar,Solar
+electricity_generation_2023.csv,Variable,Uranium,Uranium
+electricity_generation_2023.csv,Variable,Wind,Wind
+electricity_generation_2023.csv,Type,Name of the Column,Plant type or primary fuel
+electricity_generation_2023.csv,Type,Primary Fuel,Primary fuel
+electricity_generation_2023.csv,Year,Name of the Column,Year that the data refers to
+electricity_generation_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+electricity_generation_2023.csv,Value,Name of the Column,Amount of energy in gigawatt hours
+electricity_generation_2023.csv,Value,Real Number,Amount of energy in gigawatt hours
+electricity_interchange_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+electricity_interchange_2023.csv,Scenario,Current Measures,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+electricity_interchange_2023.csv,Scenario,Canada Net-zero,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+electricity_interchange_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+electricity_interchange_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+electricity_interchange_2023.csv,Region,Alberta,Province of Alberta
+electricity_interchange_2023.csv,Region,British Columbia,Province of British Columbia
+electricity_interchange_2023.csv,Region,Canada,Canada
+electricity_interchange_2023.csv,Region,Manitoba,Province of Manitoba
+electricity_interchange_2023.csv,Region,New Brunswick,Province of New Brunswick
+electricity_interchange_2023.csv,Region,Newfoundland and Labrador,Province of Newfoundland and Labrador
+electricity_interchange_2023.csv,Region,Nova Scotia,Province of Nova Scotia
+electricity_interchange_2023.csv,Region,Ontario,Province of Ontario
+electricity_interchange_2023.csv,Region,Prince Edward Island,Province of Prince Edward Island
+electricity_interchange_2023.csv,Region,Quebec,Province of Quebec
+electricity_interchange_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+electricity_interchange_2023.csv,Variable,Name of the Column,Electricity trade
+electricity_interchange_2023.csv,Variable,Exports,Flows of electricity out the province to the United States
+electricity_interchange_2023.csv,Variable,Imports,Flows of electricity into the province from the United States
+electricity_interchange_2023.csv,Variable,Net Exports,Exports less imports
+electricity_interchange_2023.csv,Variable,Interprovincial In-Flows,Flows of electricity into the province from another province
+electricity_interchange_2023.csv,Variable,Interprovincial Out-Flows,Flows of electricity out the province to another province
+electricity_interchange_2023.csv,Variable,Net Interprovincial Out-Flows,Interprovincial out-flows less interprovincial in-flows
+electricity_interchange_2023.csv,Year,Name of the Column,Year that the data refers to
+electricity_interchange_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+electricity_interchange_2023.csv,Value,Name of the Column,Volume of trade in gigawatt hours
+electricity_interchange_2023.csv,Value,Real Number,Volume of trade in gigawatt hours
+end_use_demand_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+end_use_demand_2023.csv,Scenario,Current Measures,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+end_use_demand_2023.csv,Scenario,Canada Net-zero,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+end_use_demand_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+end_use_demand_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+end_use_demand_2023.csv,Region,Alberta,Province of Alberta
+end_use_demand_2023.csv,Region,British Columbia,Province of British Columbia
+end_use_demand_2023.csv,Region,Manitoba,Province of Manitoba
+end_use_demand_2023.csv,Region,New Brunswick,Province of New Brunswick
+end_use_demand_2023.csv,Region,Newfoundland and Labrador,Province of Newfoundland and Labrador
+end_use_demand_2023.csv,Region,Northwest Territories,Northwest Territories
+end_use_demand_2023.csv,Region,Nova Scotia,Province of Nova Scotia
+end_use_demand_2023.csv,Region,Nunavut,Nunavut territory
+end_use_demand_2023.csv,Region,Ontario,Province of Ontario
+end_use_demand_2023.csv,Region,Prince Edward Island,Province of Prince Edward Island
+end_use_demand_2023.csv,Region,Quebec,Province of Quebec
+end_use_demand_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+end_use_demand_2023.csv,Region,Yukon,Yukon territory
+end_use_demand_2023.csv,Region,Canada,Canada
+end_use_demand_2023.csv,Variable,Name of the Column,Variable that the data refers to
+end_use_demand_2023.csv,Variable,Biofuels & Emerging Energy,"Biomass (wood), solar, geothermal, hydrogen, ethanol and biodiesel."
+end_use_demand_2023.csv,Variable,Electricity,Electricity
+end_use_demand_2023.csv,Variable,Hydrogen,Hydrogen
+end_use_demand_2023.csv,Variable,Natural Gas,Natural gas
+end_use_demand_2023.csv,Variable,Other,"Coal, coke, coke oven gas and steam"
+end_use_demand_2023.csv,Variable,RPP,Refined petroleum products
+end_use_demand_2023.csv,Variable,Total End-Use Demand,Total End-Use
+end_use_demand_2023.csv,Variable,Aviation Fuel,Aviation fuel
+end_use_demand_2023.csv,Variable,Biofuels,Ethanol and biodiesel
+end_use_demand_2023.csv,Variable,Diesel,Diesel
+end_use_demand_2023.csv,Variable,Heavy Fuel Oil,Heavy fuel oil
+end_use_demand_2023.csv,Variable,LPG,Liquefied petroleum gases
+end_use_demand_2023.csv,Variable,Lubricants,Lubricants
+end_use_demand_2023.csv,Variable,Motor Gasoline,Motor Gasoline
+end_use_demand_2023.csv,Year,Name of the Column,Year that the data refers to
+end_use_demand_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+end_use_demand_2023.csv,Value,Name of the Column,Amount of energy in petajoules
+end_use_demand_2023.csv,Value,Real Number,Amount of energy in petajoules
+end_use_demand_2023.csv,Sector,Name of the Column,Sectors of the economy
+end_use_demand_2023.csv,Sector,Commercial,"Offices, stores, warehouses, government and institutional buildings, utilities, communications, and other service industries."
+end_use_demand_2023.csv,Sector,Industrial,"Manufacturing, forestry, fisheries, agriculture, construction, mining, and oil and natural gas extraction"
+end_use_demand_2023.csv,Sector,Residential,Households
+end_use_demand_2023.csv,Sector,Total End-Use,All sectors combined
+end_use_demand_2023.csv,Sector,Transportation,"Passenger and freight on-road transportation, as well as air, rail, marine, and non-industrial off-road travel"
+end_use_prices_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+end_use_prices_2023.csv,Scenario,Current Measures,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+end_use_prices_2023.csv,Scenario,Canada Net-zero,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+end_use_prices_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+end_use_prices_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+end_use_prices_2023.csv,Region,Alberta,Province of Alberta
+end_use_prices_2023.csv,Region,British Columbia,Province of British Columbia
+end_use_prices_2023.csv,Region,Manitoba,Province of Manitoba
+end_use_prices_2023.csv,Region,New Brunswick,Province of New Brunswick
+end_use_prices_2023.csv,Region,Newfoundland and Labrador,Province of Newfoundland and Labrador
+end_use_prices_2023.csv,Region,Northwest Territories,Northwest Territories
+end_use_prices_2023.csv,Region,Nova Scotia,Province of Nova Scotia
+end_use_prices_2023.csv,Region,Nunavut,Nunavut territory
+end_use_prices_2023.csv,Region,Ontario,Province of Ontario
+end_use_prices_2023.csv,Region,Prince Edward Island,Province of Prince Edward Island
+end_use_prices_2023.csv,Region,Quebec,Province of Quebec
+end_use_prices_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+end_use_prices_2023.csv,Region,Yukon,Yukon territory
+end_use_prices_2023.csv,Variable,Name of the Column,Variable that the data refers to
+end_use_prices_2023.csv,Variable,Electricity,Electricity
+end_use_prices_2023.csv,Variable,Oil,Home heating oil
+end_use_prices_2023.csv,Variable,Natural Gas,Natural gas
+end_use_prices_2023.csv,Variable,Diesel,Diesel
+end_use_prices_2023.csv,Variable,Gasoline,Gasoline
+end_use_prices_2023.csv,Year,Name of the Column,Year that the data refers to
+end_use_prices_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+end_use_prices_2023.csv,Value,Name of the Column,"End-use price in Canadian dollars per gigajoule, in 2022 dollars terms (i.e. adjusting for inflation)"
+end_use_prices_2023.csv,Value,Real Number,"End-use price in Canadian dollars per gigajoule, in 2022 dollars terms (i.e. adjusting for inflation)"
+end_use_prices_2023.csv,Sector,Name of the Column,Sectors of the economy
+end_use_prices_2023.csv,Sector,Industrial,"Manufacturing, forestry, fisheries, agriculture, construction, mining, and oil and natural gas extraction"
+end_use_prices_2023.csv,Sector,Transportation,"Passenger and freight on-road transportation, as well as air, rail, marine, and non-industrial off-road travel"
+end_use_prices_2023.csv,Sector,Residential,Households
+end_use_prices_2023.csv,Sector,Commercial,"Offices, stores, warehouses, government and institutional buildings, utilities, communications, and other service industries."
+ethane_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+ethane_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+ethane_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+ethane_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+ethane_2023.csv,Unit,Name of the Column,Unit of measurement
+ethane_2023.csv,Unit,Thousand Barrels per day,Thousand barrels per day
+ethane_2023.csv,Unit,Thousand Cubic Meters per day,Thousand cubic meters per day
+ethane_2023.csv,Variable,Name of the Column,Variable that the data refers to
+ethane_2023.csv,Variable,Total Supply - Total Disposition,The difference between total supply minus total disposition.
+ethane_2023.csv,Variable,AB Petrochemical Demand,AB Petrochemical Demand
+ethane_2023.csv,Variable,Exports,Exports
+ethane_2023.csv,Variable,Oil Sands Solvent Demand,Oil Sands Solvent Demand
+ethane_2023.csv,Variable,ON Petrochemical Demand,ON Petrochemical Demand
+ethane_2023.csv,Variable,Imports to AB from U.S.,Imports to AB from U.S.
+ethane_2023.csv,Variable,Imports to ON from U.S.,Imports to ON from U.S.
+ethane_2023.csv,Variable,Production from Gas Processing,Production from Gas Processing
+ethane_2023.csv,Variable,Production from Oil Sands off-gas,Production from Oil Sands off-gas
+ethane_2023.csv,Variable,Total Production,Sum of all domestic production
+ethane_2023.csv,Variable,Total Supply,"Sum of all production sources, imports, stock variations and adjustments"
+ethane_2023.csv,Variable,Total Disposition,The sum of all demand and exports
+ethane_2023.csv,Variable,Ethane Not Recovered,Ethane Not Recovered
+ethane_2023.csv,Type,Name of the Column,Source or use
+ethane_2023.csv,Type,Balance (Adjustments),The difference between total supply minus total disposition.
+ethane_2023.csv,Type,Demand,Demand
+ethane_2023.csv,Type,Supply,Supply
+ethane_2023.csv,Year,Name of the Column,Year that the data refers to
+ethane_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+ethane_2023.csv,Value,Name of the Column,Volume of ethane
+ethane_2023.csv,Value,Real Number,Volume of ethane
+greenhouse_gas_emissions_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+greenhouse_gas_emissions_2023.csv,Scenario,Current Measures,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+greenhouse_gas_emissions_2023.csv,Scenario,Global Net-zero,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+greenhouse_gas_emissions_2023.csv,Scenario,Canada Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+greenhouse_gas_emissions_2023.csv,Year,Name of the Column,Year that the data refers to
+greenhouse_gas_emissions_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+greenhouse_gas_emissions_2023.csv,Unit,Name of the Column,Unit of measurement
+greenhouse_gas_emissions_2023.csv,Unit,Megatonnes,Megatonnes
+greenhouse_gas_emissions_2023.csv,Variable,Name of the Column,Variable that the data refers to
+greenhouse_gas_emissions_2023.csv,Variable,Total,Total greenhouse gas emissions
+greenhouse_gas_emissions_2023.csv,Variable,Oil and Gas,Greenhouse gas emissions from the oil and gas economic category
+greenhouse_gas_emissions_2023.csv,Variable,Electricity,Greenhouse gas emissions from the electricity economic category
+greenhouse_gas_emissions_2023.csv,Variable,Low or Non-emitting Hydrogen Production,Greenhouse gas emissions from low or non-emitting hydrogen production
+greenhouse_gas_emissions_2023.csv,Variable,Transportation,Greenhouse gas emissions from the transportation economic category
+greenhouse_gas_emissions_2023.csv,Variable,Buildings,Greenhouse gas emissions from the buildings economic category
+greenhouse_gas_emissions_2023.csv,Variable,Heavy Industry,Greenhouse gas emissions from the heavy industry economic category
+greenhouse_gas_emissions_2023.csv,Variable,Agriculture,Greenhouse gas emissions from the agriculture economic category
+greenhouse_gas_emissions_2023.csv,Variable,Waste and Others,Greenhouse gas emissions from the waste and others economic cateogry
+greenhouse_gas_emissions_2023.csv,Variable,"Land Use, Land Use Change and Forestry","Greenhouse gas emissions from Land Use, Land Use Change and Forestry"
+greenhouse_gas_emissions_2023.csv,Variable,Direct Air Capture,Greenhouse gas emissions from Direct Air Capture
+greenhouse_gas_emissions_2023.csv,Value,Name of the Column,Greenhouse gas emissions in megatonnes of carbon dioxide equivalent 
+greenhouse_gas_emissions_2023.csv,Value,Real Number,Greenhouse gas emissions in megatonnes of carbon dioxide equivalent 
+hydrogen_production_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+hydrogen_production_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+hydrogen_production_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+hydrogen_production_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+hydrogen_production_2023.csv,Unit,Name of the Column,Unit of measurement
+hydrogen_production_2023.csv,Unit,Megatonnes,Megatonnes
+hydrogen_production_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+hydrogen_production_2023.csv,Region,Alberta,Province of Alberta
+hydrogen_production_2023.csv,Region,British Columbia,Province of British Columbia
+hydrogen_production_2023.csv,Region,Manitoba,Province of Manitoba
+hydrogen_production_2023.csv,Region,New Brunswick,Province of New Brunswick
+hydrogen_production_2023.csv,Region,Newfoundland and Labrador,Province of Newfoundland and Labrador
+hydrogen_production_2023.csv,Region,Northwest Territories,Northwest Territories
+hydrogen_production_2023.csv,Region,Nova Scotia,Province of Nova Scotia
+hydrogen_production_2023.csv,Region,Nunavut,Nunavut territory
+hydrogen_production_2023.csv,Region,Ontario,Province of Ontario
+hydrogen_production_2023.csv,Region,Prince Edward Island,Province of Prince Edward Island
+hydrogen_production_2023.csv,Region,Quebec,Province of Quebec
+hydrogen_production_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+hydrogen_production_2023.csv,Region,Yukon,Yukon territory
+hydrogen_production_2023.csv,Region,Canada,Canada
+hydrogen_production_2023.csv,Variable,Name of the Column,Variable that the data refers to
+hydrogen_production_2023.csv,Variable,Biomass,Hydrogen produced via Biomass feedstocks
+hydrogen_production_2023.csv,Variable,Electrolysis,Hydrogen produced via electrolysis
+hydrogen_production_2023.csv,Variable,Natural gas with CCS,Hydrogen produced via natural gas with CCS
+hydrogen_production_2023.csv,Year,Name of the Column,Year that the data refers to
+hydrogen_production_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+hydrogen_production_2023.csv,Value,Name of the Column,Tonnage of Hydrogen Production
+hydrogen_production_2023.csv,Value,Real Number,Tonnage of Hydrogen Production
+macro_indicators_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+macro_indicators_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+macro_indicators_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+macro_indicators_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+macro_indicators_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+macro_indicators_2023.csv,Region,Canada,Canada
+macro_indicators_2023.csv,Variable,Name of the Column,Variable that the data refers to
+macro_indicators_2023.csv,Variable,Real Gross Domestic Product ($2012 Millions),"A measure of economic activity, adjusted for inflation"
+macro_indicators_2023.csv,Variable,Population (thousands),Number of people
+macro_indicators_2023.csv,Variable,Gross Domestic Product Deflator (2012=100),Index to adjust nominal gross domestic product for inflation
+macro_indicators_2023.csv,Variable,Consumer Price Index (2002=100),Index of consumer prices
+macro_indicators_2023.csv,Variable,Canada-US Exchange Rate (C$/US$),Canadian dollars required to purchase one U.S. dollar
+macro_indicators_2023.csv,Year,Name of the Column,Year that the data refers to
+macro_indicators_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+macro_indicators_2023.csv,Value,Name of the Column,Value for a given macroeconomic indicator
+macro_indicators_2023.csv,Value,Real Number,Value for a given macroeconomic indicator
+natural_gas_drilling_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+natural_gas_drilling_2023.csv,Scenario,Current Measures,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+natural_gas_drilling_2023.csv,Scenario,Canada Net-zero,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+natural_gas_drilling_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+natural_gas_drilling_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+natural_gas_drilling_2023.csv,Region,Western Canada,"Total of British Columbia, Alberta, Saskatchewan"
+natural_gas_drilling_2023.csv,Region,Alberta,Province of Alberta
+natural_gas_drilling_2023.csv,Region,British Columbia,Province of British Columbia
+natural_gas_drilling_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+natural_gas_drilling_2023.csv,Variable,Name of the Column,Variable that the data refers to
+natural_gas_drilling_2023.csv,Variable,Total,Total drilling
+natural_gas_drilling_2023.csv,Variable,Conventional,Conventional drilling
+natural_gas_drilling_2023.csv,Variable,Conventional (Tight Portion),Conventional (Tight Portion) drilling
+natural_gas_drilling_2023.csv,Variable,Shale,Shale drilling
+natural_gas_drilling_2023.csv,Variable,Coalbed Methane,Coalbed Methane drilling
+natural_gas_drilling_2023.csv,Year,Name of the Column,Year that the data refers to
+natural_gas_drilling_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+natural_gas_drilling_2023.csv,Value,Name of the Column,Number of wells drilled
+natural_gas_drilling_2023.csv,Value,Real Number,Number of wells drilled
+natural_gas_production_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+natural_gas_production_2023.csv,Scenario,Current Measures,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+natural_gas_production_2023.csv,Scenario,Canada Net-zero,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+natural_gas_production_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+natural_gas_production_2023.csv,Unit,Name of the Column,Unit of measurement
+natural_gas_production_2023.csv,Unit,Million Cubic Meters per day,Thousand Cubic Meters per day
+natural_gas_production_2023.csv,Unit,Billion Cubic Feet per day,Thousand Barrels per day
+natural_gas_production_2023.csv,Region,Name of the Column,"Province, territory, or Canadian total"
+natural_gas_production_2023.csv,Region,Canada,Canada
+natural_gas_production_2023.csv,Region,Western Canadian Sedimentary Basin,"An ancient sedimentary basin 1.4ÿmillion square kilometers in size that formed over southwest Manitoba, southern Saskatchewan, almost all of Alberta, eastern and northeastern British Columbia, and the southern Yukon and Northwest Territories."
+natural_gas_production_2023.csv,Region,Alberta,Province of Alberta
+natural_gas_production_2023.csv,Region,British Columbia,Province of British Columbia
+natural_gas_production_2023.csv,Region,New Brunswick,Province of New Brunswick
+natural_gas_production_2023.csv,Region,Northwest Territories,Northwest Territories
+natural_gas_production_2023.csv,Region,Nova Scotia,Province of Nova Scotia
+natural_gas_production_2023.csv,Region,Ontario,Province of Ontario
+natural_gas_production_2023.csv,Region,Saskatchewan,Province of Saskatchewan
+natural_gas_production_2023.csv,Region,Yukon,Yukon territory
+natural_gas_production_2023.csv,Variable,Name of the Column,Type of natural gas production
+natural_gas_production_2023.csv,Variable,Total,Sum of all production types
+natural_gas_production_2023.csv,Variable,Solution,Natural gas produced along with oil from oil wells
+natural_gas_production_2023.csv,Variable,Non Associated,Conventional natural gas not produced along with oil from oil wells
+natural_gas_production_2023.csv,Variable,Tight,"Gas produced from organic-rich shales or from low permeability sandstone, siltstone, limestone or dolostone reservoirs"
+natural_gas_production_2023.csv,Variable,Shale,"A form of unconventional gas trapped within shale; a sedimentary rock originally deposited as clay and dead plankton, characterized by extremely low permeability"
+natural_gas_production_2023.csv,Variable,Coalbed Methane,Natural gas that is trapped within coal seams
+natural_gas_production_2023.csv,Year,Name of the Column,Year that the data refers to
+natural_gas_production_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+natural_gas_production_2023.csv,Value,Name of the Column,Volume of natural gas produced
+natural_gas_production_2023.csv,Value,Real Number,Volume of natural gas produced
+pentanes_plus_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+pentanes_plus_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+pentanes_plus_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+pentanes_plus_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+pentanes_plus_2023.csv,Unit,Name of the Column,Unit of measurement
+pentanes_plus_2023.csv,Unit,Thousand Barrels per day,Thousand Barrels per day
+pentanes_plus_2023.csv,Unit,Thousand Cubic Meters per day,Thousand Cubic Meters per day
+pentanes_plus_2023.csv,Variable,Name of the Column,Variable that the data refers to
+pentanes_plus_2023.csv,Variable,Canada Other Demand,Demand other than diluent or exports.
+pentanes_plus_2023.csv,Variable,Diluent Demand,Diluent Demand
+pentanes_plus_2023.csv,Variable,Exports from AB to U.S.,Exports from AB to U.S.
+pentanes_plus_2023.csv,Variable,Exports from ON to U.S.,Exports from ON to U.S.
+pentanes_plus_2023.csv,Variable,Exports from ROC to U.S.,Exports from the rest of Canada (not AB and ON)  to U.S.
+pentanes_plus_2023.csv,Variable,Exports from westcoast BC to International,Exports from westcoast BC to International
+pentanes_plus_2023.csv,Variable,Oil Sands Solvent Demand,Oil Sands Solvent Demand
+pentanes_plus_2023.csv,Variable,ON Petrochemical Demand,ON Petrochemical Demand
+pentanes_plus_2023.csv,Variable,Refinery Demand,Refinery Demand
+pentanes_plus_2023.csv,Variable,Total Disposition,The sum of all demands and exports
+pentanes_plus_2023.csv,Variable,Projected Exports,Projected Exports
+pentanes_plus_2023.csv,Variable,Imports to AB from U.S.,Imports to AB from U.S.
+pentanes_plus_2023.csv,Variable,Production from Gas Processing,Production from Gas Processing
+pentanes_plus_2023.csv,Variable,Production from Oil Sands off-gas,Production from Oil Sands off-gas
+pentanes_plus_2023.csv,Variable,Production from Refineries,Production from Refineries
+pentanes_plus_2023.csv,Variable,Total Supply,Total Pentanes supply
+pentanes_plus_2023.csv,Variable,AB Petrochemical Demand,AB Petrochemical Demand
+pentanes_plus_2023.csv,Variable,Total Supply - Total Disposition,The difference between total supply minus total disposition.
+pentanes_plus_2023.csv,Variable,Total Pentanes production,Total Production
+pentanes_plus_2023.csv,Type,Name of the Column,Source or use
+pentanes_plus_2023.csv,Type,Demand,Demand
+pentanes_plus_2023.csv,Type,Supply,Supply
+pentanes_plus_2023.csv,Type,Balance (Adjustments),The difference between total supply minus total disposition.
+pentanes_plus_2023.csv,Year,Name of the Column,Year that the data refers to
+pentanes_plus_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+pentanes_plus_2023.csv,Value,Name of the Column,Volume of pentane
+pentanes_plus_2023.csv,Value,Real Number,Volume of pentane
+propane_2023.csv,Scenario,Name of the Column,A set of projections based on certain parameters and assumptions about the future.
+propane_2023.csv,Scenario,Canada Net-zero,Limited action in Canada to reduce GHG emissions beyond measures in place today and does not require that Canada achieve net-zero emissions
+propane_2023.csv,Scenario,Current Measures,Canada achieves net-zero emissions by 2050 but rest of the world moves more slowly to reduce GHG emissions.
+propane_2023.csv,Scenario,Global Net-zero,"Canada achieves net-zero emissions by 2050 and the rest of the world reduces emissions enough to limit warming to 1.5°C, by 2050"
+propane_2023.csv,Unit,Name of the Column,Unit of measurement
+propane_2023.csv,Unit,Thousand Barrels per day,Thousand Barrels per day
+propane_2023.csv,Unit,Thousand Cubic Meters per day,Thousand Cubic Meters per day
+propane_2023.csv,Variable,Name of the Column,Variable that the data refers to
+propane_2023.csv,Variable,Canada Other Demand,Other demand in Canada not covered by the other variables
+propane_2023.csv,Variable,Diluent Demand,Diluent Demand
+propane_2023.csv,Variable,Exports from AB to U.S.,Exports from AB to U.S.
+propane_2023.csv,Variable,Exports from ON to U.S.,Exports from ON to U.S.
+propane_2023.csv,Variable,Exports from ROC to U.S.,Exports from ROC to U.S.
+propane_2023.csv,Variable,Exports from westcoast BC to International,Exports from westcoast BC to International
+propane_2023.csv,Variable,Oil Sands Solvent Demand,Oil Sands Solvent Demand
+propane_2023.csv,Variable,ON Petrochemical Demand,ON Petrochemical Demand
+propane_2023.csv,Variable,Refinery Demand,Refinery demand
+propane_2023.csv,Variable,Total Disposition,Total disposition
+propane_2023.csv,Variable,Projected Exports,Projected Exports
+propane_2023.csv,Variable,Imports to AB from U.S.,Imports to AB from U.S.
+propane_2023.csv,Variable,Production from Gas Processing,Production from Gas Processing
+propane_2023.csv,Variable,Production from Oil Sands off-gas,Production from Oil Sands off-gas
+propane_2023.csv,Variable,Production from Refineries,Production from Refineries
+propane_2023.csv,Variable,Total Supply,"Sum of all production sources, imports, stock variations and adjustments"
+propane_2023.csv,Variable,AB Petrochemical Demand,AB Petrochemical Demand
+propane_2023.csv,Variable,Total Supply - Total Disposition,The difference between total supply minus total disposition.
+propane_2023.csv,Variable,Total Production,Sum of all domestic production
+propane_2023.csv,Type,Name of the Column,Source or use
+propane_2023.csv,Type,Demand,Demand
+propane_2023.csv,Type,Supply,Supply
+propane_2023.csv,Type,Balance (Adjustments),The difference between total supply minus total disposition.
+propane_2023.csv,Year,Name of the Column,Year that the data refers to
+propane_2023.csv,Year,4 digit integer number between 2005 and 2040,Year that the data refers to
+propane_2023.csv,Value,Name of the Column,Volume of propane
+propane_2023.csv,Value,Real Number,Volume of propane

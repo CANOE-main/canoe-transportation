@@ -11,22 +11,33 @@ from datetime import datetime
 import re
 import unicodedata
 
+spreadsheet_name = 'CANOE_TRN_ON'
+db_name = 'canoe_trn_vanilla'
+ldv_profile_name = 'ON-2016TTS_no-we_2018_v4_2023-batteries'
+
+# ON-2016TTS_no-we_2018_v4_2023-batteries
+# ON-2022NHTS_2018_v4_2023-batteries
+
 # Update these paths according to your files' locations
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
-database = dir_path + 'canoe_trn.sqlite'
+database = dir_path + 'compiled_database/' + db_name + '.sqlite'
 schema = dir_path + '../canoe_schema.sql'
 template = dir_path + 'canoe_trn_template.xlsx'
 
 # Spreadsheet database to compile
-spreadsheet = dir_path + 'spreadsheet_database/CANOE_FUEL_TRN_ON.xlsx'
+spreadsheet = dir_path + 'spreadsheet_database/' + spreadsheet_name + '.xlsx'
 
 # RAMP-mobility simulation results to compile
-ldv_profile = dir_path + '../charging_profiles/ramp_mobility/results/ON-2016TTS_2018_no-we_v3_newsizes.csv'
+ldv_profile = dir_path + '../charging_profiles/ramp_mobility/results/' + ldv_profile_name + '.csv'
+weather_year = 2018
+
+# Aggregate existing capacities and efficiencies into 5-year vintages
+aggregate_excap = True
 
 # Rep days to keep in D000 format, leave empty if preserving all 365 days
 # rep_days = ['D114']
 
-# Define the precision of the model parameters
+# Define the precision of the model parameters - after 5 decimals of precision, numerical instability starts to present 
 epsilon = 0.00001
 precision = 5
 
@@ -131,12 +142,50 @@ def cleanup():
     tech_vintage_remove = curs.execute(f"""SELECT DISTINCT tech, vintage FROM ExistingCapacity WHERE exist_cap < {epsilon}""").fetchall()
     for table in tables:
             for tech, vintage in tech_vintage_remove:
+                print(f"Deleted {tech} @ {vintage} in {table}")
                 curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND vintage = ?""", (tech, vintage))
+
+    # Get tech-vintage pairs from Efficiency, CostVariable, and CostFixed that do not exist in ExistingCapacity
+    for table in tables[1:]:  # Skip ExistingCapacity
+        tech_vintage_not_in_excap = curs.execute(
+            f"""SELECT DISTINCT tech, vintage FROM {table} WHERE vintage < 2021 
+                AND (tech, vintage) NOT IN (SELECT tech, vintage FROM ExistingCapacity)"""
+        ).fetchall()
+
+        # Remove these pairs from Efficiency, CostVariable, and CostFixed
+        for tech, vintage in tech_vintage_not_in_excap:
+            print(f"Deleted {tech} @ {vintage} in {table}")
+            curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND vintage = ?""", (tech, vintage))
+    
+    tables_with_vintage = ["CostVariable", "CostInvest", "CostFixed"]
+    tables_with_period = ["MaxAnnualCapacityFactor", "MinAnnualCapacityFactor"]
+
+    # Remove tech-vintage pairs from specified tables that do not exist in Efficiency
+    for table in tables_with_vintage:
+        tech_vintage_not_in_efficiency = curs.execute(
+            r"""SELECT DISTINCT tech, vintage FROM {} 
+                WHERE tech NOT LIKE '%\_R' ESCAPE '\' AND (tech, vintage) NOT IN (SELECT tech, vintage FROM Efficiency)""".format(table)
+        ).fetchall()
+
+        for tech, vintage in tech_vintage_not_in_efficiency:
+            print(f"Deleted {tech} @ {vintage} in {table}")
+            curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND vintage = ?""", (tech, vintage))
+
+    # Remove tech-period pairs from specified tables that do not exist in Efficiency
+    for table in tables_with_period:
+        tech_period_not_in_efficiency = curs.execute(
+            r"""SELECT DISTINCT tech, periods FROM {} 
+                WHERE tech NOT LIKE '%\_R' ESCAPE '\' AND (tech, periods) NOT IN (SELECT tech, vintage FROM Efficiency)""".format(table)
+        ).fetchall()
+
+        for tech, period in tech_period_not_in_efficiency:
+            print(f"Deleted {tech} @ {period} in {table}")
+            curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND periods = ?""", (tech, period))
 
     conn.commit()
     conn.close()
 
-    print(f"Existing techs of a given vintage with no capacity have been removed in {os.path.basename(database)}\n")
+    print(f"Cleanup complete.\n")
 
 """
 ##################################################
@@ -165,8 +214,8 @@ def insert_template():
     "time_periods", #       TimePeriod
     "time_season", #        TimeSeason
     "time_of_day", #        TimeofDay
-    "tech_annual", #    Includes those technologies without DSDs | Dropped in v3
-    "StorageDuration" # Assumes 8760 hours of storage for H2 to simulate unlimited supply year-round
+    "tech_annual", #        Includes those technologies with constant annual demand [deprecated list]
+    "StorageDuration" #     Assumes 8760 hours of storage for H2 to simulate unlimited supply year-round
     ]
 
     # Read the specified sheets into a dictionary of dataframes
@@ -370,6 +419,7 @@ def compile_dsd():
     
     # Converts simulation results time series into ET time zone, resamples into hourly resolution, and normalizes distribution
     cp = cp.set_index(cp.index.tz_convert('America/Toronto'))
+    cp = cp[cp.index.year == weather_year]
     cp = cp.resample('H').mean()
     cp = cp/cp.sum()
 
@@ -500,11 +550,12 @@ def compile_excap():
     # Fill NaNs as empty values; allowing for consistent grouping of vintages
     df = df.fillna('')
 
-    # # Aggregates 2000-2020 vintages into 5-year vintages (e.g., 2002 -> 2000 and 2003 -> 2005)
-    df.Vintage = df.Vintage.astype(int)
-    df['qVintage'] = df.Vintage.apply(quinquennial_mapping)
-    df = df.groupby([i for i in df.columns.tolist() if i not in ['Vintage', parameter]]).agg({parameter: 'sum'}).reset_index()
-    df = df.rename(columns={'qVintage': 'Vintage'})
+    if aggregate_excap:
+        # Aggregates 2000-2020 vintages into 5-year vintages (e.g., 2002 -> 2000 and 2003 -> 2005)
+        df.Vintage = df.Vintage.astype(int)
+        df['qVintage'] = df.Vintage.apply(quinquennial_mapping)
+        df = df.groupby([i for i in df.columns.tolist() if i not in ['Vintage', parameter]]).agg({parameter: 'sum'}).reset_index()
+        df = df.rename(columns={'qVintage': 'Vintage'})
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
     df[parameter] = df[parameter].round(precision)
@@ -631,10 +682,10 @@ def compile_acf():
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (row['Region'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter], row['Notes'], 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
-    
+        
         curs.execute("""REPLACE INTO MinAnnualCapacityFactor(regions, periods, tech, output_comm, min_acf, min_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.99, f"99% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
+                (row['Region'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.90, f"90% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
             
     conn.commit()
@@ -677,14 +728,15 @@ def compile_efficiency():
     # Fill NaNs as empty values; allowing for consistent grouping of vintages
     df = df.fillna('')
 
-    # Aggregates 2000-2020 vintages into 5-year vintages (e.g., 2002 -> 2000 and 2003 -> 2005)
-    df.Vintage = df.Vintage.astype(int)
-    df_ex = df[df.Vintage <= 2020]
-    df_new = df[df.Vintage > 2020]
-    df_ex['qVintage'] = df_ex.Vintage.apply(quinquennial_mapping)
-    df_ex_agg = df_ex.groupby([i for i in df_ex.columns.tolist() if i not in ['Vintage', parameter]]).agg({parameter: 'mean'}).reset_index()
-    df_ex_agg = df_ex_agg.rename(columns={'qVintage': 'Vintage'})
-    df = pd.concat([df_ex_agg, df_new], ignore_index=True).reset_index(drop=True)
+    if aggregate_excap:
+        # Aggregates 2000-2020 vintages into 5-year vintages (e.g., 2002 -> 2000 and 2003 -> 2005)
+        df.Vintage = df.Vintage.astype(int)
+        df_ex = df[df.Vintage <= 2020]
+        df_new = df[df.Vintage > 2020]
+        df_ex['qVintage'] = df_ex.Vintage.apply(quinquennial_mapping)
+        df_ex_agg = df_ex.groupby([i for i in df_ex.columns.tolist() if i not in ['Vintage', parameter]]).agg({parameter: 'min'}).reset_index() # 'min' helps decrease overestimated energy use
+        df_ex_agg = df_ex_agg.rename(columns={'qVintage': 'Vintage'})
+        df = pd.concat([df_ex_agg, df_new], ignore_index=True).reset_index(drop=True)
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
     df[parameter] = df[parameter].round(precision)
@@ -1033,6 +1085,76 @@ def filter_repdays():
 
 """
 ##################################################
+    Update variable cost entries
+##################################################
+"""
+
+def update_cost_variable_entries():
+    # Connect to the SQLite database
+    conn = sqlite3.connect(database)
+
+    # Fetch data from ExistingCapacity and CostVariable tables
+    existing_capacity_df = pd.read_sql_query("SELECT tech, vintage FROM ExistingCapacity", conn)
+    cost_variable_df = pd.read_sql_query("SELECT tech, vintage FROM CostVariable", conn).drop_duplicates()
+
+    # Define thresholds for vintage
+    vintage_thresholds = [2005, 2010, 2015, 2020]
+
+    # Loop over each vintage threshold
+    for threshold in vintage_thresholds:
+        # Find all tech-vintage pairs missing in CostVariable for the current threshold
+        missing_pairs = existing_capacity_df.merge(cost_variable_df, on=['tech', 'vintage'], how='left', indicator=True)
+        missing_pairs = missing_pairs[(missing_pairs['_merge'] == 'left_only') & (missing_pairs['vintage'] <= threshold)].drop(columns=['_merge'])
+
+        # Loop through each missing pair to find and insert corresponding entries
+        for _, missing_row in missing_pairs.iterrows():
+            tech = missing_row['tech']
+            vintage = missing_row['vintage']
+
+            # Find the closest matching vintage in CostVariable that is greater than or equal to the current vintage
+            matched_rows = pd.read_sql_query(f"""
+                SELECT * FROM CostVariable
+                WHERE tech = '{tech}' AND vintage >= {vintage}
+                ORDER BY vintage ASC LIMIT 1
+            """, conn)
+            
+            if not matched_rows.empty:
+                matched_vintage = matched_rows['vintage'].iloc[0]
+                matched_cost_variable_entries = pd.read_sql_query(f"""
+                    SELECT * FROM CostVariable
+                    WHERE tech = '{tech}' AND vintage = {matched_vintage}
+                """, conn)
+
+                # Prepare new rows for the missing pair using the matched entries
+                new_rows = []
+                for _, entry_row in matched_cost_variable_entries.iterrows():
+                    # Check if the entry already exists
+                    existing_entry = pd.read_sql_query(f"""
+                        SELECT COUNT(*) as count FROM CostVariable
+                        WHERE tech = '{tech}' AND vintage = {vintage} AND periods = {entry_row['periods']}
+                    """, conn)
+                    
+                    if existing_entry['count'].iloc[0] == 0:
+                        new_row = entry_row.copy()
+                        new_row['vintage'] = vintage
+                        new_row['cost_variable_notes'] = 'Assumed the same value as the next quinquennium vintage (e.g., 2019 -> 2020)'
+                        new_rows.append(new_row)
+                
+                # Convert new rows to DataFrame and insert them
+                if new_rows:
+                    new_rows_df = pd.DataFrame(new_rows)
+                    new_rows_df.to_sql('CostVariable', conn, if_exists='append', index=False)
+
+    # Verify the insertion
+    new_entries_count = pd.read_sql_query("SELECT COUNT(*) FROM CostVariable WHERE cost_variable_notes='Inserted by script based on threshold match'", conn)
+    print(f"Inserted {new_entries_count['COUNT(*)'].iloc[0]} new entries into the CostVariable table.")
+
+    # Close the connection
+    conn.close()
+
+
+"""
+##################################################
     Compile all parameters
 ##################################################
 """
@@ -1059,11 +1181,13 @@ def compile_transport():
     compile_costfixed()
     compile_emissionact()
     compile_techinputsplit()
-
-    cleanup()
-
+    
     # if rep_days:
     #     filter_repdays()
+    if not aggregate_excap:
+        update_cost_variable_entries()
+
+    cleanup()
 
     print(f"All parameter data from {os.path.basename(spreadsheet)} compiled into {os.path.basename(database)}\n")
 

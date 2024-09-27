@@ -1,0 +1,407 @@
+19-Sep-24 01:33:12 | main | INFO | *** STARTING TEMOA ***
+19-Sep-24 01:33:12 | temoa_config | INFO | Scenario Name:  trn_vanilla_morris
+19-Sep-24 01:33:12 | temoa_config | INFO | Data source:  data_files\canoe_on_12d_vanilla_morris.sqlite
+19-Sep-24 01:33:12 | temoa_config | INFO | Data target:  data_files\canoe_on_12d_vanilla_morris.sqlite
+19-Sep-24 01:33:12 | temoa_config | INFO | Mode:  METHOD_OF_MORRIS
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Saving excel is disabled during Morris runs.
+19-Sep-24 01:33:21 | morris_sequencer | WARNING | Price check is disabled during Morris runs.  If you wish to check costs, run "CHECK" on model before MM
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Using solver options: {}
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Morris perturbation: 0.15
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Morris levels: 6
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Morris trajectories: 12
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Morris Seed (None indicates system generated): 29
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Morris number of cores: 6
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Initialized Morris Sequencer
+19-Sep-24 01:33:21 | morris_sequencer | INFO | Currently, MM only logs ERROR level messages during model build, which is done repeatedly.  If there are issues building the model, run Temoa in CHECK separately to get more detail on the model.
+19-Sep-24 01:33:21 | hybrid_loader | INFO | Loading data portal
+19-Sep-24 01:33:21 | commodity_network_manager | INFO | starting network analysis for region ON
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_ramping
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_curtailment
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_flex
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_exchange
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_group_names
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_variable
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_retirement
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: LoanLifetimeTech
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2021 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2021 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2025 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2025 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2030 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2030 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2035 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2035 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2040 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2040 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2045 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2045 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2050 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2050 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: TechInputSplitAverage
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: RenewablePortfolioStandard
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: CostEmission_rpe
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: CostEmission
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: LoanRate
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacity
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacity
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacity
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxCapacityGroup
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacityGroup
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacityGroup
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacityGroup
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacityShare
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxCapacityShare
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacityShare
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxCapacityShare
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacityGroupShare
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacityGroupShare
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivityGroup
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivityGroup
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivityShare
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivityShare
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxResource
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivity
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivity
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxGrowthRate
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinGrowthRate
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: GrowthRateSeed
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: EmissionLimit
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: LinkedTechs
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: RampUp
+19-Sep-24 01:33:22 | hybrid_loader | INFO | table, but no (usable) values for param or set: RampDown
+19-Sep-24 01:33:33 | morris_evaluate | INFO | Starting MM evaluation # 1
+19-Sep-24 01:33:33 | morris_evaluate | INFO | Starting MM evaluation # 1
+19-Sep-24 01:33:33 | morris_evaluate | INFO | Starting MM evaluation # 2
+19-Sep-24 01:33:33 | morris_evaluate | INFO | Starting MM evaluation # 2
+19-Sep-24 01:33:33 | morris_evaluate | INFO | Starting MM evaluation # 3
+19-Sep-24 01:33:33 | morris_evaluate | INFO | Starting MM evaluation # 3
+19-Sep-24 01:33:34 | morris_evaluate | INFO | Starting MM evaluation # 4
+19-Sep-24 01:33:34 | morris_evaluate | INFO | Starting MM evaluation # 4
+19-Sep-24 01:33:34 | morris_evaluate | INFO | Starting MM evaluation # 6
+19-Sep-24 01:33:34 | morris_evaluate | INFO | Starting MM evaluation # 6
+19-Sep-24 01:33:34 | morris_evaluate | INFO | Starting MM evaluation # 5
+19-Sep-24 01:33:34 | morris_evaluate | INFO | Starting MM evaluation # 5
+19-Sep-24 01:51:02 | morris_evaluate | INFO | Finished MM evaluation # 6 with OBJ value: 1812534.09 
+19-Sep-24 01:51:02 | morris_evaluate | INFO | Finished MM evaluation # 6 with OBJ value: 1812534.09 
+19-Sep-24 01:51:03 | morris_evaluate | INFO | Finished MM evaluation # 2 with OBJ value: 1823171.55 
+19-Sep-24 01:51:03 | morris_evaluate | INFO | Finished MM evaluation # 2 with OBJ value: 1823171.55 
+19-Sep-24 01:51:38 | morris_evaluate | INFO | Finished MM evaluation # 3 with OBJ value: 1822644.05 
+19-Sep-24 01:51:38 | morris_evaluate | INFO | Finished MM evaluation # 3 with OBJ value: 1822644.05 
+19-Sep-24 01:52:07 | morris_evaluate | INFO | Finished MM evaluation # 1 with OBJ value: 1823176.95 
+19-Sep-24 01:52:07 | morris_evaluate | INFO | Finished MM evaluation # 1 with OBJ value: 1823176.95 
+19-Sep-24 01:52:09 | morris_evaluate | INFO | Finished MM evaluation # 5 with OBJ value: 1816254.94 
+19-Sep-24 01:52:09 | morris_evaluate | INFO | Finished MM evaluation # 5 with OBJ value: 1816254.94 
+19-Sep-24 01:52:09 | morris_evaluate | INFO | Finished MM evaluation # 4 with OBJ value: 1816968.83 
+19-Sep-24 01:52:09 | morris_evaluate | INFO | Finished MM evaluation # 4 with OBJ value: 1816968.83 
+19-Sep-24 01:56:17 | morris_evaluate | INFO | Starting MM evaluation # 7
+19-Sep-24 01:56:17 | morris_evaluate | INFO | Starting MM evaluation # 7
+19-Sep-24 01:56:24 | morris_evaluate | INFO | Starting MM evaluation # 8
+19-Sep-24 01:56:24 | morris_evaluate | INFO | Starting MM evaluation # 8
+19-Sep-24 01:56:45 | morris_evaluate | INFO | Starting MM evaluation # 9
+19-Sep-24 01:56:45 | morris_evaluate | INFO | Starting MM evaluation # 9
+19-Sep-24 01:56:48 | morris_evaluate | INFO | Starting MM evaluation # 10
+19-Sep-24 01:56:48 | morris_evaluate | INFO | Starting MM evaluation # 10
+19-Sep-24 01:56:48 | morris_evaluate | INFO | Starting MM evaluation # 11
+19-Sep-24 01:56:48 | morris_evaluate | INFO | Starting MM evaluation # 11
+19-Sep-24 01:56:49 | morris_evaluate | INFO | Starting MM evaluation # 12
+19-Sep-24 01:56:49 | morris_evaluate | INFO | Starting MM evaluation # 12
+19-Sep-24 02:07:17 | morris_evaluate | INFO | Finished MM evaluation # 7 with OBJ value: 1810558.46 
+19-Sep-24 02:07:17 | morris_evaluate | INFO | Finished MM evaluation # 7 with OBJ value: 1810558.46 
+19-Sep-24 02:07:59 | morris_evaluate | INFO | Finished MM evaluation # 8 with OBJ value: 1815620.30 
+19-Sep-24 02:07:59 | morris_evaluate | INFO | Finished MM evaluation # 8 with OBJ value: 1815620.30 
+19-Sep-24 02:07:59 | morris_evaluate | INFO | Starting MM evaluation # 13
+19-Sep-24 02:07:59 | morris_evaluate | INFO | Starting MM evaluation # 13
+19-Sep-24 02:10:52 | morris_evaluate | INFO | Starting MM evaluation # 14
+19-Sep-24 02:10:52 | morris_evaluate | INFO | Starting MM evaluation # 14
+19-Sep-24 02:11:03 | morris_evaluate | INFO | Finished MM evaluation # 9 with OBJ value: 1823431.10 
+19-Sep-24 02:11:03 | morris_evaluate | INFO | Finished MM evaluation # 9 with OBJ value: 1823431.10 
+19-Sep-24 02:11:28 | morris_evaluate | INFO | Finished MM evaluation # 11 with OBJ value: 1820737.63 
+19-Sep-24 02:11:28 | morris_evaluate | INFO | Finished MM evaluation # 11 with OBJ value: 1820737.63 
+19-Sep-24 02:11:39 | morris_evaluate | INFO | Finished MM evaluation # 12 with OBJ value: 1815439.95 
+19-Sep-24 02:11:39 | morris_evaluate | INFO | Finished MM evaluation # 12 with OBJ value: 1815439.95 
+19-Sep-24 02:11:58 | morris_evaluate | INFO | Finished MM evaluation # 10 with OBJ value: 1820827.19 
+19-Sep-24 02:11:58 | morris_evaluate | INFO | Finished MM evaluation # 10 with OBJ value: 1820827.19 
+19-Sep-24 02:12:17 | morris_evaluate | INFO | Starting MM evaluation # 15
+19-Sep-24 02:12:17 | morris_evaluate | INFO | Starting MM evaluation # 15
+19-Sep-24 02:14:33 | morris_evaluate | INFO | Starting MM evaluation # 16
+19-Sep-24 02:14:33 | morris_evaluate | INFO | Starting MM evaluation # 16
+19-Sep-24 02:14:58 | morris_evaluate | INFO | Starting MM evaluation # 17
+19-Sep-24 02:14:58 | morris_evaluate | INFO | Starting MM evaluation # 17
+19-Sep-24 02:14:59 | morris_evaluate | INFO | Starting MM evaluation # 18
+19-Sep-24 02:14:59 | morris_evaluate | INFO | Starting MM evaluation # 18
+19-Sep-24 02:18:56 | morris_evaluate | INFO | Finished MM evaluation # 13 with OBJ value: 1820078.61 
+19-Sep-24 02:18:56 | morris_evaluate | INFO | Finished MM evaluation # 13 with OBJ value: 1820078.61 
+19-Sep-24 02:20:40 | morris_evaluate | INFO | Starting MM evaluation # 19
+19-Sep-24 02:20:40 | morris_evaluate | INFO | Starting MM evaluation # 19
+19-Sep-24 02:21:49 | morris_evaluate | INFO | Finished MM evaluation # 14 with OBJ value: 1820887.69 
+19-Sep-24 02:21:49 | morris_evaluate | INFO | Finished MM evaluation # 14 with OBJ value: 1820887.69 
+19-Sep-24 02:23:24 | morris_evaluate | INFO | Starting MM evaluation # 20
+19-Sep-24 02:23:24 | morris_evaluate | INFO | Starting MM evaluation # 20
+19-Sep-24 02:23:33 | morris_evaluate | INFO | Finished MM evaluation # 15 with OBJ value: 1830098.06 
+19-Sep-24 02:23:33 | morris_evaluate | INFO | Finished MM evaluation # 15 with OBJ value: 1830098.06 
+19-Sep-24 02:24:43 | morris_evaluate | INFO | Starting MM evaluation # 21
+19-Sep-24 02:24:43 | morris_evaluate | INFO | Starting MM evaluation # 21
+19-Sep-24 02:26:31 | morris_evaluate | INFO | Finished MM evaluation # 16 with OBJ value: 1832253.21 
+19-Sep-24 02:26:31 | morris_evaluate | INFO | Finished MM evaluation # 16 with OBJ value: 1832253.21 
+19-Sep-24 02:27:35 | morris_evaluate | INFO | Starting MM evaluation # 22
+19-Sep-24 02:27:35 | morris_evaluate | INFO | Starting MM evaluation # 22
+19-Sep-24 02:27:44 | morris_evaluate | INFO | Finished MM evaluation # 17 with OBJ value: 1829590.85 
+19-Sep-24 02:27:44 | morris_evaluate | INFO | Finished MM evaluation # 17 with OBJ value: 1829590.85 
+19-Sep-24 02:28:07 | morris_evaluate | INFO | Finished MM evaluation # 18 with OBJ value: 1829958.56 
+19-Sep-24 02:28:07 | morris_evaluate | INFO | Finished MM evaluation # 18 with OBJ value: 1829958.56 
+19-Sep-24 02:28:28 | morris_evaluate | INFO | Starting MM evaluation # 23
+19-Sep-24 02:28:28 | morris_evaluate | INFO | Starting MM evaluation # 23
+19-Sep-24 02:28:52 | morris_evaluate | INFO | Starting MM evaluation # 24
+19-Sep-24 02:28:52 | morris_evaluate | INFO | Starting MM evaluation # 24
+19-Sep-24 02:31:34 | morris_evaluate | INFO | Finished MM evaluation # 19 with OBJ value: 1829828.77 
+19-Sep-24 02:31:34 | morris_evaluate | INFO | Finished MM evaluation # 19 with OBJ value: 1829828.77 
+19-Sep-24 02:32:27 | morris_evaluate | INFO | Starting MM evaluation # 25
+19-Sep-24 02:32:27 | morris_evaluate | INFO | Starting MM evaluation # 25
+19-Sep-24 02:35:30 | morris_evaluate | INFO | Finished MM evaluation # 21 with OBJ value: 1793084.42 
+19-Sep-24 02:35:30 | morris_evaluate | INFO | Finished MM evaluation # 21 with OBJ value: 1793084.42 
+19-Sep-24 02:35:31 | morris_evaluate | INFO | Finished MM evaluation # 20 with OBJ value: 1802926.97 
+19-Sep-24 02:35:31 | morris_evaluate | INFO | Finished MM evaluation # 20 with OBJ value: 1802926.97 
+19-Sep-24 02:37:51 | morris_evaluate | INFO | Starting MM evaluation # 26
+19-Sep-24 02:37:51 | morris_evaluate | INFO | Starting MM evaluation # 26
+19-Sep-24 02:38:16 | morris_evaluate | INFO | Starting MM evaluation # 27
+19-Sep-24 02:38:16 | morris_evaluate | INFO | Starting MM evaluation # 27
+19-Sep-24 02:39:47 | morris_evaluate | INFO | Finished MM evaluation # 22 with OBJ value: 1816559.37 
+19-Sep-24 02:39:47 | morris_evaluate | INFO | Finished MM evaluation # 22 with OBJ value: 1816559.37 
+19-Sep-24 02:40:33 | morris_evaluate | INFO | Finished MM evaluation # 23 with OBJ value: 1816106.05 
+19-Sep-24 02:40:33 | morris_evaluate | INFO | Finished MM evaluation # 23 with OBJ value: 1816106.05 
+19-Sep-24 02:40:57 | morris_evaluate | INFO | Finished MM evaluation # 24 with OBJ value: 1824629.98 
+19-Sep-24 02:40:57 | morris_evaluate | INFO | Finished MM evaluation # 24 with OBJ value: 1824629.98 
+19-Sep-24 02:40:59 | morris_evaluate | INFO | Starting MM evaluation # 28
+19-Sep-24 02:40:59 | morris_evaluate | INFO | Starting MM evaluation # 28
+19-Sep-24 02:42:02 | morris_evaluate | INFO | Starting MM evaluation # 29
+19-Sep-24 02:42:02 | morris_evaluate | INFO | Starting MM evaluation # 29
+19-Sep-24 02:42:30 | morris_evaluate | INFO | Starting MM evaluation # 30
+19-Sep-24 02:42:30 | morris_evaluate | INFO | Starting MM evaluation # 30
+19-Sep-24 02:43:18 | morris_evaluate | INFO | Finished MM evaluation # 25 with OBJ value: 1824807.87 
+19-Sep-24 02:43:18 | morris_evaluate | INFO | Finished MM evaluation # 25 with OBJ value: 1824807.87 
+19-Sep-24 02:45:03 | morris_evaluate | INFO | Starting MM evaluation # 31
+19-Sep-24 02:45:03 | morris_evaluate | INFO | Starting MM evaluation # 31
+19-Sep-24 02:48:29 | morris_evaluate | INFO | Finished MM evaluation # 26 with OBJ value: 1821157.85 
+19-Sep-24 02:48:29 | morris_evaluate | INFO | Finished MM evaluation # 26 with OBJ value: 1821157.85 
+19-Sep-24 02:49:34 | morris_evaluate | INFO | Starting MM evaluation # 32
+19-Sep-24 02:49:34 | morris_evaluate | INFO | Starting MM evaluation # 32
+19-Sep-24 02:49:44 | morris_evaluate | INFO | Finished MM evaluation # 27 with OBJ value: 1823032.24 
+19-Sep-24 02:49:44 | morris_evaluate | INFO | Finished MM evaluation # 27 with OBJ value: 1823032.24 
+19-Sep-24 02:51:20 | morris_evaluate | INFO | Starting MM evaluation # 33
+19-Sep-24 02:51:20 | morris_evaluate | INFO | Starting MM evaluation # 33
+19-Sep-24 02:52:38 | morris_evaluate | INFO | Finished MM evaluation # 28 with OBJ value: 1826810.44 
+19-Sep-24 02:52:38 | morris_evaluate | INFO | Finished MM evaluation # 28 with OBJ value: 1826810.44 
+19-Sep-24 02:54:02 | morris_evaluate | INFO | Finished MM evaluation # 29 with OBJ value: 1808581.69 
+19-Sep-24 02:54:02 | morris_evaluate | INFO | Finished MM evaluation # 29 with OBJ value: 1808581.69 
+19-Sep-24 02:54:02 | morris_evaluate | INFO | Starting MM evaluation # 34
+19-Sep-24 02:54:02 | morris_evaluate | INFO | Starting MM evaluation # 34
+19-Sep-24 02:54:37 | morris_evaluate | INFO | Finished MM evaluation # 30 with OBJ value: 1810029.13 
+19-Sep-24 02:54:37 | morris_evaluate | INFO | Finished MM evaluation # 30 with OBJ value: 1810029.13 
+19-Sep-24 02:55:38 | morris_evaluate | INFO | Starting MM evaluation # 35
+19-Sep-24 02:55:38 | morris_evaluate | INFO | Starting MM evaluation # 35
+19-Sep-24 02:56:08 | morris_evaluate | INFO | Starting MM evaluation # 36
+19-Sep-24 02:56:08 | morris_evaluate | INFO | Starting MM evaluation # 36
+19-Sep-24 02:56:53 | morris_evaluate | INFO | Finished MM evaluation # 31 with OBJ value: 1810657.18 
+19-Sep-24 02:56:53 | morris_evaluate | INFO | Finished MM evaluation # 31 with OBJ value: 1810657.18 
+19-Sep-24 02:57:58 | morris_evaluate | INFO | Starting MM evaluation # 37
+19-Sep-24 02:57:58 | morris_evaluate | INFO | Starting MM evaluation # 37
+19-Sep-24 03:00:36 | morris_evaluate | INFO | Finished MM evaluation # 32 with OBJ value: 1792315.57 
+19-Sep-24 03:00:36 | morris_evaluate | INFO | Finished MM evaluation # 32 with OBJ value: 1792315.57 
+19-Sep-24 03:01:45 | morris_evaluate | INFO | Starting MM evaluation # 38
+19-Sep-24 03:01:45 | morris_evaluate | INFO | Starting MM evaluation # 38
+19-Sep-24 03:02:21 | morris_evaluate | INFO | Finished MM evaluation # 33 with OBJ value: 1804683.95 
+19-Sep-24 03:02:21 | morris_evaluate | INFO | Finished MM evaluation # 33 with OBJ value: 1804683.95 
+19-Sep-24 03:03:33 | morris_evaluate | INFO | Starting MM evaluation # 39
+19-Sep-24 03:03:33 | morris_evaluate | INFO | Starting MM evaluation # 39
+19-Sep-24 03:04:24 | morris_evaluate | INFO | Finished MM evaluation # 34 with OBJ value: 1804624.01 
+19-Sep-24 03:04:24 | morris_evaluate | INFO | Finished MM evaluation # 34 with OBJ value: 1804624.01 
+19-Sep-24 03:06:37 | morris_evaluate | INFO | Starting MM evaluation # 40
+19-Sep-24 03:06:37 | morris_evaluate | INFO | Starting MM evaluation # 40
+19-Sep-24 03:08:06 | morris_evaluate | INFO | Finished MM evaluation # 35 with OBJ value: 1806301.71 
+19-Sep-24 03:08:06 | morris_evaluate | INFO | Finished MM evaluation # 35 with OBJ value: 1806301.71 
+19-Sep-24 03:09:06 | morris_evaluate | INFO | Finished MM evaluation # 36 with OBJ value: 1822613.02 
+19-Sep-24 03:09:06 | morris_evaluate | INFO | Finished MM evaluation # 36 with OBJ value: 1822613.02 
+19-Sep-24 03:09:31 | morris_evaluate | INFO | Starting MM evaluation # 41
+19-Sep-24 03:09:31 | morris_evaluate | INFO | Starting MM evaluation # 41
+19-Sep-24 03:09:37 | morris_evaluate | INFO | Finished MM evaluation # 37 with OBJ value: 1817410.03 
+19-Sep-24 03:09:37 | morris_evaluate | INFO | Finished MM evaluation # 37 with OBJ value: 1817410.03 
+19-Sep-24 03:09:53 | morris_evaluate | INFO | Starting MM evaluation # 42
+19-Sep-24 03:09:53 | morris_evaluate | INFO | Starting MM evaluation # 42
+19-Sep-24 03:10:23 | morris_evaluate | INFO | Starting MM evaluation # 43
+19-Sep-24 03:10:23 | morris_evaluate | INFO | Starting MM evaluation # 43
+19-Sep-24 03:12:32 | morris_evaluate | INFO | Finished MM evaluation # 38 with OBJ value: 1816466.90 
+19-Sep-24 03:12:32 | morris_evaluate | INFO | Finished MM evaluation # 38 with OBJ value: 1816466.90 
+19-Sep-24 03:14:08 | morris_evaluate | INFO | Starting MM evaluation # 44
+19-Sep-24 03:14:08 | morris_evaluate | INFO | Starting MM evaluation # 44
+19-Sep-24 03:15:25 | morris_evaluate | INFO | Finished MM evaluation # 39 with OBJ value: 1810807.91 
+19-Sep-24 03:15:25 | morris_evaluate | INFO | Finished MM evaluation # 39 with OBJ value: 1810807.91 
+19-Sep-24 03:16:50 | morris_evaluate | INFO | Starting MM evaluation # 45
+19-Sep-24 03:16:50 | morris_evaluate | INFO | Starting MM evaluation # 45
+19-Sep-24 03:17:05 | morris_evaluate | INFO | Finished MM evaluation # 40 with OBJ value: 1825659.18 
+19-Sep-24 03:17:05 | morris_evaluate | INFO | Finished MM evaluation # 40 with OBJ value: 1825659.18 
+19-Sep-24 03:17:52 | morris_evaluate | INFO | Starting MM evaluation # 46
+19-Sep-24 03:17:52 | morris_evaluate | INFO | Starting MM evaluation # 46
+19-Sep-24 03:21:34 | morris_evaluate | INFO | Finished MM evaluation # 41 with OBJ value: 1823452.60 
+19-Sep-24 03:21:34 | morris_evaluate | INFO | Finished MM evaluation # 41 with OBJ value: 1823452.60 
+19-Sep-24 03:22:23 | morris_evaluate | INFO | Finished MM evaluation # 42 with OBJ value: 1824998.75 
+19-Sep-24 03:22:23 | morris_evaluate | INFO | Finished MM evaluation # 42 with OBJ value: 1824998.75 
+19-Sep-24 03:22:53 | morris_evaluate | INFO | Finished MM evaluation # 43 with OBJ value: 1828690.06 
+19-Sep-24 03:22:53 | morris_evaluate | INFO | Finished MM evaluation # 43 with OBJ value: 1828690.06 
+19-Sep-24 03:23:07 | morris_evaluate | INFO | Starting MM evaluation # 47
+19-Sep-24 03:23:07 | morris_evaluate | INFO | Starting MM evaluation # 47
+19-Sep-24 03:24:34 | morris_evaluate | INFO | Starting MM evaluation # 48
+19-Sep-24 03:24:34 | morris_evaluate | INFO | Starting MM evaluation # 48
+19-Sep-24 03:24:41 | morris_evaluate | INFO | Starting MM evaluation # 49
+19-Sep-24 03:24:41 | morris_evaluate | INFO | Starting MM evaluation # 49
+19-Sep-24 03:24:59 | morris_evaluate | INFO | Finished MM evaluation # 44 with OBJ value: 1809922.95 
+19-Sep-24 03:24:59 | morris_evaluate | INFO | Finished MM evaluation # 44 with OBJ value: 1809922.95 
+19-Sep-24 03:25:29 | morris_evaluate | INFO | Starting MM evaluation # 50
+19-Sep-24 03:25:29 | morris_evaluate | INFO | Starting MM evaluation # 50
+19-Sep-24 03:27:37 | morris_evaluate | INFO | Finished MM evaluation # 45 with OBJ value: 1797204.84 
+19-Sep-24 03:27:37 | morris_evaluate | INFO | Finished MM evaluation # 45 with OBJ value: 1797204.84 
+19-Sep-24 03:28:53 | morris_evaluate | INFO | Starting MM evaluation # 51
+19-Sep-24 03:28:53 | morris_evaluate | INFO | Starting MM evaluation # 51
+19-Sep-24 03:29:22 | morris_evaluate | INFO | Finished MM evaluation # 46 with OBJ value: 1797765.45 
+19-Sep-24 03:29:22 | morris_evaluate | INFO | Finished MM evaluation # 46 with OBJ value: 1797765.45 
+19-Sep-24 03:30:28 | morris_evaluate | INFO | Starting MM evaluation # 52
+19-Sep-24 03:30:28 | morris_evaluate | INFO | Starting MM evaluation # 52
+19-Sep-24 03:33:33 | morris_evaluate | INFO | Finished MM evaluation # 47 with OBJ value: 1798022.60 
+19-Sep-24 03:33:33 | morris_evaluate | INFO | Finished MM evaluation # 47 with OBJ value: 1798022.60 
+19-Sep-24 03:34:14 | morris_evaluate | INFO | Starting MM evaluation # 53
+19-Sep-24 03:34:14 | morris_evaluate | INFO | Starting MM evaluation # 53
+19-Sep-24 03:37:36 | morris_evaluate | INFO | Finished MM evaluation # 48 with OBJ value: 1799563.22 
+19-Sep-24 03:37:36 | morris_evaluate | INFO | Finished MM evaluation # 48 with OBJ value: 1799563.22 
+19-Sep-24 03:37:47 | morris_evaluate | INFO | Finished MM evaluation # 50 with OBJ value: 1798608.10 
+19-Sep-24 03:37:47 | morris_evaluate | INFO | Finished MM evaluation # 50 with OBJ value: 1798608.10 
+19-Sep-24 03:37:48 | morris_evaluate | INFO | Finished MM evaluation # 49 with OBJ value: 1810119.64 
+19-Sep-24 03:37:48 | morris_evaluate | INFO | Finished MM evaluation # 49 with OBJ value: 1810119.64 
+19-Sep-24 03:42:18 | morris_evaluate | INFO | Starting MM evaluation # 54
+19-Sep-24 03:42:18 | morris_evaluate | INFO | Starting MM evaluation # 54
+19-Sep-24 03:42:26 | morris_evaluate | INFO | Starting MM evaluation # 55
+19-Sep-24 03:42:26 | morris_evaluate | INFO | Starting MM evaluation # 55
+19-Sep-24 03:42:26 | morris_evaluate | INFO | Starting MM evaluation # 56
+19-Sep-24 03:42:26 | morris_evaluate | INFO | Starting MM evaluation # 56
+19-Sep-24 03:42:30 | morris_evaluate | INFO | Finished MM evaluation # 51 with OBJ value: 1799402.35 
+19-Sep-24 03:42:30 | morris_evaluate | INFO | Finished MM evaluation # 51 with OBJ value: 1799402.35 
+19-Sep-24 03:43:37 | morris_evaluate | INFO | Finished MM evaluation # 52 with OBJ value: 1799148.75 
+19-Sep-24 03:43:37 | morris_evaluate | INFO | Finished MM evaluation # 52 with OBJ value: 1799148.75 
+19-Sep-24 03:43:39 | morris_evaluate | INFO | Starting MM evaluation # 57
+19-Sep-24 03:43:39 | morris_evaluate | INFO | Starting MM evaluation # 57
+19-Sep-24 03:44:36 | morris_evaluate | INFO | Finished MM evaluation # 53 with OBJ value: 1808692.22 
+19-Sep-24 03:44:36 | morris_evaluate | INFO | Finished MM evaluation # 53 with OBJ value: 1808692.22 
+19-Sep-24 03:45:19 | morris_evaluate | INFO | Starting MM evaluation # 58
+19-Sep-24 03:45:19 | morris_evaluate | INFO | Starting MM evaluation # 58
+19-Sep-24 03:45:34 | morris_evaluate | INFO | Starting MM evaluation # 59
+19-Sep-24 03:45:34 | morris_evaluate | INFO | Starting MM evaluation # 59
+19-Sep-24 03:54:24 | morris_evaluate | INFO | Finished MM evaluation # 54 with OBJ value: 1810108.73 
+19-Sep-24 03:54:24 | morris_evaluate | INFO | Finished MM evaluation # 54 with OBJ value: 1810108.73 
+19-Sep-24 03:55:03 | morris_evaluate | INFO | Finished MM evaluation # 55 with OBJ value: 1812713.76 
+19-Sep-24 03:55:03 | morris_evaluate | INFO | Finished MM evaluation # 55 with OBJ value: 1812713.76 
+19-Sep-24 03:55:09 | morris_evaluate | INFO | Finished MM evaluation # 56 with OBJ value: 1825576.76 
+19-Sep-24 03:55:09 | morris_evaluate | INFO | Finished MM evaluation # 56 with OBJ value: 1825576.76 
+19-Sep-24 03:56:05 | morris_evaluate | INFO | Finished MM evaluation # 57 with OBJ value: 1822264.52 
+19-Sep-24 03:56:05 | morris_evaluate | INFO | Finished MM evaluation # 57 with OBJ value: 1822264.52 
+19-Sep-24 03:57:55 | morris_evaluate | INFO | Starting MM evaluation # 60
+19-Sep-24 03:57:55 | morris_evaluate | INFO | Starting MM evaluation # 60
+19-Sep-24 03:59:08 | morris_evaluate | INFO | Finished MM evaluation # 58 with OBJ value: 1822437.13 
+19-Sep-24 03:59:08 | morris_evaluate | INFO | Finished MM evaluation # 58 with OBJ value: 1822437.13 
+19-Sep-24 03:59:30 | morris_evaluate | INFO | Starting MM evaluation # 61
+19-Sep-24 03:59:30 | morris_evaluate | INFO | Starting MM evaluation # 61
+19-Sep-24 03:59:32 | morris_evaluate | INFO | Starting MM evaluation # 62
+19-Sep-24 03:59:32 | morris_evaluate | INFO | Starting MM evaluation # 62
+19-Sep-24 03:59:32 | morris_evaluate | INFO | Starting MM evaluation # 63
+19-Sep-24 03:59:32 | morris_evaluate | INFO | Starting MM evaluation # 63
+19-Sep-24 03:59:53 | morris_evaluate | INFO | Finished MM evaluation # 59 with OBJ value: 1806218.30 
+19-Sep-24 03:59:53 | morris_evaluate | INFO | Finished MM evaluation # 59 with OBJ value: 1806218.30 
+19-Sep-24 03:59:57 | morris_evaluate | INFO | Starting MM evaluation # 64
+19-Sep-24 03:59:57 | morris_evaluate | INFO | Starting MM evaluation # 64
+19-Sep-24 04:00:24 | morris_evaluate | INFO | Starting MM evaluation # 65
+19-Sep-24 04:00:24 | morris_evaluate | INFO | Starting MM evaluation # 65
+19-Sep-24 04:07:14 | morris_evaluate | INFO | Finished MM evaluation # 60 with OBJ value: 1805079.81 
+19-Sep-24 04:07:14 | morris_evaluate | INFO | Finished MM evaluation # 60 with OBJ value: 1805079.81 
+19-Sep-24 04:08:02 | morris_evaluate | INFO | Starting MM evaluation # 66
+19-Sep-24 04:08:02 | morris_evaluate | INFO | Starting MM evaluation # 66
+19-Sep-24 04:12:32 | morris_evaluate | INFO | Finished MM evaluation # 61 with OBJ value: 1806742.69 
+19-Sep-24 04:12:32 | morris_evaluate | INFO | Finished MM evaluation # 61 with OBJ value: 1806742.69 
+19-Sep-24 04:13:02 | morris_evaluate | INFO | Finished MM evaluation # 63 with OBJ value: 1819808.82 
+19-Sep-24 04:13:02 | morris_evaluate | INFO | Finished MM evaluation # 63 with OBJ value: 1819808.82 
+19-Sep-24 04:13:28 | morris_evaluate | INFO | Finished MM evaluation # 62 with OBJ value: 1799809.72 
+19-Sep-24 04:13:28 | morris_evaluate | INFO | Finished MM evaluation # 62 with OBJ value: 1799809.72 
+19-Sep-24 04:13:39 | morris_evaluate | INFO | Finished MM evaluation # 65 with OBJ value: 1809632.16 
+19-Sep-24 04:13:39 | morris_evaluate | INFO | Finished MM evaluation # 65 with OBJ value: 1809632.16 
+19-Sep-24 04:13:41 | morris_evaluate | INFO | Starting MM evaluation # 67
+19-Sep-24 04:13:41 | morris_evaluate | INFO | Starting MM evaluation # 67
+19-Sep-24 04:14:30 | morris_evaluate | INFO | Finished MM evaluation # 64 with OBJ value: 1812779.03 
+19-Sep-24 04:14:30 | morris_evaluate | INFO | Finished MM evaluation # 64 with OBJ value: 1812779.03 
+19-Sep-24 04:15:23 | morris_evaluate | INFO | Starting MM evaluation # 68
+19-Sep-24 04:15:23 | morris_evaluate | INFO | Starting MM evaluation # 68
+19-Sep-24 04:16:41 | morris_evaluate | INFO | Starting MM evaluation # 69
+19-Sep-24 04:16:41 | morris_evaluate | INFO | Starting MM evaluation # 69
+19-Sep-24 04:16:42 | morris_evaluate | INFO | Starting MM evaluation # 70
+19-Sep-24 04:16:42 | morris_evaluate | INFO | Starting MM evaluation # 70
+19-Sep-24 04:17:20 | morris_evaluate | INFO | Starting MM evaluation # 71
+19-Sep-24 04:17:20 | morris_evaluate | INFO | Starting MM evaluation # 71
+19-Sep-24 04:19:07 | morris_evaluate | INFO | Finished MM evaluation # 66 with OBJ value: 1806023.98 
+19-Sep-24 04:19:07 | morris_evaluate | INFO | Finished MM evaluation # 66 with OBJ value: 1806023.98 
+19-Sep-24 04:20:13 | morris_evaluate | INFO | Starting MM evaluation # 72
+19-Sep-24 04:20:13 | morris_evaluate | INFO | Starting MM evaluation # 72
+19-Sep-24 04:25:04 | morris_evaluate | INFO | Finished MM evaluation # 67 with OBJ value: 1805999.57 
+19-Sep-24 04:25:04 | morris_evaluate | INFO | Finished MM evaluation # 67 with OBJ value: 1805999.57 
+19-Sep-24 04:25:54 | morris_evaluate | INFO | Starting MM evaluation # 73
+19-Sep-24 04:25:54 | morris_evaluate | INFO | Starting MM evaluation # 73
+19-Sep-24 04:26:27 | morris_evaluate | INFO | Finished MM evaluation # 68 with OBJ value: 1806207.84 
+19-Sep-24 04:26:27 | morris_evaluate | INFO | Finished MM evaluation # 68 with OBJ value: 1806207.84 
+19-Sep-24 04:29:21 | morris_evaluate | INFO | Starting MM evaluation # 74
+19-Sep-24 04:29:21 | morris_evaluate | INFO | Starting MM evaluation # 74
+19-Sep-24 04:29:27 | morris_evaluate | INFO | Finished MM evaluation # 70 with OBJ value: 1792522.13 
+19-Sep-24 04:29:27 | morris_evaluate | INFO | Finished MM evaluation # 70 with OBJ value: 1792522.13 
+19-Sep-24 04:30:05 | morris_evaluate | INFO | Finished MM evaluation # 71 with OBJ value: 1834163.07 
+19-Sep-24 04:30:05 | morris_evaluate | INFO | Finished MM evaluation # 71 with OBJ value: 1834163.07 
+19-Sep-24 04:30:05 | morris_evaluate | INFO | Finished MM evaluation # 69 with OBJ value: 1803513.50 
+19-Sep-24 04:30:05 | morris_evaluate | INFO | Finished MM evaluation # 69 with OBJ value: 1803513.50 
+19-Sep-24 04:31:44 | morris_evaluate | INFO | Starting MM evaluation # 75
+19-Sep-24 04:31:44 | morris_evaluate | INFO | Starting MM evaluation # 75
+19-Sep-24 04:32:25 | morris_evaluate | INFO | Finished MM evaluation # 72 with OBJ value: 1804530.25 
+19-Sep-24 04:32:25 | morris_evaluate | INFO | Finished MM evaluation # 72 with OBJ value: 1804530.25 
+19-Sep-24 04:32:31 | morris_evaluate | INFO | Starting MM evaluation # 76
+19-Sep-24 04:32:31 | morris_evaluate | INFO | Starting MM evaluation # 76
+19-Sep-24 04:32:45 | morris_evaluate | INFO | Starting MM evaluation # 77
+19-Sep-24 04:32:45 | morris_evaluate | INFO | Starting MM evaluation # 77
+19-Sep-24 04:32:57 | morris_evaluate | INFO | Starting MM evaluation # 78
+19-Sep-24 04:32:57 | morris_evaluate | INFO | Starting MM evaluation # 78
+19-Sep-24 04:35:41 | morris_evaluate | INFO | Finished MM evaluation # 73 with OBJ value: 1803985.22 
+19-Sep-24 04:35:41 | morris_evaluate | INFO | Finished MM evaluation # 73 with OBJ value: 1803985.22 
+19-Sep-24 04:36:56 | morris_evaluate | INFO | Starting MM evaluation # 79
+19-Sep-24 04:36:56 | morris_evaluate | INFO | Starting MM evaluation # 79
+19-Sep-24 04:39:56 | morris_evaluate | INFO | Finished MM evaluation # 74 with OBJ value: 1804192.22 
+19-Sep-24 04:39:56 | morris_evaluate | INFO | Finished MM evaluation # 74 with OBJ value: 1804192.22 
+19-Sep-24 04:41:22 | morris_evaluate | INFO | Starting MM evaluation # 80
+19-Sep-24 04:41:22 | morris_evaluate | INFO | Starting MM evaluation # 80
+19-Sep-24 04:43:08 | morris_evaluate | INFO | Finished MM evaluation # 75 with OBJ value: 1804190.21 
+19-Sep-24 04:43:08 | morris_evaluate | INFO | Finished MM evaluation # 75 with OBJ value: 1804190.21 
+19-Sep-24 04:44:07 | morris_evaluate | INFO | Finished MM evaluation # 76 with OBJ value: 1795654.71 
+19-Sep-24 04:44:07 | morris_evaluate | INFO | Finished MM evaluation # 76 with OBJ value: 1795654.71 
+19-Sep-24 04:44:59 | morris_evaluate | INFO | Finished MM evaluation # 77 with OBJ value: 1788989.71 
+19-Sep-24 04:44:59 | morris_evaluate | INFO | Finished MM evaluation # 77 with OBJ value: 1788989.71 
+19-Sep-24 04:45:00 | morris_evaluate | INFO | Starting MM evaluation # 81
+19-Sep-24 04:45:00 | morris_evaluate | INFO | Starting MM evaluation # 81
+19-Sep-24 04:45:21 | morris_evaluate | INFO | Starting MM evaluation # 82
+19-Sep-24 04:45:21 | morris_evaluate | INFO | Starting MM evaluation # 82
+19-Sep-24 04:45:36 | morris_evaluate | INFO | Starting MM evaluation # 83
+19-Sep-24 04:45:36 | morris_evaluate | INFO | Starting MM evaluation # 83
+19-Sep-24 04:45:39 | morris_evaluate | INFO | Finished MM evaluation # 78 with OBJ value: 1799540.87 
+19-Sep-24 04:45:39 | morris_evaluate | INFO | Finished MM evaluation # 78 with OBJ value: 1799540.87 
+19-Sep-24 04:46:07 | morris_evaluate | INFO | Starting MM evaluation # 84
+19-Sep-24 04:46:07 | morris_evaluate | INFO | Starting MM evaluation # 84
+19-Sep-24 04:48:34 | morris_evaluate | INFO | Finished MM evaluation # 79 with OBJ value: 1800769.10 
+19-Sep-24 04:48:34 | morris_evaluate | INFO | Finished MM evaluation # 79 with OBJ value: 1800769.10 
+19-Sep-24 04:51:33 | morris_evaluate | INFO | Finished MM evaluation # 80 with OBJ value: 1797946.37 
+19-Sep-24 04:51:33 | morris_evaluate | INFO | Finished MM evaluation # 80 with OBJ value: 1797946.37 
+19-Sep-24 04:55:17 | morris_evaluate | INFO | Finished MM evaluation # 81 with OBJ value: 1798144.42 
+19-Sep-24 04:55:17 | morris_evaluate | INFO | Finished MM evaluation # 81 with OBJ value: 1798144.42 
+19-Sep-24 04:55:59 | morris_evaluate | INFO | Finished MM evaluation # 82 with OBJ value: 1799069.33 
+19-Sep-24 04:55:59 | morris_evaluate | INFO | Finished MM evaluation # 82 with OBJ value: 1799069.33 
+19-Sep-24 04:56:12 | morris_evaluate | INFO | Finished MM evaluation # 83 with OBJ value: 1801158.29 
+19-Sep-24 04:56:12 | morris_evaluate | INFO | Finished MM evaluation # 83 with OBJ value: 1801158.29 
+19-Sep-24 04:56:25 | morris_evaluate | INFO | Finished MM evaluation # 84 with OBJ value: 1802284.25 
+19-Sep-24 04:56:25 | morris_evaluate | INFO | Finished MM evaluation # 84 with OBJ value: 1802284.25 
