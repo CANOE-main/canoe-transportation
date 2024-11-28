@@ -1,0 +1,261 @@
+15-Nov-24 08:11:56 | main | INFO | *** STARTING TEMOA ***
+15-Nov-24 08:11:56 | temoa_config | INFO | Scenario Name:  trn_lifetimes
+15-Nov-24 08:11:56 | temoa_config | INFO | Data source:  data_files\canoe_on_12d_lifetimes.sqlite
+15-Nov-24 08:11:56 | temoa_config | INFO | Data target:  data_files\canoe_on_12d_lifetimes.sqlite
+15-Nov-24 08:11:56 | temoa_config | INFO | Mode:  PERFECT_FORESIGHT
+15-Nov-24 08:11:58 | hybrid_loader | INFO | Loading data portal
+15-Nov-24 08:11:58 | commodity_network_manager | INFO | starting network analysis for region ON
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_ramping
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_curtailment
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_flex
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_exchange
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_variable
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_retirement
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: LoanLifetimeTech
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2021 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2021 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2025 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2025 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2030 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2030 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2035 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2035 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2040 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2040 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2045 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2045 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2050 for tech I_CEMENT_GEN with inputcommodity I_hfo has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | WARNING | Technology Input Split requirement in region ON, period 2050 for tech I_CEMENT_GEN with inputcommodity I_ngl has been removed because the tech path with that input is invalid/not available/orphan.  See the other warnings for this TECH in this region-period, and check for availability of all components in data.
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: TechInputSplitAverage
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: RenewablePortfolioStandard
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: CostEmission_rpe
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: CostEmission
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: LoanRate
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacity
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacity
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacity
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxCapacityGroup
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacityGroup
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacityGroup
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacityGroup
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacityShare
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxCapacityShare
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacityShare
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacityGroupShare
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacityGroupShare
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivityGroup
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivityGroup
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivityShare
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivityShare
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxResource
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivity
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivity
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxGrowthRate
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinGrowthRate
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: GrowthRateSeed
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: EmissionLimit
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: LinkedTechs
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: RampUp
+15-Nov-24 08:11:58 | hybrid_loader | INFO | table, but no (usable) values for param or set: RampDown
+15-Nov-24 08:11:59 | run_actions | INFO | Started creating model instance from data
+15-Nov-24 08:14:35 | run_actions | INFO | Finished creating model instance from data
+15-Nov-24 08:14:35 | run_actions | INFO | model built...  Variables: 1931619, Constraints: 3112654
+15-Nov-24 08:14:35 | pricing_check | INFO | Started price checking model: unknown
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech C_OTHER of vintage 2021 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_ELCG_RPS_to_TX of vintage 2021 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_ELCG_to_TX of vintage 2021 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_ELC_TX_to_DX of vintage 2021 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_INT_OUT of vintage 2021 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_NG_CC_RFIT_BYPASS of vintage 2021 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_NG_CC_RFIT_BYPASS of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_NG_CC_RFIT_BYPASS of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_NG_CC_RFIT_BYPASS of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_NG_CC_RFIT_BYPASS of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_NG_CC_RFIT_BYPASS of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech E_NG_CC_RFIT_BYPASS of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CEMENT_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CEMENT_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CEMENT_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CEMENT_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CEMENT_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CEMENT_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CHEMICAL_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CHEMICAL_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CHEMICAL_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CHEMICAL_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CHEMICAL_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CHEMICAL_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CONSTR_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CONSTR_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CONSTR_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CONSTR_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CONSTR_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_CONSTR_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_FORESTRY_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_FORESTRY_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_FORESTRY_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_FORESTRY_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_FORESTRY_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_FORESTRY_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MANUF-OTH_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MANUF-OTH_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MANUF-OTH_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MANUF-OTH_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MANUF-OTH_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MANUF-OTH_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MINING_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MINING_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MINING_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MINING_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MINING_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_MINING_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_PULPPAPER_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_PULPPAPER_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_PULPPAPER_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_PULPPAPER_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_PULPPAPER_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_PULPPAPER_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_REFINERY of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_REFINERY of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_REFINERY of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_REFINERY of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_REFINERY of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_REFINERY of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_SMELTING_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_SMELTING_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_SMELTING_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_SMELTING_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_SMELTING_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_SMELTING_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_STEEL_GEN of vintage 2025 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_STEEL_GEN of vintage 2030 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_STEEL_GEN of vintage 2035 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_STEEL_GEN of vintage 2040 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_STEEL_GEN of vintage 2045 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech I_STEEL_GEN of vintage 2050 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | Check 1a (detail): tech R_APP_OTH of vintage 2021 in region ON does not have a Fixed Cost or Investment Cost component
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_CEMENT_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_FORESTRY_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_REFINERY has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_MINING_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_MANUF-OTH_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_CHEMICAL_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_CONSTR_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_PULPPAPER_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_SMELTING_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | WARNING | check 1b:
+tech I_STEEL_GEN has Investment Cost in some vintage/regions but not all
+    missing (r, v):
+      (ON, 2025)
+      (ON, 2030)
+      (ON, 2035)
+      (ON, 2040)
+      (ON, 2045)
+      (ON, 2050)
+    available (r, v):
+       (ON, 2021): 0.1
+
+15-Nov-24 08:14:59 | pricing_check | INFO | Finished Price Checking Build Action
+15-Nov-24 08:14:59 | run_actions | INFO | Starting the solve process using gurobi solver on model unknown
+15-Nov-24 08:22:38 | run_actions | INFO | Solve process complete
+15-Nov-24 08:22:38 | run_actions | INFO | The solver reported status as: optimal
+15-Nov-24 08:23:20 | run_actions | INFO | TotalCost value: 1772870.07

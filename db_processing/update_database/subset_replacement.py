@@ -7,9 +7,9 @@ import sqlite3
 import os
 import shutil
 
-target_name = 'canoe_on_12d_vanilla'
-source_name = 'canoe_trn_vanilla_v3'
-subset_name = 'canoe_trn_vanilla_aeo_v3'
+target_name = 'canoe_on_12d_vanilla3'
+source_name = 'canoe_trn_on_vanilla3_v3'
+subset_name = 'canoe_trn_vanilla2_v3'
 
 # Define the paths for the source, target, and log files
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'

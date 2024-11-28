@@ -11,8 +11,10 @@ from datetime import datetime
 import re
 import unicodedata
 
-spreadsheet_name = 'CANOE_TRN_ON'
-db_name = 'canoe_trn_vanilla'
+province = 'BCT'
+
+spreadsheet_name = 'CANOE_TRN_<r>_v3'.replace('<r>', province)
+db_name = 'canoe_trn_<r>_vanilla3'.replace('<r>', province.lower())
 ldv_profile_name = 'ON-2016TTS_no-we_2018_v4_2023-batteries'
 
 # ON-2016TTS_no-we_2018_v4_2023-batteries
@@ -33,9 +35,6 @@ weather_year = 2018
 
 # Aggregate existing capacities and efficiencies into 5-year vintages
 aggregate_excap = True
-
-# Rep days to keep in D000 format, leave empty if preserving all 365 days
-# rep_days = ['D114']
 
 # Define the precision of the model parameters - after 5 decimals of precision, numerical instability starts to present 
 epsilon = 0.00001
@@ -142,7 +141,7 @@ def cleanup():
     tech_vintage_remove = curs.execute(f"""SELECT DISTINCT tech, vintage FROM ExistingCapacity WHERE exist_cap < {epsilon}""").fetchall()
     for table in tables:
             for tech, vintage in tech_vintage_remove:
-                print(f"Deleted {tech} @ {vintage} in {table}")
+                print(f"Deleted {tech} @ {vintage} in {table} because exist_cap < {epsilon}")
                 curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND vintage = ?""", (tech, vintage))
 
     # Get tech-vintage pairs from Efficiency, CostVariable, and CostFixed that do not exist in ExistingCapacity
@@ -154,7 +153,7 @@ def cleanup():
 
         # Remove these pairs from Efficiency, CostVariable, and CostFixed
         for tech, vintage in tech_vintage_not_in_excap:
-            print(f"Deleted {tech} @ {vintage} in {table}")
+            print(f"Deleted {tech} @ {vintage} in {table} because not in ExistingCapacity")
             curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND vintage = ?""", (tech, vintage))
     
     tables_with_vintage = ["CostVariable", "CostInvest", "CostFixed"]
@@ -164,22 +163,22 @@ def cleanup():
     for table in tables_with_vintage:
         tech_vintage_not_in_efficiency = curs.execute(
             r"""SELECT DISTINCT tech, vintage FROM {} 
-                WHERE tech NOT LIKE '%\_R' ESCAPE '\' AND (tech, vintage) NOT IN (SELECT tech, vintage FROM Efficiency)""".format(table)
+                WHERE tech NOT LIKE '%\_EX' ESCAPE '\' AND (tech, vintage) NOT IN (SELECT tech, vintage FROM Efficiency)""".format(table)
         ).fetchall()
 
         for tech, vintage in tech_vintage_not_in_efficiency:
-            print(f"Deleted {tech} @ {vintage} in {table}")
+            print(f"Deleted {tech} @ {vintage} in {table} because not in Efficiency")
             curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND vintage = ?""", (tech, vintage))
 
     # Remove tech-period pairs from specified tables that do not exist in Efficiency
     for table in tables_with_period:
         tech_period_not_in_efficiency = curs.execute(
             r"""SELECT DISTINCT tech, periods FROM {} 
-                WHERE tech NOT LIKE '%\_R' ESCAPE '\' AND (tech, periods) NOT IN (SELECT tech, vintage FROM Efficiency)""".format(table)
+                WHERE tech NOT LIKE '%\_EX' ESCAPE '\' AND (tech, periods) NOT IN (SELECT tech, vintage FROM Efficiency)""".format(table)
         ).fetchall()
 
         for tech, period in tech_period_not_in_efficiency:
-            print(f"Deleted {tech} @ {period} in {table}")
+            print(f"Deleted {tech} @ {period} in {table} because not in Efficiency")
             curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND periods = ?""", (tech, period))
 
     conn.commit()
@@ -378,7 +377,7 @@ def compile_demand():
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO Demand(regions, periods, demand_comm, demand, demand_units, demand_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (row['Region'], row['Period'], row['Demand Commodity'], row[parameter], row['Unit'], row['Notes'], 
+                    (province, row['Period'], row['Demand Commodity'], row[parameter], row['Unit'], row['Notes'], 
                     row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
 
     conn.commit()
@@ -507,7 +506,7 @@ def compile_lifetime():
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO LifetimeTech(regions, tech, life, life_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (row['Region'], row['Technology'], row['Lifetime'], row['Notes'], 
+                    (province, row['Technology'], row['Lifetime'], row['Notes'], 
                     row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
 
     conn.commit()
@@ -568,7 +567,7 @@ def compile_excap():
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO ExistingCapacity(regions, tech, vintage, exist_cap, exist_cap_units, exist_cap_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Technology'], row['Vintage'], row[parameter], row['Unit'], row['Notes'], 
+                (province, row['Technology'], row['Vintage'], row[parameter], row['Unit'], row['Notes'], 
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
@@ -609,7 +608,7 @@ def compile_c2a():
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO CapacityToActivity(regions, tech, c2a, c2a_notes)
                         VALUES(?, ?, ?, ?)""",
-                    (row['Region'], row['Technology'], row['Capacity to Activity'], f"[{row['Activity Unit']}/{row['Capacity Unit']}] {row['Notes']}"))
+                    (province, row['Technology'], row['Capacity to Activity'], f"[{row['Activity Unit']}/{row['Capacity Unit']}] {row['Notes']}"))
 
     conn.commit()
     conn.close()
@@ -667,7 +666,7 @@ def compile_acf():
     
     for _idx, row in df.iterrows():
 
-        if row['Technology'].endswith('_R'): #  Applies only for residual technologies
+        if row['Technology'].endswith('_EX'): #  Applies only for residual technologies
             
             # Attempt to find the lifetime for the given technology
             lifetime_rows = df_lifetime[df_lifetime.Technology == row['Technology']].Lifetime
@@ -680,12 +679,12 @@ def compile_acf():
 
         curs.execute("""REPLACE INTO MaxAnnualCapacityFactor(regions, periods, tech, output_comm, max_acf, max_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter], row['Notes'], 
+                (province, row['Period'], row['Technology'], row['Output Commodity'], row[parameter], row['Notes'], 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
         
         curs.execute("""REPLACE INTO MinAnnualCapacityFactor(regions, periods, tech, output_comm, min_acf, min_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.90, f"90% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
+                (province, row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.99, f"99% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
             
     conn.commit()
@@ -749,7 +748,7 @@ def compile_efficiency():
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO Efficiency(regions, input_comm, tech, vintage, output_comm, efficiency, eff_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], f"[{row['Unit']}] {row['Notes']}", 
+                (province, row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], f"[{row['Unit']}] {row['Notes']}", 
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
@@ -804,7 +803,7 @@ def compile_costinvest():
         curs.execute("""REPLACE INTO CostInvest(regions, tech, vintage, cost_invest, cost_invest_units, cost_invest_notes, data_cost_invest, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
+                (province, row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
                  round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
@@ -874,7 +873,7 @@ def compile_costvariable():
         curs.execute("""REPLACE INTO CostVariable(regions, periods, tech, vintage, cost_variable, cost_variable_units, cost_variable_notes, data_cost_variable, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
+                (province, row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
                  round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
@@ -944,7 +943,7 @@ def compile_costfixed():
         curs.execute("""REPLACE INTO CostFixed(regions, periods, tech, vintage, cost_fixed, cost_fixed_units, cost_fixed_notes, data_cost_fixed, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
+                (province, row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
                  round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
@@ -1000,7 +999,7 @@ def compile_emissionact():
         curs.execute("""REPLACE INTO EmissionActivity(regions, emis_comm, input_comm, tech, vintage, output_comm, emis_act, emis_act_units, emis_act_notes, 
                     reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (row['Region'], row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], row['Unit'], row['Notes'], 
+                    (province, row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], row['Unit'], row['Notes'], 
                     row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
@@ -1054,34 +1053,13 @@ def compile_techinputsplit():
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO TechInputSplit(regions, periods, input_comm, tech, ti_split, ti_split_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (row['Region'], row['Period'], row['Input Commodity'], row['Technology'], row[parameter], row['Notes'], 
+                (province, row['Period'], row['Input Commodity'], row['Technology'], row[parameter], row['Notes'], 
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
     print(f"Tech input commodity split data compiled into {os.path.basename(database)}\n")
-
-"""
-##################################################
-    Filter representative days
-##################################################
-"""
-
-def filter_repdays():
-    """
-    Filters out days that are not included in the representative days list
-    """
-    conn = sqlite3.connect(database)
-    curs = conn.cursor()
-
-    # Delete rows that do not match the days in the list
-    placeholders = ', '.join('?' for _ in rep_days)
-    query = f"DELETE FROM DemandSpecificDistribution WHERE season_name NOT IN ({placeholders})"
-    curs.execute(query, rep_days)
-
-    conn.commit()
-    conn.close()
 
 """
 ##################################################
@@ -1182,8 +1160,6 @@ def compile_transport():
     compile_emissionact()
     compile_techinputsplit()
     
-    # if rep_days:
-    #     filter_repdays()
     if not aggregate_excap:
         update_cost_variable_entries()
 

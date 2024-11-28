@@ -2,7 +2,7 @@ import sqlite3
 import shutil
 import os
 
-db_name = 'canoe_trn_vanilla'
+db_name = 'canoe_trn_bct_vanilla3'
 
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 sql_file = dir_path + 'temoa_v2_to_v3.txt'

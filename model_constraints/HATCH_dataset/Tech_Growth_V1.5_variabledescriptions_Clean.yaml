@@ -1,0 +1,877 @@
+---
+- Annual Production|Acrylic Fiber:
+    description: Annual production of acrylic fiber
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Acrylonitrile:
+    description: Annual production of acrylonitrile
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Air-Source Heat Pumps:
+    description: Annual shipments of Air Source Heat Pumps
+    unit: '-'
+    category: Energy End-Use
+- Annual Production|All Biofuels:
+    description: Annual production of biofuels across types
+    unit: Petajoule
+    category: Energy Supply
+- Annual Production|Ammonia Synthesis:
+    description: Annual production of synthetic ammonia through ammonia synthesis (includes nitrogen fertilizer and synthetic ammonia production)
+    unit: thousand tons of nitrogen equivalent
+    category: Chemicals and Industry
+- Annual Production|Aniline:
+    description: Annual production of aniline
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Aquaculture:
+    description: Annual aquaculture production (output from aquaculture activities for consumption)
+    unit: metric tons
+    category: Sea and Water
+- Annual Production|Beer:
+    description: Annual beer production
+    unit: thousand hectolitres
+    category: Food and Health
+- Annual Production|Benzene:
+    description: Annual production of benzene
+    unit: million gallons
+    category: Chemicals and Industry
+- Annual Production|Bisphenol A:
+    description: Annual production of Bisphenol A (BPA)
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Cadmium Refining:
+    description: Annual cadmium refinery production (includes production from ores, concentrates, flue dusts, and other materials)
+    unit: metric tons
+    category: Materials
+- Annual Production|Cane Sugar:
+    description: Annual cane sugar production
+    unit: thousand metric tons
+    category: Food and Health
+- Annual Production|Caprolactam:
+    description: Annual production of caprolactam
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Capture Fisheries:
+    description: Annual production of capture fisheries measured as volume of fish catches (including commercial, industrial, recreational, and subsistence)
+    unit: metric tons
+    category: Sea and Water
+- Annual Production|Caustic Soda:
+    description: Annual production of caustic soda
+    unit: thousand metric tons
+    category: Chemicals and Industry
+- Annual Production|Cement:
+    description: Annual production of cement (includes portland cement and masonry cement end-uses)
+    unit: metric tons
+    category: Materials
+- Annual Production|Coal:
+    description: Total coal production
+    unit: million metric tons
+    category: Energy Supply
+- Annual Production|Cobalt:
+    description: Annual production of cobalt mining
+    unit: thousand metric tons
+    category: Materials
+- Annual Production|Copper|Mining:
+    description: Annual production of copper from mines
+    unit: metric tons
+    category: Materials
+- Annual Production|Copper|Refining:
+    description: Annual copper refinery production
+    unit: metric tons
+    category: Materials
+- Annual Production|Crude Oil:
+    description: Annual production of crude oil
+    unit: thousand metric tons
+    category: Energy Supply
+- Annual Production|Cyclohexane:
+    description: Annual production of cyclohexane
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Electricity:
+    description: Annual production of electricity
+    unit: TWh
+    category: Energy Supply
+- Annual Production|Electricity|Nuclear:
+    description: Annual electricity production of nuclear energy systems
+    unit: TWh
+    category: Energy Supply
+- Annual Production|Ethanolamine:
+    description: Annual production of ethanolamine
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Ethanol:
+    description: Annual production of ethanol
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Ethylene:
+    description: Annual Production of ethylene
+    unit: billion pounds
+    category: Chemicals and Industry
+- Annual Production|Ethylene Glycol:
+    description: Annual production of ethylene glycol
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Formaldehyde:
+    description: Annual production of formaldehyde
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Gold:
+    description: Annual production of gold
+    unit: metric tons
+    category: Materials
+- Annual Production|Graphite:
+    description: Annual production of graphite mining
+    unit: thousand metric tons
+    category: Materials
+- Annual Production|High-Density Polyethylene:
+    description: Annual production of high-density polyethylene
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Hydrochloric Acid:
+    description: Annual production of hydrochloric acid
+    unit: thousand metric tons
+    category: Chemicals and Industry
+- Annual Production|Hydroelectricity:
+    description: Annual production of hydroelectricity
+    unit: TWh
+    category: Energy Supply
+- Annual Production|Hydrofluoric Acid:
+    description: Annual production of hydrofluoric acid
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Iron Ore:
+    description: Annual production of iron ore
+    unit: metric tons
+    category: Materials
+- Annual Production|Lead:
+    description: Annual production of lead mines (lead content)
+    unit: metric tons
+    category: Materials
+- Annual Production|Liquefied Natural Gas Exports:
+    description: Annual exports of liquified natural gas
+    unit: billion cubic feet
+    category: Energy Supply
+- Annual Production|Lithium Mine Production:
+    description: Annual production of lithium mining
+    unit: thousand metric tons
+    category: Materials
+- Annual Production|Low-Density Polyethylene:
+    description: Annual production of low-density polyethylene
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Magnesium:
+    description: Annual production of magnesium
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Maleic Anhydride:
+    description: Annual production of maleic anhydride
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Methanol:
+    description: Annual production of methanol
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Milk:
+    description: Annual amount of milk production
+    unit: thousand metric tons
+    category: Food and Health
+- Annual Production|Motor Gasoline:
+    description: Annual production of motor gasoline
+    unit: billion barrels
+    category: Energy Supply
+- Annual Production|Natural Gas Production:
+    description: Annual natural gas production 
+    unit: billion cubic meters
+    category: Energy Supply
+- Annual Production|Neoprene Rubber:
+    description: Annual production of neoprene rubber
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Nickel:
+    description: Annual production of nickel
+    unit: thousand metric tons
+    category: Chemicals and Industry
+- Annual Production|Nitric Acid:
+    description: Annual production of nitric acid
+    unit: thousand metric tons
+    category: Chemicals and Industry
+- Annual Production|Nitrogen Fertilizer:
+    description: Annual nutrient nitrogen fertilizer for agricultural use
+    unit: metric tons
+    category: Food and Health
+- Annual Production|Oil:
+    description: Annual production of oil
+    unit: million metric tons
+    category: Infrastructure
+- Annual Production|Paraxylene:
+    description: Annual production of paraxylene
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Pentaerythritol:
+    description: Annual production of pentaerythritol
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Phenol:
+    description: Annual production of phenol
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Phosphate Fertilizer:
+    description: Annual nutrient nitrogen fertilizer for agricultural use
+    unit: metric tons
+    category: Food and Health
+- Annual Production|Phthalic Anhydride:
+    description: Annual production of phthalic anhydride
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Polyester Fiber:
+    description: Annual production of polyester
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Polystyrene:
+    description: Annual production of polystyrene
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Polyvinylchloride:
+    description: Annual production of polyvinylchloride
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Potash Fertilizer:
+    description: Annual nutrient potash K20 for agricultural use
+    unit: metric tons
+    category: Food and Health
+- Annual Production|Primary Aluminum:
+    description: Annual primary production of aluminum (includes aluminum tapped from pots, excludes weight of alloying materials and metal produced from return scrap or remelted minerals)
+    unit: metric tons
+    category: Materials
+- Annual Production|Primary Bauxite:
+    description: Annual production of bauxite
+    unit: metric tons
+    category: Materials
+- Annual Production|Primary Copper:
+    description: Annual primary production of copper (includes copper produced from ore, concentrates, precipitates, measured in tons of copper content)
+    unit: metric tons
+    category: Materials
+- Annual Production|Primary Magnesium:
+    description: Annual production of primary magnesium
+    unit: Short tons
+    category: Chemicals and Industry
+- Annual Production|Rare Earth Mine Production:
+    description: Annual production of rare earth materials
+    unit: thousand metric tons
+    category: Materials
+- Annual Production|Raw Steel:
+    description: Amount of raw steel production (includes steel formed in solid state after melting)
+    unit: metric tons
+    category: Materials
+- Annual Production|Renewable Power:
+    description: Annual production of renewable energy
+    unit: TWh
+    category: Energy Supply
+- Annual Production|Salt:
+    description: Annual production of salt (includes end-uses of agriculture, alkalies and chlorine, deicing, food products, metal production, other chemicals, paper products, petroleum, textiles and cyeing, water treatment, and other industrial uses)
+    unit: metric tons
+    category: Materials
+- Annual Production|Sand and Gravel|Construction:
+    description: Annual production of sand and gravel for construction use
+    unit: metric tons
+    category: Materials
+- Annual Production|Sand and Gravel|Industrial:
+    description: Annual production of sand and gravel for industrial uses (includes glassmaking, foundry, metallurgical uses, abrasives, filtration, petroleum, recreational uses)
+    unit: metric tons
+    category: Materials
+- Annual Production|Shale Oil:
+    description: Annual production of shale oil
+    unit: billion cubic feet
+    category: Energy Supply
+- Annual Production|Shotgun Sanger DNA Sequencing:
+    description: Amount of DNA sequencing in kilobases that have been processed using the Shotgun Sanger method
+    unit: kilobase
+    category: Food and Health
+- Annual Production|Silver:
+    description: Annual production of silver
+    unit: metric tons
+    category: Materials
+- Annual Production|Sodium:
+    description: Annual production of sodium
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Sodium Chlorate:
+    description: Annual production of sodium chlorate
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Styrene:
+    description: Annual production of styrene
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Sulphuric Acid:
+    description: Annual production of sulphuric acid
+    unit: thousand metric tons
+    category: Chemicals and Industry
+- Annual Production|Synthetic Filaments:
+    description: Annual production of synthetic filaments
+    unit: thousand metric tons
+    category: Chemicals and Industry
+- Annual Production|Tin:
+    description: Annual production of tin
+    unit: thousand metric tons
+    category: Materials
+- Annual Production|Titanium Sponge:
+    description: Annual production of titanium sponge
+    unit: net tons
+    category: Chemicals and Industry
+- Annual Production|Urea:
+    description: Annual production of urea
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Vinyl Acetate:
+    description: Annual production of vinyl acetate
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Vinyl Chloride:
+    description: Annual production of vinyl chloride
+    unit: million pounds
+    category: Chemicals and Industry
+- Annual Production|Zinc:
+    description: Annual production of zinc
+    unit: thousand metric tons
+    category: Materials
+- Average Capacity of Unit Additions|Fluid Catalytic Cracking Refineries:
+    description: Average capacity of unit additions of oil refineries using fluid catalytic cracking
+    unit: MW
+    category: Energy Supply
+- Cumulative Acreage|Insect-Resistant Corn:
+    description: Acres planted with insect-resistant corn
+    unit: Acres
+    category: Food and Health
+- Cumulative Acreage|Insect-Resistant Cotton:
+    description: Acres planted with insect-resistant cotton
+    unit: Acres
+    category: Food and Health
+- Cumulative Acreage|Herbicide-Tolerant Corn:
+    description: Acres planted with herbicide-tolerant corn
+    unit: Acres
+    category: Food and Health
+- Cumulative Acreage|Herbicide-Tolerant Cotton:
+    description: Acres planted with herbicide-resistant cotton
+    unit: Acres
+    category: Food and Health
+- Cumulative Acreage|Herbicide-Tolerant Soybeans:
+    description: Acres planted with herbicide-resistant soybeans
+    unit: Acres
+    category: Food and Health
+- Computing Capacity|Computing Growth:
+    description: Amount of computing power per dollar
+    unit: Calculations per second per $1,000
+    category: Digitalization
+- Computing Capacity|Internet Backbone Bandwidth:
+    description: Capacity of internet data routes
+    unit: Bits/second
+    category: Digitalization
+- Computing Capacity|Internet Traffic:
+    description: Amount of data flow over the internet
+    unit: Gigabytes per month
+    category: Digitalization
+- Computing Capacity|Magnetic Data Storage:
+    description: Amount of data storage (magnetic data storage on disks) per dollar
+    unit: Bits per dollar
+    category: Digitalization
+- Computing Capacity|Microprocessor Clock Speed:
+    description: Microprocessor Clock Speed used in desktops and personal computers
+    unit: Hz
+    category: Digitalization
+- Computing Capacity|Processing Performance:
+    description: Performance of Central Processing Units measured as number of instructions executed per second
+    unit: Million instructions per second (MIPS)
+    category: Digitalization
+- Computing Capacity|Random Access Memory:
+    description: Amount of computer memory (random access memory) per dollar
+    unit: Bits per dollar
+    category: Digitalization
+- Computing Capacity|Transistors per Microprocessor Chip:
+    description: Number of transistors per microprocessor chips
+    unit: Transistors per microprocessor
+    category: Digitalization
+- Cumulative Number of Units|High Speed Rail:
+    description: Total length of high-speed railway network in commercial operation
+    unit: kilometers
+    category: Infrastructure
+- Cumulative Number of Units|Natural Gas Pipelines:
+    description: Total miles of natural gas pipelines (including transmission, distribution, and gathering pipelines)
+    unit: miles
+    category: Infrastructure
+- Cumulative Number of Units|Oil Pipelines:
+    description: Total miles of oil pipelines
+    unit: miles
+    category: Infrastructure
+- Cumulative Number of Units|Public Roads:
+    description: Total mileage for all public roads
+    unit: miles
+    category: Infrastructure
+- Cumulative Number of Units|Railroad Tracks:
+    description: Cumulative length of railroad completed
+    unit: kilometers
+    category: Infrastructure
+- Cumulative Rated Capacity|Electricity|Compressed Air Energy Storage:
+    description: Total installed capacity of compressed air energy storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Electricity|Electro-Chemical Capacitor:
+    description: Total installed capacity of electro-chemical capacitor storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Electricity|Flow Battery Storage:
+    description: Total installed capacity of redox flow battery storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Electricity|Flywheel Battery Storage:
+    description: Total installed capacity of flywheel battery storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Electricity|Lead-Acid Battery Storage:
+    description: Total installed capacity of lead-acid battery storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Electricity|Lithium-Ion Battery Storage:
+    description: Total installed capacity of lithium-ion battery storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Electricity|Pumped Hydro Storage:
+    description: Total installed capacity of pumped hydroelectric energy storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Electricity|Sodium-Based Battery Storage:
+    description: Total installed capacity of sodium-based battery storage (includes molten sodium batteries and sodium ion batteries)
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Electricity|Zinc-Based Battery Storage:
+    description: Total installed capacity of zinc-based battery storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Hydrogen Storage:
+    description: Total installed capacity of hydrogen storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Nickel-Based Battery Storage:
+    description: Total installed capacity of nickel-based battery systems
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Thermal Energy Storage|Heat Thermal Battery Storage:
+    description: Total installed capacity of thermal battery storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Thermal Energy Storage|Latent Heat Storage:
+    description: Total installed capacity of latent heat storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Capacity|Thermal Energy Storage|Sensible Heat Storage:
+    description: Total installed capacity of sensible heat battery storage
+    unit: kWh
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Compressed Air Energy Storage:
+    description: Total installed power of compressed air energy storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Electro-Chemical Capacitor:
+    description: Total installed power of electro-chemical capacitor storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Flow Battery Storage:
+    description: Total installed power of redox flow battery storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Flywheel Battery Storage:
+    description: Total installed power of flywheel battery storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Lead-Acid Battery Storage:
+    description: Total installed power of lead-acid battery storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Lithium-Ion Battery Storage:
+    description: Total installed power of lithium-ion battery storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Pumped Hydro Storage:
+    description: Total installed power of pumped hydroelectric energy storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Sodium-Based Battery Storage:
+    description: Total installed power of sodium-based battery storage (includes molten sodium batteries and sodium ion batteries)
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Electricity|Zinc-Based Battery Storage:
+    description: Total installed power of zinc-based battery storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Hydrogen Storage:
+    description: Total installed power of hydrogen storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Nickel-Based Battery Storage:
+    description: Total installed power of nickel-based battery systems
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Thermal Energy Storage|Heat Thermal Battery Storage:
+    description: Total installed power of thermal battery storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Thermal Energy Storage|Latent Heat Storage:
+    description: Total installed power of latent heat storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Rated Power|Thermal Energy Storage|Sensible Heat Storage:
+    description: Total installed power of sensible heat battery storage
+    unit: kW
+    category: Storage Technology
+- Cumulative Total Capacity|Bicycles:
+    description: Cumulative Energy Capacity of Bicycles (Calculated by multiplying cumulative number of bicycles by 100 watts per bicycle)
+    unit: MW
+    category: Transportation
+- Cumulative Total Capacity|Cellphones:
+    description: Cumulative energy capacity of cellphones
+    unit: MW
+    category: Household Appliance
+- Cumulative Total Capacity|Coal Power:
+    description: Cumulative capacity of coal power plants
+    unit: MW
+    category: Energy Supply
+- Cumulative Total Capacity|Compact Flourescent Light bulbs:
+    description: Cumulative electricity capacity of compact fluorescent lightbulbs sold
+    unit: MW
+    category: Energy End-Use
+- Cumulative Total Capacity|Desalination:
+    description: Total capacity of operational desalination plants
+    unit: Million cubic meters per day
+    category: Sea and Water
+- Cumulative Total Capacity|Electric Bicycles:
+    description: Total energy of electric bicycles
+    unit: MW
+    category: Transportation
+- Cumulative Total Capacity|Electricity|Natural Gas:
+    description: Total electricity generating capacity of natural gas power plants
+    unit: MW
+    category: Energy Supply
+- Cumulative Total Capacity|Ground Source Heat Pumps:
+    description: Total capacity of direct-use geothermal heat pumps
+    unit: MWt
+    category: Energy End-Use
+- Cumulative Total Capacity|Jet Aircrafts:
+    description: Total energy capacity of  jet aircrafts
+    unit: MW
+    category: Transportation
+- Cumulative Total Capacity|Laundry Dryers:
+    description: Total installed energy capacity of laundry dryers
+    unit: MW
+    category: Household Appliance
+- Cumulative Total Capacity|Motorcycles:
+    description: Total energy capacity of motorcycles
+    unit: MW
+    category: Transportation
+- Cumulative Total Capacity|Passenger Cars:
+    description: Cumulative total energy capacity of passenger cars measured by the electricity equivalent of engine
+    unit: MW
+    category: Transportation
+- Cumulative Total Capacity|Refrigerators:
+    description: Cumulative electricity generation from solid biomass
+    unit: MW
+    category: Household Appliance
+- Cumulative Total Capacity|Stationary Steam Engines:
+    description: Total energy capacity of stationary steam engines
+    unit: MW
+    category: Energy Supply
+- Cumulative Total Capacity|Steam Locomotives:
+    description: Total energy capacity of steam locomotives
+    unit: MW
+    category: Transportation
+- Cumulative Total Capacity|Washing Machines:
+    description: Total installed energy capacity of washing machines
+    unit: MW
+    category: Household Appliance
+- Cumulative Total Capacity|Wet Flue Gas Desulfurization Systems:
+    description: Cumulative installed capacity of wet flue gas desulfurization systems (scrubbers)
+    unit: GWe
+    category: Energy Supply
+- Installed Capacity|Carbon Capture & Sequestration:
+    description: Total installed capacity of carbon capture and storage systems
+    unit: GW
+    category: Energy Supply
+- Installed Capacity|Electricity|Biogas:
+    description: Cumulative Electricity Generation from Biogas
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Electricity|Concentrated Solar:
+    description: Total capacity of operational concentrated solar power energy systems
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Electricity|Geothermal Energy:
+    description: Annual installed electricity capacity of geothermal energy
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Electricity|Liquid Biofuels:
+    description: Cumulative Electricity Generation from Liquid Biofuels
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Electricity|Marine Energy:
+    description: Installed capacity of marine energy
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Electricity|Offshore Wind:
+    description: Total installed capacity of offshore wind energy
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Electricity|Onshore Wind:
+    description: Cumulative installed electricity generating capacity of wind-energy systems
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Electricity|Solar Photovoltaic:
+    description: Cumulative installed generating capacity of solar photovoltaic systems
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Electricity|Solid Biomass:
+    description: Cumulative electricity generation from solid biomass
+    unit: MW
+    category: Energy Supply
+- Installed Capacity|Solar Thermal Energy:
+    description: Installed capacity of solar thermal energy systems
+    unit: MW
+    category: Energy Supply
+- Net Total Capacity|Fluid Catalytic Cracking Refineries:
+    description: Net capacity of oil refineries using fluid catalytic cracking
+    unit: MW
+    category: Energy Supply
+- Number of Units|Canals:
+    description: Total miles of canals constructed
+    unit: miles
+    category: Transportation
+- Number of Units|Cellphones:
+    description: Number of cellphone users
+    unit: '-'
+    category: Household Appliance
+- Number of Units|Crop Harvester:
+    description: Number of crop harvesters in operation
+    unit: '-'
+    category: Food and Health
+- Number of Units|Nuclear Weapons:
+    description: Number of intact nuclear weapons in stockpiles
+    unit: '-'
+    category: Space and Defense
+- Number of Units|Passenger Cars:
+    description: Number of units
+    unit: '-'
+    category: Transportation
+- Number of Units|Postal Traffic:
+    description: Number of items mailed/received
+    unit: Number (millions)
+    category: Infrastructure
+- Number of Units|Radios:
+    description: Cumulative number of radios in operation
+    unit: '-'
+    category: Household Appliance
+- Number of Units|Space Launches:
+    description: Number of objects launched into space
+    unit: '-'
+    category: Space and Defense
+- Number of Units|Steamships:
+    description: Number of steamships in midyear
+    unit: '-'
+    category: Transportation
+- Number of Units|Telegraph Traffic:
+    description: Number of telegrams sent annually (millions)
+    unit: Number (millions)
+    category: Infrastructure
+- Number of Units|Telephones:
+    description: Number of landline telephones in operation
+    unit: '-'
+    category: Household Appliance
+- Number of Units|Televisions:
+    description: Number of televisions in use
+    unit: '-'
+    category: Household Appliance
+- Share of Market|Amazon Prime Users:
+    description: Percentage of United States population who are Amazon Prime users
+    unit: '%'
+    category: Digitalization
+- Share of Market|Automatic Transmission:
+    description: Percentage of car output with automatic transmission
+    unit: '%'
+    category: Transportation
+- Share of Market|Cable Television:
+    description: Percentage of United States households with cable television
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Central Heating:
+    description: Percentage of United States dwelling units with central heating
+    unit: '%'
+    category: Energy End-Use
+- Share of Market|Colour Television:
+    description: Percentage of United States households with colour television
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Disc Brakes:
+    description: Percentage of cars with disc brakes in the United States
+    unit: '%'
+    category: Transportation
+- Share of Market|Dishwashers:
+    description: Percentage of United States households with dishwashers
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Electric Range:
+    description: Percentage of United States households with electric ranges
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Electronic Ignition:
+    description: Percentage of cars with electronic ignition in the United States
+    unit: '%'
+    category: Transportation
+- Share of Market|Flush Toilet:
+    description: Percentage of United States households with access to a flush toilet
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Freezers:
+    description: Share of United States households with freezers
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Home Air Conditioning:
+    description: Percentage of households in the United States with home air conditioning
+    unit: '%'
+    category: Energy End-Use
+- Share of Market|Home Computers:
+    description: Percentage of households in the United States with a home computer
+    unit: '%'
+    category: Digitalization
+- Share of Market|Household Internet Access:
+    description: Percentage of United States households with internet access
+    unit: '%'
+    category: Digitalization
+- Share of Market|Households with Only Mobile Phones:
+    description: Percentage of United States households without a landline, only using mobile phones
+    unit: '%'
+    category: Digitalization
+- Share of Market|Irons:
+    description: Percentage of United States households with ironers
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Microcomputers:
+    description: Percentage of United States households with microcomputers
+    unit: '%'
+    category: Digitalization
+- Share of Market|Microwaves:
+    description: Percentage of United States households with microwaves
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Nox Pollution Control Technologies:
+    description: Percentage of industrial boilers adopting NOx pollution control technologies
+    unit: '%'
+    category: Energy Supply
+- Share of Market|Power Steering:
+    description: Percentage of vehicles in the United States with power steering
+    unit: '%'
+    category: Transportation
+- Share of Market|Radial Tires:
+    description: Percentage of vehicles in the United States with radial tires
+    unit: '%'
+    category: Transportation
+- Share of Market|Real-time Gross Settlement:
+    description: Percentage of United States population using real-time gross settlement technologies
+    unit: '%'
+    category: Digitalization
+- Share of Market|Running Water:
+    description: Percentage of United States households with access to running water
+    unit: '%'
+    category: Infrastructure
+- Share of Market|Stoves:
+    description: Percentage of United States households with a stove
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Vacuums:
+    description: Share of United States households with vacuums
+    unit: '%'
+    category: Household Appliance
+- Share of Market|Videocassette recorder:
+    description: Percentage of United States households with videocassette recorders
+    unit: '%'
+    category: Digitalization
+- Share of Market|Water Heater:
+    description: Percentage of United States households with water heaters
+    unit: '%'
+    category: Household Appliance
+- Share of Population|Diphtheria and Tetanus Vaccine First Dose:
+    description: Percentage of surviving infants who received the first dose of diphtheria and tetanus toxoid with pertussis containing vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Diphtheria and Tetanus Vaccine Third Dose:
+    description: Percentage of surviving infants who received the 3rd dose of diphtheria and tetanus toxoid with pertussis containing vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Ebook Reader:
+    description: Percentage of adults in the United States who own an eBook reader
+    unit: '%'
+    category: Digitalization
+- Share of Population|Haemophilus Influenzae Vaccine Third Dose:
+    description: Percentage of surviving infants who received the 3rd dose of Haemophilus influenzae type b containing vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Hepatitis B Vaccine First Dose:
+    description: Percentage of births which received a dose of hepatitis B vaccine within 24 hours of delivery
+    unit: '%'
+    category: Food and Health
+- Share of Population|Hepatitis B Vaccine Third Dose:
+    description: Percentage of surviving infants who received the 3rd dose of hepatitis B containing vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Inactivated Polio Vaccine:
+    description: Percentage of surviving infants who received at least one dose of inactivated polio vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Measles Vaccine First Dose:
+    description: Percentage of surviving infants who received the first dose of measles containing vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Measles Vaccine Second Dose:
+    description: Percentage of surviving infants who received the second dose of measles containing vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Pneumococcal Conjugate Vaccine:
+    description: Percentage of surviving infants who received the 3rd dose of pneumococcal conjugate vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Podcasting:
+    description: Percentage of Americans aged 12 or older who have ever listened to a podcast
+    unit: '%'
+    category: Digitalization
+- Share of Population|Polio Vaccine Third Dose:
+    description: Percentage of surviving infants who received the 3rd dose of polio containing vaccine (inactivated or oral)
+    unit: '%'
+    category: Food and Health
+- Share of Population|Rotavirus Vaccine:
+    description: Percentage of surviving infants who received the final recommended dose of rotavirus vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Rubella Vaccine First Dose:
+    description: Percentage of surviving infants who received the 1st dose of rubella containing vaccine
+    unit: '%'
+    category: Food and Health
+- Share of Population|Smartphone Usage:
+    description: Percentage of United States adults who own a smartphone
+    unit: '%'
+    category: Digitalization
+- Share of Population|Social Media Usage:
+    description: Percentage of United States adults who use at least one social media site
+    unit: '%'
+    category: Digitalization
+- Share of Population|Tablet:
+    description: Percentage of United States adults who own a tablet
+    unit: '%'
+    category: Digitalization
+- Share of Population|Tuberculosis Vaccine:
+    description: Percentage of births who received one dose of Bacillus Calmette Guerin vaccine (Tuberculosis Vaccine)
+    unit: '%'
+    category: Food and Health
+- Share of Population|Yellow Fever Vaccine:
+    description: Percentage of surviving infants who received one dose of yellow fever vaccine
+    unit: '%'
+    category: Food and Health
+- Total Capacity|Oil Refining:
+    description: Amount of oil refined daily
+    unit: thousand barrels
+    category: Energy Supply
