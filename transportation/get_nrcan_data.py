@@ -161,6 +161,9 @@ def concatenate_all_tables(region, nrcan_tables):
     return df
 
 def compile_spreadsheets(region, spreadsheet, nrcan_tables, start_row=3, end_row=118, insert_col=3):
+    """
+    New spreadsheets are built on top of the ON spreadsheet model and copied into new spreadsheets
+    """
     nrcan_df = concatenate_all_tables(region.lower(), nrcan_tables)
     master_spreadsheet = spreadsheet.replace('<r>', 'ON')
 
