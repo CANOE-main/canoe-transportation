@@ -1,0 +1,61 @@
+06-May-25 17:14:26 | main | INFO | *** STARTING TEMOA ***
+06-May-25 17:14:26 | temoa_config | INFO | Scenario Name:  vanilla4_cftnorm
+06-May-25 17:14:26 | temoa_config | INFO | Data source:  data_files\canoe_on_12d_vanilla4_cftnorm.sqlite
+06-May-25 17:14:26 | temoa_config | INFO | Data target:  data_files\canoe_on_12d_vanilla4_cftnorm.sqlite
+06-May-25 17:14:26 | temoa_config | INFO | Mode:  PERFECT_FORESIGHT
+06-May-25 17:14:30 | hybrid_loader | INFO | Loading data portal
+06-May-25 17:14:30 | commodity_network_manager | INFO | starting network analysis for region ON
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_ramping
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_curtailment
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_flex
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_exchange
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_group_names
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_variable
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: tech_retirement
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: LoanLifetimeTech
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: TechInputSplitAverage
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: TechOutputSplit
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: RenewablePortfolioStandard
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: CostEmission_rpe
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: CostEmission
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: LoanRate
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacity
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacity
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacity
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxCapacityGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacityGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacityGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacityGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacityShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxCapacityShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacityShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacityShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinCapacityGroupShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxCapacityGroupShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinNewCapacityGroupShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxNewCapacityGroupShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivityGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivityGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivityShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivityShare
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxResource
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxActivity
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MinActivity
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxGrowthRate
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxGrowthRateGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: MaxGrowthRateTwoGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: GrowthRateSeed
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: GrowthRateSeedGroup
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: EmissionLimit
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: LinkedTechs
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: RampUp
+06-May-25 17:14:32 | hybrid_loader | INFO | table, but no (usable) values for param or set: RampDown
+06-May-25 17:14:32 | run_actions | INFO | Started creating model instance from data
+06-May-25 17:17:49 | run_actions | INFO | Finished creating model instance from data
+06-May-25 17:17:49 | run_actions | INFO | model built...  Variables: 1227139, Constraints: 1631550
+06-May-25 17:17:49 | pricing_check | INFO | Started price checking model: unknown
+06-May-25 17:18:06 | pricing_check | INFO | Finished Price Checking Build Action
+06-May-25 17:18:06 | run_actions | INFO | Starting the solve process using gurobi solver on model unknown
+06-May-25 17:27:20 | run_actions | INFO | Solve process complete
+06-May-25 17:27:20 | run_actions | INFO | The solver reported status as: optimal
+06-May-25 17:28:41 | run_actions | INFO | TotalCost value: 1940987.51

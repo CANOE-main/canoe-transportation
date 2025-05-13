@@ -3,9 +3,9 @@ import shutil
 import os
 import pandas as pd
 
-db_source = 'canoe_on_12d_vanilla_nhts_fixed'
-db_target = 'canoe_on_12d_nhts_fixed'
-constraints = 'trn_constraints_zev'
+db_source = 'canoe_on_12d_vanilla4'
+db_target = 'canoe_on_12d_evgrowth'
+constraints = 'trn_constraints_evgrowth'
 
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 source = dir_path + '../db_processing/update_database/target_database/' + db_source + '.sqlite'
@@ -57,12 +57,12 @@ for sheet_name, data in sheet_data.items():
                     'INSERT INTO LoanRate (region, tech, vintage, rate, notes) VALUES (?, ?, ?, ?, ?)',
                     tuple(row)
                 )
-    elif sheet_name == 'GrowthRateMin':
-        melted_data = data.melt(id_vars=['region', 'tech', 'notes', 'reference'], var_name='period', value_name='rate')
-        replace_data(sheet_name, melted_data)
-    elif sheet_name == 'GrowthRateMax':
-        melted_data = data.melt(id_vars=['region', 'tech', 'notes', 'reference'], var_name='period', value_name='rate')
-        replace_data(sheet_name, melted_data)
+    # elif sheet_name == 'GrowthRateMin':
+    #     melted_data = data.melt(id_vars=['region', 'tech', 'notes', 'reference'], var_name='period', value_name='rate')
+    #     replace_data(sheet_name, melted_data)
+    # elif sheet_name == 'GrowthRateMax':
+    #     melted_data = data.melt(id_vars=['region', 'tech', 'notes', 'reference'], var_name='period', value_name='rate')
+    #     replace_data(sheet_name, melted_data)
     else:
         replace_data(sheet_name, data)
 

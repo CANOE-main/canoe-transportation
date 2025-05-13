@@ -11,10 +11,10 @@ from datetime import datetime
 import re
 import unicodedata
 
-province = 'BCT'
+province = 'ON'
 
-spreadsheet_name = 'CANOE_TRN_<r>_v3'.replace('<r>', province)
-db_name = 'canoe_trn_<r>_vanilla3'.replace('<r>', province.lower())
+spreadsheet_name = 'CANOE_TRN_<r>_v4'.replace('<r>', province)
+db_name = 'canoe_trn_<r>_vanilla4'.replace('<r>', province.lower())
 ldv_profile_name = 'ON-2016TTS_no-we_2018_v4_2023-batteries'
 
 # ON-2016TTS_no-we_2018_v4_2023-batteries
@@ -32,13 +32,17 @@ spreadsheet = dir_path + 'spreadsheet_database/' + spreadsheet_name + '.xlsx'
 # RAMP-mobility simulation results to compile
 ldv_profile = dir_path + '../charging_profiles/ramp_mobility/results/' + ldv_profile_name + '.csv'
 weather_year = 2018
+charging_dsd = False       # choose whether to represent LD EV charging demand distribution in the DSD (True) or CFT (False) Temoa tables
 
 # Aggregate existing capacities and efficiencies into 5-year vintages
 aggregate_excap = True
 
-# Define the precision of the model parameters - after 5 decimals of precision, numerical instability starts to present 
-epsilon = 0.00001
-precision = 5
+# Convert CH4 and N2O units of ktonnes into tonnes (to harmonize with other sectors)
+convert_emission_units = True
+
+# Define the precision of the model parameters
+epsilon = 1e-4  # For cleaning existing capacities that are too small
+precision = 9   # For consistent precision across the model
 
 # Rewrite database from scratch if it already exists
 wipe_database = True
@@ -386,14 +390,14 @@ def compile_demand():
     print(f"Demand data compiled into {os.path.basename(database)}\n")
 
 """
-##################################################
-    Demand specific distribution (LDV demand)
-##################################################
+#########################################################
+    Demand specific distribution (LD EV charging demand)
+#########################################################
 """
 
 def compile_dsd():
     """
-    Reads demand specific distribution RAMP-mobility simulation results and compiles them into the .sqlite format 
+    Reads charging demand distribution from RAMP-mobility simulation results and compiles them into the .sqlite format 
     """
     sheet = 'DemandDist'
     last_col = 'Technological'
@@ -433,7 +437,7 @@ def compile_dsd():
     
     # Creates DSD dataframe from the template and fills in the DSD from the RAMP-mobility results along with the metadata from the spreadsheet database
     df = pd.DataFrame(columns=dsd_template)
-    df['dsd'] = cp['Charging Profile'].round(10).values # DSDs rounded to 10 decimals
+    df['dsd'] = cp['Charging Profile'].round(precision).values # DSDs rounded to 10 decimals
     df['season_name'] = cp['Day'].values
     df['time_of_day_name'] = cp['Hour'].values
 
@@ -471,6 +475,74 @@ def compile_dsd():
     conn.close()
 
     print(f"Demand specific distributions compiled into {os.path.basename(database)}\n")
+
+"""
+##################################################
+    Capacity factor tech (LD EV charging demand)
+##################################################
+"""
+
+def compile_cft():
+    """
+    Reads charging demand distribution from RAMP-mobility simulation results and compiles them into the .sqlite format 
+    """
+    # Imports the template format of the DSD table
+    cft_template = pd.read_excel(template, sheet_name = 'CapacityFactorTech', header=None, nrows=1).iloc[0].values.tolist()
+
+    # Imports the charging profiles from the RAMP-mobility results
+    cp = pd.read_csv(ldv_profile, index_col=0)
+    cp.index = pd.to_datetime(cp.index, utc=True)
+    
+    # Converts simulation results time series into ET time zone, resamples into hourly resolution, and normalizes distribution
+    cp = cp.set_index(cp.index.tz_convert('America/Toronto'))
+    cp = cp[cp.index.year == weather_year]
+    cp = cp.resample('H').mean()
+    cp = cp/cp.max()                # normalize by the largest datapoint since the charging distribution will go to capacity factor tech
+
+    # Labels time series into the desired format
+    cp['Day'] = cp.index.strftime('D%j')
+    # cp['Hour'] = cp.index.strftime('H%H')
+
+    cp.reset_index(inplace=True)
+    cp.rename(columns={'index': 'Timestamp'}, inplace=True)
+    cp['Hour'] = (cp['Timestamp'].dt.hour + 1).astype(str).str.zfill(2).apply(lambda x: f'H{x}') # Hour labels from H01 to H24
+    cp.set_index('Timestamp', inplace=True)    
+    
+    # Creates the charging dist dataframe from the template and fills in the charging dist from the RAMP-mobility results along with the metadata from the spreadsheet database
+    df = pd.DataFrame(columns=cft_template)
+    df['cf_tech'] = cp['Charging Profile'].round(precision).values # the charging dists rounded to 10 decimals
+    df['season_name'] = cp['Day'].values
+    df['time_of_day_name'] = cp['Hour'].values
+
+    df['tech'] = 'T_LDV_BEV_CHRG'
+    df['regions'] = 'ON'
+    cft_notes = (
+        "This distribution represents the hourly variation of electricity demand from light-duty BEV charging. By using the stochastic aggregation framework RAMP-mobility to characterize "
+        "daily travel needs and battery consumption, and consequently, charging loads from 2,500 vehicles. Using travel survey data from the Tomorrow Transportation Survey 2016, Ontario "
+        "population-weighted temperature profiles from renewables.ninja, and other technical parameters described in the spreadsheet database."
+    )
+    df.loc[df['time_of_day_name'] == 'H01', 'cf_tech_notes'] = cft_notes #    Only shown every 24th hour to reduce database size
+    df.loc[df['time_of_day_name'] == 'H01', 'reference'] = 'Data Management Group. (2018). Transportation Tomorrow Survey (TTS) 2016. Department of Civil Engineering, University of Toronto. https://dmg.utoronto.ca/' #    Only shown every 24th hour to reduce database size
+    df['data_year'] = 2018
+    df['dq_rel'] = 1
+    df['dq_comp'] = 2
+    df['dq_time'] = 1
+    df['dq_geog'] = 1
+    df['dq_tech'] = 1
+
+    # Convert NaNs to None to handle SQL nulls properly
+    df = df.where(pd.notnull(df), None)
+
+    # Connect with database and replace parameters
+    conn = sqlite3.connect(database)
+
+    # Insert the dataframe into the sqlite database
+    df.to_sql('CapacityFactorTech', conn, if_exists='replace', index=False)
+            
+    conn.commit()
+    conn.close()
+
+    print(f"Capacity factor distributions compiled into {os.path.basename(database)}\n")
 
 """
 ##################################################
@@ -803,7 +875,7 @@ def compile_costinvest():
         curs.execute("""REPLACE INTO CostInvest(regions, tech, vintage, cost_invest, cost_invest_units, cost_invest_notes, data_cost_invest, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
+                (province, row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
                  round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
@@ -873,7 +945,7 @@ def compile_costvariable():
         curs.execute("""REPLACE INTO CostVariable(regions, periods, tech, vintage, cost_variable, cost_variable_units, cost_variable_notes, data_cost_variable, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
+                (province, row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
                  round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
@@ -943,7 +1015,7 @@ def compile_costfixed():
         curs.execute("""REPLACE INTO CostFixed(regions, periods, tech, vintage, cost_fixed, cost_fixed_units, cost_fixed_notes, data_cost_fixed, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']}", row['Notes'], 
+                (province, row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
                  round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
@@ -996,11 +1068,19 @@ def compile_emissionact():
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
-        curs.execute("""REPLACE INTO EmissionActivity(regions, emis_comm, input_comm, tech, vintage, output_comm, emis_act, emis_act_units, emis_act_notes, 
-                    reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
-                    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (province, row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], row['Unit'], row['Notes'], 
-                    row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
+        if row['Emission Commodity'] in ['ch4', 'n2o'] and convert_emission_units:
+            curs.execute("""REPLACE INTO EmissionActivity(regions, emis_comm, input_comm, tech, vintage, output_comm, emis_act, emis_act_units, emis_act_notes, 
+                        reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
+                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (province, row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter]*1000, row['Unit'].replace('kt', 't'), row['Notes'], 
+                        row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
+        
+        else:
+            curs.execute("""REPLACE INTO EmissionActivity(regions, emis_comm, input_comm, tech, vintage, output_comm, emis_act, emis_act_units, emis_act_notes, 
+                        reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
+                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (province, row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], row['Unit'], row['Notes'], 
+                        row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
@@ -1148,7 +1228,10 @@ def compile_transport():
     compile_techs()
     compile_comms()
     compile_demand()
-    compile_dsd()
+
+    if charging_dsd: compile_dsd()
+    else: compile_cft()
+
     compile_lifetime()
     compile_excap()
     compile_c2a()

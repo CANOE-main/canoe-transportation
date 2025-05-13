@@ -385,7 +385,7 @@ CREATE TABLE MinNewCapacityShare
         REFERENCES Technology (tech),
     group_name     TEXT
         REFERENCES TechGroup (group_name),
-    max_proportion REAL,
+    min_proportion REAL,
     notes          TEXT, reference, data_year, data_flags, dq_est, dq_rel, dq_comp, dq_time, dq_geog, dq_tech, additional_notes,
     PRIMARY KEY (region, period, tech, group_name)
 );
@@ -695,7 +695,7 @@ ALTER TABLE Technology ADD COLUMN retire INTEGER;
 ALTER TABLE Technology ADD COLUMN flex INTEGER;
 ALTER TABLE Technology ADD COLUMN variable INTEGER;
 ALTER TABLE Technology ADD COLUMN exchange INTEGER;
-
+ALTER TABLE Technology ADD COLUMN cf_fixed INTEGER;
 
 ALTER TABLE technology_labels RENAME TO TechnologyType;
 ALTER TABLE TechnologyType RENAME COLUMN tech_labels TO label;

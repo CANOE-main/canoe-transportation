@@ -7,15 +7,17 @@ import sqlite3
 import os
 import shutil
 
-target_name = 'canoe_on_12d_vanilla3'
-source_name = 'canoe_trn_on_vanilla3_v3'
-subset_name = 'canoe_trn_vanilla2_v3'
+target_name = 'canoe_on_12d_vanilla4'
+source_name = 'canoe_trn_on_vanilla4_v3'
+subset_name = 'canoe_trn_on_vanilla4_v3'
 
 # Define the paths for the source, target, and log files
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 target = dir_path + 'target_database/' + target_name + '.sqlite' #    Database to be updated
 source = dir_path + '../to_temoa_v3/v3_database/' + source_name + '.sqlite' #   Where new datapoints come from
 subset = dir_path + '../to_temoa_v3/v3_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
+# source = dir_path + 'target_database/' + source_name + '.sqlite' #   Where new datapoints come from
+# subset = dir_path + 'target_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
 log = dir_path + 'update_log.txt'
 
 # shutil.copyfile(original, target)
@@ -33,14 +35,16 @@ subset_cursor = subset_conn.cursor()
 log_file = open(log, 'w')
 
 # Replace references
-references = True
+references = False
 
 # List of tables to target
 tech_tables = [
     'Technology', 
     'LifetimeTech', 
     'ExistingCapacity', 
-    'CapacityToActivity', 
+    'CapacityToActivity',
+    # 'CapacityFactorProcess',
+    # 'CapacityFactorTech', 
     'MaxAnnualCapacityFactor', 
     'MinAnnualCapacityFactor', 
     'Efficiency', 
@@ -48,7 +52,8 @@ tech_tables = [
     'CostFixed', 
     'CostVariable', 
     'EmissionActivity', 
-    'TechInputSplit'
+    'TechInputSplit',
+    # 'StorageDuration'
     ]
 commodity_tables = {
     'Commodity': 'name', 

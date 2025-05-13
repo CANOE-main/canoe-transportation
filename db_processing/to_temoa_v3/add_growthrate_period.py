@@ -2,7 +2,7 @@ import sqlite3
 import shutil
 import os
 
-db_name = 'canoe_on_365d_vanilla'
+db_name = 'canoe_on_12d_vanilla3_ref'
 
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 target = dir_path + '../update_database/target_database/' + db_name + '_wperiod.sqlite'
@@ -15,15 +15,19 @@ conn = sqlite3.connect(target)
 # Function to add column and reorder table
 def add_column_and_reorder_table(table_name):
     # Adding a new column 'period' to the specified table
-    alter_table_query = f"ALTER TABLE {table_name} ADD COLUMN period;"
-    conn.execute(alter_table_query)
+    # Check if the 'period' column already exists
+    cursor = conn.execute(f"PRAGMA table_info({table_name});")
+    columns = [col[1] for col in cursor.fetchall()]
+    if 'period' not in columns:
+        alter_table_query = f"ALTER TABLE {table_name} ADD COLUMN period;"
+        conn.execute(alter_table_query)
 
     # Fetching the existing columns
     cursor = conn.execute(f"PRAGMA table_info({table_name});")
     columns = [col[1] for col in cursor.fetchall()]
 
     # Reordering columns: region, tech, period, rate, ...
-    reordered_columns = ['region', 'tech', 'period'] + [col for col in columns if col not in ['region', 'tech', 'period']]
+    reordered_columns = ['region', 'period', 'tech'] + [col for col in columns if col not in ['region', 'period', 'tech']]
 
     # Create a temporary table with reordered columns
     create_temp_table_query = f"""
