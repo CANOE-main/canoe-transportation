@@ -1641,3 +1641,36 @@ CREATE TABLE IF NOT EXISTS "references" (
 
 	CONSTRAINT references_PK PRIMARY KEY ("reference")
 );
+
+CREATE TABLE IF NOT EXISTS "EmissionEmbodied" (
+    "regions"     TEXT,
+    "emis_comm"   TEXT
+        REFERENCES "commodities" (comm_name),
+    "tech"        TEXT
+        REFERENCES "technologies" (tech),
+    "vintage"     INTEGER
+        REFERENCES "time_periods" (t_periods),
+    "value"       REAL,
+    "units"       TEXT,
+    "notes"       TEXT,
+    "reference" text,
+	"data_year" integer,
+	"data_flags" text,
+	"dq_est" integer,
+	"dq_rel" integer,
+	"dq_comp" integer,
+	"dq_time" integer,
+	"dq_geog" integer,
+	"dq_tech" integer,
+	"additional_notes" text,
+	
+	FOREIGN KEY("reference") REFERENCES "references"("reference"),
+	FOREIGN KEY("dq_est") REFERENCES "dq_estimate"("data_quality_estimated"),
+	FOREIGN KEY("dq_rel") REFERENCES "dq_estimate"("data_quality_reliability"),
+	FOREIGN KEY("dq_comp") REFERENCES "dq_estimate"("data_quality_completeness"),
+	FOREIGN KEY("dq_time") REFERENCES "dq_estimate"("data_quality_time_related"),
+	FOREIGN KEY("dq_geog") REFERENCES "dq_estimate"("data_quality_geography"),
+	FOREIGN KEY("dq_tech") REFERENCES "dq_estimate"("data_quality_technology")
+
+    PRIMARY KEY ("regions", "emis_comm", "tech", "vintage")
+);

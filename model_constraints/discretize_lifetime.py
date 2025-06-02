@@ -3,10 +3,12 @@ import sqlite3
 import pandas as pd
 import os
 
-# Define input and output database paths
+db_input = 'canoe_on_12d_vanilla4'
+db_output = 'canoe_on_12d_life3'
+
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
-input_db_path = dir_path + '../db_processing/update_database/target_database/canoe_on_12d_vanilla3.sqlite'
-output_db_path = dir_path + '../canoe_on_12d_lifetimes.sqlite'
+input_db_path = dir_path + '../db_processing/update_database/target_database/' + db_input + '.sqlite'
+output_db_path = dir_path + '../' + db_output + '.sqlite'
 
 # Create a copy of the database
 shutil.copyfile(input_db_path, output_db_path)

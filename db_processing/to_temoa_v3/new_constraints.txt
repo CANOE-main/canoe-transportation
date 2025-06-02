@@ -91,6 +91,21 @@ CREATE TABLE IF NOT EXISTS GroupGrowthRateSeed
     PRIMARY KEY (region, group_name, seed)
 );
 
+CREATE TABLE IF NOT EXISTS EmissionEmbodied
+(
+    region      TEXT,
+    emis_comm   TEXT
+        REFERENCES Commodity (name),
+    tech        TEXT
+        REFERENCES Technology (tech),
+    vintage     INTEGER
+        REFERENCES TimePeriod (period),
+    value       REAL,
+    units       TEXT,
+    notes       TEXT, reference, data_year, data_flags, dq_est, dq_rel, dq_comp, dq_time, dq_geog, dq_tech, additional_notes,
+    PRIMARY KEY (region, emis_comm,  tech, vintage)
+);
+
 -- CREATE TABLE MinNewCapacityShare_new AS
 --             SELECT region, period, tech, group_name, max_proportion AS min_proportion, notes
 --             FROM MinNewCapacityShare;

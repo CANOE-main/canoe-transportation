@@ -35,7 +35,7 @@ subset_cursor = subset_conn.cursor()
 log_file = open(log, 'w')
 
 # Replace references
-references = False
+references = True
 
 # List of tables to target
 tech_tables = [
@@ -43,15 +43,16 @@ tech_tables = [
     'LifetimeTech', 
     'ExistingCapacity', 
     'CapacityToActivity',
-    # 'CapacityFactorProcess',
-    # 'CapacityFactorTech', 
+    'CapacityFactorProcess',
+    'CapacityFactorTech', 
     'MaxAnnualCapacityFactor', 
     'MinAnnualCapacityFactor', 
     'Efficiency', 
     'CostInvest', 
     'CostFixed', 
     'CostVariable', 
-    'EmissionActivity', 
+    'EmissionActivity',
+    'EmissionEmbodied', 
     'TechInputSplit',
     # 'StorageDuration'
     ]

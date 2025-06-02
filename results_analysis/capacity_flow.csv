@@ -1,0 +1,478 @@
+mode,fuel,vintage,cap type,capacity
+HD Truck,Battery electric,2025,net capacity,0.15
+HD Truck,Battery electric,2030,net capacity,0.69
+HD Truck,Battery electric,2035,net capacity,2.58
+HD Truck,Battery electric,2040,net capacity,8.98
+HD Truck,Battery electric,2045,net capacity,27.49
+HD Truck,Battery electric,2050,net capacity,46.77
+HD Truck,Diesel,2021,net capacity,150.53
+HD Truck,Diesel,2025,net capacity,152.73
+HD Truck,Diesel,2030,net capacity,157.46
+HD Truck,Diesel,2035,net capacity,165.92
+HD Truck,Diesel,2040,net capacity,141.62
+HD Truck,Diesel,2045,net capacity,129.69
+HD Truck,Diesel,2050,net capacity,123.58
+HD Truck,Fuel-cell electric,2025,net capacity,0.15
+HD Truck,Fuel-cell electric,2030,net capacity,0.69
+HD Truck,Fuel-cell electric,2035,net capacity,2.58
+HD Truck,Fuel-cell electric,2040,net capacity,8.98
+HD Truck,Fuel-cell electric,2045,net capacity,11.34
+HD Truck,Fuel-cell electric,2050,net capacity,13.76
+HD Truck,Hybrid,2025,net capacity,0.15
+HD Truck,Hybrid,2030,net capacity,0.69
+HD Truck,Hybrid,2035,net capacity,2.58
+HD Truck,Hybrid,2040,net capacity,8.98
+HD Truck,Hybrid,2045,net capacity,11.07
+HD Truck,Hybrid,2050,net capacity,10.54
+HD Truck,Plug-in hybrid,2025,net capacity,0.15
+HD Truck,Plug-in hybrid,2030,net capacity,0.69
+HD Truck,Plug-in hybrid,2035,net capacity,2.58
+HD Truck,Plug-in hybrid,2040,net capacity,8.98
+HD Truck,Plug-in hybrid,2045,net capacity,13.75
+HD Truck,Plug-in hybrid,2050,net capacity,16.9
+LD Car,BEV (150-mile AER),2021,net capacity,60.75
+LD Car,BEV (150-mile AER),2025,net capacity,171.82
+LD Car,BEV (150-mile AER),2030,net capacity,599.08
+LD Car,BEV (150-mile AER),2035,net capacity,1864.77
+LD Car,BEV (150-mile AER),2040,net capacity,3972.75
+LD Car,BEV (150-mile AER),2045,net capacity,5662.69
+LD Car,BEV (150-mile AER),2050,net capacity,7430.0
+LD Car,BEV (200-mile AER),2025,net capacity,0.01
+LD Car,BEV (200-mile AER),2030,net capacity,0.02
+LD Car,BEV (200-mile AER),2035,net capacity,0.02
+LD Car,BEV (200-mile AER),2040,net capacity,0.02
+LD Car,BEV (200-mile AER),2045,net capacity,0.02
+LD Car,BEV (200-mile AER),2050,net capacity,0.03
+LD Car,BEV (300-mile AER),2035,net capacity,0.01
+LD Car,BEV (300-mile AER),2040,net capacity,0.01
+LD Car,BEV (300-mile AER),2045,net capacity,0.01
+LD Car,BEV (300-mile AER),2050,net capacity,0.01
+LD Car,Compressed NG,2025,net capacity,4.27
+LD Car,Compressed NG,2030,net capacity,19.53
+LD Car,Compressed NG,2035,net capacity,19.93
+LD Car,Compressed NG,2040,net capacity,15.93
+LD Car,Compressed NG,2045,net capacity,0.68
+LD Car,Compressed NG,2050,net capacity,0.29
+LD Car,Diesel,2021,net capacity,62.31
+LD Car,Diesel,2025,net capacity,170.72
+LD Car,Diesel,2030,net capacity,246.17
+LD Car,Diesel,2035,net capacity,247.02
+LD Car,Diesel,2040,net capacity,122.35
+LD Car,Diesel,2045,net capacity,6.87
+LD Car,Diesel,2050,net capacity,2.25
+LD Car,Fuel-cell electric,2025,net capacity,4.27
+LD Car,Fuel-cell electric,2030,net capacity,19.53
+LD Car,Fuel-cell electric,2035,net capacity,74.32
+LD Car,Fuel-cell electric,2040,net capacity,71.49
+LD Car,Fuel-cell electric,2045,net capacity,57.2
+LD Car,Fuel-cell electric,2050,net capacity,2.46
+LD Car,Gasoline,2021,net capacity,4067.41
+LD Car,Gasoline,2025,net capacity,4939.31
+LD Car,Gasoline,2030,net capacity,3623.51
+LD Car,Gasoline,2035,net capacity,1532.72
+LD Car,Gasoline,2040,net capacity,68.65
+LD Car,Gasoline,2045,net capacity,27.8
+LD Car,Gasoline,2050,net capacity,1.76
+LD Car,Hybrid,2021,net capacity,98.16
+LD Car,Hybrid,2025,net capacity,278.1
+LD Car,Hybrid,2030,net capacity,923.45
+LD Car,Hybrid,2035,net capacity,1501.81
+LD Car,Hybrid,2040,net capacity,1347.36
+LD Car,Hybrid,2045,net capacity,683.05
+LD Car,Hybrid,2050,net capacity,37.83
+LD Car,PHEV (35-mile AER),2021,net capacity,25.42
+LD Car,PHEV (35-mile AER),2025,net capacity,75.05
+LD Car,PHEV (35-mile AER),2030,net capacity,270.84
+LD Car,PHEV (35-mile AER),2035,net capacity,908.56
+LD Car,PHEV (35-mile AER),2040,net capacity,876.53
+LD Car,PHEV (35-mile AER),2045,net capacity,689.78
+LD Car,PHEV (35-mile AER),2050,net capacity,29.88
+LD Truck,BEV (150-mile AER),2021,net capacity,28.67
+LD Truck,BEV (150-mile AER),2025,net capacity,92.67
+LD Truck,BEV (150-mile AER),2030,net capacity,347.8
+LD Truck,BEV (150-mile AER),2035,net capacity,1269.89
+LD Truck,BEV (150-mile AER),2040,net capacity,3258.32
+LD Truck,BEV (150-mile AER),2045,net capacity,5195.63
+LD Truck,BEV (150-mile AER),2050,net capacity,8023.66
+LD Truck,BEV (200-mile AER),2021,net capacity,0.01
+LD Truck,BEV (200-mile AER),2025,net capacity,0.02
+LD Truck,BEV (200-mile AER),2030,net capacity,0.03
+LD Truck,BEV (200-mile AER),2035,net capacity,0.04
+LD Truck,BEV (200-mile AER),2040,net capacity,0.05
+LD Truck,BEV (200-mile AER),2045,net capacity,0.05
+LD Truck,BEV (200-mile AER),2050,net capacity,0.06
+LD Truck,BEV (300-mile AER),2021,net capacity,4.45
+LD Truck,BEV (300-mile AER),2025,net capacity,4.45
+LD Truck,BEV (300-mile AER),2030,net capacity,4.46
+LD Truck,BEV (300-mile AER),2035,net capacity,4.39
+LD Truck,BEV (300-mile AER),2040,net capacity,0.02
+LD Truck,BEV (300-mile AER),2045,net capacity,0.02
+LD Truck,BEV (300-mile AER),2050,net capacity,0.02
+LD Truck,BEV (400-mile AER),2030,net capacity,0.01
+LD Truck,BEV (400-mile AER),2035,net capacity,0.01
+LD Truck,BEV (400-mile AER),2040,net capacity,0.01
+LD Truck,BEV (400-mile AER),2045,net capacity,0.01
+LD Truck,BEV (400-mile AER),2050,net capacity,0.01
+LD Truck,Compressed NG,2025,net capacity,5.26
+LD Truck,Compressed NG,2030,net capacity,24.06
+LD Truck,Compressed NG,2035,net capacity,38.95
+LD Truck,Compressed NG,2040,net capacity,39.97
+LD Truck,Compressed NG,2045,net capacity,35.39
+LD Truck,Compressed NG,2050,net capacity,16.76
+LD Truck,Diesel,2021,net capacity,213.09
+LD Truck,Diesel,2025,net capacity,1596.55
+LD Truck,Diesel,2030,net capacity,2087.79
+LD Truck,Diesel,2035,net capacity,2307.95
+LD Truck,Diesel,2040,net capacity,2234.59
+LD Truck,Diesel,2045,net capacity,865.34
+LD Truck,Diesel,2050,net capacity,343.81
+LD Truck,Fuel-cell electric,2025,net capacity,5.26
+LD Truck,Fuel-cell electric,2030,net capacity,24.06
+LD Truck,Fuel-cell electric,2035,net capacity,90.58
+LD Truck,Fuel-cell electric,2040,net capacity,142.6
+LD Truck,Fuel-cell electric,2045,net capacity,140.91
+LD Truck,Fuel-cell electric,2050,net capacity,124.48
+LD Truck,Gasoline,2021,net capacity,4962.68
+LD Truck,Gasoline,2025,net capacity,4970.9
+LD Truck,Gasoline,2030,net capacity,3978.64
+LD Truck,Gasoline,2035,net capacity,2424.08
+LD Truck,Gasoline,2040,net capacity,22.02
+LD Truck,Gasoline,2045,net capacity,13.99
+LD Truck,Gasoline,2050,net capacity,4.75
+LD Truck,Hybrid,2021,net capacity,93.02
+LD Truck,Hybrid,2025,net capacity,260.38
+LD Truck,Hybrid,2030,net capacity,897.91
+LD Truck,Hybrid,2035,net capacity,2020.47
+LD Truck,Hybrid,2040,net capacity,2071.52
+LD Truck,Hybrid,2045,net capacity,1937.83
+LD Truck,Hybrid,2050,net capacity,1311.24
+LD Truck,PHEV (35-mile AER),2021,net capacity,12.89
+LD Truck,PHEV (35-mile AER),2025,net capacity,40.98
+LD Truck,PHEV (35-mile AER),2030,net capacity,136.35
+LD Truck,PHEV (35-mile AER),2035,net capacity,474.07
+LD Truck,PHEV (35-mile AER),2040,net capacity,469.67
+LD Truck,PHEV (35-mile AER),2045,net capacity,448.56
+LD Truck,PHEV (35-mile AER),2050,net capacity,354.79
+LD Truck,PHEV (50-mile AER),2030,net capacity,14.83
+LD Truck,PHEV (50-mile AER),2035,net capacity,68.65
+LD Truck,PHEV (50-mile AER),2040,net capacity,251.06
+LD Truck,PHEV (50-mile AER),2045,net capacity,260.11
+LD Truck,PHEV (50-mile AER),2050,net capacity,252.93
+MD Truck,Battery electric,2021,net capacity,0.03
+MD Truck,Battery electric,2025,net capacity,0.5
+MD Truck,Battery electric,2030,net capacity,2.19
+MD Truck,Battery electric,2035,net capacity,8.19
+MD Truck,Battery electric,2040,net capacity,28.72
+MD Truck,Battery electric,2045,net capacity,89.76
+MD Truck,Battery electric,2050,net capacity,215.05
+MD Truck,Diesel,2021,net capacity,251.66
+MD Truck,Diesel,2025,net capacity,240.09
+MD Truck,Diesel,2030,net capacity,193.94
+MD Truck,Diesel,2035,net capacity,132.16
+MD Truck,Diesel,2040,net capacity,1.57
+MD Truck,Diesel,2045,net capacity,1.08
+MD Truck,Diesel,2050,net capacity,0.54
+MD Truck,Fuel-cell electric,2025,net capacity,0.42
+MD Truck,Fuel-cell electric,2030,net capacity,1.93
+MD Truck,Fuel-cell electric,2035,net capacity,7.24
+MD Truck,Fuel-cell electric,2040,net capacity,25.46
+MD Truck,Fuel-cell electric,2045,net capacity,79.6
+MD Truck,Fuel-cell electric,2050,net capacity,121.89
+MD Truck,Gasoline,2021,net capacity,170.05
+MD Truck,Gasoline,2025,net capacity,240.81
+MD Truck,Gasoline,2030,net capacity,321.17
+MD Truck,Gasoline,2035,net capacity,438.84
+MD Truck,Gasoline,2040,net capacity,483.4
+MD Truck,Gasoline,2045,net capacity,414.83
+MD Truck,Gasoline,2050,net capacity,310.16
+MD Truck,Hybrid,2025,net capacity,0.42
+MD Truck,Hybrid,2030,net capacity,1.93
+MD Truck,Hybrid,2035,net capacity,7.24
+MD Truck,Hybrid,2040,net capacity,25.46
+MD Truck,Hybrid,2045,net capacity,25.76
+MD Truck,Hybrid,2050,net capacity,24.92
+MD Truck,Plug-in hybrid,2025,net capacity,0.42
+MD Truck,Plug-in hybrid,2030,net capacity,1.93
+MD Truck,Plug-in hybrid,2035,net capacity,7.24
+MD Truck,Plug-in hybrid,2040,net capacity,25.46
+MD Truck,Plug-in hybrid,2045,net capacity,26.07
+MD Truck,Plug-in hybrid,2050,net capacity,25.24
+HD Truck,Battery electric,2025,new capacity,0.15
+HD Truck,Battery electric,2030,new capacity,0.54
+HD Truck,Battery electric,2035,new capacity,1.89
+HD Truck,Battery electric,2040,new capacity,6.4
+HD Truck,Battery electric,2045,new capacity,18.67
+HD Truck,Battery electric,2050,new capacity,19.81
+HD Truck,Diesel,2021,new capacity,15.98
+HD Truck,Diesel,2025,new capacity,11.93
+HD Truck,Diesel,2030,new capacity,31.49
+HD Truck,Diesel,2035,new capacity,44.12
+HD Truck,Diesel,2040,new capacity,54.08
+HD Truck,Diesel,2050,new capacity,25.38
+HD Truck,Fuel-cell electric,2025,new capacity,0.15
+HD Truck,Fuel-cell electric,2030,new capacity,0.54
+HD Truck,Fuel-cell electric,2035,new capacity,1.89
+HD Truck,Fuel-cell electric,2040,new capacity,6.4
+HD Truck,Fuel-cell electric,2045,new capacity,2.51
+HD Truck,Fuel-cell electric,2050,new capacity,2.96
+HD Truck,Hybrid,2025,new capacity,0.15
+HD Truck,Hybrid,2030,new capacity,0.54
+HD Truck,Hybrid,2035,new capacity,1.89
+HD Truck,Hybrid,2040,new capacity,6.4
+HD Truck,Hybrid,2045,new capacity,2.25
+HD Truck,Plug-in hybrid,2025,new capacity,0.15
+HD Truck,Plug-in hybrid,2030,new capacity,0.54
+HD Truck,Plug-in hybrid,2035,new capacity,1.89
+HD Truck,Plug-in hybrid,2040,new capacity,6.4
+HD Truck,Plug-in hybrid,2045,new capacity,4.92
+HD Truck,Plug-in hybrid,2050,new capacity,3.69
+LD Car,BEV (150-mile AER),2021,new capacity,19.93
+LD Car,BEV (150-mile AER),2025,new capacity,111.07
+LD Car,BEV (150-mile AER),2030,new capacity,430.9
+LD Car,BEV (150-mile AER),2035,new capacity,1322.8
+LD Car,BEV (150-mile AER),2040,new capacity,2219.05
+LD Car,BEV (150-mile AER),2045,new capacity,2120.84
+LD Car,BEV (150-mile AER),2050,new capacity,3090.11
+LD Car,BEV (200-mile AER),2030,new capacity,0.01
+LD Car,BEV (200-mile AER),2035,new capacity,0.01
+LD Car,BEV (200-mile AER),2040,new capacity,0.01
+LD Car,BEV (200-mile AER),2045,new capacity,0.01
+LD Car,BEV (200-mile AER),2050,new capacity,0.01
+LD Car,Compressed NG,2025,new capacity,4.27
+LD Car,Compressed NG,2030,new capacity,15.26
+LD Car,Compressed NG,2035,new capacity,0.4
+LD Car,Compressed NG,2040,new capacity,0.27
+LD Car,Compressed NG,2045,new capacity,0.01
+LD Car,Diesel,2025,new capacity,126.76
+LD Car,Diesel,2030,new capacity,115.6
+LD Car,Diesel,2035,new capacity,4.66
+LD Car,Diesel,2040,new capacity,2.09
+LD Car,Diesel,2045,new capacity,0.12
+LD Car,Diesel,2050,new capacity,0.04
+LD Car,Fuel-cell electric,2025,new capacity,4.27
+LD Car,Fuel-cell electric,2030,new capacity,15.26
+LD Car,Fuel-cell electric,2035,new capacity,54.79
+LD Car,Fuel-cell electric,2040,new capacity,1.44
+LD Car,Fuel-cell electric,2045,new capacity,0.97
+LD Car,Fuel-cell electric,2050,new capacity,0.05
+LD Car,Gasoline,2021,new capacity,458.66
+LD Car,Gasoline,2025,new capacity,1465.32
+LD Car,Gasoline,2030,new capacity,41.33
+LD Car,Gasoline,2035,new capacity,26.07
+LD Car,Gasoline,2040,new capacity,1.26
+LD Car,Gasoline,2045,new capacity,0.47
+LD Car,Gasoline,2050,new capacity,0.03
+LD Car,Hybrid,2021,new capacity,19.94
+LD Car,Hybrid,2025,new capacity,179.94
+LD Car,Hybrid,2030,new capacity,675.96
+LD Car,Hybrid,2035,new capacity,645.91
+LD Car,Hybrid,2040,new capacity,25.49
+LD Car,Hybrid,2045,new capacity,11.65
+LD Car,Hybrid,2050,new capacity,0.69
+LD Car,PHEV (35-mile AER),2025,new capacity,49.62
+LD Car,PHEV (35-mile AER),2030,new capacity,198.48
+LD Car,PHEV (35-mile AER),2035,new capacity,660.46
+LD Car,PHEV (35-mile AER),2040,new capacity,17.6
+LD Car,PHEV (35-mile AER),2045,new capacity,11.73
+LD Car,PHEV (35-mile AER),2050,new capacity,0.55
+LD Truck,BEV (150-mile AER),2021,new capacity,28.67
+LD Truck,BEV (150-mile AER),2025,new capacity,64.0
+LD Truck,BEV (150-mile AER),2030,new capacity,255.13
+LD Truck,BEV (150-mile AER),2035,new capacity,922.1
+LD Truck,BEV (150-mile AER),2040,new capacity,2017.1
+LD Truck,BEV (150-mile AER),2045,new capacity,2001.31
+LD Truck,BEV (150-mile AER),2050,new capacity,3083.16
+LD Truck,BEV (200-mile AER),2021,new capacity,0.01
+LD Truck,BEV (200-mile AER),2025,new capacity,0.01
+LD Truck,BEV (200-mile AER),2030,new capacity,0.01
+LD Truck,BEV (200-mile AER),2035,new capacity,0.01
+LD Truck,BEV (200-mile AER),2040,new capacity,0.01
+LD Truck,BEV (200-mile AER),2045,new capacity,0.02
+LD Truck,BEV (200-mile AER),2050,new capacity,0.02
+LD Truck,BEV (300-mile AER),2035,new capacity,0.01
+LD Truck,BEV (300-mile AER),2045,new capacity,0.01
+LD Truck,BEV (300-mile AER),2050,new capacity,0.01
+LD Truck,Compressed NG,2025,new capacity,5.26
+LD Truck,Compressed NG,2030,new capacity,18.8
+LD Truck,Compressed NG,2035,new capacity,14.89
+LD Truck,Compressed NG,2040,new capacity,1.02
+LD Truck,Compressed NG,2045,new capacity,0.68
+LD Truck,Compressed NG,2050,new capacity,0.17
+LD Truck,Diesel,2025,new capacity,1383.46
+LD Truck,Diesel,2030,new capacity,525.08
+LD Truck,Diesel,2035,new capacity,295.33
+LD Truck,Diesel,2040,new capacity,30.7
+LD Truck,Diesel,2045,new capacity,14.22
+LD Truck,Diesel,2050,new capacity,3.55
+LD Truck,Fuel-cell electric,2025,new capacity,5.26
+LD Truck,Fuel-cell electric,2030,new capacity,18.8
+LD Truck,Fuel-cell electric,2035,new capacity,66.52
+LD Truck,Fuel-cell electric,2040,new capacity,52.02
+LD Truck,Fuel-cell electric,2045,new capacity,3.58
+LD Truck,Fuel-cell electric,2050,new capacity,2.37
+LD Truck,Gasoline,2021,new capacity,361.09
+LD Truck,Gasoline,2025,new capacity,8.22
+LD Truck,Gasoline,2030,new capacity,9.27
+LD Truck,Gasoline,2035,new capacity,4.11
+LD Truck,Gasoline,2040,new capacity,0.42
+LD Truck,Gasoline,2045,new capacity,0.18
+LD Truck,Gasoline,2050,new capacity,0.04
+LD Truck,Hybrid,2021,new capacity,71.79
+LD Truck,Hybrid,2025,new capacity,167.36
+LD Truck,Hybrid,2030,new capacity,637.53
+LD Truck,Hybrid,2035,new capacity,1125.91
+LD Truck,Hybrid,2040,new capacity,140.72
+LD Truck,Hybrid,2045,new capacity,33.67
+LD Truck,Hybrid,2050,new capacity,10.94
+LD Truck,PHEV (35-mile AER),2021,new capacity,7.48
+LD Truck,PHEV (35-mile AER),2025,new capacity,28.09
+LD Truck,PHEV (35-mile AER),2030,new capacity,95.36
+LD Truck,PHEV (35-mile AER),2035,new capacity,337.8
+LD Truck,PHEV (35-mile AER),2040,new capacity,8.41
+LD Truck,PHEV (35-mile AER),2045,new capacity,6.99
+LD Truck,PHEV (35-mile AER),2050,new capacity,1.59
+LD Truck,PHEV (50-mile AER),2030,new capacity,14.83
+LD Truck,PHEV (50-mile AER),2035,new capacity,53.82
+LD Truck,PHEV (50-mile AER),2040,new capacity,182.42
+LD Truck,PHEV (50-mile AER),2045,new capacity,9.05
+LD Truck,PHEV (50-mile AER),2050,new capacity,7.65
+MD Truck,Battery electric,2021,new capacity,0.03
+MD Truck,Battery electric,2025,new capacity,0.47
+MD Truck,Battery electric,2030,new capacity,1.7
+MD Truck,Battery electric,2035,new capacity,6.0
+MD Truck,Battery electric,2040,new capacity,20.55
+MD Truck,Battery electric,2045,new capacity,61.5
+MD Truck,Battery electric,2050,new capacity,126.99
+MD Truck,Diesel,2021,new capacity,18.11
+MD Truck,Diesel,2025,new capacity,0.51
+MD Truck,Diesel,2030,new capacity,0.55
+MD Truck,Diesel,2035,new capacity,0.46
+MD Truck,Diesel,2040,new capacity,0.04
+MD Truck,Diesel,2045,new capacity,0.02
+MD Truck,Diesel,2050,new capacity,0.01
+MD Truck,Fuel-cell electric,2025,new capacity,0.42
+MD Truck,Fuel-cell electric,2030,new capacity,1.51
+MD Truck,Fuel-cell electric,2035,new capacity,5.32
+MD Truck,Fuel-cell electric,2040,new capacity,18.21
+MD Truck,Fuel-cell electric,2045,new capacity,54.56
+MD Truck,Fuel-cell electric,2050,new capacity,43.8
+MD Truck,Gasoline,2021,new capacity,20.39
+MD Truck,Gasoline,2025,new capacity,78.82
+MD Truck,Gasoline,2030,new capacity,111.5
+MD Truck,Gasoline,2035,new capacity,159.16
+MD Truck,Gasoline,2040,new capacity,133.93
+MD Truck,Gasoline,2045,new capacity,10.25
+MD Truck,Gasoline,2050,new capacity,6.82
+MD Truck,Hybrid,2025,new capacity,0.42
+MD Truck,Hybrid,2030,new capacity,1.51
+MD Truck,Hybrid,2035,new capacity,5.32
+MD Truck,Hybrid,2040,new capacity,18.21
+MD Truck,Hybrid,2045,new capacity,0.73
+MD Truck,Hybrid,2050,new capacity,0.66
+MD Truck,Plug-in hybrid,2025,new capacity,0.42
+MD Truck,Plug-in hybrid,2030,new capacity,1.51
+MD Truck,Plug-in hybrid,2035,new capacity,5.32
+MD Truck,Plug-in hybrid,2040,new capacity,18.21
+MD Truck,Plug-in hybrid,2045,new capacity,1.04
+MD Truck,Plug-in hybrid,2050,new capacity,0.67
+HD Truck,Battery electric,2045,retired cap,-0.15
+HD Truck,Battery electric,2050,retired cap,-0.54
+HD Truck,Diesel,2025,retired cap,-9.73
+HD Truck,Diesel,2030,retired cap,-26.76
+HD Truck,Diesel,2035,retired cap,-35.66
+HD Truck,Diesel,2040,retired cap,-78.38
+HD Truck,Diesel,2045,retired cap,-11.93
+HD Truck,Diesel,2050,retired cap,-31.49
+HD Truck,Fuel-cell electric,2045,retired cap,-0.15
+HD Truck,Fuel-cell electric,2050,retired cap,-0.54
+HD Truck,Hybrid,2045,retired cap,-0.15
+HD Truck,Hybrid,2050,retired cap,-0.54
+HD Truck,Plug-in hybrid,2045,retired cap,-0.15
+HD Truck,Plug-in hybrid,2050,retired cap,-0.54
+LD Car,BEV (150-mile AER),2030,retired cap,-3.64
+LD Car,BEV (150-mile AER),2035,retired cap,-57.12
+LD Car,BEV (150-mile AER),2040,retired cap,-111.07
+LD Car,BEV (150-mile AER),2045,retired cap,-430.9
+LD Car,BEV (150-mile AER),2050,retired cap,-1322.8
+LD Car,BEV (200-mile AER),2045,retired cap,-0.01
+LD Car,BEV (200-mile AER),2050,retired cap,-0.01
+LD Car,Compressed NG,2040,retired cap,-4.27
+LD Car,Compressed NG,2045,retired cap,-15.26
+LD Car,Compressed NG,2050,retired cap,-0.4
+LD Car,Diesel,2025,retired cap,-18.35
+LD Car,Diesel,2030,retired cap,-40.15
+LD Car,Diesel,2035,retired cap,-3.81
+LD Car,Diesel,2040,retired cap,-126.76
+LD Car,Diesel,2045,retired cap,-115.6
+LD Car,Diesel,2050,retired cap,-4.66
+LD Car,Fuel-cell electric,2040,retired cap,-4.27
+LD Car,Fuel-cell electric,2045,retired cap,-15.26
+LD Car,Fuel-cell electric,2050,retired cap,-54.79
+LD Car,Gasoline,2025,retired cap,-593.42
+LD Car,Gasoline,2030,retired cap,-1357.13
+LD Car,Gasoline,2035,retired cap,-2116.86
+LD Car,Gasoline,2040,retired cap,-1465.32
+LD Car,Gasoline,2045,retired cap,-41.33
+LD Car,Gasoline,2050,retired cap,-26.07
+LD Car,Hybrid,2030,retired cap,-30.61
+LD Car,Hybrid,2035,retired cap,-67.55
+LD Car,Hybrid,2040,retired cap,-179.94
+LD Car,Hybrid,2045,retired cap,-675.96
+LD Car,Hybrid,2050,retired cap,-645.91
+LD Car,PHEV (35-mile AER),2030,retired cap,-2.68
+LD Car,PHEV (35-mile AER),2035,retired cap,-22.74
+LD Car,PHEV (35-mile AER),2040,retired cap,-49.62
+LD Car,PHEV (35-mile AER),2045,retired cap,-198.48
+LD Car,PHEV (35-mile AER),2050,retired cap,-660.46
+LD Truck,BEV (150-mile AER),2040,retired cap,-28.67
+LD Truck,BEV (150-mile AER),2045,retired cap,-64.0
+LD Truck,BEV (150-mile AER),2050,retired cap,-255.13
+LD Truck,BEV (200-mile AER),2040,retired cap,-0.01
+LD Truck,BEV (200-mile AER),2045,retired cap,-0.01
+LD Truck,BEV (200-mile AER),2050,retired cap,-0.01
+LD Truck,BEV (300-mile AER),2035,retired cap,-0.07
+LD Truck,BEV (300-mile AER),2040,retired cap,-4.38
+LD Truck,Compressed NG,2045,retired cap,-5.26
+LD Truck,Compressed NG,2050,retired cap,-18.8
+LD Truck,Diesel,2030,retired cap,-33.85
+LD Truck,Diesel,2035,retired cap,-75.17
+LD Truck,Diesel,2040,retired cap,-104.06
+LD Truck,Diesel,2045,retired cap,-1383.46
+LD Truck,Diesel,2050,retired cap,-525.08
+LD Truck,Fuel-cell electric,2045,retired cap,-5.26
+LD Truck,Fuel-cell electric,2050,retired cap,-18.8
+LD Truck,Gasoline,2030,retired cap,-1001.53
+LD Truck,Gasoline,2035,retired cap,-1558.67
+LD Truck,Gasoline,2040,retired cap,-2402.48
+LD Truck,Gasoline,2045,retired cap,-8.22
+LD Truck,Gasoline,2050,retired cap,-9.27
+LD Truck,Hybrid,2035,retired cap,-3.35
+LD Truck,Hybrid,2040,retired cap,-89.66
+LD Truck,Hybrid,2045,retired cap,-167.36
+LD Truck,Hybrid,2050,retired cap,-637.53
+LD Truck,PHEV (35-mile AER),2035,retired cap,-0.08
+LD Truck,PHEV (35-mile AER),2040,retired cap,-12.81
+LD Truck,PHEV (35-mile AER),2045,retired cap,-28.09
+LD Truck,PHEV (35-mile AER),2050,retired cap,-95.36
+LD Truck,PHEV (50-mile AER),2050,retired cap,-14.83
+MD Truck,Battery electric,2040,retired cap,-0.03
+MD Truck,Battery electric,2045,retired cap,-0.47
+MD Truck,Battery electric,2050,retired cap,-1.7
+MD Truck,Diesel,2025,retired cap,-12.08
+MD Truck,Diesel,2030,retired cap,-46.7
+MD Truck,Diesel,2035,retired cap,-62.24
+MD Truck,Diesel,2040,retired cap,-130.64
+MD Truck,Diesel,2045,retired cap,-0.51
+MD Truck,Diesel,2050,retired cap,-0.55
+MD Truck,Fuel-cell electric,2045,retired cap,-0.42
+MD Truck,Fuel-cell electric,2050,retired cap,-1.51
+MD Truck,Gasoline,2025,retired cap,-8.05
+MD Truck,Gasoline,2030,retired cap,-31.14
+MD Truck,Gasoline,2035,retired cap,-41.49
+MD Truck,Gasoline,2040,retired cap,-89.37
+MD Truck,Gasoline,2045,retired cap,-78.82
+MD Truck,Gasoline,2050,retired cap,-111.5
+MD Truck,Hybrid,2045,retired cap,-0.42
+MD Truck,Hybrid,2050,retired cap,-1.51
+MD Truck,Plug-in hybrid,2045,retired cap,-0.42
+MD Truck,Plug-in hybrid,2050,retired cap,-1.51

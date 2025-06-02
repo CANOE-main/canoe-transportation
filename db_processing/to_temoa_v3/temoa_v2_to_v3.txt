@@ -78,6 +78,8 @@ ALTER TABLE EmissionActivity RENAME COLUMN "emis_act" TO activity;
 ALTER TABLE EmissionActivity RENAME COLUMN "emis_act_units" TO units;
 ALTER TABLE EmissionActivity RENAME COLUMN "emis_act_notes" TO notes;
 
+ALTER TABLE EmissionEmbodied RENAME COLUMN "regions" TO region;
+
 ALTER TABLE EmissionLimit RENAME COLUMN "regions" TO region;
 ALTER TABLE EmissionLimit RENAME COLUMN "periods" TO period;
 ALTER TABLE EmissionLimit RENAME COLUMN "emis_limit" TO value;

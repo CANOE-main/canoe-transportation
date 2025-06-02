@@ -4,8 +4,8 @@ import os
 import pandas as pd
 
 db_source = 'canoe_on_12d_vanilla4'
-db_target = 'canoe_on_12d_evgrowth'
-constraints = 'trn_constraints_evgrowth'
+db_target = 'canoe_on_12d_lowgrowth'
+constraints = 'trn_constraints_lowgrowth'
 
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 source = dir_path + '../db_processing/update_database/target_database/' + db_source + '.sqlite'

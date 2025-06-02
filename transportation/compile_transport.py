@@ -37,6 +37,9 @@ charging_dsd = False       # choose whether to represent LD EV charging demand d
 # Aggregate existing capacities and efficiencies into 5-year vintages
 aggregate_excap = True
 
+# Create EmissionEmbodied table
+create_emission_embodied = False
+
 # Convert CH4 and N2O units of ktonnes into tonnes (to harmonize with other sectors)
 convert_emission_units = True
 
@@ -67,6 +70,7 @@ def instantiate_database():
     # Build the database if it doesn't exist. Otherwise clear all data if forced
     if build_db: curs.executescript(open(schema, 'r').read())
     elif wipe_database:
+        curs.executescript(open(schema, 'r').read())
         tables = [t[0] for t in curs.execute("""SELECT name FROM sqlite_master WHERE type='table';""").fetchall()]
         for table in tables: curs.execute(f"DELETE FROM '{table}'")
         print("Database wiped prior to aggregation.\n")
@@ -1089,6 +1093,86 @@ def compile_emissionact():
 
 """
 ##################################################
+    Emission Embodied
+##################################################
+"""
+
+def compile_emissionemb():
+    """
+    Reads emission factors from capacities from the .xlsx file and compiles them into .sqlite format 
+    """
+    sheet = 'EmissionEmb'
+    parameter = 'EmissionEmbodied'
+    last_col = 'Technological'
+
+    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+        return None
+    
+    # Reads excel sheet columns and limits the number of columns to the last DQI
+    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    ncols = cols.index(last_col) #    Last column to read
+
+    # Imports the table on the excel sheet
+    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df.columns = df.columns.astype(str)
+    df = df.loc[:, ~df.columns.str.contains('Unnamed')]
+
+    # Copies the values from 2021 to re-create vintages for 2025-2050
+    df['2025'], df['2030'], df['2035'], df['2040'], df['2045'], df['2050'] = df['2021'], df['2021'], df['2021'], df['2021'], df['2021'], df['2021']
+
+    # Melts the vintage columns into vintage and parameter colums and drops rows with empty parameters
+    vintages = [col for col in df.columns if col.isdigit()]
+    params = [col for col in df.columns if not col.isdigit()]
+    df = pd.melt(df, id_vars=params, var_name='Vintage', value_name=parameter, value_vars=vintages)
+    df = df.dropna(subset=[parameter])
+
+    # Fill NaNs as empty values; allowing for consistent grouping of vintages
+    df = df.fillna('')
+
+    # Round values to the nearest precision (decimal place) and normalize references to ASCII
+    df[parameter] = df[parameter].round(precision)
+    df['Reference'] = df['Reference'].apply(normalize_to_ascii)
+
+    # Connect with database and replace parameters
+    conn = sqlite3.connect(database)
+    curs = conn.cursor()
+
+    # Creates the EmissionEmbodied table
+    # curs.execute("""CREATE TABLE EmissionEmbodied(
+    #                 regions      TEXT,
+    #                 emis_comm   TEXT
+    #                     REFERENCES commodities (comm_name),
+    #                 tech        TEXT
+    #                     REFERENCES technologies (tech),
+    #                 vintage     INTEGER
+    #                     REFERENCES time_periods (t_periods),
+    #                 value       REAL,
+    #                 units       TEXT,
+    #                 notes       TEXT, reference, data_year, data_flags, dq_est, dq_rel, dq_comp, dq_time, dq_geog, dq_tech, additional_notes,
+    #                 PRIMARY KEY (regions, emis_comm, tech, vintage))""")
+
+    for _idx, row in df.iterrows():
+        if row['Emission Commodity'] in ['ch4', 'n2o'] and convert_emission_units:
+            curs.execute("""REPLACE INTO EmissionEmbodied(regions, emis_comm, tech, vintage, value, units, notes, 
+                        reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
+                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (province, row['Emission Commodity'], row['Technology'], row['Vintage'], row[parameter]*1000, row['Unit'].replace('kt', 't'), row['Notes'], 
+                        row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
+        
+        else:
+            curs.execute("""REPLACE INTO EmissionEmbodied(regions, emis_comm, tech, vintage, value, units, notes, 
+                        reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
+                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (province, row['Emission Commodity'], row['Technology'], row['Vintage'], row[parameter], row['Unit'], row['Notes'], 
+                        row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
+            
+    conn.commit()
+    conn.close()
+
+    print(f"Emission factors from capacity data compiled into {os.path.basename(database)}\n")
+
+"""
+##################################################
     Tech input split
 ##################################################
 """
@@ -1241,10 +1325,12 @@ def compile_transport():
     compile_costvariable()
     compile_costfixed()
     compile_emissionact()
+
+    if create_emission_embodied: compile_emissionemb()
+
     compile_techinputsplit()
-    
-    if not aggregate_excap:
-        update_cost_variable_entries()
+
+    if not aggregate_excap: update_cost_variable_entries()
 
     cleanup()
 
