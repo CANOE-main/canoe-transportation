@@ -11,44 +11,9 @@ from datetime import datetime
 import re
 import unicodedata
 
-province = 'ON'
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')    # Ignore UserWarnings from openpyxl
 
-spreadsheet_name = 'CANOE_TRN_<r>_v4'.replace('<r>', province)
-db_name = 'canoe_trn_<r>_vanilla4'.replace('<r>', province.lower())
-ldv_profile_name = 'ON-2016TTS_no-we_2018_v4_2023-batteries'
-
-# ON-2016TTS_no-we_2018_v4_2023-batteries
-# ON-2022NHTS_2018_v4_2023-batteries
-
-# Update these paths according to your files' locations
-dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
-database = dir_path + 'compiled_database/' + db_name + '.sqlite'
-schema = dir_path + '../canoe_schema.sql'
-template = dir_path + 'canoe_trn_template.xlsx'
-
-# Spreadsheet database to compile
-spreadsheet = dir_path + 'spreadsheet_database/' + spreadsheet_name + '.xlsx'
-
-# RAMP-mobility simulation results to compile
-ldv_profile = dir_path + '../charging_profiles/ramp_mobility/results/' + ldv_profile_name + '.csv'
-weather_year = 2018
-charging_dsd = False       # choose whether to represent LD EV charging demand distribution in the DSD (True) or CFT (False) Temoa tables
-
-# Aggregate existing capacities and efficiencies into 5-year vintages
-aggregate_excap = True
-
-# Create EmissionEmbodied table
-create_emission_embodied = False
-
-# Convert CH4 and N2O units of ktonnes into tonnes (to harmonize with other sectors)
-convert_emission_units = True
-
-# Define the precision of the model parameters
-epsilon = 1e-4  # For cleaning existing capacities that are too small
-precision = 9   # For consistent precision across the model
-
-# Rewrite database from scratch if it already exists
-wipe_database = True
 
 """
 ##################################################
@@ -56,23 +21,25 @@ wipe_database = True
 ##################################################
 """
 
-def instantiate_database():
+def instantiate_database(config):
     """
     Create sqlite database from schema sql file
     """
     # Check if database exists or needs to be built
-    build_db = not os.path.exists(database)
+    build_db = not os.path.exists(config['database'])
 
     # Connect to the new database file
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor() # Cursor object interacts with the sqlite db
 
     # Build the database if it doesn't exist. Otherwise clear all data if forced
-    if build_db: curs.executescript(open(schema, 'r').read())
-    elif wipe_database:
-        curs.executescript(open(schema, 'r').read())
+    if build_db:
+        curs.executescript(open(config['schema'], 'r').read())
+    elif config.get('wipe_database', False):
+        curs.executescript(open(config['schema'], 'r').read())
         tables = [t[0] for t in curs.execute("""SELECT name FROM sqlite_master WHERE type='table';""").fetchall()]
-        for table in tables: curs.execute(f"DELETE FROM '{table}'")
+        for table in tables:
+            curs.execute(f"DELETE FROM '{table}'")
         print("Database wiped prior to aggregation.\n")
     
     conn.commit()
@@ -137,19 +104,19 @@ def normalize_to_ascii(text):
                      .replace('®', '(R)'))
     return ascii_encoded
 
-def cleanup():
+def cleanup(config):
     """
     Removes existing techs of a given vintage with no capacity
     """
     tables = ["ExistingCapacity", "Efficiency", "CostVariable", "CostFixed"] #   Tables to check for tech-vintage pairs with exist_cap = 0
     
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
-    tech_vintage_remove = curs.execute(f"""SELECT DISTINCT tech, vintage FROM ExistingCapacity WHERE exist_cap < {epsilon}""").fetchall()
+    tech_vintage_remove = curs.execute(f"""SELECT DISTINCT tech, vintage FROM ExistingCapacity WHERE exist_cap < {config['epsilon']}""").fetchall()
     for table in tables:
             for tech, vintage in tech_vintage_remove:
-                print(f"Deleted {tech} @ {vintage} in {table} because exist_cap < {epsilon}")
+                print(f"Deleted {tech} @ {vintage} in {table} because exist_cap < {config['epsilon']}")
                 curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND vintage = ?""", (tech, vintage))
 
     # Get tech-vintage pairs from Efficiency, CostVariable, and CostFixed that do not exist in ExistingCapacity
@@ -200,7 +167,7 @@ def cleanup():
 ##################################################
 """
 
-def insert_template():
+def insert_template(config):
     """ 
     Imports predefined template tables into the sqlite database
     """
@@ -226,10 +193,10 @@ def insert_template():
     ]
 
     # Read the specified sheets into a dictionary of dataframes
-    dfs = pd.read_excel(template, sheet_name=tables)
+    dfs = pd.read_excel(config['template'], sheet_name=tables)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
 
     # For each table, insert the data from the corresponding dataframe
     for sheet_name, df in dfs.items():
@@ -240,23 +207,23 @@ def insert_template():
     conn.commit()
     conn.close()
 
-    print(f"Template tables inserted into {os.path.basename(database)}\n")
+    print(f"Template tables inserted into {os.path.basename(config['database'])}\n")
 
-def compile_ref():
+def compile_ref(config):
     """
     Reads references from the .xlsx file and compiles them into .sqlite format 
     """
     sheet = 'References'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Imports the table on the excel sheet and normalizes references to ASCII
-    df = pd.read_excel(spreadsheet, sheet_name = sheet)
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet)
     df['References'] = df['References'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
@@ -265,36 +232,30 @@ def compile_ref():
     conn.commit()
     conn.close()
 
-    print(f"References compiled into {os.path.basename(database)}\n")
+    print(f"References compiled into {os.path.basename(config['database'])}\n")
 
-"""
-##################################################
-    Techs and commodities
-##################################################
-"""
-
-def compile_techs():
+def compile_techs(config):
     """
     Reads technologies from the .xlsx file and compiles them into .sqlite format 
     """
     sheet = 'Techs'
     last_col = 'Category'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to read
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
     df = df.fillna('')
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
@@ -304,30 +265,30 @@ def compile_techs():
     conn.commit()
     conn.close()
 
-    print(f"Technology data compiled into {os.path.basename(database)}\n")
+    print(f"Technology data compiled into {os.path.basename(config['database'])}\n")
 
-def compile_comms():
+def compile_comms(config):
     """
     Reads commodities from the .xlsx file and compiles them into .sqlite format 
     """
     sheet = 'Comms'
     last_col = 'Details'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
     df = df.fillna('')
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
@@ -337,15 +298,9 @@ def compile_comms():
     conn.commit()
     conn.close()
 
-    print(f"Commodity data compiled into {os.path.basename(database)}\n")
+    print(f"Commodity data compiled into {os.path.basename(config['database'])}\n")
 
-"""
-##################################################
-    Demand
-##################################################
-"""
-
-def compile_demand():
+def compile_demand(config):
     """
     Reads demands from the .xlsx file and compiles them into .sqlite format 
     """
@@ -353,15 +308,15 @@ def compile_demand():
     parameter = 'Demand'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -375,31 +330,25 @@ def compile_demand():
     df = df.fillna('')
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO Demand(regions, periods, demand_comm, demand, demand_units, demand_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (province, row['Period'], row['Demand Commodity'], row[parameter], row['Unit'], row['Notes'], 
+                    (config['province'], row['Period'], row['Demand Commodity'], row[parameter], row['Unit'], row['Notes'], 
                     row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
 
     conn.commit()
     conn.close()
 
-    print(f"Demand data compiled into {os.path.basename(database)}\n")
+    print(f"Demand data compiled into {os.path.basename(config['database'])}\n")
 
-"""
-#########################################################
-    Demand specific distribution (LD EV charging demand)
-#########################################################
-"""
-
-def compile_dsd():
+def compile_dsd(config):
     """
     Reads charging demand distribution from RAMP-mobility simulation results and compiles them into the .sqlite format 
     """
@@ -407,26 +356,26 @@ def compile_dsd():
     last_col = 'Technological'
     n_demands = 3
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the metadata on the excel sheet
-    metadata = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1), nrows=n_demands) # Number of demands that are affected by the dsd
+    metadata = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1), nrows=n_demands) # Number of demands that are affected by the dsd
 
     # Imports the template format of the DSD table
-    dsd_template = pd.read_excel(template, sheet_name = 'DemandSpecificDistribution', header=None, nrows=1).iloc[0].values.tolist()
+    dsd_template = pd.read_excel(config['template'], sheet_name = 'DemandSpecificDistribution', header=None, nrows=1).iloc[0].values.tolist()
 
     # Imports the charging profiles from the RAMP-mobility results
-    cp = pd.read_csv(ldv_profile, index_col=0)
+    cp = pd.read_csv(config['ldv_profile'], index_col=0)
     cp.index = pd.to_datetime(cp.index, utc=True)
     
     # Converts simulation results time series into ET time zone, resamples into hourly resolution, and normalizes distribution
     cp = cp.set_index(cp.index.tz_convert('America/Toronto'))
-    cp = cp[cp.index.year == weather_year]
+    cp = cp[cp.index.year == config['weather_year']]
     cp = cp.resample('H').mean()
     cp = cp/cp.sum()
 
@@ -441,7 +390,7 @@ def compile_dsd():
     
     # Creates DSD dataframe from the template and fills in the DSD from the RAMP-mobility results along with the metadata from the spreadsheet database
     df = pd.DataFrame(columns=dsd_template)
-    df['dsd'] = cp['Charging Profile'].round(precision).values # DSDs rounded to 10 decimals
+    df['dsd'] = cp['Charging Profile'].round(config['precision']).values # DSDs rounded to 10 decimals
     df['season_name'] = cp['Day'].values
     df['time_of_day_name'] = cp['Hour'].values
 
@@ -470,7 +419,7 @@ def compile_dsd():
     df_merged = df_merged.where(pd.notnull(df_merged), None)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
 
     # Insert the dataframe into the sqlite database
     df_merged.to_sql('DemandSpecificDistribution', conn, if_exists='replace', index=False)
@@ -478,7 +427,7 @@ def compile_dsd():
     conn.commit()
     conn.close()
 
-    print(f"Demand specific distributions compiled into {os.path.basename(database)}\n")
+    print(f"Demand specific distributions compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -486,20 +435,20 @@ def compile_dsd():
 ##################################################
 """
 
-def compile_cft():
+def compile_cft(config):
     """
     Reads charging demand distribution from RAMP-mobility simulation results and compiles them into the .sqlite format 
     """
     # Imports the template format of the DSD table
-    cft_template = pd.read_excel(template, sheet_name = 'CapacityFactorTech', header=None, nrows=1).iloc[0].values.tolist()
+    cft_template = pd.read_excel(config['template'], sheet_name = 'CapacityFactorTech', header=None, nrows=1).iloc[0].values.tolist()
 
     # Imports the charging profiles from the RAMP-mobility results
-    cp = pd.read_csv(ldv_profile, index_col=0)
+    cp = pd.read_csv(config['ldv_profile'], index_col=0)
     cp.index = pd.to_datetime(cp.index, utc=True)
     
     # Converts simulation results time series into ET time zone, resamples into hourly resolution, and normalizes distribution
     cp = cp.set_index(cp.index.tz_convert('America/Toronto'))
-    cp = cp[cp.index.year == weather_year]
+    cp = cp[cp.index.year == config['weather_year']]
     cp = cp.resample('H').mean()
     cp = cp/cp.max()                # normalize by the largest datapoint since the charging distribution will go to capacity factor tech
 
@@ -514,7 +463,7 @@ def compile_cft():
     
     # Creates the charging dist dataframe from the template and fills in the charging dist from the RAMP-mobility results along with the metadata from the spreadsheet database
     df = pd.DataFrame(columns=cft_template)
-    df['cf_tech'] = cp['Charging Profile'].round(precision).values # the charging dists rounded to 10 decimals
+    df['cf_tech'] = cp['Charging Profile'].round(config['precision']).values # the charging dists rounded to 10 decimals
     df['season_name'] = cp['Day'].values
     df['time_of_day_name'] = cp['Hour'].values
 
@@ -538,7 +487,7 @@ def compile_cft():
     df = df.where(pd.notnull(df), None)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
 
     # Insert the dataframe into the sqlite database
     df.to_sql('CapacityFactorTech', conn, if_exists='replace', index=False)
@@ -546,7 +495,7 @@ def compile_cft():
     conn.commit()
     conn.close()
 
-    print(f"Capacity factor distributions compiled into {os.path.basename(database)}\n")
+    print(f"Capacity factor distributions compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -554,41 +503,41 @@ def compile_cft():
 ##################################################
 """
 
-def compile_lifetime():
+def compile_lifetime(config):
     """
     Reads lifetimes from the .xlsx file and compiles them into .sqlite format 
     """
     sheet = 'Lifetime'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet and normalize references to ASCII
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
     df = df.fillna('')
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO LifetimeTech(regions, tech, life, life_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (province, row['Technology'], row['Lifetime'], row['Notes'], 
+                    (config['province'], row['Technology'], row['Lifetime'], row['Notes'], 
                     row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
 
     conn.commit()
     conn.close()
 
-    print(f"Lifetime data compiled into {os.path.basename(database)}\n")
+    print(f"Lifetime data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -596,7 +545,7 @@ def compile_lifetime():
 ##################################################
 """
 
-def compile_excap():
+def compile_excap(config):
     """
     Reads existing capacities from the .xlsx file and compiles them into .sqlite format 
     """
@@ -604,15 +553,15 @@ def compile_excap():
     parameter = 'ExistingCapacity'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -625,7 +574,7 @@ def compile_excap():
     # Fill NaNs as empty values; allowing for consistent grouping of vintages
     df = df.fillna('')
 
-    if aggregate_excap:
+    if config['aggregate_excap']:
         # Aggregates 2000-2020 vintages into 5-year vintages (e.g., 2002 -> 2000 and 2003 -> 2005)
         df.Vintage = df.Vintage.astype(int)
         df['qVintage'] = df.Vintage.apply(quinquennial_mapping)
@@ -633,23 +582,23 @@ def compile_excap():
         df = df.rename(columns={'qVintage': 'Vintage'})
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO ExistingCapacity(regions, tech, vintage, exist_cap, exist_cap_units, exist_cap_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Technology'], row['Vintage'], row[parameter], row['Unit'], row['Notes'], 
+                (config['province'], row['Technology'], row['Vintage'], row[parameter], row['Unit'], row['Notes'], 
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
-    print(f"Existing capacity data compiled into {os.path.basename(database)}\n")
+    print(f"Existing capacity data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -657,39 +606,39 @@ def compile_excap():
 ##################################################
 """
 
-def compile_c2a():
+def compile_c2a(config):
     """
     Reads c2a factors from the .xlsx file and compiles them into .sqlite format 
     """
     sheet = 'Cap2Act'
     last_col = 'Notes'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
     df = df.fillna('')
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO CapacityToActivity(regions, tech, c2a, c2a_notes)
                         VALUES(?, ?, ?, ?)""",
-                    (province, row['Technology'], row['Capacity to Activity'], f"[{row['Activity Unit']}/{row['Capacity Unit']}] {row['Notes']}"))
+                    (config['province'], row['Technology'], row['Capacity to Activity'], f"[{row['Activity Unit']}/{row['Capacity Unit']}] {row['Notes']}"))
 
     conn.commit()
     conn.close()
 
-    print(f"C2A factors data compiled into {os.path.basename(database)}\n")
+    print(f"C2A factors data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -697,7 +646,7 @@ def compile_c2a():
 ##################################################
 """
 
-def compile_acf():
+def compile_acf(config):
     """
     Reads annual cap factors from the .xlsx file and compiles them into .sqlite format 
     """
@@ -705,15 +654,15 @@ def compile_acf():
     parameter = 'MaxAnnualCapFactor'
     last_col = 'Notes'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -728,16 +677,16 @@ def compile_acf():
     df = df.fillna('')
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
      # Reads technologies' lifetimes and last period of exsiting technologies
-    df_lifetime = pd.read_excel(spreadsheet, sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
-    period_0 = pd.read_excel(template, sheet_name='time_periods')
+    df_lifetime = pd.read_excel(config['spreadsheet'], sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
+    period_0 = pd.read_excel(config['template'], sheet_name='time_periods')
     period_0 = period_0[period_0['flag'] == 'e'].max().values[0]
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
     
     for _idx, row in df.iterrows():
@@ -755,18 +704,18 @@ def compile_acf():
 
         curs.execute("""REPLACE INTO MaxAnnualCapacityFactor(regions, periods, tech, output_comm, max_acf, max_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Period'], row['Technology'], row['Output Commodity'], row[parameter], row['Notes'], 
+                (config['province'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter], row['Notes'], 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
         
         curs.execute("""REPLACE INTO MinAnnualCapacityFactor(regions, periods, tech, output_comm, min_acf, min_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.99, f"99% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
+                (config['province'], row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.99, f"99% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
             
     conn.commit()
     conn.close()
 
-    print(f"Max/min annual cap factors data compiled into {os.path.basename(database)}\n")
+    print(f"Max/min annual cap factors data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -774,7 +723,7 @@ def compile_acf():
 ##################################################
 """
 
-def compile_efficiency():
+def compile_efficiency(config):
     """
     Reads efficiencies from the .xlsx file and compiles them into .sqlite format 
     """
@@ -782,15 +731,15 @@ def compile_efficiency():
     parameter = 'Efficiency'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -803,34 +752,34 @@ def compile_efficiency():
     # Fill NaNs as empty values; allowing for consistent grouping of vintages
     df = df.fillna('')
 
-    if aggregate_excap:
+    if config['aggregate_excap']:
         # Aggregates 2000-2020 vintages into 5-year vintages (e.g., 2002 -> 2000 and 2003 -> 2005)
         df.Vintage = df.Vintage.astype(int)
         df_ex = df[df.Vintage <= 2020]
         df_new = df[df.Vintage > 2020]
         df_ex['qVintage'] = df_ex.Vintage.apply(quinquennial_mapping)
-        df_ex_agg = df_ex.groupby([i for i in df_ex.columns.tolist() if i not in ['Vintage', parameter]]).agg({parameter: 'min'}).reset_index() # 'min' helps decrease overestimated energy use
+        df_ex_agg = df_ex.groupby([i for i in df_ex.columns.tolist() if i not in ['Vintage', parameter]]).agg({parameter: 'min'}).reset_index()
         df_ex_agg = df_ex_agg.rename(columns={'qVintage': 'Vintage'})
         df = pd.concat([df_ex_agg, df_new], ignore_index=True).reset_index(drop=True)
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO Efficiency(regions, input_comm, tech, vintage, output_comm, efficiency, eff_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], f"[{row['Unit']}] {row['Notes']}", 
+                (config['province'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], f"[{row['Unit']}] {row['Notes']}", 
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
-    print(f"Efficiency data compiled into {os.path.basename(database)}\n")
+    print(f"Efficiency data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -838,7 +787,7 @@ def compile_efficiency():
 ##################################################
 """
 
-def compile_costinvest():
+def compile_costinvest(config):
     """
     Reads investment costs from the .xlsx file and compiles them into .sqlite format 
     """
@@ -846,15 +795,15 @@ def compile_costinvest():
     parameter = 'CostInvest'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -868,25 +817,25 @@ def compile_costinvest():
     df = df.fillna('')
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO CostInvest(regions, tech, vintage, cost_invest, cost_invest_units, cost_invest_notes, data_cost_invest, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
-                 round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
+                (config['province'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
+                 round(row[parameter]/row['Conversion Factor'], config['precision']), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
-    print(f"Investment cost data compiled into {os.path.basename(database)}\n")
+    print(f"Investment cost data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -894,7 +843,7 @@ def compile_costinvest():
 ##################################################
 """
 
-def compile_costvariable():
+def compile_costvariable(config):
     """
     Reads variable costs from the .xlsx file and compiles them into .sqlite format 
     """
@@ -902,15 +851,15 @@ def compile_costvariable():
     parameter = 'CostVariable'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -925,14 +874,14 @@ def compile_costvariable():
     df = df.fillna('')
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Reads technologies' lifetimes
-    df_lifetime = pd.read_excel(spreadsheet, sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
+    df_lifetime = pd.read_excel(config['spreadsheet'], sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
     
     for _idx, row in df.iterrows():
@@ -949,14 +898,14 @@ def compile_costvariable():
         curs.execute("""REPLACE INTO CostVariable(regions, periods, tech, vintage, cost_variable, cost_variable_units, cost_variable_notes, data_cost_variable, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
-                 round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
+                (config['province'], row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
+                 round(row[parameter]/row['Conversion Factor'], config['precision']), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
-    print(f"Variable cost data compiled into {os.path.basename(database)}\n")
+    print(f"Variable cost data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -964,7 +913,7 @@ def compile_costvariable():
 ##################################################
 """
 
-def compile_costfixed():
+def compile_costfixed(config):
     """
     Reads fixed costs from the .xlsx file and compiles them into .sqlite format 
     """
@@ -972,15 +921,15 @@ def compile_costfixed():
     parameter = 'CostFixed'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -995,14 +944,14 @@ def compile_costfixed():
     df = df.fillna('')
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Reads technologies' lifetimes
-    df_lifetime = pd.read_excel(spreadsheet, sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
+    df_lifetime = pd.read_excel(config['spreadsheet'], sheet_name = 'Lifetime', skiprows=[0], usecols=['Technology', 'Lifetime'])
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
     
     for _idx, row in df.iterrows():
@@ -1019,14 +968,14 @@ def compile_costfixed():
         curs.execute("""REPLACE INTO CostFixed(regions, periods, tech, vintage, cost_fixed, cost_fixed_units, cost_fixed_notes, data_cost_fixed, data_cost_year, data_curr,
                      reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
-                 round(row[parameter]/row['Conversion Factor'], precision), row['Original Currency Year'], row['Original Currency'],
+                (config['province'], row['Period'], row['Technology'], row['Vintage'], row[parameter], f"{int(row['Currency Year'])} {row['Currency']} ({row['Unit']})", row['Notes'], 
+                 round(row[parameter]/row['Conversion Factor'], config['precision']), row['Original Currency Year'], row['Original Currency'],
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
-    print(f"Fixed cost data compiled into {os.path.basename(database)}\n")
+    print(f"Fixed cost data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -1034,7 +983,7 @@ def compile_costfixed():
 ##################################################
 """
 
-def compile_emissionact():
+def compile_emissionact(config):
     """
     Reads emission factors from activities from the .xlsx file and compiles them into .sqlite format 
     """
@@ -1042,15 +991,15 @@ def compile_emissionact():
     parameter = 'EmissionActivity'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -1064,32 +1013,31 @@ def compile_emissionact():
     df = df.fillna('')
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
-        if row['Emission Commodity'] in ['ch4', 'n2o'] and convert_emission_units:
+        if row['Emission Commodity'] in ['ch4', 'n2o'] and config['convert_emission_units']:
             curs.execute("""REPLACE INTO EmissionActivity(regions, emis_comm, input_comm, tech, vintage, output_comm, emis_act, emis_act_units, emis_act_notes, 
                         reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (province, row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter]*1000, row['Unit'].replace('kt', 't'), row['Notes'], 
+                        (config['province'], row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter]*1000, row['Unit'].replace('kt', 't'), row['Notes'], 
                         row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
-        
         else:
             curs.execute("""REPLACE INTO EmissionActivity(regions, emis_comm, input_comm, tech, vintage, output_comm, emis_act, emis_act_units, emis_act_notes, 
                         reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (province, row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], row['Unit'], row['Notes'], 
+                        (config['province'], row['Emission Commodity'], row['Input Commodity'], row['Technology'], row['Vintage'], row['Output Commodity'], row[parameter], row['Unit'], row['Notes'], 
                         row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
-    print(f"Emission factors from activity data compiled into {os.path.basename(database)}\n")
+    print(f"Emission factors from activity data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -1097,7 +1045,7 @@ def compile_emissionact():
 ##################################################
 """
 
-def compile_emissionemb():
+def compile_emissionemb(config):
     """
     Reads emission factors from capacities from the .xlsx file and compiles them into .sqlite format 
     """
@@ -1105,15 +1053,15 @@ def compile_emissionemb():
     parameter = 'EmissionEmbodied'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -1130,11 +1078,11 @@ def compile_emissionemb():
     df = df.fillna('')
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     # Creates the EmissionEmbodied table
@@ -1152,24 +1100,23 @@ def compile_emissionemb():
     #                 PRIMARY KEY (regions, emis_comm, tech, vintage))""")
 
     for _idx, row in df.iterrows():
-        if row['Emission Commodity'] in ['ch4', 'n2o'] and convert_emission_units:
+        if row['Emission Commodity'] in ['ch4', 'n2o'] and config['convert_emission_units']:
             curs.execute("""REPLACE INTO EmissionEmbodied(regions, emis_comm, tech, vintage, value, units, notes, 
                         reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (province, row['Emission Commodity'], row['Technology'], row['Vintage'], row[parameter]*1000, row['Unit'].replace('kt', 't'), row['Notes'], 
+                        (config['province'], row['Emission Commodity'], row['Technology'], row['Vintage'], row[parameter]*1000, row['Unit'].replace('kt', 't'), row['Notes'], 
                         row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
-        
         else:
             curs.execute("""REPLACE INTO EmissionEmbodied(regions, emis_comm, tech, vintage, value, units, notes, 
                         reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (province, row['Emission Commodity'], row['Technology'], row['Vintage'], row[parameter], row['Unit'], row['Notes'], 
+                        (config['province'], row['Emission Commodity'], row['Technology'], row['Vintage'], row[parameter], row['Unit'], row['Notes'], 
                         row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
-    print(f"Emission factors from capacity data compiled into {os.path.basename(database)}\n")
+    print(f"Emission factors from capacity data compiled into {os.path.basename(config['database'])}\n")
 
 """
 ##################################################
@@ -1177,7 +1124,7 @@ def compile_emissionemb():
 ##################################################
 """
 
-def compile_techinputsplit():
+def compile_techinputsplit(config):
     """
     Reads tech input commodity splits from the .xlsx file and compiles them into .sqlite format 
     """
@@ -1185,15 +1132,15 @@ def compile_techinputsplit():
     parameter = 'TechInputSplit'
     last_col = 'Technological'
 
-    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+    if sheet not in pd.ExcelFile(config['spreadsheet']).sheet_names:
         return None
     
     # Reads excel sheet columns and limits the number of columns to the last DQI
-    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    cols = pd.read_excel(config['spreadsheet'], sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
     ncols = cols.index(last_col) #    Last column to read
 
     # Imports the table on the excel sheet
-    df = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
+    df = pd.read_excel(config['spreadsheet'], sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1))
     df.columns = df.columns.astype(str)
     df = df.loc[:, ~df.columns.str.contains('Unnamed')]
 
@@ -1207,33 +1154,27 @@ def compile_techinputsplit():
     df = df.fillna('')
 
     # Round values to the nearest precision (decimal place) and normalize references to ASCII
-    df[parameter] = df[parameter].round(precision)
+    df[parameter] = df[parameter].round(config['precision'])
     df['Reference'] = df['Reference'].apply(normalize_to_ascii)
 
     # Connect with database and replace parameters
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
     curs = conn.cursor()
 
     for _idx, row in df.iterrows():
         curs.execute("""REPLACE INTO TechInputSplit(regions, periods, input_comm, tech, ti_split, ti_split_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Period'], row['Input Commodity'], row['Technology'], row[parameter], row['Notes'], 
+                (config['province'], row['Period'], row['Input Commodity'], row['Technology'], row[parameter], row['Notes'], 
                 row['Reference'], row['Data Year'], row['Reliability'], row['Representativeness'], dq_time(row['Data Year']), row['Geographical'], row['Technological']))
             
     conn.commit()
     conn.close()
 
-    print(f"Tech input commodity split data compiled into {os.path.basename(database)}\n")
+    print(f"Tech input commodity split data compiled into {os.path.basename(config['database'])}\n")
 
-"""
-##################################################
-    Update variable cost entries
-##################################################
-"""
-
-def update_cost_variable_entries():
+def update_cost_variable_entries(config):
     # Connect to the SQLite database
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(config['database'])
 
     # Fetch data from ExistingCapacity and CostVariable tables
     existing_capacity_df = pd.read_sql_query("SELECT tech, vintage FROM ExistingCapacity", conn)
@@ -1301,38 +1242,99 @@ def update_cost_variable_entries():
 ##################################################
 """
 
-def compile_transport():
+def compile_transport(
+    province: str = 'ON',  # Default province, can be overridden by the user
+    spreadsheet_name_format: str = 'CANOE_TRN_<r>_v4',
+    db_name_format: str = 'canoe_trn_<r>_vanilla4',
+    ldv_profile_name: str = 'ON-2016TTS_no-we_2018_v4_2023-batteries',
+    # ON-2016TTS_no-we_2018_v4_2023-batteries
+    # ON-2022NHTS_2018_v4_2023-batteries
+    dir_path = None,
+    # RAMP-mobility simulation results to compile
+    weather_year = 2018,
+    charging_dsd = False,       # choose whether to represent LD EV charging demand distribution in the DSD (True) or CFT (False) Temoa tables
+    # Aggregate existing capacities and efficiencies into 5-year vintages
+    aggregate_excap = True,
+    # Create EmissionEmbodied table
+    create_emission_embodied = False,
+    # Convert CH4 and N2O units of ktonnes into tonnes (to harmonize with other sectors)
+    convert_emission_units = True,
+    # Define the precision of the model parameters
+    epsilon = 1e-4,  # For cleaning existing capacities that are too small
+    precision = 9,   # For consistent precision across the model
+    # Rewrite database from scratch if it already exists
+    wipe_database = True
+):
     """
     Runs all compiling functions
     """
-    instantiate_database()
 
-    insert_template()
-    compile_ref()
-    compile_techs()
-    compile_comms()
-    compile_demand()
+    spreadsheet_name = spreadsheet_name_format.replace('<r>', province)
+    db_name = db_name_format.replace('<r>', province.lower())
 
-    if charging_dsd: compile_dsd()
-    else: compile_cft()
+    # Update these paths according to your files' locations
+    if dir_path is None:
+        dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
+    
+    database = dir_path + 'compiled_database/' + db_name + '.sqlite'
+    schema = dir_path + '../canoe_schema.sql'
+    template = dir_path + 'canoe_trn_template.xlsx'
 
-    compile_lifetime()
-    compile_excap()
-    compile_c2a()
-    compile_acf()
-    compile_efficiency()
-    compile_costinvest()
-    compile_costvariable()
-    compile_costfixed()
-    compile_emissionact()
+    # Spreadsheet database to compile
+    spreadsheet = dir_path + 'spreadsheet_database/' + spreadsheet_name + '.xlsx'
 
-    if create_emission_embodied: compile_emissionemb()
+    # RAMP-mobility simulation results to compile
+    ldv_profile = dir_path + '../charging_profiles/ramp_mobility/results/' + ldv_profile_name + '.csv'
 
-    compile_techinputsplit()
+    # Packing all parameters into a config dictionary to be passed to functions below
+    config = dict(
+        province=province,
+        spreadsheet=spreadsheet,
+        database=database,
+        schema=schema,
+        template=template,
+        ldv_profile=ldv_profile,
+        weather_year=weather_year,
+        charging_dsd=charging_dsd,
+        aggregate_excap=aggregate_excap,
+        create_emission_embodied=create_emission_embodied,
+        convert_emission_units=convert_emission_units,
+        epsilon=epsilon,
+        precision=precision,
+        wipe_database=wipe_database
+    )
 
-    if not aggregate_excap: update_cost_variable_entries()
+    # print for checking
+    [print(k, ':', v) for k, v in config.items()]
+    
+    instantiate_database(config)
 
-    cleanup()
+    insert_template(config)
+    compile_ref(config)
+    compile_techs(config)
+    compile_comms(config)
+    compile_demand(config)
+
+    if charging_dsd: compile_dsd(config)
+    else: compile_cft(config)
+
+    compile_lifetime(config)
+    compile_excap(config)
+    compile_c2a(config)
+    compile_acf(config)
+    compile_efficiency(config)
+    compile_costinvest(config)
+    compile_costvariable(config)
+    compile_costfixed(config)
+    compile_emissionact(config)
+
+    if create_emission_embodied: compile_emissionemb(config)
+
+    compile_techinputsplit(config)
+
+    if not aggregate_excap: update_cost_variable_entries(config)
+
+    cleanup(config)
 
     print(f"All parameter data from {os.path.basename(spreadsheet)} compiled into {os.path.basename(database)}\n")
 
