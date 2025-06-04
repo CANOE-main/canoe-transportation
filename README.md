@@ -29,19 +29,7 @@ This repository contains the compiled input data of the transportation sector us
 
 ## Quickstart
 
-1. **Clone the repository**
-    ```bash
-    git clone <repo-url>
-    cd CANOE-transportation
-    ```
-
-2. **Install dependencies**  
-   (Recommended: use a virtual environment)
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3. **Compile the database from spreadsheets**
+1. **Compile the database from spreadsheets**
     - Edit and run the Jupyter notebook `Create database.ipynb` **OR** run the main scripts in sequence:
     ```python
     # Compile the transport database from Excel
@@ -49,13 +37,13 @@ This repository contains the compiled input data of the transportation sector us
     compile_transport(province='ON', spreadsheet_name_format='CANOE_TRN_<r>_v4', db_name_format='canoe_trn_<r>_vanilla4')
     ```
 
-4. **Convert to Temoa v3 format**
+2. **Convert to Temoa v3 format**
     ```python
     from db_processing.to_temoa_v3.to_temoa_v3 import convert_to_temoa_v3
     convert_to_temoa_v3(db_name='canoe_trn_on_vanilla4')
     ```
 
-5. **Replace subset in the database**
+3. **Replace subset in the database**
     ```python
     from db_processing.update_database.subset_replacement import replace_subset
     replace_subset(
@@ -65,13 +53,13 @@ This repository contains the compiled input data of the transportation sector us
     )
     ```
 
-6. **Normalize capacity factor tables (optional)**
+4. **Normalize capacity factor tables (optional)**
     ```python
     from db_processing.update_database.cft_norm import normalize_cft
     normalize_cft('canoe_on_12d_vanilla4')
     ```
 
-7. **Apply model constraints**
+5. **Apply model constraints**
     ```python
     from model_constraints.update_constraints import update_constraints
     update_constraints(
