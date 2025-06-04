@@ -86,6 +86,7 @@ This repository contains the compiled input data of the transportation sector us
 ## Flowchart: Script and Function Relationships
 
 ```mermaid
+%%{init: {'theme':'dark'}}%%
 flowchart TD
     %% Data files as rectangles
     A[/"Excel Spreadsheets"/]:::datafile
@@ -93,14 +94,14 @@ flowchart TD
     E[/"Temoa v3 .sqlite Database"/]:::datafile
     G[/"Updated Target Database"/]:::datafile
     I[/"Normalized Database"/]:::datafile
-    K[/"Scenario Database with Constraints"/]:::datafile
+    K[/"Scenario Database<br/>with Constraints"/]:::datafile
 
     %% Functions as processes
-    B{{compile_transport<br/>transportation/compile_transport.py}}:::process
-    D{{convert_to_temoa_v3<br/>db_processing/to_temoa_v3/to_temoa_v3.py}}:::process
-    F{{replace_subset<br/>db_processing/update_database/subset_replacement.py}}:::process
-    H{{normalize_cft<br/>db_processing/update_database/cft_norm.py}}:::process
-    J{{update_constraints<br/>model_constraints/update_constraints.py}}:::process
+    B{{compile_transport<br/>transportation/<br/>compile_transport.py}}:::process
+    D{{convert_to_temoa_v3<br/>db_processing/to_temoa_v3/<br/>to_temoa_v3.py}}:::process
+    F{{replace_subset<br/>db_processing/update_database/<br/>subset_replacement.py}}:::process
+    H{{normalize_cft<br/>db_processing/update_database/<br/>cft_norm.py}}:::process
+    J{{update_constraints<br/>model_constraints/<br/>update_constraints.py}}:::process
 
     %% Flow
     A --> B
@@ -115,8 +116,8 @@ flowchart TD
     J --> K
 
     %% Styles
-    classDef datafile fill:#e3e6f3,stroke:#2b3a67,stroke-width:2px;
-    classDef process fill:#f9f6e7,stroke:#bfa600,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef datafile fill:#555555,stroke-width:2px,color:#ffffff;
+    classDef process fill:#555555,stroke-width:2px,color:#ffffff;
 
     %% Interactivity (hover titles)
     A:::datafile
@@ -132,9 +133,5 @@ flowchart TD
     H:::process
     J:::process
 
-    %% Clickable links (optional, remove if not needed)
-    click B "transportation/compile_transport.py" "View compile_transport.py"
-    click D "db_processing/to_temoa_v3/to_temoa_v3.py" "View to_temoa_v3.py"
-    click F "db_processing/update_database/subset_replacement.py" "View subset_replacement.py"
-    click H "db_processing/update_database/cft_norm.py" "View cft_norm.py"
-    click J "model_constraints/update_constraints.py" "View update_constraints.py"
+```
+
