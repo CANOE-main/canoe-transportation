@@ -7,15 +7,19 @@ import sqlite3
 import os
 import shutil
 
-# Function to replace rows based on 'tech' matching any 'tech' from Technology table in the subset db
 def replace_tech_rows(table_name, subset_cursor, source_cursor, target_cursor, log_file, **kwargs):
-    # Get the list of techs from the subset Technology table
-    subset_cursor.execute('SELECT tech FROM "Technology"')
-    techs = [row[0] for row in subset_cursor.fetchall()]
+    """
+    Replaces rows based on 'tech' matching any 'tech' from Technology table in the subset db
     
-    # Delete rows where 'tech' matches any tech from the subset Technology table
-    for tech in techs:
-        target_cursor.execute(f'DELETE FROM "{table_name}" WHERE tech = ?', (tech,))
+    """
+    if subset_cursor is not None:
+        # Get the list of techs from the subset Technology table
+        subset_cursor.execute('SELECT tech FROM "Technology"')
+        techs = [row[0] for row in subset_cursor.fetchall()]
+        
+        # Delete rows where 'tech' matches any tech from the subset Technology table
+        for tech in techs:
+            target_cursor.execute(f'DELETE FROM "{table_name}" WHERE tech = ?', (tech,))
     
     # Insert rows from the source database
     source_cursor.execute(f'SELECT * FROM "{table_name}"')
@@ -33,13 +37,14 @@ def replace_tech_rows(table_name, subset_cursor, source_cursor, target_cursor, l
 
 # Function to replace rows for Commodity, Demand, and DemandSpecificDistribution tables based on 'name' from subset db
 def replace_commodity_rows(table_name, column_name, subset_cursor, source_cursor, target_cursor, log_file, **kwargs):
-    # Get the list of names from the subset Commodity table
-    subset_cursor.execute('SELECT name FROM "Commodity"')
-    names = [row[0] for row in subset_cursor.fetchall()]
-    
-    # Delete rows where 'name' matches any name from the subset Commodity table
-    for name in names:
-        target_cursor.execute(f'DELETE FROM "{table_name}" WHERE {column_name} = ?', (name,))
+    if subset_cursor is not None:
+        # Get the list of names from the subset Commodity table
+        subset_cursor.execute('SELECT name FROM "Commodity"')
+        names = [row[0] for row in subset_cursor.fetchall()]
+        
+        # Delete rows where 'name' matches any name from the subset Commodity table
+        for name in names:
+            target_cursor.execute(f'DELETE FROM "{table_name}" WHERE {column_name} = ?', (name,))
     
     # Insert rows from the source database
     source_cursor.execute(f'SELECT * FROM "{table_name}"')
@@ -96,44 +101,35 @@ def remove_duplicates(target_cursor, log_file, **kwargs):
             target_cursor.execute(f'ALTER TABLE temp_{table_name} RENAME TO "{table_name}"')
             log_file.write(f"Removed duplicates from {table_name}\n")
 
-def get_unique_seasons(cursor):
-    """
-    Returns a set of unique 'season' values from all tables in the given SQLite database.
-    """
-    unique_seasons = set()
-    # Get all table names
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    tables = [row[0] for row in cursor.fetchall()]
-    for table in tables:
-        # Check if table has a 'season' column
-        cursor.execute(f'PRAGMA table_info("{table}")')
-        columns = [col[1] for col in cursor.fetchall()]
-        if 'season' in columns:
-            cursor.execute(f'SELECT DISTINCT season FROM "{table}"')
-            seasons = [row[0] for row in cursor.fetchall()]
-            unique_seasons.update(seasons)
-    return unique_seasons
-
-def keep_common_season(source_cursor, target_cursor, log_file, **kwargs):
-    """
-    Finds and keeps the common seasons (representative days) in the database.
-    """
-    return None
-
-
 def replace_subset(target_name: str, 
                    source_name: str, 
-                   subset_name: str,
+                   subset_name: str = None,
+                   output_name: str = None,
                    dir_path: str = None,
-                   references: bool = True):
+                   references: bool = True,
+                   tech_tables = None,
+                   commodity_tables_dict: dict = None):
     """
-    Replaces the subset database with the target database.
+    Removes rows in target database that appear in subset database, then adds rows from source database.
+    
+    This script removes all subset entries from the user-specified list of tables that have any matching tech or commodity index, depending on the table, in the target db. 
+    Then, it inserts all the entries from the source db into the same list of tables. An easy way of interpreting this is with the following set operation:
+
+    `output.sqlite = [set(target.sqlite) - set(subset.sqlite)] + set(source.sqlite)`
+    
+    Modifies Temoa v3 databases.
 
     Inputs:
     - target_name: str, name of the target database to be updated. E.g. 'canoe_on_12d_vanilla4'
-    - source_name: str, name of the source database from which new datapoints are taken. E.g. 'canoe_trn_on_vanilla4_v3'
-    - subset_name: str, name of the subset database to identify old datapoints to be replaced. E.g. 'canoe_trn_on_vanilla4_v3'
+    - source_name: str, name of the source database from which new datapoints are taken. 
+        This should have the new or updated entries that you want to insert into target db. E.g. 'canoe_trn_on_vanilla4_v3'
+    - subset_name: str, name of the subset database to identify old datapoints to be replaced. 
+        This should have the deprecated or outdated entries that you want to remove or update in the target db. E.g. 'canoe_trn_on_vanilla4_v3'
+        If None, no rows will be removed from the target database.
+    - output_name: str, name of the output database. If provided, creates a copy of target database. If None, the target database will be updated in place.
     - references: bool, if True, replace references in the target database with those from the source database
+    - tech_tables: list of str, names of the tables that contain technology data to be updated.
+    - commodity_tables_dict: dict {table_name: column_name}, mapping of table names to the column name that contains the commodity or demand name.
     """ 
 
     # Define the paths for the source, target, and log files
@@ -141,47 +137,69 @@ def replace_subset(target_name: str,
         dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
     target = dir_path + 'target_database/' + target_name + '.sqlite' #    Database to be updated
     source = dir_path + '../to_temoa_v3/v3_database/' + source_name + '.sqlite' #   Where new datapoints come from
-    subset = dir_path + '../to_temoa_v3/v3_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
+    
     # source = dir_path + 'target_database/' + source_name + '.sqlite' #   Where new datapoints come from
-    # subset = dir_path + 'target_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
+    
+    # If output_name is provided, create a copy of the target database
+    if output_name is not None:
+        output = dir_path + 'target_database/' + output_name + '.sqlite'
+        shutil.copyfile(target, output)
+        del target    # Remove the original target variable to avoid confusion
+        target = output    # All operations will be performed on the output database
+    else:
+        print('output_name not provided, updating target database in place:')
+        print(target)
+
     log = dir_path + 'update_log.txt'
 
     # shutil.copyfile(original, target)
+    
+    if type(tech_tables) is str:
+        tech_tables = [tech_tables]
+    if tech_tables is None:
+        # List of tables to target
+        tech_tables = [
+            'Technology', 
+            'LifetimeTech', 
+            'ExistingCapacity', 
+            'CapacityToActivity',
+            'CapacityFactorProcess',
+            'CapacityFactorTech', 
+            'MaxAnnualCapacityFactor', 
+            'MinAnnualCapacityFactor', 
+            'Efficiency', 
+            'CostInvest', 
+            'CostFixed', 
+            'CostVariable', 
+            'EmissionActivity',
+            'EmissionEmbodied', 
+            'TechInputSplit',
+            # 'StorageDuration'
+            ]
 
-    # List of tables to target
-    tech_tables = [
-        'Technology', 
-        'LifetimeTech', 
-        'ExistingCapacity', 
-        'CapacityToActivity',
-        'CapacityFactorProcess',
-        'CapacityFactorTech', 
-        'MaxAnnualCapacityFactor', 
-        'MinAnnualCapacityFactor', 
-        'Efficiency', 
-        'CostInvest', 
-        'CostFixed', 
-        'CostVariable', 
-        'EmissionActivity',
-        'EmissionEmbodied', 
-        'TechInputSplit',
-        # 'StorageDuration'
-        ]
-    commodity_tables = {
-        'Commodity': 'name', 
-        'Demand': 'commodity', 
-        # 'DemandSpecificDistribution': 'demand_name'
-        }
+    if commodity_tables_dict is None:
+        commodity_tables_dict = {
+            'Commodity': 'name', 
+            'Demand': 'commodity', 
+            # 'DemandSpecificDistribution': 'demand_name'
+            }
     
     try:
         # Connect to the source, target, and subset databases
         source_conn = sqlite3.connect(source)
         target_conn = sqlite3.connect(target)
-        subset_conn = sqlite3.connect(subset)
 
         source_cursor = source_conn.cursor()
         target_cursor = target_conn.cursor()
-        subset_cursor = subset_conn.cursor()
+
+        if subset_name is None:
+            subset_conn = None
+            subset_cursor = None
+        else:
+            subset = dir_path + '../to_temoa_v3/v3_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
+            # subset = dir_path + 'target_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
+            subset_conn = sqlite3.connect(subset)
+            subset_cursor = subset_conn.cursor()
 
         # Open the log file
         log_file = open(log, 'w')
@@ -197,7 +215,7 @@ def replace_subset(target_name: str,
             replace_tech_rows(table_name, **config)
 
         # Replace rows for Commodity, Demand, and DemandSpecificDistribution tables
-        for table_name, col in commodity_tables.items():
+        for table_name, col in commodity_tables_dict.items():
             replace_commodity_rows(table_name, col, **config)
 
         if references:
@@ -210,12 +228,13 @@ def replace_subset(target_name: str,
         # Commit the changes and close the connections
         target_conn.commit()
         target_cursor.execute('VACUUM;') #  Reclaims unused space
-        print("Replaced subset. Saved to:", target)
+        print("Done. Saved to:", target)
 
     finally:
         source_conn.close()
         target_conn.close()
-        subset_conn.close()
+        if subset_conn is not None:
+            subset_conn.close()
 
         # Close the log file
         log_file.close()

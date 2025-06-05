@@ -15,7 +15,7 @@ This repository contains the compiled input data of the transportation sector us
   - `to_temoa_v3/`  
     Converts the compiled database into the Temoa v3 format (`to_temoa_v3.py`).
   - `update_database/`  
-    Contains scripts for updating and normalizing the database, such as `subset_replacement.py` (for replacing subsets of the database) and `cft_norm.py` (for normalizing capacity factor tables).
+    Contains scripts for updating and normalizing the database, such as `subset_replacement.py` (for removing/adding/replacing rows in a database) and `cft_norm.py` (for normalizing capacity factor tables).
 - **model_constraints/**  
   Contains Excel spreadsheets with the different explicit (user-defined) constraints applied to the vanilla CANOE-transportation model, and scripts (e.g., `update_constraints.py`) to apply them.
 - **charging_profiles/**  
@@ -43,7 +43,7 @@ This repository contains the compiled input data of the transportation sector us
     convert_to_temoa_v3(db_name='canoe_trn_on_vanilla4')
     ```
 
-3. **Replace subset in the database**
+3. **Replace rows in the database**
     ```python
     from db_processing.update_database.subset_replacement import replace_subset
     replace_subset(
@@ -85,11 +85,11 @@ flowchart TD
     K[/"Scenario Database<br/>with Constraints"/]:::datafile
 
     %% Functions as processes
-    B{{compile_transport<br/>transportation/<br/>compile_transport.py}}:::process
-    D{{convert_to_temoa_v3<br/>db_processing/to_temoa_v3/<br/>to_temoa_v3.py}}:::process
-    F{{replace_subset<br/>db_processing/update_database/<br/>subset_replacement.py}}:::process
-    H{{normalize_cft<br/>db_processing/update_database/<br/>cft_norm.py}}:::process
-    J{{update_constraints<br/>model_constraints/<br/>update_constraints.py}}:::process
+    B{{"compile_transport()<br/>in transportation/<br/>compile_transport.py"}}:::process
+    D{{"convert_to_temoa_v3()<br/>in db_processing/to_temoa_v3/<br/>to_temoa_v3.py"}}:::process
+    F{{"replace_subset()<br/>in db_processing/update_database/<br/>subset_replacement.py"}}:::process
+    H{{"normalize_cft()<br/>in db_processing/update_database/<br/>cft_norm.py"}}:::process
+    J{{"update_constraints()<br/>in model_constraints/<br/>update_constraints.py"}}:::process
 
     %% Flow
     A --> B
