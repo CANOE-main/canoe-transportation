@@ -26,6 +26,7 @@ def replace_tech_rows(table_name, subset_cursor, source_cursor, target_cursor, l
     source_data = source_cursor.fetchall()
     source_cursor.execute(f'PRAGMA table_info("{table_name}")')
     columns = [col[1] for col in source_cursor.fetchall()]
+
     for row in source_data:
         try:
             target_cursor.execute(f'INSERT INTO "{table_name}" ({", ".join(columns)}) VALUES ({", ".join(["?"] * len(columns))})', row)
@@ -101,10 +102,14 @@ def remove_duplicates(target_cursor, log_file, **kwargs):
             target_cursor.execute(f'ALTER TABLE temp_{table_name} RENAME TO "{table_name}"')
             log_file.write(f"Removed duplicates from {table_name}\n")
 
-def replace_subset(target_name: str, 
-                   source_name: str, 
+def replace_subset(target_name: str = None,
+                   source_name: str = None, 
                    subset_name: str = None,
                    output_name: str = None,
+                   target_path: str = None,
+                   source_path: str = None, 
+                   subset_path: str = None,
+                   output_path: str = None,
                    dir_path: str = None,
                    references: bool = True,
                    tech_tables = None,
@@ -127,6 +132,7 @@ def replace_subset(target_name: str,
         This should have the deprecated or outdated entries that you want to remove or update in the target db. E.g. 'canoe_trn_on_vanilla4_v3'
         If None, no rows will be removed from the target database.
     - output_name: str, name of the output database. If provided, creates a copy of target database. If None, the target database will be updated in place.
+    - {target, source, subset, output}_path: the direct path to the file, if desired. If '.sqlite' extension isn't present in path, automatically append it.
     - references: bool, if True, replace references in the target database with those from the source database
     - tech_tables: list of str, names of the tables that contain technology data to be updated.
     - commodity_tables_dict: dict {table_name: column_name}, mapping of table names to the column name that contains the commodity or demand name.
@@ -135,20 +141,27 @@ def replace_subset(target_name: str,
     # Define the paths for the source, target, and log files
     if dir_path is None:
         dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
-    target = dir_path + 'target_database/' + target_name + '.sqlite' #    Database to be updated
-    source = dir_path + '../to_temoa_v3/v3_database/' + source_name + '.sqlite' #   Where new datapoints come from
+    if target_name is not None:
+        target_path = dir_path + 'target_database/' + target_name + '.sqlite' #    Database to be updated
+    if source_name is not None:
+        source_path = dir_path + '../to_temoa_v3/v3_database/' + source_name + '.sqlite' #   Where new datapoints come from
     
+    if '.sqlite' not in target_path: target_path += '.sqlite'
+    if '.sqlite' not in source_path: source_path += '.sqlite'
+
     # source = dir_path + 'target_database/' + source_name + '.sqlite' #   Where new datapoints come from
     
-    # If output_name is provided, create a copy of the target database
-    if output_name is not None:
-        output = dir_path + 'target_database/' + output_name + '.sqlite'
-        shutil.copyfile(target, output)
-        del target    # Remove the original target variable to avoid confusion
-        target = output    # All operations will be performed on the output database
+    # If either output_name or output_path is provided, create a copy of the target database
+    if (output_name is not None) or (output_path is not None):
+        if output_path is None:
+            output_path = dir_path + 'target_database/' + output_name + '.sqlite'
+        if '.sqlite' not in output_path: output_path += '.sqlite'
+        shutil.copyfile(target_path, output_path)
+        del target_path    # Remove the original target variable to avoid confusion
+        target_path = output_path    # All operations will be performed on the output database
     else:
-        print('output_name not provided, updating target database in place:')
-        print(target)
+        print('output_name nor output_path not provided, updating target database in place:')
+        print(target_path)  
 
     log = dir_path + 'update_log.txt'
 
@@ -186,19 +199,22 @@ def replace_subset(target_name: str,
     
     try:
         # Connect to the source, target, and subset databases
-        source_conn = sqlite3.connect(source)
-        target_conn = sqlite3.connect(target)
+        source_conn = sqlite3.connect(source_path)
+        target_conn = sqlite3.connect(target_path)
 
         source_cursor = source_conn.cursor()
         target_cursor = target_conn.cursor()
 
-        if subset_name is None:
+        if subset_name is None and subset_path is None:
+            # subset not provided
             subset_conn = None
             subset_cursor = None
         else:
-            subset = dir_path + '../to_temoa_v3/v3_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
+            if subset_path is None:
+                subset_path = dir_path + '../to_temoa_v3/v3_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
             # subset = dir_path + 'target_database/' + subset_name + '.sqlite' #   To identify the old datapoints to be replaced
-            subset_conn = sqlite3.connect(subset)
+            if '.sqlite' not in subset_path: subset_path += '.sqlite'
+            subset_conn = sqlite3.connect(subset_path)
             subset_cursor = subset_conn.cursor()
 
         # Open the log file
@@ -209,26 +225,34 @@ def replace_subset(target_name: str,
                 'source_cursor': source_cursor, 
                 'target_cursor': target_cursor, 
                 'log_file': log_file}
+        
+        # Get list of tables in source_conn (excluding SQLite internal tables)
+        source_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        source_tables = [row[0] for row in source_cursor.fetchall()]
+        print("Tables in source_conn:", source_tables)
 
         # Replace rows for tables with 'tech' key
         for table_name in tech_tables:
-            replace_tech_rows(table_name, **config)
+            if table_name in source_tables:
+                replace_tech_rows(table_name, **config)
 
         # Replace rows for Commodity, Demand, and DemandSpecificDistribution tables
         for table_name, col in commodity_tables_dict.items():
             replace_commodity_rows(table_name, col, **config)
 
-        if references:
-            replace_references(**config)
-        else:
+        if not references:
             print('References not replaced.')
+        elif 'references' not in source_tables:
+            print("'references' not in source_tables. Will not replace references.")
+        else:
+            replace_references(**config)    
 
         remove_duplicates(**config)
 
         # Commit the changes and close the connections
         target_conn.commit()
         target_cursor.execute('VACUUM;') #  Reclaims unused space
-        print("Done. Saved to:", target)
+        print("Done. Saved to:", target_path)
 
     finally:
         source_conn.close()
