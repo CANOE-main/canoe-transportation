@@ -52,6 +52,7 @@ def replace_commodity_rows(table_name, column_name, subset_cursor, source_cursor
     source_data = source_cursor.fetchall()
     source_cursor.execute(f'PRAGMA table_info("{table_name}")')
     columns = [col[1] for col in source_cursor.fetchall()]
+
     for row in source_data:
         try:
             target_cursor.execute(f'INSERT INTO "{table_name}" ({", ".join(columns)}) VALUES ({", ".join(["?"] * len(columns))})', row)
@@ -110,6 +111,7 @@ def replace_subset(target_name: str = None,
                    source_path: str = None, 
                    subset_path: str = None,
                    output_path: str = None,
+                   sql_instructions_path: str = None,
                    dir_path: str = None,
                    references: bool = True,
                    tech_tables = None,
@@ -133,6 +135,7 @@ def replace_subset(target_name: str = None,
         If None, no rows will be removed from the target database.
     - output_name: str, name of the output database. If provided, creates a copy of target database. If None, the target database will be updated in place.
     - {target, source, subset, output}_path: the direct path to the file, if desired. If '.sqlite' extension isn't present in path, automatically append it.
+    - sql_instructions_path: path to an sql file to be run
     - references: bool, if True, replace references in the target database with those from the source database
     - tech_tables: list of str, names of the tables that contain technology data to be updated.
     - commodity_tables_dict: dict {table_name: column_name}, mapping of table names to the column name that contains the commodity or demand name.
@@ -219,6 +222,13 @@ def replace_subset(target_name: str = None,
 
         # Open the log file
         log_file = open(log, 'w')
+
+        if sql_instructions_path is not None:
+            # execute sql instructions
+            if '.sql' not in sql_instructions_path: sql_instructions_path += '.sql'
+            with open(sql_instructions_path, 'r') as f:
+                sql_script = f.read()
+            target_cursor.executescript(sql_script)
 
         # dictionary to pass arguments to the functions
         config = {'subset_cursor': subset_cursor, 

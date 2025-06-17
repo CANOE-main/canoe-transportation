@@ -4,6 +4,9 @@ import os
 import re
 import pandas as pd
 
+import sys
+
+sys.path.append('..')
 from utils import remove_empty_tables
 
 """
@@ -12,16 +15,27 @@ Files:
 - insertions.xlsx: Contains data to be inserted into the database. Each sheet corresponds to a table in the database. If a row exists in the sqlite and insertions.xlsx, overwrite value with that from insertions.xlsx 
 """
 
-def read_melt_excel(xls, sheet_name, header=0, melt_int_col=None, value_name=None):
+def read_melt_excel(xls, sheet_name, header=0, melt_int_col=None, value_name=None, end_col_str='model input'):
     """
     xls: pd.ExcelFile object
     header: list of rows to read as the headers. Default is first row (header=0)
     melt_int_col: column in 1st row to melt, values in 2nd row should be integers
     value_name: what to name the column of values after melting to long format?
+    end_col_str: string or regex to search for to signify the last column to be read
     """
     df = pd.read_excel(xls, sheet_name=sheet_name, header=header)
 
     if type(header) is list and len(header) > 1:
+        # Concat multiindex column names with '_'
+        cols_concat = pd.Series(['_'.join([str(i) for i in col if str(i) != '']) for col in df.columns])
+        # Find the lowest column index that matches end_col_str
+        end_col_detected = cols_concat.str.lower().str.contains(end_col_str)
+        if end_col_detected.all() is False:
+            print('df.columns:', df.columns)
+            raise ValueError(f"No columns matching '{end_col_str}' found in sheet '{sheet_name}'.")
+        else:
+            df = df.iloc[:,:end_col_detected.argmax()].dropna(how='all')
+
         cols = []
         for col in df.columns:
             if (col[0] == melt_int_col and type(col[1]) is int):
@@ -60,7 +74,11 @@ def xlsx_to_sqlite(xlsx_path, sqlite_path, schema_ref_db: str,
         # configuration to use in read_melt_excel for specific tables
         read_melt_excel_config = {
             'Efficiency': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'efficiency'},
-            'Demand': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'demand'}}
+            'Demand': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'demand'},
+            'ExistingCapacity': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'capacity'},
+            'MaxAnnualCapacityFactor': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'factor'},
+            'CostInvest': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'}
+            }
 
     # Copy the schema reference file
     shutil.copy(schema_ref_db, sqlite_path)
@@ -91,27 +109,27 @@ def xlsx_to_sqlite(xlsx_path, sqlite_path, schema_ref_db: str,
         
         # Read each sheet in the Excel file and write it to the SQLite database
         # Only read sheets that match the schema
-        xls = pd.ExcelFile(xlsx_path)
-        for sheet_name in xls.sheet_names:
-            if sheet_name in schema:
-                if sheet_name in read_melt_excel_config:
-                    df = read_melt_excel(xls, sheet_name=sheet_name, **read_melt_excel_config[sheet_name])
+        with pd.ExcelFile(xlsx_path) as xls:
+            for sheet_name in xls.sheet_names:
+                if sheet_name in schema:
+                    if sheet_name in read_melt_excel_config:
+                        df = read_melt_excel(xls, sheet_name=sheet_name, **read_melt_excel_config[sheet_name])
+                    else:
+                        df = read_melt_excel(xls, sheet_name=sheet_name)
+
+                    # select columns based on the columns defined for the table in the schema, ignore any extra columns
+                    df = df[[col for col in schema[sheet_name] if col in df.columns]]
+
+                    # insert the df into the sqlite database, adding to existing table if it exists
+                    # if the table does not exist, it will be created
+                    df.to_sql(sheet_name, conn, if_exists='append', index=False)
+                    # print message indicating columns dropped
+                    dropped_columns = set(df.columns) - set(schema[sheet_name])
+                    if dropped_columns:
+                        print(f"Dropped columns {dropped_columns} from sheet '{sheet_name}' as they are not defined in the schema.")
+
                 else:
-                    df = read_melt_excel(xls, sheet_name=sheet_name)
-
-                # select columns based on the columns defined for the table in the schema, ignore any extra columns
-                df = df[[col for col in schema[sheet_name] if col in df.columns]]
-
-                # insert the df into the sqlite database, adding to existing table if it exists
-                # if the table does not exist, it will be created
-                df.to_sql(sheet_name, conn, if_exists='append', index=False)
-                # print message indicating columns dropped
-                dropped_columns = set(df.columns) - set(schema[sheet_name])
-                if dropped_columns:
-                    print(f"Dropped columns {dropped_columns} from sheet '{sheet_name}' as they are not defined in the schema.")
-
-            else:
-                print(f"Sheet '{sheet_name}' does not match any defined schema and will be skipped.")
+                    print(f"Sheet '{sheet_name}' does not match any defined schema and will be skipped.")
 
     finally:
         remove_empty_tables(cursor=cursor)
@@ -158,6 +176,36 @@ def edit_sqlite_db(input_db_path, output_db_path, table, replace_rows=None, add_
     finally:
         if conn:
             conn.close()
+
+def insert_profiles_CapacityFactorTech(db_path, profiles_df, new_db_path=None):
+    """
+    db_path: Path to the database where the profiles will be inserted.
+    profiles_df: DataFrame containing the profiles to be inserted. Already formatted with columns in CapacityFactorTech format.
+    
+    Insert the capacity factor profiles into the database. Removes existing entries for the specified technologies before inserting new ones.
+    """
+    if new_db_path is not None:
+        print(f"Copying database from {db_path} to {new_db_path} for insertion of profiles.")
+        # Copy the schema reference file
+        shutil.copy(db_path, new_db_path)
+        db_path = new_db_path
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Remove rows where tech is already in profiles_df
+        tech_list = profiles_df.tech.unique()
+        placeholders = ','.join(['?' for _ in tech_list])
+        cursor.execute(f"DELETE FROM CapacityFactorTech WHERE tech IN ({placeholders})", tech_list)
+        conn.commit()
+        
+        # Add the new profiles
+        profiles_df.to_sql('CapacityFactorTech', con=conn, if_exists='append', index=False)
+    
+    finally:
+        conn.close()
+
 
 def copy_and_rename_tech_rows(db_path, output_db_path, tech_column='tech'):
     """

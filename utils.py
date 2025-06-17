@@ -10,6 +10,23 @@ def connect_to_db(db_path):
     cursor = conn.cursor()
     return conn, cursor
 
+def act_with_db_connection(db_path, callback, **kwargs):
+    """
+    Safely connects to the database and executes the callback function with the connection.
+    Ensures the connection is properly closed even if an error occurs.
+    
+    Args:
+        db_path: Path to the SQLite database
+        callback: Function that takes a connection object as argument
+    """
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        return callback(conn, **kwargs)
+    finally:
+        if conn:
+            conn.close()
+
 def remove_empty_tables(db_path=None, cursor=None):
     """
     Removes all tables from the SQLite database at db_path that have zero rows.
@@ -63,3 +80,14 @@ def get_unique_seasons(db_path=None, cursor=None):
         conn.close()
 
     return list(unique_seasons)
+
+def get_primary_keys(cursor, table_name):
+    """
+    Returns a list of primary key column names for the given table.
+    """
+    cursor.execute(f'PRAGMA table_info("{table_name}")')
+    return [row[1] for row in cursor.fetchall() if row[5] > 0]
+
+# Example usage:
+# primary_keys = get_primary_keys(target_cursor, "Technology")
+# print(primary_keys)
