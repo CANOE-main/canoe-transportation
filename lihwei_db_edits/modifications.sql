@@ -28,13 +28,14 @@ T_H2_HDV_REFUEL:
 DELETIONS
 - Demand: remove rows where commodity = 'T_D_tkm_hdv_t' and region = ON
 - ExistingCapacity: remove rows where tech = 'T_HDV_T_DSL_EX' and region = ON
-- MaxAnnualCapacityFactor: remove rows where tech is 'T_HDV_T_(DSL|BEV|FC)' and region = ON
+- MaxAnnualCapacityFactor, MinAnnualCapacityFactor: remove rows where tech is 'T_HDV_T_(DSL|BEV|FC)' and region = ON
 - Efficiency: remove rows where tech is 'T_HDV_T_(DSL|BEV|FC)' and region = ON
 - CostInvest: remove rows where tech is 'T_HDV_T_(DSL|BEV|FC)' and region = ON
 */
 DELETE FROM Demand WHERE commodity = 'T_D_tkm_hdv_t' AND region = 'ON';
 DELETE FROM ExistingCapacity WHERE tech = 'T_HDV_T_DSL_EX' AND region = 'ON';
 DELETE FROM MaxAnnualCapacityFactor WHERE (tech LIKE 'T_HDV_T_DSL%' OR tech LIKE 'T_HDV_T_BEV%' OR tech LIKE 'T_HDV_T_FC%') AND region = 'ON';
+DELETE FROM MinAnnualCapacityFactor WHERE (tech LIKE 'T_HDV_T_DSL%' OR tech LIKE 'T_HDV_T_BEV%' OR tech LIKE 'T_HDV_T_FC%') AND region = 'ON';
 DELETE FROM Efficiency WHERE (tech LIKE 'T_HDV_T_DSL%' OR tech LIKE 'T_HDV_T_BEV%' OR tech LIKE 'T_HDV_T_FC%') AND region = 'ON';
 DELETE FROM CostInvest WHERE (tech LIKE 'T_HDV_T_DSL%' OR tech LIKE 'T_HDV_T_BEV%' OR tech LIKE 'T_HDV_T_FC%') AND region = 'ON';
 
@@ -44,6 +45,7 @@ MODIFICATIONS
 */
 
 -- In CostVariable, make copies of T_HDV_T_... and make it T_HDV_T_LH_...
+
 INSERT INTO CostVariable (tech, region, period, vintage, units, cost, notes, reference)
 SELECT 
     REPLACE(tech, 'T_HDV_T_', 'T_HDV_T_LH_') AS tech,

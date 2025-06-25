@@ -173,6 +173,7 @@ def replace_subset(target_name: str = None,
     if type(tech_tables) is str:
         tech_tables = [tech_tables]
     if tech_tables is None:
+        # TO-DO: automatically get tables that are in both source and target databases and have a 'tech' column
         # List of tables to target
         tech_tables = [
             'Technology', 
@@ -190,6 +191,7 @@ def replace_subset(target_name: str = None,
             'EmissionActivity',
             'EmissionEmbodied', 
             'TechInputSplit',
+            'MaxCapacity'
             # 'StorageDuration'
             ]
 

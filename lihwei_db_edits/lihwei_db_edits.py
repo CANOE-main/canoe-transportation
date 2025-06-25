@@ -76,8 +76,10 @@ def xlsx_to_sqlite(xlsx_path, sqlite_path, schema_ref_db: str,
             'Efficiency': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'efficiency'},
             'Demand': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'demand'},
             'ExistingCapacity': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'capacity'},
+            'MinAnnualCapacityFactor': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'factor'},
             'MaxAnnualCapacityFactor': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'factor'},
-            'CostInvest': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'}
+            'CostInvest': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'},
+            'CostFixed':  {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'}
             }
 
     # Copy the schema reference file
@@ -200,8 +202,9 @@ def insert_profiles_CapacityFactorTech(db_path, profiles_df, new_db_path=None):
         cursor.execute(f"DELETE FROM CapacityFactorTech WHERE tech IN ({placeholders})", tech_list)
         conn.commit()
         
-        # Add the new profiles
-        profiles_df.to_sql('CapacityFactorTech', con=conn, if_exists='append', index=False)
+        # Add the new profiles. Only add columns that are in CapacityFactorTech
+        (profiles_df[['tod', 'factor', 'season', 'tech', 'region', 'cf_tech_notes']]
+         .to_sql('CapacityFactorTech', con=conn, if_exists='append', index=False))
     
     finally:
         conn.close()
