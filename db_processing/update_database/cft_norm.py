@@ -3,8 +3,8 @@ import shutil
 import os
 import pandas as pd
 
-db_source = 'canoe_on_12d_vanilla4'
-db_target = 'canoe_on_12d_vanilla4_cftnorm'
+db_source = 'canoe_on_12d_vanilla4_nhts_fixed'
+db_target = 'canoe_on_12d_vanilla4_nhts_fixed_norm'
 
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 source = dir_path + 'target_database/' + db_source + '.sqlite'

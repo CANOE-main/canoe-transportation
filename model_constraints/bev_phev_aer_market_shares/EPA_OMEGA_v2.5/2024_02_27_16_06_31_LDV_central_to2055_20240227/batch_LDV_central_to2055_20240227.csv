@@ -1,0 +1,86 @@
+Parameters,,,,,
+Batch Settings,,,,,
+Batch Name,LDV_central_to2055_20240227,,,,
+Analysis Final Year,2055,,,,
+Analysis Dollar Basis,2022,,,,
+,,,,,
+Batch Analysis Context Settings,,,,,
+Context Name,AEO2023,,,,
+Context Case,Reference case,,,,
+Credit Market Efficiency,0.8,,,,
+Context Fuel Prices File,I:\Project\OMEGA2\runs\inputs\master_all\archive\context_fuel_prices_20231010.csv,,,,
+Context Electricity Prices File,I:\Project\OMEGA2\runs\inputs\master_all\archive\context_electricity_prices_aeo_20231010.csv,,,,
+Context New Vehicle Market File,I:\Project\OMEGA2\runs\inputs\master_all\archive\context_new_vehicle_market_20230605.csv,,,,
+Manufacturers File,I:\Project\OMEGA2\runs\inputs\master_all\archive\manufacturers_20230928.csv,,,,
+Market Classes File,I:\Project\OMEGA2\runs\inputs\master_all\archive\market_classes_ice_bev_phev-body_style_20230508.csv,,,,
+New Vehicle Price Elasticity of Demand,-0.4,,,,
+Onroad Fuels File,I:\Project\OMEGA2\runs\inputs\master_all\archive\onroad_fuels_20240222.csv,,,,
+Onroad Vehicle Calculations File,I:\Project\OMEGA2\runs\inputs\master_all\archive\onroad_vehicle_calculations_LD_20231023.csv,,,,
+Onroad VMT File,I:\Project\OMEGA2\runs\inputs\master_all\archive\annual_vmt_fixed_by_age_ice_bev_phev-body_style_20230508.csv,,,,
+Producer Cross Subsidy Multiplier Max,1.05,,,,
+Producer Cross Subsidy Multiplier Min,1/1.05,,,,
+Producer Generalized Cost File,I:\Project\OMEGA2\runs\inputs\master_all\archive\producer_generalized_cost-body_style_20230720.csv,,,,
+Production Constraints File,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_constraints-body_style_20221130.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_constraints-body_style_20221130.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_constraints-body_style_20221130.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_constraints-body_style_20221130.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_constraints-body_style_20221130.csv
+Sales Share File,I:\Project\OMEGA2\runs\inputs\master_all\archive\sales_share_params_20240222.csv,,,,
+Vehicle Price Modifications File,I:\Project\OMEGA2\runs\inputs\master_all\archive\vehicle_price_modifications-body_style_0kbevincentives_20230720.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\vehicle_price_modifications_20240221.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\vehicle_price_modifications_20240221.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\vehicle_price_modifications_20240221.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\vehicle_price_modifications_20240221.csv
+Vehicle Reregistration File,I:\Project\OMEGA2\runs\inputs\master_all\archive\reregistration_fixed_by_age_ice_bev_phev-body_style_20230508.csv,,,,
+ICE Vehicle Simulation Results File,I:\Project\OMEGA2\runs\inputs\master_all\archive\simulated_vehicles_rse_ice_20240226.csv,,,,
+BEV Vehicle Simulation Results File,I:\Project\OMEGA2\runs\inputs\master_all\archive\simulated_vehicles_rse_bev_20231103.csv,,,,
+PHEV Vehicle Simulation Results File,I:\Project\OMEGA2\runs\inputs\master_all\archive\simulated_vehicles_rse_phev_20231105.csv,,,,
+Vehicles File,I:\Project\OMEGA2\runs\inputs\master_all\archive\vehicles_ldv_MY2022_20231211.csv,,,,
+Powertrain Cost File,I:\Project\OMEGA2\runs\inputs\master_all\archive\powertrain_cost_frm_20240221.csv,,,,
+Glider Cost File,I:\Project\OMEGA2\runs\inputs\master_all\archive\glider_cost_20220719.csv,,,,
+Body Styles File,I:\Project\OMEGA2\runs\inputs\master_all\archive\body_styles_20220324.csv,,,,
+Mass Scaling File,I:\Project\OMEGA2\runs\inputs\master_all\archive\mass_scaling_20231103.csv,,,,
+Workfactor Definition File,I:\Project\OMEGA2\runs\inputs\master_all\archive\workfactor_definition_20230928.csv,,,,
+,,,,,
+Session Settings,,,,,
+Enable Session,TRUE,TRUE,TRUE,TRUE,TRUE
+Session Name,NTR-noIRA,NTR,Final,AltA,AltB
+,,,,,
+Session Policy Alternatives Settings,,,,,
+Drive Cycle Weights File,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_weights_LD_20231023.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_weights_LD_20231023.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_weights_LD_20231023.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_weights_LD_20231023.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_weights_LD_20231023.csv
+Drive Cycle Ballast File,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_ballast_20230104.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_ballast_20230104.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_ballast_20230104.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_ballast_20230104.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycle_ballast_20230104.csv
+Drive Cycles File,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycles_20230921.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycles_20230921.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycles_20230921.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycles_20230921.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\drive_cycles_20230921.csv
+GHG Credit Params File,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credit_params_20220301.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credit_params_20220301.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credit_params_20220301.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credit_params_20220301.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credit_params_20220301.csv
+GHG Credits File,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credits_22trends_20231107.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credits_22trends_20231107.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credits_22trends_20231107.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credits_22trends_20231107.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_credits_22trends_20231107.csv
+GHG Standards File,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_standards-footprint_NTR-FRM-CFR-form_20220228.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_standards-footprint_NTR-FRM-CFR-form_20220228.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_standards-footprint_yoy_b_to2032_C_b50_74_m0p35_T_b50_83_m1p38_20230208.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_standards-footprint_yoy_a_to2032_C_b50_74_m0p35_T_b50_83_m1p38_20221116.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\ghg_standards-footprint_Alt3_to_2030_Alt2_to_2032_20230921.csv
+Off-Cycle Credits File,I:\Project\OMEGA2\runs\inputs\master_all\archive\offcycle_credits_noaction_20231106.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\offcycle_credits_noaction_20231106.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\offcycle_credits_final_phaseout_20231106.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\offcycle_credits_early_phaseout_20231106.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\offcycle_credits_altB_phaseout_20231106.csv
+Policy Fuel Upstream Methods File,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuel_upstream_methods-upstream_zero_20210602.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuel_upstream_methods-upstream_zero_20210602.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuel_upstream_methods-upstream_zero_20210602.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuel_upstream_methods-upstream_zero_20210602.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuel_upstream_methods-upstream_zero_20210602.csv
+Policy Utility Factor Methods File,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_utility_factor_methods_20230517.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_utility_factor_methods_20230517.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_utility_factor_methods_proposal_wdelayto2031_20231001.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_utility_factor_methods_proposal_20230517.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_utility_factor_methods_proposal_wdelayto2031_20231001.csv
+Policy Fuels File,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuels_20230711.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuels_20230711.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuels_20230711.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuels_20230711.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\policy_fuels_20230711.csv
+Production Multipliers File,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_multipliers_20230208.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_multipliers_20230208.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_multipliers_20230208.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_multipliers_20230208.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\production_multipliers_20230208.csv
+Regulatory Classes File,I:\Project\OMEGA2\runs\inputs\master_all\archive\regulatory_classes_20221019.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\regulatory_classes_20221019.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\regulatory_classes_20221019.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\regulatory_classes_20221019.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\regulatory_classes_20221019.csv
+Required Sales Share File,I:\Project\OMEGA2\runs\inputs\master_all\archive\required_sales_share-body_style_noACC2_20230222.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\required_sales_share-body_style_noACC2_20230222.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\required_sales_share-body_style_noACC2_20230222.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\required_sales_share-body_style_noACC2_20230222.csv,I:\Project\OMEGA2\runs\inputs\master_all\archive\required_sales_share-body_style_noACC2_20230222.csv
+,,,,,
+Session Postproc Settings,,,,,
+Context Implicit Price Deflators File,I:\Project\OMEGA2\runs\inputs\master_all\archive\implicit_price_deflators_20230602.csv,,,,
+,,,,,
+Developer Settings,,,,,
+settings.use_prerun_context_outputs,FALSE,FALSE,FALSE,FALSE,FALSE
+settings.prerun_context_folder,,,,,
+settings.battery_GWh_limit_years,"[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]","[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]","[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]","[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]","[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]"
+settings.battery_GWh_limit,"[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]","[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]","[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]","[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]","[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]"
+settings.producer_price_modification_scaler,0,0,0,0,0
+settings.producer_footprint_wtp,200,200,200,200,200
+settings.footprint_min_scaler,1/1.05,0.952380952,0.952380952,0.952380952,0.952380952
+settings.footprint_max_scaler,1.05,1.05,1.05,1.05,1.05
+settings.redesign_interval_gain_years,"[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]"
+settings.redesign_interval_gain,"[1, 1, 0]","[1, 1, 0]","[1, 1, 0]","[1, 1, 0]","[1, 1, 0]"
+settings.non_context_session_process_scaler,1,1,1,1,1
+settings.producer_shares_mode,FALSE,FALSE,FALSE,FALSE,FALSE
+settings.producer_compliance_search_multipoint,TRUE,TRUE,TRUE,TRUE,TRUE
+settings.powertrain_cost_with_ira,FALSE,TRUE,TRUE,TRUE,TRUE
+settings.powertrain_cost_with_gpf,FALSE,FALSE,TRUE,TRUE,TRUE
+settings.powertrain_cost_tracker,TRUE,TRUE,TRUE,TRUE,TRUE
+settings.base_year_min_sales,0,0,0,0,0
+settings.phev_range_mi,40,40,40,40,40
+settings.bev_of_ice_rlhp60_scaler,0.85,0.85,0.85,0.85,0.85
+settings.no_backsliding,TRUE,TRUE,TRUE,TRUE,TRUE
+settings.nmc_share_BEV,"{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}"
+settings.nmc_share_PHEV,"{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}"
+settings.nmc_share_HEV,{2022: 1},{2022: 1},{2022: 1},{2022: 1},{2022: 1}
+settings.battery_cost_constant_thru,2025,2025,2025,2025,2025
+settings.producer_market_category_ramp_limit,0.2,0.2,0.2,0.2,0.2
+settings.producer_strategic_compliance_buffer_years,"[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]"
+settings.producer_strategic_compliance_buffer,"[0, 0, 0.001]","[0, 0, 0.001]","[0, 0, 0.001]","[0, 0, 0.001]","[0, 0, 0.001]"

@@ -2,7 +2,7 @@ import sqlite3
 import shutil
 import os
 
-db_name = 'canoe_trn_on_vanilla4'
+db_name = 'canoe_trn_on_vanilla4_charger_batteries'
 charging_dsd = False    # choose whether to represent LD EV charging demand distribution in the DSD (True) or CFT (False) Temoa tables
 
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'

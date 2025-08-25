@@ -13,10 +13,12 @@ import unicodedata
 
 province = 'ON'
 
-spreadsheet_name = 'CANOE_TRN_<r>_v4'.replace('<r>', province)
-db_name = 'canoe_trn_<r>_vanilla4'.replace('<r>', province.lower())
-ldv_profile_name = 'ON-2016TTS_no-we_2018_v4_2023-batteries'
+spreadsheet_name = 'CANOE_TRN_<r>_v4_charger_usage'.replace('<r>', province)
+db_name = 'canoe_trn_<r>_vanilla4_charger_batteries'.replace('<r>', province.lower())
+ldv_profile_name = 'ON-2016TTS_no-we_2018_v5_chargers_AER-shares'
 
+# ON-2016TTS_no-we_2018_v5_chargers_AER-shares
+# ON-2016TTS_no-we_2018_v5_dunsky-chargers
 # ON-2016TTS_no-we_2018_v4_2023-batteries
 # ON-2022NHTS_2018_v4_2023-batteries
 
@@ -164,8 +166,9 @@ def cleanup():
             print(f"Deleted {tech} @ {vintage} in {table} because not in ExistingCapacity")
             curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND vintage = ?""", (tech, vintage))
     
-    tables_with_vintage = ["CostVariable", "CostInvest", "CostFixed"]
+    tables_with_vintage = ["CostVariable", "CostInvest", "CostFixed", "EmissionActivity"]
     tables_with_period = ["MaxAnnualCapacityFactor", "MinAnnualCapacityFactor"]
+    tables_with_tech_only = ["CapacityToActivity", "LifetimeTech"]
 
     # Remove tech-vintage pairs from specified tables that do not exist in Efficiency
     for table in tables_with_vintage:
@@ -188,6 +191,12 @@ def cleanup():
         for tech, period in tech_period_not_in_efficiency:
             print(f"Deleted {tech} @ {period} in {table} because not in Efficiency")
             curs.execute(f"""DELETE FROM {table} WHERE tech = ? AND periods = ?""", (tech, period))
+
+    # Remove tech-only entries from specified tables that do not exist in Efficiency
+    for table in tables_with_tech_only:
+        for tech in tech_vintage_not_in_efficiency:
+            print(f"Deleted {tech} in {table} because not in Efficiency")
+            curs.execute(f"""DELETE FROM {table} WHERE tech = ?""", (tech,))
 
     conn.commit()
     conn.close()
@@ -490,7 +499,20 @@ def compile_cft():
     """
     Reads charging demand distribution from RAMP-mobility simulation results and compiles them into the .sqlite format 
     """
-    # Imports the template format of the DSD table
+    sheet = 'DemandDist'
+    last_col = 'Technological'
+
+    if sheet not in pd.ExcelFile(spreadsheet).sheet_names:
+        return None
+    
+    # Reads excel sheet columns and limits the number of columns to the last DQI
+    cols = pd.read_excel(spreadsheet, sheet_name = sheet, header=None, skiprows=[0], nrows=1).iloc[0].values.tolist()
+    ncols = cols.index(last_col) #    Last column to read
+
+    # Imports the metadata on the excel sheet
+    metadata = pd.read_excel(spreadsheet, sheet_name = sheet, skiprows=[0], usecols=range(ncols + 1), nrows=1)
+    
+    # Imports the template format of the CFT table
     cft_template = pd.read_excel(template, sheet_name = 'CapacityFactorTech', header=None, nrows=1).iloc[0].values.tolist()
 
     # Imports the charging profiles from the RAMP-mobility results
@@ -518,21 +540,16 @@ def compile_cft():
     df['season_name'] = cp['Day'].values
     df['time_of_day_name'] = cp['Hour'].values
 
-    df['tech'] = 'T_LDV_BEV_CHRG'
-    df['regions'] = 'ON'
-    cft_notes = (
-        "This distribution represents the hourly variation of electricity demand from light-duty BEV charging. By using the stochastic aggregation framework RAMP-mobility to characterize "
-        "daily travel needs and battery consumption, and consequently, charging loads from 2,500 vehicles. Using travel survey data from the Tomorrow Transportation Survey 2016, Ontario "
-        "population-weighted temperature profiles from renewables.ninja, and other technical parameters described in the spreadsheet database."
-    )
-    df.loc[df['time_of_day_name'] == 'H01', 'cf_tech_notes'] = cft_notes #    Only shown every 24th hour to reduce database size
-    df.loc[df['time_of_day_name'] == 'H01', 'reference'] = 'Data Management Group. (2018). Transportation Tomorrow Survey (TTS) 2016. Department of Civil Engineering, University of Toronto. https://dmg.utoronto.ca/' #    Only shown every 24th hour to reduce database size
-    df['data_year'] = 2018
-    df['dq_rel'] = 1
-    df['dq_comp'] = 2
-    df['dq_time'] = 1
-    df['dq_geog'] = 1
-    df['dq_tech'] = 1
+    df['tech'] = metadata['Technology'].values[0]
+    df['regions'] = province
+    df.loc[df['time_of_day_name'] == 'H01', 'cf_tech_notes'] = metadata['Notes'].values[0] #    Only shown every 24th hour to reduce database size
+    df.loc[df['time_of_day_name'] == 'H01', 'reference'] = metadata['Reference'].apply(normalize_to_ascii).values[0] #    Only shown every 24th hour to reduce database size
+    df['data_year'] = metadata['Data Year'].astype(int).values[0]
+    df['dq_rel'] = metadata['Reliability'].astype(int).values[0]
+    df['dq_comp'] = metadata['Representativeness'].astype(int).values[0]
+    df['dq_time'] = metadata['Temporal'].astype(int).values[0]
+    df['dq_geog'] = metadata['Geographical'].astype(int).values[0]
+    df['dq_tech'] = metadata['Technological'].astype(int).values[0]
 
     # Convert NaNs to None to handle SQL nulls properly
     df = df.where(pd.notnull(df), None)
@@ -758,10 +775,11 @@ def compile_acf():
                 (province, row['Period'], row['Technology'], row['Output Commodity'], row[parameter], row['Notes'], 
                 row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
         
-        curs.execute("""REPLACE INTO MinAnnualCapacityFactor(regions, periods, tech, output_comm, min_acf, min_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (province, row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.99, f"99% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
-                row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
+        if not 'CHRG' in row['Technology']:
+            curs.execute("""REPLACE INTO MinAnnualCapacityFactor(regions, periods, tech, output_comm, min_acf, min_acf_notes, reference, data_year, dq_rel, dq_comp, dq_time, dq_geog, dq_tech)
+                    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (province, row['Period'], row['Technology'], row['Output Commodity'], row[parameter]*0.999, f"99.9% of MaxAnnualCapacityFactor for computational slack. {row['Notes']}", 
+                    row['Reference'], row['Data Year'], 1, 1, dq_time(row['Data Year']), 1, 1))
             
     conn.commit()
     conn.close()

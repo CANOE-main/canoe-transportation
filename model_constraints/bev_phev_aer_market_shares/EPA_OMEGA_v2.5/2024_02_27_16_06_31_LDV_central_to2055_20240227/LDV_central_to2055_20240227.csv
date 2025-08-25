@@ -1,0 +1,86 @@
+Parameters,NTR-noIRA,NTR,Final,AltA,AltB
+Batch Settings,FROM I:/Project/OMEGA2/runs/batch_files/archive/batch_LDV_central_to2055_20240227.csv,,,,
+Batch Name,2024_02_27_16_06_31_LDV_central_to2055_20240227,,,,
+Analysis Final Year,2055.0,,,,
+Analysis Dollar Basis,2022.0,,,,
+,,,,,
+Batch Analysis Context Settings,,,,,
+Context Name,AEO2023,,,,
+Context Case,Reference case,,,,
+Credit Market Efficiency,0.8,,,,
+Context Fuel Prices File,NTR-noIRA\in\context_fuel_prices_20231010.csv,NTR\in\context_fuel_prices_20231010.csv,Final\in\context_fuel_prices_20231010.csv,AltA\in\context_fuel_prices_20231010.csv,AltB\in\context_fuel_prices_20231010.csv
+Context Electricity Prices File,NTR-noIRA\in\context_electricity_prices_aeo_20231010.csv,NTR\in\context_electricity_prices_aeo_20231010.csv,Final\in\context_electricity_prices_aeo_20231010.csv,AltA\in\context_electricity_prices_aeo_20231010.csv,AltB\in\context_electricity_prices_aeo_20231010.csv
+Context New Vehicle Market File,NTR-noIRA\in\context_new_vehicle_market_20230605.csv,NTR\in\context_new_vehicle_market_20230605.csv,Final\in\context_new_vehicle_market_20230605.csv,AltA\in\context_new_vehicle_market_20230605.csv,AltB\in\context_new_vehicle_market_20230605.csv
+Manufacturers File,NTR-noIRA\in\manufacturers_20230928.csv,NTR\in\manufacturers_20230928.csv,Final\in\manufacturers_20230928.csv,AltA\in\manufacturers_20230928.csv,AltB\in\manufacturers_20230928.csv
+Market Classes File,NTR-noIRA\in\market_classes_ice_bev_phev-body_style_20230508.csv,NTR\in\market_classes_ice_bev_phev-body_style_20230508.csv,Final\in\market_classes_ice_bev_phev-body_style_20230508.csv,AltA\in\market_classes_ice_bev_phev-body_style_20230508.csv,AltB\in\market_classes_ice_bev_phev-body_style_20230508.csv
+New Vehicle Price Elasticity of Demand,-0.4,,,,
+Onroad Fuels File,NTR-noIRA\in\onroad_fuels_20240222.csv,NTR\in\onroad_fuels_20240222.csv,Final\in\onroad_fuels_20240222.csv,AltA\in\onroad_fuels_20240222.csv,AltB\in\onroad_fuels_20240222.csv
+Onroad Vehicle Calculations File,NTR-noIRA\in\onroad_vehicle_calculations_LD_20231023.csv,NTR\in\onroad_vehicle_calculations_LD_20231023.csv,Final\in\onroad_vehicle_calculations_LD_20231023.csv,AltA\in\onroad_vehicle_calculations_LD_20231023.csv,AltB\in\onroad_vehicle_calculations_LD_20231023.csv
+Onroad VMT File,NTR-noIRA\in\annual_vmt_fixed_by_age_ice_bev_phev-body_style_20230508.csv,NTR\in\annual_vmt_fixed_by_age_ice_bev_phev-body_style_20230508.csv,Final\in\annual_vmt_fixed_by_age_ice_bev_phev-body_style_20230508.csv,AltA\in\annual_vmt_fixed_by_age_ice_bev_phev-body_style_20230508.csv,AltB\in\annual_vmt_fixed_by_age_ice_bev_phev-body_style_20230508.csv
+Producer Cross Subsidy Multiplier Max,1.05,,,,
+Producer Cross Subsidy Multiplier Min,0.9523809523809523,,,,
+Producer Generalized Cost File,NTR-noIRA\in\producer_generalized_cost-body_style_20230720.csv,NTR\in\producer_generalized_cost-body_style_20230720.csv,Final\in\producer_generalized_cost-body_style_20230720.csv,AltA\in\producer_generalized_cost-body_style_20230720.csv,AltB\in\producer_generalized_cost-body_style_20230720.csv
+Production Constraints File,NTR-noIRA\in\production_constraints-body_style_20221130.csv,NTR\in\production_constraints-body_style_20221130.csv,Final\in\production_constraints-body_style_20221130.csv,AltA\in\production_constraints-body_style_20221130.csv,AltB\in\production_constraints-body_style_20221130.csv
+Sales Share File,NTR-noIRA\in\sales_share_params_20240222.csv,NTR\in\sales_share_params_20240222.csv,Final\in\sales_share_params_20240222.csv,AltA\in\sales_share_params_20240222.csv,AltB\in\sales_share_params_20240222.csv
+Vehicle Price Modifications File,NTR-noIRA\in\vehicle_price_modifications-body_style_0kbevincentives_20230720.csv,NTR\in\vehicle_price_modifications_20240221.csv,Final\in\vehicle_price_modifications_20240221.csv,AltA\in\vehicle_price_modifications_20240221.csv,AltB\in\vehicle_price_modifications_20240221.csv
+Vehicle Reregistration File,NTR-noIRA\in\reregistration_fixed_by_age_ice_bev_phev-body_style_20230508.csv,NTR\in\reregistration_fixed_by_age_ice_bev_phev-body_style_20230508.csv,Final\in\reregistration_fixed_by_age_ice_bev_phev-body_style_20230508.csv,AltA\in\reregistration_fixed_by_age_ice_bev_phev-body_style_20230508.csv,AltB\in\reregistration_fixed_by_age_ice_bev_phev-body_style_20230508.csv
+ICE Vehicle Simulation Results File,NTR-noIRA\in\simulated_vehicles_rse_ice_20240226.csv,NTR\in\simulated_vehicles_rse_ice_20240226.csv,Final\in\simulated_vehicles_rse_ice_20240226.csv,AltA\in\simulated_vehicles_rse_ice_20240226.csv,AltB\in\simulated_vehicles_rse_ice_20240226.csv
+BEV Vehicle Simulation Results File,NTR-noIRA\in\simulated_vehicles_rse_bev_20231103.csv,NTR\in\simulated_vehicles_rse_bev_20231103.csv,Final\in\simulated_vehicles_rse_bev_20231103.csv,AltA\in\simulated_vehicles_rse_bev_20231103.csv,AltB\in\simulated_vehicles_rse_bev_20231103.csv
+PHEV Vehicle Simulation Results File,NTR-noIRA\in\simulated_vehicles_rse_phev_20231105.csv,NTR\in\simulated_vehicles_rse_phev_20231105.csv,Final\in\simulated_vehicles_rse_phev_20231105.csv,AltA\in\simulated_vehicles_rse_phev_20231105.csv,AltB\in\simulated_vehicles_rse_phev_20231105.csv
+Vehicles File,NTR-noIRA\in\vehicles_ldv_MY2022_20231211.csv,NTR\in\vehicles_ldv_MY2022_20231211.csv,Final\in\vehicles_ldv_MY2022_20231211.csv,AltA\in\vehicles_ldv_MY2022_20231211.csv,AltB\in\vehicles_ldv_MY2022_20231211.csv
+Powertrain Cost File,NTR-noIRA\in\powertrain_cost_frm_20240221.csv,NTR\in\powertrain_cost_frm_20240221.csv,Final\in\powertrain_cost_frm_20240221.csv,AltA\in\powertrain_cost_frm_20240221.csv,AltB\in\powertrain_cost_frm_20240221.csv
+Glider Cost File,NTR-noIRA\in\glider_cost_20220719.csv,NTR\in\glider_cost_20220719.csv,Final\in\glider_cost_20220719.csv,AltA\in\glider_cost_20220719.csv,AltB\in\glider_cost_20220719.csv
+Body Styles File,NTR-noIRA\in\body_styles_20220324.csv,NTR\in\body_styles_20220324.csv,Final\in\body_styles_20220324.csv,AltA\in\body_styles_20220324.csv,AltB\in\body_styles_20220324.csv
+Mass Scaling File,NTR-noIRA\in\mass_scaling_20231103.csv,NTR\in\mass_scaling_20231103.csv,Final\in\mass_scaling_20231103.csv,AltA\in\mass_scaling_20231103.csv,AltB\in\mass_scaling_20231103.csv
+Workfactor Definition File,NTR-noIRA\in\workfactor_definition_20230928.csv,NTR\in\workfactor_definition_20230928.csv,Final\in\workfactor_definition_20230928.csv,AltA\in\workfactor_definition_20230928.csv,AltB\in\workfactor_definition_20230928.csv
+,,,,,
+Session Settings,,,,,
+Enable Session,True,True,True,True,True
+Session Name,NTR-noIRA,NTR,Final,AltA,AltB
+,,,,,
+Session Policy Alternatives Settings,,,,,
+Drive Cycle Weights File,NTR-noIRA\in\drive_cycle_weights_LD_20231023.csv,NTR\in\drive_cycle_weights_LD_20231023.csv,Final\in\drive_cycle_weights_LD_20231023.csv,AltA\in\drive_cycle_weights_LD_20231023.csv,AltB\in\drive_cycle_weights_LD_20231023.csv
+Drive Cycle Ballast File,NTR-noIRA\in\drive_cycle_ballast_20230104.csv,NTR\in\drive_cycle_ballast_20230104.csv,Final\in\drive_cycle_ballast_20230104.csv,AltA\in\drive_cycle_ballast_20230104.csv,AltB\in\drive_cycle_ballast_20230104.csv
+Drive Cycles File,NTR-noIRA\in\drive_cycles_20230921.csv,NTR\in\drive_cycles_20230921.csv,Final\in\drive_cycles_20230921.csv,AltA\in\drive_cycles_20230921.csv,AltB\in\drive_cycles_20230921.csv
+GHG Credit Params File,NTR-noIRA\in\ghg_credit_params_20220301.csv,NTR\in\ghg_credit_params_20220301.csv,Final\in\ghg_credit_params_20220301.csv,AltA\in\ghg_credit_params_20220301.csv,AltB\in\ghg_credit_params_20220301.csv
+GHG Credits File,NTR-noIRA\in\ghg_credits_22trends_20231107.csv,NTR\in\ghg_credits_22trends_20231107.csv,Final\in\ghg_credits_22trends_20231107.csv,AltA\in\ghg_credits_22trends_20231107.csv,AltB\in\ghg_credits_22trends_20231107.csv
+GHG Standards File,NTR-noIRA\in\ghg_standards-footprint_NTR-FRM-CFR-form_20220228.csv,NTR\in\ghg_standards-footprint_NTR-FRM-CFR-form_20220228.csv,Final\in\ghg_standards-footprint_yoy_b_to2032_C_b50_74_m0p35_T_b50_83_m1p38_20230208.csv,AltA\in\ghg_standards-footprint_yoy_a_to2032_C_b50_74_m0p35_T_b50_83_m1p38_20221116.csv,AltB\in\ghg_standards-footprint_Alt3_to_2030_Alt2_to_2032_20230921.csv
+Off-Cycle Credits File,NTR-noIRA\in\offcycle_credits_noaction_20231106.csv,NTR\in\offcycle_credits_noaction_20231106.csv,Final\in\offcycle_credits_final_phaseout_20231106.csv,AltA\in\offcycle_credits_early_phaseout_20231106.csv,AltB\in\offcycle_credits_altB_phaseout_20231106.csv
+Policy Fuel Upstream Methods File,NTR-noIRA\in\policy_fuel_upstream_methods-upstream_zero_20210602.csv,NTR\in\policy_fuel_upstream_methods-upstream_zero_20210602.csv,Final\in\policy_fuel_upstream_methods-upstream_zero_20210602.csv,AltA\in\policy_fuel_upstream_methods-upstream_zero_20210602.csv,AltB\in\policy_fuel_upstream_methods-upstream_zero_20210602.csv
+Policy Utility Factor Methods File,NTR-noIRA\in\policy_utility_factor_methods_20230517.csv,NTR\in\policy_utility_factor_methods_20230517.csv,Final\in\policy_utility_factor_methods_proposal_wdelayto2031_20231001.csv,AltA\in\policy_utility_factor_methods_proposal_20230517.csv,AltB\in\policy_utility_factor_methods_proposal_wdelayto2031_20231001.csv
+Policy Fuels File,NTR-noIRA\in\policy_fuels_20230711.csv,NTR\in\policy_fuels_20230711.csv,Final\in\policy_fuels_20230711.csv,AltA\in\policy_fuels_20230711.csv,AltB\in\policy_fuels_20230711.csv
+Production Multipliers File,NTR-noIRA\in\production_multipliers_20230208.csv,NTR\in\production_multipliers_20230208.csv,Final\in\production_multipliers_20230208.csv,AltA\in\production_multipliers_20230208.csv,AltB\in\production_multipliers_20230208.csv
+Regulatory Classes File,NTR-noIRA\in\regulatory_classes_20221019.csv,NTR\in\regulatory_classes_20221019.csv,Final\in\regulatory_classes_20221019.csv,AltA\in\regulatory_classes_20221019.csv,AltB\in\regulatory_classes_20221019.csv
+Required Sales Share File,NTR-noIRA\in\required_sales_share-body_style_noACC2_20230222.csv,NTR\in\required_sales_share-body_style_noACC2_20230222.csv,Final\in\required_sales_share-body_style_noACC2_20230222.csv,AltA\in\required_sales_share-body_style_noACC2_20230222.csv,AltB\in\required_sales_share-body_style_noACC2_20230222.csv
+,,,,,
+Session Postproc Settings,,,,,
+Context Implicit Price Deflators File,NTR-noIRA\in\implicit_price_deflators_20230602.csv,NTR\in\implicit_price_deflators_20230602.csv,Final\in\implicit_price_deflators_20230602.csv,AltA\in\implicit_price_deflators_20230602.csv,AltB\in\implicit_price_deflators_20230602.csv
+,,,,,
+Developer Settings,,,,,
+settings.use_prerun_context_outputs,False,False,False,False,False
+settings.prerun_context_folder,,,,,
+settings.battery_GWh_limit_years,"[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]","[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]","[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]","[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]","[2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]"
+settings.battery_GWh_limit,"[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]","[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]","[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]","[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]","[79, 150, 261, 372, 483, 580, 720, 860, 1000, 1100, 1200, 1300, 1400, 1500, 1500, 1500, 1500, 1500, 1500]"
+settings.producer_price_modification_scaler,0,0,0,0,0
+settings.producer_footprint_wtp,200,200,200,200,200
+settings.footprint_min_scaler,0.9523809523809523,0.952380952,0.952380952,0.952380952,0.952380952
+settings.footprint_max_scaler,1.05,1.05,1.05,1.05,1.05
+settings.redesign_interval_gain_years,"[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]"
+settings.redesign_interval_gain,"[1, 1, 0]","[1, 1, 0]","[1, 1, 0]","[1, 1, 0]","[1, 1, 0]"
+settings.non_context_session_process_scaler,1,1,1,1,1
+settings.producer_shares_mode,False,False,False,False,False
+settings.producer_compliance_search_multipoint,True,True,True,True,True
+settings.powertrain_cost_with_ira,False,True,True,True,True
+settings.powertrain_cost_with_gpf,False,False,True,True,True
+settings.powertrain_cost_tracker,True,True,True,True,True
+settings.base_year_min_sales,0,0,0,0,0
+settings.phev_range_mi,40,40,40,40,40
+settings.bev_of_ice_rlhp60_scaler,0.85,0.85,0.85,0.85,0.85
+settings.no_backsliding,True,True,True,True,True
+settings.nmc_share_BEV,"{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}"
+settings.nmc_share_PHEV,"{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}","{2022: 0.97, 2023: 0.92, 2024: 0.9, 2025: 0.84, 2026: 0.83, 2027: 0.82, 2028: 0.81}"
+settings.nmc_share_HEV,{2022: 1},{2022: 1},{2022: 1},{2022: 1},{2022: 1}
+settings.battery_cost_constant_thru,2025,2025,2025,2025,2025
+settings.producer_market_category_ramp_limit,0.2,0.2,0.2,0.2,0.2
+settings.producer_strategic_compliance_buffer_years,"[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]","[2020, 2032, 2033]"
+settings.producer_strategic_compliance_buffer,"[0, 0, 0.001]","[0, 0, 0.001]","[0, 0, 0.001]","[0, 0, 0.001]","[0, 0, 0.001]"

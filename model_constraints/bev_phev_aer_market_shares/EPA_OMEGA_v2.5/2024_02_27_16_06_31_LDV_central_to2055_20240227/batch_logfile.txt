@@ -1,0 +1,54 @@
+OMEGA 2.3.0 batch started at 2024-02-28 13:07:58
+
+REMOTE BATCHFILE = 2024_02_27_16_06_31_LDV_central_to2055_20240227.csv
+REMOTE BATCHFILE = 2024_02_27_16_06_31_LDV_central_to2055_20240227.csv
+REMOTE BATCHFILE = 2024_02_27_16_06_31_LDV_central_to2055_20240227.csv
+
+Processing Session 3 (AltA):
+
+Processing Session 2 (Final):
+
+Processing Session 4 (AltB):
+
+Processing Session 1 (NTR):
+Initializing Session 'AltB' -> out\
+Initializing Session 'AltA' -> out\
+Initializing Session 'Final' -> out\
+Getting User settings...
+Initializing Session 'NTR' -> out\
+Getting User settings...
+Getting User settings...
+Getting User settings...
+Getting Developer Settings...
+Getting Developer Settings...
+Getting Developer Settings...
+Starting Compliance Run AltB ...
+Starting Compliance Run Final ...
+Starting Compliance Run AltA ...
+Getting Developer Settings...
+Starting Compliance Run NTR ...
+$$$ Session Completed, Session "Final" $$$
+Rename complete after 1 seconds
+
+OMEGA batch ended at 2024-02-29 06:09:18
+OMEGA batch elapsed time 61280.39 seconds
+
+$$$ batch complete $$$$$$ Session Completed, Session "AltA" $$$
+Rename complete after 1 seconds
+
+OMEGA batch ended at 2024-02-29 06:12:01
+OMEGA batch elapsed time 61443.73 seconds
+
+$$$ batch complete $$$$$$ Session Completed, Session "AltB" $$$
+Rename complete after 1 seconds
+
+OMEGA batch ended at 2024-02-29 06:17:36
+OMEGA batch elapsed time 61778.80 seconds
+
+$$$ batch complete $$$$$$ Session Completed, Session "NTR" $$$
+Rename complete after 1 seconds
+
+OMEGA batch ended at 2024-02-29 08:05:50
+OMEGA batch elapsed time 68272.10 seconds
+
+$$$ batch complete $$$

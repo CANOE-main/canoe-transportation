@@ -3,10 +3,11 @@ import sqlite3
 import pandas as pd
 import os
 
-db_input  = 'canoe_on_12d_vanilla4'
-db_output = 'canoe_on_12d_life_7'
+db_input  = 'canoe_on_12d_baseline_life' 
+db_output = 'canoe_on_12d_baseline_life_7'
 base_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
-input_db_path  = base_dir + '../db_processing/update_database/target_database/' + db_input  + '.sqlite'
+# input_db_path  = base_dir + '../db_processing/update_database/target_database/' + db_input  + '.sqlite'
+input_db_path = base_dir + '../' + db_input + '.sqlite'
 output_db_path = base_dir + '../' + db_output + '.sqlite'
 
 shutil.copyfile(input_db_path, output_db_path)
@@ -39,12 +40,10 @@ lifetime_map = {                                                                
 # scaling_factors = {                                                                 # Corresponding to three lifetime classes
 #     'percentiles': 0.25,    # scaling factor for new suffixes
 #     'parents': 0.50,        # scaling factor for parent technologies
-#     'residuals': 0.75,      # scaling factor for existing techs without older vintages
 # }
 scaling_factors = {                                                               # Corresponding to seven lifetime classes   
     'percentiles': 0.12,
     'parents': 0.28,
-    'residuals': 0.40,
 }
 
 # Duplicate tech entries in every table that has a 'tech' column

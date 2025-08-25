@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-cp_name = 'ON-2016TTS_no-we_2018_v4_2023-batteries'
+cp_name = 'ON-2022NHTS_2018_v5_chargers_AER-shares'
 
 dir_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 cp_file = dir_path + 'ramp_mobility/results/' + cp_name + '.csv'
@@ -13,4 +13,4 @@ cp = cp[cp.index.year == 2018]
 cp = cp.resample('H').mean()
 cp = cp.loc['2018-01-02':'2018-12-30']
 
-cp.to_csv('ldv_charging (to clustering).csv')
+cp.to_csv('ldv_charging (tts).csv')

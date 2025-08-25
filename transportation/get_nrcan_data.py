@@ -3,7 +3,7 @@ import shutil
 import pandas as pd
 import openpyxl
 
-spreadsheet_name = 'CANOE_TRN_<r>_v3'    # Copies will be made of the master_spreadsheet (ON) after updating with NRCan EUD tables from other provinces
+spreadsheet_name = 'CANOE_TRN_<r>_v4_charger_usage'    # Copies will be made of the master_spreadsheet (ON) after updating with NRCan EUD tables from other provinces
 province_list = [
     'QC', 
     'MB', 
