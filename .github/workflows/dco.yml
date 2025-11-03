@@ -1,0 +1,14 @@
+name: DCO Check
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch: {}
+
+# 👇 grant the scopes the called workflow needs
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dco:
+    uses: CANOE-main/CANOE/.github/workflows/dco.yml@main
