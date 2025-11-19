@@ -15,14 +15,25 @@ Files:
 - insertions.xlsx: Contains data to be inserted into the database. Each sheet corresponds to a table in the database. If a row exists in the sqlite and insertions.xlsx, overwrite value with that from insertions.xlsx 
 """
 
-def read_melt_excel(xls, sheet_name, header=0, melt_int_col=None, value_name=None, end_col_str='model input'):
+def read_melt_excel(xls, sheet_name, 
+                    sheet_layout='plain', header=0, melt_int_col=None, value_name=None, end_col_str='model input', 
+                    print_messages=False):
     """
     xls: pd.ExcelFile object
+    sheet_name: name of the sheet to read
+    sheet_layout: 'spreadsheet_database', 'multiindex_header' or 'plain' (default)
+    - If 'spreadsheet_database', follow custom format in CANOE-transportation/transportation/spreadsheet_database
+    - If 'multiindex_header', read as multiindex header and melt the integer columns.
+    - If 'plain', read as normal dataframe without melting. Headers are in first row.
+    
     header: list of rows to read as the headers. Default is first row (header=0)
     melt_int_col: column in 1st row to melt, values in 2nd row should be integers
     value_name: what to name the column of values after melting to long format?
     end_col_str: string or regex to search for to signify the last column to be read
     """
+    if sheet_layout not in ['spreadsheet_database', 'multiindex_header', 'plain']:
+        raise ValueError("sheet_layout must be one of 'spreadsheet_database', 'multiindex_header', or 'plain'")
+    
     df = pd.read_excel(xls, sheet_name=sheet_name, header=header)
 
     if type(header) is list and len(header) > 1:
@@ -36,23 +47,54 @@ def read_melt_excel(xls, sheet_name, header=0, melt_int_col=None, value_name=Non
         else:
             df = df.iloc[:,:end_col_detected.argmax()].dropna(how='all')
 
-        cols = []
-        for col in df.columns:
-            if (col[0] == melt_int_col and type(col[1]) is int):
-                cols += [col[0]+'_'+str(col[1])]
-            else:
-                cols += [str(col[1])]    # get value in 2nd row, convert to str
-        df.columns = cols
+        # If sheet_layout is 'spreadsheet_database', follow custom format
+        if sheet_layout == 'spreadsheet_database':
+            cols = []
+            for col in df.columns:
+                if (col[0] == melt_int_col and type(col[1]) is int):
+                    cols += [col[0]+'_'+str(col[1])]
+                else:
+                    cols += [str(col[1])]    # get value in 2nd row, convert to str
+            df.columns = cols
 
-        id_vars = [col for col in df.columns if not col.startswith(melt_int_col+'_')]
-        value_vars = [col for col in df.columns if col.startswith(melt_int_col+'_')]
-        df = df.melt(id_vars=id_vars, value_vars=value_vars,
-                            var_name=melt_int_col, value_name=value_name)
+            id_vars = [col for col in df.columns if not col.startswith(melt_int_col+'_')]
+            value_vars = [col for col in df.columns if col.startswith(melt_int_col+'_')]
+            df = df.melt(id_vars=id_vars, value_vars=value_vars,
+                                var_name=melt_int_col, value_name=value_name)
 
-        # Optionally, clean up the 'vintage' column to just have the year
-        df[melt_int_col] = df[melt_int_col].str.replace(melt_int_col+'_', '').astype(int)
-        # drop rows where value is nan
-        df = df.dropna(subset=value_name)
+            # Optionally, clean up the 'vintage' column to just have the year
+            df[melt_int_col] = df[melt_int_col].str.replace(melt_int_col+'_', '').astype(int)
+            # drop rows where value is nan
+            df = df.dropna(subset=value_name)
+            return df
+        
+        elif sheet_layout == 'multiindex_header':
+            # Get MultiIndex levels from the first column
+            multiindex_vars = {'variable_'+str(i): col for i, col in enumerate(df.columns[0]) if 'unnamed' not in str(col).lower()}
+            drop_col = 'variable_' + str(len(df.columns[0])-1)    # drop 'variable_n' where n is the last level of the multiindex
+
+            if print_messages: print('multiindex_vars', multiindex_vars)
+
+            id_vars, value_vars = [], []
+            for col in df.columns[1:]:
+                # id_vars: columns where the bottom-most level is not unnamed
+                if 'unnamed' not in str(col[-1]).lower(): id_vars.append(col)
+                else: value_vars.append(col)
+
+            if print_messages:
+                print("id_vars:", id_vars)
+                print("value_vars:", value_vars)
+
+            df_melted = pd.melt(df, id_vars=id_vars, value_vars=value_vars, value_name=value_name)
+            df_melted.columns = [col[-1] if type(col) is tuple else col for col in df_melted.columns]    # set columns for multiindex columns
+            # rename variable_0, variable_1, ... to the actual variable names
+            df_melted = df_melted.rename(columns=multiindex_vars).drop(columns=drop_col, errors='ignore')
+            return df_melted
+        
+        elif sheet_layout == 'plain':
+            # print warning
+            print(f"Warning: sheet_layout is {sheet_layout} but headers are {header}. Sheet '{sheet_name}' read as plain dataframe without melting.")
+            
     return df
 
 
@@ -73,13 +115,15 @@ def xlsx_to_sqlite(xlsx_path, sqlite_path, schema_ref_db: str,
     if read_melt_excel_config is None:
         # configuration to use in read_melt_excel for specific tables
         read_melt_excel_config = {
-            'Efficiency': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'efficiency'},
-            'Demand': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'demand'},
-            'ExistingCapacity': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'capacity'},
-            'MinAnnualCapacityFactor': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'factor'},
-            'MaxAnnualCapacityFactor': {'header': [0,1], 'melt_int_col': 'period', 'value_name': 'factor'},
-            'CostInvest': {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'},
-            'CostFixed':  {'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'}
+            'Efficiency': {'sheet_layout': 'spreadsheet_database', 'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'efficiency'},
+            'Demand': {'sheet_layout': 'spreadsheet_database', 'header': [0,1], 'melt_int_col': 'period', 'value_name': 'demand'},
+            'ExistingCapacity': {'sheet_layout': 'spreadsheet_database', 'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'capacity'},
+            'MinAnnualCapacityFactor': {'sheet_layout': 'spreadsheet_database', 'header': [0,1], 'melt_int_col': 'period', 'value_name': 'factor'},
+            'MaxAnnualCapacityFactor': {'sheet_layout': 'spreadsheet_database', 'header': [0,1], 'melt_int_col': 'period', 'value_name': 'factor'},
+            'LimitAnnualCapacityFactor': {'sheet_layout': 'multiindex_header', 'header': [0,1,2], 'value_name': 'factor'},
+            'CostInvest': {'sheet_layout': 'spreadsheet_database', 'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'},
+            'CostFixed':  {'sheet_layout': 'spreadsheet_database', 'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'},
+            'CostVariable':  {'sheet_layout': 'spreadsheet_database', 'header': [0,1], 'melt_int_col': 'vintage', 'value_name': 'cost'}
             }
 
     # Copy the schema reference file
@@ -116,6 +160,9 @@ def xlsx_to_sqlite(xlsx_path, sqlite_path, schema_ref_db: str,
                 if sheet_name in schema:
                     if sheet_name in read_melt_excel_config:
                         df = read_melt_excel(xls, sheet_name=sheet_name, **read_melt_excel_config[sheet_name])
+                        # drop rows where 'value_name' is None
+                        df = df.dropna(subset=[read_melt_excel_config[sheet_name]['value_name']])
+                        
                     else:
                         df = read_melt_excel(xls, sheet_name=sheet_name)
 
@@ -178,6 +225,64 @@ def edit_sqlite_db(input_db_path, output_db_path, table, replace_rows=None, add_
     finally:
         if conn:
             conn.close()
+
+def get_primary_keys(conn, table):
+    """Return a list of primary key columns for a given table."""
+    pragma = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    pk_cols = [row[1] for row in pragma if row[5] > 0]  # row[5] is pk sequence (0 if not PK)
+    return pk_cols
+
+def upsert_table(src_db, dest_db, table, pk_cols=None):
+    """
+    Upsert all rows from src_db.table into dest_db.table using ON CONFLICT.
+    Auto-detect primary keys (PKs) if pk_cols is not supplied.
+    """
+    with sqlite3.connect(src_db) as conn_src, sqlite3.connect(dest_db) as conn_dest:
+        df = pd.read_sql_query(f"SELECT * FROM {table}", conn_src)
+        if df.empty:
+            return
+        if not pk_cols:
+            pk_cols = get_primary_keys(conn_dest, table)
+        if not pk_cols:
+            print(f"Warning: No primary key detected for table '{table}'. Skipping upsert.")
+            return
+        cols = df.columns.tolist()
+        placeholders = ", ".join(["?"] * len(cols))
+        update_clause = ", ".join([f"{col}=excluded.{col}" for col in cols if col not in pk_cols])
+        sql = (f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders}) "
+               f"ON CONFLICT({', '.join(pk_cols)}) DO UPDATE SET {update_clause};")
+        for row in df.itertuples(index=False, name=None):
+            conn_dest.execute(sql, row)
+        conn_dest.commit()
+
+def upsert_database(src_db, dest_db, output_db=None, primary_keys_dict=None):
+    """
+    Upserts all tables from src_db into dest_db, saves as output_db.
+    If output_db is None, dest_db is overwritten with warning.
+    Primary keys are auto-detected, but can be manually specified with primary_keys dict.
+    primary_keys: dict of {table_name: [pk_col1, pk_col2, ...]}
+    
+    # Example usage:
+    # upsert_database('A.sqlite', 'B.sqlite', 'B_upserted.sqlite')
+    """
+    if output_db is None:
+        print(f"Warning: output_db is None. Overwriting dest_db '{dest_db}'.")
+        output_db = dest_db
+    else:
+        shutil.copy(dest_db, output_db)
+
+    with sqlite3.connect(src_db) as conn_src, sqlite3.connect(output_db) as conn_dest:
+        tables = [row[0] for row in conn_src.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+        for table in tables:
+            if table in ('sqlite_sequence',):  # skip internal tables
+                continue
+            if primary_keys_dict and table in primary_keys_dict:
+                pk_cols = primary_keys_dict[table]
+            else:
+                pk_cols = None
+            upsert_table(src_db, output_db, table, pk_cols)
+    print(f"Upserted tables from {src_db} into {output_db}.")
+
 
 def insert_profiles_CapacityFactorTech(db_path, profiles_df, new_db_path=None):
     """
