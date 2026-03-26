@@ -1,8 +1,10 @@
-# 🛶 Canadian Open Energy Model (CANOE) - Transportation Sector
+# Canadian Open Energy Model (CANOE) - Transportation Sector
 
 **Framework for the transportation energy system database of the Canadian Open Energy Model.**
 
 This repository contains the compiled input data, processing scripts, and analysis tools for the transportation sector of the CANOE project. It maps the transportation energy system, including fuel supply, vehicle technologies, and charging profiles.
+
+For documentation on transport, visit: [Here ](https://canoe-main.github.io/canoe-transportation/)
 
 ## Project Structure
 
