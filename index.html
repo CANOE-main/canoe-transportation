@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CANOE Transportation Sector Documentation</title>
+<style>
+:root {
+    --bg: #ffffff;
+    --fg: #1a1a2e;
+    --accent: #000000; 
+    --accent-light: #fbe9e7;
+    --border: #ffccbc;
+    --code-bg: #fffbf9;
+    --link: #1976d2;
+    --toc-bg: #fffaf8;
+    --sidebar-width: 280px;
+    --max-content: 920px;
+    --table-header-bg: #fbe9e7;
+    --table-stripe: #fff5f2;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--fg);
+    background: var(--bg);
+}
+
+/* ---- Sidebar navigation ---- */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--toc-bg);
+    border-right: 1px solid var(--border);
+    padding: 1.2rem 1rem;
+    z-index: 100;
+}
+
+#sidebar h2 {
+    margin: 0 0 0.8rem 0;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+}
+
+#sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#sidebar li {
+    margin: 0.15rem 0;
+}
+
+#sidebar a {
+    display: block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    transition: background 0.15s;
+}
+
+#sidebar a:hover, #sidebar a.active {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+#sidebar .toc-section {
+    margin-top: 1.2rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+}
+
+#sidebar .toc-section-label {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* ---- Main content ---- */
+#content {
+    margin-left: var(--sidebar-width);
+    max-width: var(--max-content);
+    padding: 2rem 2.5rem 4rem 2.5rem;
+}
+
+/* ---- Typography ---- */
+h1 {
+    font-size: 2rem;
+    margin: 2rem 0 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin: 2.4rem 0 0.5rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+}
+
+h3 {
+    font-size: 1.2rem;
+    margin: 1.8rem 0 0.4rem;
+    color: var(--accent);
+}
+
+h4 {
+    font-size: 1.05rem;
+    margin: 1.4rem 0 0.3rem;
+}
+
+p { margin: 0.6rem 0; }
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---- Code ---- */
+code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+}
+
+pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+/* ---- Tables ---- */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+    font-size: 0.92rem;
+}
+
+th, td {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background: var(--table-header-bg);
+    font-weight: 600;
+}
+
+tr:nth-child(even) td { background: var(--table-stripe); }
+
+/* ---- Lists ---- */
+ul, ol { padding-left: 1.6rem; }
+li { margin: 0.25rem 0; }
+li > ul, li > ol { margin-top: 0.15rem; }
+
+/* ---- Blockquotes (used for notes) ---- */
+blockquote {
+    margin: 1rem 0;
+    padding: 0.8rem 1.2rem;
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+}
+
+blockquote p { margin: 0.2rem 0; }
+
+/* ---- Horizontal rule ---- */
+hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+/* ---- Section divider ---- */
+.section-divider {
+    margin: 3rem 0;
+    padding: 1.5rem 0 0;
+    border-top: 3px solid var(--accent);
+}
+
+.section-divider h1 {
+    border-bottom: none;
+    margin-top: 0;
+}
+
+/* ---- Print styles ---- */
+@media print {
+    #sidebar { display: none; }
+    #content { margin-left: 0; max-width: 100%; }
+    h1, h2, h3 { break-after: avoid; }
+    table { break-inside: avoid; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+    #sidebar { display: none; }
+    #content { margin-left: 0; padding: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <h2>CANOE Documentation</h2>
+  <div class="toc-section">
+    <div class="toc-section-label">Data Processing</div>
+    <ul>
+      <li><a href="#canoe-transportation-sector-data-processing-documentation">CANOE Transport Sector &mdash; Data Processing</a></li>
+      <li><a href="#table-of-contents">Table of Contents</a></li>
+      <li><a href="#1-overview">1. Overview</a></li>
+      <li><a href="#2-pipeline-architecture">2. Pipeline Architecture</a></li>
+      <li><a href="#3-upstream-data-fetching">3. Upstream Data Fetching</a></li>
+      <li><a href="#4-spreadsheet-database-layer">4. Spreadsheet Database</a></li>
+      <li><a href="#5-the-compiler-logic">5. The Compiler Logic</a></li>
+      <li><a href="#6-known-assumptions-and-limitations">6. Assumptions &amp; Limitations</a></li>
+    </ul>
+  </div>
+  <div class="toc-section">
+    <div class="toc-section-label">Data Sources</div>
+    <ul>
+      <li><a href="#canoe-transportation-sector-data-sources-catalog">CANOE Transport Sector &mdash; Data Sources</a></li>
+      <li><a href="#1-data-source-summary">1. Data Source Summary</a></li>
+      <li><a href="#2-natural-resources-canada-nrcan-ceud">2. NRCan CEUD</a></li>
+      <li><a href="#3-ramp-mobility-profiles">3. RAMP-mobility Profiles</a></li>
+      <li><a href="#4-analytical-forecasts-aeo-greet-nhts">4. Analytical Forecasts</a></li>
+      <li><a href="#5-update-procedures-checklist">5. Update Procedures</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="content">
+
+<h1 id="canoe-transportation-sector-data-processing-documentation">CANOE Transportation Sector &mdash; Data Processing Documentation</h1>
+<p><em>Comprehensive documentation of the data pipeline that converts upstream data sources into a Temoa-ready SQLite database for the Canadian Open Energy (CANOE) model's transportation sector.</em></p>
+<hr>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#1-overview">Overview</a></li>
+<li><a href="#2-pipeline-architecture">Pipeline Architecture</a></li>
+<li><a href="#3-upstream-data-fetching">Upstream Data Fetching</a></li>
+<li><a href="#4-spreadsheet-database-layer">Spreadsheet Database Layer</a></li>
+<li><a href="#5-the-compiler-logic">The Compiler Logic</a></li>
+<li><a href="#6-known-assumptions-and-limitations">Known Assumptions and Limitations</a></li>
+</ol>
+<hr>
+
+<h2 id="1-overview">1. Overview</h2>
+<h3 id="purpose">Purpose</h3>
+<p>The CANOE transportation sector differs fundamentally from the other end-use sectors. Rather than pure Python transformations directly acting on raw APIs, the transportation pipeline utilizes an intermediate, human-readable <strong>Spreadsheet Database</strong> (Excel). A Python <strong>Compiler</strong> script then sanitizes, temporal-aggregates, and translates that spreadsheet into a strict Temoa-compatible SQLite database.</p>
+<h3 id="what-the-tool-produces">What the Tool Produces</h3>
+<ul>
+<li><strong>Excel Workbooks</strong>: Populated baseline data templates representing varying regional transport paradigms.</li>
+<li><strong>SQLite Databases</strong>: Extensively constrained, Temoa-ready databases mapping out fleets, efficiencies, capacities, and detailed Light-Duty Electric Vehicle (LD EV) charging curves.</li>
+</ul>
+<h3 id="scope">Scope</h3>
+<p>The model operates across:</p>
+<ul>
+<li><strong>Regions</strong>: Canadian provinces.</li>
+<li><strong>Sectors</strong>: Transportation (Passenger Cars, Light Trucks, Heavy Freight, Transit, Rail, Marine, Aviation).</li>
+<li><strong>Commodities</strong>: Gasoline, Diesel, Jet Fuel, Electricity, Hydrogen, Biofuels.</li>
+<li><strong>Temporal Resolution</strong>: Vintages tracked precisely, and electric vehicle charging profiles tracked at an <strong>hourly resolution</strong> mapped to specific Demand Specific Distributions (DSDs) or Capacity Factors (CFTs).</li>
+</ul>
+<hr>
+
+<h2 id="2-pipeline-architecture">2. Pipeline Architecture</h2>
+<p>The transportation pipeline executes in a two-stage process:</p>
+<div class="codehilite"><pre><span></span><code>1. get_nrcan_data.py    &rarr; Fetches raw base statistics and injects them into an Excel Template
+2. CANOE_TRN_v4.xlsx    &rarr; *Human Editable Layer* containing projected bounds, tech trees, and costs
+3. compile_transport.py &rarr; The Compiler:
+   a. instantiate_database &rarr; Opens SQLite schema structure
+   b. compile_techs/comms  &rarr; Loads rigid string parameters
+   c. compile_demand       &rarr; Loads generic sectoral energy bounds
+   d. compile_excap        &rarr; Loads historical fleet stock (Aggregated Quinquennially)
+   e. compile_efficiency/costs &rarr; Connects financial &amp; thermodynamic bounds to fleet logic
+   f. compile_dsd/cft      &rarr; Attaches external RAMP-mobility hourly logic to EV charging nodes
+   g. cleanup              &rarr; Actively prunes &quot;dead&quot; or unused technologies from the database to save solver memory
+</code></pre></div>
+<hr>
+
+<h2 id="3-upstream-data-fetching">3. Upstream Data Fetching</h2>
+<p>Executed via <code>get_nrcan_data.py</code>:</p>
+<ul>
+<li>Targets the <strong>Natural Resources Canada (NRCan) Comprehensive Energy Use Database (CEUD)</strong> specific to the transportation domain (Tables 7, 14-21, 28-37).</li>
+<li>Downloads provincial <code>.xls</code> files natively, strips formatting ("Shares", "GHG", missing rows), and reconstructs standard time-series arrays.</li>
+<li><strong>Template Injection</strong>: The script systematically opens a master Excel template (e.g., <code>CANOE_TRN_ON_v4...xlsx</code>), copies it for the distinct target province (e.g., <code>QC</code>, <code>MB</code>), and injects the cleaned raw NRCan arrays directly onto the <code>Background Data</code> sheet.</li>
+</ul>
+<hr>
+
+<h2 id="4-spreadsheet-database-layer">4. Spreadsheet Database Layer</h2>
+<p>The <code>spreadsheet_database</code> directory houses the <code>.xlsx</code> files acting as the true modeling nexus for transportation. Unlike purely algorithmic sectors, predicting the capital cost decay of hydrogen fuel-cell heavy-duty trucks necessitates human assumptions that are better governed in a spreadsheet.</p>
+<p>Key Tabs:</p>
+<ul>
+<li><strong>Techs &amp; Comms</strong>: Topology flags.</li>
+<li><strong>Demand</strong>: Generic bounds for vehicle kilometers traveled (VKT) or broad energy totals.</li>
+<li><strong>ExCap</strong>: Historical vehicle adoption vintages extending back to 2000.</li>
+<li><strong>Efficiency &amp; Costs</strong>: Financials, fixed O&amp;M, and operational efficiency curves for future technology options.</li>
+<li><strong>Lifetime</strong>: Operational survival bounds.</li>
+<li><strong>DemandDist / CapFact</strong>: Time-slicing logic switches.</li>
+</ul>
+<hr>
+
+<h2 id="5-the-compiler-logic">5. The Compiler Logic</h2>
+<p>Executed via <code>compile_transport.py</code>:</p>
+<h3 id="quinquennial-aggregation">Quinquennial Aggregation</h3>
+<ul>
+<li>Modern Temoa models rapidly bog down if forced to evaluate every historical adoption year continuously.</li>
+<li>For <code>ExistingCapacity</code>, the compiler triggers <code>quinquennial_mapping()</code>, forcing historical vehicle stocks (2000&ndash;2020) into 5-year representative integer buckets (e.g., vintages 2011, 2012, 2013, 2014, and 2015 all collapse violently into a singular <code>2015</code> stock block).</li>
+</ul>
+<h3 id="ev-charging-profiles-dsds-and-cfts">EV Charging Profiles (DSDs and CFTs)</h3>
+<ul>
+<li>Electric vehicle grid loading cannot be ignored. The compiler reads external CSV arrays located in <code>charging_profiles/ramp_mobility/results/</code> (e.g., <code>ON-2016TTS...csv</code>).</li>
+<li>It converts the hourly timestamps strict to <code>America/Toronto</code> ET formatting, averages them into 24-hour sets (Day/Night maps), and injects them directly into <code>DemandSpecificDistribution</code> or <code>CapacityFactorTech</code> elements.</li>
+</ul>
+<h3 id="automatic-cleanup-garbage-collection">Automatic Cleanup &amp; Garbage Collection</h3>
+<ul>
+<li>To maintain a lean SQL matrix, the compiler executes a strict <code>cleanup()</code> function <em>after</em> importing spreadsheet databases.</li>
+<li>It explicitly locates and <strong>Deletes</strong> any technologies inside <code>Efficiency</code>, <code>CostVariable</code>, and <code>CostFixed</code> that lack a corresponding foundation inside <code>ExistingCapacity</code> or whose existing capacity falls below an arbitrary noise threshold (<code>epsilon = 1e-4</code>).</li>
+</ul>
+<h3 id="data-quality-indexing-dqi">Data Quality Indexing (DQI)</h3>
+<ul>
+<li>Assigns empirical trust scores via <code>dq_time()</code>. If a value is sourced from data only 3 years old, it scores a <code>1</code> (excellent). If the data year is &gt;15 years obsolete, it inherently degrades to a <code>5</code>.</li>
+</ul>
+<hr>
+
+<h2 id="6-known-assumptions-and-limitations">6. Known Assumptions and Limitations</h2>
+<ol>
+<li><strong>Quinquennial Distortion</strong>: Aggregating historical fleet data into 5-year blocks artificially smooths historical fleet adoption. It assumes the fleet turnover dynamics can ignore granular year-over-year deviations.</li>
+<li><strong>RAMP-Mobility Fixation</strong>: Electric vehicle grid charging profiles rely strictly on static representations from RAMP-mobility models. It inherently models "dumb" charging patterns based on typical commuter behavior, rather than perfectly responsive price-arbitrage charging mechanisms.</li>
+<li><strong>Time Zone Lock</strong>: RAMP profiles currently hard-force <code>tz_convert('America/Toronto')</code>. Applying this strictly to models operating in BC or AB may cause sunset/charging peaks to artificially miss-align with local grid solar profiles.</li>
+<li><strong>Decoupled Future Projections</strong>: Because future bounds exist entirely within the Excel spreadsheets, CANOE updates do not automatically project transport dynamics. If the CER alters GDP assumptions, <code>canoe-transportation</code> does not magically respond; a human must manually readjust the Excel macro-scalars.</li>
+</ol>
+<div class="section-divider">
+  <h1 id="canoe-transportation-sector-data-sources-catalog">CANOE Transportation Sector &mdash; Data Sources Catalog</h1>
+</div>
+
+<h2 id="1-data-source-summary">1. Data Source Summary</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Data Type</th>
+<th style="text-align: left;">Primary Source</th>
+<th style="text-align: left;">Granularity</th>
+<th style="text-align: left;">Update Frequency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Historical Baselines</strong></td>
+<td style="text-align: left;">NRCan CEUD</td>
+<td style="text-align: left;">Province / Annual</td>
+<td style="text-align: left;">Annual</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>EV Charging Maps</strong></td>
+<td style="text-align: left;">RAMP-mobility</td>
+<td style="text-align: left;">Hourly / Seasonal</td>
+<td style="text-align: left;">Static / Independent</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Financial Trajectories</strong></td>
+<td style="text-align: left;">AEO, GREET, Internal</td>
+<td style="text-align: left;">Technology-Level</td>
+<td style="text-align: left;">Manual</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Usage Patterns</strong></td>
+<td style="text-align: left;">NHTS / Regional Studies</td>
+<td style="text-align: left;">Demographic / Daily</td>
+<td style="text-align: left;">Manual</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-natural-resources-canada-nrcan-ceud">2. Natural Resources Canada (NRCan) CEUD</h2>
+<ul>
+<li><strong>Usage</strong>: Provides overarching historical anchors for existing vehicle populations (ExCap), initial fuel consumptions, and physical transport modalities (Rail, Aviation, Marine).</li>
+<li><strong>Update Procedure</strong>: Governed by <code>get_nrcan_data.py</code>. Adjust the hardcoded target years (e.g., "2021") in the URL fetcher strings.</li>
+</ul>
+<h2 id="3-ramp-mobility-profiles">3. RAMP-mobility Profiles</h2>
+<ul>
+<li><strong>Usage</strong>: Yields crucial 8760 simulation profiles dictating exactly when EV fleets interface with the power grid.</li>
+<li><strong>Update Procedure</strong>: External. If a new transportation adoption study is conducted (e.g., shifting toward intense workplace charging instead of at-home nighttime charging), a new external RAMP model must be run, outputting a new <code>.csv</code> into the <code>charging_profiles/</code> directory, and <code>compile_transport.py</code> must have its <code>ldv_profile_name</code> target string manually updated.</li>
+</ul>
+<h2 id="4-analytical-forecasts-aeo-greet-nhts">4. Analytical Forecasts (AEO, GREET, NHTS)</h2>
+<ul>
+<li><strong>Usage</strong>: Because the compiler accepts anything typed into the Excel spreadsheet, bounds concerning Future Battery Costs, Hydrogen Fuel-Cell Efficiencies, and Vehicle Lifetime caps are heavily influenced by the EIA AEO, Argonne National Lab's GREET model, and Household Travel Surveys.</li>
+<li><strong>Update Procedure</strong>: Manual. Requires a modeler to open the specific <code>.xlsx</code> database, review the literature, update the cells, cite the update in the "References" column, and execute <code>compile_transport.py</code> to bake those new assumptions into the <code>.sqlite</code> file.</li>
+</ul>
+<h2 id="5-update-procedures-checklist">5. Update Procedures (Checklist)</h2>
+<p>During regular annual or biannual CANOE updates:</p>
+<ol>
+<li><strong>NRCan Fetching</strong>: Run <code>get_nrcan_data.py</code>. Ensure the NRCan API URLs still correctly route to the <code>.xls</code> formats rather than <code>.csv</code> updates.</li>
+<li><strong>Review Spreadsheets</strong>: Open the generated <code>CANOE_TRN_[REGION]...xlsx</code> files. Validate that the newly injected <code>Background Data</code> correctly cascaded through the formulas linking to <code>ExCap</code> and <code>Demand</code>.</li>
+<li><strong>Literature Review</strong>: Manually scrutinize EV cost trajectories and ICCT/GREET emissions estimates. Update the spreadsheet manually if reality has outpaced the older projections.</li>
+<li><strong>Compile</strong>: Execute <code>compile_transport.py</code>.</li>
+<li><strong>Review Logs</strong>: The terminal will spit out specific <code>cleanup()</code> logs noting exactly which technologies were deleted. Ensure it hasn't accidentally wiped out a critical emerging technology due to a rounding threshold error.</li>
+</ol>
+</main>
+
+</body>
+</html>
