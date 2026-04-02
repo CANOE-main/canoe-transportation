@@ -39,7 +39,7 @@ This guide explains how to propose changes, report issues, and improve the proje
 ## Security & Data
 - Never commit secrets — use environment variables.  
 - Avoid unsafe deserialization (`pickle`, unsafe `yaml.load`).  
-- Report vulnerabilities privately via canoe-support@googlegroups.com.  
+- Report vulnerabilities privately via [CANOE Support](https://groups.google.com/u/3/g/canoe-support).  
 
 ---
 
