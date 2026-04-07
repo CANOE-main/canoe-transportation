@@ -248,9 +248,12 @@ def upsert_table(src_db, dest_db, table, pk_cols=None):
             return
         cols = df.columns.tolist()
         placeholders = ", ".join(["?"] * len(cols))
-        update_clause = ", ".join([f"{col}=excluded.{col}" for col in cols if col not in pk_cols])
+        update_clause = "UPDATE SET " + ", ".join([f"{col}=excluded.{col}" for col in cols if col not in pk_cols])
+        if cols == pk_cols: update_clause = "NOTHING"  # No columns to update
+        
         sql = (f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({placeholders}) "
-               f"ON CONFLICT({', '.join(pk_cols)}) DO UPDATE SET {update_clause};")
+               f"ON CONFLICT({', '.join(pk_cols)}) DO {update_clause};")
+        print(sql, update_clause)
         for row in df.itertuples(index=False, name=None):
             conn_dest.execute(sql, row)
         conn_dest.commit()
