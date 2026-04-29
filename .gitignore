@@ -1,2 +1,12 @@
+.venv/
 __pycache__/
-canoe_on_365d*
+.pytest_cache/
+.ruff_cache/
+.snakemake/
+.agents/
+data/raw/
+data/cache/
+data/interim/
+data/processed/
+outputs/
+logs/
