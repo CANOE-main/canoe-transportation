@@ -18,7 +18,7 @@ Do not use an ExecPlan for small one-file edits, typo fixes, formatting-only cha
 
 Store plans in:
 
-    .agent/plans/
+    .agents/plans/
 
 Use numbered descriptive names:
 

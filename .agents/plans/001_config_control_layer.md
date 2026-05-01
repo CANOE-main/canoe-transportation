@@ -10,6 +10,14 @@ This should let the backend load canonical paths, source metadata, and a baselin
 
 The v2.0 backend is replacing the legacy Excel/compiler workflow with a reproducible Snakemake + Python pipeline. The first milestone is baseline reproduction, so this config layer should support a legacy-equivalent baseline before experimental scenarios.
 
+## Current repository findings
+
+- `src/` exists and should follow the planned architecture from `AGENTS.md`: thin entry-point scripts at `src/setup.py` and `src/build_transport.py`, with shared implementation under `src/parameterization/`.
+- `config/`, `workflow/`, and `tests/` do not exist yet.
+- `inputs/` currently contains only `inputs/canoe_dataset_schema.sql`.
+- Legacy validation evidence is under `legacy_backend/`, including `legacy_backend/canoe_on_12d_baseline.sqlite`, `legacy_backend/canoe_schema.sql`, deprecated compiler scripts, spreadsheet inputs, constraint workbooks, RAMP-mobility outputs, GREET files, and analysis CSVs/notebooks.
+- `pyproject.toml` includes `pyyaml`, `snakemake`, `pytest`, and `ruff`; uv build packaging is explicitly configured to use the `parameterization` module from the planned scaffold.
+
 ## Scope
 
 Add or update:
@@ -73,17 +81,48 @@ Run the Snakemake command too if a smoke rule is added.
 
 ## Progress
 
-- [ ] Repo inspected.
-- [ ] `config/paths.yaml` added or updated.
-- [ ] `config/sources.yaml` added or updated.
-- [ ] `config/scenarios/baseline.yaml` added or updated.
-- [ ] YAML utilities added.
-- [ ] Setup smoke validation added.
-- [ ] Optional Snakemake smoke rule added.
-- [ ] Tests added.
-- [ ] Validation commands run.
-- [ ] Outcomes summarized.
+- [x] Repo inspected.
+- [x] `config/paths.yaml` added or updated.
+- [x] `config/sources.yaml` added or updated.
+- [x] `config/scenarios/baseline.yaml` added or updated.
+- [x] YAML utilities added.
+- [x] Setup smoke validation added.
+- [x] Optional Snakemake smoke rule added.
+- [x] Tests added.
+- [x] Validation commands run.
+- [x] Outcomes summarized.
 
 ## Outcomes
 
-Record final files changed, commands run, passing/failing checks, generated outputs, known placeholders, and recommended next plan.
+Files changed:
+
+- Added `README.md`.
+- Added `config/paths.yaml`, `config/sources.yaml`, and `config/scenarios/baseline.yaml`.
+- Added `src/setup.py`, `src/build_transport.py`, `src/parameterization/__init__.py`, `src/parameterization/utils.py`, `src/validation/__init__.py`, and `src/validation/config_smoke.py`.
+- Added `workflow/Snakefile`.
+- Added `tests/test_config.py`.
+- Updated `pyproject.toml` to configure uv build packaging for `parameterization` and `validation`, add `src` to pytest import paths, and exclude `legacy_backend`, `.snakemake`, and `outputs` from Ruff.
+- `uv.lock` was refreshed by `uv run` to match the current project metadata.
+
+Commands run:
+
+- `uv run python src/setup.py --scenario config/scenarios/baseline.yaml`: passed.
+- `uv run pytest`: passed, 5 tests.
+- `uv run ruff check .`: passed.
+- `uv build`: passed; built an sdist and wheel using the explicit `parameterization` module configuration.
+- `uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/baseline.yaml --cores 1`: passed after correcting the Snakefile config path to `config/paths.yaml`.
+
+Generated outputs:
+
+- `outputs/logs/setup_smoke_baseline.json`, with `ok: true`, existing schema and legacy baseline checks, created working directories, active sources, placeholder source list, and non-goals set to false for downloads, transformations, and SQLite compilation.
+- Created working directories under `inputs/cache`, `inputs/external`, `inputs/interim`, `inputs/processed`, `outputs/sqlite`, `outputs/validation`, and `outputs/logs`.
+
+Known placeholders:
+
+- `sources.yaml` marks NRCan CEUD transport and RAMP-mobility LDV charging as active placeholder sources.
+- AEO-style and GREET-style sources are registered as inactive placeholders.
+- Exact URLs, citations, source versions, checksums, units, and extraction maps remain unresolved.
+
+Recommended next plan:
+
+- `002_sqlite_schema_instantiation.md`: instantiate an empty target SQLite database from `inputs/canoe_dataset_schema.sql`, validate schema tables/keys, and keep it separate from data extraction or parity comparison.
