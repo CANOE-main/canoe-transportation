@@ -1,0 +1,31 @@
+version: 1
+
+scenario:
+  name: baseline
+  description: "Legacy-equivalent baseline scaffold for smoke validation only."
+
+regions:
+  - ON
+
+model_years:
+  start: 2018
+  end: 2050
+  step: 5
+
+active_sources:
+  - nrcan_ceud_transport
+  - ramp_mobility_ldv_charging
+
+outputs:
+  sqlite_name: canoe_transport_baseline.sqlite
+  validation_report: outputs/validation/baseline_setup_smoke.json
+  setup_log: outputs/logs/setup_smoke_baseline.json
+
+validation:
+  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+
+switches:
+  legacy_equivalent: true
+  download_sources: false
+  compile_sqlite: false
+  transform_parameters: false

@@ -1,0 +1,25 @@
+version: 1
+
+root: "."
+
+inputs:
+  root: inputs
+  cache: inputs/cache
+  external: inputs/external
+  interim: inputs/interim
+  processed: inputs/processed
+  schema: inputs/canoe_dataset_schema.sql
+
+outputs:
+  root: outputs
+  sqlite: outputs/sqlite
+  validation: outputs/validation
+  logs: outputs/logs
+
+legacy:
+  root: legacy_backend
+  baseline_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+  schema: legacy_backend/canoe_schema.sql
+  transportation_compiler: legacy_backend/transportation[deprecated]/compile_transport.py
+  charging_profiles: legacy_backend/charging_profiles[deprecated]
+  constraints: legacy_backend/model_constraints[deprecated]

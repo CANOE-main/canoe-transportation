@@ -47,8 +47,8 @@ wheels = [
 ]
 
 [[package]]
-name = "canoe-transport"
-version = "0.1.0"
+name = "canoe-transportation"
+version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },

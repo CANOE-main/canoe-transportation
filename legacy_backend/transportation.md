@@ -103,9 +103,7 @@ The transportation sector in CANOE has various transportation modes and required
 
 
 | tech       | description                                                                                              |   unlim_cap |   annual |   reserve |   curtail |   flex |
-|:-----------|:---------------------------------------------------------------------------------------------------------|------------:|---------:|----------:|----------:|-------:|
-| T\_TRP     | all transportation energy demands                                                                        |           1 |        1 |         0 |         0 |      0 |
-| T\_TRP     | all transportation energy demands                                                                        |           1 |        1 |         0 |         0 |      0 |
+|:-----------|:---------------------------------------------------------------------------------------------------------|------------:|---------:|----------:|----------:|-------:|]
 | F\_T\_BIO  | bioenergy distribution from fuel sector to transportation sector                                         |           1 |        1 |         0 |         0 |      0 |
 | E\_T\_ELC  | Electricity distribution to transportation sector                                                        |           1 |        0 |         0 |         0 |      0 |
 | F\_T\_H2   | Hydrogen distribution from fuel sector to transportation sector                                          |           1 |        1 |         0 |         0 |      0 |

@@ -1,0 +1,15 @@
+configfile: "config/paths.yaml"
+
+scenario_path = config.get("scenario", "config/scenarios/baseline.yaml")
+
+
+rule all:
+    input:
+        "outputs/logs/setup_smoke_baseline.json"
+
+
+rule setup_smoke:
+    output:
+        "outputs/logs/setup_smoke_baseline.json"
+    shell:
+        "uv run python src/setup.py --scenario {scenario_path}"

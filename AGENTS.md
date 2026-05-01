@@ -15,18 +15,19 @@ The backend must support controlled experiments on transport representation choi
 ## Engineering principles
 
 1. Reproducibility: run from version-controlled code, YAML configs, cached sources, and registered external inputs.
-2. Traceability: map every parameter to source, transformation logic, units, assumptions, and target SQLite table.
+2. Traceability: map every parameter to its source, transformation logic, units, assumptions, and target SQLite table.
 3. Validation first: reproduce legacy SQLite outputs before changing assumptions or expanding scenarios.
-4. Robustness: log missing non-critical inputs, skipped outputs, fallbacks, and warnings.
+4. Robustness: log missing non-critical inputs, skipped outputs, fallbacks, warnings, and validation differences.
 5. Modularity: group code by parameter family and source relationship, not one giant compiler.
 6. Scenario awareness: use Snakemake and YAML for regions, periods, sources, fuel prices, and modeling switches.
 7. Practical Python: prefer readable, typed, testable functions over unnecessary abstractions.
 
 ## Planned architecture
 
+```text
     .
     ├── AGENTS.md                       # Stable repo instructions
-    ├── .agent/                         # Optional agent planning guidance
+    ├── .agents/                        # Optional agent planning guidance
     │   ├── PLANS.md                    # ExecPlan protocol
     │   ├── plans/                      # Task-specific plans
     │   └── skills/                     # Small repo-local skills
@@ -40,11 +41,11 @@ The backend must support controlled experiments on transport representation choi
     │   └── rules/                      # Modular workflow rules
     ├── src/
     │   ├── setup.py                    # Load config, create paths, fetch/cache data, validate sources
-    │   ├── utils.py                    # Shared I/O, logging, YAML, units, CSV/Excel helpers
     │   ├── build_transport.py          # Build SQLite, run modules, post-process, log
+    │   ├── validation/                 # SQLite parity, schema, tolerance, and smoke checks
     │   └── parameterization/
-    │       ├── validation/                     # SQLite parity, schema, tolerance, and smoke checks
-    │       ├── stocks_and_demands.py           # Existing capacity, demand, utilization, historical anchors
+    │       ├── utils.py                # Shared I/O, logging, YAML, units, CSV/Excel helpers
+    │       ├── stocks_and_demands.py   # Existing capacity, demand, utilization, historical anchors
     │       ├── on_road_effs_and_costs.py       # Road efficiency, capex, fixed O&M
     │       ├── on_road_variable_costs.py       # Road maintenance and variable O&M
     │       ├── off_road_effs_and_costs.py      # Aviation, rail, marine, other off-road costs/efficiencies
@@ -83,6 +84,7 @@ The backend must support controlled experiments on transport representation choi
     │   └── canoe_schema.sql                # Legacy CANOE SQLite schema
     ├── tests/                          # Unit, parsing, schema, smoke, and parity tests
     └── pyproject.toml                  # uv-managed package metadata and tooling
+```
 
 ## Data rules
 
@@ -109,7 +111,7 @@ Before introducing new assumptions or scenarios:
 3. Document differences from refactoring, schema cleanup, rounding, quinquennial aggregation, extraction changes, or bug fixes.
 4. Isolate intentional assumption changes in named scenarios or separate commits.
 
-Do not “improve” assumptions during baseline reproduction unless the change is explicit, documented, and validated.
+Do not improve assumptions during baseline reproduction unless the change is explicit, documented, and validated.
 
 ## Scenario management rules
 
@@ -119,7 +121,7 @@ Avoid hardcoding scenario logic in Python when the choice belongs in YAML.
 
 ## Validation and logging
 
-Validation outputs go to `outputs/validation/`; logs go to `outputs/logs/`.
+Validation code lives under `src/validation/`. Validation outputs go to `outputs/validation/`; logs go to `outputs/logs/`.
 
 Validation should cover schema creation, row counts, parameter tolerances, key integrity, region/period/vintage/technology/commodity coverage, unit consistency, CFT normalization, skipped/fallback reports, pruning reports, and at least one small baseline smoke build.
 
@@ -131,7 +133,7 @@ The v2.0 branch keeps the old backend as validation evidence. Treat `legacy/` as
 
 When legacy behavior is needed, inspect only the relevant files first, usually the legacy compiler, NRCan fetcher, database-processing scripts, charging profiles, constraint workbooks, or baseline SQLite. Avoid broad rewrites, bulk formatting, or edits inside `legacy/`.
 
-Large binary/data artifacts in `legacy/` are parity baselines or source evidence, not active development targets. Document their role in `legacy/README.md` or reference them from config/validation files.
+Large binary/data artifacts in `legacy/` are parity baselines or source evidence, not active development targets. Document their role in `legacy/README.md` or reference them from config and validation files.
 
 ## Coding standards
 
@@ -139,19 +141,21 @@ Large binary/data artifacts in `legacy/` are parity baselines or source evidence
 - Keep functions small, readable, typed where useful, and testable.
 - Prefer `pathlib.Path` and explicit column names.
 - Use standard logging instead of `print()` in pipeline code.
-- Keep pandas transformations readable.
+- Keep pandas transformations readable and auditable.
 - Add tests for parsing, unit conversion, schema insertion, and parity-sensitive transformations.
 - Do not introduce large frameworks unless they clearly reduce complexity.
 
 ## Snakemake expectations
 
-Snakemake should orchestrate config loading, cache setup, source download/registration, source validation, extraction, transformation, SQLite instantiation, parameter insertion, post-processing, cleanup, and validation reports.
+Snakemake should orchestrate config loading, cache setup, source download or registration, source validation, extraction, transformation, SQLite instantiation, parameter insertion, post-processing, cleanup, and validation reports.
 
 Rules should be modular and named by workflow stage or parameter family.
 
 ## Agent workflow
 
-For multi-step, risky, or staged work, use `.agent/PLANS.md` and a task-specific ExecPlan. Otherwise, keep diffs small, inspect relevant files first, preserve compatibility, avoid invented assumptions, update tests/validation, and document behavior changes.
+For multi-step, risky, or staged work, use `.agents/PLANS.md` and a task-specific ExecPlan. Otherwise, keep diffs small, inspect relevant files first, preserve compatibility, avoid invented assumptions, update tests or validation when behavior changes, and document meaningful changes.
+
+Do not edit files outside the requested scope unless they are required for the task. When architecture references appear in docs, comments, tests, plans, or code, keep them aligned with the `## Planned architecture` section in this file.
 
 ## Git and done criteria
 
