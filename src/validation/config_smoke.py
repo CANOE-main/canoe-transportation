@@ -46,6 +46,7 @@ def run_smoke_validation(
         "ok": True,
         "timestamp_utc": now.isoformat(),
         "scenario": bundle.scenario["scenario"]["name"],
+        "model_years": bundle.scenario["model_years"],
         "scenario_path": str(bundle.scenario_path),
         "paths_path": str(bundle.paths_path),
         "sources_path": str(bundle.sources_path),

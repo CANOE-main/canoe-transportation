@@ -18,7 +18,7 @@ outputs:
 
 legacy:
   root: legacy_backend
-  baseline_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
   schema: legacy_backend/canoe_schema.sql
   transportation_compiler: legacy_backend/transportation[deprecated]/compile_transport.py
   charging_profiles: legacy_backend/charging_profiles[deprecated]

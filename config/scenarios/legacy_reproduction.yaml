@@ -1,0 +1,29 @@
+version: 1
+
+scenario:
+  name: legacy_reproduction
+  description: "Legacy reproduction scaffold for smoke validation and CEUD input extraction only."
+
+regions:
+  - ON
+
+model_years:
+  years: [2021, 2025, 2030, 2035, 2040, 2045, 2050]
+
+active_sources:
+  - nrcan_ceud_transport_provincial
+  - nrcan_ceud_transport_national
+
+outputs:
+  sqlite_name: canoe_transport_legacy_reproduction.sqlite
+  validation_report: outputs/validation/legacy_reproduction_setup_smoke.json
+  setup_log: outputs/logs/setup_smoke_legacy_reproduction.json
+
+validation:
+  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+
+switches:
+  legacy_equivalent: true
+  download_sources: false
+  compile_sqlite: false
+  transform_parameters: false

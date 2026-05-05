@@ -4,11 +4,11 @@
 
 Create the first minimal YAML configuration layer for the CANOE transportation backend v2.0.
 
-This should let the backend load canonical paths, source metadata, and a baseline scenario without hardcoded paths or scenario choices. This is a scaffold only: no full data downloading, parameter transformation, or SQLite compilation yet.
+This should let the backend load canonical paths, source metadata, and a legacy reproduction scenario without hardcoded paths or scenario choices. This is a scaffold only: no full data downloading, parameter transformation, or SQLite compilation yet.
 
 ## Context
 
-The v2.0 backend is replacing the legacy Excel/compiler workflow with a reproducible Snakemake + Python pipeline. The first milestone is baseline reproduction, so this config layer should support a legacy-equivalent baseline before experimental scenarios.
+The v2.0 backend is replacing the legacy Excel/compiler workflow with a reproducible Snakemake + Python pipeline. The first milestone is legacy reproduction, so this config layer should support reproducing legacy-equivalent behavior before experimental scenarios.
 
 ## Current repository findings
 
@@ -24,7 +24,7 @@ Add or update:
 
 - `config/paths.yaml`
 - `config/sources.yaml`
-- `config/scenarios/baseline.yaml`
+- `config/scenarios/legacy_reproduction.yaml`
 - minimal YAML-loading utilities
 - setup smoke validation
 - optional Snakemake smoke rule
@@ -41,18 +41,18 @@ Do not invent source data, formulas, or final table mappings. Use clear placehol
 1. Inspect the repository structure and existing config/workflow/test files.
 2. Create `config/paths.yaml` with canonical input, cache, external, interim, processed, output, SQLite, validation, log, schema, and legacy-reference paths.
 3. Create `config/sources.yaml` with initial entries for NRCan CEUD transport, RAMP-mobility LDV charging profiles, and placeholders for AEO/GREET-style sources.
-4. Create `config/scenarios/baseline.yaml` with scenario name, region list, model years, active sources, output SQLite name, validation reference path, and baseline switches.
+4. Create `config/scenarios/legacy_reproduction.yaml` with scenario name, region list, model years, active sources, output SQLite name, validation reference path, and legacy reproduction switches.
 5. Add minimal Python helpers to load YAML, resolve paths, check required keys, and create configured directories.
 6. Add or update `src/setup.py` so this command runs without network access:
 
    ```bash
-   uv run python src/setup.py --scenario config/scenarios/baseline.yaml
+   uv run python src/setup.py --scenario config/scenarios/legacy_reproduction.yaml
    ```
 
 7. Add a Snakemake smoke rule only if it fits the existing repo structure cleanly:
 
    ```bash
-   uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/baseline.yaml --cores 1
+   uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/legacy_reproduction.yaml --cores 1
    ```
 
 8. Add tests for YAML parsing, required keys, active scenario sources, and path resolution.
@@ -62,7 +62,7 @@ Do not invent source data, formulas, or final table mappings. Use clear placehol
 The plan is complete when these pass or failures are documented:
 
 ```bash
-uv run python src/setup.py --scenario config/scenarios/baseline.yaml
+uv run python src/setup.py --scenario config/scenarios/legacy_reproduction.yaml
 uv run pytest
 uv run ruff check .
 ```
@@ -84,7 +84,7 @@ Run the Snakemake command too if a smoke rule is added.
 - [x] Repo inspected.
 - [x] `config/paths.yaml` added or updated.
 - [x] `config/sources.yaml` added or updated.
-- [x] `config/scenarios/baseline.yaml` added or updated.
+- [x] `config/scenarios/legacy_reproduction.yaml` added or updated.
 - [x] YAML utilities added.
 - [x] Setup smoke validation added.
 - [x] Optional Snakemake smoke rule added.
@@ -97,7 +97,7 @@ Run the Snakemake command too if a smoke rule is added.
 Files changed:
 
 - Added `README.md`.
-- Added `config/paths.yaml`, `config/sources.yaml`, and `config/scenarios/baseline.yaml`.
+- Added `config/paths.yaml`, `config/sources.yaml`, and `config/scenarios/legacy_reproduction.yaml`.
 - Added `src/setup.py`, `src/build_transport.py`, `src/parameterization/__init__.py`, `src/parameterization/utils.py`, `src/validation/__init__.py`, and `src/validation/config_smoke.py`.
 - Added `workflow/Snakefile`.
 - Added `tests/test_config.py`.
@@ -106,15 +106,15 @@ Files changed:
 
 Commands run:
 
-- `uv run python src/setup.py --scenario config/scenarios/baseline.yaml`: passed.
+- `uv run python src/setup.py --scenario config/scenarios/legacy_reproduction.yaml`: passed.
 - `uv run pytest`: passed, 5 tests.
 - `uv run ruff check .`: passed.
 - `uv build`: passed; built an sdist and wheel using the explicit `parameterization` module configuration.
-- `uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/baseline.yaml --cores 1`: passed after correcting the Snakefile config path to `config/paths.yaml`.
+- `uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/legacy_reproduction.yaml --cores 1`: passed after correcting the Snakefile config path to `config/paths.yaml`.
 
 Generated outputs:
 
-- `outputs/logs/setup_smoke_baseline.json`, with `ok: true`, existing schema and legacy baseline checks, created working directories, active sources, placeholder source list, and non-goals set to false for downloads, transformations, and SQLite compilation.
+- `outputs/logs/setup_smoke_legacy_reproduction.json`, with `ok: true`, existing schema and legacy reference checks, created working directories, active sources, placeholder source list, and non-goals set to false for downloads, transformations, and SQLite compilation.
 - Created working directories under `inputs/cache`, `inputs/external`, `inputs/interim`, `inputs/processed`, `outputs/sqlite`, `outputs/validation`, and `outputs/logs`.
 
 Known placeholders:

@@ -21,7 +21,7 @@ REQUIRED_SCENARIO_KEYS = (
     "validation",
     "switches",
 )
-REQUIRED_SOURCE_KEYS = ("title", "status", "source_type", "file_type", "path", "validation_rule")
+REQUIRED_SOURCE_KEYS = ("title", "status", "source_type", "file_type", "validation_rule")
 
 
 @dataclass(frozen=True)
@@ -109,6 +109,18 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
         if key not in bundle.scenario:
             errors.append(f"scenario YAML missing {key}")
 
+    model_years = bundle.scenario.get("model_years", {})
+    if isinstance(model_years, dict) and "years" in model_years:
+        years = model_years["years"]
+        if not isinstance(years, list) or not all(isinstance(year, int) for year in years):
+            errors.append("scenario YAML model_years.years must be a list of integers")
+    elif isinstance(model_years, dict):
+        for key in ("start", "end", "step"):
+            if key not in model_years:
+                errors.append(f"scenario YAML missing model_years.{key}")
+    else:
+        errors.append("scenario YAML model_years must be a mapping")
+
     sources = bundle.sources.get("sources")
     if not isinstance(sources, dict):
         errors.append("sources.yaml missing sources mapping")
@@ -127,6 +139,8 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
         for key in REQUIRED_SOURCE_KEYS:
             if key not in source:
                 errors.append(f"sources.yaml missing sources.{source_name}.{key}")
+        if "path" not in source and "path_template" not in source:
+            errors.append(f"sources.yaml missing sources.{source_name}.path or path_template")
 
     return errors
 

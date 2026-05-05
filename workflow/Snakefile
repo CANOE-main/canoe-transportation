@@ -1,15 +1,19 @@
 configfile: "config/paths.yaml"
 
-scenario_path = config.get("scenario", "config/scenarios/baseline.yaml")
+from pathlib import Path
+
+scenario_path = config.get("scenario", "config/scenarios/legacy_reproduction.yaml")
+scenario = __import__("yaml").safe_load(Path(scenario_path).read_text(encoding="utf-8"))
+setup_log = scenario["outputs"]["setup_log"]
 
 
 rule all:
     input:
-        "outputs/logs/setup_smoke_baseline.json"
+        setup_log
 
 
 rule setup_smoke:
     output:
-        "outputs/logs/setup_smoke_baseline.json"
+        setup_log
     shell:
         "uv run python src/setup.py --scenario {scenario_path}"
