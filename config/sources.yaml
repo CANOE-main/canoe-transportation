@@ -90,13 +90,51 @@
 #   should verify during an annual update.
 #
 # tables:
-#   Some upstream sources are not a single file. NRCan CEUD transport, for example,
-#   is a source family parameterized by year, region, and table_id:
+#   Use this when one registered source represents a family of related files or
+#   CEUD table IDs rather than a single dataset. For example, NRCan transport
+#   files vary by year, region, and table_id:
 #
 #     tran_{region}_e_{table_id}.xls
 #
-#   In these cases, keep one top-level source entry and describe the varying files
-#   using url_template/path_template plus a nested tables registry.
+#   Keep one top-level source entry for the source family, then describe each
+#   table under `tables:`. These entries should say what the raw table is, what
+#   backend concepts it supports, and which parameter module is expected to use it.
+#
+#   Required table-entry fields:
+#     label:
+#       Human-readable source table name.
+#
+#     short_name:
+#       Stable snake_case identifier used in logs, extraction outputs, and tests.
+#       This should describe the table's backend role, not just repeat the label.
+#
+#     inputs:
+#       Raw concepts expected from the source table, e.g. stock, sales, activity,
+#       fuel_use, avg_distance, occupancy, load_factor, or fuel_split.
+#
+#     applies_to:
+#       Transport modes, subsectors, or technology groups covered by the table,
+#       e.g. cars, light_trucks, medium_heavy_trucks, passenger_air, freight_rail.
+#
+#     produces:
+#       Intermediate backend quantities this table helps derive, e.g. demand,
+#       existing_capacity, fleet_turnover, utilization_from_stock,
+#       occupancy_from_activity, stock_from_activity, or fuel_type_disaggregation.
+#
+#     parameter_modules:
+#       Parameterization modules expected to consume this table.
+#
+#   Optional table-entry fields:
+#     notes:
+#       Short caveat or legacy interpretation note. Keep detailed transformations
+#       in config/parameters/ or extraction maps, not here.
+#
+#     validation_rule:
+#       Table-specific availability/shape check if the top-level source rule is
+#       too generic.
+#
+#     units:
+#       Native units if this table has clearer units than the parent source.
 #
 # What not to put here yet
 # -----------------------
@@ -120,137 +158,188 @@ sources:
     source_type: upstream_download
     file_type: xls
     url_template: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/Excel/{year}/tran_{region}_e_{table_id}.xls"
-    path_template: "inputs/cache/nrcan_ceud_transport/{year}/tran_{region}_e_{table_id}.xls"
+    path_template: "inputs/cache/nrcan_ceud_transport/{year}_tran_{region}_e_{table_id}.xls"
     years:
-      default: 2023
-      allowed: [2021, 2022, 2023]  # expand later if needed
+      default: 2021
     regions:
-      default: all_provinces
-      allowed: [AB, BC, MB, NB, NL, NS, ON, PE, QC, SK]
+      default: "ON"    # any or all provinces
+      allowed: ["AB", "BCT", "MB", "NB", "NL", "NS", "ON", "PE", "QC", "SK"]
     units: "varies"
     citation: "Natural Resources Canada. (2025). Transportation Sector – Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm"
     validation_rule: "For each requested year-region-table_id, confirm file exists, can be opened, and contains expected CEUD table structure."
     refresh_notes: >
-      Legacy workflow used get_nrcan_data.py to download CEUD transport Tables
-      7, 20-21, and 28-37, strip formatting/noise rows, and inject cleaned arrays
+      Legacy workflow used get_nrcan_data.py to download CEUD transport Tables 7, 20-21, and 28-37, strip formatting/noise rows, and inject cleaned arrays
       into the transport spreadsheet Background Data sheet.
     tables:
       21:
         label: "Car Explanatory"
         short_name: car_fleet
-        use: [sales, stock, avg_distance]
+        inputs: [sales, stock, avg_distance]
         applies_to: [cars]
+        produces: [fleet_turnover, occupancy_from_activity]
         parameter_modules: [stocks_and_demands]
       37:
         label: "Truck Explanatory"
         short_name: truck_fleet
-        use: [sales, stock, fleet_efficiency, avg_distance]
+        inputs: [sales, stock, fleet_efficiency, avg_distance]
         applies_to: [passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
-        parameter_modules: [stocks_and_demands]
+        produces: [fleet_turnover, md_truck_efficiency, hd_truck_efficiency, occupancy_from_activity]
+        parameter_modules: [stocks_and_demands, on_road_effs_and_costs]
       31:
         label: "Bus Explanatory"
         short_name: bus_fleet
-        use: [stock, avg_distance]
+        inputs: [stock, avg_distance]
         applies_to: [school_buses, urban_transit, inter_city_buses]
+        produces: [fleet_size, occupancy_from_activity]
         parameter_modules: [stocks_and_demands]
       20:
         label: "Cars"
         short_name: car_activity
-        use: [activity]
+        inputs: [activity]
         applies_to: [cars]
+        produces: [demand, utilization_from_stock]
         parameter_modules: [stocks_and_demands]
       34:
         label: "Passenger Light Trucks"
         short_name: passenger_light_trucks_activity
-        use: [activity]
+        inputs: [activity]
         applies_to: [passenger_light_trucks]
+        produces: [demand, utilization_from_stock]
         parameter_modules: [stocks_and_demands]
       35:
         label: "Freight Light Trucks"
         short_name: freight_light_trucks_activity
-        use: [activity]
+        inputs: [activity]
         applies_to: [freight_light_trucks]
+        produces: [demand, utilization_from_stock]
         parameter_modules: [stocks_and_demands]
       36:
         label: ["Medium Trucks", "Heavy Trucks"]
         short_name: medium_heavy_trucks_activity
-        use: [activity]
+        inputs: [activity]
         applies_to: [medium_trucks, heavy_trucks]
+        produces: [demand, utilization_from_stock]
         parameter_modules: [stocks_and_demands]
       32:
         label: "Motorcycle"
-        short_name: motorcycle_activity
-        use: [activity]
+        short_name: motorcycle_fleet_activity
+        inputs: [activity, stock, avg_distance]
         applies_to: [motorcycles]
+        produces: [demand, utilization_from_stock, fleet_size, occupancy_from_activity]
         parameter_modules: [stocks_and_demands]
       28:
         label: "School Buses"
         short_name: school_buses_activity
-        use: [activity, fuel_use]
+        inputs: [activity, fuel_use]
         applies_to: [school_buses]
+        produces: [demand, utilization_from_stock, fuel_type_disaggregation]
         parameter_modules: [stocks_and_demands]
       29:
         label: "Urban Transit"
-        short_name: urban_transit
-        use: [activity, fuel_use]
+        short_name: urban_transit_activity
+        inputs: [activity, fuel_use]
         applies_to: [urban_transit]
+        produces: [demand, utilization_from_stock, fuel_type_disaggregation]
         parameter_modules: [stocks_and_demands]
       30:
         label: "Inter-City Buses"
         short_name: inter_city_buses_activity
-        use: [activity, fuel_use]
+        inputs: [activity, fuel_use]
         applies_to: [inter_city_buses]
+        produces: [demand, utilization_from_stock, fuel_type_disaggregation]
+        parameter_modules: [stocks_and_demands]
+      14:
+        label: "Passenger Air"
+        short_name: passenger_air_provincial_fuel_use
+        inputs: [fuel_use]
+        applies_to: [passenger_air]
+        produces: [stock_from_activity, fuel_type_disaggregation]
+        parameter_modules: [stocks_and_demands]
+      15:
+        label: "Freight Air"
+        short_name: freight_air_provincial_fuel_use
+        inputs: [fuel_use]
+        applies_to: [freight_air]
+        produces: [stock_from_activity, fuel_type_disaggregation]
+        parameter_modules: [stocks_and_demands]
+      17:
+        label: "Passenger Rail"
+        short_name: passenger_rail_provincial_fuel_use
+        inputs: [fuel_use]
+        applies_to: [passenger_rail]
+        produces: [stock_from_activity]
+        parameter_modules: [stocks_and_demands]
+      18:
+        label: "Freight Rail"
+        short_name: freight_rail_provincial_fuel_use
+        inputs: [fuel_use]
+        applies_to: [freight_rail]
+        produces: [stock_from_activity]
+        parameter_modules: [stocks_and_demands]
+      19:
+        label: "Marine Freight"
+        short_name: marine_freight_provincial_fuel_use
+        inputs: [fuel_use]
+        applies_to: [marine_freight]
+        produces: [stock_from_activity, fuel_type_disaggregation]
         parameter_modules: [stocks_and_demands]
       7:
         label: "Off-Road"
-        short_name: off_road
-        use: [fuel_use]
+        short_name: off_road_fuel_use
+        inputs: [fuel_use]
         applies_to: [off_road]
+        produces: [demand]
         parameter_modules: [stocks_and_demands]
 
   nrcan_ceud_transport_national:
-    title: "NRCan Comprehensive Energy Use Database Transportation Sector tables"
+    title: "NRCan Comprehensive Energy Use Database Transportation Sector national tables"
     status: pending
     source_type: upstream_download
     file_type: xls
     url_template: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/Excel/{year}/tran_ca_e_{table_id}.xls"
-    path_template: "inputs/cache/nrcan_ceud_transport/{year}/tran_ca_e_{table_id}.xls"
-    year:
-      default: 2023
-      allowed: [2021, 2022, 2023]
+    path_template: "inputs/cache/nrcan_ceud_transport/{year}_tran_ca_e_{table_id}.xls"
+    years:
+      default: 2021
+    regions:
+      default: "global"   # CANOE label for national-level data
     units: "varies"
     citation: "Natural Resources Canada. (2025). Transportation Sector – Canada. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_ca.cfm"
     validation_rule: "For each requested year-table_id, confirm file exists, can be opened, and contains expected CEUD table structure."
     refresh_notes: >
       Legacy workflow used CEUD transport Tables 14-19 directly in the transport spreadsheet Background Data sheet.
-    table_id:
-      14:
+    tables:
+      20:
         label: "Passenger Air"
-        short_name: passenger_air_activity
-        use: [activity, fuel_use]
+        short_name: passenger_air_national_activity
+        inputs: [activity, fuel_use]
         applies_to: [passenger_air]
+        produces: [demand, fuel_type_disaggregation]
         parameter_modules: [stocks_and_demands]
       15:
         label: "Freight Air"
-        short_name: freight_air
-        use: [activity, fuel_use]
+        short_name: freight_air_national_activity
+        inputs: [activity, fuel_use]
         applies_to: [freight_air]
+        produces: [demand, fuel_type_disaggregation]
         parameter_modules: [stocks_and_demands]
       17:
         label: "Passenger Rail"
-        short_name: passenger_rail
-        use: [activity, fuel_use]
+        short_name: passenger_rail_national_activity
+        inputs: [activity, fuel_use]
         applies_to: [passenger_rail]
+        produces: [demand]
         parameter_modules: [stocks_and_demands]
       18:
         label: "Freight Rail"
-        short_name: freight_rail
-        use: sector_activity
+        short_name: freight_rail_national_activity
+        inputs: [activity, fuel_use]
         applies_to: [freight_rail]
+        produces: [demand]
         parameter_modules: [stocks_and_demands]
       19:
         label: "Marine Freight"
-        short_name: marine_freight
-        use: sector_activity
+        short_name: marine_freight_national_activity
+        inputs: [activity, fuel_use]
         applies_to: [marine_freight]
+        produces: [demand, fuel_type_disaggregation]
         parameter_modules: [stocks_and_demands]

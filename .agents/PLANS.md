@@ -23,9 +23,8 @@ Store plans in:
 Use numbered descriptive names:
 
     001_config_control_layer.md
-    002_sqlite_schema_instantiation.md
-    003_legacy_sqlite_comparison.md
-    004_stocks_and_demands_baseline.md
+    002_stocks_and_demands_baseline.md
+    003_sqlite_schema_instantiation.md
 
 ## Required sections
 
@@ -63,8 +62,8 @@ Use relevant commands such as:
 
     uv run pytest
     uv run ruff check .
-    uv run python src/setup.py --scenario config/scenarios/baseline.yaml
-    uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/baseline.yaml --cores 1
+    uv run python src/setup.py --scenario config/scenarios/legacy_reproduction.yaml
+    uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/legacy_reproduction.yaml --cores 1
 
 Early scaffold plans may validate only YAML loading, path creation, imports, and smoke tests.
 
