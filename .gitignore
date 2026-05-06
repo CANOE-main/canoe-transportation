@@ -2,6 +2,8 @@
 .uv-cache/
 __pycache__/
 .pytest_cache/
+.pytest-basetemp/
+.pytest-cache-runtime/
 .ruff_cache/
 .snakemake/
 data/raw/

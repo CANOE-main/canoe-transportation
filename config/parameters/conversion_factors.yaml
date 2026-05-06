@@ -1,0 +1,4 @@
+version: 1
+
+mass:
+  kg_to_lb: 2.20462
