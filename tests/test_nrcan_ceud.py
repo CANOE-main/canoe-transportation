@@ -7,6 +7,7 @@ from parameterization.nrcan_ceud import (
     clean_label,
     extract_unit,
     iter_table_requests,
+    module_rules,
     normalize_ceud_dataframe,
     render_ceud_url,
 )
@@ -15,6 +16,11 @@ from parameterization.utils import load_config_bundle
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+
+
+def nrcan_rules() -> dict[str, object]:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    return module_rules(bundle)
 
 
 def test_render_ceud_url_uses_year_region_and_table_id() -> None:
@@ -36,8 +42,17 @@ def test_iter_table_requests_uses_raw_cache_names() -> None:
     assert requests[0].cache_path.name.startswith("2021_tran_on_e_")
 
 
+def test_nrcan_rules_load_paths_and_extraction_parameters_from_config() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    rules = module_rules(bundle)
+
+    assert rules["interim_subdir"] == "fetched_nrcan_ceud_inputs"
+    assert rules["raw_excel_skiprows"] == 10
+    assert rules["region_output_template"] == "nrcan_ceud_transport_{region}.csv"
+
+
 def test_clean_label_removes_superscript_noise() -> None:
-    assert clean_label("Passenger-km (10^9)\N{SUPERSCRIPT ONE}") == "Passenger-km (109)"
+    assert clean_label("Passenger-km (10^9)\N{SUPERSCRIPT ONE}", nrcan_rules()) == "Passenger-km (109)"
 
 
 def test_extract_unit_uses_last_parenthesized_token() -> None:
@@ -70,7 +85,7 @@ def test_normalize_ceud_dataframe_drops_noise_and_preserves_provenance() -> None
         cache_path=REPO_ROOT / "inputs" / "cache" / "nrcan_ceud_transport" / "2021_tran_on_e_36.xls",
     )
 
-    normalized = normalize_ceud_dataframe(raw, request)
+    normalized = normalize_ceud_dataframe(raw, request, nrcan_rules())
 
     assert normalized.to_dict("records") == [
         {
@@ -126,7 +141,7 @@ def test_table_7_total_energy_use_can_be_value_and_group_header() -> None:
         cache_path=REPO_ROOT / "inputs" / "cache" / "nrcan_ceud_transport" / "2021_tran_on_e_7.xls",
     )
 
-    normalized = normalize_ceud_dataframe(raw, request)
+    normalized = normalize_ceud_dataframe(raw, request, nrcan_rules())
 
     assert normalized[["raw_series", "unit", "value"]].to_dict("records") == [
         {"raw_series": "Total Energy Use (PJ)", "unit": "PJ", "value": 10.0},

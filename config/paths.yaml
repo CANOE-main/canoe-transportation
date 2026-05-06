@@ -2,6 +2,9 @@ version: 1
 
 root: "."
 
+config:
+  parameters: config/parameters
+
 inputs:
   root: inputs
   cache: inputs/cache

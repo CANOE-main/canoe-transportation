@@ -63,6 +63,48 @@ def resolve_repo_path(repo_root: Path, value: str | Path) -> Path:
     return (repo_root / path).resolve()
 
 
+def resolve_configured_path(bundle: ConfigBundle, section: str, key: str, *parts: str | Path) -> Path:
+    """Resolve a path from paths.yaml and append optional child parts."""
+    section_config = bundle.paths.get(section, {})
+    if not isinstance(section_config, dict) or key not in section_config:
+        raise KeyError(f"paths.yaml missing {section}.{key}")
+    base = resolve_repo_path(bundle.repo_root, section_config[key])
+    return base.joinpath(*map(Path, parts)) if parts else base
+
+
+def resolve_input_path(bundle: ConfigBundle, key: str, *parts: str | Path) -> Path:
+    """Resolve an input path from paths.yaml."""
+    return resolve_configured_path(bundle, "inputs", key, *parts)
+
+
+def resolve_parameter_path(bundle: ConfigBundle, filename: str | Path) -> Path:
+    """Resolve a config/parameters file through paths.yaml."""
+    config_paths = bundle.paths.get("config", {})
+    parameter_root = "config/parameters"
+    if isinstance(config_paths, dict):
+        parameter_root = config_paths.get("parameters", parameter_root)
+    return resolve_repo_path(bundle.repo_root, parameter_root) / Path(filename)
+
+
+def load_parameter_yaml(bundle: ConfigBundle, filename: str | Path) -> dict[str, Any]:
+    """Load a YAML mapping from config/parameters."""
+    return load_yaml(resolve_parameter_path(bundle, filename))
+
+
+def load_harmonization_rules(bundle: ConfigBundle, module_name: str) -> dict[str, Any]:
+    """Load harmonization rules for one parameterization module."""
+    rules = load_parameter_yaml(bundle, "harmonization_rules.yaml")
+    module_rules = rules.get("parameterization", {}).get(module_name, {})
+    if not isinstance(module_rules, dict):
+        raise ValueError(f"Expected mapping for harmonization rules: {module_name}")
+    return module_rules
+
+
+def load_conversion_factors(bundle: ConfigBundle) -> dict[str, Any]:
+    """Load shared conversion factors."""
+    return load_parameter_yaml(bundle, "conversion_factors.yaml")
+
+
 def load_config_bundle(
     scenario_path: str | Path,
     *,
@@ -139,8 +181,8 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
         for key in REQUIRED_SOURCE_KEYS:
             if key not in source:
                 errors.append(f"sources.yaml missing sources.{source_name}.{key}")
-        if "path" not in source and "path_template" not in source:
-            errors.append(f"sources.yaml missing sources.{source_name}.path or path_template")
+        if "path" not in source and "path_template" not in source and "cache_path_template" not in source:
+            errors.append(f"sources.yaml missing sources.{source_name}.path, path_template, or cache_path_template")
 
     return errors
 

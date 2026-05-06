@@ -14,14 +14,11 @@ from typing import Any
 import pandas as pd
 import requests
 
-from parameterization.utils import ConfigBundle, load_config_bundle, resolve_repo_path
+from parameterization.utils import ConfigBundle, load_config_bundle, load_harmonization_rules, resolve_input_path
 
 
 SOURCE_PROVINCIAL = "nrcan_ceud_transport_provincial"
 SOURCE_NATIONAL = "nrcan_ceud_transport_national"
-INTERIM_DIR = "inputs/interim/fetched_nrcan_ceud_inputs"
-WARNING_LOG = "warnings.log"
-MANIFEST = "manifest.csv"
 
 
 @dataclass(frozen=True)
@@ -38,15 +35,21 @@ class CeudTableRequest:
     output_region: str
 
 
-def clean_label(value: object) -> str | None:
-    """Clean CEUD labels using the legacy character filter."""
+def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
+    """Load CEUD harmonization rules."""
+    return load_harmonization_rules(bundle, "nrcan_ceud")
+
+
+def clean_label(value: object, rules: dict[str, Any]) -> str | None:
+    """Clean CEUD labels using configured legacy-equivalent rules."""
     if value is None or (isinstance(value, float) and math.isnan(value)) or pd.isna(value):
         return None
-    if str(value).strip().lower() in {"nan", "n.a.", "na"}:
+    if str(value).strip().lower() in set(rules["null_labels"]):
         return None
-    text = str(value).translate(str.maketrans("", "", "¹²³"))
+    text = str(value).translate(str.maketrans("", "", str(rules["remove_label_characters"])))
     text = unicodedata.normalize("NFKD", text)
-    cleaned = "".join(char for char in text if char.isalnum() or char in "- /()|%")
+    allowed = str(rules["allowed_label_characters"])
+    cleaned = "".join(char for char in text if char.isalnum() or char in allowed)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned or None
 
@@ -67,9 +70,15 @@ def extract_unit(raw_series: object) -> str | None:
     return unit or None
 
 
-def is_value_bearing_group_header(label: str, request: CeudTableRequest) -> bool:
+def is_value_bearing_group_header(
+    label: str,
+    request: CeudTableRequest,
+    rules: dict[str, Any],
+) -> bool:
     """Return true for CEUD rows that are both a value row and a parent header."""
-    return request.table_id == 7 and label == "Total Energy Use (PJ)"
+    configured = rules.get("group_header_value_rows", {})
+    labels = configured.get(request.table_id, configured.get(str(request.table_id), []))
+    return label in labels
 
 
 def render_ceud_url(source: dict[str, Any], *, year: int, region: str, table_id: int) -> str:
@@ -86,8 +95,13 @@ def render_cache_path(
     table_id: int,
 ) -> Path:
     """Render the deterministic raw cache path for one CEUD table."""
-    path = source["path_template"].format(year=year, region=region.lower(), table_id=table_id)
-    return resolve_repo_path(bundle.repo_root, path)
+    template = source.get("cache_path_template", source.get("path_template"))
+    if template is None:
+        raise KeyError("CEUD source missing cache_path_template")
+    path = template.format(year=year, region=region.lower(), table_id=table_id)
+    if str(path).replace("\\", "/").startswith("inputs/cache/"):
+        path = str(path).replace("\\", "/").removeprefix("inputs/cache/")
+    return resolve_input_path(bundle, "cache", path)
 
 
 def configured_year(source: dict[str, Any]) -> int:
@@ -185,20 +199,25 @@ def fetch_to_cache(request: CeudTableRequest, *, timeout: int = 60) -> str:
     return "downloaded"
 
 
-def read_ceud_excel(path: Path) -> pd.DataFrame:
-    """Read a raw CEUD Excel table using the legacy metadata-row offset."""
-    return pd.read_excel(path, skiprows=10)
+def read_ceud_excel(path: Path, *, skiprows: int) -> pd.DataFrame:
+    """Read a raw CEUD Excel table using the configured metadata-row offset."""
+    return pd.read_excel(path, skiprows=skiprows)
 
 
-def normalize_ceud_dataframe(raw: pd.DataFrame, request: CeudTableRequest) -> pd.DataFrame:
+def normalize_ceud_dataframe(
+    raw: pd.DataFrame,
+    request: CeudTableRequest,
+    rules: dict[str, Any],
+) -> pd.DataFrame:
     """Normalize a parsed CEUD table into traceable long form."""
     if raw.shape[1] < 3:
         raise ValueError("CEUD table has fewer than three columns")
 
     df = raw.copy()
-    label_column = "Unnamed: 1" if "Unnamed: 1" in df.columns else df.columns[1]
-    if "Unnamed: 0" in df.columns:
-        df = df.drop(columns=["Unnamed: 0"])
+    label_column = "Unnamed: 1" if "Unnamed: 1" in df.columns else df.columns[int(rules["label_column_fallback_index"])]
+    drop_columns = [column for column in rules["drop_columns_if_present"] if column in df.columns]
+    if drop_columns:
+        df = df.drop(columns=drop_columns)
 
     year_columns: dict[Any, int] = {}
     for column in df.columns:
@@ -210,7 +229,7 @@ def normalize_ceud_dataframe(raw: pd.DataFrame, request: CeudTableRequest) -> pd
         raise ValueError("CEUD table has no integer year columns")
 
     df = df[[label_column, *year_columns.keys()]].rename(columns=year_columns)
-    df[label_column] = df[label_column].map(clean_label)
+    df[label_column] = df[label_column].map(lambda value: clean_label(value, rules))
 
     header: str | None = None
     raw_series: list[str | None] = []
@@ -220,7 +239,7 @@ def normalize_ceud_dataframe(raw: pd.DataFrame, request: CeudTableRequest) -> pd
         if label is None or pd.isna(label):
             header = None
             raw_series.append(None)
-        elif is_value_bearing_group_header(label, request):
+        elif is_value_bearing_group_header(label, request, rules):
             header = label
             raw_series.append(label)
         elif pd.isna(row[first_year]):
@@ -232,12 +251,13 @@ def normalize_ceud_dataframe(raw: pd.DataFrame, request: CeudTableRequest) -> pd
             raw_series.append(label)
     df["raw_series"] = raw_series
     df = df.dropna(subset=["raw_series"])
-    df = df[~df["raw_series"].str.contains("Shares|GHG", case=False, na=False)]
+    df = df[~df["raw_series"].str.contains(str(rules["drop_raw_series_pattern"]), case=False, na=False)]
     df = df.dropna(subset=year_columns.values(), how="all")
 
     df["raw_series"] = add_legacy_table_label_prefixes(
         df["raw_series"],
         request.table_meta.get("label", ""),
+        rules,
     )
 
     long = df.melt(
@@ -283,18 +303,20 @@ def normalize_ceud_dataframe(raw: pd.DataFrame, request: CeudTableRequest) -> pd
     ]
 
 
-def add_legacy_table_label_prefixes(series: pd.Series, table_label: object) -> pd.Series:
-    """Apply the legacy Activity/Energy label prefix behavior, including table 36."""
+def add_legacy_table_label_prefixes(
+    series: pd.Series,
+    table_label: object,
+    rules: dict[str, Any],
+) -> pd.Series:
+    """Apply configured legacy Activity/Energy label prefix behavior."""
     labels: list[str] = []
     activity_count = 0
     intensity_count = 0
     label_list = table_label if isinstance(table_label, list) else None
+    markers = [str(marker) for marker in rules["table_label_prefix_markers"]]
     for raw_value in series:
         value = str(raw_value)
-        needs_prefix = any(
-            marker in value
-            for marker in ("Activity", "Energy Intensity", "Energy Use by Energy Source")
-        )
+        needs_prefix = any(marker in value for marker in markers)
         if not needs_prefix:
             labels.append(value)
             continue
@@ -319,21 +341,22 @@ def write_outputs(
     manifest_rows: list[dict[str, Any]],
     warnings: list[str],
     output_dir: Path,
+    rules: dict[str, Any],
 ) -> None:
     """Write normalized CEUD outputs, a manifest, and warning log."""
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest = pd.DataFrame(manifest_rows)
-    manifest.to_csv(output_dir / MANIFEST, index=False)
+    manifest.to_csv(output_dir / rules["manifest_file"], index=False)
 
     if rows:
         all_rows = pd.concat(rows, ignore_index=True)
         for region, region_rows in all_rows.groupby("region"):
             suffix = str(region).lower()
-            region_rows.to_csv(output_dir / f"nrcan_ceud_transport_{suffix}.csv", index=False)
+            region_rows.to_csv(output_dir / rules["region_output_template"].format(region=suffix), index=False)
     else:
-        (output_dir / "nrcan_ceud_transport_empty.csv").write_text("", encoding="utf-8")
+        (output_dir / rules["empty_output_file"]).write_text("", encoding="utf-8")
 
-    (output_dir / WARNING_LOG).write_text("\n".join(warnings) + ("\n" if warnings else ""), encoding="utf-8")
+    (output_dir / rules["warnings_file"]).write_text("\n".join(warnings) + ("\n" if warnings else ""), encoding="utf-8")
 
 
 def fetch_and_normalize(
@@ -346,7 +369,8 @@ def fetch_and_normalize(
 ) -> Path:
     """Fetch/cache configured CEUD tables and write normalized interim CSVs."""
     bundle = load_config_bundle(scenario_path)
-    output_dir = resolve_repo_path(bundle.repo_root, INTERIM_DIR)
+    rules = module_rules(bundle)
+    output_dir = resolve_input_path(bundle, "interim", rules["interim_subdir"])
     requests_to_fetch = iter_table_requests(bundle, regions=regions, include_national=include_national, year=year)
     rows: list[pd.DataFrame] = []
     manifest_rows: list[dict[str, Any]] = []
@@ -362,15 +386,19 @@ def fetch_and_normalize(
                 status = "cached"
             else:
                 raise FileNotFoundError(request.cache_path)
-            normalized = normalize_ceud_dataframe(read_ceud_excel(request.cache_path), request)
-            rows.append(normalized)
+            raw = read_ceud_excel(request.cache_path, skiprows=int(rules["raw_excel_skiprows"]))
+            rows.append(normalize_ceud_dataframe(raw, request, rules))
         except Exception as exc:
             status = "failed"
             reason = str(exc)
-            warnings.append(
-                f"{request.source_id} {request.output_region} table {request.table_id}: {reason}"
+            warnings.append(f"{request.source_id} {request.output_region} table {request.table_id}: {reason}")
+            logging.warning(
+                "Failed to process %s %s table %s: %s",
+                request.source_id,
+                request.output_region,
+                request.table_id,
+                exc,
             )
-            logging.warning("Failed to process %s %s table %s: %s", request.source_id, request.output_region, request.table_id, exc)
 
         manifest_rows.append(
             {
@@ -386,7 +414,7 @@ def fetch_and_normalize(
             }
         )
 
-    write_outputs(rows, manifest_rows, warnings, output_dir)
+    write_outputs(rows, manifest_rows, warnings, output_dir, rules)
     return output_dir
 
 

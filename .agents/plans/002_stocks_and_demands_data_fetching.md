@@ -1,4 +1,4 @@
-# 002_stocks_and_demands_baseline.md
+# 002_stocks_and_demands_data_fetching.md
 
 ## Goal
 

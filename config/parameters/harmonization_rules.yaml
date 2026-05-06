@@ -1,0 +1,58 @@
+version: 1
+
+parameterization:
+  nrcan_ceud:
+    interim_subdir: fetched_nrcan_ceud_inputs
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    empty_output_file: nrcan_ceud_transport_empty.csv
+    region_output_template: nrcan_ceud_transport_{region}.csv
+    raw_excel_skiprows: 10
+    label_column_fallback_index: 1
+    drop_columns_if_present: ["Unnamed: 0"]
+    null_labels: ["nan", "n.a.", "na"]
+    remove_label_characters: "Â¹Â²Â³¹²³"
+    allowed_label_characters: "- /()|%"
+    drop_raw_series_pattern: "Shares|GHG"
+    group_header_value_rows:
+      7: ["Total Energy Use (PJ)"]
+    table_label_prefix_markers:
+      - Activity
+      - Energy Intensity
+      - Energy Use by Energy Source
+
+  ontario_vehicle_population:
+    interim_subdir: fetched_ontario_vehicle_population
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    reports:
+      4:
+        report_label: "Report 4"
+        cleaned_output_template: ontario_vehicle_population_report4_cleaned_{year}.csv
+        distribution_output_template: ontario_vehicle_population_report4_epa_gvwr_distribution_{year}.csv
+        required_columns: [WEIGHT_CLASS, KG_FROM, KG_TO, FIT-ACTIVE]
+        weight_class_column: WEIGHT_CLASS
+        kept_weight_class: COMMERCIAL
+        kg_from_column: KG_FROM
+        kg_to_column: KG_TO
+        count_column: FIT-ACTIVE
+        output_count_column: NATIVE_COUNT
+        epa_gvwr_column: EPA_GVWR
+        share_column: SHARE
+        epa_gvwr_labels: [LDT1-2, LDT3-4, MDV2b, MDV3, MDV4, MDV5, MDV6, MDV7, MDV8]
+        epa_gvwr_bin_edges_lb: [-.inf, 6000, 8500, 10000, 14000, 16000, 19500, 26000, 33000, .inf]
+      5:
+        report_label: "Report 5"
+        cleaned_output_template: ontario_vehicle_population_report5_cleaned_{year}.csv
+        distribution_output_template: ontario_vehicle_population_report5_age_distribution_{year}.csv
+        required_columns: [VEHICLE_CLASS, DESCRIPTOR, VALUE, FIT-ACTIVE]
+        vehicle_class_column: VEHICLE_CLASS
+        descriptor_column: DESCRIPTOR
+        kept_descriptor: YEAR
+        kept_vehicle_classes: [PASSENGER, COMMERCIAL, MOTORCYCLE, BUS]
+        model_year_column: VALUE
+        count_column: FIT-ACTIVE
+        output_count_column: NATIVE_COUNT
+        age_column: AGE
+        age_distribution_column: AGE_DIST
+        max_age: 30
