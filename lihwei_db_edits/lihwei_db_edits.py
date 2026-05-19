@@ -171,6 +171,8 @@ def xlsx_to_sqlite(xlsx_path, sqlite_path, schema_ref_db: str,
 
                     # insert the df into the sqlite database, adding to existing table if it exists
                     # if the table does not exist, it will be created
+                    # print(sheet_name, df.head())    # print data for troubleshooting
+                    
                     df.to_sql(sheet_name, conn, if_exists='append', index=False)
                     # print message indicating columns dropped
                     dropped_columns = set(df.columns) - set(schema[sheet_name])
