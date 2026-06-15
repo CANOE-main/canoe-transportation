@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from parameterization.utils import (
+from utils import (
     configured_directories,
     load_config_bundle,
     resolve_repo_path,

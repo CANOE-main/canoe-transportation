@@ -7,10 +7,10 @@ config:
 
 inputs:
   root: inputs
-  cache: inputs/cache
-  external: inputs/external
-  interim: inputs/interim
-  processed: inputs/processed
+  cache: inputs/0_cache
+  external: inputs/0_external_models
+  interim: inputs/1_interim
+  processed: inputs/2_processed
   schema: inputs/canoe_dataset_schema.sql
 
 outputs:

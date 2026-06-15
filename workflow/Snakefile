@@ -21,10 +21,9 @@ rule setup_smoke:
 
 rule fetch_ontario_vehicle_population:
     output:
-        manifest="inputs/interim/fetched_ontario_vehicle_population/manifest.csv",
-        report4="inputs/interim/fetched_ontario_vehicle_population/ontario_vehicle_population_report4_epa_gvwr_distribution_{year}.csv",
-        report5="inputs/interim/fetched_ontario_vehicle_population/ontario_vehicle_population_report5_age_distribution_{year}.csv",
+        report4="inputs/1_interim/fetched_ontario_vehicle_population/ontario_vehicle_population_report4_epa_gvwr_distribution_{year}.csv",
+        report5="inputs/1_interim/fetched_ontario_vehicle_population/ontario_vehicle_population_report5_age_distribution_{year}.csv",
     params:
         scenario=scenario_path
     shell:
-        "uv run python -m parameterization.ontario_vehicle_population --scenario {params.scenario} --year {wildcards.year}"
+        "uv run python -m fetching.vehicle_population --scenario {params.scenario} --year {wildcards.year}"

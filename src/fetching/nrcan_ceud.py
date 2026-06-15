@@ -14,7 +14,7 @@ from typing import Any
 import pandas as pd
 import requests
 
-from parameterization.utils import ConfigBundle, load_config_bundle, load_harmonization_rules, resolve_input_path
+from utils import ConfigBundle, load_config_bundle, load_harmonization_rules, resolve_input_path
 
 
 SOURCE_PROVINCIAL = "nrcan_ceud_transport_provincial"
@@ -99,8 +99,11 @@ def render_cache_path(
     if template is None:
         raise KeyError("CEUD source missing cache_path_template")
     path = template.format(year=year, region=region.lower(), table_id=table_id)
-    if str(path).replace("\\", "/").startswith("inputs/cache/"):
-        path = str(path).replace("\\", "/").removeprefix("inputs/cache/")
+    normalized_path = str(path).replace("\\", "/")
+    for cache_root in ("inputs/cache/", "inputs/0_cache/"):
+        if normalized_path.startswith(cache_root):
+            path = normalized_path.removeprefix(cache_root)
+            break
     return resolve_input_path(bundle, "cache", path)
 
 

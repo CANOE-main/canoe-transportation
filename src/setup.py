@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from parameterization.utils import load_config_bundle, resolve_repo_path
+from utils import load_config_bundle, resolve_repo_path
 from validation.config_smoke import run_smoke_validation
 
 
