@@ -1,0 +1,34 @@
+{
+  "ok": true,
+  "timestamp_utc": "2026-04-30T20:17:34.130176+00:00",
+  "scenario": "baseline",
+  "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\baseline.yaml",
+  "paths_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
+  "sources_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\sources.yaml",
+  "created_directories": [
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\cache",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\external",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\interim",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\processed",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\logs"
+  ],
+  "schema_exists": true,
+  "schema_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\canoe_dataset_schema.sql",
+  "reference_sqlite_exists": true,
+  "reference_sqlite": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\canoe_on_12d_baseline.sqlite",
+  "active_sources": [
+    "nrcan_ceud_transport",
+    "ramp_mobility_ldv_charging"
+  ],
+  "placeholder_sources": [
+    "nrcan_ceud_transport",
+    "ramp_mobility_ldv_charging"
+  ],
+  "non_goals": {
+    "download_sources": false,
+    "transform_parameters": false,
+    "compile_sqlite": false
+  }
+}

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from parameterization.nrcan_ceud import (
+from fetching.nrcan_ceud import (
     CeudTableRequest,
     clean_label,
     extract_unit,
@@ -11,7 +11,7 @@ from parameterization.nrcan_ceud import (
     normalize_ceud_dataframe,
     render_ceud_url,
 )
-from parameterization.utils import load_config_bundle
+from utils import load_config_bundle
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -38,7 +38,7 @@ def test_iter_table_requests_uses_raw_cache_names() -> None:
     requests = iter_table_requests(bundle, regions=["ON"], include_national=False)
 
     assert requests
-    assert requests[0].cache_path.parent == REPO_ROOT / "inputs" / "cache" / "nrcan_ceud_transport"
+    assert requests[0].cache_path.parent == REPO_ROOT / "inputs" / "0_cache" / "nrcan_ceud_transport"
     assert requests[0].cache_path.name.startswith("2021_tran_on_e_")
 
 
@@ -82,7 +82,7 @@ def test_normalize_ceud_dataframe_drops_noise_and_preserves_provenance() -> None
             "parameter_modules": ["stocks_and_demands"],
         },
         url="https://example.test/table.xls",
-        cache_path=REPO_ROOT / "inputs" / "cache" / "nrcan_ceud_transport" / "2021_tran_on_e_36.xls",
+        cache_path=REPO_ROOT / "inputs" / "0_cache" / "nrcan_ceud_transport" / "2021_tran_on_e_36.xls",
     )
 
     normalized = normalize_ceud_dataframe(raw, request, nrcan_rules())
@@ -103,7 +103,7 @@ def test_normalize_ceud_dataframe_drops_noise_and_preserves_provenance() -> None
             "value": 1.5,
             "unit": "PJ",
             "cached_file": str(
-                REPO_ROOT / "inputs" / "cache" / "nrcan_ceud_transport" / "2021_tran_on_e_36.xls"
+                REPO_ROOT / "inputs" / "0_cache" / "nrcan_ceud_transport" / "2021_tran_on_e_36.xls"
             ),
         }
     ]
@@ -138,7 +138,7 @@ def test_table_7_total_energy_use_can_be_value_and_group_header() -> None:
             "parameter_modules": ["stocks_and_demands"],
         },
         url="https://example.test/table.xls",
-        cache_path=REPO_ROOT / "inputs" / "cache" / "nrcan_ceud_transport" / "2021_tran_on_e_7.xls",
+        cache_path=REPO_ROOT / "inputs" / "0_cache" / "nrcan_ceud_transport" / "2021_tran_on_e_7.xls",
     )
 
     normalized = normalize_ceud_dataframe(raw, request, nrcan_rules())

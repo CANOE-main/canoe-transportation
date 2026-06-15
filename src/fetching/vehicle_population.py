@@ -12,7 +12,7 @@ from zipfile import ZipFile
 import pandas as pd
 import requests
 
-from parameterization.utils import (
+from utils import (
     ConfigBundle,
     load_config_bundle,
     load_conversion_factors,
@@ -117,8 +117,11 @@ def render_cache_path(bundle: ConfigBundle, source: dict[str, Any], *, year: int
     if template is None:
         raise KeyError("Ontario vehicle population source missing cache_path_template")
     path = template.format(year=year)
-    if str(path).replace("\\", "/").startswith("inputs/cache/"):
-        path = str(path).replace("\\", "/").removeprefix("inputs/cache/")
+    normalized_path = str(path).replace("\\", "/")
+    for cache_root in ("inputs/cache/", "inputs/0_cache/"):
+        if normalized_path.startswith(cache_root):
+            path = normalized_path.removeprefix(cache_root)
+            break
     return resolve_input_path(bundle, "cache", path)
 
 

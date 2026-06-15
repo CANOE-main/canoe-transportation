@@ -4,7 +4,7 @@ from zipfile import ZipFile
 import pandas as pd
 import pytest
 
-from parameterization.ontario_vehicle_population import (
+from fetching.vehicle_population import (
     OntarioVehiclePopulationRequest,
     build_request,
     fetch_to_cache,
@@ -16,7 +16,7 @@ from parameterization.ontario_vehicle_population import (
     resolve_zip_member_name,
     select_ckan_resource,
 )
-from parameterization.utils import load_config_bundle
+from utils import load_config_bundle
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -79,7 +79,7 @@ def test_build_request_uses_configured_ckan_metadata_and_default_year() -> None:
 
     assert request.year == 2022
     assert request.package_id == "vehicle-population-data"
-    assert request.cache_path == REPO_ROOT / "inputs" / "cache" / "ontario_vehicle_population" / "2022_vehicle_population_data.zip"
+    assert request.cache_path == REPO_ROOT / "inputs" / "0_cache" / "ontario_vehicle_population" / "2022_vehicle_population_data.zip"
     assert request.report4_member == "2022_Reg_Veh_Report4_Weight_Class&Status.TXT"
     assert request.report5_member == "2022_Reg_Veh_Report5_Class&Status&Descriptors.TXT"
 
@@ -181,6 +181,6 @@ def test_fetch_to_cache_reuses_existing_zip_without_request(tmp_path: Path, monk
     def fail_get(*_args: object, **_kwargs: object) -> object:
         raise AssertionError("requests.get should not be called for cached files")
 
-    monkeypatch.setattr("parameterization.ontario_vehicle_population.requests.get", fail_get)
+    monkeypatch.setattr("fetching.vehicle_population.requests.get", fail_get)
 
     assert fetch_to_cache(request) == "cached"

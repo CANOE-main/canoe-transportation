@@ -93,7 +93,7 @@ def load_parameter_yaml(bundle: ConfigBundle, filename: str | Path) -> dict[str,
 
 def load_harmonization_rules(bundle: ConfigBundle, module_name: str) -> dict[str, Any]:
     """Load harmonization rules for one parameterization module."""
-    rules = load_parameter_yaml(bundle, "harmonization_rules.yaml")
+    rules = load_parameter_yaml(bundle, "rules.yaml")
     module_rules = rules.get("parameterization", {}).get(module_name, {})
     if not isinstance(module_rules, dict):
         raise ValueError(f"Expected mapping for harmonization rules: {module_name}")
@@ -102,7 +102,7 @@ def load_harmonization_rules(bundle: ConfigBundle, module_name: str) -> dict[str
 
 def load_conversion_factors(bundle: ConfigBundle) -> dict[str, Any]:
     """Load shared conversion factors."""
-    return load_parameter_yaml(bundle, "conversion_factors.yaml")
+    return load_parameter_yaml(bundle, "conversion.yaml")
 
 
 def load_config_bundle(

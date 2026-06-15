@@ -37,41 +37,42 @@ This layout is the preferred direction, not a rigid template. Preserve it where 
 ├── config/                         # YAML configs and scenarios
 │   ├── paths.yaml                  # Canonical paths
 │   ├── sources.yaml                # Source registry
-│   ├── scenarios/                  # Baseline and experiment configs
-│   └── parameters/                 # Extraction maps and parameter metadata
+│   ├── scenarios/                  # Baseline and alternative scenario configs
+│   └── parameters/                 # Harmonization rules, extraction maps, and parameter metadata
 ├── workflow/                       # Snakemake orchestration
 │   ├── Snakefile                   # Main workflow entry point
 │   └── rules/                      # Modular workflow rules
 ├── src/
 │   ├── setup.py                    # Load config, create paths, fetch/cache data, validate sources
 │   ├── build_transport.py          # Build SQLite, run modules, post-process, log
+│   ├── utils/                      # Shared I/O, logging, YAML, units, CSV/Excel helpers
 │   ├── validation/                 # SQLite parity, schema, tolerance, and smoke checks
-│   └── parameterization/
-│       ├── utils.py                # Shared I/O, logging, YAML, units, CSV/Excel helpers
-│       ├── stocks_and_demands.py   # Existing capacity, demand, utilization, historical anchors
-│       ├── on_road_effs_and_costs.py       # Road efficiency, capex, fixed O&M
-│       ├── on_road_variable_costs.py       # Road maintenance and variable O&M
-│       ├── off_road_effs_and_costs.py      # Aviation, rail, marine, other off-road costs/efficiencies
-│       ├── on_road_lifetimes.py            # Road survival, retirement, lifetimes
-│       ├── off_road_lifetimes.py           # Off-road lifetimes and vintage availability
-│       ├── ldv_charging_dist.py            # RAMP-mobility BEV profiles to CFT-ready tables
-│       ├── emission_embodied.py            # Vehicle-cycle/manufacturing emissions
-│       ├── emission_activity.py            # Fuel-cycle/upstream/activity emissions
-│       ├── market_constraints.py           # SCC, ZEV shares, AER classes, fuel/policy limits
-│       ├── adoption_constraints.py         # Adoption/growth constraints
-│       └── sector_coupling.py              # Fuel, electricity, hydrogen, blending links
+│   ├── fetching/                   # Upstream download, cache, and interim normalization
+│   │   ├── nrcan_ceud.py           # NRCan CEUD transport tables
+│   │   ├── vehicle_population.py   # Provincial vehicle population reports
+│   │   ├── statcan_tables.py       # Statistics Canada transport tables
+│   │   ├── cer_enerfuture.py       # CER energy future projections
+│   │   ├── nlr_atb_autonomie.py    # NLR ATB and Autonomie technology data
+│   │   └── assorted_sources.py     # Smaller registered source adapters
+│   └── parameterization/           # Transform normalized inputs into model parameters
+│       ├── stocks_and_demands.py   # Capacity, demand, utilization, and anchors
+│       ├── lifetimes_survival.py   # Lifetimes and survival curves
+│       ├── road_aggregation.py     # Road class mappings and aggregation weights
+│       ├── efficiencies.py         # Technology efficiencies
+│       ├── capex_opex.py           # Investment and operating costs
+│       ├── ldv_charging.py         # BEV charging profiles and time slices
+│       ├── emissions.py            # Vehicle-cycle and operating emissions
+│       ├── market_constraints.py   # Market shares, policy limits, and SCC rules
+│       ├── adoption_constraints.py # Adoption and growth constraints
+│       └── sector_coupling.py      # Fuel, electricity, hydrogen, and blends
 ├── inputs/
 │   ├── canoe_dataset_schema.sql    # CANOE/Temoa SQLite schema
-│   ├── existing_techs.csv          # Existing technology dictionary
-│   ├── new_techs.csv               # Future technology dictionary
-│   ├── fuel_commodities.csv        # Fuel/commodity definitions
-│   ├── demands.csv                 # Service-demand definitions
-│   ├── regions.csv                 # Region and proxy mappings
-│   ├── time.csv                    # Periods, seasons, slices, fractions, hour maps
-│   ├── cache/                      # Cached upstream downloads; never hand-edit
-│   ├── external/                   # Registered external model outputs
-│   ├── interim/                    # Extracted/normalized debug tables
-│   └── processed/                  # Parameter-ready tables
+│   ├── 0_canoe_template/           # Default metadata and tech/commodity archetypes
+│   ├── 0_manual_params/            # Hand-edited heterogeneous parameter inputs
+│   ├── 0_cache/                    # Fetched upstream downloads; never hand-edit
+│   ├── 0_external_models/          # Registered external model outputs
+│   ├── 1_interim/                  # Extracted and harmonized debug tables
+│   └── 2_processed/                # Parameter-ready tables
 ├── outputs/
 │   ├── sqlite/                     # Final CANOE/Temoa-ready databases
 │   ├── validation/                 # Parity/schema/tolerance reports
@@ -91,16 +92,17 @@ Use:
 * `config/sources.yaml` for source identity, access, cache templates, validation rules, citations, and refresh notes;
 * `config/scenarios/*.yaml` for run-specific selections and modeling switches;
 * `config/parameters/*.yaml` for extraction maps, bins, class mappings, units, filters, conversion factors, and parameter metadata.
-* `config/parameters/harmonization_rules.yaml` stores processing rules and assumptions, e.g., source filters, class mappings, bin definitions, and thresholds. * `config/parameters/conversion_factors.yaml` stores any conversion factor used across the model, e.g., mass, volume, currency, and energy unit conversions.
+* `config/parameters/rules.yaml` stores harmonization protocols and assumptions, e.g., source filters, class mappings, bin definitions, and thresholds. 
+* `config/parameters/conversion.yaml` stores any conversion factor used across the model, e.g., mass, volume, currency, and energy unit conversions.
 
 Python modules may contain source-invariant implementation constants only. If a value affects modeling behavior, source selection, output location, or reproducibility, move it to config. Scripts should resolve paths through the config bundle instead of embedding repo-relative strings.
 
 ## Data and source rules
 
-* Keep authoritative downloads in `inputs/cache/`; never hand-edit cached files.
-* Keep registered external model outputs in `inputs/external/`.
-* Keep normalized intermediates in `inputs/interim/`.
-* Keep parameter-ready tables in `inputs/processed/`.
+* Keep authoritative downloads in `inputs/0_cache/`; never hand-edit cached files.
+* Keep registered external model outputs in `inputs/0_external_models/`.
+* Keep normalized intermediates in `inputs/1_interim/`.
+* Keep parameter-ready tables in `inputs/2_processed/`.
 * Excel inputs require explicit maps in `config/parameters/`: workbook, sheet, range/table, units, expected shape, transformation, and target table.
 * `sources.yaml` should record source path/URL, version/date, file type, units, citation, checksum or validation rule, and refresh notes where available.
 * Prefer consistent, reusable source metadata fields. Do not over-normalize the source schema before patterns are proven across multiple source families.
