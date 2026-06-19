@@ -343,7 +343,7 @@ flowchart LR
   %% --- Processes ---
   subgraph utilization[" "]
 	  direction BT
-	  p0["`**Annual vehicle utilization (UF)**<br>**Eq. (i)** 5-year avg of activity ÷ stock excluding 2020-2021, then scaled by **capacity_to_activity**`"]
+	  p0["`**Annual vehicle utilization (UF)**<br>**eq. (i)** 5-year avg of activity ÷ stock excluding 2020-2021, then scaled by **capacity_to_activity**`"]
 	  s0 -- nrcan_ceud.py --> p0
   end
   style utilization fill:transparent,color:transparent
@@ -430,7 +430,7 @@ flowchart LR
   s4[("`**StatCan table**<br>Buses avg. lifetime by province`")]
   s5@{shape: doc, label: "**SFU CIMS model assumptions**<br>Lifetime of remaining modes"}
 
-  p2["`**Road retirement profiles**<br>• If provincial sources, estimate fleet retirement rates by age with fleet cohort data<br><br>• Aggregate survival curves for cars and trucks, truncated to 30 years, using mappings`"]
+  p2["`**Road retirement profiles**<br>• **eq. (i)** If provincial sources, estimate fleet retirement rates by age with fleet cohort data<br><br>• Aggregate survival curves for cars and trucks, truncated to 30 years, using mappings`"]
   p1 -. true .-> p2
   s6 -. "road_aggregation.py" .-> p2
   
@@ -679,7 +679,7 @@ flowchart LR
   end
 	  
   %% --- Processes ---
-  p3["`**Variable costs from off-road**<br>• *Aircrafts:* (i-ii) normalized maintenance costs per demand unit (CAPEX uses same factors) <br><br>• *Other off-road:* estimate variable costs with OEO ratios`"]
+  p3["`**Variable costs from off-road**<br>• *Aircrafts:* **eq. (i-ii)** normalized maintenance costs per demand unit (CAPEX uses same factors) <br><br>• *Other off-road:* estimate variable costs with OEO ratios`"]
   s7 & s8 -- inputs/manual_params/ --> p3
   
   subgraph road["`**Road M&R costs**`"]
@@ -691,7 +691,7 @@ flowchart LR
   end
 	  
   %% --- Processes ---
-  p2["`**Maintainance & repair costs**<br>• *LDVs:* (i) get age-dependent repair cost via empirical model;<br>(ii) add avg. maintenance costs per mile (Burnham et al. 2021)<br><br>• *MHDVs:* (iii) age-dependent M&R costs via empirical model (Islam et al. 2022)<br><br>• Aggregate M&R cost-per-mile curves by vehicle class using efficiency mappings`"]
+  p2["`**Maintainance & repair costs**<br>• *LDVs:* **(i)** get age-dependent repair cost via empirical model;<br>**(ii)** add avg. maintenance costs per mile (Burnham et al. 2021)<br><br>• *MHDVs:* **(iii)** age-dependent M&R costs via empirical model (Islam et al. 2022)<br><br>• Aggregate M&R cost-per-mile curves by vehicle class using efficiency mappings`"]
   s2 -- nlr_atb_autonomie.py --> p2
   s4 -- nlr_atb_autonomie.py --> p2
   s3 -- inputs/manual_params/ --> p2
