@@ -4,10 +4,14 @@ __pycache__/
 .pytest_cache/
 .pytest-basetemp*/
 .pytest-cache-runtime*/
+.pytest-runtime*/
+.pytest-tmp*/
 .ruff_cache/
 .snakemake/
+dist/
 inputs/0_cache/
 inputs/0_external_models/
 inputs/1_interim/
 inputs/2_processed/
 inputs/playground/
+outputs/

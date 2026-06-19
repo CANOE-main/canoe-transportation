@@ -45,7 +45,7 @@ This layout is the preferred direction, not a rigid template. Preserve it where 
 ├── src/
 │   ├── setup.py                    # Load config, create paths, fetch/cache data, validate sources
 │   ├── build_transport.py          # Build SQLite, run modules, post-process, log
-│   ├── utils/                      # Shared I/O, logging, YAML, units, CSV/Excel helpers
+│   ├── utils.py                    # Shared I/O, logging, YAML, units, CSV/Excel helpers
 │   ├── validation/                 # SQLite parity, schema, tolerance, and smoke checks
 │   ├── fetching/                   # Upstream download, cache, and interim normalization
 │   │   ├── nrcan_ceud.py           # NRCan CEUD transport tables
@@ -77,7 +77,7 @@ This layout is the preferred direction, not a rigid template. Preserve it where 
 │   ├── sqlite/                     # Final CANOE/Temoa-ready databases
 │   ├── validation/                 # Parity/schema/tolerance reports
 │   └── logs/                       # Build logs and warnings
-├── legacy/                         # Old backend kept as validation evidence; read-mostly
+├── legacy_backend/                 # Old backend kept as validation evidence; read-mostly
 ├── tests/                          # Unit, parsing, schema, smoke, and parity tests
 └── pyproject.toml                  # uv-managed package metadata and tooling
 ```
