@@ -159,9 +159,6 @@ info
 ---
 config:
   layout: dagre
-  theme: neutral
-  themeVariables:
-    fontSize: 17px
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
@@ -169,8 +166,6 @@ config:
     curve: linear
 ---
 flowchart LR
-  subgraph canvas[" "]
-  direction LR
   %% --- Sources ---
   s0[("`**Maintained sources**<br>Public datasets that are curated, maintained and updated regularly`")]
   s1@{shape: doc, label: "**Heterogeneous sources**<br>Public data that is manually scraped from documentation, model inputs, or assumptions"}
@@ -184,31 +179,14 @@ flowchart LR
   s2 --> p1 
 
   p1 --> o1[/"`**Parameter-ready output**<br>Parameter values inserted into SQLite databases<br>[describes units]`"/]
-  end
-
-  %% --- Styling ---
-  style canvas fill:#ffffff,stroke:#ffffff
-  classDef database fill:#5b638c
-  classDef doc fill:#608c5b
-  classDef model fill:#b8ab3d
-  classDef output fill:#ab4444
-
-  class s0 database
-  class s1 doc
-  class s2 model
-  class o1 output
 ```
 
 ### `existing_capacity`
 
 ```mermaid
 ---
-title: existing_capacity
 config:
   layout: dagre
-  theme: neutral
-  themeVariables:
-    fontSize: 17px
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
@@ -216,8 +194,6 @@ config:
     curve: linear
 ---
 flowchart LR
-  subgraph canvas[" "]
-  direction LR
   %% --- Sources ---
   s0[("`**NRCan CEUD**<br>Provincial vehicle sales, stocks, off-road energy use, and energy intensities`")]
   s1[("`**ON Transportation**<br>Fit-active vehicle age cohort by inferred size class`")]
@@ -243,16 +219,6 @@ flowchart LR
   s5 -- statcan_tables.py --> p2
 
   p2 -- stocks_and_demands.py --> o1[/"`**existing_capacity**<br>[k vehicles]<br>[bn tonne-km]<br>[bn passenger-km]`"/]
-  end
-
-  %% --- Styling ---
-  style canvas fill:#ffffff,stroke:#ffffff
-  classDef database fill:#5b638c
-  classDef doc fill:#608c5b
-  classDef output fill:#ab4444
-
-  class s0,s1,s2,s3,s4,s5 database;
-  class o1 output;
 
   %% --- Hyperlinks ---
   click s5 "https://doi.org/10.25318/2310030801-eng"
@@ -277,9 +243,6 @@ flowchart LR
 ---
 config:
   layout: dagre
-  theme: neutral
-  themeVariables:
-    fontSize: 17px
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
@@ -287,8 +250,6 @@ config:
     curve: linear
 ---
 flowchart LR
-  subgraph canvas["`**demand**`"]
-  direction LR
   %% --- Sources ---
   s0[("`**NRCan CEUD**<br>Provincial vehicle activity and off-road energy use; national off-road energy intensity`")]
   s1[("`**CER Canada's Energy Future**<br>Real GDP projections<br>*Def. scenario:* current measures`")]
@@ -300,16 +261,6 @@ flowchart LR
   s1 -- cer_enerfuture.py --> p1
 
   p1 -- stocks_and_demands.py --> o1[/"`**demand**<br>[bn passenger-km]<br>[bn tonne-km]`"/]
-  end
-
-  %% --- Styling ---
-  style canvas fill:#ffffff,stroke:#ffffff
-  classDef database fill:#5b638c
-  classDef doc fill:#608c5b
-  classDef output fill:#ab4444
-
-  class s0,s1 database;
-  class o1 output;
 
   %% --- Hyperlinks ---
   click s0 "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm"
@@ -326,18 +277,13 @@ flowchart LR
 ---
 config:
   layout: dagre
-  theme: neutral
-  themeVariables:
-    fontSize: 17px
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: curve
+    curve: linear
 ---
 flowchart LR
-  subgraph canvas["`**limit_annual_capacity_factor**`"]
-  direction LR
   %% --- Sources ---
   s0[("`**NRCan CEUD**<br>Provincial vehicle activity [bn tonne-km] and stock [k vehicles]`")]
   s1[("`**NLR Annual Tech. Baseline**<br>Age-based annual mileage profiles (VMT schedules) of cars and LD, MD, and HD trucks`")]
@@ -367,16 +313,6 @@ flowchart LR
   
   o2[/"`**limit_annual_capacity_factor**<br>*Operator: =*<br>*Indexed by vintage and period*`"/]
   p3 -. "stocks_and_demands.py" .-> o2
-  end
-  
-  %% --- Styling ---
-  style canvas fill:#ffffff,stroke:#ffffff
-  classDef database fill:#5b638c
-  classDef doc fill:#608c5b
-  classDef output fill:#ab4444
-
-  class s0,s1,s2,s3 database;
-  class o1,o2 output;
 
   %% --- Hyperlinks ---
   click s0 "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm"
@@ -401,18 +337,13 @@ flowchart LR
 ---
 config:
   layout: dagre
-  theme: neutral
-  themeVariables:
-    fontSize: 17px
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: curve
+    curve: linear
 ---
 flowchart LR
-  subgraph canvas["`**lifetime**`"]
-  direction LR
   %% --- Sources ---
   subgraph national["`**National granularity (US)**`"]
     direction LR
@@ -446,17 +377,6 @@ flowchart LR
 
   p2 -. "lifetimes_survival.py" .-> o1[/"`**lifetime_survival_curve**<br>[-]`"/]
   p3 -- lifetimes_survival.py --> o2[/"`**lifetime_process**<br>[years]`"/]
-  end
-
-  %% --- Styling ---
-  style canvas fill:#ffffff,stroke:#ffffff
-  classDef database fill:#5b638c
-  classDef doc fill:#608c5b
-  classDef output fill:#ab4444
-
-  class s0,s1,s2,s3,s4,s6 database;
-  class s5 doc;
-  class o1,o2 output;
 
   %% --- Hyperlinks ---
   click s0 "https://data.ontario.ca/dataset/vehicle-population-data"
@@ -491,9 +411,6 @@ flowchart LR
 ---
 config:
   layout: dagre
-  theme: neutral
-  themeVariables:
-    fontSize: 17px
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
@@ -501,14 +418,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  subgraph canvas["`**efficiency**`"]
-  direction LR
   %% --- Sources ---
-  subgraph road["`**Road efficiencies**`"]
-	  s1[("`**NRCan Fuel Consum. Ratings**<br>Car and light-truck ratings by make and model`")]
-	  s2[("`**Autonomie TEA via NLR ATB**<br>Future vehicle efficiencies and powertrain multipliers<br>*Def. scenario:* mid trajectory`")]
-	  s2_2[("`**JGCRI GCAM model**<br>Motorcycle (>250 cc) efficiencies for Canada`")]
-  end
   subgraph agg["`**Road aggregation weights**`"]
 	  s3@{shape: doc, label: "**Wards Intelligence**<br>Vehicle sales by vintage, make, and model"}
 	  s4[("`**ON Transportation**<br>Fit-active vehicles by vintage, make, and model`")]
@@ -518,6 +428,11 @@ flowchart LR
 	    s5[("`**Quebec SAAQ**<br>Vehicles in operation by vintage, make, and model`")]
 	    s6[("`**Insurance Corp. of BC**<br>Vehicle counts by vintage, make, and model`")]
 	  end
+  end
+  subgraph road["`**Road efficiencies**`"]
+	  s1[("`**NRCan Fuel Consum. Ratings**<br>Car and light-truck ratings by make and model`")]
+	  s2[("`**Autonomie TEA via NLR ATB**<br>Future vehicle efficiencies and powertrain multipliers<br>*Def. scenario:* mid trajectory`")]
+	  s2_2[("`**JGCRI GCAM model**<br>Motorcycle (>250 cc) efficiencies for Canada`")]
   end
   subgraph off["`**Off-road efficiencies**`"]
 	  s7@{shape: docs, label: "**EPRI REGEN model assumptions**<br>Future multipliers for inter-city buses and off-road modes"}
@@ -552,17 +467,6 @@ flowchart LR
   p3 -- efficiencies.py --> p4
 
   p4 -- efficiencies.py --> o1[/"`***efficiency***<br>[PJ/bn passenger-km]<br>[PJ/bn tonne-km]`"/]
-  end
-
-  %% --- Styling ---
-  style canvas fill:#ffffff,stroke:#ffffff
-  classDef database fill:#5b638c
-  classDef doc fill:#608c5b
-  classDef output fill:#ab4444
-
-  class s0,s1,s2,s4,s5,s6,s9,s10,s2_2 database;
-  class s3,s7,s8 doc;
-  class o1 output;
 
   %% --- Hyperlinks ---
   click s6 "https://public.tableau.com/app/profile/icbc/viz/VehiclePopulationIntroPage/VehiclePopulationData"
@@ -596,9 +500,6 @@ flowchart LR
 ---
 config:
   layout: dagre
-  theme: neutral
-  themeVariables:
-    fontSize: 17px
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
@@ -606,8 +507,6 @@ config:
     curve: linear
 ---
 flowchart LR
-  subgraph canvas["`**cost_invest**`"]
-  direction LR
   s3[("`**CER Canada's Energy Future**<br>Currency exchange rates and GDP deflator index<br>*Def. scenario:* mid trajectory`")]
   subgraph offroad["`**Off-road CAPEX**`"]
 	  %% --- Sources ---
@@ -636,17 +535,6 @@ flowchart LR
   s3 -- cer_enerfuture.py --> p4
 
   p4 -- capex_opex.py --> o1[/"`***cost_invest***<br>[$M 2020CAD/k vehicles]<br>[$M 2020CAD/bn passenger-km]<br>[$M 2020CAD/bn tonne-km]`"/]
-  end
-
-  %% --- Styling ---
-  style canvas fill:#ffffff,stroke:#ffffff
-  classDef database fill:#5b638c
-  classDef doc fill:#608c5b
-  classDef output fill:#ab4444
-
-  class s1,s2,s3 database;
-  class s7,s8 doc;
-  class o1 output;
 
   %% --- Hyperlinks ---
   click s8 "https://us-regen-docs.epri.com/v2025/assumptions/transportation.html#non-road-vehicles"
@@ -672,9 +560,6 @@ flowchart LR
 ---
 config:
   layout: dagre
-  theme: neutral
-  themeVariables:
-    fontSize: 17px
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
@@ -682,8 +567,6 @@ config:
     curve: linear
 ---
 flowchart LR
-  subgraph canvas["`**cost_variable**`"]
-  direction LR
   subgraph offroad["`**Off-road OPEX**`"]
 	  %% --- Sources ---
 	  s7@{shape: docs, label: "**CMU OEO model assumptions**<br>Variable costs of rail techs set to 6% (freight) and 10% (passenger) of CAPEX; marine freight set to 5%"}
@@ -718,17 +601,6 @@ flowchart LR
   s9 -- nrcan_ceud.py --> p4
 
   p4 -- capex_opex.py --> o1[/"`***cost_invest***<br>[$M 2020CAD/k vehicles]<br>[$M 2020CAD/bn passenger-km]<br>[$M 2020CAD/bn tonne-km]`"/]
-  end
-
-  %% --- Styling ---
-  style canvas fill:#ffffff,stroke:#ffffff
-  classDef database fill:#5b638c
-  classDef doc fill:#608c5b
-  classDef output fill:#ab4444
-
-  class s0,s1,s2,s4,s9 database;
-  class s7,s8,s3 doc;
-  class o1 output;
 
   %% --- Hyperlinks ---
   click s9 "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm"
