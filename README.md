@@ -160,8 +160,10 @@ info
 title: Input-parameter ETL legends
 config:
   layout: dagre
-  theme: neutral
+  theme: base
   themeVariables:
+    background: "#ffffff"
+    darkMode: false
     fontSize: 17px
   flowchart:
     nodeSpacing: 35
@@ -203,8 +205,10 @@ flowchart LR
 title: existing_capacity
 config:
   layout: dagre
-  theme: neutral
+  theme: base
   themeVariables:
+    background: "#ffffff"
+    darkMode: false
     fontSize: 17px
   flowchart:
     nodeSpacing: 35
@@ -271,8 +275,10 @@ flowchart LR
 title: demand
 config:
   layout: dagre
-  theme: neutral
+  theme: base
   themeVariables:
+    background: "#ffffff"
+    darkMode: false
     fontSize: 17px
   flowchart:
     nodeSpacing: 35
@@ -317,8 +323,10 @@ flowchart LR
 title: limit_annual_capacity_factor
 config:
   layout: dagre
-  theme: neutral
+  theme: base
   themeVariables:
+    background: "#ffffff"
+    darkMode: false
     fontSize: 17px
   flowchart:
     nodeSpacing: 35
@@ -370,7 +378,10 @@ flowchart LR
   click s1 "https://atb.nlr.gov/transportation/2024/data"
 ```
 #### Equations
-$$(i)\;\mathrm{UF[\text{-}]}=\frac{\mathrm{Activity[bn\;tonne\text{-}km/year]}}{\mathrm{Stock[k\;units]}\cdot \mathrm{C2A[bn\;t\text{-}km/k\;units\cdot year]}}$$
+
+```math
+(i)\;\mathrm{UF[\text{-}]}=\frac{\mathrm{Activity[bn\;tonne\text{-}km/year]}}{\mathrm{Stock[k\;units]}\cdot \mathrm{C2A[bn\;t\text{-}km/k\;units\cdot year]}}
+```
 
 | Harmonization rule                          | Affected classes | Description                                                                                                                                                           |
 | ------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -386,8 +397,10 @@ $$(i)\;\mathrm{UF[\text{-}]}=\frac{\mathrm{Activity[bn\;tonne\text{-}km/year]}}{
 title: lifetime
 config:
   layout: dagre
-  theme: neutral
+  theme: base
   themeVariables:
+    background: "#ffffff"
+    darkMode: false
     fontSize: 17px
   flowchart:
     nodeSpacing: 40
@@ -449,7 +462,10 @@ flowchart LR
 ```
 
 #### Equations
-$$(i)\;\mathrm{Survival}_{age}=\frac{\mathrm{Stock}_{vintage,\;age}}{\mathrm{Stock}_{vintage,\;0}}$$
+
+```math
+(i)\;\mathrm{Survival}_{age}=\frac{\mathrm{Stock}_{vintage,\;age}}{\mathrm{Stock}_{vintage,\;0}}
+```
 
 | Harmonization rule                        | Affected classes | Description                                                                                                                                              |
 | ----------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -469,8 +485,10 @@ $$(i)\;\mathrm{Survival}_{age}=\frac{\mathrm{Stock}_{vintage,\;age}}{\mathrm{Sto
 title: efficiency
 config:
   layout: dagre
-  theme: neutral
+  theme: base
   themeVariables:
+    background: "#ffffff"
+    darkMode: false
     fontSize: 17px
   flowchart:
     nodeSpacing: 35
@@ -569,8 +587,9 @@ flowchart LR
 title: cost_invest
 config:
   layout: dagre
-  theme: neutral
+  theme: base
   themeVariables:
+    background: "#ffffff"
     darkMode: false
     fontSize: 17px
   flowchart:
@@ -642,9 +661,9 @@ flowchart LR
 title: cost_variable
 config:
   layout: dagre
-  theme: neutral
+  theme: base
   themeVariables:
-    darkMode: false
+    background: "#ffffff"
     fontSize: 17px
   flowchart:
     nodeSpacing: 35
@@ -709,13 +728,28 @@ flowchart LR
 ```
 
 #### Road M&R equations
-$$(i)\; \mathrm{Repair}^{LDV}_{age}=\mathrm{size}\cdot \mathrm{pwt}\cdot C_{age}\cdot e^{\beta\cdot \mathrm{price}}$$
-$$(ii)\; \mathrm{M\&R}^{LDV}_{age}=\mathrm{Repair}^{LDV}_{age}+\mathrm{Maint.}^{LDV}$$
-$$(iii)\; \mathrm{M\&R}^{MHDV}_{age}=\mathrm{pwt}(m\cdot \mathrm{age}+b)$$
+
+```math
+(i)\; \mathrm{Repair}^{LDV}_{age}=\mathrm{size}\cdot \mathrm{pwt}\cdot C_{age}\cdot e^{\beta\cdot \mathrm{price}}
+```
+
+```math
+(ii)\; \mathrm{M\&R}^{LDV}_{age}=\mathrm{Repair}^{LDV}_{age}+\mathrm{Maint.}^{LDV}
+```
+
+```math
+(iii)\; \mathrm{M\&R}^{MHDV}_{age}=\mathrm{pwt}(m\cdot \mathrm{age}+b)
+```
 
 #### Off-road M&R equations
-$$(i)\; \mathrm{M\&R}^{Air}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Seats}\cdot \mathrm{Load\;factor}}$$
-$$(ii)\; \mathrm{M\&R}^{Air}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Tonnes}\cdot \mathrm{Load\;factor}}$$
+
+```math
+(i)\; \mathrm{M\&R}^{Air}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Seats}\cdot \mathrm{Load\;factor}}
+```
+
+```math
+(ii)\; \mathrm{M\&R}^{Air}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Tonnes}\cdot \mathrm{Load\;factor}}
+```
 
 | Harmonization rule                            | Affected classes                                                 | Description                                                                                                                                                                                                                                                                                                                         |
 | --------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
