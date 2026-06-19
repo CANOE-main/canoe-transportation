@@ -1,29 +1,16 @@
-configfile: "config/paths.yaml"
-
-from pathlib import Path
-
-scenario_path = config.get("scenario", "config/scenarios/legacy_reproduction.yaml")
-scenario = __import__("yaml").safe_load(Path(scenario_path).read_text(encoding="utf-8"))
-setup_log = scenario["outputs"]["setup_log"]
-
-
 rule all:
     input:
-        setup_log
+        "outputs/logs/doctor.ok"
 
 
-rule setup_smoke:
+rule doctor_smoke:
     output:
-        setup_log
-    shell:
-        "uv run python src/setup.py --scenario {scenario_path}"
+        "outputs/logs/doctor.ok"
+    run:
+        import subprocess
+        from pathlib import Path
 
-
-rule fetch_ontario_vehicle_population:
-    output:
-        report4="inputs/1_interim/fetched_ontario_vehicle_population/ontario_vehicle_population_report4_epa_gvwr_distribution_{year}.csv",
-        report5="inputs/1_interim/fetched_ontario_vehicle_population/ontario_vehicle_population_report5_age_distribution_{year}.csv",
-    params:
-        scenario=scenario_path
-    shell:
-        "uv run python -m fetching.vehicle_population --scenario {params.scenario} --year {wildcards.year}"
+        subprocess.run(["uv", "run", "python", "scripts/doctor.py"], check=True)
+        output_path = Path(output[0])
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text("ok\n", encoding="utf-8")
