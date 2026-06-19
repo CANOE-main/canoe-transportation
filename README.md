@@ -169,7 +169,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  subgraph canvas["`**Input-parameter ETL legends**`"]
+  subgraph canvas[" "]
   direction LR
   %% --- Sources ---
   s0[("`**Maintained sources**<br>Public datasets that are curated, maintained and updated regularly`")]
@@ -203,6 +203,7 @@ flowchart LR
 
 ```mermaid
 ---
+title: existing_capacity
 config:
   layout: dagre
   theme: neutral
@@ -215,7 +216,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  subgraph canvas["`**existing_capacity**`"]
+  subgraph canvas[" "]
   direction LR
   %% --- Sources ---
   s0[("`**NRCan CEUD**<br>Provincial vehicle sales, stocks, off-road energy use, and energy intensities`")]
