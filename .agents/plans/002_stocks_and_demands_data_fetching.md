@@ -24,7 +24,7 @@ In v2.0, instead, the inputs are fetched, cleaned and harmonized such that later
 - `config/sources.yaml`
 - `config/paths.yaml` if path additions are needed
 - `src/setup.py`
-- `src/parameterization/utils.py`
+- `src/utils.py`
 - `src/parameterization/stocks_and_demands.py`
 - optionally `src/parameterization/nrcan_ceud.py`
 - optionally `workflow/Snakefile` or a small rule file if workflow scaffolding exists

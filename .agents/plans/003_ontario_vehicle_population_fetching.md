@@ -28,7 +28,7 @@ Expected ZIP members vary by year:
 - `config/sources.yaml`
 - `config/paths.yaml` if path additions are needed
 - `src/setup.py` or shared source-fetching utilities
-- `src/parameterization/utils.py`
+- `src/utils.py`
 - optionally `src/parameterization/fleet_attributes.py`
 - optionally `src/parameterization/stocks_and_demands.py`
 - optionally `src/parameterization/on_road_effs_and_costs.py`
@@ -207,7 +207,7 @@ Additional files changed in this refactor:
 - `config/paths.yaml`
 - `config/parameters/harmonization_rules.yaml`
 - `config/parameters/conversion_factors.yaml`
-- `src/parameterization/utils.py`
+- `src/utils.py`
 - `src/parameterization/nrcan_ceud.py`
 - `src/parameterization/ontario_vehicle_population.py`
 - `tests/test_nrcan_ceud.py`

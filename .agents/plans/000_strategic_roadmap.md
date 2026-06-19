@@ -14,7 +14,7 @@ Implemented:
 - Python scaffold:
   - `src/setup.py`: config smoke entry point.
   - `src/build_transport.py`: placeholder only; it defines `main()` but does not call it, so `uv run python src/build_transport.py` exits successfully without compiling anything.
-  - `src/parameterization/utils.py`: YAML loading, path resolution, config validation, directory creation.
+  - `src/utils.py`: YAML loading, path resolution, config validation, directory creation.
   - `src/parameterization/nrcan_ceud.py`: fetch/cache/normalize NRCan CEUD transport Excel tables.
   - `src/parameterization/ontario_vehicle_population.py`: discover/cache/normalize Ontario vehicle population Reports 4 and 5.
   - `src/validation/config_smoke.py`: config smoke validation.
@@ -64,7 +64,7 @@ Deviations:
 `001_config_control_layer.md`
 
 - Status: completed.
-- Implemented outputs: `config/paths.yaml`, `config/sources.yaml`, `config/scenarios/legacy_reproduction.yaml`, `src/setup.py`, `src/build_transport.py`, `src/parameterization/utils.py`, `src/validation/config_smoke.py`, `workflow/Snakefile`, `tests/test_config.py`, `README.md`, packaging/test config.
+- Implemented outputs: `config/paths.yaml`, `config/sources.yaml`, `config/scenarios/legacy_reproduction.yaml`, `src/setup.py`, `src/build_transport.py`, `src/utils.py`, `src/validation/config_smoke.py`, `workflow/Snakefile`, `tests/test_config.py`, `README.md`, packaging/test config.
 - Validation recorded in plan: `uv run python src/setup.py --scenario config/scenarios/legacy_reproduction.yaml`, `uv run pytest`, `uv run ruff check .`, `uv build`, and Snakemake smoke passed at that time.
 - Current unresolved placeholders: no SQLite instantiation, no source downloads in setup, no transformation/build, incomplete source metadata/checksums/citations, no parameter maps.
 - Recommended next step from plan: schema instantiation; still not done.
