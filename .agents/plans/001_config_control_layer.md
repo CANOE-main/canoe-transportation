@@ -98,7 +98,7 @@ Files changed:
 
 - Added `README.md`.
 - Added `config/paths.yaml`, `config/sources.yaml`, and `config/scenarios/legacy_reproduction.yaml`.
-- Added `src/setup.py`, `src/build_transport.py`, `src/parameterization/__init__.py`, `src/parameterization/utils.py`, `src/validation/__init__.py`, and `src/validation/config_smoke.py`.
+- Added `src/setup.py`, `src/build_transport.py`, `src/parameterization/__init__.py`, `src/utils.py`, `src/validation/__init__.py`, and `src/validation/config_smoke.py`.
 - Added `workflow/Snakefile`.
 - Added `tests/test_config.py`.
 - Updated `pyproject.toml` to configure uv build packaging for `parameterization` and `validation`, add `src` to pytest import paths, and exclude `legacy_backend`, `.snakemake`, and `outputs` from Ruff.

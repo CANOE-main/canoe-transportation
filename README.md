@@ -187,7 +187,7 @@ flowchart LR
   end
 
   %% --- Styling ---
-  style canvas fill:#ffffff
+  style canvas fill:#ffffff,stroke:#ffffff
   classDef database fill:#5b638c
   classDef doc fill:#608c5b
   classDef model fill:#b8ab3d
@@ -203,7 +203,6 @@ flowchart LR
 
 ```mermaid
 ---
-title: existing_capacity
 config:
   layout: dagre
   theme: neutral
@@ -216,6 +215,8 @@ config:
     curve: linear
 ---
 flowchart LR
+  subgraph canvas["`**existing_capacity**`"]
+  direction LR
   %% --- Sources ---
   s0[("`**NRCan CEUD**<br>Provincial vehicle sales, stocks, off-road energy use, and energy intensities`")]
   s1[("`**ON Transportation**<br>Fit-active vehicle age cohort by inferred size class`")]
@@ -241,8 +242,10 @@ flowchart LR
   s5 -- statcan_tables.py --> p2
 
   p2 -- stocks_and_demands.py --> o1[/"`**existing_capacity**<br>[k vehicles]<br>[bn tonne-km]<br>[bn passenger-km]`"/]
+  end
 
   %% --- Styling ---
+  style canvas fill:#ffffff,stroke:#ffffff
   classDef database fill:#5b638c
   classDef doc fill:#608c5b
   classDef output fill:#ab4444
@@ -271,7 +274,6 @@ flowchart LR
 
 ```mermaid
 ---
-title: demand
 config:
   layout: dagre
   theme: neutral
@@ -284,6 +286,8 @@ config:
     curve: linear
 ---
 flowchart LR
+  subgraph canvas["`**demand**`"]
+  direction LR
   %% --- Sources ---
   s0[("`**NRCan CEUD**<br>Provincial vehicle activity and off-road energy use; national off-road energy intensity`")]
   s1[("`**CER Canada's Energy Future**<br>Real GDP projections<br>*Def. scenario:* current measures`")]
@@ -295,8 +299,10 @@ flowchart LR
   s1 -- cer_enerfuture.py --> p1
 
   p1 -- stocks_and_demands.py --> o1[/"`**demand**<br>[bn passenger-km]<br>[bn tonne-km]`"/]
+  end
 
   %% --- Styling ---
+  style canvas fill:#ffffff,stroke:#ffffff
   classDef database fill:#5b638c
   classDef doc fill:#608c5b
   classDef output fill:#ab4444
@@ -317,7 +323,6 @@ flowchart LR
 
 ```mermaid
 ---
-title: limit_annual_capacity_factor
 config:
   layout: dagre
   theme: neutral
@@ -327,9 +332,11 @@ config:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
+    curve: curve
 ---
 flowchart LR
+  subgraph canvas["`**limit_annual_capacity_factor**`"]
+  direction LR
   %% --- Sources ---
   s0[("`**NRCan CEUD**<br>Provincial vehicle activity [bn tonne-km] and stock [k vehicles]`")]
   s1[("`**NLR Annual Tech. Baseline**<br>Age-based annual mileage profiles (VMT schedules) of cars and LD, MD, and HD trucks`")]
@@ -359,8 +366,10 @@ flowchart LR
   
   o2[/"`**limit_annual_capacity_factor**<br>*Operator: =*<br>*Indexed by vintage and period*`"/]
   p3 -. "stocks_and_demands.py" .-> o2
+  end
   
   %% --- Styling ---
+  style canvas fill:#ffffff,stroke:#ffffff
   classDef database fill:#5b638c
   classDef doc fill:#608c5b
   classDef output fill:#ab4444
@@ -389,19 +398,20 @@ flowchart LR
 
 ```mermaid
 ---
-title: lifetime
 config:
   layout: dagre
   theme: neutral
   themeVariables:
     fontSize: 17px
   flowchart:
-    nodeSpacing: 40
+    nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
+    curve: curve
 ---
 flowchart LR
+  subgraph canvas["`**lifetime**`"]
+  direction LR
   %% --- Sources ---
   subgraph national["`**National granularity (US)**`"]
     direction LR
@@ -435,8 +445,10 @@ flowchart LR
 
   p2 -. "lifetimes_survival.py" .-> o1[/"`**lifetime_survival_curve**<br>[-]`"/]
   p3 -- lifetimes_survival.py --> o2[/"`**lifetime_process**<br>[years]`"/]
+  end
 
   %% --- Styling ---
+  style canvas fill:#ffffff,stroke:#ffffff
   classDef database fill:#5b638c
   classDef doc fill:#608c5b
   classDef output fill:#ab4444
@@ -476,7 +488,6 @@ flowchart LR
 *Note: Some technologies are not represented in this diagram, see config/parameters/harmonization_rules.yaml for full disclosure.*
 ```mermaid
 ---
-title: efficiency
 config:
   layout: dagre
   theme: neutral
@@ -489,6 +500,8 @@ config:
     curve: linear
 ---
 flowchart LR
+  subgraph canvas["`**efficiency**`"]
+  direction LR
   %% --- Sources ---
   subgraph road["`**Road efficiencies**`"]
 	  s1[("`**NRCan Fuel Consum. Ratings**<br>Car and light-truck ratings by make and model`")]
@@ -524,6 +537,8 @@ flowchart LR
   s2 -- nlr_atb_autonomie.py --> p2
   s2_2 -- assorted_sources.py --> p2
   p0 -- road_aggregation.py --> p2
+  
+  s9 -- nrcan_ceud.py --> p4
 	  
   p3["`**Off-road baseline and indexing**<br>• *Existing off-road modes:* use incumbent fleet energy intensity<br><br>• *New off-road modes:* index existing efficiencies to future multipliers`"]
   s7 -- inputs/manual_params/ --> p3
@@ -532,13 +547,14 @@ flowchart LR
   s0 -- nrcan_ceud.py --> p2 & p3
   
   p4["`**Period & unit harmonization**<br>• Aggregate existing efficiencies into 5-year vintages<br><br>• Convert to service-output efficiency using load factors`"]
-  s9 -- nrcan_ceud.py --> p4
   p2 -- efficiencies.py --> p4
   p3 -- efficiencies.py --> p4
 
   p4 -- efficiencies.py --> o1[/"`***efficiency***<br>[PJ/bn passenger-km]<br>[PJ/bn tonne-km]`"/]
+  end
 
   %% --- Styling ---
+  style canvas fill:#ffffff,stroke:#ffffff
   classDef database fill:#5b638c
   classDef doc fill:#608c5b
   classDef output fill:#ab4444
@@ -577,7 +593,6 @@ flowchart LR
 *Note: Some technologies are not represented in this diagram, see config/parameters/harmonization_rules.yaml for full disclosure.*
 ```mermaid
 ---
-title: cost_invest
 config:
   layout: dagre
   theme: neutral
@@ -590,6 +605,8 @@ config:
     curve: linear
 ---
 flowchart LR
+  subgraph canvas["`**cost_invest**`"]
+  direction LR
   s3[("`**CER Canada's Energy Future**<br>Currency exchange rates and GDP deflator index<br>*Def. scenario:* mid trajectory`")]
   subgraph offroad["`**Off-road CAPEX**`"]
 	  %% --- Sources ---
@@ -618,8 +635,10 @@ flowchart LR
   s3 -- cer_enerfuture.py --> p4
 
   p4 -- capex_opex.py --> o1[/"`***cost_invest***<br>[$M 2020CAD/k vehicles]<br>[$M 2020CAD/bn passenger-km]<br>[$M 2020CAD/bn tonne-km]`"/]
+  end
 
   %% --- Styling ---
+  style canvas fill:#ffffff,stroke:#ffffff
   classDef database fill:#5b638c
   classDef doc fill:#608c5b
   classDef output fill:#ab4444
@@ -650,20 +669,20 @@ flowchart LR
 *Note: Some technologies are not represented in this diagram, see config/parameters/harmonization_rules.yaml for full disclosure.*
 ```mermaid
 ---
-title: cost_variable
 config:
   layout: dagre
   theme: neutral
   themeVariables:
     fontSize: 17px
   flowchart:
-    defaultRenderer: elk
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
     curve: linear
 ---
 flowchart LR
+  subgraph canvas["`**cost_variable**`"]
+  direction LR
   subgraph offroad["`**Off-road OPEX**`"]
 	  %% --- Sources ---
 	  s7@{shape: docs, label: "**CMU OEO model assumptions**<br>Variable costs of rail techs set to 6% (freight) and 10% (passenger) of CAPEX; marine freight set to 5%"}
@@ -698,8 +717,10 @@ flowchart LR
   s9 -- nrcan_ceud.py --> p4
 
   p4 -- capex_opex.py --> o1[/"`***cost_invest***<br>[$M 2020CAD/k vehicles]<br>[$M 2020CAD/bn passenger-km]<br>[$M 2020CAD/bn tonne-km]`"/]
+  end
 
   %% --- Styling ---
+  style canvas fill:#ffffff,stroke:#ffffff
   classDef database fill:#5b638c
   classDef doc fill:#608c5b
   classDef output fill:#ab4444
