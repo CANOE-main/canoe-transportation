@@ -66,9 +66,9 @@ This layout is the preferred direction, not a rigid template. Preserve it where 
 │       ├── adoption_constraints.py # Adoption and growth constraints
 │       └── sector_coupling.py      # Fuel, electricity, hydrogen, and blends
 ├── inputs/
-│   ├── canoe_dataset_schema.sql    # CANOE/Temoa SQLite schema
-│   ├── 0_canoe_template/           # Default metadata and tech/commodity archetypes
-│   ├── 0_manual_params/            # Hand-edited heterogeneous parameter inputs
+│   ├── temoa_schema_v4.sql         # CANOE/Temoa SQLite schema
+│   ├── 0_canoe_template/           # Hard-coded metadata and tech/commodity archetypes
+│   ├── 0_manual_params/            # Hard-coded heterogeneous parameter inputs
 │   ├── 0_cache/                    # Fetched upstream downloads; never hand-edit
 │   ├── 0_external_models/          # Registered external model outputs
 │   ├── 1_interim/                  # Extracted and harmonized debug tables
@@ -157,6 +157,8 @@ Large binary/data artifacts in `legacy/` are parity baselines or source evidence
 Snakemake should orchestrate config loading, cache setup, source download or registration, source validation, extraction, transformation, SQLite instantiation, parameter insertion, post-processing, cleanup, and validation reports.
 
 Rules should be modular and named by workflow stage or parameter family.
+
+*Note: During early development, stabilize Python entrypoints and artifact contracts before wiring them into Snakemake. Snakemake failures block workflow changes, not isolated source or parameter-module work, unless orchestration is explicitly part of the task.*
 
 ## Agent workflow
 

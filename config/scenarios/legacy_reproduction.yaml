@@ -2,10 +2,10 @@ version: 1
 
 scenario:
   name: legacy_reproduction
-  description: "Legacy reproduction scaffold for smoke validation and CEUD input extraction only."
+  description: "Legacy reproduction scaffold with initial template database bootstrap."
 
 regions:
-  - ON
+  - "ON"
 
 model_years:
   years: [2021, 2025, 2030, 2035, 2040, 2045, 2050]
@@ -13,10 +13,11 @@ model_years:
 active_sources:
   - nrcan_ceud_transport_provincial
   - nrcan_ceud_transport_national
+  - statcan_transport_tables
 
 outputs:
   sqlite_name: canoe_transport_legacy_reproduction.sqlite
-  validation_report: outputs/validation/legacy_reproduction_setup_smoke.json
+  validation_report: outputs/validation/legacy_reproduction_database_bootstrap.json
   setup_log: outputs/logs/setup_smoke_legacy_reproduction.json
 
 validation:
@@ -25,5 +26,5 @@ validation:
 switches:
   legacy_equivalent: true
   download_sources: false
-  compile_sqlite: false
+  compile_sqlite: true
   transform_parameters: false

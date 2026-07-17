@@ -15,6 +15,24 @@ The current implementation is still early-stage. It includes:
 
 It does **not** compile full SQLite databases yet. Parameterization modules, end-to-end workflow rules, and baseline SQLite parity validation will be added incrementally.
 
+## Table of Contents
+
+- [Development workflow](#development-workflow)
+- [Current module entrypoints](#current-module-entrypoints)
+- [Snakemake status](#snakemake-status)
+- [Runtime hygiene](#runtime-hygiene)
+- [Verification tiers](#verification-tiers)
+- [Input-parameter ETL flowcharts](#input-parameter-etl-flowcharts)
+  - [Mermaid version](#mermaid-version)
+  - [Flowchart legends](#flowchart-legends)
+  - [`existing_capacity`](#existing_capacity)
+  - [`demand`](#demand)
+  - [`limit_annual_capacity_factor`](#limit_annual_capacity_factor)
+  - [`lifetime_process` and `lifetime_survival_curve`](#lifetime_process-and-lifetime_survival_curve)
+  - [`efficiency`](#efficiency)
+  - [`cost_invest`](#cost_invest)
+  - [`cost_variable`](#cost_variable)
+
 ## Development workflow
 
 During early development, direct Python entrypoints are the primary way to test source adapters and parameter modules. Snakemake is currently a thin orchestration layer and should not block ordinary module-level work unless the task edits workflow files or connects multiple stages.
@@ -28,124 +46,45 @@ Use this order of checks for most implementation tasks:
 
 ## Current module entrypoints
 
-Fetch/cache and normalize NRCan CEUD Ontario transport tables:
+Module-level smoke checks can be invoked using `uv run python -m <module-name>` with a scenario YAML and relevant options. These are preferred during early source-adapter development because failures are easier to attribute to Python logic, config, source metadata, or cache state.
+
+Fetch and normalize the five configured Statistics Canada transport tables with:
 
 ```powershell
-uv run python -m fetching.nrcan_ceud --scenario config/scenarios/legacy_reproduction.yaml --regions ON --skip-national
+uv run python -m fetching.statcan_tables --scenario config/scenarios/legacy_reproduction.yaml
 ```
 
-Run the same NRCan step using cached inputs only:
-
-```powershell
-uv run python -m fetching.nrcan_ceud --scenario config/scenarios/legacy_reproduction.yaml --regions ON --skip-national --no-download
-```
-
-Fetch/cache and normalize Ontario vehicle population Reports 4 and 5:
-
-```powershell
-uv run python -m fetching.vehicle_population --scenario config/scenarios/legacy_reproduction.yaml --year 2022
-```
-
-These commands are module-level smoke checks. They are preferred during early source-adapter development because failures are easier to attribute to Python logic, config, source metadata, or cache state.
+Add `--no-download` for deterministic offline reuse of the cached WDS metadata and
+full-table ZIPs. Normalized per-table CSVs, the reconciled annual LDV history and
+overlap diagnostics, filtered heavy-truck freight candidates, `manifest.csv`, and
+`warnings.log` are written under `inputs/1_interim/fetched_statcan_transport/`.
 
 ## Snakemake status
 
 Snakemake is intended to orchestrate the full backend once more stages exist: source registration, fetching, normalization, parameterization, SQLite creation, validation, and reports.
 
-At this stage, Snakemake should remain minimal and side-effect-light. It should wrap stable CLI entrypoints rather than contain complex transformation logic.
-
-Use Snakemake checks when:
-
-* editing `workflow/Snakefile` or files under `workflow/`;
-* connecting multiple stages through declared inputs and outputs;
-* preparing an end-to-end reproducible build target;
-* validating that a scenario can construct a workflow DAG.
-
-Do not treat Snakemake dry-runs as a blocker for routine module-level ETL work unless the task specifically changes workflow orchestration.
-
-Preferred workflow smoke check, once the doctor target is available:
-
-```powershell
-uv run snakemake -n --snakefile workflow/Snakefile --config scenario=config/scenarios/legacy_reproduction.yaml --cores 1 outputs/logs/doctor.ok
-```
-
-Run the smoke target:
-
-```powershell
-uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/legacy_reproduction.yaml --cores 1 outputs/logs/doctor.ok
-```
-
-A full no-target Snakemake dry-run is a Tier 2 workflow check, not a default development gate.
+Use Snakemake checks when editing `workflow/Snakefile`, connecting multiple stages, or validating the workflow DAG. Do not treat Snakemake as a blocker for routine module-level ETL work unless the task specifically changes workflow orchestration.
 
 ## Runtime hygiene
 
-Use `scripts/clean_runtime.py` to inspect local runtime state before deleting anything:
+Use `scripts/clean_runtime.py` to inspect and optionally clean local runtime state. The cleanup is dry-run safe by default. Apply cleanup only after reviewing paths; pass `--apply` to execute deletion.
 
-```powershell
-uv run python scripts/clean_runtime.py
-```
-
-The cleanup command is dry-run safe by default. Apply cleanup only after reviewing the selected paths:
-
-```powershell
-uv run python scripts/clean_runtime.py --apply
-```
-
-Generated backend outputs are opt-in:
-
-```powershell
-uv run python scripts/clean_runtime.py --include-generated --apply
-```
-
-Fetched upstream cache under `inputs/0_cache/` is a separate opt-in:
-
-```powershell
-uv run python scripts/clean_runtime.py --include-cache --apply
-```
-
-Registered external model outputs under `inputs/0_external_models/` are not cleaned by this script.
-
-Use the live-download-free doctor for Tier 0 checks:
-
-```powershell
-uv run python scripts/doctor.py
-```
-
-The doctor command should load configs, resolve paths, verify imports, and report repo readiness without fetching live data or mutating repository state.
+Use `scripts/doctor.py` for Tier 0 checks: loads configs, resolves paths, verifies imports, and reports repo readiness without fetching live data.
 
 ## Verification tiers
 
-Use the lightest validation tier that matches the task. Higher tiers are important, but they should not block early module-level development unless the task depends on them.
+Use the lightest validation tier that matches the task. Higher tiers are important but should not block early module-level development unless the task depends on them.
 
-| Tier | Scope                                                     | Typical commands                                                                                                                       | Blocks which work?               |
-| ---- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| 0    | Imports, config loading, repo doctor, lint, focused tests | `uv run python scripts/doctor.py`; `uv run ruff check scripts src tests`; focused `uv run pytest ...`                                  | Routine code/config changes      |
-| 1    | Cache-only source or parameter smoke checks               | `uv run python -m fetching.nrcan_ceud --scenario config/scenarios/legacy_reproduction.yaml --regions ON --skip-national --no-download` | Work touching that source/module |
-| 2    | Snakemake DAG and workflow wiring                         | `uv run snakemake -n --snakefile workflow/Snakefile --config scenario=config/scenarios/legacy_reproduction.yaml --cores 1 <target>`    | Workflow changes only            |
-| 3    | Full SQLite build and baseline parity validation          | Full workflow build plus validation reports                                                                                            | Baseline reproduction milestones |
-
-Recommended focused test command for the current scaffold:
-
-```powershell
-uv run pytest tests/test_config.py tests/test_nrcan_ceud.py tests/test_vehicle_population.py tests/test_runtime_hygiene.py
-```
-
-If a stale or locked pytest runtime directory blocks default pytest startup on Windows, inspect runtime state first:
-
-```powershell
-uv run python scripts/clean_runtime.py
-```
-
-For one-off verification while a lock is being investigated, use fresh repo-local pytest runtime paths:
-
-```powershell
-uv run pytest tests/test_config.py tests/test_nrcan_ceud.py tests/test_vehicle_population.py tests/test_runtime_hygiene.py --basetemp=.pytest-basetemp-manual -o cache_dir=.pytest-cache-runtime-manual
-```
-
-Full `uv run pytest`, full Snakemake dry-runs, SQLite builds, and parity reports remain important, but they are not required for every early ETL iteration.
+| Tier | Scope                                                     | Blocks which work?               |
+| ---- | --------------------------------------------------------- | -------------------------------- |
+| 0    | Imports, config loading, repo doctor, lint, focused tests | Routine code/config changes      |
+| 1    | Cache-only source or parameter smoke checks               | Work touching that source/module |
+| 2    | Snakemake DAG and workflow wiring                         | Workflow changes only            |
+| 3    | Full SQLite build and baseline parity validation          | Baseline reproduction milestones |
 
 
 ## Input-parameter ETL flowcharts
+**Important note:** if text inside nodes/figures does not render completely, you must reset your zoom to 100% and reload the website. Weird, I know.
 
 ### Mermaid version
 

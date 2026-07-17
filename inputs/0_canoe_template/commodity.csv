@@ -1,0 +1,52 @@
+name,flag,description,units
+gsl,p,Gasoline blendstock,PJ
+eth,p,Ethanol (100% corn-based ethanol),PJ
+T_gsl,p,Gasoline with at least 10% ethanol; blend mandates as per the Cleaner Transportation Fuels regulation. ,PJ
+dsl,p,Low-sulfur diesel,PJ
+rdsl,p,Renewable diesel (50% soy-based biodiesel and 50% HDRD),PJ
+T_dsl,p,Diesel with 4% renewable diesel; blend mandates as per the Cleaner Transportation Fuels regulation. ,PJ
+T_cng,p,Compressed natural gas ,PJ
+jtf,p,Petroleum conventional jet fuel,PJ
+spk,p,Renewable synthetic jet fuel,PJ
+T_jtf,p,"Conv. jet fuel, after potential blending with renewable jet fuel ",PJ
+T_spk,p,Conventional jet fuel with 50% HEFA SPK; blend limit in compliance with ASTM D7566 standards.,PJ
+T_mdo,p,"Marine diesel oil, 0.1% sulfur content ",PJ
+T_hfo,p,"Heavy fuel oil, 0.1% sulfur content ",PJ
+T_lng,p,Liquified natural gas ,PJ
+T_ng,p,Natural gas for industry process,PJ
+T_elc,p,Electricity used by transportation technologies,PJ
+T_dsl_elc_mdv,p,Diesel and electricity for plug-in hybrid vehicles (medium-duty class),PJ
+T_dsl_elc_hdv,p,Diesel and electricity for plug-in hybrid vehicles (heavy-duty class),PJ
+T_gsl_elc_phev35,p,Gasoline and electricity for plug-in hybrid vehicles (35-mile CD range ratio),PJ
+T_gsl_elc_phev50,p,Gasoline and electricity for plug-in hybrid vehicles (50-mile CD range ratio),PJ
+T_elc_ldv_bev_chrg,p,Electricity from light-duty BEV charger,PJ
+T_elc_ldv_phev_chrg,p,Electricity from light-duty PHEV charger,PJ
+T_elc_mdv_chrg,p,Electricity from medium-duty EV charger,PJ
+T_elc_hdv_chrg,p,Electricity from heavy-duty EV charger,PJ
+h2_700,p,Gaseous H2 @ 700 bar,PJ
+T_h2_ldv,p,Gaseous H2 @ 700 bar for use in light-duty vehicles,PJ
+T_h2_mdv,p,Gaseous H2 @ 700 bar for use in medium-duty vehicles,PJ
+T_h2_hdv,p,Gaseous H2 @ 700 bar for use in heavy-duty vehicles,PJ
+T_D_pkm_ldv_c,d,Demand for total passenger-kilometers driven by cars,billion passenger-km
+T_D_pkm_ldv_t,d,Demand for total passenger-kilometers driven by light-duty passenger trucks,billion passenger-km
+T_D_tkm_ldv_t,d,Demand for total tonne-kilometers driven by light-duty freight trucks,billion tonne-km
+T_D_tkm_mdv_t,d,Demand for total tonne-kilometers driven by medium-duty trucks,billion tonne-km
+T_D_tkm_hdv_t,d,Demand for total tonne-kilometers driven by heavy-duty trucks,billion tonne-km
+T_D_pkm_ldv_m,d,Demand for total passenger-kilometers driven by motorcycles,billion passenger-km
+T_D_pkm_hdv_bs,d,Demand for total passenger-kilometers driven by school and employee buses,billion passenger-km
+T_D_pkm_hdv_bt,d,Demand for total passenger-kilometers driven by urban transit buses,billion passenger-km
+T_D_pkm_hdv_bic,d,Demand for total passenger-kilometers driven by inter-city buses,billion passenger-km
+T_D_pkm_hdv_aj,d,Demand for total passenger-kilometers by jet aircrafts,billion passenger-km
+T_D_tkm_hdv_aj,d,Demand for total tonne-kilometers by jet aircrafts,billion tonne-km
+T_D_pkm_hdv_r,d,Demand for total passenger-kilometers by inter-city and urban transit rails,billion passenger-km
+T_D_tkm_hdv_r,d,Demand for total tonne-kilometers by freight rails,billion tonne-km
+T_D_tkm_hdv_wt,d,Demand for total tonne-kilometers by marine vessels,billion tonne-km
+T_D_pj_off,d,Demand for PJ by off-road vehicles,PJ
+co2e,e,"Carbon dioxide equivalent (GWP 100, IPCC AR6)",kt
+co2,e,Carbon dioxide,kt
+n2o,e,Nitrous oxide,kt
+ch4,e,Methane,kt
+T_annual_pkm_ldv_c,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,
+T_annual_pkm_ldv_t,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,
+T_annual_tkm_ldv_t,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,
+T_annual_pkm_ldv_m,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,

@@ -10,7 +10,7 @@ import yaml
 
 
 REQUIRED_PATH_SECTIONS = ("inputs", "outputs", "legacy")
-REQUIRED_INPUT_KEYS = ("cache", "external", "interim", "processed", "schema")
+REQUIRED_INPUT_KEYS = ("cache", "external", "interim", "processed", "schema", "template")
 REQUIRED_OUTPUT_KEYS = ("sqlite", "validation", "logs")
 REQUIRED_SCENARIO_KEYS = (
     "scenario",

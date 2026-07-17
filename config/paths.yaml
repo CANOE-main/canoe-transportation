@@ -11,7 +11,8 @@ inputs:
   external: inputs/0_external_models
   interim: inputs/1_interim
   processed: inputs/2_processed
-  schema: inputs/canoe_dataset_schema.sql
+  schema: inputs/temoa_schema_v4.sql
+  template: inputs/0_canoe_template
 
 outputs:
   root: outputs

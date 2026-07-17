@@ -56,3 +56,116 @@ parameterization:
         age_column: AGE
         age_distribution_column: AGE_DIST
         max_age: 30
+
+  statcan_tables:
+    interim_subdir: fetched_statcan_transport
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    read_chunksize: 100000
+    provenance_columns:
+      - REF_DATE
+      - GEO
+      - DGUID
+      - UOM
+      - UOM_ID
+      - SCALAR_FACTOR
+      - SCALAR_ID
+      - VECTOR
+      - COORDINATE
+      - VALUE
+      - STATUS
+      - SYMBOL
+      - TERMINATED
+      - DECIMALS
+    geography:
+      AB: {label: Alberta, freight_contains: [Alberta]}
+      BC: {label: British Columbia, freight_contains: [British Columbia]}
+      BCT: {label: British Columbia and the Territories, freight_contains: [British Columbia, Yukon, Northwest Territories, Nunavut]}
+      MB: {label: Manitoba, freight_contains: [Manitoba]}
+      NB: {label: New Brunswick, freight_contains: [New Brunswick]}
+      NL: {label: Newfoundland and Labrador, freight_contains: [Newfoundland and Labrador]}
+      NLLAB: {label: Newfoundland and Labrador, freight_contains: [Newfoundland and Labrador]}
+      NS: {label: Nova Scotia, freight_contains: [Nova Scotia]}
+      NT: {label: Northwest Territories, freight_contains: [Northwest Territories]}
+      NU: {label: Nunavut, freight_contains: [Nunavut]}
+      "ON": {label: Ontario, freight_contains: [Ontario]}
+      PE: {label: Prince Edward Island, freight_contains: [Prince Edward Island]}
+      PEI: {label: Prince Edward Island, freight_contains: [Prince Edward Island]}
+      QC: {label: Quebec, freight_contains: [Quebec, Québec]}
+      SK: {label: Saskatchewan, freight_contains: [Saskatchewan]}
+      YT: {label: Yukon, freight_contains: [Yukon]}
+    tables:
+      "20-10-0021-01":
+        normalizer: ldv_archived
+        output_file: statcan_20100021_ldv_registrations_archived.csv
+        metadata_dimensions: [Geography, Fuel type, Vehicle type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Fuel type, Vehicle type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Fuel type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Vehicle type: [Passenger cars, Pickup trucks, Multi-purpose vehicles, Vans]
+          Statistics: [Number of vehicles]
+      "20-10-0025-01":
+        normalizer: ldv_current
+        output_file: statcan_20100025_ldv_registrations_quarterly.csv
+        metadata_dimensions: [Geography, Fuel type, Vehicle type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Fuel type, Vehicle type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Fuel type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Vehicle type: [Passenger cars, Pickup trucks, Multi-purpose vehicles, Vans]
+          Statistics: [Number of vehicles]
+      "23-10-0308-01":
+        normalizer: medium_truck_fuels
+        output_file: statcan_23100308_medium_truck_fuels.csv
+        metadata_dimensions: [Geography, Vehicle Type, Fuel Type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Vehicle Type, Fuel Type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Vehicle Type: ["Total, vehicles weighing 4,536 to 11,793 kilograms"]
+          Fuel Type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Statistics: [Number of vehicles]
+      "34-10-0254-01":
+        normalizer: bus_lifetimes
+        output_file: statcan_34100254_bus_expected_life.csv
+        metadata_dimensions: [Geography, "Public transit assets, average expected useful life"]
+        required_columns: [REF_DATE, GEO, DGUID, "Public transit assets, average expected useful life", UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Public transit assets, average expected useful life:
+            - Diesel buses, average expected useful life
+            - Bio-diesel buses, average expected useful life
+            - Electric buses, average expected useful life
+            - Natural gas buses, average expected useful life
+            - Hybrid buses (includes diesel, biodiesel and natural gas), average expected useful life
+            - Other buses, average expected useful life
+      "23-10-0142-01":
+        normalizer: freight
+        output_file: statcan_23100142_freight_selected_long.csv
+        metadata_dimensions: ["Geography, origin of shipments", "Geography, destination of shipments", "Mode of transportation", "Commodity group", Characteristics]
+        required_columns: [REF_DATE, GEO, "Geography, destination of shipments", "Mode of transportation", "Commodity group", Characteristics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Mode of transportation: [Truck (for-hire)]
+          Characteristics: [Shipments, Weight, Distance, Tonne-kilometres]
+    ldv_history:
+      archived_table: "20-10-0021-01"
+      current_table: "20-10-0025-01"
+      output_file: statcan_ldv_registrations_historical.csv
+      overlap_file: statcan_ldv_registrations_overlap.csv
+      policy: current_preferred_archived_precoverage_only
+      current_period_aggregation: sum_quarters
+      complete_periods_per_year: 4
+      incomplete_year_policy: exclude_and_warn
+      overlap_absolute_tolerance: 0.0
+    freight:
+      output_file: statcan_23100142_freight_heavy_truck_candidates.csv
+      shipments_characteristic: Shipments
+      weight_characteristic: Weight
+      distance_characteristic: Distance
+      tonne_km_characteristic: Tonne-kilometres
+      haul_distribution:
+        category_column: haul_class
+        weight_column: tonne_kilometres
+        aggregation: sum
+        normalization: share_of_total_tonne_kilometres
+      regional_long_haul_threshold_miles: 350.0
+      exact_boundary_assignment: regional
+      assumed_truck_curb_weight_kg: 13000.0
+      class8_gross_vehicle_weight_threshold_kg: 14970.0
+      gross_weight_boundary: greater_than_or_equal

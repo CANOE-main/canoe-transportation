@@ -83,6 +83,8 @@ Early scaffold plans may validate only YAML loading, path creation, imports, and
 
 Parity-sensitive plans must compare new outputs against legacy SQLite outputs or documented reference tables.
 
+*Note: Use the lightest verification tier relevant to the task; do not require Snakemake or full SQLite parity for isolated module-level work.*
+
 ## Completion
 
 Before marking an ExecPlan complete, update:
