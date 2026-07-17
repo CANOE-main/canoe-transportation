@@ -2,3 +2,15 @@ version: 1
 
 mass:
   kg_to_lb: 2.20462
+
+length:
+  mile_to_km: 1.609344
+
+statcan:
+  scalar_factor_multipliers:
+    units: 1.0
+    tens: 10.0
+    hundreds: 100.0
+    thousands: 1000.0
+    millions: 1000000.0
+    billions: 1000000000.0

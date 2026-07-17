@@ -418,3 +418,68 @@ sources:
     refresh_notes: >
       Source ZIP URLs are CKAN resources and may change by release. Discover resources from the Ontario Data Catalogue package metadata instead of hardcoding resource URLs. 
       Legacy workflow uses data year 2022 and only Reports 4 and 5.
+
+  statcan_transport_tables:
+    title: "Statistics Canada transportation tables"
+    status: pending
+    source_type: upstream_download
+    file_type: zip
+    access:
+      method: statcan_wds_full_table_csv
+      language: en
+      cube_metadata_url: "https://www150.statcan.gc.ca/t1/wds/rest/getCubeMetadata"
+      full_table_url_template: "https://www150.statcan.gc.ca/t1/wds/rest/getFullTableDownloadCSV/{product_id}/{language}"
+    cache_path_template: "statcan_transport/{product_id}-eng.zip"
+    metadata_cache_path_template: "statcan_transport/{product_id}-metadata.json"
+    units: varies by table and characteristic; preserve UOM and SCALAR_FACTOR
+    citation: "Statistics Canada. Web Data Service and cited tables. https://www.statcan.gc.ca/en/developers/wds"
+    validation_rule: "WDS metadata must match configured table titles/dimensions/members, and each resolved English full-table ZIP must contain its PID data CSV."
+    refresh_notes: >
+      Resolve current archive URLs through getFullTableDownloadCSV rather than DOI or
+      table-viewer pages. Cache both cube metadata and the authoritative full-table ZIP.
+    tables:
+      "20-10-0021-01":
+        product_id: 20100021
+        title: "New motor vehicle registrations, inactive"
+        frequency: annual
+        coverage: "2011-2021"
+        archive_status: archived
+        citation: "Statistics Canada. Table 20-10-0021-01. https://doi.org/10.25318/2010002101-eng"
+        intended_consumers: [stocks_and_demands]
+        validation_rule: "Archived annual table must expose 2011-2021 geography, fuel type, LDV type, and number-of-vehicles series."
+      "20-10-0025-01":
+        product_id: 20100025
+        title: "New motor vehicle registrations, quarterly, by geographic level"
+        frequency: quarterly
+        coverage: "2017-present"
+        archive_status: current
+        citation: "Statistics Canada. Table 20-10-0025-01. https://doi.org/10.25318/2010002501-eng"
+        intended_consumers: [stocks_and_demands]
+        validation_rule: "Current quarterly table must expose exact province-level geography, fuel type, LDV type, and number-of-vehicles series."
+      "23-10-0308-01":
+        product_id: 23100308
+        title: "Vehicle registrations, by type of vehicle and fuel type"
+        frequency: annual
+        coverage: "2017-present"
+        archive_status: current
+        citation: "Statistics Canada. Table 23-10-0308-01. https://doi.org/10.25318/2310030801-eng"
+        intended_consumers: [stocks_and_demands, road_aggregation]
+        validation_rule: "Annual table must expose the 4,536-11,793 kg vehicle class, configured fuel types, and number-of-vehicles series by province."
+      "34-10-0254-01":
+        product_id: 34100254
+        title: "Average expected useful life of new publicly owned public transit assets, Infrastructure Canada"
+        frequency: occasional
+        coverage: "2016, 2018, and 2020"
+        archive_status: current
+        citation: "Statistics Canada. Table 34-10-0254-01. https://doi.org/10.25318/3410025401-eng"
+        intended_consumers: [lifetimes_survival]
+        validation_rule: "Occasional table must expose the six configured bus asset useful-life members in average years by province."
+      "23-10-0142-01":
+        product_id: 23100142
+        title: "Origin and destination of transported commodities, Canadian Freight Analysis Framework"
+        frequency: annual
+        coverage: "2011-2017"
+        archive_status: current
+        citation: "Statistics Canada. Table 23-10-0142-01. https://doi.org/10.25318/2310014201-eng"
+        intended_consumers: [road_aggregation]
+        validation_rule: "Annual table must expose origin, destination, Truck (for-hire), every commodity group, and shipments/weight/distance/tonne-kilometre characteristics."

@@ -16,7 +16,8 @@ SCENARIO = "config/scenarios/legacy_reproduction.yaml"
 def test_config_bundle_loads() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
 
-    assert bundle.paths["inputs"]["schema"] == "inputs/canoe_dataset_schema.sql"
+    assert bundle.paths["inputs"]["schema"] == "inputs/temoa_schema_v4.sql"
+    assert bundle.paths["inputs"]["template"] == "inputs/0_canoe_template"
     assert bundle.scenario["scenario"]["name"] == "legacy_reproduction"
     assert bundle.scenario["model_years"]["years"] == [2021, 2025, 2030, 2035, 2040, 2045, 2050]
     assert "sources" in bundle.sources
@@ -43,7 +44,7 @@ def test_path_resolution_and_directory_list() -> None:
     schema_path = resolve_repo_path(bundle.repo_root, bundle.paths["inputs"]["schema"])
     directories = configured_directories(bundle)
 
-    assert schema_path == REPO_ROOT / "inputs" / "canoe_dataset_schema.sql"
+    assert schema_path == REPO_ROOT / "inputs" / "temoa_schema_v4.sql"
     assert schema_path.exists()
     assert REPO_ROOT / "outputs" / "logs" in directories
 

@@ -1,6 +1,14 @@
+STATCAN_SCENARIO = config.get(
+    "scenario",
+    "config/scenarios/legacy_reproduction.yaml",
+)
+
+
 rule all:
     input:
-        "outputs/logs/doctor.ok"
+        "outputs/logs/doctor.ok",
+        "inputs/1_interim/fetched_statcan_transport/manifest.csv",
+        "inputs/1_interim/fetched_statcan_transport/warnings.log",
 
 
 rule doctor_smoke:
@@ -14,3 +22,13 @@ rule doctor_smoke:
         output_path = Path(output[0])
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text("ok\n", encoding="utf-8")
+
+
+rule statcan_transport_tables:
+    output:
+        manifest="inputs/1_interim/fetched_statcan_transport/manifest.csv",
+        warnings="inputs/1_interim/fetched_statcan_transport/warnings.log",
+    params:
+        scenario=STATCAN_SCENARIO,
+    shell:
+        "uv run python -m fetching.statcan_tables --scenario {params.scenario}"

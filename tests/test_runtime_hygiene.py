@@ -101,11 +101,12 @@ def test_pytest_defaults_do_not_pin_runtime_directories() -> None:
     assert all("--basetemp" not in option for option in addopts)
 
 
-def test_snakefile_is_minimal_doctor_smoke_layer() -> None:
+def test_snakefile_keeps_minimal_doctor_and_statcan_layers() -> None:
     snakefile = (REPO_ROOT / "workflow" / "Snakefile").read_text(encoding="utf-8")
 
     assert "outputs/logs/doctor.ok" in snakefile
     assert "scripts/doctor.py" in snakefile
+    assert "fetching.statcan_tables" in snakefile
+    assert "fetched_statcan_transport/manifest.csv" in snakefile
     assert "fetching.vehicle_population" not in snakefile
-    assert "config/scenarios" not in snakefile
     assert "configfile:" not in snakefile
