@@ -1,98 +1,108 @@
 # PLANS.md
 
-This repository uses ExecPlans for bounded, multi-step changes. An ExecPlan is a short-lived implementation note that helps a coding agent or contributor execute a task without relying on conversation history.
+ExecPlans are short-lived implementation records for bounded changes. They let a coding
+agent or contributor research, execute, and verify a task without relying on conversation
+history. They constrain scope and acceptance criteria; they do not replace durable policy
+in `AGENTS.md` or freeze an initial design after repository evidence contradicts it.
 
-ExecPlans are scaffolds, not permanent design law. They should constrain scope, risks, and acceptance criteria while allowing the implementation to evolve when repository evidence, tests, configs, or validation results justify a better path.
+## When an ExecPlan is required
 
-## When to use an ExecPlan
+Create or update a plan when a task:
 
-Create or update an ExecPlan when a task:
-- changes multiple files or directories;
-- affects Snakemake orchestration, configuration, validation, or SQLite outputs;
-- introduces a source, parameter module, extraction map, or scenario;
-- changes baseline reproduction behavior;
-- is risky enough that progress, decisions, or validation need to be recorded.
+- changes multiple files or responsibilities;
+- affects configuration, validation, orchestration, database artifacts, or parity;
+- introduces a source, scenario, parameter slice, or interface;
+- has staged, risky, ambiguous, or explicitly requested work;
+- needs progress, decisions, deviations, or validation evidence preserved.
 
-Do not use an ExecPlan for small one-file edits, typo fixes, formatting-only changes, or isolated tests unless requested.
+Skip a plan for a small isolated edit unless the user requests one.
 
-## Location and naming
+Store plans under `.agents/plans/` using the next numbered descriptive name, for example
+`011_context_ownership_restructure.md`. Completed plans are audit trails, not permanent
+architecture references.
 
-Store plans in:
-    .agents/plans/
+## Research and task boundary
 
-Use numbered descriptive names:
-    001_config_control_layer.md
-    002_stocks_and_demands_data_fetching.md
-    003_ontario_vehicle_population_fetching.md
+Before editing:
 
-## Required sections
+1. Read `AGENTS.md`, the user-named files, and the current working-tree state.
+2. Inspect the implementation and focused tests at the interface being changed.
+3. Retrieve parameter, source, scenario, workflow, or legacy context only when the task
+   crosses that seam; do not load whole directories for possible relevance.
+4. Record concrete current findings, conflicts, and uncertainties.
+5. Define the smallest complete slice and explicit non-goals.
 
-Keep each ExecPlan concise, usually 50–100 lines. Use these sections:
-1. Goal
-2. Context
-3. Scope
-4. Non-goals
-5. Implementation steps
-6. Validation
-7. Acceptance criteria
-8. Progress
-9. Outcomes
+Identify the applicable contracts:
 
-Add a short “Decision log” only when architecture, source metadata, module boundaries, or modeling choices change.
+- **Source contract:** identity, version, access or registration, physical structure,
+  native units, availability checks, provenance, and offline behavior.
+- **Interface contract:** caller inputs, invariants, ordering, errors, and compatibility.
+- **Artifact contract:** path, format, schema, grain, keys, units, duplicate/null policy,
+  and deterministic write behavior.
+- **Output contract:** consumer, target table or report, acceptance tolerance, logs, and
+  reconciliation or parity evidence.
 
-## ExecPlan rules
+Use only the contracts relevant to the task. Do not invent missing assumptions; mark an
+unresolved choice and keep it out of implementation until its owner supplies evidence.
 
-- Inspect the repository before editing.
-- Update the plan with concrete findings only when they affect the task.
-- Keep the plan task-specific; do not repeat `AGENTS.md`.
-- Prefer the smallest useful implementation slice.
-- Preserve baseline reproduction as the first priority.
-- Do not invent source data, formulas, table mappings, or modeling assumptions.
-- Mark uncertain details as provisional, not permanent.
-- Let proven code, tests, configs, and validation results refine earlier assumptions.
-- Keep progress checkboxes current.
-- Record commands run and whether they passed or failed.
+## Required plan content
 
-## Evolvability rules
+Keep plans concise and task-specific, normally with:
 
-- Plans should constrain scope, not freeze architecture.
-- Tests should constrain behavior.
-- Configs should constrain assumptions.
-- Validation should constrain trust.
-- Legacy artifacts should constrain baseline parity.
+1. **Goal**
+2. **Context** — inspected evidence and current findings
+3. **Scope**
+4. **Non-goals**
+5. **Implementation steps**
+6. **Validation**
+7. **Acceptance criteria**
+8. **Progress**
+9. **Outcomes**
 
-When implementation evidence contradicts the original plan, do not force the code to satisfy an outdated assumption. Update the plan’s Progress, Outcomes, or Decision log with:
+Add risks where failure could damage artifacts, alter behavior silently, require network
+or external inputs, or make rollback difficult. Add a short Decision log only for
+choices that affect source metadata, interfaces, module seams, assumptions, or later
+work. Reference `AGENTS.md` instead of copying repository policy.
+
+## Plan the verification
+
+Choose the lightest tier that can exercise the changed contract:
+
+- **Interface/static:** parse, import, schema, link, lint, or structural checks.
+- **Focused behavior:** unit or fixture tests at the changed interface.
+- **Artifact/integration:** deterministic offline smoke, affected DAG target, temporary
+  database, or source-to-output reconciliation.
+- **End-to-end/parity:** full build and comparison against accepted reference outputs.
+
+Escalate only when the lower tier cannot observe the risk. A successful command is not
+proof of correctness: define what output, invariant, row count, warning, reconciliation,
+or tolerance makes the result acceptable. Plans must list exact commands, required
+inputs, expected artifacts, and where logs or reports will be written.
+
+## Execute and update
+
+- Keep progress checkboxes current and record commands as they run.
+- Preserve unrelated working-tree changes.
+- Validate from the changed interface inward before running broader checks.
+- Prefer deterministic offline evidence when the task does not require a source refresh.
+- Record skipped, dropped, fallback, cleanup, and warning behavior relevant to the task.
+- Stop scope growth at the stated non-goals; record larger inconsistencies as follow-up.
+
+When code, tests, config, artifacts, or validation evidence contradict the plan, update
+the plan rather than forcing implementation to satisfy an obsolete assumption. Record:
+
 - what changed;
 - why it changed;
-- what evidence justified the change;
-- whether follow-up work is needed.
+- the evidence;
+- the effect on scope or acceptance;
+- any unresolved follow-up.
 
-**Important**: Durable project truth should move into code, tests, configs, validation reports, and concise documentation. Completed ExecPlans are an audit trail, not the source of truth.
-
-## Validation rules
-
-Every ExecPlan must define command-line checks.
-
-Use relevant commands such as:
-    uv run pytest
-    uv run ruff check .
-    uv run python src/setup.py --scenario config/scenarios/legacy_reproduction.yaml
-    uv run snakemake --snakefile workflow/Snakefile --config scenario=config/scenarios/legacy_reproduction.yaml --cores 1
-
-Early scaffold plans may validate only YAML loading, path creation, imports, and smoke tests.
-
-Parity-sensitive plans must compare new outputs against legacy SQLite outputs or documented reference tables.
-
-*Note: Use the lightest verification tier relevant to the task; do not require Snakemake or full SQLite parity for isolated module-level work.*
+Durable truth belongs in the owning code, config, tests, validation reports, or focused
+documentation. Do not turn an ExecPlan into a second architecture manual.
 
 ## Completion
 
-Before marking an ExecPlan complete, update:
-- Progress;
-- Outcomes;
-- commands run;
-- passing/failing checks;
-- generated outputs;
-- known placeholders;
-- deviations from the original plan, if any;
-- recommended next plan, if any.
+Before marking a plan complete, update Progress, Outcomes, the commands and results,
+generated artifacts, known placeholders, deviations, unresolved work, and any recommended
+follow-up. Completion requires the acceptance criteria to be met or each exception to be
+explicitly documented.

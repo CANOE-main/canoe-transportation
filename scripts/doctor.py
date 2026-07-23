@@ -93,6 +93,7 @@ def run_doctor(
     prepare_import_path(root)
 
     from utils import load_config_bundle, resolve_repo_path, validate_config_bundle
+    from validation.schema_contract import schema_evidence
 
     errors: list[str] = []
     checks: dict[str, Any] = {"repo_root": str(root), "mutated": create_dirs}
@@ -113,11 +114,9 @@ def run_doctor(
             "scenario": str(bundle.scenario_path),
             "validation_errors": config_errors,
         }
-        schema_path = resolve_repo_path(bundle.repo_root, bundle.paths["inputs"]["schema"])
         reference_sqlite = resolve_repo_path(bundle.repo_root, bundle.scenario["validation"]["reference_sqlite"])
         checks["paths"] = {
-            "schema": str(schema_path),
-            "schema_exists": schema_path.exists(),
+            "schema_package": schema_evidence(),
             "reference_sqlite": str(reference_sqlite),
             "reference_sqlite_exists": reference_sqlite.exists(),
         }

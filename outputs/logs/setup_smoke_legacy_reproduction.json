@@ -1,42 +1,80 @@
 {
   "ok": true,
-  "timestamp_utc": "2026-05-07T01:40:47.003455+00:00",
+  "timestamp_utc": "2026-07-22T17:34:54.028568+00:00",
   "scenario": "legacy_reproduction",
-  "model_years": {
-    "years": [
-      2021,
+  "periods": {
+    "base_year": 2021,
+    "existing": [
+      2021
+    ],
+    "model": [
       2025,
       2030,
       2035,
       2040,
       2045,
       2050
-    ]
+    ],
+    "step": 5
+  },
+  "currency": {
+    "target": "CAD",
+    "target_year": 2020,
+    "inflation_index": "gdp_deflator"
+  },
+  "economics": {
+    "global_discount_rate": 0.03,
+    "default_loan_rate": 0.03
   },
   "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\legacy_reproduction.yaml",
   "paths_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
   "sources_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\sources.yaml",
   "created_directories": [
-    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\cache",
-    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\external",
-    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\interim",
-    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\processed",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_cache",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_external_models",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim",
+    "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\2_processed",
     "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite",
     "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation",
     "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\logs"
   ],
-  "schema_exists": true,
-  "schema_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\canoe_dataset_schema.sql",
+  "packaged_schema": {
+    "package": "canoe-schema",
+    "package_version": "4.0.0",
+    "package_commit": "32740578f62fe9cfc760034be0201b4dcaf7c653",
+    "schema_version": "4.0",
+    "ddl_sha256": "cc949df14e654c0b2e549ea02ae165fe646974ddd5454c3f4ebf5a08838fb996",
+    "technology_notes_extension_sha256": "93ec356bddc6a9b7544c5ca67a7a30b238bdc133537fd33191bc2de3be044c83"
+  },
   "reference_sqlite_exists": true,
   "reference_sqlite": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\canoe_on_12d_baseline.sqlite",
   "active_sources": [
     "nrcan_ceud_transport_provincial",
-    "nrcan_ceud_transport_national"
+    "nrcan_ceud_transport_national",
+    "statcan_transport_tables",
+    "cer_canadas_energy_future"
   ],
   "placeholder_sources": [],
-  "non_goals": {
+  "switches": {
+    "legacy_equivalent": true,
+    "debug": false,
     "download_sources": false,
+    "compile_sqlite": true,
     "transform_parameters": false,
-    "compile_sqlite": false
+    "include_existing_capacity": true
+  },
+  "planned": {
+    "weather_year": null,
+    "timezone": null,
+    "technology_progress": null,
+    "demand_projection": null,
+    "fuel_price_future": null,
+    "utilization": null,
+    "bev_charging": null,
+    "adoption_constraints": null,
+    "retirement_formulation": null,
+    "emissions_scope": null,
+    "sector_coupling": null,
+    "capacity_limits": null
   }
 }

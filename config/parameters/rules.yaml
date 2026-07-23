@@ -1,3 +1,14 @@
+# Extraction and harmonization contracts for registered source artifacts.
+#
+# Each `parameterization` entry is consumed by its named adapter or parameter module and
+# owns source-layout selectors, mappings, filters, bins, thresholds, normalization
+# choices, and deterministic interim artifact names. Use stable keys, keep comments next
+# to the value they explain, and add a focused consumer test for each new contract.
+#
+# External identity, access, citations, and physical availability checks belong in
+# `config/sources.yaml`; run selections belong in scenario YAML; reusable numeric unit
+# conversions belong in `conversion.yaml`.
+
 version: 1
 
 parameterization:
@@ -164,8 +175,110 @@ parameterization:
         weight_column: tonne_kilometres
         aggregation: sum
         normalization: share_of_total_tonne_kilometres
-      regional_long_haul_threshold_miles: 350.0
+      regional_long_haul_threshold_miles: 350.0                           # middle point of the regional (250-mile) and long-haul (500-mile) driving ranges from Autonomie TEA (Islam et al. 2023)
       exact_boundary_assignment: regional
-      assumed_truck_curb_weight_kg: 13000.0
+      assumed_truck_curb_weight_kg: 13000.0                               # average curb weight of class 8 trucks, except refuse and urban transit, from Autonomie TEA (Islam et al. 2023)
       class8_gross_vehicle_weight_threshold_kg: 14970.0
       gross_weight_boundary: greater_than_or_equal
+
+  cer_enerfuture:
+    interim_subdir_template: "fetched_cer_energy_future/{edition}"
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    default_scenario: Current Measures
+    common_required_columns: [Scenario, Region, Variable, Year, Value]
+    geography:
+      AB: Alberta
+      BC: British Columbia
+      BCT: [British Columbia, Yukon, Northwest Territories, Nunavut]
+      MB: Manitoba
+      NB: New Brunswick
+      NL: Newfoundland and Labrador
+      NLLAB: Newfoundland and Labrador
+      NS: Nova Scotia
+      NT: Northwest Territories
+      NU: Nunavut
+      "ON": Ontario
+      PE: Prince Edward Island
+      PEI: Prince Edward Island
+      QC: Quebec
+      SK: Saskatchewan
+      YT: Yukon
+    components:
+      macro-indicators:
+        output_file: cer_macro_indicators.csv
+        required_columns: [Scenario, Region, Variable, Year, Value]
+        region: Canada
+        variables:
+          real_gdp: "Real Gross Domestic Product ("
+          gdp_deflator: "Gross Domestic Product Deflator ("
+          cad_per_usd: "Canada-US Exchange Rate (C$/US$)"
+      end-use-demand:
+        output_file: cer_transport_end_use_demand.csv
+        required_columns: [Scenario, Region, Variable, Year, Value, Sector]
+        sector: Transportation
+        include_canada_total: true
+        unit: PJ
+      end-use-prices:
+        output_file: cer_transport_end_use_prices.csv
+        required_columns: [Scenario, Region, Variable, Year, Value, Sector]
+        sector: Transportation
+        variables: [Gasoline, Diesel]
+        unit: 2022 CAD/GJ
+
+  nlr_atb_autonomie:
+    interim_subdir: fetched_nlr_atb_autonomie
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    components:
+      vehicles:
+        output_file: atb_vehicles.csv
+        metric_keys:
+          "Fuel Economy (mi/dge)": fuel_economy_mi_per_dge
+          "Fuel Economy (mi/gge)": fuel_economy_mi_per_gge
+          "Modeled Vehicle Price (2022$)": modeled_vehicle_price
+          "Range (mi)": range_mi
+          "Useable Energy (kWh)": usable_battery_capacity_kwh
+        metric_units:
+          "Fuel Economy (mi/dge)": mi/dge
+          "Fuel Economy (mi/gge)": mi/gge
+          "Modeled Vehicle Price (2022$)": 2022 USD/vehicle
+          "Range (mi)": mi
+          "Useable Energy (kWh)": kWh
+      maintenance_ldv:
+        outputs:
+          class_multipliers: atb_maintenance_ldv_class_multipliers.csv
+          powertrain_multipliers: atb_maintenance_ldv_powertrain_multipliers.csv
+          baseline_repair_cost: atb_maintenance_ldv_baseline_repair_cost.csv
+          maintenance_cost: atb_maintenance_ldv_maintenance_cost.csv
+      vmt:
+        output_file: atb_age_vmt.csv
+        value_column: vmt_mi
+        unit: mi/vehicle-year
+      anl_bean:
+        output_file: anl_bean_mhdv_maintenance_coefficients.csv
+        workbook_sheet: "TCO Assumpt."
+        workbook_range: "A33:H54"
+        expected_columns: [A, B, C, D, E, F, G, H]
+        table_layout:
+          header_row: 33
+          label_column: A
+          powertrain_column: B
+          vehicle_class_columns:
+            C: "LonghaulSleeper 8"
+            D: "BoxMedium 6"
+            E: "BoxMedium 4"
+            F: "DrayageDayCab 8"
+            G: "RegionalDayCab 8"
+            H: "TransitHeavy 8"
+          expected_powertrains: [Conv, SeriesPHEV, BEV, ParHEV, FCHEV, ISG, FCEV]
+          blocks:
+            maintenance_powertrain_multiplier:
+              rows: [34, 40]
+              source_label: "Maintenance Powertain Multplier"
+            coefficient_a:
+              rows: [41, 47]
+              source_label: "Coef A"
+            coefficient_b:
+              rows: [48, 54]
+              source_label: "Coef B"

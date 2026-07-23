@@ -1,19 +1,53 @@
-version: 1
+# Run selections and modeling switches for the legacy-reproduction build.
+# Select registered sources here; keep source access/provenance in `sources.yaml`,
+# extraction rules in `parameters/rules.yaml`, and reusable conversions in
+# `parameters/conversion.yaml`. See `config/scenarios/README.md` for field behavior.
+
+version: 2
 
 scenario:
   name: legacy_reproduction
-  description: "Legacy reproduction scaffold with initial template database bootstrap."
+  description: "Reproduce the legacy transportation backend before changing modeling assumptions."
+  purpose: baseline_reproduction
 
-regions:
-  - "ON"
+geography:
+  # Quote ON because YAML 1.1 parsers otherwise interpret it as a boolean.
+  regions: ["ON"]
 
-model_years:
-  years: [2021, 2025, 2030, 2035, 2040, 2045, 2050]
+periods:
+  # Source/base observations are distinct from the regular future model grid.
+  base_year: 2021
+  existing: [2021]
+  model: [2025, 2030, 2035, 2040, 2045, 2050]
+  step: 5
 
-active_sources:
-  - nrcan_ceud_transport_provincial
-  - nrcan_ceud_transport_national
-  - statcan_transport_tables
+sources:
+  # URLs, citations, components, and source defaults remain in config/sources.yaml.
+  active:
+    - nrcan_ceud_transport_provincial
+    - nrcan_ceud_transport_national
+    - statcan_transport_tables
+    - cer_canadas_energy_future
+    - nlr_atb_transportation_2024
+    - anl_autonomie_bean_2022
+  selections:
+    nrcan_ceud_transport_provincial: {year: 2021}
+    nrcan_ceud_transport_national: {year: 2021}
+    cer_canadas_energy_future:
+      edition: 2026
+      scenario: Current Measures
+    nlr_atb_transportation_2024:
+      edition: 2024
+      trajectory: Conservative
+
+currency:
+  target: CAD
+  target_year: 2020
+  inflation_index: gdp_deflator
+
+economics:
+  global_discount_rate: 0.03
+  default_loan_rate: 0.03
 
 outputs:
   sqlite_name: canoe_transport_legacy_reproduction.sqlite
@@ -21,10 +55,37 @@ outputs:
   setup_log: outputs/logs/setup_smoke_legacy_reproduction.json
 
 validation:
+  behavior: error
   reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+  compare_legacy: true
+  # Add parameter-specific absolute tolerances only when parity evidence supports them.
+  parameter_tolerances: {}
 
 switches:
   legacy_equivalent: true
+  debug: false
   download_sources: false
   compile_sqlite: true
   transform_parameters: false
+  include_existing_capacity: true
+
+# Scenario-authored notes take precedence when a consuming row builder supports them.
+# Technology overrides are operational; parameter overrides remain planned.
+row_note_overrides:
+  technology: {}
+  parameters: {}
+
+# These fields document future scenario choices without activating unimplemented behavior.
+planned:
+  weather_year: null
+  timezone: null
+  technology_progress: null
+  demand_projection: null
+  fuel_price_future: null
+  utilization: null
+  bev_charging: null
+  adoption_constraints: null
+  retirement_formulation: null
+  emissions_scope: null
+  sector_coupling: null
+  capacity_limits: null

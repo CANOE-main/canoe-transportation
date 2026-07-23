@@ -1,3 +1,7 @@
+# Reusable numeric conversion factors shared by source and parameter modules.
+# Keys state the conversion direction; source-specific transforms and run selections
+# belong in `rules.yaml` and scenario YAML respectively.
+
 version: 1
 
 mass:
@@ -5,6 +9,9 @@ mass:
 
 length:
   mile_to_km: 1.609344
+
+energy:
+  gigawatt_year_to_petajoule: 31.536
 
 statcan:
   scalar_factor_multipliers:

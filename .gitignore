@@ -15,3 +15,5 @@ inputs/1_interim/
 inputs/2_processed/
 inputs/playground/
 outputs/
+.agents/skills/
+.agents/plans/

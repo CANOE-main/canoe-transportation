@@ -89,7 +89,7 @@ def test_doctor_runs_without_mutating_by_default() -> None:
     assert result.ok is True
     assert result.checks["mutated"] is False
     assert set(result.checks["imports"]) == {"fetching", "parameterization", "utils", "validation"}
-    assert result.checks["paths"]["schema_exists"] is True
+    assert result.checks["paths"]["schema_package"]["package"] == "canoe-schema"
 
 
 def test_pytest_defaults_do_not_pin_runtime_directories() -> None:
@@ -101,12 +101,19 @@ def test_pytest_defaults_do_not_pin_runtime_directories() -> None:
     assert all("--basetemp" not in option for option in addopts)
 
 
-def test_snakefile_keeps_minimal_doctor_and_statcan_layers() -> None:
+def test_snakefile_keeps_coarse_source_and_single_writer_build_layers() -> None:
     snakefile = (REPO_ROOT / "workflow" / "Snakefile").read_text(encoding="utf-8")
 
-    assert "outputs/logs/doctor.ok" in snakefile
+    assert "load_config_bundle" in snakefile
+    assert "SCENARIO.scenario.outputs.sqlite_name" in snakefile
+    assert "SCENARIO.scenario.outputs.validation_report" in snakefile
+    assert "SCENARIO.scenario.switches.download_sources" in snakefile
+    assert "configured_edition" in snakefile
     assert "scripts/doctor.py" in snakefile
     assert "fetching.statcan_tables" in snakefile
-    assert "fetched_statcan_transport/manifest.csv" in snakefile
+    assert "STATCAN_RULES['interim_subdir']" in snakefile
+    assert "rule transport_database" in snakefile
+    assert "src/build_transport.py" in snakefile
+    assert "{params.scenario:q}" in snakefile
     assert "fetching.vehicle_population" not in snakefile
     assert "configfile:" not in snakefile

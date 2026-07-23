@@ -7,32 +7,51 @@ import logging
 import math
 import re
 import unicodedata
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
+from urllib.parse import urlparse
 
 import pandas as pd
 import requests
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from utils import ConfigBundle, load_config_bundle, load_harmonization_rules, resolve_input_path
+from validation.config_models import SourceComponent, SourceSpec
 
 
 SOURCE_PROVINCIAL = "nrcan_ceud_transport_provincial"
 SOURCE_NATIONAL = "nrcan_ceud_transport_national"
 
 
-@dataclass(frozen=True)
-class CeudTableRequest:
+class CeudTableRequest(BaseModel):
     """One CEUD table file requested from the source registry."""
 
-    source_id: str
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    source_id: Literal[
+        "nrcan_ceud_transport_provincial",
+        "nrcan_ceud_transport_national",
+    ]
     region: str
     year: int
     table_id: int
-    table_meta: dict[str, Any]
+    table_meta: SourceComponent
     url: str
     cache_path: Path
     output_region: str
+
+    @model_validator(mode="after")
+    def validate_request(self) -> "CeudTableRequest":
+        parsed = urlparse(self.url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError(f"CEUD URL is not an absolute HTTP(S) URL: {self.url}")
+        if self.year < 1900 or self.table_id <= 0:
+            raise ValueError("CEUD year and table_id must be positive source identifiers")
+        if not self.cache_path.is_absolute() or self.cache_path.suffix.casefold() != ".xls":
+            raise ValueError(f"CEUD cache path must be an absolute .xls path: {self.cache_path}")
+        if not self.region or not self.output_region:
+            raise ValueError("CEUD region fields cannot be blank")
+        return self
 
 
 def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
@@ -81,21 +100,27 @@ def is_value_bearing_group_header(
     return label in labels
 
 
-def render_ceud_url(source: dict[str, Any], *, year: int, region: str, table_id: int) -> str:
+def render_ceud_url(source: SourceSpec, *, year: int, region: str, table_id: int) -> str:
     """Render a CEUD URL from a source registry entry."""
-    return source["url_template"].format(year=year, region=region.lower(), table_id=table_id)
+    return str(source.adapter["url_template"]).format(
+        year=year,
+        region=region.lower(),
+        table_id=table_id,
+    )
 
 
 def render_cache_path(
     bundle: ConfigBundle,
-    source: dict[str, Any],
+    source: SourceSpec,
     *,
     year: int,
     region: str,
     table_id: int,
 ) -> Path:
     """Render the deterministic raw cache path for one CEUD table."""
-    template = source.get("cache_path_template", source.get("path_template"))
+    template = source.adapter.get(
+        "cache_path_template", source.adapter.get("path_template")
+    )
     if template is None:
         raise KeyError("CEUD source missing cache_path_template")
     path = template.format(year=year, region=region.lower(), table_id=table_id)
@@ -107,23 +132,33 @@ def render_cache_path(
     return resolve_input_path(bundle, "cache", path)
 
 
-def configured_year(source: dict[str, Any]) -> int:
+def configured_year(source: SourceSpec) -> int:
     """Return the default CEUD release year from either accepted config spelling."""
-    year_config = source.get("years", source.get("year", {}))
+    year_config = source.adapter.get("years", source.adapter.get("year", {}))
     if isinstance(year_config, dict):
         return int(year_config["default"])
     return int(year_config)
 
 
-def provincial_regions(source: dict[str, Any], requested_regions: list[str] | None) -> list[str]:
+def scenario_source_year(
+    bundle: ConfigBundle, source_id: str, source: SourceSpec
+) -> int:
+    """Resolve a source year from scenario selection or registry default."""
+    selection = bundle.scenario.sources.selections.get(source_id)
+    if selection is not None and selection.year is not None:
+        return selection.year
+    return configured_year(source)
+
+
+def provincial_regions(source: SourceSpec, requested_regions: list[str] | None) -> list[str]:
     """Resolve requested provincial regions against the source registry."""
-    allowed = [str(region).upper() for region in source["regions"]["allowed"]]
+    allowed = [str(region).upper() for region in source.adapter["regions"]["allowed"]]
     if requested_regions:
         unknown = sorted(set(region.upper() for region in requested_regions) - set(allowed))
         if unknown:
             raise ValueError(f"Unknown CEUD provincial regions: {', '.join(unknown)}")
         return [region.upper() for region in requested_regions]
-    default = source["regions"].get("default")
+    default = source.adapter["regions"].get("default")
     if default == "all_provinces":
         return allowed
     return [str(default).upper()]
@@ -141,9 +176,11 @@ def iter_table_requests(
     requests_to_fetch: list[CeudTableRequest] = []
 
     provincial = sources[SOURCE_PROVINCIAL]
-    provincial_year = year or configured_year(provincial)
+    provincial_year = year or scenario_source_year(
+        bundle, SOURCE_PROVINCIAL, provincial
+    )
     for region in provincial_regions(provincial, regions):
-        for table_id, table_meta in sorted(provincial["tables"].items()):
+        for table_id, table_meta in sorted(provincial.components.items()):
             table_id_int = int(table_id)
             requests_to_fetch.append(
                 CeudTableRequest(
@@ -166,8 +203,10 @@ def iter_table_requests(
 
     if include_national:
         national = sources[SOURCE_NATIONAL]
-        national_year = year or configured_year(national)
-        for table_id, table_meta in sorted(national["tables"].items()):
+        national_year = year or scenario_source_year(
+            bundle, SOURCE_NATIONAL, national
+        )
+        for table_id, table_meta in sorted(national.components.items()):
             table_id_int = int(table_id)
             requests_to_fetch.append(
                 CeudTableRequest(
@@ -200,6 +239,23 @@ def fetch_to_cache(request: CeudTableRequest, *, timeout: int = 60) -> str:
     response.raise_for_status()
     request.cache_path.write_bytes(response.content)
     return "downloaded"
+
+
+def validate_source(request: CeudTableRequest, raw: pd.DataFrame | None = None) -> None:
+    """Validate the cached CEUD artifact before harmonization."""
+    context = f"{request.source_id}/{request.table_id} ({request.output_region})"
+    if not request.cache_path.is_file():
+        raise FileNotFoundError(f"CEUD source {context} is missing: {request.cache_path}")
+    if request.cache_path.stat().st_size <= 0:
+        raise ValueError(f"CEUD source {context} is empty: {request.cache_path}")
+    if raw is None:
+        return
+    if raw.empty:
+        raise ValueError(f"CEUD source {context} contains no data rows")
+    if raw.shape[1] < 3:
+        raise ValueError(f"CEUD source {context} has fewer than three columns")
+    if not any(str(column).strip().isdigit() for column in raw.columns):
+        raise ValueError(f"CEUD source {context} has no integer year columns")
 
 
 def read_ceud_excel(path: Path, *, skiprows: int) -> pd.DataFrame:
@@ -389,9 +445,13 @@ def fetch_and_normalize(
                 status = "cached"
             else:
                 raise FileNotFoundError(request.cache_path)
+            validate_source(request)
             raw = read_ceud_excel(request.cache_path, skiprows=int(rules["raw_excel_skiprows"]))
+            validate_source(request, raw)
             rows.append(normalize_ceud_dataframe(raw, request, rules))
         except Exception as exc:
+            if request.table_meta.required:
+                raise
             status = "failed"
             reason = str(exc)
             warnings.append(f"{request.source_id} {request.output_region} table {request.table_id}: {reason}")

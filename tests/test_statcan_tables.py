@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-from dataclasses import replace
 from pathlib import Path
 from zipfile import ZipFile
 
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from fetching.statcan_tables import (
     StatCanSourceError,
@@ -67,6 +67,15 @@ def test_request_resolution_uses_wds_and_configured_cache_root(bundle) -> None:
     assert request.metadata_cache_path.name == "20100025-metadata.json"
 
 
+def test_request_model_rejects_invalid_rendered_url(bundle) -> None:
+    request = request_for(bundle, "20-10-0025-01")
+    payload = request.model_dump()
+    payload["download_api_url"] = "not-a-url"
+
+    with pytest.raises(ValidationError, match="download URL"):
+        type(request).model_validate(payload)
+
+
 def test_download_url_resolution_validates_wds_response(bundle) -> None:
     request = request_for(bundle, "20-10-0021-01")
 
@@ -92,10 +101,11 @@ def test_download_url_resolution_validates_wds_response(bundle) -> None:
 
 
 def test_offline_cache_reuse_and_missing_cache_failure(bundle, tmp_path: Path) -> None:
-    request = replace(
-        request_for(bundle, "20-10-0021-01"),
-        metadata_cache_path=tmp_path / "metadata.json",
-        archive_cache_path=tmp_path / "table.zip",
+    request = request_for(bundle, "20-10-0021-01").model_copy(
+        update={
+            "metadata_cache_path": tmp_path / "metadata.json",
+            "archive_cache_path": tmp_path / "table.zip",
+        }
     )
     with pytest.raises(FileNotFoundError, match="Offline StatCan cache is incomplete"):
         ensure_cached_artifacts(request, download=False)
@@ -439,9 +449,8 @@ def test_manifest_and_warning_outputs_are_written(rules, tmp_path: Path) -> None
 
 
 def test_changed_csv_dimensions_fail_with_available_columns(bundle, rules, tmp_path: Path) -> None:
-    request = replace(
-        request_for(bundle, "20-10-0021-01"),
-        archive_cache_path=tmp_path / "20100021-eng.zip",
+    request = request_for(bundle, "20-10-0021-01").model_copy(
+        update={"archive_cache_path": tmp_path / "20100021-eng.zip"}
     )
     csv_path = tmp_path / "20100021.csv"
     csv_path.write_text("REF_DATE,GEO,VALUE\n2011,Ontario,1\n", encoding="utf-8")

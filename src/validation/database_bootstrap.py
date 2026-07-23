@@ -15,8 +15,9 @@ def validate_database(
     connection: sqlite3.Connection,
     *,
     expected_primary_keys: Mapping[str, Sequence[tuple[Any, ...]]],
+    touched_tables: Sequence[str] | None = None,
 ) -> dict[str, Any]:
-    """Check schema presence, loaded keys/counts, foreign keys, and file integrity."""
+    """Check touched rows/provenance, foreign keys, and file integrity."""
     schema_tables = {
         row[0]
         for row in connection.execute(
@@ -25,6 +26,7 @@ def validate_database(
     }
     errors: list[str] = []
     tables: dict[str, dict[str, Any]] = {}
+    provenance_audit: dict[str, dict[str, int]] = {}
 
     for table, expected_keys_sequence in expected_primary_keys.items():
         if table not in schema_tables:
@@ -66,6 +68,54 @@ def validate_database(
             "primary_keys_match": keys_match,
         }
 
+    for table in dict.fromkeys(touched_tables or expected_primary_keys):
+        if table not in schema_tables:
+            errors.append(f"Schema is missing touched table: {table}")
+            continue
+        columns = {
+            row[1]
+            for row in connection.execute(
+                f"PRAGMA table_info({_quote_identifier(table)})"
+            ).fetchall()
+        }
+        row_count = int(
+            connection.execute(
+                f"SELECT COUNT(*) FROM {_quote_identifier(table)}"
+            ).fetchone()[0]
+        )
+        audit = {"row_count": row_count, "null_data_id": 0, "unregistered_data_id": 0,
+                 "unregistered_source_pair": 0}
+        if "data_id" in columns and table != "data_set":
+            audit["null_data_id"] = int(
+                connection.execute(
+                    f"SELECT COUNT(*) FROM {_quote_identifier(table)} "
+                    "WHERE data_id IS NULL"
+                ).fetchone()[0]
+            )
+            audit["unregistered_data_id"] = int(
+                connection.execute(
+                    f"SELECT COUNT(*) FROM {_quote_identifier(table)} AS touched "
+                    "LEFT JOIN data_set AS registered ON registered.data_id = touched.data_id "
+                    "WHERE touched.data_id IS NOT NULL AND registered.data_id IS NULL"
+                ).fetchone()[0]
+            )
+        if {"data_source", "data_id"}.issubset(columns) and table != "data_source":
+            audit["unregistered_source_pair"] = int(
+                connection.execute(
+                    f"SELECT COUNT(*) FROM {_quote_identifier(table)} AS touched "
+                    "LEFT JOIN data_source AS registered "
+                    "ON registered.source_id = touched.data_source "
+                    "AND registered.data_id = touched.data_id "
+                    "WHERE touched.data_source IS NOT NULL "
+                    "AND touched.data_id IS NOT NULL "
+                    "AND registered.source_id IS NULL"
+                ).fetchone()[0]
+            )
+        for check in ("null_data_id", "unregistered_data_id", "unregistered_source_pair"):
+            if audit[check]:
+                errors.append(f"{table} provenance audit {check}={audit[check]}")
+        provenance_audit[table] = audit
+
     integrity_rows = [row[0] for row in connection.execute("PRAGMA integrity_check")]
     if integrity_rows != ["ok"]:
         errors.append(f"SQLite integrity_check failed: {integrity_rows}")
@@ -81,6 +131,7 @@ def validate_database(
         "errors": errors,
         "schema_table_count": len(schema_tables),
         "tables": tables,
+        "touched_table_audit": provenance_audit,
         "integrity_check": integrity_rows,
         "foreign_key_violations": len(foreign_key_rows),
         "foreign_keys_enabled": foreign_keys_enabled,

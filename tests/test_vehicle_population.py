@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from fetching.vehicle_population import (
+    CkanLookupRequest,
     OntarioVehiclePopulationRequest,
     build_request,
     fetch_to_cache,
@@ -15,6 +16,7 @@ from fetching.vehicle_population import (
     read_vehicle_population_txt,
     resolve_zip_member_name,
     select_ckan_resource,
+    validate_source,
 )
 from utils import load_config_bundle
 
@@ -84,6 +86,30 @@ def test_build_request_uses_configured_ckan_metadata_and_default_year() -> None:
     assert request.report5_member == "2022_Reg_Veh_Report5_Class&Status&Descriptors.TXT"
 
 
+def test_lookup_request_rejects_invalid_override_before_metadata_io(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with pytest.raises(ValueError, match="source year"):
+        CkanLookupRequest(
+            base_url="https://data.ontario.ca",
+            package_id="vehicle-population-data",
+            year=-1,
+            selector={"format": "zip"},
+            cache_path=(tmp_path / "vehicle.zip").resolve(),
+        )
+
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+
+    def fail_fetch(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("metadata I/O should not run")
+
+    monkeypatch.setattr(
+        "fetching.vehicle_population.fetch_ckan_package_metadata", fail_fetch
+    )
+    with pytest.raises(ValueError, match="source year"):
+        build_request(bundle, year=-1)
+
+
 def test_ontario_rules_load_paths_and_extraction_parameters_from_config() -> None:
     rules = ontario_rules()
 
@@ -105,6 +131,26 @@ def test_read_vehicle_population_txt_and_zip_members(tmp_path: Path) -> None:
     assert resolve_zip_member_name(archive, report.name) == f"2022/{report.name}"
     assert from_txt.to_dict("records") == from_zip.to_dict("records")
     assert from_zip.loc[0, "FIT-ACTIVE"] == "10"
+
+
+def test_source_validation_reports_missing_required_member(tmp_path: Path) -> None:
+    archive = tmp_path / "vehicle_population.zip"
+    with ZipFile(archive, "w") as zip_file:
+        zip_file.writestr("report4.txt", "header\n")
+    request = OntarioVehiclePopulationRequest(
+        source_id="ontario_ministry_transport_vehicle_population",
+        year=2022,
+        package_id="vehicle-population-data",
+        resource_id="resource-2022",
+        resource_name="Vehicle population 2022",
+        url="https://example.test/vehicle-population-2022.zip",
+        cache_path=archive.resolve(),
+        report4_member="report4.txt",
+        report5_member="report5.txt",
+    )
+
+    with pytest.raises(FileNotFoundError, match="report5.txt"):
+        validate_source(request)
 
 
 def test_normalize_report4_assigns_epa_gvwr_bins_and_distribution() -> None:

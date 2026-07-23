@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import argparse
 import logging
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
+from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import pandas as pd
 import requests
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from utils import (
     ConfigBundle,
@@ -19,17 +20,44 @@ from utils import (
     load_harmonization_rules,
     resolve_input_path,
 )
+from validation.config_models import SourceComponent, SourceSpec
 
 
 SOURCE_ID = "ontario_ministry_transport_vehicle_population"
 ZIP_MEMBER_SEPARATOR = "\t"
 
 
-@dataclass(frozen=True)
-class OntarioVehiclePopulationRequest:
+class CkanLookupRequest(BaseModel):
+    """Validated request required before CKAN package metadata I/O."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    base_url: str
+    package_id: str
+    year: int
+    selector: dict[str, Any]
+    cache_path: Path
+
+    @model_validator(mode="after")
+    def validate_lookup(self) -> "CkanLookupRequest":
+        parsed = urlparse(self.base_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError(f"CKAN base URL is invalid: {self.base_url}")
+        if not self.package_id or self.year < 1900:
+            raise ValueError("CKAN package ID and source year are required")
+        if not self.cache_path.is_absolute() or self.cache_path.suffix.casefold() != ".zip":
+            raise ValueError(
+                f"Ontario vehicle cache path must be an absolute .zip path: {self.cache_path}"
+            )
+        return self
+
+
+class OntarioVehiclePopulationRequest(BaseModel):
     """One year-specific Ontario vehicle population archive request."""
 
-    source_id: str
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    source_id: Literal["ontario_ministry_transport_vehicle_population"]
     year: int
     package_id: str
     resource_id: str
@@ -39,15 +67,30 @@ class OntarioVehiclePopulationRequest:
     report4_member: str
     report5_member: str
 
+    @model_validator(mode="after")
+    def validate_request(self) -> "OntarioVehiclePopulationRequest":
+        parsed = urlparse(self.url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError(f"Ontario vehicle archive URL is invalid: {self.url}")
+        if self.year < 1900 or not self.package_id or not self.resource_id:
+            raise ValueError("Ontario vehicle request identifiers are incomplete")
+        if not self.cache_path.is_absolute() or self.cache_path.suffix.casefold() != ".zip":
+            raise ValueError(
+                f"Ontario vehicle cache path must be an absolute .zip path: {self.cache_path}"
+            )
+        if not self.report4_member or not self.report5_member:
+            raise ValueError("Ontario vehicle request requires Reports 4 and 5")
+        return self
+
 
 def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
     """Load Ontario vehicle population harmonization rules."""
     return load_harmonization_rules(bundle, "ontario_vehicle_population")
 
 
-def configured_year(source: dict[str, Any]) -> int:
+def configured_year(source: SourceSpec) -> int:
     """Return the default data year from a source registry entry."""
-    years = source.get("years", {})
+    years = source.adapter.get("years", {})
     if isinstance(years, dict):
         return int(years["default"])
     return int(years)
@@ -111,9 +154,11 @@ def select_ckan_resource(
     return candidates[0]
 
 
-def render_cache_path(bundle: ConfigBundle, source: dict[str, Any], *, year: int) -> Path:
+def render_cache_path(bundle: ConfigBundle, source: SourceSpec, *, year: int) -> Path:
     """Render the deterministic cache path for one Ontario vehicle population ZIP."""
-    template = source.get("cache_path_template", source.get("path_template"))
+    template = source.adapter.get(
+        "cache_path_template", source.adapter.get("path_template")
+    )
     if template is None:
         raise KeyError("Ontario vehicle population source missing cache_path_template")
     path = template.format(year=year)
@@ -125,10 +170,10 @@ def render_cache_path(bundle: ConfigBundle, source: dict[str, Any], *, year: int
     return resolve_input_path(bundle, "cache", path)
 
 
-def source_components(source: dict[str, Any]) -> dict[Any, Any]:
+def source_components(source: SourceSpec) -> dict[str | int, Any]:
     """Return Ontario vehicle population report components."""
-    components = source.get("reports", source.get("tables"))
-    if not isinstance(components, dict):
+    components = source.components
+    if not components:
         raise ValueError("Ontario vehicle population source must define reports 4 and 5")
     return components
 
@@ -142,24 +187,37 @@ def build_request(
     """Build a concrete archive request from sources.yaml and CKAN metadata."""
     source = bundle.sources["sources"][SOURCE_ID]
     selected_year = year or configured_year(source)
-    access = source["access"]
-    metadata = package_metadata or fetch_ckan_package_metadata(access["ckan_base_url"], access["package_id"])
+    access = source.adapter["access"]
+    lookup = CkanLookupRequest(
+        base_url=str(access["ckan_base_url"]),
+        package_id=str(access["package_id"]),
+        year=selected_year,
+        selector=access["resource_selector"],
+        cache_path=render_cache_path(bundle, source, year=selected_year),
+    )
+    metadata = package_metadata or fetch_ckan_package_metadata(
+        lookup.base_url, lookup.package_id
+    )
     resource = select_ckan_resource(metadata, year=selected_year, selector=access["resource_selector"])
     components = source_components(source)
     report4 = components.get(4, components.get("4"))
     report5 = components.get(5, components.get("5"))
-    if not isinstance(report4, dict) or not isinstance(report5, dict):
+    if not isinstance(report4, SourceComponent) or not isinstance(report5, SourceComponent):
         raise ValueError("Ontario vehicle population source must define reports 4 and 5")
     return OntarioVehiclePopulationRequest(
         source_id=SOURCE_ID,
         year=selected_year,
-        package_id=access["package_id"],
+        package_id=lookup.package_id,
         resource_id=str(resource.get("id", "")),
         resource_name=str(resource.get("name", "")),
         url=str(resource["url"]),
-        cache_path=render_cache_path(bundle, source, year=selected_year),
-        report4_member=report4["raw_member_template"].format(year=selected_year),
-        report5_member=report5["raw_member_template"].format(year=selected_year),
+        cache_path=lookup.cache_path,
+        report4_member=str(report4.adapter["raw_member_template"]).format(
+            year=selected_year
+        ),
+        report5_member=str(report5.adapter["raw_member_template"]).format(
+            year=selected_year
+        ),
     )
 
 
@@ -172,6 +230,24 @@ def fetch_to_cache(request: OntarioVehiclePopulationRequest, *, timeout: int = 1
     response.raise_for_status()
     request.cache_path.write_bytes(response.content)
     return "downloaded"
+
+
+def validate_source(request: OntarioVehiclePopulationRequest) -> tuple[str, str]:
+    """Validate the cached ZIP and required report members before harmonization."""
+    if not request.cache_path.is_file():
+        raise FileNotFoundError(
+            f"Ontario vehicle source {request.source_id}/{request.year} is missing: "
+            f"{request.cache_path}"
+        )
+    if request.cache_path.stat().st_size <= 0:
+        raise ValueError(
+            f"Ontario vehicle source {request.source_id}/{request.year} is empty: "
+            f"{request.cache_path}"
+        )
+    return (
+        resolve_zip_member_name(request.cache_path, request.report4_member),
+        resolve_zip_member_name(request.cache_path, request.report5_member),
+    )
 
 
 def read_report_from_zip(cache_path: Path, member_name: str) -> pd.DataFrame:
@@ -395,8 +471,7 @@ def fetch_and_normalize(
     else:
         raise FileNotFoundError(request.cache_path)
 
-    report4_member = resolve_zip_member_name(request.cache_path, request.report4_member)
-    report5_member = resolve_zip_member_name(request.cache_path, request.report5_member)
+    report4_member, report5_member = validate_source(request)
     report4_raw = read_report_from_zip(request.cache_path, report4_member)
     report5_raw = read_report_from_zip(request.cache_path, report5_member)
     report4_cleaned, report4_distribution = normalize_report4(

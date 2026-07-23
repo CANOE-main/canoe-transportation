@@ -1,24 +1,53 @@
-STATCAN_SCENARIO = config.get(
+from fetching.cer_enerfuture import configured_edition
+from utils import load_config_bundle, load_harmonization_rules
+
+
+SCENARIO_PATH = config.get(
     "scenario",
     "config/scenarios/legacy_reproduction.yaml",
 )
+SCENARIO = load_config_bundle(SCENARIO_PATH)
+CER_EDITION = str(configured_edition(SCENARIO))
+CER_RULES = load_harmonization_rules(SCENARIO, "cer_enerfuture")
+STATCAN_RULES = load_harmonization_rules(SCENARIO, "statcan_tables")
+INTERIM_ROOT = SCENARIO.paths.inputs.interim.rstrip("/\\")
+LOG_ROOT = SCENARIO.paths.outputs.logs.rstrip("/\\")
+SQLITE_ROOT = SCENARIO.paths.outputs.sqlite.rstrip("/\\")
+CER_INTERIM = (
+    f"{INTERIM_ROOT}/"
+    f"{CER_RULES['interim_subdir_template'].format(edition=CER_EDITION)}"
+)
+STATCAN_INTERIM = f"{INTERIM_ROOT}/{STATCAN_RULES['interim_subdir']}"
+DOCTOR_OUTPUT = f"{LOG_ROOT}/doctor.ok"
+TRANSPORT_DATABASE = f"{SQLITE_ROOT}/{SCENARIO.scenario.outputs.sqlite_name}"
+TRANSPORT_VALIDATION = SCENARIO.scenario.outputs.validation_report
+CACHE_FLAG = "" if SCENARIO.scenario.switches.download_sources else "--no-download"
 
 
 rule all:
     input:
-        "outputs/logs/doctor.ok",
-        "inputs/1_interim/fetched_statcan_transport/manifest.csv",
-        "inputs/1_interim/fetched_statcan_transport/warnings.log",
+        DOCTOR_OUTPUT,
+        f"{STATCAN_INTERIM}/manifest.csv",
+        f"{STATCAN_INTERIM}/warnings.log",
+        f"{CER_INTERIM}/manifest.csv",
+        f"{CER_INTERIM}/warnings.log",
+        TRANSPORT_DATABASE,
+        TRANSPORT_VALIDATION,
 
 
 rule doctor_smoke:
     output:
-        "outputs/logs/doctor.ok"
+        DOCTOR_OUTPUT
+    params:
+        scenario=SCENARIO_PATH,
     run:
         import subprocess
         from pathlib import Path
 
-        subprocess.run(["uv", "run", "python", "scripts/doctor.py"], check=True)
+        subprocess.run(
+            ["uv", "run", "python", "scripts/doctor.py", "--scenario", params.scenario],
+            check=True,
+        )
         output_path = Path(output[0])
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text("ok\n", encoding="utf-8")
@@ -26,9 +55,41 @@ rule doctor_smoke:
 
 rule statcan_transport_tables:
     output:
-        manifest="inputs/1_interim/fetched_statcan_transport/manifest.csv",
-        warnings="inputs/1_interim/fetched_statcan_transport/warnings.log",
+        manifest=f"{STATCAN_INTERIM}/manifest.csv",
+        warnings=f"{STATCAN_INTERIM}/warnings.log",
     params:
-        scenario=STATCAN_SCENARIO,
+        scenario=SCENARIO_PATH,
+        cache_flag=CACHE_FLAG,
     shell:
-        "uv run python -m fetching.statcan_tables --scenario {params.scenario}"
+        "uv run python -m fetching.statcan_tables "
+        "--scenario {params.scenario:q} {params.cache_flag}"
+
+
+rule cer_enerfuture:
+    output:
+        manifest=f"{CER_INTERIM}/manifest.csv",
+        warnings=f"{CER_INTERIM}/warnings.log",
+    params:
+        scenario=SCENARIO_PATH,
+        edition=CER_EDITION,
+        cache_flag=CACHE_FLAG,
+    shell:
+        "uv run python -m fetching.cer_enerfuture "
+        "--scenario {params.scenario:q} --edition {params.edition:q} "
+        "{params.cache_flag}"
+
+
+rule transport_database:
+    input:
+        doctor=DOCTOR_OUTPUT,
+        paths="config/paths.yaml",
+        sources="config/sources.yaml",
+        scenario=SCENARIO_PATH,
+        technology="inputs/0_canoe_template/technology.csv",
+        commodity="inputs/0_canoe_template/commodity.csv",
+    output:
+        database=TRANSPORT_DATABASE,
+        validation=TRANSPORT_VALIDATION,
+    shell:
+        "uv run python src/build_transport.py "
+        "--scenario {input.scenario:q} --overwrite"

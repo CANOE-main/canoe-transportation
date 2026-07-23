@@ -8,9 +8,11 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "canoe-schema",
     "numpy>=2.4.4",
     "openpyxl>=3.1.5",
     "pandas>=3.0.2",
+    "pydantic>=2.13,<3",
     "pyyaml>=6.0.3",
     "requests>=2.33.1",
     "snakemake>=9.19.0",
@@ -24,6 +26,9 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = ["fetching", "parameterization", "utils", "validation"]
+
+[tool.uv.sources]
+canoe-schema = { git = "https://github.com/CANOE-main/canoe-schema.git", rev = "32740578f62fe9cfc760034be0201b4dcaf7c653" }
 
 [dependency-groups]
 dev = [
