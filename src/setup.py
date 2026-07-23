@@ -15,7 +15,9 @@ from validation.config_smoke import run_smoke_validation
 def write_status(status: dict[str, Any], scenario_path: str | Path) -> Path:
     """Write setup status to the scenario-configured log path."""
     bundle = load_config_bundle(scenario_path)
-    output_path = resolve_repo_path(bundle.repo_root, bundle.scenario["outputs"]["setup_log"])
+    output_path = resolve_repo_path(
+        bundle.repo_root, bundle.scenario.outputs.setup_log
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(status, indent=2) + "\n", encoding="utf-8")
     return output_path

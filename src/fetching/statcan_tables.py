@@ -7,14 +7,15 @@ import json
 import logging
 import os
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
 import pandas as pd
 import requests
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from utils import (
     ConfigBundle,
@@ -23,6 +24,7 @@ from utils import (
     load_harmonization_rules,
     resolve_input_path,
 )
+from validation.config_models import SourceSpec
 
 
 SOURCE_ID = "statcan_transport_tables"
@@ -32,9 +34,10 @@ class StatCanSourceError(ValueError):
     """Raised when a configured StatCan source contract is unavailable or changed."""
 
 
-@dataclass(frozen=True)
-class StatCanTableRequest:
+class StatCanTableRequest(BaseModel):
     """Resolved API/cache/output contract for one configured StatCan table."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     table_id: str
     product_id: int
@@ -47,6 +50,35 @@ class StatCanTableRequest:
     normalizer: str
     table_rules: dict[str, Any]
 
+    @model_validator(mode="after")
+    def validate_request(self) -> "StatCanTableRequest":
+        for label, value in (
+            ("metadata", self.metadata_url),
+            ("download", self.download_api_url),
+        ):
+            parsed = urlparse(value)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ValueError(f"StatCan {label} URL is invalid: {value}")
+        if not self.table_id or self.product_id <= 0 or not self.title:
+            raise ValueError("StatCan table identifiers and title are required")
+        if (
+            not self.archive_cache_path.is_absolute()
+            or self.archive_cache_path.suffix.casefold() != ".zip"
+        ):
+            raise ValueError(
+                f"StatCan archive cache must be an absolute .zip path: "
+                f"{self.archive_cache_path}"
+            )
+        if (
+            not self.metadata_cache_path.is_absolute()
+            or self.metadata_cache_path.suffix.casefold() != ".json"
+        ):
+            raise ValueError(
+                f"StatCan metadata cache must be an absolute .json path: "
+                f"{self.metadata_cache_path}"
+            )
+        return self
+
 
 def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
     """Load StatCan harmonization and selector rules."""
@@ -55,7 +87,11 @@ def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
 
 def scenario_regions(bundle: ConfigBundle, requested: list[str] | None = None) -> list[str]:
     """Resolve and validate one or more scenario region codes."""
-    regions = requested if requested is not None else bundle.scenario.get("regions", [])
+    regions = (
+        requested
+        if requested is not None
+        else list(bundle.scenario.geography.regions)
+    )
     if not isinstance(regions, list) or not regions:
         raise StatCanSourceError("Scenario regions must be a non-empty list")
     configured = module_rules(bundle)["geography"]
@@ -68,9 +104,9 @@ def scenario_regions(bundle: ConfigBundle, requested: list[str] | None = None) -
 def build_requests(bundle: ConfigBundle) -> list[StatCanTableRequest]:
     """Build the five explicit table requests from source and rule configuration."""
     source = bundle.sources["sources"].get(SOURCE_ID)
-    if not isinstance(source, dict):
+    if not isinstance(source, SourceSpec):
         raise StatCanSourceError(f"sources.yaml missing {SOURCE_ID}")
-    tables = source.get("tables")
+    tables = source.components
     rules = module_rules(bundle)
     rule_tables = rules.get("tables")
     if not isinstance(tables, dict) or not isinstance(rule_tables, dict):
@@ -81,17 +117,19 @@ def build_requests(bundle: ConfigBundle) -> list[StatCanTableRequest]:
             f"sources={sorted(tables)}, rules={sorted(rule_tables)}"
         )
 
-    access = source["access"]
+    access = source.adapter["access"]
     language = str(access["language"])
     requests_to_make: list[StatCanTableRequest] = []
     for table_id, table_meta in tables.items():
-        product_id = int(table_meta["product_id"])
+        product_id = int(table_meta.adapter["product_id"])
         table_rules = rule_tables[table_id]
+        if isinstance(table_meta.label, list):
+            raise StatCanSourceError(f"StatCan table {table_id} label must be one title")
         requests_to_make.append(
             StatCanTableRequest(
                 table_id=table_id,
                 product_id=product_id,
-                title=str(table_meta["title"]),
+                title=table_meta.label,
                 metadata_url=str(access["cube_metadata_url"]),
                 download_api_url=str(access["full_table_url_template"]).format(
                     product_id=product_id,
@@ -100,12 +138,14 @@ def build_requests(bundle: ConfigBundle) -> list[StatCanTableRequest]:
                 archive_cache_path=resolve_input_path(
                     bundle,
                     "cache",
-                    str(source["cache_path_template"]).format(product_id=product_id),
+                    str(source.adapter["cache_path_template"]).format(
+                        product_id=product_id
+                    ),
                 ),
                 metadata_cache_path=resolve_input_path(
                     bundle,
                     "cache",
-                    str(source["metadata_cache_path_template"]).format(
+                    str(source.adapter["metadata_cache_path_template"]).format(
                         product_id=product_id
                     ),
                 ),
@@ -313,6 +353,20 @@ def main_csv_member(request: StatCanTableRequest) -> str:
             f"{request.archive_cache_path}, found {matches}"
         )
     return matches[0]
+
+
+def validate_source(request: StatCanTableRequest) -> str:
+    """Validate both cached StatCan artifacts before table harmonization."""
+    context = f"{SOURCE_ID}/{request.table_id}"
+    for label, path in (
+        ("metadata", request.metadata_cache_path),
+        ("archive", request.archive_cache_path),
+    ):
+        if not path.is_file():
+            raise FileNotFoundError(f"StatCan {context} {label} cache is missing: {path}")
+        if path.stat().st_size <= 0:
+            raise StatCanSourceError(f"StatCan {context} {label} cache is empty: {path}")
+    return main_csv_member(request)
 
 
 def _freight_region_frames(
@@ -726,6 +780,7 @@ def fetch_and_normalize(
             download=download,
             session=session,
         )
+        validate_source(request)
         metadata = read_cached_metadata(request)
         validate_metadata_contract(metadata, request)
         selected, member, input_rows = read_selected_table(

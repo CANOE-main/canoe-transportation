@@ -1,6 +1,8 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
+from pydantic import ValidationError
 
 from fetching.nrcan_ceud import (
     CeudTableRequest,
@@ -10,6 +12,7 @@ from fetching.nrcan_ceud import (
     module_rules,
     normalize_ceud_dataframe,
     render_ceud_url,
+    validate_source,
 )
 from utils import load_config_bundle
 
@@ -40,6 +43,33 @@ def test_iter_table_requests_uses_raw_cache_names() -> None:
     assert requests
     assert requests[0].cache_path.parent == REPO_ROOT / "inputs" / "0_cache" / "nrcan_ceud_transport"
     assert requests[0].cache_path.name.startswith("2021_tran_on_e_")
+
+
+def test_request_validation_rejects_before_file_or_network_io(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError, match="URL"):
+        CeudTableRequest(
+            source_id="nrcan_ceud_transport_provincial",
+            region="on",
+            output_region="ON",
+            year=2021,
+            table_id=20,
+            table_meta={"label": "Cars", "short_name": "cars"},
+            url="not-a-url",
+            cache_path=(tmp_path / "table.xls").resolve(),
+        )
+
+    valid = CeudTableRequest(
+        source_id="nrcan_ceud_transport_provincial",
+        region="on",
+        output_region="ON",
+        year=2021,
+        table_id=20,
+        table_meta={"label": "Cars", "short_name": "cars"},
+        url="https://example.test/table.xls",
+        cache_path=(tmp_path / "missing.xls").resolve(),
+    )
+    with pytest.raises(FileNotFoundError, match="nrcan_ceud_transport_provincial/20"):
+        validate_source(valid)
 
 
 def test_nrcan_rules_load_paths_and_extraction_parameters_from_config() -> None:

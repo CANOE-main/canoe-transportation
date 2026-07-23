@@ -12,6 +12,7 @@ from utils import (
     resolve_repo_path,
     validate_config_bundle,
 )
+from validation.schema_contract import schema_evidence
 
 
 def run_smoke_validation(
@@ -32,10 +33,14 @@ def run_smoke_validation(
         }
 
     created_directories = create_configured_directories(bundle)
-    schema_path = resolve_repo_path(bundle.repo_root, bundle.paths["inputs"]["schema"])
-    reference_sqlite = resolve_repo_path(bundle.repo_root, bundle.scenario["validation"]["reference_sqlite"])
-    active_sources = bundle.scenario["active_sources"]
-    sources = bundle.sources["sources"]
+    reference_value = bundle.scenario.validation.reference_sqlite
+    reference_sqlite = (
+        resolve_repo_path(bundle.repo_root, reference_value)
+        if reference_value is not None
+        else None
+    )
+    active_sources = bundle.scenario.sources.active
+    sources = bundle.sources.sources
     placeholder_sources = [
         source_name
         for source_name in active_sources
@@ -45,21 +50,23 @@ def run_smoke_validation(
     return {
         "ok": True,
         "timestamp_utc": now.isoformat(),
-        "scenario": bundle.scenario["scenario"]["name"],
-        "model_years": bundle.scenario["model_years"],
+        "scenario": bundle.scenario.scenario.name,
+        "periods": bundle.scenario.periods.model_dump(mode="json"),
+        "currency": bundle.scenario.currency.model_dump(mode="json"),
+        "economics": bundle.scenario.economics.model_dump(mode="json"),
         "scenario_path": str(bundle.scenario_path),
         "paths_path": str(bundle.paths_path),
         "sources_path": str(bundle.sources_path),
         "created_directories": [str(path) for path in created_directories],
-        "schema_exists": schema_path.exists(),
-        "schema_path": str(schema_path),
-        "reference_sqlite_exists": reference_sqlite.exists(),
-        "reference_sqlite": str(reference_sqlite),
+        "packaged_schema": schema_evidence(),
+        "reference_sqlite_exists": (
+            reference_sqlite.exists() if reference_sqlite is not None else None
+        ),
+        "reference_sqlite": (
+            str(reference_sqlite) if reference_sqlite is not None else None
+        ),
         "active_sources": active_sources,
         "placeholder_sources": placeholder_sources,
-        "non_goals": {
-            "download_sources": False,
-            "transform_parameters": False,
-            "compile_sqlite": False,
-        },
+        "switches": bundle.scenario.switches.model_dump(mode="json"),
+        "planned": bundle.scenario.planned.model_dump(mode="json"),
     }
