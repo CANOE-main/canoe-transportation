@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
 import math
 import re
@@ -21,6 +22,7 @@ from validation.config_models import SourceComponent, SourceSpec
 
 SOURCE_PROVINCIAL = "nrcan_ceud_transport_provincial"
 SOURCE_NATIONAL = "nrcan_ceud_transport_national"
+SOURCE_RATINGS = "nrcan_fuel_consumption_ratings"
 
 
 class CeudTableRequest(BaseModel):
@@ -54,9 +56,94 @@ class CeudTableRequest(BaseModel):
         return self
 
 
+class FuelConsumptionRatingRequest(BaseModel):
+    """One pinned English Fuel Consumption Ratings CSV request."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    source_id: Literal["nrcan_fuel_consumption_ratings"]
+    component_key: str
+    component_meta: SourceComponent
+    resource_id: str
+    resource_title: str
+    url: str
+    cache_path: Path
+    expected_md5: str
+    expected_bytes: int
+    expected_model_years: tuple[int, ...]
+    required_columns: tuple[str, ...]
+    required_non_null_columns: tuple[str, ...]
+    output_file: str
+
+    @model_validator(mode="after")
+    def validate_request(self) -> "FuelConsumptionRatingRequest":
+        parsed = urlparse(self.url)
+        if (
+            parsed.scheme != "https"
+            or parsed.hostname != "open.canada.ca"
+            or not parsed.path.endswith(".csv")
+        ):
+            raise ValueError(
+                "Fuel Consumption Ratings URL must be an official HTTPS CSV URL"
+            )
+        if not re.fullmatch(
+            r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}",
+            self.resource_id,
+        ):
+            raise ValueError(
+                f"Fuel Consumption Ratings resource_id is invalid: {self.resource_id}"
+            )
+        if not re.fullmatch(r"[0-9a-f]{32}", self.expected_md5):
+            raise ValueError("Fuel Consumption Ratings expected_md5 must be lowercase MD5")
+        if self.expected_bytes <= 0:
+            raise ValueError("Fuel Consumption Ratings expected_bytes must be positive")
+        if (
+            not self.cache_path.is_absolute()
+            or self.cache_path.suffix.casefold() != ".csv"
+        ):
+            raise ValueError(
+                "Fuel Consumption Ratings cache path must be an absolute .csv path: "
+                f"{self.cache_path}"
+            )
+        if (
+            Path(self.output_file).name != self.output_file
+            or Path(self.output_file).suffix.casefold() != ".csv"
+        ):
+            raise ValueError(
+                "Fuel Consumption Ratings output_file must be a CSV filename"
+            )
+        if (
+            not self.expected_model_years
+            or list(self.expected_model_years)
+            != sorted(set(self.expected_model_years))
+            or min(self.expected_model_years) < 1900
+        ):
+            raise ValueError(
+                "Fuel Consumption Ratings model years must be sorted and unique"
+            )
+        if not self.required_columns or not self.required_non_null_columns:
+            raise ValueError(
+                "Fuel Consumption Ratings physical column contracts cannot be empty"
+            )
+        missing_non_null = sorted(
+            set(self.required_non_null_columns) - set(self.required_columns)
+        )
+        if missing_non_null:
+            raise ValueError(
+                "Fuel Consumption Ratings non-null columns are not required columns: "
+                f"{missing_non_null}"
+            )
+        return self
+
+
 def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
     """Load CEUD harmonization rules."""
     return load_harmonization_rules(bundle, "nrcan_ceud")
+
+
+def ratings_rules(bundle: ConfigBundle) -> dict[str, Any]:
+    """Load Fuel Consumption Ratings acquisition and output rules."""
+    return load_harmonization_rules(bundle, "nrcan_fuel_consumption_ratings")
 
 
 def clean_label(value: object, rules: dict[str, Any]) -> str | None:
@@ -130,6 +217,67 @@ def render_cache_path(
             path = normalized_path.removeprefix(cache_root)
             break
     return resolve_input_path(bundle, "cache", path)
+
+
+def render_ratings_cache_path(
+    bundle: ConfigBundle,
+    component: SourceComponent,
+) -> Path:
+    """Resolve one pinned Fuel Consumption Ratings cache path."""
+    configured_path = str(component.adapter["cache_path"])
+    normalized_path = configured_path.replace("\\", "/")
+    for cache_root in ("inputs/cache/", "inputs/0_cache/"):
+        if normalized_path.startswith(cache_root):
+            configured_path = normalized_path.removeprefix(cache_root)
+            break
+    return resolve_input_path(bundle, "cache", configured_path)
+
+
+def iter_rating_requests(bundle: ConfigBundle) -> list[FuelConsumptionRatingRequest]:
+    """Build exact English rating-resource requests from the source registry."""
+    source = bundle.sources["sources"][SOURCE_RATINGS]
+    rules = ratings_rules(bundle)
+    outputs = rules["outputs"]
+    component_keys = list(source.components)
+    missing_outputs = sorted(set(component_keys) - set(outputs))
+    unexpected_outputs = sorted(set(outputs) - set(component_keys))
+    if missing_outputs or unexpected_outputs:
+        raise ValueError(
+            "Fuel Consumption Ratings output mapping does not match source components: "
+            f"missing={missing_outputs}, unexpected={unexpected_outputs}"
+        )
+
+    requests_to_fetch: list[FuelConsumptionRatingRequest] = []
+    resource_ids: list[str] = []
+    for component_key, component in source.components.items():
+        adapter = component.adapter
+        request = FuelConsumptionRatingRequest(
+            source_id=SOURCE_RATINGS,
+            component_key=str(component_key),
+            component_meta=component,
+            resource_id=str(adapter["resource_id"]),
+            resource_title=str(component.label),
+            url=str(adapter["url"]),
+            cache_path=render_ratings_cache_path(bundle, component),
+            expected_md5=str(adapter["expected_md5"]),
+            expected_bytes=int(adapter["expected_bytes"]),
+            expected_model_years=tuple(
+                int(year) for year in adapter["expected_model_years"]
+            ),
+            required_columns=tuple(
+                str(column) for column in adapter["required_columns"]
+            ),
+            required_non_null_columns=tuple(
+                str(column) for column in adapter["required_non_null_columns"]
+            ),
+            output_file=str(outputs[component_key]),
+        )
+        requests_to_fetch.append(request)
+        resource_ids.append(request.resource_id)
+
+    if len(resource_ids) != len(set(resource_ids)):
+        raise ValueError("Fuel Consumption Ratings resource IDs must be unique")
+    return requests_to_fetch
 
 
 def configured_year(source: SourceSpec) -> int:
@@ -239,6 +387,163 @@ def fetch_to_cache(request: CeudTableRequest, *, timeout: int = 60) -> str:
     response.raise_for_status()
     request.cache_path.write_bytes(response.content)
     return "downloaded"
+
+
+def bytes_md5(content: bytes) -> str:
+    """Return a lowercase MD5 used by the Open Government resource registry."""
+    return hashlib.md5(content, usedforsecurity=False).hexdigest()
+
+
+def file_md5(path: Path) -> str:
+    """Hash one cached file without loading it all into memory."""
+    digest = hashlib.md5(usedforsecurity=False)
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def fetch_rating_to_cache(
+    request: FuelConsumptionRatingRequest,
+    *,
+    timeout: int = 60,
+) -> str:
+    """Atomically download one pinned Ratings CSV unless already cached."""
+    if request.cache_path.exists():
+        return "cached"
+
+    request.cache_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = request.cache_path.with_suffix(f"{request.cache_path.suffix}.part")
+    if temporary.exists():
+        temporary.unlink()
+    try:
+        response = requests.get(request.url, timeout=timeout)
+        response.raise_for_status()
+        content = response.content
+        if len(content) != request.expected_bytes:
+            raise ValueError(
+                f"{request.component_key} download has {len(content)} bytes; "
+                f"expected {request.expected_bytes}"
+            )
+        actual_md5 = bytes_md5(content)
+        if actual_md5 != request.expected_md5:
+            raise ValueError(
+                f"{request.component_key} download MD5 is {actual_md5}; "
+                f"expected {request.expected_md5}"
+            )
+        temporary.write_bytes(content)
+        temporary.replace(request.cache_path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    return "downloaded"
+
+
+def validate_rating_cache(request: FuelConsumptionRatingRequest) -> tuple[int, str]:
+    """Validate the byte-level identity of one pinned cached CSV."""
+    context = f"{request.source_id}/{request.component_key}"
+    if not request.cache_path.is_file():
+        raise FileNotFoundError(
+            f"Fuel Consumption Ratings source {context} is missing: "
+            f"{request.cache_path}"
+        )
+    actual_bytes = request.cache_path.stat().st_size
+    if actual_bytes != request.expected_bytes:
+        raise ValueError(
+            f"Fuel Consumption Ratings source {context} has {actual_bytes} bytes; "
+            f"expected {request.expected_bytes}"
+        )
+    actual_md5 = file_md5(request.cache_path)
+    if actual_md5 != request.expected_md5:
+        raise ValueError(
+            f"Fuel Consumption Ratings source {context} MD5 is {actual_md5}; "
+            f"expected {request.expected_md5}"
+        )
+    return actual_bytes, actual_md5
+
+
+def read_rating_csv(
+    request: FuelConsumptionRatingRequest,
+    *,
+    encoding_candidates: list[str],
+) -> tuple[pd.DataFrame, str]:
+    """Read a pinned Ratings CSV with the configured deterministic fallback order."""
+    attempted: list[str] = []
+    for encoding in encoding_candidates:
+        attempted.append(str(encoding))
+        try:
+            return pd.read_csv(request.cache_path, encoding=encoding), encoding
+        except UnicodeDecodeError:
+            continue
+    raise UnicodeError(
+        f"Could not decode {request.component_key} with encodings: "
+        f"{', '.join(attempted)}"
+    )
+
+
+def normalize_rating_dataframe(
+    raw: pd.DataFrame,
+    request: FuelConsumptionRatingRequest,
+) -> pd.DataFrame:
+    """Validate and source-normalize one Fuel Consumption Ratings resource."""
+    if raw.empty:
+        raise ValueError(f"{request.component_key} contains no data rows")
+
+    normalized = raw.copy()
+    normalized.columns = [str(column).strip() for column in normalized.columns]
+    duplicate_columns = sorted(
+        {
+            column
+            for column in normalized.columns
+            if list(normalized.columns).count(column) > 1
+        }
+    )
+    if duplicate_columns:
+        raise ValueError(
+            f"{request.component_key} has duplicate columns after trimming: "
+            f"{duplicate_columns}"
+        )
+
+    missing_columns = sorted(
+        set(request.required_columns) - set(normalized.columns)
+    )
+    if missing_columns:
+        raise ValueError(
+            f"{request.component_key} is missing columns: {missing_columns}"
+        )
+
+    model_years = pd.to_numeric(normalized["Model year"], errors="coerce")
+    if model_years.isna().any() or (model_years % 1 != 0).any():
+        raise ValueError(f"{request.component_key} has invalid Model year values")
+    normalized["Model year"] = model_years.astype(int)
+    actual_model_years = tuple(
+        sorted(normalized["Model year"].drop_duplicates().tolist())
+    )
+    if actual_model_years != request.expected_model_years:
+        raise ValueError(
+            f"{request.component_key} covers model years {actual_model_years}; "
+            f"expected {request.expected_model_years}"
+        )
+
+    for column in request.required_non_null_columns:
+        blank = (
+            normalized[column].isna()
+            | normalized[column].fillna("").astype(str).str.strip().eq("")
+        )
+        if blank.any():
+            raise ValueError(
+                f"{request.component_key} has {int(blank.sum())} blank {column} values"
+            )
+
+    normalized.insert(0, "source_id", request.source_id)
+    normalized.insert(1, "component", request.component_key)
+    normalized.insert(2, "resource_id", request.resource_id)
+    normalized.insert(3, "resource_title", request.resource_title)
+    normalized.insert(4, "resource_version", request.component_meta.version or "")
+    normalized.insert(5, "resource_url", request.url)
+    normalized.insert(6, "source_row", range(2, len(normalized) + 2))
+    normalized.insert(7, "cached_file", str(request.cache_path))
+    return normalized
 
 
 def validate_source(request: CeudTableRequest, raw: pd.DataFrame | None = None) -> None:
@@ -481,12 +786,119 @@ def fetch_and_normalize(
     return output_dir
 
 
+def write_dataframe_atomic(frame: pd.DataFrame, path: Path) -> None:
+    """Write one CSV and atomically publish it at the configured path."""
+    temporary = path.with_suffix(f"{path.suffix}.tmp")
+    if temporary.exists():
+        temporary.unlink()
+    try:
+        frame.to_csv(temporary, index=False)
+        temporary.replace(path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def write_rating_outputs(
+    *,
+    frames: dict[str, pd.DataFrame],
+    manifest_rows: list[dict[str, Any]],
+    warnings: list[str],
+    output_dir: Path,
+    rules: dict[str, Any],
+) -> None:
+    """Atomically publish Ratings interim tables, manifest, and warning log."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for output_file, frame in frames.items():
+        write_dataframe_atomic(frame, output_dir / output_file)
+    write_dataframe_atomic(
+        pd.DataFrame(manifest_rows),
+        output_dir / str(rules["manifest_file"]),
+    )
+    warnings_path = output_dir / str(rules["warnings_file"])
+    warnings_path.write_text(
+        "\n".join(warnings) + ("\n" if warnings else ""),
+        encoding="utf-8",
+    )
+
+
+def fetch_and_normalize_ratings(
+    scenario_path: str | Path,
+    *,
+    download: bool = True,
+) -> Path:
+    """Fetch/cache pinned Ratings resources and write source-normalized CSVs."""
+    bundle = load_config_bundle(scenario_path)
+    rules = ratings_rules(bundle)
+    output_dir = resolve_input_path(bundle, "interim", rules["interim_subdir"])
+    encoding_candidates = [
+        str(encoding) for encoding in rules["encoding_candidates"]
+    ]
+    frames: dict[str, pd.DataFrame] = {}
+    manifest_rows: list[dict[str, Any]] = []
+    warnings: list[str] = []
+
+    for request in iter_rating_requests(bundle):
+        if download:
+            cache_status = fetch_rating_to_cache(request)
+        elif request.cache_path.exists():
+            cache_status = "cached"
+        else:
+            raise FileNotFoundError(
+                f"Fuel Consumption Ratings source {request.component_key} is missing "
+                f"during --no-download execution: {request.cache_path}"
+            )
+
+        byte_count, actual_md5 = validate_rating_cache(request)
+        raw, encoding = read_rating_csv(
+            request,
+            encoding_candidates=encoding_candidates,
+        )
+        normalized = normalize_rating_dataframe(raw, request)
+        frames[request.output_file] = normalized
+        model_years = normalized["Model year"]
+        manifest_rows.append(
+            {
+                "source_id": request.source_id,
+                "component": request.component_key,
+                "short_name": request.component_meta.short_name,
+                "resource_id": request.resource_id,
+                "resource_title": request.resource_title,
+                "resource_version": request.component_meta.version or "",
+                "url": request.url,
+                "cached_file": str(request.cache_path),
+                "cache_status": cache_status,
+                "encoding": encoding,
+                "md5": actual_md5,
+                "bytes": byte_count,
+                "row_count": len(normalized),
+                "model_year_min": int(model_years.min()),
+                "model_year_max": int(model_years.max()),
+                "output_file": request.output_file,
+            }
+        )
+
+    write_rating_outputs(
+        frames=frames,
+        manifest_rows=manifest_rows,
+        warnings=warnings,
+        output_dir=output_dir,
+        rules=rules,
+    )
+    return output_dir
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", default="config/scenarios/legacy_reproduction.yaml")
     parser.add_argument("--year", type=int, default=None)
     parser.add_argument("--regions", nargs="*", default=None)
     parser.add_argument("--skip-national", action="store_true")
+    parser.add_argument(
+        "--ratings-only",
+        action="store_true",
+        help="Fetch the pinned Fuel Consumption Ratings resources instead of CEUD tables.",
+    )
     parser.add_argument("--no-download", action="store_true")
     return parser.parse_args()
 
@@ -494,14 +906,24 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
-    output_dir = fetch_and_normalize(
-        args.scenario,
-        regions=args.regions,
-        include_national=not args.skip_national,
-        year=args.year,
-        download=not args.no_download,
-    )
-    logging.info("Wrote NRCan CEUD interim outputs to %s", output_dir)
+    if args.ratings_only:
+        output_dir = fetch_and_normalize_ratings(
+            args.scenario,
+            download=not args.no_download,
+        )
+        logging.info(
+            "Wrote NRCan Fuel Consumption Ratings interim outputs to %s",
+            output_dir,
+        )
+    else:
+        output_dir = fetch_and_normalize(
+            args.scenario,
+            regions=args.regions,
+            include_national=not args.skip_national,
+            year=args.year,
+            download=not args.no_download,
+        )
+        logging.info("Wrote NRCan CEUD interim outputs to %s", output_dir)
 
 
 if __name__ == "__main__":

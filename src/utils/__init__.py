@@ -136,6 +136,7 @@ def configured_directories(bundle: ConfigBundle) -> list[Path]:
     keys = (
         bundle.paths.inputs.cache,
         bundle.paths.inputs.external,
+        bundle.paths.inputs.manual,
         bundle.paths.inputs.interim,
         bundle.paths.inputs.processed,
         bundle.paths.outputs.sqlite,

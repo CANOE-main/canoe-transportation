@@ -4,7 +4,7 @@
 
 This repository is the v2.0 refactor of the CANOE transportation backend. It replaces
 the legacy Excel-centred compiler with a reproducible, auditable Python pipeline that
-builds Temoa/CANOE-ready SQLite databases for Canadian transport-sector modelling.
+builds Temoa/CANOE-ready SQLite databases for Canadian multi-sector energy system modelling.
 
 Baseline reproduction is the first priority. Reproduce legacy-equivalent outputs within
 documented tolerances and explain or accept parity gaps before adding new assumptions,
@@ -38,6 +38,23 @@ registered external-model outputs, `inputs/1_interim/` for normalized audit tabl
 Backend-owned structure under `inputs/0_canoe_template/` is not an external source and
 must not receive external citations, DQ scores, or `Txx` identifiers.
 
+## Context retrieval and presentation
+
+`README.md` is a human-facing presentation layer and normally is unnecessary context
+for implementation tasks. It is the repository's sole intentional redundancy
+exception: it may mirror selected backend architecture and ETL flowcharts from the
+structural references to showcase the project. Do not remove or condense that
+duplication merely to deduplicate context; change it only when the user explicitly
+requests a README redesign.
+
+Retrieve `docs/backend_architecture.md` only when a task affects repository structure,
+module ownership, orchestration seams, or artifact placement. Retrieve only the affected
+parameter family or direct shared dependency from `docs/etl_flowcharts.md`. Read only
+the relevant sections. Before implementing planned documentation, verify it against
+current code, config, tests, schemas, and validation evidence.
+
+When you need to search external library/API docs, use Context7.
+
 ## Data, provenance, and parity
 
 - Trace external-data parameter rows to a registered source and transformation.
@@ -52,14 +69,15 @@ must not receive external citations, DQ scores, or `Txx` identifiers.
   reference SQLite, document differences, and isolate intentional changes in named
   scenarios or commits.
 
+Across ETL modules, keep acquisition, physical validation, parsing, harmonization, and
+writing separately testable. Validate each physical artifact before harmonization,
+preserve source-native values needed for audit, make reruns safe, and prohibit hidden
+network access during declared offline or `--no-download` execution.
+
 Treat `legacy_backend/` as read-mostly validation evidence. Inspect only the artifact
 needed for the parity question and do not edit legacy files unless cleanup or migration
 is explicitly requested. Large legacy binaries and databases are evidence, not active
 development targets.
-
-Parameter-specific lineage, equations, and planned source relationships live in
-`docs/etl_flowcharts.md`; retrieve only the section relevant to the parameter family
-being changed.
 
 ## Validation interfaces
 
@@ -67,7 +85,7 @@ Use Pydantic where runtime trust is required:
 
 - At source and config interfaces, type stable shared fields and implemented adapter
   requests. Keep source-native extensions with their adapters, validate requests before
-  I/O, and validate physical artifacts before harmonization.
+  I/O, and keep validation close to the interface it protects.
 - At the SQLite seam, construct the relevant `canoe_schema.v4_0` row model immediately
   before parameterized insertion, register provenance first, reject invalid or
   conflicting rows, and finish with focused provenance, foreign-key, and integrity

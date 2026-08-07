@@ -92,7 +92,13 @@ def run_doctor(
     root = (repo_root or find_repo_root()).resolve()
     prepare_import_path(root)
 
-    from utils import load_config_bundle, resolve_repo_path, validate_config_bundle
+    from parameterization.manual_parameters import validate_manual_registry
+    from utils import (
+        load_config_bundle,
+        load_harmonization_rules,
+        resolve_repo_path,
+        validate_config_bundle,
+    )
     from validation.schema_contract import schema_evidence
 
     errors: list[str] = []
@@ -124,6 +130,18 @@ def run_doctor(
             configured_generated_directories(bundle),
             create_dirs=create_dirs,
         )
+        manual_rules = load_harmonization_rules(bundle, "manual_parameters")
+        manual_registry, manual_frames = validate_manual_registry(
+            bundle,
+            source_column=str(manual_rules["source_column"]),
+            notes_column=str(manual_rules["notes_column"]),
+        )
+        checks["manual_parameters"] = {
+            "files": sorted(manual_frames),
+            "file_count": len(manual_frames),
+            "component_count": len(manual_registry),
+            "selected_cited_rows": int(manual_registry["selected_rows"].sum()),
+        }
     except Exception as exc:
         errors.append(f"config/path check failed: {exc}")
 

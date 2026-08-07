@@ -18,7 +18,7 @@ Create or update a plan when a task:
 Skip a plan for a small isolated edit unless the user requests one.
 
 Store plans under `.agents/plans/` using the next numbered descriptive name, for example
-`011_context_ownership_restructure.md`. Completed plans are audit trails, not permanent
+`NNN_descriptive_task.md`. Completed plans are audit trails, not permanent
 architecture references.
 
 ## Research and task boundary
@@ -44,6 +44,21 @@ Identify the applicable contracts:
 
 Use only the contracts relevant to the task. Do not invent missing assumptions; mark an
 unresolved choice and keep it out of implementation until its owner supplies evidence.
+
+### ETL refinement
+
+For ETL work, classify the changed slice as acquisition, physical validation,
+normalization, parameter transformation, insertion, orchestration, or parity. Retrieve
+only context that crosses that seam.
+
+When applicable, the plan should pin down source-native structure and units; cache
+identity and offline behavior; interim grain, keys, provenance, nulls, and duplicates;
+and the final row model or target table. Validate from the first changed interface
+inward: config/request, physical artifact, parser, transformation/conversion, output
+contract, provenance/reconciliation, then SQLite integrity or parity.
+
+ETL outcomes must record generated artifacts, logs or reports, warned or dropped
+records, offline behavior, and unresolved source or parity issues.
 
 ## Required plan content
 

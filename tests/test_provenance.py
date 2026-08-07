@@ -34,6 +34,20 @@ def test_yaml_order_pins_current_source_mapping(bundle) -> None:
         "cer_canadas_energy_future": "T05",
         "nlr_atb_transportation_2024": "T06",
         "anl_autonomie_bean_2022": "T07",
+        "nrcan_fuel_consumption_ratings": "T08",
+        "nhtsa_cafe_2024_ldv_survival": "T09",
+        "eia_nems_hd_truck_scrappage": "T10",
+        "jgcri_gcam_motorcycle_inputs": "T11",
+        "epri_us_regen_2025_transportation": "T12",
+        "faa_economic_values_2024": "T13",
+        "wards_intelligence_2022_sales_shares": "T14",
+        "emrg_sfu_cims_model": "T15",
+        "open_energy_outlook_2022": "T16",
+        "argonne_rd_greet_2025_rev1": "T17",
+        "epa_moves4_population_activity_2023": "T18",
+        "canada_energy_policy_simulator_3_4_7": "T19",
+        "argonne_hdsam_4_5": "T20",
+        "fueleconomy_gov_vehicle_data": "T21",
     }
 
 

@@ -7,6 +7,7 @@ import fnmatch
 import hashlib
 import io
 import logging
+import math
 import os
 import re
 from pathlib import Path
@@ -23,6 +24,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from utils import (
     ConfigBundle,
     load_config_bundle,
+    load_conversion_factors,
     load_harmonization_rules,
     resolve_input_path,
 )
@@ -272,7 +274,7 @@ def discover_zip_members(
             name
             for name in names
             if any(
-                fnmatch.fnmatchcase(name.casefold(), pattern.casefold())
+                _matches_archive_member(name, pattern)
                 for pattern in component.member_patterns
             )
         }
@@ -288,6 +290,17 @@ def discover_zip_members(
             )
         discovered[component.component_id] = matches.pop()
     return discovered
+
+
+def _matches_archive_member(name: str, pattern: str) -> bool:
+    """Match an exact member or the same member below one release directory."""
+    normalized_name = name.replace("\\", "/").casefold()
+    normalized_pattern = pattern.replace("\\", "/").casefold()
+    if normalized_pattern.startswith("*/"):
+        suffix = normalized_pattern[2:]
+        if len(normalized_name.split("/")) != len(suffix.split("/")) + 1:
+            return False
+    return fnmatch.fnmatchcase(normalized_name, normalized_pattern)
 
 
 def _require_columns(
@@ -332,6 +345,14 @@ def normalize_vehicles(
         raise NlrAtbAutonomieError(
             f"ATB vehicles.csv missing configured metrics {missing_metrics}"
         )
+    phev_powertrain = str(vehicle_rules["phev_powertrain"])
+    phev_reconciliation_metrics = {
+        str(metric) for metric in vehicle_rules["phev_reconciliation_metrics"].values()
+    }
+    is_phev_fuel_economy = selected["vehicle_powertrain"].eq(
+        phev_powertrain
+    ) & selected["metric"].isin(phev_reconciliation_metrics)
+    selected = selected.loc[~is_phev_fuel_economy].copy()
     selected["year"] = pd.to_numeric(selected["year"], errors="coerce")
     selected["value"] = pd.to_numeric(selected["value"], errors="coerce")
     if selected[["year", "value"]].isna().any().any():
@@ -346,6 +367,711 @@ def normalize_vehicles(
     return selected.drop(columns=["scenario"]).sort_values(
         ["vehicle_class", "vehicle_powertrain", "vehicle_detail", "metric", "trajectory", "year"],
         na_position="last",
+    ).reset_index(drop=True)
+
+
+def _numeric_columns(
+    frame: pd.DataFrame,
+    columns: list[str],
+    *,
+    context: str,
+) -> pd.DataFrame:
+    normalized = frame.copy()
+    for column in columns:
+        normalized[column] = pd.to_numeric(normalized[column], errors="coerce")
+    invalid = normalized[columns].isna() | ~normalized[columns].map(
+        lambda value: math.isfinite(float(value))
+    )
+    if invalid.any().any():
+        bad_columns = [column for column in columns if invalid[column].any()]
+        raise NlrAtbAutonomieError(
+            f"{context} contains non-numeric or non-finite values in {bad_columns}"
+        )
+    return normalized
+
+
+def combine_mhdv_phev_cycles(
+    frame: pd.DataFrame,
+    *,
+    rules: dict[str, Any],
+) -> pd.DataFrame:
+    """Combine active MHDV cycles using consumption-correct averaging."""
+    cycle_rules = rules["cycle_aggregation"]["cycles"]
+    contribution_columns = [
+        str(cycle["contribution"]) for cycle in cycle_rules.values()
+    ]
+    numeric = _numeric_columns(
+        frame,
+        contribution_columns,
+        context="ATB MHDV PHEV cycle inputs",
+    )
+    contributions = numeric[contribution_columns]
+    if (contributions < 0).any().any():
+        raise NlrAtbAutonomieError(
+            "ATB MHDV PHEV cycle contributions must be non-negative"
+        )
+    tolerance = float(rules["tolerances"]["cycle_contribution_sum"])
+    sums = contributions.sum(axis=1)
+    if ((sums - 1.0).abs() > tolerance).any():
+        raise NlrAtbAutonomieError(
+            "ATB MHDV PHEV active cycle contributions must sum to 1 within "
+            f"{tolerance}"
+        )
+
+    reciprocal_consumption = pd.Series(0.0, index=numeric.index)
+    combined_electricity = pd.Series(0.0, index=numeric.index)
+    for cycle in cycle_rules.values():
+        weight = numeric[str(cycle["contribution"])]
+        cs = pd.to_numeric(
+            numeric[str(cycle["cs_fuel_economy"])], errors="coerce"
+        )
+        cd = pd.to_numeric(
+            numeric[str(cycle["cd_electricity_consumption"])], errors="coerce"
+        )
+        active = weight > 0
+        active_values = pd.concat([cs[active], cd[active]], axis=1)
+        invalid_active = active_values.isna() | ~active_values.map(
+            lambda value: math.isfinite(float(value))
+        )
+        if invalid_active.any().any():
+            raise NlrAtbAutonomieError(
+                "ATB MHDV PHEV active-cycle CS/CD values must be numeric and finite"
+            )
+        if (cs[active] <= 0).any():
+            raise NlrAtbAutonomieError(
+                "ATB MHDV PHEV active-cycle CS fuel economy must be positive"
+            )
+        if (cd[active] < 0).any():
+            raise NlrAtbAutonomieError(
+                "ATB MHDV PHEV active-cycle CD electricity consumption "
+                "must be non-negative"
+            )
+        reciprocal_consumption.loc[active] += weight[active] / cs[active]
+        combined_electricity.loc[active] += weight[active] * cd[active]
+    if (reciprocal_consumption <= 0).any():
+        raise NlrAtbAutonomieError(
+            "ATB MHDV PHEV cycle aggregation produced non-positive fuel consumption"
+        )
+    return pd.DataFrame(
+        {
+            "combined_cs_fuel_economy_mi_per_gallon_equivalent": (
+                1.0 / reciprocal_consumption
+            ),
+            "combined_cd_electricity_consumption_wh_per_mi": combined_electricity,
+            "source_cycle_contribution_sum": sums,
+        },
+        index=numeric.index,
+    )
+
+
+def _validate_utility_factor_table(
+    frame: pd.DataFrame,
+    *,
+    key_fields: list[str],
+    utility_factor_column: str,
+    context: str,
+    range_column: str | None = None,
+) -> pd.DataFrame:
+    _require_columns(
+        frame,
+        [*key_fields, utility_factor_column],
+        context,
+    )
+    numeric_columns = [utility_factor_column]
+    if range_column is not None:
+        numeric_columns.append(range_column)
+    normalized = _numeric_columns(frame, numeric_columns, context=context)
+    if normalized.duplicated(key_fields, keep=False).any():
+        duplicates = normalized.loc[
+            normalized.duplicated(key_fields, keep=False), key_fields
+        ].drop_duplicates()
+        raise NlrAtbAutonomieError(
+            f"{context} has ambiguous duplicate keys: "
+            f"{duplicates.to_dict(orient='records')[:5]}"
+        )
+    if (
+        (normalized[utility_factor_column] < 0)
+        | (normalized[utility_factor_column] > 1)
+    ).any():
+        raise NlrAtbAutonomieError(f"{context} utility factors must lie in [0, 1]")
+    return normalized
+
+
+def _joined_text(values: pd.Series) -> str:
+    return " | ".join(dict.fromkeys(str(value) for value in values.dropna() if str(value)))
+
+
+def match_phev_utility_factors(
+    vehicles: pd.DataFrame,
+    *,
+    ldv_utility_factors: pd.DataFrame,
+    mdhd_utility_factors: pd.DataFrame,
+    rules: dict[str, Any],
+) -> pd.DataFrame:
+    """Match exact MHDV UFs and exact or bounded-interpolated LDV UFs."""
+    matching = rules["utility_factor_matching"]
+    uf_column = str(matching["utility_factor_column"])
+    reference_column = str(matching["reference_column"])
+    notes_column = str(matching["notes_column"])
+    ldv_rules = matching["ldv"]
+    mdhd_rules = matching["mdhd"]
+    ldv_keys = [str(value) for value in ldv_rules["exact_key_fields"]]
+    mdhd_keys = [str(value) for value in mdhd_rules["exact_key_fields"]]
+    range_column = str(ldv_rules["interpolation_dimension"])
+
+    ldv_table = _validate_utility_factor_table(
+        ldv_utility_factors,
+        key_fields=ldv_keys,
+        utility_factor_column=uf_column,
+        range_column=range_column,
+        context="ATB LDV PHEV utility-factor table",
+    )
+    mdhd_table = _validate_utility_factor_table(
+        mdhd_utility_factors,
+        key_fields=mdhd_keys,
+        utility_factor_column=uf_column,
+        context="ATB MHDV PHEV utility-factor table",
+    )
+
+    result = vehicles.copy()
+    match_rows: list[dict[str, Any]] = []
+    ldv_weight = str(rules["light_duty_weight_category"])
+    mdhd_weight = str(rules["medium_heavy_weight_category"])
+    for _, vehicle in result.iterrows():
+        weight_category = str(vehicle["vehicle_weight_category"])
+        if weight_category == ldv_weight:
+            target_range = float(vehicle["electric_range_mi"])
+            candidates = ldv_table[
+                ldv_table["vehicle_weight_category"].astype(str).eq(weight_category)
+            ].sort_values(range_column)
+            exact = candidates[candidates[range_column].eq(target_range)]
+            if len(exact) == 1:
+                matched = exact.iloc[0]
+                match_rows.append(
+                    {
+                        "fleet_utility_factor": float(matched[uf_column]),
+                        "utility_factor_source_family": str(
+                            ldv_rules["source_family"]
+                        ),
+                        "utility_factor_match_method": "exact",
+                        "utility_factor_matched_range_mi": target_range,
+                        "utility_factor_lower_range_mi": target_range,
+                        "utility_factor_upper_range_mi": target_range,
+                        "utility_factor_reference": str(matched[reference_column]),
+                        "utility_factor_notes": str(matched[notes_column]),
+                    }
+                )
+                continue
+            if len(exact) > 1:
+                raise NlrAtbAutonomieError(
+                    f"Ambiguous LDV PHEV utility factor for range {target_range}"
+                )
+            if str(ldv_rules["interpolation_method"]) != "linear":
+                raise NlrAtbAutonomieError(
+                    f"No exact LDV PHEV utility factor for range {target_range}"
+                )
+            lower = candidates[candidates[range_column] < target_range].tail(1)
+            upper = candidates[candidates[range_column] > target_range].head(1)
+            if lower.empty or upper.empty:
+                raise NlrAtbAutonomieError(
+                    "LDV PHEV utility-factor interpolation would extrapolate for "
+                    f"{weight_category}, range {target_range}"
+                )
+            low = lower.iloc[0]
+            high = upper.iloc[0]
+            low_range = float(low[range_column])
+            high_range = float(high[range_column])
+            fraction = (target_range - low_range) / (high_range - low_range)
+            utility_factor = float(low[uf_column]) + fraction * (
+                float(high[uf_column]) - float(low[uf_column])
+            )
+            match_rows.append(
+                {
+                    "fleet_utility_factor": utility_factor,
+                    "utility_factor_source_family": str(ldv_rules["source_family"]),
+                    "utility_factor_match_method": "linear_interpolation",
+                    "utility_factor_matched_range_mi": target_range,
+                    "utility_factor_lower_range_mi": low_range,
+                    "utility_factor_upper_range_mi": high_range,
+                    "utility_factor_reference": _joined_text(
+                        pd.Series([low[reference_column], high[reference_column]])
+                    ),
+                    "utility_factor_notes": _joined_text(
+                        pd.Series([low[notes_column], high[notes_column]])
+                    ),
+                }
+            )
+        elif weight_category == mdhd_weight:
+            candidates = mdhd_table
+            for key in mdhd_keys:
+                candidates = candidates[
+                    candidates[key].astype(str).eq(str(vehicle[key]))
+                ]
+            if len(candidates) != 1:
+                raise NlrAtbAutonomieError(
+                    "MHDV PHEV utility-factor match must produce exactly one row for "
+                    f"{[(key, vehicle[key]) for key in mdhd_keys]}; got {len(candidates)}"
+                )
+            matched = candidates.iloc[0]
+            match_rows.append(
+                {
+                    "fleet_utility_factor": float(matched[uf_column]),
+                    "utility_factor_source_family": str(mdhd_rules["source_family"]),
+                    "utility_factor_match_method": "exact",
+                    "utility_factor_matched_range_mi": pd.NA,
+                    "utility_factor_lower_range_mi": pd.NA,
+                    "utility_factor_upper_range_mi": pd.NA,
+                    "utility_factor_reference": str(matched[reference_column]),
+                    "utility_factor_notes": str(matched[notes_column]),
+                }
+            )
+        else:
+            raise NlrAtbAutonomieError(
+                f"Unsupported PHEV vehicle weight category {weight_category!r}"
+            )
+
+    matches = pd.DataFrame(match_rows, index=result.index)
+    result = pd.concat([result, matches], axis=1)
+    tolerance = float(rules["tolerances"]["utility_factor_bounds"])
+    if (
+        (result["fleet_utility_factor"] < -tolerance)
+        | (result["fleet_utility_factor"] > 1.0 + tolerance)
+    ).any():
+        raise NlrAtbAutonomieError("Matched PHEV utility factors fall outside [0, 1]")
+    return result
+
+
+def _conversion_value(
+    conversions: dict[str, Any],
+    rules: dict[str, Any],
+    name: str,
+) -> float:
+    value: Any = conversions
+    path = [str(part) for part in rules["conversion_keys"][name]]
+    for part in path:
+        if not isinstance(value, dict) or part not in value:
+            raise NlrAtbAutonomieError(
+                f"Missing configured conversion factor {'.'.join(path)}"
+            )
+        value = value[part]
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError) as exc:
+        raise NlrAtbAutonomieError(
+            f"Configured conversion factor {'.'.join(path)} is not numeric"
+        ) from exc
+    if not math.isfinite(numeric) or numeric <= 0:
+        raise NlrAtbAutonomieError(
+            f"Configured conversion factor {'.'.join(path)} must be positive and finite"
+        )
+    return numeric
+
+
+def _reconcile_phev_total_fuel_economy(
+    derived: pd.DataFrame,
+    *,
+    output_vehicles: pd.DataFrame,
+    rules: dict[str, Any],
+) -> pd.DataFrame:
+    reconciliation = rules["reconciliation"]
+    key_fields = [str(value) for value in reconciliation["output_key_fields"]]
+    derived_key_fields = {
+        str(output): str(derived)
+        for output, derived in reconciliation["derived_to_output_key_fields"].items()
+    }
+    if set(derived_key_fields) != set(key_fields):
+        raise NlrAtbAutonomieError(
+            "PHEV reconciliation derived/output key mapping is incomplete"
+        )
+    metric_by_basis = {
+        str(key): str(value)
+        for key, value in reconciliation["metric_by_basis"].items()
+    }
+    evidence = output_vehicles[
+        output_vehicles["vehicle_powertrain"].eq(str(rules["source_powertrain"]))
+        & output_vehicles["metric"].isin(metric_by_basis.values())
+    ].copy()
+    evidence["year"] = pd.to_numeric(evidence["year"], errors="coerce")
+    evidence["value"] = pd.to_numeric(evidence["value"], errors="coerce")
+    if evidence[["year", "value"]].isna().any().any():
+        raise NlrAtbAutonomieError(
+            "ATB output PHEV reconciliation rows contain invalid year/value data"
+        )
+    evidence["year"] = evidence["year"].astype(int)
+    evidence_key_fields = [*key_fields, "metric"]
+    if evidence.duplicated(evidence_key_fields, keep=False).any():
+        raise NlrAtbAutonomieError(
+            "ATB output PHEV fuel economy has ambiguous reconciliation keys"
+        )
+    evidence_lookup = {
+        tuple(row[field] for field in evidence_key_fields): row
+        for _, row in evidence.iterrows()
+    }
+    aliases = {
+        str(key): str(value)
+        for key, value in reconciliation.get("scenario_aliases", {}).items()
+    }
+    rows: list[dict[str, Any]] = []
+    for _, row in derived.iterrows():
+        basis = str(row["fuel_equivalent_basis"])
+        metric = metric_by_basis[basis]
+        key_values = {
+            field: row[derived_key_fields[field]] for field in key_fields
+        }
+        exact_key = tuple([*(key_values[field] for field in key_fields), metric])
+        matched = evidence_lookup.get(exact_key)
+        method = "exact"
+        matched_scenario = str(row["trajectory"])
+        if matched is None and str(row["trajectory"]) in aliases:
+            matched_scenario = aliases[str(row["trajectory"])]
+            key_values["scenario"] = matched_scenario
+            alias_key = tuple([*(key_values[field] for field in key_fields), metric])
+            matched = evidence_lookup.get(alias_key)
+            method = "scenario_alias" if matched is not None else "missing"
+        elif matched is None:
+            method = "missing"
+        if matched is None:
+            rows.append(
+                {
+                    "reconciliation_output_scenario": pd.NA,
+                    "reconciliation_match_method": method,
+                    "reconciliation_output_metric": metric,
+                    "reconciliation_output_fuel_economy_mi_per_gallon_equivalent": pd.NA,
+                    "reconciliation_absolute_difference": pd.NA,
+                    "reconciliation_relative_difference": pd.NA,
+                    "reconciliation_within_tolerance": pd.NA,
+                }
+            )
+            continue
+        published = float(matched["value"])
+        calculated = float(
+            row["reconciliation_derived_total_fuel_economy_mi_per_gallon_equivalent"]
+        )
+        absolute_difference = abs(calculated - published)
+        relative_difference = absolute_difference / abs(published) if published else math.inf
+        within = math.isclose(
+            calculated,
+            published,
+            rel_tol=float(reconciliation["relative_tolerance"]),
+            abs_tol=float(
+                reconciliation["absolute_tolerance_mi_per_gallon_equivalent"]
+            ),
+        )
+        rows.append(
+            {
+                "reconciliation_output_scenario": matched_scenario,
+                "reconciliation_match_method": method,
+                "reconciliation_output_metric": metric,
+                "reconciliation_output_fuel_economy_mi_per_gallon_equivalent": published,
+                "reconciliation_absolute_difference": absolute_difference,
+                "reconciliation_relative_difference": relative_difference,
+                "reconciliation_within_tolerance": within,
+            }
+        )
+    return pd.concat(
+        [derived.reset_index(drop=True), pd.DataFrame(rows)], axis=1
+    )
+
+
+def derive_phev_efficiency(
+    vehicle_inputs: pd.DataFrame,
+    *,
+    ldv_utility_factors: pd.DataFrame,
+    mdhd_utility_factors: pd.DataFrame,
+    output_vehicles: pd.DataFrame,
+    rules: dict[str, Any],
+    conversions: dict[str, Any],
+    source_members: dict[str, str],
+    default_trajectory: str,
+) -> pd.DataFrame:
+    """Derive one auditable utility-weighted efficiency row per ATB PHEV input."""
+    powertrain = str(rules["source_powertrain"])
+    selected = vehicle_inputs[
+        vehicle_inputs["vehicle_powertrain"].astype(str).eq(powertrain)
+    ].copy()
+    if selected.empty:
+        raise NlrAtbAutonomieError("ATB inputs_vehicles.csv contains no PHEV rows")
+    key_fields = [str(value) for value in rules["source_key_fields"]]
+    if selected.duplicated(key_fields, keep=False).any():
+        raise NlrAtbAutonomieError(
+            "ATB PHEV vehicle inputs have ambiguous source-dimension keys"
+        )
+    selected["source_vehicle_input_row"] = selected.index + 2
+    selected = _numeric_columns(
+        selected,
+        ["year", "range(mi)"],
+        context="ATB PHEV vehicle inputs",
+    )
+    selected["year"] = selected["year"].astype(int)
+
+    source_fields = {
+        str(source): str(target)
+        for target, source in rules["source_fields"].items()
+    }
+    selected = selected.rename(columns=source_fields)
+    selected["trajectory"] = selected["source_scenario"].astype(str)
+    cycle_rename: dict[str, str] = {}
+    for cycle_name, cycle in rules["cycle_aggregation"]["cycles"].items():
+        prefix = str(cycle_name).casefold()
+        cycle_rename[str(cycle["contribution"])] = (
+            f"source_{prefix}_cycle_contribution"
+        )
+        cycle_rename[str(cycle["cs_fuel_economy"])] = (
+            f"source_{prefix}_cs_fuel_economy_mi_per_dge"
+        )
+        cycle_rename[str(cycle["cd_electricity_consumption"])] = (
+            f"source_{prefix}_cd_electricity_consumption_wh_per_mi"
+        )
+
+    ldv_weight = str(rules["light_duty_weight_category"])
+    mdhd_weight = str(rules["medium_heavy_weight_category"])
+    ldv = selected["vehicle_weight_category"].eq(ldv_weight)
+    mdhd = selected["vehicle_weight_category"].eq(mdhd_weight)
+    if (~(ldv | mdhd)).any():
+        unexpected = sorted(
+            selected.loc[~(ldv | mdhd), "vehicle_weight_category"].astype(str).unique()
+        )
+        raise NlrAtbAutonomieError(
+            f"ATB PHEV inputs contain unsupported weight categories {unexpected}"
+        )
+
+    selected[
+        "combined_cs_fuel_economy_mi_per_gallon_equivalent"
+    ] = pd.NA
+    selected["combined_cd_electricity_consumption_wh_per_mi"] = pd.NA
+    selected["source_cycle_contribution_sum"] = pd.NA
+    ldv_values = _numeric_columns(
+        selected.loc[
+            ldv,
+            [
+                "source_combined_cs_fuel_economy_mi_per_gge",
+                "source_combined_cd_electricity_consumption_wh_per_mi",
+            ],
+        ],
+        [
+            "source_combined_cs_fuel_economy_mi_per_gge",
+            "source_combined_cd_electricity_consumption_wh_per_mi",
+        ],
+        context="ATB LDV PHEV combined inputs",
+    )
+    if (ldv_values["source_combined_cs_fuel_economy_mi_per_gge"] <= 0).any():
+        raise NlrAtbAutonomieError("ATB LDV PHEV combined CS fuel economy must be positive")
+    if (
+        ldv_values["source_combined_cd_electricity_consumption_wh_per_mi"] < 0
+    ).any():
+        raise NlrAtbAutonomieError(
+            "ATB LDV PHEV combined CD electricity consumption must be non-negative"
+        )
+    selected.loc[
+        ldv, "combined_cs_fuel_economy_mi_per_gallon_equivalent"
+    ] = ldv_values["source_combined_cs_fuel_economy_mi_per_gge"]
+    selected.loc[
+        ldv, "combined_cd_electricity_consumption_wh_per_mi"
+    ] = ldv_values["source_combined_cd_electricity_consumption_wh_per_mi"]
+
+    raw_cycle_rules = rules["cycle_aggregation"]["cycles"]
+    pre_rename_cycle_columns = [
+        str(value)
+        for cycle in raw_cycle_rules.values()
+        for value in cycle.values()
+    ]
+    original_mdhd = vehicle_inputs.loc[selected.index[mdhd]]
+    cycle_combined = combine_mhdv_phev_cycles(
+        original_mdhd[pre_rename_cycle_columns],
+        rules=rules,
+    )
+    for column in cycle_combined:
+        selected.loc[mdhd, column] = cycle_combined[column]
+    selected = selected.rename(columns=cycle_rename)
+
+    basis_map = {
+        str(key): str(value) for key, value in rules["fuel_equivalent_basis"].items()
+    }
+    selected["fuel_equivalent_basis"] = selected["secondary_fuel"].map(basis_map)
+    if selected["fuel_equivalent_basis"].isna().any():
+        fuels = sorted(
+            selected.loc[
+                selected["fuel_equivalent_basis"].isna(), "secondary_fuel"
+            ].astype(str).unique()
+        )
+        raise NlrAtbAutonomieError(
+            f"ATB PHEV secondary fuels have no equivalent-gallon basis: {fuels}"
+        )
+
+    selected = match_phev_utility_factors(
+        selected,
+        ldv_utility_factors=ldv_utility_factors,
+        mdhd_utility_factors=mdhd_utility_factors,
+        rules=rules,
+    )
+    selected[
+        "combined_cs_fuel_economy_mi_per_gallon_equivalent"
+    ] = pd.to_numeric(
+        selected["combined_cs_fuel_economy_mi_per_gallon_equivalent"]
+    )
+    selected[
+        "combined_cd_electricity_consumption_wh_per_mi"
+    ] = pd.to_numeric(
+        selected["combined_cd_electricity_consumption_wh_per_mi"]
+    )
+    utility_factor = selected["fleet_utility_factor"]
+    selected[
+        "utility_weighted_fuel_consumption_gallon_equivalent_per_mi"
+    ] = (1.0 - utility_factor) / selected[
+        "combined_cs_fuel_economy_mi_per_gallon_equivalent"
+    ]
+    selected[
+        "utility_weighted_electricity_consumption_wh_per_mi"
+    ] = utility_factor * selected[
+        "combined_cd_electricity_consumption_wh_per_mi"
+    ]
+
+    mile_to_km = _conversion_value(conversions, rules, "mile_to_km")
+    us_gallon_to_litre = _conversion_value(
+        conversions, rules, "us_gallon_to_litre"
+    )
+    wh_to_kwh = _conversion_value(conversions, rules, "wh_to_kwh")
+    fuel_conversion = _conversion_value(
+        conversions,
+        rules,
+        "gal_equivalent_per_mile_to_litre_equivalent_per_100_km",
+    )
+    electricity_conversion = _conversion_value(
+        conversions, rules, "wh_per_mile_to_kwh_per_100_km"
+    )
+    expected_fuel_conversion = us_gallon_to_litre * 100.0 / mile_to_km
+    expected_electricity_conversion = 100.0 * wh_to_kwh / mile_to_km
+    if not math.isclose(
+        fuel_conversion, expected_fuel_conversion, rel_tol=1.0e-15, abs_tol=0.0
+    ):
+        raise NlrAtbAutonomieError(
+            "Configured gal-equivalent/mi to litre-equivalent/100 km factor "
+            "does not match its configured primitives"
+        )
+    if not math.isclose(
+        electricity_conversion,
+        expected_electricity_conversion,
+        rel_tol=1.0e-15,
+        abs_tol=0.0,
+    ):
+        raise NlrAtbAutonomieError(
+            "Configured Wh/mi to kWh/100 km factor does not match its "
+            "configured primitives"
+        )
+    wh_per_gge = _conversion_value(conversions, rules, "wh_per_gge")
+    wh_per_dge = _conversion_value(conversions, rules, "wh_per_dge")
+    selected["wh_per_fuel_equivalent_gallon"] = selected[
+        "fuel_equivalent_basis"
+    ].map({"gge": wh_per_gge, "dge": wh_per_dge})
+    selected[
+        "utility_weighted_fuel_consumption_litre_equivalent_per_100_km"
+    ] = (
+        selected["utility_weighted_fuel_consumption_gallon_equivalent_per_mi"]
+        * fuel_conversion
+    )
+    selected[
+        "utility_weighted_electricity_consumption_kwh_per_100_km"
+    ] = (
+        selected["utility_weighted_electricity_consumption_wh_per_mi"]
+        * electricity_conversion
+    )
+    selected["utility_weighted_fuel_energy_wh_equivalent_per_mi"] = (
+        selected["utility_weighted_fuel_consumption_gallon_equivalent_per_mi"]
+        * selected["wh_per_fuel_equivalent_gallon"]
+    )
+    selected["total_utility_weighted_energy_wh_equivalent_per_mi"] = (
+        selected["utility_weighted_fuel_energy_wh_equivalent_per_mi"]
+        + selected["utility_weighted_electricity_consumption_wh_per_mi"]
+    )
+    if (
+        selected["total_utility_weighted_energy_wh_equivalent_per_mi"] <= 0
+    ).any():
+        raise NlrAtbAutonomieError(
+            "ATB PHEV total utility-weighted energy must be positive"
+        )
+    selected["electricity_input_share"] = (
+        selected["utility_weighted_electricity_consumption_wh_per_mi"]
+        / selected["total_utility_weighted_energy_wh_equivalent_per_mi"]
+    )
+    selected["liquid_fuel_input_share"] = 1.0 - selected["electricity_input_share"]
+    share_tolerance = float(rules["tolerances"]["input_share_sum"])
+    if (
+        (selected["electricity_input_share"] < -share_tolerance)
+        | (selected["electricity_input_share"] > 1.0 + share_tolerance)
+        | (selected["liquid_fuel_input_share"] < -share_tolerance)
+        | (selected["liquid_fuel_input_share"] > 1.0 + share_tolerance)
+        | (
+            (
+                selected["electricity_input_share"]
+                + selected["liquid_fuel_input_share"]
+                - 1.0
+            ).abs()
+            > share_tolerance
+        )
+    ).any():
+        raise NlrAtbAutonomieError(
+            "ATB PHEV energy input shares must lie in [0,1] and sum to 1"
+        )
+
+    units = rules["units"]
+    selected["combined_cs_fuel_economy_unit"] = selected[
+        "fuel_equivalent_basis"
+    ].map(units["combined_cs"])
+    selected["utility_weighted_fuel_consumption_source_unit"] = selected[
+        "fuel_equivalent_basis"
+    ].map(units["utility_weighted_fuel_source"])
+    selected["utility_weighted_fuel_consumption_canadian_unit"] = selected[
+        "fuel_equivalent_basis"
+    ].map(units["utility_weighted_fuel_canadian"])
+    selected["utility_weighted_electricity_consumption_source_unit"] = str(
+        units["utility_weighted_electricity_source"]
+    )
+    selected["utility_weighted_electricity_consumption_canadian_unit"] = str(
+        units["utility_weighted_electricity_canadian"]
+    )
+    selected[
+        "reconciliation_derived_total_fuel_economy_mi_per_gallon_equivalent"
+    ] = 1.0 / (
+        selected["utility_weighted_fuel_consumption_gallon_equivalent_per_mi"]
+        + selected["utility_weighted_electricity_consumption_wh_per_mi"]
+        / selected["wh_per_fuel_equivalent_gallon"]
+    )
+    selected["trajectory"] = selected["trajectory"].astype(str)
+    aliases = {
+        str(key): str(value)
+        for key, value in rules["reconciliation"].get("scenario_aliases", {}).items()
+    }
+    selected["is_default_trajectory"] = selected["trajectory"].map(
+        lambda value: aliases.get(value, value) == default_trajectory
+    )
+    selected["source_id"] = ATB_SOURCE_ID
+    selected["source_vehicle_input_member"] = source_members["phev_vehicle_inputs"]
+    selected["source_utility_factor_member"] = selected[
+        "utility_factor_source_family"
+    ].map(
+        {
+            str(rules["utility_factor_matching"]["ldv"]["source_family"]): (
+                source_members["phev_utility_factor_ldv"]
+            ),
+            str(rules["utility_factor_matching"]["mdhd"]["source_family"]): (
+                source_members["phev_utility_factor_mdhd"]
+            ),
+        }
+    )
+    selected["source_reconciliation_member"] = source_members["vehicles"]
+    selected = _reconcile_phev_total_fuel_economy(
+        selected,
+        output_vehicles=output_vehicles,
+        rules=rules,
+    )
+    return selected.sort_values(
+        [
+            "vehicle_weight_category",
+            "vehicle_class",
+            "vehicle_detail",
+            "trajectory",
+            "year",
+        ]
     ).reset_index(drop=True)
 
 
@@ -602,6 +1328,7 @@ def fetch_and_normalize(
     """Fetch/cache ATB and write source-normalized ATB/available ANL outputs."""
     bundle = load_config_bundle(scenario_path)
     rules = module_rules(bundle)
+    conversions = load_conversion_factors(bundle)
     request = build_atb_request(bundle)
     default_trajectory = configured_trajectory(bundle)
     output_dir = resolve_input_path(bundle, "interim", str(rules["interim_subdir"]))
@@ -620,6 +1347,9 @@ def fetch_and_normalize(
     archive_checksum = file_sha256(request.cache_path)
     outputs: dict[str, pd.DataFrame] = {}
     vmt_frames: list[pd.DataFrame] = []
+    phev_frames: dict[str, pd.DataFrame] = {}
+    phev_source_members: dict[str, str] = {}
+    output_vehicle_evidence: pd.DataFrame | None = None
     manifest_rows: list[dict[str, Any]] = []
     warnings: list[str] = []
 
@@ -645,6 +1375,7 @@ def fetch_and_normalize(
                 frame = pd.read_csv(archive.open(member))
                 input_rows = len(frame)
                 if normalizer == "vehicles":
+                    output_vehicle_evidence = frame.copy()
                     normalized = normalize_vehicles(
                         frame,
                         request=request,
@@ -656,6 +1387,39 @@ def fetch_and_normalize(
                     filename = str(rules["components"]["vehicles"]["output_file"])
                     outputs[filename] = normalized
                     output_files.append(filename)
+                elif normalizer in {
+                    "phev_vehicle_inputs",
+                    "phev_utility_factor_ldv",
+                    "phev_utility_factor_mdhd",
+                }:
+                    _require_columns(
+                        frame,
+                        component.required_columns,
+                        f"ATB {component.component_id}",
+                    )
+                    if normalizer == "phev_vehicle_inputs":
+                        normalized = frame[
+                            frame["vehicle_powertrain"]
+                            .astype(str)
+                            .eq(
+                                str(
+                                    rules["components"]["phev_efficiency"][
+                                        "source_powertrain"
+                                    ]
+                                )
+                            )
+                        ].copy()
+                    else:
+                        normalized = frame.copy()
+                    if normalized.empty:
+                        raise NlrAtbAutonomieError(
+                            f"ATB {component.component_id} selected no rows"
+                        )
+                    phev_frames[normalizer] = frame
+                    phev_source_members[normalizer] = member
+                    output_files.append(
+                        str(rules["components"]["phev_efficiency"]["output_file"])
+                    )
                 elif normalizer == "vmt_ldv":
                     normalized = normalize_vmt_ldv(
                         frame,
@@ -695,6 +1459,75 @@ def fetch_and_normalize(
                     "status": "ok",
                 }
             )
+
+    required_phev_frames = {
+        "phev_vehicle_inputs",
+        "phev_utility_factor_ldv",
+        "phev_utility_factor_mdhd",
+    }
+    missing_phev_frames = sorted(required_phev_frames - set(phev_frames))
+    if missing_phev_frames or output_vehicle_evidence is None:
+        raise NlrAtbAutonomieError(
+            "ATB archive did not provide the complete PHEV derivation contract: "
+            f"missing {missing_phev_frames or ['vehicles']}"
+        )
+    phev_rules = rules["components"]["phev_efficiency"]
+    phev_source_members["vehicles"] = members["vehicles"]
+    phev = derive_phev_efficiency(
+        phev_frames["phev_vehicle_inputs"],
+        ldv_utility_factors=phev_frames["phev_utility_factor_ldv"],
+        mdhd_utility_factors=phev_frames["phev_utility_factor_mdhd"],
+        output_vehicles=output_vehicle_evidence,
+        rules=phev_rules,
+        conversions=conversions,
+        source_members=phev_source_members,
+        default_trajectory=default_trajectory,
+    )
+    phev_filename = str(phev_rules["output_file"])
+    outputs[phev_filename] = phev
+    missing_reconciliation = int(
+        phev["reconciliation_output_fuel_economy_mi_per_gallon_equivalent"]
+        .isna()
+        .sum()
+    )
+    outside_tolerance = int(
+        phev["reconciliation_within_tolerance"].eq(False).sum()  # noqa: E712
+    )
+    if missing_reconciliation or outside_tolerance:
+        comparable = phev["reconciliation_relative_difference"].dropna()
+        max_relative = float(comparable.max()) if not comparable.empty else math.nan
+        warnings.append(
+            "PHEV output fuel-economy reconciliation is report-only: "
+            f"{missing_reconciliation} missing and {outside_tolerance} outside "
+            f"configured tolerance across {len(phev)} derived rows; maximum relative "
+            f"difference={max_relative:.12g}."
+        )
+    manifest_rows.append(
+        {
+            "source_id": ATB_SOURCE_ID,
+            "component_id": "phev_efficiency_derivation",
+            "source_url": request.url,
+            "cached_file": str(request.cache_path),
+            "sha256": archive_checksum,
+            "cache_status": cache_status,
+            "source_member": "|".join(
+                phev_source_members[key]
+                for key in (
+                    "phev_vehicle_inputs",
+                    "phev_utility_factor_ldv",
+                    "phev_utility_factor_mdhd",
+                    "vehicles",
+                )
+            ),
+            "input_rows": len(phev_frames["phev_vehicle_inputs"]),
+            "selected_rows": len(phev),
+            "output_files": phev_filename,
+            "default_trajectory": default_trajectory,
+            "status": "ok_with_reconciliation_differences"
+            if missing_reconciliation or outside_tolerance
+            else "ok",
+        }
+    )
 
     if not vmt_frames:
         raise NlrAtbAutonomieError("ATB archive produced no VMT schedules")

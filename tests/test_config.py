@@ -6,7 +6,12 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from utils import configured_directories, load_config_bundle, load_parameter_yaml
+from utils import (
+    configured_directories,
+    load_config_bundle,
+    load_parameter_yaml,
+    resolve_input_path,
+)
 from validation.config_models import ScenarioRowNoteOverrides, SourceComponent
 from validation.config_smoke import run_smoke_validation
 
@@ -66,6 +71,9 @@ def test_path_resolution_and_directory_list() -> None:
     directories = configured_directories(bundle)
 
     assert REPO_ROOT / "outputs" / "logs" in directories
+    assert resolve_input_path(bundle, "manual") == (
+        REPO_ROOT / "inputs" / "0_manual_params"
+    )
 
 
 def test_shared_energy_conversion_is_not_scenario_local() -> None:
@@ -95,6 +103,8 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
         "compile_sqlite": True,
         "transform_parameters": False,
         "include_existing_capacity": True,
+        "survival_curves": False,
+        "survival_curve_max_age": 30,
     }
 
 
@@ -156,6 +166,12 @@ def test_extra_nested_config_field_is_rejected(tmp_path: Path) -> None:
                 {"efficiency": -0.01}
             ),
             "must be non-negative",
+        ),
+        (
+            lambda payload: payload["switches"].update(
+                {"survival_curve_max_age": 0}
+            ),
+            "survival_curve_max_age",
         ),
     ],
 )

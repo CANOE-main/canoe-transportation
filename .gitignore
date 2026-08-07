@@ -10,10 +10,11 @@ __pycache__/
 .snakemake/
 dist/
 inputs/0_cache/
-inputs/0_external_models/
 inputs/1_interim/
 inputs/2_processed/
 inputs/playground/
 outputs/
+docs/insights/__marimo__/
 .agents/skills/
 .agents/plans/
+tmp/
