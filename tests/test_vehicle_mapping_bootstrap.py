@@ -580,6 +580,13 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
         crosswalk["mto_make_code"].eq("FORD")
         & crosswalk["mto_model_code"].eq("CRG")
     ).any()
+    ford_gt_codes = crosswalk.loc[
+        crosswalk["mto_make_code"].eq("FORD")
+        & crosswalk["mto_model_code"].isin(["MGT", "SGT"])
+    ]
+    assert set(ford_gt_codes["canonical_model"]) == {"Mustang"}
+    assert set(ford_gt_codes["nlr_atb_class"]) == {"Compact"}
+    assert not ford_gt_codes["canonical_model"].eq("GT").any()
     assert not crosswalk["match_method"].str.contains(
         "ordered_model_abbreviation",
         regex=False,

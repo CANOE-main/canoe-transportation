@@ -125,6 +125,10 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
     for source_name in bundle.scenario.sources.active:
         if source_name not in registered:
             errors.append(f"active source not defined in sources.yaml: {source_name}")
+        elif registered[source_name].status != "active":
+            errors.append(
+                f"scenario activates inactive source from sources.yaml: {source_name}"
+            )
     for source_name in bundle.scenario.sources.selections:
         if source_name not in registered:
             errors.append(f"source selection not defined in sources.yaml: {source_name}")

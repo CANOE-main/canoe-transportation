@@ -131,6 +131,7 @@ def load_evidence(
             "nlr_class_retention": lifetime_rules["nlr_class_retention_file"],
             "ceud_vintage_retention": lifetime_rules["ceud_class_vintage_retention_file"],
             "ceud_class_retention": lifetime_rules["ceud_class_retention_file"],
+            "ceud_scope_comparison": lifetime_rules["ceud_scope_comparison_file"],
             "transition_mapping_coverage": lifetime_rules["transition_mapping_coverage_file"],
             "mto_survival_decision": lifetime_rules["mto_survival_decision_file"],
             "pooled_retention": lifetime_rules["pooled_estimates_file"],
@@ -212,7 +213,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                 strokeDash=alt.StrokeDash("measure:N", title="Count"),
                 tooltip=["report_year:O", "measure:N", alt.Tooltip("vehicles:Q", format=",")],
             )
-            .properties(width=600, height=280)
+            .properties(width=700, height=300)
         )
         reconciliation_difference = reconciliation_summary["absolute_difference"].sum()
         source_reconciliation_output = mo.vstack([
@@ -224,7 +225,6 @@ def _(alt, chart_ui, evidence, mo, pd):
             """),
             mo.stat(f"{int(reconciliation_difference):,}", "Absolute reconciliation difference", "Zero means every annual status total is conserved", bordered=True, target_direction="decrease"),
             chart_ui(reconciliation_chart),
-            # mo.ui.table(reconciliation_summary, selection=None, pagination=False, label="Annual Report A status reconciliation"),
         ])
         return source_reconciliation_output
 
@@ -487,6 +487,7 @@ def _(STATUS_COLORS, STATUS_ORDER, alt, chart_ui, evidence, mo, pd):
                             registration_status_summary,
                             selection=None,
                             pagination=False,
+                            page_size=10,
                             wrapped_columns=[
                                 "source meaning",
                                 "inferred working interpretation",
@@ -502,7 +503,7 @@ def _(STATUS_COLORS, STATUS_ORDER, alt, chart_ui, evidence, mo, pd):
                             ),
                             selection=None,
                             pagination=True,
-                            page_size=30,
+                            page_size=10,
                             format_mapping={"status_share": "{:.2%}"},
                         ),
                     }
@@ -881,10 +882,10 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             their canonical Ratings family.
             """),
             mo.ui.tabs({
-                "Coverage": mo.ui.table(coverage, selection=None, pagination=False, format_mapping={"coverage": "{:.2%}", "unmapped_share": "{:.2%}"}),
-                "Ratings-family use": mo.ui.table(family_use_summary.sort_values(["nlr_atb_class", "share"], ascending=[True, False]), selection=None, pagination=False, format_mapping={"share": "{:.2%}"}),
-                "Edition row coverage": mo.ui.table(mapping_edition_row_parts.sort_values(["VEHICLE_CLASS", "report_year", "status_order"]), selection=None, pagination=True, page_size=25, format_mapping={"share": "{:.2%}"}),
-                "Model-year coverage": mo.ui.table(mapping_model_year_coverage.sort_values(["vehicle_class", "report_year", "model_year"]), selection=None, pagination=True, page_size=30, format_mapping={"mapping_coverage": "{:.2%}"}),
+                "Coverage": mo.ui.table(coverage, selection=None, pagination=False, page_size=10, format_mapping={"coverage": "{:.2%}", "unmapped_share": "{:.2%}"}),
+                "Ratings-family use": mo.ui.table(family_use_summary.sort_values(["nlr_atb_class", "share"], ascending=[True, False]), selection=None, pagination=False, page_size=10, format_mapping={"share": "{:.2%}"}),
+                "Edition row coverage": mo.ui.table(mapping_edition_row_parts.sort_values(["VEHICLE_CLASS", "report_year", "status_order"]), selection=None, pagination=True, page_size=10, format_mapping={"share": "{:.2%}"}),
+                "Model-year coverage": mo.ui.table(mapping_model_year_coverage.sort_values(["vehicle_class", "report_year", "model_year"]), selection=None, pagination=True, page_size=10, format_mapping={"mapping_coverage": "{:.2%}"}),
             }),
         ])
         return mapping_progress_output
@@ -1057,99 +1058,13 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
                 chart_ui(unmapped_share_chart("PASSENGER")),
                 chart_ui(unmapped_share_chart("COMMERCIAL")),
             ]),
-            mo.ui.table(unmapped_reason_summary[["VEHICLE_CLASS", "reason_label", "unresolved_fit_active_stock", "share_of_unresolved_stock", "share_of_total_stock", "unresolved_rows", "share_of_total_rows"]], selection=None, pagination=False, format_mapping={"share_of_unresolved_stock": "{:.2%}", "share_of_total_stock": "{:.2%}", "share_of_total_rows": "{:.2%}"}, label="Relative and absolute unresolved-stock attribution"),
+            mo.ui.table(unmapped_reason_summary[["VEHICLE_CLASS", "reason_label", "unresolved_fit_active_stock", "share_of_unresolved_stock", "share_of_total_stock", "unresolved_rows", "share_of_total_rows"]], selection=None, pagination=False, page_size=10, format_mapping={"share_of_unresolved_stock": "{:.2%}", "share_of_total_stock": "{:.2%}", "share_of_total_rows": "{:.2%}"}, label="Relative and absolute unresolved-stock attribution"),
         ])
         return unmapped_reasons_output, reason_labels
 
     _unmapped_reasons_output, reason_labels = _build_view()
     _unmapped_reasons_output
     return (reason_labels,)
-
-
-@app.cell(hide_code=True)
-def latest_unresolved_worklist_heading(mo):
-    mo.md("""
-    ### Latest-snapshot unresolved MTO key worklist
-    """)
-    return
-
-
-@app.cell
-def _(evidence, mo, pd, reason_labels):
-    def _build_view():
-        latest_worklist = evidence["latest_unresolved_worklist"].copy()
-        for column in [
-            "fit_active_stock",
-            "model_year_from",
-            "model_year_to",
-            "observed_model_years",
-            "candidate_model_similarity",
-        ]:
-            latest_worklist[column] = pd.to_numeric(
-                latest_worklist[column], errors="coerce"
-            )
-        latest_worklist["reason_label"] = latest_worklist[
-            "unresolved_reason"
-        ].map(reason_labels).fillna(latest_worklist["unresolved_reason"])
-        latest_worklist = latest_worklist.sort_values(
-            ["fit_active_stock", "VEHICLE_CLASS", "MAKE", "MODEL"],
-            ascending=[False, True, True, True],
-            kind="stable",
-        )
-        worklist_summary = (
-            latest_worklist.groupby("VEHICLE_CLASS", as_index=False)
-            .agg(
-                unresolved_mto_keys=("MODEL", "size"),
-                unresolved_fit_active_stock=("fit_active_stock", "sum"),
-            )
-        )
-        latest_worklist_output = mo.vstack([
-            mo.md("""
-            This is the manual-review queue: one row for every unique, nonsuppressed
-            Passenger or Commercial MTO make-model key present in the latest snapshot
-            that still lacks an accepted crosswalk. It is sorted by current FIT_ACTIVE
-            stock so review effort starts with the largest fleet impact. Candidate fields
-            are retained where evidence exists; ambiguous and weak candidates remain
-            unaccepted until additional evidence is supplied.
-            """),
-            mo.ui.table(
-                worklist_summary,
-                selection=None,
-                pagination=False,
-                label="Latest unresolved key totals",
-            ),
-            mo.ui.table(
-                latest_worklist,
-                selection=None,
-                pagination=True,
-                page_size=25,
-                visible_columns=[
-                    "VEHICLE_CLASS",
-                    "MAKE",
-                    "MODEL",
-                    "fit_active_stock",
-                    "model_year_from",
-                    "model_year_to",
-                    "observed_model_years",
-                    "model_year_list",
-                    "reason_label",
-                    "candidate_canonical_make",
-                    "candidate_canonical_model",
-                    "candidate_nrcan_vehicle_class",
-                    "candidate_nlr_atb_class",
-                    "candidate_match_method",
-                    "candidate_model_similarity",
-                    "rating_model_labels",
-                ],
-                freeze_columns_left=["VEHICLE_CLASS", "MAKE", "MODEL"],
-                wrapped_columns=["model_year_list", "rating_model_labels"],
-                label="Prioritized latest-snapshot MTO mapping worklist",
-            ),
-        ])
-        return latest_worklist_output
-
-    _build_view()
-    return
 
 
 @app.cell(hide_code=True)
@@ -1227,6 +1142,9 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
             .nlargest(3, "FIT_ACTIVE")["unresolved_reason"]
             .tolist()
         )
+        no_make_agreement_code = "no_normalized_make_agreement"
+        if no_make_agreement_code not in top_reason_codes:
+            top_reason_codes.append(no_make_agreement_code)
         strong_candidate_code = "unreviewed_high_confidence_candidate"
         if (
             unresolved_detail.loc[
@@ -1476,10 +1394,13 @@ def _(alt, chart_ui, evidence, mo, pd):
                 latest_mapped[column], errors="coerce"
             )
         latest_mapped_year = int(latest_mapped["report_year"].max())
+        latest_eligible_vintage = latest_mapped_year - 1
         latest_vintage_nlr = (
             latest_mapped.loc[
                 latest_mapped["report_year"].eq(latest_mapped_year)
-                & latest_mapped["MODEL_YEAR"].between(2020, latest_mapped_year)
+                & latest_mapped["MODEL_YEAR"].between(
+                    2000, latest_eligible_vintage
+                )
                 & latest_mapped["FIT_ACTIVE"].gt(0)
             ]
             .groupby(["MODEL_YEAR", "nlr_atb_class"], as_index=False)["FIT_ACTIVE"]
@@ -1492,7 +1413,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             )
         )
         latest_vintage_total = float(latest_vintage_nlr["fit_active_stock"].sum())
-        latest_vintage_nlr["share_of_2020_plus_mapped_stock"] = (
+        latest_vintage_nlr["share_of_2000_plus_mapped_stock"] = (
             latest_vintage_nlr["fit_active_stock"] / latest_vintage_total
         )
         latest_nlr_order = (
@@ -1510,11 +1431,11 @@ def _(alt, chart_ui, evidence, mo, pd):
             .mark_area(interpolate="monotone", opacity=0.85)
             .encode(
                 x=alt.X("model_year:Q", title="Model-year vintage", axis=alt.Axis(format="d", tickMinStep=1)),
-                y=alt.Y("share_of_2020_plus_mapped_stock:Q", title="Share of mapped 2020+ FIT_ACTIVE stock", stack="zero", axis=alt.Axis(format="%")),
+                y=alt.Y("share_of_2000_plus_mapped_stock:Q", title="Share of mapped 2000+ FIT_ACTIVE stock", stack="zero", axis=alt.Axis(format="%")),
                 color=alt.Color("nlr_atb_class:N", title="NLR ATB class", sort=latest_nlr_order),
-                tooltip=["model_year:O", "nlr_atb_class:N", alt.Tooltip("fit_active_stock:Q", format=","), alt.Tooltip("share_of_2020_plus_mapped_stock:Q", format=".2%")],
+                tooltip=["model_year:O", "nlr_atb_class:N", alt.Tooltip("fit_active_stock:Q", format=","), alt.Tooltip("share_of_2000_plus_mapped_stock:Q", format=".2%")],
             )
-            .properties(width=760, height=300, title=f"{latest_mapped_year} mapped fleet: 2020+ vintage composition")
+            .properties(width=760, height=300, title=f"{latest_mapped_year} mapped fleet: 2000-{latest_eligible_vintage} vintage composition")
         )
 
 
@@ -1532,12 +1453,12 @@ def _(alt, chart_ui, evidence, mo, pd):
             chart_ui(edition_composition_chart("Light Truck")),
             mo.md("""
             The area chart below isolates the latest snapshot and model-year vintages
-            from 2020 onward. Each colored area is an NLR ATB class contribution divided
-            by all mapped 2020+ FIT_ACTIVE stock; the class-vintage contributions sum to
+            from 2000 onward. Each colored area is an NLR ATB class contribution divided
+            by all mapped 2000+ FIT_ACTIVE stock; the class-vintage contributions sum to
             100% across the displayed data.
             """),
             chart_ui(latest_vintage_area),
-            mo.ui.table(edition_ratings_composition.sort_values(["nrcan_ceud_class", "report_year", "within_edition_ceud_share"], ascending=[True, True, False]), selection=None, pagination=True, page_size=30, format_mapping={"within_edition_ceud_share": "{:.2%}"}),
+            mo.ui.table(edition_ratings_composition.sort_values(["nrcan_ceud_class", "report_year", "within_edition_ceud_share"], ascending=[True, True, False]), selection=None, pagination=True, page_size=10, format_mapping={"within_edition_ceud_share": "{:.2%}"}),
         ])
         return mapped_composition_output
 
@@ -1627,6 +1548,29 @@ def _(alt, chart_ui, evidence, mo, pd):
             on=["nrcan_ceud_class", "normalized_make_model"],
             how="inner",
         )
+        top_crosswalk_interval_table = top_crosswalk_intervals.loc[
+            :,
+            [
+                "nrcan_ceud_class",
+                "normalized_make_model",
+                "mto_make_code",
+                "mto_model_code",
+                "model_year_from",
+                "model_year_to",
+                "nrcan_vehicle_class",
+                "nlr_atb_class",
+                "match_method",
+            ],
+        ].sort_values(
+            [
+                "nrcan_ceud_class",
+                "normalized_make_model",
+                "mto_make_code",
+                "mto_model_code",
+                "model_year_from",
+            ],
+            kind="stable",
+        ).reset_index(drop=True)
 
 
         def top_family_heatmap(ceud_class: str) -> alt.Chart:
@@ -1681,8 +1625,8 @@ def _(alt, chart_ui, evidence, mo, pd):
             """),
             mo.ui.tabs({
                 "Family totals": mo.ui.table(top_20_families.sort_values(["nrcan_ceud_class", "family_rank"]), selection=None, pagination=True, page_size=10, freeze_columns_left=["nrcan_ceud_class", "normalized_make_model"]),
-                "Exact model-year stock": mo.ui.table(top_heatmap_data.sort_values(["nrcan_ceud_class", "family_rank", "model_year"]), selection=None, pagination=True, page_size=20, visible_columns=["nrcan_ceud_class", "normalized_make_model", "matched_mto_keys", "model_year", "fit_active_stock", "nrcan_vehicle_class", "nlr_atb_class"], freeze_columns_left=["nrcan_ceud_class", "normalized_make_model"]),
-                "Crosswalk intervals": mo.ui.table(top_crosswalk_intervals.sort_values(["nrcan_ceud_class", "family_rank", "canonical_make", "canonical_model", "mto_make_code", "mto_model_code", "model_year_from"]), selection=None, pagination=True, page_size=20, visible_columns=["nrcan_ceud_class", "normalized_make_model", "mto_make_code", "mto_model_code", "model_year_from", "model_year_to", "nrcan_vehicle_class", "nlr_atb_class", "match_method"], freeze_columns_left=["nrcan_ceud_class", "normalized_make_model"]),
+                "Exact model-year stock": mo.ui.table(top_heatmap_data.sort_values(["nrcan_ceud_class", "family_rank", "model_year"]), selection=None, pagination=True, page_size=10, visible_columns=["nrcan_ceud_class", "normalized_make_model", "matched_mto_keys", "model_year", "fit_active_stock", "nrcan_vehicle_class", "nlr_atb_class"], freeze_columns_left=["nrcan_ceud_class", "normalized_make_model"]),
+                "Crosswalk intervals": mo.ui.table(top_crosswalk_interval_table, selection=None, pagination=True, page_size=10, label="Accepted crosswalk intervals for top mapped families"),
             }),
         ])
         return top_mapped_output
@@ -1796,8 +1740,10 @@ def _(alt, chart_ui, evidence, mo, pd):
         percentile_sampled_families = pd.concat(
             percentile_samples, ignore_index=True
         )
+        ceud_display_labels = {"Light Truck": "LD Truck"}
         percentile_sampled_families["display_family"] = (
             percentile_sampled_families["nrcan_ceud_class"]
+            .replace(ceud_display_labels)
             + " | "
             + percentile_sampled_families["normalized_make_model"]
         )
@@ -1897,7 +1843,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                             ),
                             selection=None,
                             pagination=True,
-                            page_size=15,
+                            page_size=10,
                             freeze_columns_left=[
                                 "nrcan_ceud_class",
                                 "normalized_make_model",
@@ -1915,7 +1861,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                             ),
                             selection=None,
                             pagination=True,
-                            page_size=30,
+                            page_size=10,
                             visible_columns=[
                                 "nrcan_ceud_class",
                                 "normalized_make_model",
@@ -2034,8 +1980,8 @@ def _(alt, chart_ui, evidence, mo, pd):
                 chart_ui(model_year_comparison_chart(empirical, wards_frame, "Car", class_column, legend_title)),
                 chart_ui(model_year_comparison_chart(empirical, wards_frame, "Light Truck", class_column, legend_title)),
                 mo.ui.tabs({
-                    "MTO latest-stock table": mo.ui.table(empirical.sort_values(["nrcan_ceud_class", class_column, "model_year"]), selection=None, pagination=True, page_size=25, format_mapping={"within_model_year_share": "{:.2%}"}),
-                    "Wards 2018/2021 table": mo.ui.table(wards_frame.sort_values(["nrcan_ceud_class", "year", class_column]), selection=None, pagination=False, format_mapping={"market_share": "{:.2%}"}),
+                    "MTO latest-stock table": mo.ui.table(empirical.sort_values(["nrcan_ceud_class", class_column, "model_year"]), selection=None, pagination=True, page_size=10, format_mapping={"within_model_year_share": "{:.2%}"}),
+                    "Wards 2018/2021 table": mo.ui.table(wards_frame.sort_values(["nrcan_ceud_class", "year", class_column]), selection=None, pagination=False, page_size=10, format_mapping={"market_share": "{:.2%}"}),
                 }),
             ])
 
@@ -2088,7 +2034,7 @@ def _(evidence, mo, pd):
             transition_rows[_column] = pd.to_numeric(transition_rows[_column], errors="coerce")
         usable_transition_rows = transition_rows.loc[
             transition_rows["stock_status"].eq("FIT_ACTIVE")
-            & transition_rows["age"].between(2, 40)
+            & transition_rows["age"].ge(0)
             & transition_rows["cohort_count_t"].gt(0)
         ].copy()
         transition_support = (
@@ -2135,7 +2081,28 @@ def _(evidence, mo, pd):
             vintage, report-year pair, and both FIT_ACTIVE counts are preserved before
             any class claim is attached. A row exists only when both consecutive editions
             contain the same strictly FIT_ACTIVE key, starting exposure is positive, and
-            starting age is at least two.
+            starting age is nonnegative. No model-year floor is applied at this survival
+            interface; the separate 2000 floor remains limited to existing-fleet weights
+            and age-distribution aggregation.
+
+            Variable meanings:
+
+            - $p$: Report A source category, Passenger or Commercial.
+            - $k$: stable abbreviated MTO make-model key.
+            - $v$: model-year vintage of that key.
+            - $t$: report year at the beginning of a one-year transition.
+            - $a=t-v$: vehicle age at the beginning of the transition.
+            - $N_{p,k,v,t}$: observed FIT_ACTIVE stock at the start of the transition.
+            - $D$: apparent retirements, equal to starting stock minus next-year stock;
+              it can be negative when registrations grow.
+            - $q$: empirical one-year apparent retirement rate; $r=1-q$ is the
+              corresponding survival factor.
+            - $c$: reviewed target vehicle class, and $m(k,v)$ is the class assigned
+              to a particular MTO key and vintage.
+            - $E$: pooled starting exposure—the sum of beginning-of-transition stock
+              contributing to a class-vintage-age estimate.
+            - $S$ and $F$: cumulative survival and cumulative scrappage implied by the
+              sequence of pooled annual rates.
 
             For each eligible transition the backend executes:
 
@@ -2167,13 +2134,20 @@ def _(evidence, mo, pd):
             \]
 
             Cumulative MTO survival is an actual product of those empirical annual
-            factors, normalized to one at the first eligible age:
+            factors with an explicit age-zero baseline:
 
             \[
-            S_c(2)=1,
+            S_c(0)=1,
             \qquad S_c(a+1)=S_c(a)r_{c,a},
             \qquad F_c(a)=1-S_c(a).
             \]
+
+            Age zero is the baseline and also the first empirical starting age:
+            the age-0 rate updates survival at age 1, the age-1 rate updates survival at
+            age 2, and so on. The terminal row after the oldest observed rate shows the
+            effect of that final annual factor. Source-reported pre-2000 vintages are
+            retained here, including sparse very-old cohorts, so tail support and exposure
+            must be interpreted from the audit columns rather than a hard vintage cutoff.
 
             The recurrence is checked directly against the generated class-age output.
             NHTSA values are loaded only after the MTO transition, mapping, pooling, and
@@ -2186,16 +2160,231 @@ def _(evidence, mo, pd):
             | Stage | Grain | Purpose |
             |---|---|---|
             | Raw annual snapshot | source category x MTO make-model x vintage x report year | Preserve each observed fit-active Report A cohort count before mapping. |
-            | Raw key transition | same make-model-vintage in consecutive report years, age 2+ | Calculate un-clipped apparent retirements, annual survival factor, and retirement rate. |
+            | Raw key transition | same make-model-vintage in consecutive report years, age 0+ | Calculate un-clipped apparent retirements, annual survival factor, and retirement rate. |
             | Mapped key transition | eligible raw transition plus reviewed vintage-range crosswalk | Attach class evidence without recomputing or filtering the raw rate by latest-snapshot presence. |
             | NLR and CEUD class-vintage | class x vintage x age | Sum starting exposure and apparent retirements. |
             | Final CEUD class-age | Car/Light Truck x age | Sum across vintages, calculate annual rates, support counts, and the cumulative product. |
             | Decision gate | class-level diagnostic | Retain NHTSA schedules unless coverage, bounds, continuity, monotonicity, support, and comparison gates all pass. |
             """),
             mo.stat(f"{maximum_recurrence_error:.3g}", "Maximum cumulative-survival recurrence error", "Zero within numerical precision confirms the displayed curve is the product of the empirical annual factors", bordered=True, target_direction="decrease"),
-            mo.ui.table(transition_support, selection=None, pagination=False, format_mapping={"share_survival_factor_above_one": "{:.2%}"}, label="Passenger and Commercial audit support"),
+            mo.ui.table(transition_support, selection=None, pagination=False, page_size=10, format_mapping={"share_survival_factor_above_one": "{:.2%}"}, label="Passenger and Commercial audit support"),
         ])
         return mto_retention_method_output
+
+    _build_view()
+    return
+
+
+@app.cell(hide_code=True)
+def transition_rate_distribution_heading(mo):
+    mo.md("""
+    ### Make-model-vintage retirement-rate distributions by age
+    """)
+    return
+
+
+@app.cell
+def _(alt, chart_ui, evidence, mo, pd):
+    def _build_view():
+        rate_rows = evidence["raw_key_transitions"].copy()
+        for column in [
+            "age",
+            "annual_retirement_rate",
+            "cohort_count_t",
+        ]:
+            rate_rows[column] = pd.to_numeric(rate_rows[column], errors="coerce")
+        rate_rows = rate_rows.loc[
+            rate_rows["annual_retirement_rate"].notna()
+        ].copy()
+        display_minimum = -0.50
+        display_maximum = 0.50
+        bin_width = 0.025
+        central_rates = rate_rows.loc[
+            rate_rows["annual_retirement_rate"].between(
+                display_minimum, display_maximum
+            )
+        ].copy()
+        central_rates["rate_bin_number"] = (
+            (
+                central_rates["annual_retirement_rate"] - display_minimum
+            )
+            / bin_width
+        ).astype(int).clip(
+            lower=0,
+            upper=int((display_maximum - display_minimum) / bin_width) - 1,
+        )
+        central_rates["rate_bin_start"] = (
+            display_minimum + central_rates["rate_bin_number"] * bin_width
+        )
+        central_rates["rate_bin_end"] = (
+            central_rates["rate_bin_start"] + bin_width
+        )
+        histogram_rows = (
+            central_rates.groupby(
+                [
+                    "vehicle_class",
+                    "age",
+                    "rate_bin_start",
+                    "rate_bin_end",
+                ],
+                as_index=False,
+            )
+            .agg(
+                transition_count=("annual_retirement_rate", "size"),
+                starting_exposure=("cohort_count_t", "sum"),
+            )
+        )
+        distribution_summary = (
+            rate_rows.groupby(["vehicle_class", "age"], as_index=False)
+            .agg(
+                transition_count=("annual_retirement_rate", "size"),
+                starting_exposure=("cohort_count_t", "sum"),
+                minimum_rate=("annual_retirement_rate", "min"),
+                fifth_percentile=(
+                    "annual_retirement_rate",
+                    lambda values: values.quantile(0.05),
+                ),
+                median_rate=("annual_retirement_rate", "median"),
+                ninety_fifth_percentile=(
+                    "annual_retirement_rate",
+                    lambda values: values.quantile(0.95),
+                ),
+                maximum_rate=("annual_retirement_rate", "max"),
+                negative_rate_count=(
+                    "annual_retirement_rate",
+                    lambda values: int(values.lt(0).sum()),
+                ),
+                below_display_window=(
+                    "annual_retirement_rate",
+                    lambda values: int(values.lt(display_minimum).sum()),
+                ),
+                above_display_window=(
+                    "annual_retirement_rate",
+                    lambda values: int(values.gt(display_maximum).sum()),
+                ),
+            )
+        )
+        distribution_summary["negative_rate_share"] = (
+            distribution_summary["negative_rate_count"]
+            / distribution_summary["transition_count"]
+        )
+        shared_transition_max = max(
+            1, int(histogram_rows["transition_count"].max())
+        )
+
+        def histogram_matrix(source_category: str, color: str) -> alt.FacetChart:
+            source_rows = histogram_rows.loc[
+                histogram_rows["vehicle_class"].eq(source_category)
+            ].copy()
+            source_rows["age_label"] = (
+                "age=" + source_rows["age"].astype(int).astype(str)
+            )
+            bars = (
+                alt.Chart()
+                .mark_bar(color=color)
+                .encode(
+                    x=alt.X(
+                        "rate_bin_start:Q",
+                        bin=alt.Bin(binned=True),
+                        title=None,
+                        axis=alt.Axis(format="%", tickCount=3),
+                        scale=alt.Scale(
+                            domain=[display_minimum, display_maximum]
+                        ),
+                    ),
+                    x2=alt.X2("rate_bin_end:Q"),
+                    y=alt.Y(
+                        "transition_count:Q",
+                        title=None,
+                        axis=alt.Axis(tickCount=3),
+                        scale=alt.Scale(domain=[0, shared_transition_max]),
+                    ),
+                    tooltip=[
+                        alt.Tooltip("age:O", title="Starting age"),
+                        alt.Tooltip("rate_bin_start:Q", format=".1%"),
+                        alt.Tooltip("rate_bin_end:Q", format=".1%"),
+                        alt.Tooltip("transition_count:Q", format=","),
+                        alt.Tooltip("starting_exposure:Q", format=","),
+                    ],
+                )
+            )
+            labels = (
+                alt.Chart()
+                .transform_aggregate(
+                    panel_transition_count="sum(transition_count)",
+                    groupby=["age", "age_label"],
+                )
+                .mark_text(
+                    align="right",
+                    baseline="top",
+                    color="#333333",
+                    fontSize=11,
+                )
+                .encode(
+                    x=alt.value(141),
+                    y=alt.value(4),
+                    text=alt.Text("age_label:N"),
+                )
+            )
+            return (
+                alt.layer(bars, labels, data=source_rows)
+                .properties(width=145, height=85)
+                .facet(
+                    facet=alt.Facet(
+                        "age:O",
+                        header=alt.Header(labels=False, title=None),
+                    ),
+                    columns=6,
+                    spacing=4,
+                    title=f"{source_category.title()} raw transition-rate distributions",
+                )
+                .resolve_scale(x="shared", y="shared")
+                .configure_view(stroke="#d9d9d9")
+            )
+
+        rate_distribution_output = mo.vstack([
+            mo.md("""
+            Each small histogram describes the cross-sectional distribution of raw
+            one-year rates across eligible MTO make-model-vintage series at one starting
+            age. Every series receives one observation per eligible report-year pair;
+            these histograms are counts, not stock-weighted class estimates. Passenger and
+            Commercial remain source categories because this view precedes class mapping.
+            Age labels sit inside each panel; all panels and both tabs share the same
+            -50% to +50% x-domain and transition-count y-domain. Axis titles are omitted
+            from individual panels to keep the six-column grid compact.
+
+            The histogram window is -50% to +50% so the central distribution remains
+            readable. This is display-only: no raw value is clipped or discarded from the
+            estimator. The table reports full-range minima, maxima, quantiles, negative
+            growth-case counts, and observations outside the displayed window. Very large
+            negative rates occur when a small starting cohort grows sharply in the next
+            edition; their low exposure is visible separately from their observation count.
+            """),
+            mo.ui.tabs({
+                "Passenger distributions": chart_ui(
+                    histogram_matrix("PASSENGER", "#457b9d")
+                ),
+                "Commercial distributions": chart_ui(
+                    histogram_matrix("COMMERCIAL", "#e76f51")
+                ),
+            }),
+            mo.ui.table(
+                distribution_summary,
+                selection=None,
+                pagination=True,
+                page_size=10,
+                format_mapping={
+                    "minimum_rate": "{:.2%}",
+                    "fifth_percentile": "{:.2%}",
+                    "median_rate": "{:.2%}",
+                    "ninety_fifth_percentile": "{:.2%}",
+                    "maximum_rate": "{:.2%}",
+                    "negative_rate_share": "{:.2%}",
+                },
+                label="Full un-clipped rate distribution and tail audit by age",
+            ),
+        ])
+        return rate_distribution_output
 
     _build_view()
     return
@@ -2290,7 +2479,7 @@ def passenger_status_proxy(
                     y=alt.Y("status_share:Q", title="Fit-active share of two buckets", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
                     tooltip=["age:Q", alt.Tooltip("status_share:Q", format=".2%")],
                 )
-                .properties(width=600, height=180, title="Fit-active share by age")
+                .properties(width=700, height=300, title="Fit-active share by age")
             )
             return mo.vstack([chart_ui(counts), chart_ui(share)])
 
@@ -2304,7 +2493,7 @@ def passenger_status_proxy(
             not physical retirement or scrappage.
             """),
             mo.ui.tabs({"Passenger": status_view("PASSENGER"), "Commercial": status_view("COMMERCIAL")}),
-            mo.ui.table(fit_status_bucket_summary, selection=None, pagination=False, format_mapping={"share_of_two_status_stock": "{:.2%}"}, label=f"Fit-active and fit-inactive totals in {fit_status_latest_year}"),
+            mo.ui.table(fit_status_bucket_summary, selection=None, pagination=False, page_size=10, format_mapping={"share_of_two_status_stock": "{:.2%}"}, label=f"Fit-active and fit-inactive totals in {fit_status_latest_year}"),
         ])
         return status_proxy_output
 
@@ -2357,13 +2546,17 @@ def _(alt, chart_ui, evidence, mo, pd):
         for _column in numeric_columns:
             mto_curves[_column] = pd.to_numeric(mto_curves[_column], errors="coerce")
         annual_rows = mto_curves.loc[mto_curves["annual_retirement_rate"].notna()].copy()
+        annual_age_domain = [
+            int(annual_rows["age"].min()),
+            int(annual_rows["age"].max()),
+        ]
         annual_lines = (
             alt.Chart(annual_rows)
-            .mark_line()
+            .mark_line(interpolate="linear")
             .encode(
-                x=alt.X("age:Q", title="Starting vehicle age", scale=alt.Scale(domain=[2, 25])),
+                x=alt.X("age:Q", title="Starting vehicle age", scale=alt.Scale(domain=annual_age_domain)),
                 y=alt.Y("annual_retirement_rate:Q", title="Annual apparent retirement rate", axis=alt.Axis(format="%"), scale=alt.Scale(zero=True)),
-                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"])),
+                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right")),
             )
         )
         annual_points = (
@@ -2372,7 +2565,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             .encode(
                 x="age:Q",
                 y="annual_retirement_rate:Q",
-                color=alt.Color("vehicle_class:N", legend=None),
+                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right")),
                 size=alt.Size("fit_active_exposure:Q", title="Starting exposure", scale=alt.Scale(range=[20, 240])),
                 tooltip=["vehicle_class:N", "age:Q", alt.Tooltip("annual_retirement_rate:Q", format=".2%"), alt.Tooltip("annual_survival_factor:Q", format=".2%"), alt.Tooltip("fit_active_exposure:Q", format=","), "number_of_vintages:Q", "number_of_transitions:Q"],
             )
@@ -2395,15 +2588,34 @@ def _(alt, chart_ui, evidence, mo, pd):
         ].copy()
         mto_comparison["evidence_source"] = "MTO cohort transitions"
         survival_comparison = pd.concat([legacy_comparison, mto_comparison], ignore_index=True)
+        survival_line_types = {
+            "MTO cohort transitions": "Continuous: MTO transitions",
+            "Legacy NHTSA": "Dashed: legacy NHTSA",
+        }
+        survival_comparison["line_type"] = survival_comparison[
+            "evidence_source"
+        ].map(survival_line_types)
+        comparison_age_max = int(survival_comparison["age"].max())
         cumulative_chart = (
             alt.Chart(survival_comparison)
-            .mark_line(point=True)
+            .mark_line(point=True, interpolate="linear")
             .encode(
-                x=alt.X("age:Q", title="Vehicle age", scale=alt.Scale(domain=[0, 40])),
+                x=alt.X("age:Q", title="Vehicle age", scale=alt.Scale(domain=[0, comparison_age_max])),
                 y=alt.Y("cumulative_survival:Q", title="Cumulative survival", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
-                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"])),
-                strokeDash=alt.StrokeDash("evidence_source:N", title="Evidence"),
-                tooltip=["vehicle_class:N", "evidence_source:N", "age:Q", alt.Tooltip("cumulative_survival:Q", format=".2%")],
+                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right")),
+                strokeDash=alt.StrokeDash(
+                    "line_type:N",
+                    title="Line type",
+                    scale=alt.Scale(
+                        domain=[
+                            "Continuous: MTO transitions",
+                            "Dashed: legacy NHTSA",
+                        ],
+                        range=[[1, 0], [7, 4]],
+                    ),
+                    legend=alt.Legend(orient="right"),
+                ),
+                tooltip=["vehicle_class:N", "line_type:N", "age:Q", alt.Tooltip("cumulative_survival:Q", format=".2%")],
             )
             .properties(width=700, height=300, title="MTO and legacy NHTSA cumulative survival")
         )
@@ -2414,35 +2626,288 @@ def _(alt, chart_ui, evidence, mo, pd):
             mo.md(f"""
             **Decision: {decision_outcome}.** The estimator uses only strictly
             `FIT_ACTIVE` keys observed in consecutive Report A editions, with positive
-            starting exposure and starting age at least two. Class mapping is attached
-            afterwards. Raw and pooled negative retirement rates are preserved, never
-            clipped. Latest-snapshot composition weights do not enter these rates.
+            starting exposure and nonnegative starting age. Age 0 to 1 is the first
+            empirical transition. Class mapping is attached afterwards. Raw and pooled
+            negative retirement rates are preserved, never clipped. Latest-snapshot
+            composition weights do not enter these rates.
 
             #### 1. Stock-weighted historical mapping coverage
+
+            This is not the share of unique make-model-vintage series. Its denominator is
+            the sum of `N_{{p,k,v,t}}`, the FIT_ACTIVE stock at the beginning of every
+            eligible historical transition. A series observed over several annual pairs
+            contributes its starting exposure to each pair. The mapped share is the part
+            of that exposure whose reviewed vintage-specific crosswalk resolves to CEUD
+            Car or Light Truck.
             """),
             chart_ui(coverage_chart),
-            mo.md("#### 2. Empirical annual rates, exposure, and vintage support"),
+            mo.md("""
+            #### 2. Empirical annual rates, exposure, and vintage support
+
+            At each class and age, the empirical rate is total apparent retirements divided
+            by total starting exposure. Starting exposure is therefore the summed stock of
+            every mapped make-model-vintage-report-year transition entering that point—not
+            the latest fleet stock. Vintage support counts distinct model years, while
+            transition support counts the individual make-model-vintage annual pairs.
+            Point area represents starting exposure; the color legend distinguishes Car
+            and Light Truck.
+            """),
             chart_ui(annual_chart),
             mo.md("""
-            Point area is starting FIT_ACTIVE exposure. Hovering reports the number of
-            contributing vintages and make-model-vintage transitions. Ages 23-24 have
-            fewer than three vintages, so the configured support gate retains the legacy
-            NHTSA schedule even though the pooled rates are in bounds and cumulative MTO
-            evidence is monotone over its observed interval.
+            Hovering reports exposure and both support counts. The configured decision gate
+            evaluates the full uncapped historical age range, including the sparse old-age
+            tail, rather than treating 2000 as a survival-evidence floor.
 
             #### 3. Like-for-like cumulative-survival comparison
 
-            MTO cumulative survival is normalized to one at age two, the first eligible
-            transition age. The NHTSA curves retain their published age-zero baseline.
+            Both series display an age-zero baseline. For MTO, the age-0 annual rate is the
+            first empirical factor and determines survival at age 1; the age-1 rate then
+            determines survival at age 2. The MTO line is not smoothed, interpolated
+            statistically, or fitted: each plotted point is the direct cumulative product
+            of the exposure-pooled MTO factors and straight segments merely connect
+            consecutive ages. A cumulative product naturally looks smoother than its annual
+            inputs because each new rate changes the preceding survival level
+            multiplicatively. Declining late-age exposure makes those smooth-looking levels
+            less certain, not more reliable. Color identifies vehicle class; the separate
+            line-type legend identifies continuous MTO and dashed legacy evidence.
+
+            NHTSA is loaded only after the MTO transition table, annual pooling, and
+            cumulative product already exist. It never enters an MTO numerator,
+            denominator, weight, rate, interpolation, or calibration step.
             """),
             chart_ui(cumulative_chart),
             mo.ui.tabs({
-                "Decision gate": mo.ui.table(decision, selection=None, pagination=False, format_mapping={"mapped_fit_active_exposure_share": "{:.2%}", "in_bounds_rate_share": "{:.2%}"}),
-                "Final MTO class-age output": mo.ui.table(mto_curves.sort_values(["vehicle_class", "age"]), selection=None, pagination=True, page_size=25, format_mapping={"annual_retirement_rate": "{:.2%}", "annual_survival_factor": "{:.2%}", "cumulative_survival": "{:.2%}", "cumulative_scrappage": "{:.2%}"}),
-                "Transition mapping coverage": mo.ui.table(coverage, selection=None, pagination=False, format_mapping={"mapped_exposure_share": "{:.2%}"}),
+                "Decision gate": mo.ui.table(decision, selection=None, pagination=False, page_size=10, format_mapping={"mapped_fit_active_exposure_share": "{:.2%}", "in_bounds_rate_share": "{:.2%}"}),
+                "Final MTO class-age output": mo.ui.table(mto_curves.sort_values(["vehicle_class", "age"]), selection=None, pagination=True, page_size=10, format_mapping={"annual_retirement_rate": "{:.2%}", "annual_survival_factor": "{:.2%}", "cumulative_survival": "{:.2%}", "cumulative_scrappage": "{:.2%}"}),
+                "Transition mapping coverage": mo.ui.table(coverage, selection=None, pagination=False, page_size=10, format_mapping={"mapped_exposure_share": "{:.2%}"}),
             }),
         ])
         return survival_comparison_output
+
+    _build_view()
+    return
+
+
+@app.cell(hide_code=True)
+def survival_scope_comparison_heading(mo):
+    mo.md("""
+    ### All-history versus latest-survivor-conditioned aggregation
+    """)
+    return
+
+
+@app.cell
+def _(alt, chart_ui, evidence, mo, pd):
+    def _build_view():
+        scope_curves = evidence["ceud_scope_comparison"].copy()
+        for column in [
+            "age",
+            "annual_retirement_rate",
+            "annual_survival_factor",
+            "cumulative_survival",
+            "cumulative_scrappage",
+            "fit_active_exposure",
+            "number_of_vintages",
+            "number_of_transitions",
+        ]:
+            scope_curves[column] = pd.to_numeric(
+                scope_curves[column], errors="coerce"
+            )
+        scope_labels = {
+            "all_historical_transitions": "All historical series",
+            "latest_snapshot_survivors": "Series present in latest snapshot",
+        }
+        scope_curves["aggregation_method"] = scope_curves[
+            "aggregation_scope"
+        ].map(scope_labels)
+        scope_line_types = {
+            "all_historical_transitions": "Continuous: all historical",
+            "latest_snapshot_survivors": "Dashed: latest-snapshot survivors",
+        }
+        scope_curves["line_type"] = scope_curves["aggregation_scope"].map(
+            scope_line_types
+        )
+        observed_scope_rates = scope_curves.loc[
+            scope_curves["annual_retirement_rate"].notna()
+        ].copy()
+        scope_rate_age_domain = [
+            int(observed_scope_rates["age"].min()),
+            int(observed_scope_rates["age"].max()),
+        ]
+        scope_cumulative_rows = scope_curves.loc[
+            scope_curves["cumulative_survival"].notna()
+        ].copy()
+        scope_cumulative_age_max = int(scope_cumulative_rows["age"].max())
+        class_encoding = alt.Color(
+            "vehicle_class:N",
+            title="NRCan CEUD class",
+            scale=alt.Scale(
+                domain=["Car", "Light Truck"],
+                range=["#457b9d", "#e76f51"],
+            ),
+            legend=alt.Legend(orient="right"),
+        )
+        method_encoding = alt.StrokeDash(
+            "line_type:N",
+            title="Line type",
+            scale=alt.Scale(
+                domain=[
+                    "Continuous: all historical",
+                    "Dashed: latest-snapshot survivors",
+                ],
+                range=[[1, 0], [7, 4]],
+            ),
+            legend=alt.Legend(orient="right"),
+        )
+        scope_annual_chart = (
+            alt.Chart(observed_scope_rates)
+            .mark_line(point=True, interpolate="linear")
+            .encode(
+                x=alt.X(
+                    "age:Q",
+                    title="Starting vehicle age",
+                    scale=alt.Scale(domain=scope_rate_age_domain),
+                ),
+                y=alt.Y(
+                    "annual_retirement_rate:Q",
+                    title="Annual apparent retirement rate",
+                    axis=alt.Axis(format="%"),
+                ),
+                color=class_encoding,
+                strokeDash=method_encoding,
+                tooltip=[
+                    "vehicle_class:N",
+                    "aggregation_method:N",
+                    "age:Q",
+                    alt.Tooltip("annual_retirement_rate:Q", format=".2%"),
+                    alt.Tooltip("fit_active_exposure:Q", format=","),
+                    "number_of_vintages:Q",
+                    "number_of_transitions:Q",
+                ],
+            )
+            .properties(
+                width=700,
+                height=300,
+                title="Same raw transitions, alternative post-transition series scope",
+            )
+        )
+        scope_cumulative_chart = (
+            alt.Chart(scope_cumulative_rows)
+            .mark_line(point=True, interpolate="linear")
+            .encode(
+                x=alt.X("age:Q", title="Vehicle age", scale=alt.Scale(domain=[0, scope_cumulative_age_max])),
+                y=alt.Y(
+                    "cumulative_survival:Q",
+                    title="Cumulative survival",
+                    axis=alt.Axis(format="%"),
+                    scale=alt.Scale(domain=[0, 1]),
+                ),
+                color=class_encoding,
+                strokeDash=method_encoding,
+                tooltip=[
+                    "vehicle_class:N",
+                    "aggregation_method:N",
+                    "age:Q",
+                    alt.Tooltip("cumulative_survival:Q", format=".2%"),
+                ],
+            )
+            .properties(
+                width=700,
+                height=300,
+                title="Cumulative effect of the two empirical aggregation scopes",
+            )
+        )
+        exposure_support_chart = (
+            alt.Chart(observed_scope_rates)
+            .mark_line(point=True, interpolate="linear")
+            .encode(
+                x=alt.X("age:Q", title="Starting vehicle age", scale=alt.Scale(domain=scope_rate_age_domain)),
+                y=alt.Y(
+                    "fit_active_exposure:Q",
+                    title="Starting FIT_ACTIVE exposure",
+                    scale=alt.Scale(type="log"),
+                ),
+                color=class_encoding,
+                strokeDash=method_encoding,
+                tooltip=[
+                    "vehicle_class:N",
+                    "aggregation_method:N",
+                    "age:Q",
+                    alt.Tooltip("fit_active_exposure:Q", format=","),
+                ],
+            )
+            .properties(width=700, height=300, title="Exposure by age")
+        )
+        vintage_support_chart = (
+            alt.Chart(observed_scope_rates)
+            .mark_line(point=True, interpolate="linear")
+            .encode(
+                x=alt.X("age:Q", title="Starting vehicle age", scale=alt.Scale(domain=scope_rate_age_domain)),
+                y=alt.Y("number_of_vintages:Q", title="Distinct vintages"),
+                color=class_encoding,
+                strokeDash=method_encoding,
+                tooltip=[
+                    "vehicle_class:N",
+                    "aggregation_method:N",
+                    "age:Q",
+                    "number_of_vintages:Q",
+                    "number_of_transitions:Q",
+                ],
+            )
+            .properties(width=700, height=300, title="Vintage support by age")
+        )
+        scope_comparison_output = mo.vstack([
+            mo.md("""
+            Both methods begin with exactly the same raw FIT_ACTIVE make-model-vintage
+            transitions. **All historical series** pools every transition that can be
+            mapped at its own vintage. **Series present in latest snapshot** applies one
+            additional filter after mapping: its Passenger/Commercial make-model-vintage
+            key must also exist in the latest Report A snapshot. No latest-snapshot class
+            shares or stock weights are used in either rate.
+
+            The all-history method is the defensible estimator because historical cohorts
+            remain valid exposure even if they later disappear. Latest-survivor conditioning
+            is shown only to quantify survivorship bias: it preferentially retains cohorts
+            that survived long enough to reach the latest edition and can change both the
+            class mix and apparent retirement rates.
+            """),
+            chart_ui(scope_annual_chart),
+            mo.md("""
+            The cumulative curves below are independently compounded from each method's
+            own annual MTO rates. NHTSA does not enter this comparison. Differences between
+            the lines arise only from the post-transition latest-presence filter.
+            """),
+            chart_ui(scope_cumulative_chart),
+            mo.md(f"""
+            Exposure and distinct-vintage support show what the conditioning removes.
+            The survival estimator now retains all source-reported vintages and begins with
+            the empirical age-0 transition. In these generated artifacts annual evidence
+            extends through starting age {scope_rate_age_domain[1]}, and the terminal
+            cumulative point at age {scope_cumulative_age_max} applies that final factor.
+            The 2000 floor remains confined to existing-fleet aggregation weights and does
+            not truncate this forward-looking evidence. Color identifies vehicle class;
+            the separate line-type legend identifies continuous all-history and dashed
+            latest-snapshot-survivor conditioning.
+            """),
+            chart_ui(exposure_support_chart),
+            chart_ui(vintage_support_chart),
+            mo.ui.table(
+                scope_curves.sort_values(
+                    ["aggregation_scope", "vehicle_class", "age"]
+                ),
+                selection=None,
+                pagination=True,
+                page_size=10,
+                format_mapping={
+                    "annual_retirement_rate": "{:.2%}",
+                    "annual_survival_factor": "{:.2%}",
+                    "cumulative_survival": "{:.2%}",
+                    "cumulative_scrappage": "{:.2%}",
+                },
+                label="All-history and latest-survivor-conditioned class-age output",
+            ),
+        ])
+        return scope_comparison_output
 
     _build_view()
     return

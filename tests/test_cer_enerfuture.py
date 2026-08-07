@@ -38,7 +38,7 @@ def test_source_contract_targets_readme_parameter_roles(bundle) -> None:
         "stocks_and_demands",
         "capex_opex",
     ]
-    assert source.component("end-use-demand").parameter_modules == ["benchmarking"]
+    assert source.component("end-use-demand").parameter_modules == []
     assert source.component("end-use-prices").produces == ["fuel_price_scenarios"]
 
 

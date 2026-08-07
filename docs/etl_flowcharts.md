@@ -297,7 +297,10 @@ R^{\mathrm{app}}_{k,v,t}
   and consecutive-edition transitions from equation (i), then the accepted mapped-key,
   NLR class-vintage, NLR class, CEUD class-vintage, and CEUD class pooling stages. Each
   pooled ratio divides summed next-edition counts by summed fit-active exposure. It does
-  not yet insert an MTO-derived physical survival curve. The
+  not yet insert an MTO-derived physical survival curve. The survival-evidence interface
+  retains every source-reported vintage and begins with the age-0 to age-1 transition;
+  the separate model-year-2000 floor applies only to existing-fleet aggregation weights
+  and age distributions. The
   exact executed filters, aggregation steps, support measures, and interpretation are
   documented beside the diagnostics in
   `docs/insights/vehicle_population_aggregation_mapping.py`.
