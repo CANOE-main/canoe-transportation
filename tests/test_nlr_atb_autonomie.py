@@ -15,13 +15,15 @@ from fetching.nlr_atb_autonomie import (
     build_atb_request,
     build_manual_request,
     configured_trajectory,
+    derive_phev_efficiency,
     discover_zip_members,
     extract_bean_coefficients,
     fetch_archive_to_cache,
+    match_phev_utility_factors,
     module_rules,
     normalize_vehicles,
 )
-from utils import load_config_bundle
+from utils import load_config_bundle, load_conversion_factors
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -59,7 +61,165 @@ def _vehicle_frame() -> pd.DataFrame:
                     "reference": "fixture",
                 }
             )
+    rows.extend(
+        [
+            {
+                "year": 2030,
+                "scenario": "Conservative",
+                "vehicle_weight_category": "Light Duty",
+                "vehicle_class": "Compact",
+                "vehicle_powertrain": "Plug-in Hybrid",
+                "vehicle_detail": "Gasoline PHEV",
+                "fuel_category": "Electricity",
+                "fuel2_category": "Gasoline",
+                "metric": "Fuel Economy (mi/gge)",
+                "value": 70.0,
+                "reference": "fixture output evidence",
+            },
+            {
+                "year": 2030,
+                "scenario": "Mid",
+                "vehicle_weight_category": "Medium/Heavy Duty",
+                "vehicle_class": "Class 8 Sleeper",
+                "vehicle_powertrain": "Plug-in Hybrid",
+                "vehicle_detail": "Diesel PHEV",
+                "fuel_category": "Electricity",
+                "fuel2_category": "Diesel",
+                "metric": "Fuel Economy (mi/dge)",
+                "value": 30.0,
+                "reference": "fixture output evidence",
+            },
+            {
+                "year": 2030,
+                "scenario": "Conservative",
+                "vehicle_weight_category": "Light Duty",
+                "vehicle_class": "Compact",
+                "vehicle_powertrain": "Plug-in Hybrid",
+                "vehicle_detail": "Gasoline PHEV",
+                "fuel_category": "Electricity",
+                "fuel2_category": "Gasoline",
+                "metric": "Modeled Vehicle Price (2022$)",
+                "value": 40_000.0,
+                "reference": "fixture",
+            },
+        ]
+    )
     return pd.DataFrame(rows)
+
+
+def _phev_vehicle_inputs() -> pd.DataFrame:
+    base = {
+        "fuel_category": "Electricity",
+        "vehicle_powertrain": "Plug-in Hybrid",
+        "battery_cost($)": 0.0,
+        "pack_energy(kWh)": 0.0,
+        "usable_energy(kWh)": 0.0,
+        "fuel_cell_cost($/kW)": 0.0,
+        "h2_storage_tank_cost($/kgh2)": 0.0,
+        "vehicle_cost($)": 0.0,
+        "dollar_year": 2022,
+        "reference": "fixture vehicle inputs",
+    }
+    return pd.DataFrame(
+        [
+            {
+                **base,
+                "year": 2030,
+                "scenario": "Constant",
+                "fuel2_category": "Gasoline",
+                "vehicle_weight_category": "Light Duty",
+                "vehicle_class": "Compact",
+                "vehicle_detail": "Gasoline PHEV",
+                "CS(mi/gge)": 40.0,
+                "CD(Wh/mi)": 300.0,
+                "ARB_contribution": pd.NA,
+                "EPA55_contribution": pd.NA,
+                "EPA65_contribution": pd.NA,
+                "ARB_CS(mpgde)": pd.NA,
+                "EPA55_CS(mpgde)": pd.NA,
+                "EPA65_CS(mpgde)": pd.NA,
+                "ARB_CD(Wh/mi)": pd.NA,
+                "EPA55_CD(Wh/mi)": pd.NA,
+                "EPA65_CD(Wh/mi)": pd.NA,
+                "range(mi)": 35.0,
+            },
+            {
+                **base,
+                "year": 2030,
+                "scenario": "Mid",
+                "fuel2_category": "Diesel",
+                "vehicle_weight_category": "Medium/Heavy Duty",
+                "vehicle_class": "Class 8 Sleeper",
+                "vehicle_detail": "Diesel PHEV",
+                "CS(mi/gge)": pd.NA,
+                "CD(Wh/mi)": pd.NA,
+                "ARB_contribution": 0.2,
+                "EPA55_contribution": 0.3,
+                "EPA65_contribution": 0.5,
+                "ARB_CS(mpgde)": 10.0,
+                "EPA55_CS(mpgde)": 20.0,
+                "EPA65_CS(mpgde)": 40.0,
+                "ARB_CD(Wh/mi)": 1000.0,
+                "EPA55_CD(Wh/mi)": 2000.0,
+                "EPA65_CD(Wh/mi)": 3000.0,
+                "range(mi)": 100.0,
+            },
+        ]
+    )
+
+
+def _phev_uf_ldv() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "vehicle_weight_category": "Light Duty",
+                "range(mi)": 30.0,
+                "phev_uf": 0.5,
+                "reference": "fixture LDV UF",
+                "notes": "lower",
+            },
+            {
+                "vehicle_weight_category": "Light Duty",
+                "range(mi)": 40.0,
+                "phev_uf": 0.6,
+                "reference": "fixture LDV UF",
+                "notes": "upper",
+            },
+        ]
+    )
+
+
+def _phev_uf_mdhd() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "vehicle_weight_category": "Medium/Heavy Duty",
+                "vehicle_class": "Class 8 Sleeper",
+                "phev_uf": 0.8,
+                "reference": "fixture MHDV UF",
+                "notes": "exact",
+            }
+        ]
+    )
+
+
+def _derived_phev(bundle) -> pd.DataFrame:
+    rules = module_rules(bundle)["components"]["phev_efficiency"]
+    return derive_phev_efficiency(
+        _phev_vehicle_inputs(),
+        ldv_utility_factors=_phev_uf_ldv(),
+        mdhd_utility_factors=_phev_uf_mdhd(),
+        output_vehicles=_vehicle_frame(),
+        rules=rules,
+        conversions=load_conversion_factors(bundle),
+        source_members={
+            "phev_vehicle_inputs": "input/inputs_vehicles.csv",
+            "phev_utility_factor_ldv": "input/phev_uf_ldv.csv",
+            "phev_utility_factor_mdhd": "input/phev_uf_mdhd.csv",
+            "vehicles": "output/vehicles.csv",
+        },
+        default_trajectory="Conservative",
+    )
 
 
 def _maintenance_ldv_bytes() -> bytes:
@@ -130,6 +290,18 @@ def _write_fixture_zip(path: Path, *, prefix: str = "") -> None:
             _vehicle_frame().to_csv(index=False),
         )
         archive.writestr(
+            f"{prefix}input/inputs_vehicles.csv",
+            _phev_vehicle_inputs().to_csv(index=False),
+        )
+        archive.writestr(
+            f"{prefix}input/phev_uf_ldv.csv",
+            _phev_uf_ldv().to_csv(index=False),
+        )
+        archive.writestr(
+            f"{prefix}input/phev_uf_mdhd.csv",
+            _phev_uf_mdhd().to_csv(index=False),
+        )
+        archive.writestr(
             f"{prefix}input/maintenance_ldv.xlsx",
             _maintenance_ldv_bytes(),
         )
@@ -176,6 +348,11 @@ def test_source_contract_and_conservative_legacy_default(bundle) -> None:
         "efficiencies",
         "capex_opex",
     ]
+    assert {
+        "phev_vehicle_inputs",
+        "phev_utility_factor_ldv",
+        "phev_utility_factor_mdhd",
+    }.issubset(source.components)
     assert source.component("vmt_ldv").parameter_modules == ["stocks_and_demands"]
     assert set(build_atb_request(bundle).expected_trajectories) == {
         "Advanced",
@@ -202,6 +379,11 @@ def test_zip_member_discovery_accepts_release_prefix_and_rejects_ambiguity(
         archive.writestr("output/vehicles.csv", _vehicle_frame().to_csv(index=False))
     with pytest.raises(NlrAtbAutonomieError, match="vehicles is ambiguous"):
         discover_zip_members(archive_path, request.components)
+
+    nested_archive = tmp_path / "nested.zip"
+    _write_fixture_zip(nested_archive, prefix="release/nested/")
+    with pytest.raises(NlrAtbAutonomieError, match="missing required component vehicles"):
+        discover_zip_members(nested_archive, request.components)
 
 
 class _Response:
@@ -266,6 +448,15 @@ def test_required_columns_and_all_trajectories_are_retained(bundle) -> None:
     assert normalized.loc[normalized["is_default_trajectory"], "trajectory"].eq(
         "Conservative"
     ).all()
+    assert len(
+        normalized[
+            normalized["vehicle_powertrain"].eq("Battery Electric")
+            & normalized["metric"].str.startswith("Fuel Economy")
+        ]
+    ) == 8
+    assert normalized[
+        normalized["vehicle_powertrain"].eq("Plug-in Hybrid")
+    ]["metric"].tolist() == ["Modeled Vehicle Price (2022$)"]
     with pytest.raises(NlrAtbAutonomieError, match="missing required columns"):
         normalize_vehicles(
             frame.drop(columns="metric"),
@@ -274,6 +465,184 @@ def test_required_columns_and_all_trajectories_are_retained(bundle) -> None:
             source_member="output/vehicles.csv",
             default_trajectory="Conservative",
             rules=module_rules(bundle),
+        )
+
+
+def test_ldv_phev_uses_combined_inputs_interpolated_uf_and_energy_shares(bundle) -> None:
+    derived = _derived_phev(bundle)
+    row = derived[derived["vehicle_weight_category"].eq("Light Duty")].iloc[0]
+    conversion = load_conversion_factors(bundle)
+
+    assert row["fuel_equivalent_basis"] == "gge"
+    assert row["fleet_utility_factor"] == pytest.approx(0.55)
+    assert row["utility_factor_match_method"] == "linear_interpolation"
+    assert row["utility_factor_lower_range_mi"] == 30
+    assert row["utility_factor_upper_range_mi"] == 40
+    assert row["combined_cs_fuel_economy_mi_per_gallon_equivalent"] == 40
+    assert row["combined_cd_electricity_consumption_wh_per_mi"] == 300
+    assert row[
+        "utility_weighted_fuel_consumption_gallon_equivalent_per_mi"
+    ] == pytest.approx(0.45 / 40)
+    assert row[
+        "utility_weighted_electricity_consumption_wh_per_mi"
+    ] == pytest.approx(0.55 * 300)
+    assert row[
+        "utility_weighted_fuel_consumption_litre_equivalent_per_100_km"
+    ] == pytest.approx(
+        (0.45 / 40)
+        * conversion["derived"][
+            "us_gallon_equivalent_per_mile_to_litre_equivalent_per_100_km"
+        ]
+    )
+    assert row["utility_weighted_fuel_consumption_canadian_unit"] == "Lge/100 km"
+    assert row["electricity_input_share"] != pytest.approx(
+        row["fleet_utility_factor"]
+    )
+    assert row["electricity_input_share"] + row["liquid_fuel_input_share"] == (
+        pytest.approx(1.0)
+    )
+
+
+def test_mhdv_phev_uses_harmonic_cs_arithmetic_cd_and_dge_basis(bundle) -> None:
+    row = _derived_phev(bundle).loc[
+        lambda frame: frame["vehicle_weight_category"].eq("Medium/Heavy Duty")
+    ].iloc[0]
+    expected_cs = 1.0 / (0.2 / 10.0 + 0.3 / 20.0 + 0.5 / 40.0)
+    expected_cd = 0.2 * 1000.0 + 0.3 * 2000.0 + 0.5 * 3000.0
+
+    assert row["fuel_equivalent_basis"] == "dge"
+    assert row["combined_cs_fuel_economy_mi_per_gallon_equivalent"] == pytest.approx(
+        expected_cs
+    )
+    assert row["combined_cd_electricity_consumption_wh_per_mi"] == pytest.approx(
+        expected_cd
+    )
+    assert row["source_cycle_contribution_sum"] == pytest.approx(1.0)
+    assert row["source_arb_cycle_contribution"] == pytest.approx(0.2)
+    assert row["utility_factor_match_method"] == "exact"
+    assert row["utility_weighted_fuel_consumption_canadian_unit"] == "Lde/100 km"
+    assert row["wh_per_fuel_equivalent_gallon"] == pytest.approx(
+        load_conversion_factors(bundle)["energy"]["wh_per_dge"]
+    )
+
+
+def test_utility_factor_bounds_ambiguity_missing_and_no_extrapolation(bundle) -> None:
+    rules = module_rules(bundle)["components"]["phev_efficiency"]
+    vehicle = _derived_phev(bundle).loc[
+        lambda frame: frame["vehicle_weight_category"].eq("Light Duty"),
+        ["vehicle_weight_category", "vehicle_class", "electric_range_mi"],
+    ]
+    bad_bounds = _phev_uf_ldv()
+    bad_bounds.loc[0, "phev_uf"] = 1.1
+    with pytest.raises(NlrAtbAutonomieError, match=r"must lie in \[0, 1\]"):
+        match_phev_utility_factors(
+            vehicle,
+            ldv_utility_factors=bad_bounds,
+            mdhd_utility_factors=_phev_uf_mdhd(),
+            rules=rules,
+        )
+
+    ambiguous = pd.concat([_phev_uf_ldv(), _phev_uf_ldv().iloc[[0]]])
+    with pytest.raises(NlrAtbAutonomieError, match="ambiguous duplicate keys"):
+        match_phev_utility_factors(
+            vehicle,
+            ldv_utility_factors=ambiguous,
+            mdhd_utility_factors=_phev_uf_mdhd(),
+            rules=rules,
+        )
+
+    extrapolated = vehicle.copy()
+    extrapolated["electric_range_mi"] = 20
+    with pytest.raises(NlrAtbAutonomieError, match="would extrapolate"):
+        match_phev_utility_factors(
+            extrapolated,
+            ldv_utility_factors=_phev_uf_ldv(),
+            mdhd_utility_factors=_phev_uf_mdhd(),
+            rules=rules,
+        )
+
+    missing_mdhd = _phev_uf_mdhd().iloc[0:0]
+    mdhd_vehicle = pd.DataFrame(
+        [
+            {
+                "vehicle_weight_category": "Medium/Heavy Duty",
+                "vehicle_class": "Class 8 Sleeper",
+                "electric_range_mi": 100,
+            }
+        ]
+    )
+    with pytest.raises(NlrAtbAutonomieError, match="contains no rows"):
+        match_phev_utility_factors(
+            mdhd_vehicle,
+            ldv_utility_factors=_phev_uf_ldv(),
+            mdhd_utility_factors=missing_mdhd,
+            rules=rules,
+        )
+
+
+def test_phev_canadian_conversions_round_trip_without_rounding(bundle) -> None:
+    derived = _derived_phev(bundle)
+    factors = load_conversion_factors(bundle)["derived"]
+    fuel_factor = factors[
+        "us_gallon_equivalent_per_mile_to_litre_equivalent_per_100_km"
+    ]
+    electricity_factor = factors["wh_per_mile_to_kwh_per_100_km"]
+
+    assert (
+        derived[
+            "utility_weighted_fuel_consumption_litre_equivalent_per_100_km"
+        ]
+        / fuel_factor
+    ).to_numpy() == pytest.approx(
+        derived[
+            "utility_weighted_fuel_consumption_gallon_equivalent_per_mi"
+        ].to_numpy()
+    )
+    assert (
+        derived[
+            "utility_weighted_electricity_consumption_kwh_per_100_km"
+        ]
+        / electricity_factor
+    ).to_numpy() == pytest.approx(
+        derived["utility_weighted_electricity_consumption_wh_per_mi"].to_numpy()
+    )
+    assert derived["electricity_input_share"].between(0, 1).all()
+    assert derived["liquid_fuel_input_share"].between(0, 1).all()
+
+
+def test_phev_reconciliation_is_diagnostic_and_uses_scenario_alias(bundle) -> None:
+    derived = _derived_phev(bundle)
+    ldv = derived[derived["vehicle_weight_category"].eq("Light Duty")].iloc[0]
+
+    assert ldv["trajectory"] == "Constant"
+    assert ldv["reconciliation_output_scenario"] == "Conservative"
+    assert ldv["reconciliation_match_method"] == "scenario_alias"
+    assert not bool(ldv["reconciliation_within_tolerance"])
+    assert (
+        ldv["combined_cs_fuel_economy_mi_per_gallon_equivalent"]
+        == _phev_vehicle_inputs().iloc[0]["CS(mi/gge)"]
+    )
+
+
+def test_invalid_mhdv_cycle_contributions_fail(bundle) -> None:
+    inputs = _phev_vehicle_inputs()
+    inputs.loc[1, "EPA65_contribution"] = 0.4
+    rules = module_rules(bundle)["components"]["phev_efficiency"]
+    with pytest.raises(NlrAtbAutonomieError, match="must sum to 1"):
+        derive_phev_efficiency(
+            inputs,
+            ldv_utility_factors=_phev_uf_ldv(),
+            mdhd_utility_factors=_phev_uf_mdhd(),
+            output_vehicles=_vehicle_frame(),
+            rules=rules,
+            conversions=load_conversion_factors(bundle),
+            source_members={
+                "phev_vehicle_inputs": "input/inputs_vehicles.csv",
+                "phev_utility_factor_ldv": "input/phev_uf_ldv.csv",
+                "phev_utility_factor_mdhd": "input/phev_uf_mdhd.csv",
+                "vehicles": "output/vehicles.csv",
+            },
+            default_trajectory="Conservative",
         )
 
 
@@ -329,6 +698,11 @@ def test_full_fixture_run_writes_manifest_outputs_and_manual_warning(
     _write_fixture_zip(request.cache_path)
     monkeypatch.setattr(adapter, "load_config_bundle", lambda _: local_bundle)
     monkeypatch.setattr(adapter, "module_rules", lambda _: rules)
+    monkeypatch.setattr(
+        adapter,
+        "load_conversion_factors",
+        lambda _: load_conversion_factors(bundle),
+    )
 
     output_dir = adapter.fetch_and_normalize("ignored.yaml", download=False)
 
@@ -339,6 +713,10 @@ def test_full_fixture_run_writes_manifest_outputs_and_manual_warning(
     assert set(manifest["component_id"]) == {
         "vehicles",
         "maintenance_ldv",
+        "phev_vehicle_inputs",
+        "phev_utility_factor_ldv",
+        "phev_utility_factor_mdhd",
+        "phev_efficiency_derivation",
         "vmt_ldv",
         "vmt_mdhd",
         "mhdv_maintenance_coefficients",
@@ -352,8 +730,22 @@ def test_full_fixture_run_writes_manifest_outputs_and_manual_warning(
         "Constant",
         "Mid",
     }
+    phev = pd.read_csv(
+        output_dir / rules["components"]["phev_efficiency"]["output_file"]
+    )
+    phev_bytes = (
+        output_dir / rules["components"]["phev_efficiency"]["output_file"]
+    ).read_bytes()
+    assert len(phev) == 2
+    assert set(phev["fuel_equivalent_basis"]) == {"gge", "dge"}
+    assert phev["reconciliation_output_fuel_economy_mi_per_gallon_equivalent"].notna().all()
+    assert adapter.fetch_and_normalize("ignored.yaml", download=False) == output_dir
+    assert (
+        output_dir / rules["components"]["phev_efficiency"]["output_file"]
+    ).read_bytes() == phev_bytes
     warning_text = (output_dir / rules["warnings_file"]).read_text(encoding="utf-8")
     assert "Download the complete Box folder" in warning_text
+    assert "PHEV output fuel-economy reconciliation is report-only" in warning_text
 
 
 def test_missing_cached_and_manual_artifacts_fail_clearly(bundle, tmp_path: Path) -> None:

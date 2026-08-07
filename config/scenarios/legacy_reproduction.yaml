@@ -30,6 +30,10 @@ sources:
     - cer_canadas_energy_future
     - nlr_atb_transportation_2024
     - anl_autonomie_bean_2022
+    - nrcan_fuel_consumption_ratings
+    - ontario_ministry_transport_vehicle_population
+    - nhtsa_cafe_2024_ldv_survival
+    - eia_nems_hd_truck_scrappage
   selections:
     nrcan_ceud_transport_provincial: {year: 2021}
     nrcan_ceud_transport_national: {year: 2021}
@@ -68,6 +72,10 @@ switches:
   compile_sqlite: true
   transform_parameters: false
   include_existing_capacity: true
+  # Legacy reproduction uses source-derived median-equivalent lifetimes.
+  # Newer scenarios may enable empirical survival curves instead.
+  survival_curves: false
+  survival_curve_max_age: 30
 
 # Scenario-authored notes take precedence when a consuming row builder supports them.
 # Technology overrides are operational; parameter overrides remain planned.

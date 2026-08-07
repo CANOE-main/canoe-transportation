@@ -18,6 +18,10 @@ roles:
 - `economics` is operational for the SQLite bootstrap and replaces the packaged v4
   global discount and default loan rates after the package defaults are checked.
 - `outputs`, `validation`, and `switches` control artifacts and implemented execution.
+- `switches.survival_curves` chooses empirical road-vehicle survival curves
+  instead of fixed median-equivalent lifetimes;
+  `switches.survival_curve_max_age` bounds existing-stock cohorts only when
+  curves are enabled.
 - `row_note_overrides.technology` can replace the note for a named structural
   technology during database creation. `row_note_overrides.parameters` is reserved
   until parameter insertion is implemented and fails loudly if populated today.

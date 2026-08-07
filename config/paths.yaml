@@ -9,6 +9,7 @@ inputs:
   root: inputs
   cache: inputs/0_cache
   external: inputs/0_external_models
+  manual: inputs/0_manual_params
   interim: inputs/1_interim
   processed: inputs/2_processed
   template: inputs/0_canoe_template

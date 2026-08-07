@@ -10,8 +10,45 @@ mass:
 length:
   mile_to_km: 1.609344
 
+volume:
+  us_gallon_to_litre: 3.785411784
+
 energy:
   gigawatt_year_to_petajoule: 31.536
+  wh_to_kwh: 0.001
+  wh_per_gge: 33700.0
+  wh_per_dge: 37945.66929133858
+  nrcan_kwh_per_litre_gasoline_equivalent: 8.9
+
+derived:
+  us_gallon_equivalent_per_mile_to_litre_equivalent_per_100_km: 235.2145833333333
+  wh_per_mile_to_kwh_per_100_km: 0.0621371192237334
+
+provenance:
+  mile_to_km:
+    source: "NIST Special Publication 811, Appendix B.8"
+    url: "https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8"
+  us_gallon_to_litre:
+    source: "NIST Handbook 44 exact U.S. gallon conversion, reproduced in NIST SP 811 Appendix B.8"
+    url: "https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8"
+  wh_to_kwh:
+    source: "SI prefix definition"
+    url: "https://www.nist.gov/pml/owm/si-units-electric-current"
+  wh_per_gge:
+    source: "U.S. EPA fuel-economy and EV range testing: 33.7 kWh per gallon of gasoline"
+    url: "https://www.epa.gov/greenvehicles/fuel-economy-and-ev-range-testing"
+  wh_per_dge:
+    source: "Derived from 33,700 Wh/GGE and the U.S. DOE AFDC energy ratio 128,700 Btu/DGE divided by 114,300 Btu/GGE"
+    url: "https://afdc.energy.gov/glossary"
+  nrcan_kwh_per_litre_gasoline_equivalent:
+    source: "Natural Resources Canada fuel-consumption tables: one litre of gasoline contains 8.9 kWh of energy"
+    url: "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/personal-vehicles/understanding-tables"
+  us_gallon_equivalent_per_mile_to_litre_equivalent_per_100_km:
+    source: "Derived as us_gallon_to_litre * 100 / mile_to_km"
+    inputs: [volume.us_gallon_to_litre, length.mile_to_km]
+  wh_per_mile_to_kwh_per_100_km:
+    source: "Derived as 100 * wh_to_kwh / mile_to_km"
+    inputs: [energy.wh_to_kwh, length.mile_to_km]
 
 statcan:
   scalar_factor_multipliers:

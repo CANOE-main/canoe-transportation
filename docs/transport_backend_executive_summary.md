@@ -13,7 +13,7 @@ representation changes follow only after legacy parity gaps are explained or acc
 ## System at a glance
 
 ```mermaid
-flowchart LR
+flowchart TD
   CFG["Configuration control<br/>paths, sources, rules, conversions, scenarios"]
   SRC["Registered external sources"]
   FETCH["Fetching, physical validation<br/>and authoritative cache"]

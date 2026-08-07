@@ -90,6 +90,18 @@ def test_doctor_runs_without_mutating_by_default() -> None:
     assert result.checks["mutated"] is False
     assert set(result.checks["imports"]) == {"fetching", "parameterization", "utils", "validation"}
     assert result.checks["paths"]["schema_package"]["package"] == "canoe-schema"
+    assert result.checks["manual_parameters"] == {
+        "files": [
+            "cost_invest_multipliers.csv",
+            "cost_variable_multipliers.csv",
+            "efficiency_multipliers.csv",
+            "lifetime_process.csv",
+            "vehicle_class_market_shares.csv",
+        ],
+        "file_count": 5,
+        "component_count": 11,
+        "selected_cited_rows": 78,
+    }
 
 
 def test_pytest_defaults_do_not_pin_runtime_directories() -> None:

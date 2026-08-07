@@ -60,6 +60,7 @@ class InputPaths(MappingModel):
     root: str
     cache: str
     external: str
+    manual: str
     interim: str
     processed: str
     template: str
@@ -206,6 +207,8 @@ class ScenarioSwitches(MappingModel):
     compile_sqlite: bool
     transform_parameters: bool
     include_existing_capacity: bool = True
+    survival_curves: bool = False
+    survival_curve_max_age: int = Field(default=30, gt=0)
 
 
 class ScenarioRowNoteOverrides(MappingModel):
