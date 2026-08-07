@@ -107,14 +107,3 @@ that every parameter family is complete.
    technology progress, demand and fuel-price futures, adoption constraints, emissions,
    sector coupling, and capacity limits are explicit scenario placeholders, not active
    transformations; diagnostic notebooks for these areas are also future work.
-
-## Supervisor discussion
-
-- **Decision needed:** Which parameter families must constitute the next parity milestone,
-  and what evidence is sufficient to accept a gap?
-- **Decision needed:** Should road mapping/survival uncertainty block baseline delivery,
-  or be documented while retaining the legacy schedule?
-- **Decision needed:** Who owns source refresh approval and the meaning of registry
-  lifecycle status, distinct from scenario activation?
-- **Decision needed:** At what point should effort move from baseline integration to new
-  scenarios and wider Marimo diagnostics?

@@ -272,7 +272,7 @@ class SourceSpec(MappingModel):
     """Small shared source contract plus an adapter-owned extension mapping."""
 
     title: str
-    status: str
+    status: Literal["active", "inactive"]
     source_type: str
     file_type: str
     version: str

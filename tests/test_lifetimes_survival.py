@@ -4,10 +4,12 @@ import pytest
 from parameterization.lifetimes_survival import (
     aggregate_mto_survival_stages,
     aggregate_report_a_snapshots,
+    annotate_latest_snapshot_presence,
     cohort_transition_observations,
     legacy_wards_survival_curves,
     median_equivalent_lifetimes,
     mto_key_transition_observations,
+    mto_survival_scope_comparison,
     pool_cohort_retention,
     raw_mto_key_snapshots,
     retention_source_comparison,
@@ -194,7 +196,7 @@ def test_raw_key_retention_precedes_nlr_and_ceud_pooling() -> None:
         frames,
         passenger_class="PASSENGER",
         commercial_class="COMMERCIAL",
-        minimum_model_year=2000,
+        minimum_model_year=None,
         suppressed_code_patterns=[r"^\*+$"],
         unknown_code_labels=["UNKNOWN", "UNK", "N/A"],
     )
@@ -232,19 +234,88 @@ def test_raw_key_retention_precedes_nlr_and_ceud_pooling() -> None:
         "number_of_vintages",
         "number_of_transitions",
     ]
+    assert ceud_class.loc[ceud_class["age"].eq(0), "cumulative_survival"].item() == 1
+    assert ceud_class.loc[ceud_class["age"].eq(1), "annual_retirement_rate"].isna().all()
+    assert ceud_class["age"].max() == 6
+    assert ceud_class.loc[ceud_class["age"].eq(6), "cumulative_survival"].item() == pytest.approx(0.8)
 
 
-def test_raw_transition_estimator_requires_both_endpoints_and_age_two() -> None:
+def test_latest_snapshot_annotation_and_scope_comparison_are_post_transition() -> None:
+    mapped = pd.DataFrame(
+        {
+            "population_group": ["raw_passenger", "raw_passenger"],
+            "vehicle_class": ["PASSENGER", "PASSENGER"],
+            "mto_make_code": ["HOND", "FORD"],
+            "mto_model_code": ["CIV", "FOC"],
+            "model_year": [2018, 2018],
+            "stock_status": ["FIT_ACTIVE", "FIT_ACTIVE"],
+            "report_year": [2020, 2020],
+            "next_report_year": [2021, 2021],
+            "age": [2, 2],
+            "cohort_count_t": [100, 300],
+            "cohort_count_t1": [80, 270],
+            "apparent_retirements": [20, 30],
+            "annual_survival_factor": [0.8, 0.9],
+            "annual_retirement_rate": [0.2, 0.1],
+            "mapping_accepted": [True, True],
+            "nlr_atb_class": ["Compact", "Compact"],
+            "nrcan_ceud_class": ["Car", "Car"],
+        }
+    )
+    raw_snapshots = pd.DataFrame(
+        {
+            "vehicle_class": ["PASSENGER", "PASSENGER"],
+            "report_year": [2020, 2021],
+            "mto_make_code": ["HOND", "HOND"],
+            "mto_model_code": ["CIV", "CIV"],
+            "model_year": [2018, 2018],
+        }
+    )
+
+    annotated = annotate_latest_snapshot_presence(mapped, raw_snapshots)
+    comparison = mto_survival_scope_comparison(annotated)
+
+    presence = annotated.set_index("mto_model_code")[
+        "present_in_latest_snapshot"
+    ].to_dict()
+    assert presence == {"CIV": True, "FOC": False}
+    age_two = comparison.loc[comparison["age"].eq(2)].set_index(
+        "aggregation_scope"
+    )
+    assert age_two.loc[
+        "all_historical_transitions", "annual_retirement_rate"
+    ] == pytest.approx(50 / 400)
+    assert age_two.loc[
+        "latest_snapshot_survivors", "annual_retirement_rate"
+    ] == pytest.approx(20 / 100)
+    assert age_two.loc[
+        "all_historical_transitions", "number_of_transitions"
+    ] == 2
+    assert age_two.loc[
+        "latest_snapshot_survivors", "number_of_transitions"
+    ] == 1
+
+
+def test_raw_transition_estimator_requires_both_endpoints_and_nonnegative_age() -> None:
     snapshots = pd.DataFrame(
         {
-            "population_group": ["raw_passenger"] * 6,
-            "vehicle_class": ["PASSENGER"] * 6,
-            "mto_make_code": ["HOND"] * 6,
-            "mto_model_code": ["CIV", "NEW", "OLD", "CIV", "NEW", "GONE"],
-            "model_year": [2018, 2020, 2015, 2018, 2020, 2014],
-            "stock_status": ["FIT_ACTIVE"] * 6,
-            "report_year": [2020, 2020, 2020, 2021, 2021, 2021],
-            "cohort_count": [100, 10, 20, 110, 20, 30],
+            "population_group": ["raw_passenger"] * 8,
+            "vehicle_class": ["PASSENGER"] * 8,
+            "mto_make_code": ["HOND"] * 8,
+            "mto_model_code": [
+                "CIV",
+                "NEW",
+                "FUT",
+                "OLD",
+                "CIV",
+                "NEW",
+                "FUT",
+                "GONE",
+            ],
+            "model_year": [2018, 2020, 2021, 2015, 2018, 2020, 2021, 2014],
+            "stock_status": ["FIT_ACTIVE"] * 8,
+            "report_year": [2020, 2020, 2020, 2020, 2021, 2021, 2021, 2021],
+            "cohort_count": [100, 10, 5, 20, 110, 20, 6, 30],
         }
     )
 
@@ -253,11 +324,58 @@ def test_raw_transition_estimator_requires_both_endpoints_and_age_two() -> None:
     assert missing == []
     assert observations[["mto_model_code", "age"]].to_records(
         index=False
-    ).tolist() == [("CIV", 2)]
-    row = observations.iloc[0]
+    ).tolist() == [("CIV", 2), ("NEW", 0)]
+    row = observations.loc[observations["mto_model_code"].eq("CIV")].iloc[0]
     assert row["apparent_retirements"] == -10
     assert row["annual_survival_factor"] == pytest.approx(1.1)
     assert row["annual_retirement_rate"] == pytest.approx(-0.1)
+    age_zero = observations.loc[observations["mto_model_code"].eq("NEW")]
+    *_, age_zero_curve = aggregate_mto_survival_stages(
+        age_zero.assign(
+            nlr_atb_class="Compact",
+            nrcan_ceud_class="Car",
+            mapping_accepted=True,
+        )
+    )
+    assert age_zero_curve.loc[
+        age_zero_curve["age"].eq(0), "cumulative_survival"
+    ].item() == 1
+    assert age_zero_curve.loc[
+        age_zero_curve["age"].eq(1), "cumulative_survival"
+    ].item() == pytest.approx(2.0)
+
+
+def test_raw_key_snapshots_can_preserve_pre_2000_survival_evidence() -> None:
+    frame = pd.DataFrame(
+        {
+            "report_year": [2020, 2020],
+            "VEHICLE_CLASS": ["PASSENGER", "PASSENGER"],
+            "MAKE": ["FORD", "FORD"],
+            "MODEL": ["MUS", "FOC"],
+            "MODEL_YEAR": [1965, 2015],
+            "FIT_ACTIVE": [25, 100],
+        }
+    )
+
+    uncapped = raw_mto_key_snapshots(
+        [frame],
+        passenger_class="PASSENGER",
+        commercial_class="COMMERCIAL",
+        minimum_model_year=None,
+        suppressed_code_patterns=[r"^\*+$"],
+        unknown_code_labels=["UNKNOWN", "UNK", "N/A"],
+    )
+    capped = raw_mto_key_snapshots(
+        [frame],
+        passenger_class="PASSENGER",
+        commercial_class="COMMERCIAL",
+        minimum_model_year=2000,
+        suppressed_code_patterns=[r"^\*+$"],
+        unknown_code_labels=["UNKNOWN", "UNK", "N/A"],
+    )
+
+    assert set(uncapped["model_year"]) == {1965, 2015}
+    assert set(capped["model_year"]) == {2015}
 
 
 def test_raw_transition_estimator_rejects_proxy_input() -> None:

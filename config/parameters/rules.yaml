@@ -392,6 +392,7 @@ parameterization:
     nlr_class_retention_file: ontario_vehicle_population_nlr_class_retention.csv
     ceud_class_vintage_retention_file: ontario_vehicle_population_ceud_class_vintage_retention.csv
     ceud_class_retention_file: ontario_vehicle_population_ceud_class_retention.csv
+    ceud_scope_comparison_file: ontario_vehicle_population_ceud_survival_scope_comparison.csv
     transition_mapping_coverage_file: ontario_vehicle_population_transition_mapping_coverage.csv
     mto_survival_decision_file: ontario_vehicle_population_mto_survival_decision.csv
     cohort_snapshot_file: ontario_vehicle_population_mapped_cohort_snapshots.csv
@@ -408,7 +409,7 @@ parameterization:
     median_lifetimes_file: source_derived_median_lifetimes.csv
     interpolation: none
     implausible_change_ratio: null
-    minimum_model_year: 2000
+    minimum_transition_model_year: null
     medium_truck_redirects: [FORD/DRW]
     mto_survival_decision_criteria:
       minimum_mapped_exposure_share: 0.5

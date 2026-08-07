@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -61,8 +62,81 @@ def test_active_sources_are_registered_and_template_is_not_a_source() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
 
     for source_name in bundle.scenario.sources.active:
-        assert bundle.sources.sources[source_name].status == "pending"
+        assert bundle.sources.sources[source_name].status == "active"
+    assert (
+        bundle.sources.sources["wards_intelligence_2022_sales_shares"].status
+        == "inactive"
+    )
     assert "canoe_transport_template" not in bundle.sources.sources
+
+
+def test_source_component_vocabularies_are_canonical() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    current_modules = {
+        "capex_opex",
+        "efficiencies",
+        "lifetimes_survival",
+        "road_aggregation",
+        "sector_coupling",
+        "stocks_and_demands",
+    }
+    forbidden_aliases = {
+        "benchmarking",
+        "fit-active_stock",
+        "on_road_effs_and_costs",
+        "on_road_variable_costs",
+        "road_vehicle_class_mapping",
+        "urban_transit",
+        "weightclass",
+    }
+
+    for source in bundle.sources.sources.values():
+        for component in source.components.values():
+            for field_name in (
+                "inputs",
+                "applies_to",
+                "produces",
+                "parameter_modules",
+            ):
+                values = getattr(component, field_name)
+                assert not forbidden_aliases.intersection(values)
+                assert all(re.fullmatch(r"[a-z][a-z0-9_]*", value) for value in values)
+            assert set(component.parameter_modules) <= current_modules
+
+
+def test_absolute_and_relative_component_roles_are_distinct() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    sources = bundle.sources.sources
+
+    assert sources["epri_us_regen_2025_transportation"].component(
+        "nonroad_cost_invest_multipliers"
+    ).produces == ["cost_invest_multiplier"]
+    assert sources["epri_us_regen_2025_transportation"].component(
+        "nonroad_efficiency_multipliers"
+    ).produces == ["efficiency_multiplier"]
+    assert sources["open_energy_outlook_2022"].component(
+        "transport_variable_cost_multipliers"
+    ).produces == ["cost_variable_multiplier"]
+    assert sources["argonne_rd_greet_2025_rev1"].component(
+        "marine_hfo_energy_intensity"
+    ).produces == ["efficiency_multiplier"]
+
+    assert sources["emrg_sfu_cims_model"].component(
+        "transport_service_output_and_capex"
+    ).produces == ["cost_invest"]
+    assert sources["jgcri_gcam_motorcycle_inputs"].component(
+        "canada_motorcycle_inputs"
+    ).produces == ["vehicle_efficiency", "vehicle_cost", "vehicle_variable_costs"]
+
+
+def test_inactive_registry_source_cannot_be_scenario_active(tmp_path: Path) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["sources"]["active"].append("wards_intelligence_2022_sales_shares")
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="scenario activates inactive source"):
+        load_config_bundle(scenario, repo_root=tmp_path)
 
 
 def test_path_resolution_and_directory_list() -> None:

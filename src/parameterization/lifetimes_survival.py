@@ -152,11 +152,16 @@ def raw_mto_key_snapshots(
     *,
     passenger_class: str,
     commercial_class: str,
-    minimum_model_year: int,
+    minimum_model_year: int | None,
     suppressed_code_patterns: list[str],
     unknown_code_labels: list[str],
 ) -> pd.DataFrame:
-    """Build fit-active make-model-vintage snapshots before class mapping."""
+    """Build fit-active make-model-vintage snapshots before class mapping.
+
+    A null model-year floor retains every source-reported vintage.  This is the
+    survival-evidence interface and is intentionally independent of the 2000
+    existing-fleet aggregation floor.
+    """
     frames: list[pd.DataFrame] = []
     unknown = {str(label).strip().upper() for label in unknown_code_labels}
     for normalized in normalized_frames:
@@ -171,10 +176,10 @@ def raw_mto_key_snapshots(
         selected["FIT_ACTIVE"] = pd.to_numeric(
             selected["FIT_ACTIVE"], errors="coerce"
         )
-        selected = selected.loc[
-            selected["MODEL_YEAR"].ge(minimum_model_year)
-            & selected["FIT_ACTIVE"].gt(0)
-        ].copy()
+        eligible = selected["MODEL_YEAR"].notna() & selected["FIT_ACTIVE"].gt(0)
+        if minimum_model_year is not None:
+            eligible &= selected["MODEL_YEAR"].ge(minimum_model_year)
+        selected = selected.loc[eligible].copy()
         for column in ["MAKE", "MODEL"]:
             values = selected[column].astype("string").str.strip()
             suppressed = values.isna() | values.eq("") | values.str.upper().isin(
@@ -320,7 +325,7 @@ def mto_key_transition_observations(
         paired["next_report_year"] = next_report_year
         paired["age"] = report_year - paired["model_year"]
         paired = paired.loc[
-            paired["cohort_count_t"].gt(0) & paired["age"].ge(2)
+            paired["cohort_count_t"].gt(0) & paired["age"].ge(0)
         ].copy()
         if paired.empty:
             continue
@@ -410,11 +415,54 @@ def map_mto_key_transitions(
             "MODEL_YEAR": "model_year",
         }
     ).drop(columns="FIT_ACTIVE")
+    result = result.loc[:, ~result.columns.duplicated(keep="first")]
     duplicate_columns = [
         column for column in ["mto_make_code.1", "mto_model_code.1"]
         if column in result.columns
     ]
     return result.drop(columns=duplicate_columns).reset_index(drop=True)
+
+
+def annotate_latest_snapshot_presence(
+    mapped_observations: pd.DataFrame,
+    raw_snapshots: pd.DataFrame,
+) -> pd.DataFrame:
+    """Mark whether each make-model-vintage series exists in the latest snapshot."""
+    output = mapped_observations.copy()
+    if output.empty:
+        output["present_in_latest_snapshot"] = pd.Series(dtype=bool)
+        output["latest_snapshot_year"] = pd.Series(dtype="Int64")
+        return output
+    latest_snapshot_year = int(
+        pd.to_numeric(raw_snapshots["report_year"], errors="raise").max()
+    )
+    series_key = [
+        "vehicle_class",
+        "mto_make_code",
+        "mto_model_code",
+        "model_year",
+    ]
+    latest_series = (
+        raw_snapshots.loc[
+            pd.to_numeric(raw_snapshots["report_year"], errors="raise").eq(
+                latest_snapshot_year
+            ),
+            series_key,
+        ]
+        .drop_duplicates()
+        .assign(present_in_latest_snapshot=True)
+    )
+    output = output.merge(
+        latest_series,
+        on=series_key,
+        how="left",
+        validate="many_to_one",
+    )
+    output["present_in_latest_snapshot"] = (
+        output["present_in_latest_snapshot"].fillna(False).astype(bool)
+    )
+    output["latest_snapshot_year"] = latest_snapshot_year
+    return output
 
 
 def _pooled_retention(
@@ -517,8 +565,9 @@ def aggregate_mto_survival_stages(
     curve_rows: list[pd.DataFrame] = []
     for vehicle_class, rows in ceud_class.groupby("vehicle_class", sort=False):
         observed = rows.set_index("age").sort_index()
+        first_observed_age = int(observed.index.min())
         ages = pd.Index(
-            range(2, int(observed.index.max()) + 1), name="age"
+            range(0, int(observed.index.max()) + 2), name="age"
         )
         curve = observed.reindex(ages).reset_index()
         curve["vehicle_class"] = vehicle_class
@@ -529,6 +578,8 @@ def aggregate_mto_survival_stages(
             curve.loc[index, "cumulative_survival"] = (
                 survival if continuous else pd.NA
             )
+            if int(row["age"]) < first_observed_age:
+                continue
             rate = row["annual_retirement_rate"]
             if pd.isna(rate):
                 continuous = False
@@ -554,6 +605,36 @@ def aggregate_mto_survival_stages(
     ]
     ceud_class = ceud_class.loc[:, final_columns]
     return nlr_vintage, nlr_class, ceud_vintage, ceud_class
+
+
+def mto_survival_scope_comparison(
+    mapped_observations: pd.DataFrame,
+) -> pd.DataFrame:
+    """Compare all historical transitions with latest-survivor conditioning."""
+    if "present_in_latest_snapshot" not in mapped_observations.columns:
+        raise ValueError(
+            "Mapped transitions require present_in_latest_snapshot annotation"
+        )
+    scope_frames: list[pd.DataFrame] = []
+    scopes = [
+        (
+            "all_historical_transitions",
+            mapped_observations,
+        ),
+        (
+            "latest_snapshot_survivors",
+            mapped_observations.loc[
+                mapped_observations["present_in_latest_snapshot"]
+                .fillna(False)
+                .astype(bool)
+            ],
+        ),
+    ]
+    for aggregation_scope, scope_observations in scopes:
+        *_, curves = aggregate_mto_survival_stages(scope_observations)
+        curves.insert(0, "aggregation_scope", aggregation_scope)
+        scope_frames.append(curves)
+    return pd.concat(scope_frames, ignore_index=True, sort=False)
 
 
 def transition_mapping_coverage(mapped_observations: pd.DataFrame) -> pd.DataFrame:
@@ -1414,7 +1495,11 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         normalized_frames,
         passenger_class=str(report_rules["passenger_class"]),
         commercial_class=str(report_rules["commercial_class"]),
-        minimum_model_year=int(rules["minimum_model_year"]),
+        minimum_model_year=(
+            int(rules["minimum_transition_model_year"])
+            if rules.get("minimum_transition_model_year") is not None
+            else None
+        ),
         suppressed_code_patterns=[
             str(pattern)
             for pattern in report_rules.get("suppressed_code_patterns", [])
@@ -1441,6 +1526,10 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
             for value in rules.get("medium_truck_redirects", [])
         },
     )
+    mapped_key_observations = annotate_latest_snapshot_presence(
+        mapped_key_observations,
+        raw_snapshots,
+    )
     transition_coverage = transition_mapping_coverage(
         mapped_key_observations
     )
@@ -1450,6 +1539,9 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         ceud_vintage_retention,
         ceud_class_retention,
     ) = aggregate_mto_survival_stages(mapped_key_observations)
+    survival_scope_comparison = mto_survival_scope_comparison(
+        mapped_key_observations
+    )
     mapped_snapshot, commercial_snapshot = aggregate_report_a_snapshots(
         normalized_frames,
         mapping,
@@ -1546,6 +1638,7 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         rules["nlr_class_retention_file"]: nlr_class_retention,
         rules["ceud_class_vintage_retention_file"]: ceud_vintage_retention,
         rules["ceud_class_retention_file"]: ceud_class_retention,
+        rules["ceud_scope_comparison_file"]: survival_scope_comparison,
         rules["transition_mapping_coverage_file"]: transition_coverage,
         rules["mto_survival_decision_file"]: mto_survival_decision,
         rules["cohort_snapshot_file"]: mapped_snapshot,
