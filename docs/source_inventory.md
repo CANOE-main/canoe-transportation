@@ -11,7 +11,7 @@ exclude interim and processed outputs. A shared manual CSV is counted in each fa
 whose source contract registers that file. Fetch status describes acquisition or
 registration only, not parameterization or SQLite insertion.
 
-| Source family | Main transport use | Table count | Access method | Native format/artifacts | Input location | Size | Fetch status |
+| Source family | Main transport use | Table count | Access method | Native format/artifacts | Input location | Size | Status |
 | ------------- | ------------------ | ----------: | ------------- | ----------------------- | -------------- | ---: | ------------ |
 | [NRCan Comprehensive Energy Use Database (provincial and national)](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) | Provincial road activity, stock, sales, distance, and fuel use; provincial non-road fuel use; national non-road activity, energy intensity, and fuel mix | 22 (17 provincial + 5 national) | Direct URL-templated downloads | Legacy XLS tables | `inputs/0_cache/` | 805.00 KiB | **Fetched** |
 | [Ontario Ministry of Transportation vehicle population](https://data.ontario.ca/dataset/vehicle-population-data) | Report A LDV fleet-age weights, class-mapping evidence, and apparent-retention diagnostics; Report 4 MHDV weight classes; Report 5 legacy comparison only | 3 | Ontario CKAN package API with annual-resource discovery | Annual ZIP archives containing text reports | `inputs/0_cache/` | 22.88 MiB | **Fetched** |

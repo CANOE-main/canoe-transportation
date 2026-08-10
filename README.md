@@ -1,17 +1,16 @@
 # CANOE Transportation Backend
 
-This repository is the v2.0 refactor of the CANOE transportation backend. It is building
-a reproducible Python and Snakemake pipeline that turns registered transport data into
-validated CANOE/Temoa SQLite inputs.
+The CANOE transportation backend converts heterogeneous transportation evidence into
+validated parameter rows and scenario-ready SQLite databases for Canadian Open Energy Model 
+running on the Temoa energy system optimization framework.
 
-The project is still maturing. Configuration loading, source adapters, normalized
-interim artifacts, provenance, schema-backed insertion, atomic database publication,
-and focused validation are implemented. The full transport parameterization and legacy
-SQLite parity are not yet complete; the current database output is a validated
-technology/commodity bootstrap.
+Version 2.0 replaces the legacy Excel-centred compiler with a
+configuration-owned Python backend in which sources, assumptions, transformations,
+validation results, and accepted differences can be inspected independently.
 
 ## Table of Contents
 
+- [Backend at a glance](#backend-at-a-glance)
 - [Backend architecture](#backend-architecture)
 - [Input-parameter ETL flowcharts](#input-parameter-etl-flowcharts)
   - [Mermaid version](#mermaid-version)
@@ -27,77 +26,145 @@ technology/commodity bootstrap.
 - [Common commands](#common-commands)
 - [Development approach](#development-approach)
 
+## Backend at a glance
+
+```mermaid
+---
+config:
+  layout: dagre
+  flowchart:
+    nodeSpacing: 35
+    rankSpacing: 50
+    wrappingWidth: 250
+    curve: linear
+    subGraphTitleMargin:
+      top: 0
+      bottom: 25
+---
+flowchart LR
+
+  subgraph SCENARIO["`**Scenario configuration: *config/scenarios/example.yaml***<br>Sources, trajectories, regions, periods, outputs, and switches`"]
+      subgraph SOURCES["`**Source registry: *config/sources.yaml***<br>Identity, edition, access, cache, citation, units, refresh, DQI`"]
+            EVIDENCE@{shape: docs, label: "**External inputs: *inputs/0_/***<br>Public sources, cache, external models, and reviewed manual parameters"}
+      end
+      
+      subgraph RULES["`**Harmonization rules: *config/parameters/rules.yaml***<br>Layouts, selectors, mappings, filters, bins, and expected artifacts`"]
+            INTERIM@{shape: docs, label: "**Normalized inputs: *inputs/1_interim/***<br>Validated, auditable, source-shaped tables"}
+            HARM@{shape: docs, label: "**Model parameters: *inputs/2_processed/***<br>Aggregated, Temoa-ready parameter rows with explicit lineage"}
+      end
+  end
+  DB[("`**CANOE-transport database**<br>Validation and insertion into *canoe-schema* transport-sector database`")]
+
+  EVIDENCE == fetching/ ==> INTERIM == parameterization/ ==> HARM == validation/ ==> DB
+  
+  INSIGHTS@{shape: processes, label: "**docs/**<br>Architecture, ETL flowcharts, assumptions, source inventory, and Marimo notebooks"}
+  INSIGHTS -. diagnoses .-> INTERIM
+  INSIGHTS -. explains .-> HARM
+  INSIGHTS -. documents .-> DB
+```
+
+The [source registry](../config/sources.yaml) owns external identity and provenance;
+[harmonization rules](../config/parameters/rules.yaml) own source-layout and
+transformation contracts; reusable factors belong in
+[conversion configuration](../config/parameters/conversion.yaml); and
+[scenario YAML](../config/scenarios/legacy_reproduction.yaml) selects editions,
+trajectories, regions, periods, outputs, and active switches. Canonical locations are
+owned by [path configuration](../config/paths.yaml). Modular Python performs acquisition
+and transformation, while Snakemake coordinates only stable dependencies and artifacts.
+Pydantic and the pinned `canoe-schema` package form trust boundaries before atomic
+SQLite publication.
+
+The [backend architecture](backend_architecture.md) is the ownership reference. The
+[ETL flowcharts](etl_flowcharts.md) document parameter-specific provenance,
+harmonization, equations, and intended outputs; the
+[source inventory](source_inventory.md) discusses source families without replacing the
+registry. Legacy workbooks and databases remain read-mostly comparison evidence.
+Marimo notebooks are the interactive diagnostics layer and may eventually expose
+configuration choices to users who should not need to edit Python, but that layer is
+currently focused rather than comprehensive.
+
+Reproducibility is therefore collective: Git records reviewed changes; YAML owns
+selectable configuration; documented paths separate cached, interim, processed, and
+published artifacts; modular Python keeps transformations testable; manifests and logs
+record execution; and validation and parity reports make each deterministic build
+auditable.
+
 ## Backend architecture
 
 The current and proposed repository layout provides the following navigation. The
 focused structural reference is
 [`docs/backend_architecture.md`](docs/backend_architecture.md).
 
-```text
-.
-├── AGENTS.md                       # Stable repository policy
-├── README.md                       # Human-facing project orientation
-├── .agents/
-│   ├── PLANS.md                    # ExecPlan protocol
-│   ├── plans/                      # Task-local implementation records
-│   └── skills/                     # Optional task-retrieved procedures
-├── config/
-│   ├── paths.yaml                  # Canonical directories and artifact paths
-│   ├── sources.yaml                # External-source registry and provenance
-│   ├── scenarios/                  # Scenario authoring contract
-│   └── parameters/
-│       ├── rules.yaml              # Extraction and harmonization contracts
-│       └── conversion.yaml         # Reusable conversion factors
-├── workflow/
-│   └── Snakefile                   # Dependency and artifact orchestration
-├── src/
-│   ├── setup.py                    # Load config, create paths, fetch/cache data, validate sources
-│   ├── build_transport.py          # Build SQLite, run modules, post-process, log
-│   ├── fetching/                   # Upstream download, cache, and interim normalization
-│   │   ├── nrcan_ceud.py           # NRCan CEUD transport tables
-│   │   ├── vehicle_population.py   # Provincial vehicle population reports
-│   │   ├── statcan_tables.py       # Statistics Canada transport tables
-│   │   ├── cer_enerfuture.py       # CER energy future tables
-│   │   ├── nlr_atb_autonomie.py    # NLR ATB and ANL Autonomie inputs
-│   │   └── assorted_sources.py     # Smaller registered source adapters
-│   ├── parameterization/           # Transform normalized inputs into model parameters
-│   │   ├── stocks_and_demands.py   # Capacity, demand, utilization, and anchors
-│   │   ├── lifetimes_survival.py   # Lifetimes and survival curves
-│   │   ├── road_aggregation.py     # Road class mappings and aggregation weights
-│   │   ├── efficiencies.py         # Technology efficiencies
-│   │   ├── capex_opex.py           # Investment and operating costs
-│   │   ├── ldv_charging.py         # BEV charging profiles and time slices
-│   │   ├── emissions.py            # Vehicle-cycle and operating emissions
-│   │   ├── market_constraints.py   # Market shares, policy limits, and SCC rules
-│   │   ├── adoption_constraints.py # Adoption and growth constraints
-│   │   └── sector_coupling.py      # Fuel, electricity, hydrogen, and blends
-│   ├── utils/                      # Typed config and path utilities
-│   └── validation/
-│       ├── config_models.py        # Pydantic configuration contracts
-│       ├── provenance.py           # Source and dataset provenance
-│       ├── schema_contract.py      # canoe-schema v4 compatibility
-│       ├── insertion.py            # Validated parameterized insertion
-│       ├── database_bootstrap.py   # Integrity and publication checks
-│       └── legacy_compare.py       # Legacy SQLite comparison
-├── scripts/
-│   ├── doctor.py                   # Non-mutating repository readiness check
-│   └── clean_runtime.py            # Explicit runtime cleanup
-├── inputs/
-│   ├── 0_canoe_template/           # Backend-owned structural templates
-│   ├── 0_cache/                    # Authoritative cached downloads
-│   ├── 0_external_models/          # Registered external-model artifacts
-│   ├── 1_interim/                  # Normalized auditable tables
-│   └── 2_processed/                # Parameter-ready tables
-├── outputs/
-│   ├── sqlite/                     # Built CANOE/Temoa-ready databases
-│   ├── validation/                 # Validation and parity reports
-│   └── logs/                       # Run logs and warnings
-├── docs/
-│   ├── backend_architecture.md     # Repository structure and ownership reference
-│   └── etl_flowcharts.md           # Parameter-specific lineage reference
-├── legacy_backend/                 # Read-mostly parity evidence
-├── tests/                          # Focused and integration tests
-└── pyproject.toml                  # uv dependencies and tool configuration
+```mermaid
+---
+config:
+  treeView:
+    showIcons: true
+---
+treeView-beta
+  AGENTS.md ## Stable repository policy
+  README.md ## Human-facing project orientation
+  .agents/
+      PLANS.md ## ExecPlan protocol
+      plans/ ## Task-local implementation records
+      skills/ ## Optional task-retrieved procedures
+  config/
+      paths.yaml ## Canonical directories and artifact paths
+      sources.yaml ## External-source registry and provenance
+      scenarios/ ## Scenario authoring contract
+      parameters/
+          rules.yaml ## Extraction and harmonization contracts
+          conversion.yaml ## Reusable conversion factors
+  workflow/
+      Snakefile ## Dependency and artifact orchestration
+  src/
+      setup.py ## Load config, create paths, fetch/cache data, validate sources
+      build_transport.py ## Build SQLite, run modules, post-process, log
+      fetching/ ## Upstream download, cache, and interim normalization
+          nrcan_ceud.py ## NRCan CEUD transport tables
+          vehicle_population.py ## Provincial vehicle population reports
+          statcan_tables.py ## Statistics Canada transport tables
+          cer_enerfuture.py ## CER energy future tables
+          nlr_atb_autonomie.py ## NLR ATB and ANL Autonomie inputs
+          assorted_sources.py ## Smaller registered source adapters
+      parameterization/ ## Transform normalized inputs into model parameters
+          stocks_and_demands.py ## Capacity, demand, utilization, and anchors
+          lifetimes_survival.py ## Lifetimes and survival curves
+          road_aggregation.py ## Road class mappings and aggregation weights
+          efficiencies.py ## Technology efficiencies
+          capex_opex.py ## Investment and operating costs
+          ldv_charging.py ## BEV charging profiles and time slices
+          emissions.py ## Vehicle-cycle and operating emissions
+          market_constraints.py ## Market shares, policy limits, and SCC rules
+          adoption_constraints.py ## Adoption and growth constraints
+          sector_coupling.py ## Fuel, electricity, hydrogen, and blends
+      utils/ ## Typed config and path utilities
+      validation/
+          config_models.py ## Pydantic configuration contracts
+          provenance.py ## Source and dataset provenance
+          schema_contract.py ## canoe-schema v4 compatibility
+          insertion.py ## Validated parameterized insertion
+          database_bootstrap.py ## Integrity and publication checks
+          legacy_compare.py ## Legacy SQLite comparison
+  scripts/
+      doctor.py ## Non-mutating repository readiness check
+      clean_runtime.py ## Explicit runtime cleanup
+  inputs/
+      0_canoe_template/ ## Backend-owned structural templates
+      0_cache/ ## Authoritative cached downloads
+      0_external_models/ ## Registered external-model artifacts
+      1_interim/ ## Normalized auditable tables
+      2_processed/ ## Parameter-ready tables
+  outputs/
+      sqlite/ ## Built CANOE/Temoa-ready databases
+      validation/ ## Validation and parity reports
+      logs/ ## Run logs and warnings
+  docs/
+      backend_architecture.md ## Repository structure and ownership reference
+      etl_flowcharts.md ## Parameter-specific lineage reference
+  legacy_backend/ ## Read-mostly parity evidence
+  tests/ ## Focused and integration tests
+  pyproject.toml ## uv dependencies and tool configuration
 ```
 
 The main repository areas are:
