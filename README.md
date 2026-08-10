@@ -99,7 +99,7 @@ focused structural reference is
 ---
 config:
   treeView:
-    showIcons: true
+    showIcons: false
 ---
 treeView-beta
   AGENTS.md ## Stable repository policy
