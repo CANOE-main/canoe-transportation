@@ -168,7 +168,7 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
         "model": [2025, 2030, 2035, 2040, 2045, 2050],
         "step": 5,
     }
-    assert status["packaged_schema"]["package_commit"].startswith("32740578")
+    assert status["packaged_schema"]["package_commit"].startswith("1e68c377")
     assert status["reference_sqlite_exists"] is True
     assert status["switches"] == {
         "legacy_equivalent": True,

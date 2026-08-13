@@ -1255,3 +1255,68 @@ sources:
           expected_model_year_to: 2027
           required_columns: [year, make, model, VClass]
           required_non_null_columns: [year, make, model, VClass]
+
+  reviewed_mto_make_model_evidence:
+    title: "Reviewed Ontario MTO make/model evidence"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "Two-pass review, 2026-08-12"
+    required: true
+    adapter:
+      access:
+        method: version_controlled_manual_parameter
+        url: "https://domestic-security.com/dmv-model-abbreviations/"
+    units: "Categorical make/model-family evidence and observed vehicle counts."
+    citation: "Reviewed two-pass MTO make/model inference using NCIC model-code abbreviations and NHTSA vPIC make/model examples (2026-08-12)."
+    validation_rule: "Require one latest-active reviewed row per MTO make/model key and recompute the case-insensitive family-level pass agreement fields."
+    refresh_notes: >
+      Extend only through a reviewed manual pass over newly active MTO keys.
+      Preserve unresolved and conflicting candidates instead of promoting them.
+    components:
+      make_model_candidates:
+        label: "Reviewed MTO make/model candidates"
+        short_name: reviewed_mto_make_model_candidates
+        inputs: [mto_make_code, mto_model_code, highest_confidence_candidate, vpic_second_pass_candidate]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
+        produces: [vehicle_mapping_evidence]
+        parameter_modules: [road_aggregation]
+        units: "Categorical vehicle-family evidence."
+        validation_rule: "Validate exact columns, unique MTO keys, positive latest stock, canonical make, pass agreement, and agreed family."
+        adapter:
+          manual_parameter_path: "mapped_mto_make_model_keys.csv"
+          expected_columns: [source_id, mto_make_code, mto_model_code, source_vehicle_classes, first_report_year, last_report_year, observed_report_editions, report_years, model_year_from, model_year_to, observed_model_years, source_rows_across_editions, fit_active_stock_across_editions, latest_report_year, latest_fit_active_stock, highest_confidence_candidate, vpic_second_pass_candidate, vpic_second_pass_reason, other_potential_candidates, canonical_make, candidate_pass_agreement, agreed_model_candidate, notes, "source -> data_source"]
+          unique_key: [mto_make_code, mto_model_code]
+          source_selector: "Reviewed two-pass MTO make/model inference using NCIC model-code abbreviations and NHTSA vPIC make/model examples (2026-08-12)."
+          expected_rows: 1887
+
+  nhtsa_vpic_vehicle_models:
+    title: "NHTSA Vehicle Product Information Catalog"
+    status: active
+    source_type: upstream_download
+    file_type: json
+    version: "Request-scoped cached API responses"
+    required: false
+    adapter:
+      access:
+        method: official_api
+        url: "https://vpic.nhtsa.dot.gov/api/"
+    units: "Source model and vehicle-type records by make and model year."
+    citation: "National Highway Traffic Safety Administration. Vehicle Product Information Catalog (vPIC) API. https://vpic.nhtsa.dot.gov/api/"
+    validation_rule: "Issue only bootstrap-gated make/year requests, validate response envelopes and records strictly, and retain every response in the registered cache."
+    refresh_notes: >
+      Refresh only after regenerating the positive-stock, promotion-approved,
+      classless request artifact. Ordinary parameterization is offline.
+    components:
+      model_vehicle_types:
+        label: "vPIC models for make and model year"
+        short_name: vpic_model_vehicle_types
+        inputs: [make_name, model_name, vehicle_type_name]
+        applies_to: [medium_trucks, heavy_trucks]
+        produces: [non_ldv_vehicle_scope_evidence]
+        parameter_modules: [road_aggregation]
+        units: "Categorical vehicle-type evidence."
+        validation_rule: "Match only the promoted family; Truck and Incomplete Vehicle are the configured conclusive MHDV types."
+        adapter:
+          api_base_url: "https://vpic.nhtsa.dot.gov/api/vehicles"
+          cache_subdir: "vpic_vehicle_models"

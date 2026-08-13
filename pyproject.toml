@@ -29,7 +29,7 @@ build-backend = "uv_build"
 module-name = ["fetching", "parameterization", "utils", "validation"]
 
 [tool.uv.sources]
-canoe-schema = { git = "https://github.com/CANOE-main/canoe-schema.git", rev = "32740578f62fe9cfc760034be0201b4dcaf7c653" }
+canoe-schema = { git = "https://github.com/CANOE-main/canoe-schema.git", branch = "main" }
 
 [dependency-groups]
 dev = [

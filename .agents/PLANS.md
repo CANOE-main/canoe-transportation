@@ -21,6 +21,13 @@ Store plans under `.agents/plans/` using the next numbered descriptive name, for
 `NNN_descriptive_task.md`. Completed plans are audit trails, not permanent
 architecture references.
 
+Before creating a numbered plan, search existing plans for the same source,
+parameter family, or diagnostic subject. An adjacent follow-up should reopen and
+update the latest plan that owns that subject, marking older findings or decisions
+as superseded where necessary. Create another plan only when the work establishes
+a genuinely distinct responsibility or interface, or when the user explicitly asks
+for a separate plan.
+
 ## Research and task boundary
 
 Before editing:

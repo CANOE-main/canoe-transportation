@@ -25,30 +25,41 @@ config:
     rankSpacing: 50
     wrappingWidth: 250
     curve: linear
-    subGraphTitleMargin:
-      top: 0
-      bottom: 25
 ---
-flowchart LR
+flowchart TD
+  subgraph CONTROL["`**Backend configuration**`"]
+      scen_yaml@{shape: hex, label: "***config/scenarios/example_zev35.yaml***<br>Sources, trajectories, regions, periods, outputs, and switches"}
+      source_yaml@{shape: hex, label: "***config/sources.yaml***<br>Identity, edition, access, cache, citation, units, refresh, DQI"}
+      rules_yaml@{shape: hex, label: "***config/parameters/rules.yaml***<br>Layouts, selectors, mappings, filters, bins, and expected artifacts"}
+  end
+  scen_yaml -- selects ---> SCENARIO
+  source_yaml -- catalogues --> SOURCES
+  rules_yaml -- shapes ---> RULES
 
-  subgraph SCENARIO["`**Scenario configuration: *config/scenarios/example.yaml***<br>Sources, trajectories, regions, periods, outputs, and switches`"]
-      subgraph SOURCES["`**Source registry: *config/sources.yaml***<br>Identity, edition, access, cache, citation, units, refresh, DQI`"]
-            EVIDENCE@{shape: docs, label: "**External inputs: *inputs/0_/***<br>Public sources, cache, external models, and reviewed manual parameters"}
+  subgraph SCENARIO["`**Scenario orchestration**`"]
+      subgraph SOURCES["`**Source registry**`"]
+            EVIDENCE@{shape: docs, label: "**External inputs: *inputs/0_/***<br>Technology and commodity archetypes, input cache, external models, and reviewed manual parameters"}
       end
       
-      subgraph RULES["`**Harmonization rules: *config/parameters/rules.yaml***<br>Layouts, selectors, mappings, filters, bins, and expected artifacts`"]
-            INTERIM@{shape: docs, label: "**Normalized inputs: *inputs/1_interim/***<br>Validated, auditable, source-shaped tables"}
+      subgraph RULES["`**Aggregation and harmonization**`"]
+            INTERIM@{shape: docs, label: "**Normalized inputs: *inputs/1_interim/***<br>Validated and auditable source-shaped tables"}
             HARM@{shape: docs, label: "**Model parameters: *inputs/2_processed/***<br>Aggregated, Temoa-ready parameter rows with explicit lineage"}
       end
   end
-  DB[("`**CANOE-transport database**<br>Validation and insertion into *canoe-schema* transport-sector database`")]
+  
+  EVIDENCE == fetching/ ==> INTERIM == parameterization/ ==> HARM == validation/ ==> VALID
 
-  EVIDENCE == fetching/ ==> INTERIM == parameterization/ ==> HARM == validation/ ==> DB
+  subgraph VALID["`**Validation and provenance**`"]
+  direction LR
+      ASSURE["`**Validation control: *canoe_schema***<br>Pydantic boundaries, row lineage, schema contracts, and integrity`"]
+      DB[("`**CANOE-transport database**<br>Schema-ready insertion into transport-sector database`")]
+  end
+  ASSURE -- audits --> DB
   
   INSIGHTS@{shape: processes, label: "**docs/**<br>Architecture, ETL flowcharts, assumptions, source inventory, and Marimo notebooks"}
-  INSIGHTS -. diagnoses .-> INTERIM
-  INSIGHTS -. explains .-> HARM
-  INSIGHTS -. documents .-> DB
+  INSIGHTS -. diagnose ..-> INTERIM
+  INSIGHTS -. explain ..-> HARM
+  INSIGHTS -. document ..-> VALID
 ```
 
 The [source registry](../config/sources.yaml) owns external identity and provenance;

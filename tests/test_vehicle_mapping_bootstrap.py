@@ -569,24 +569,25 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
     assert len(expected_catalog) >= 500
     assert expected_catalog["supporting_rating_rows"].sum() == len(ratings)
     assert crosswalk["mto_make_code"].nunique() >= 20
-    assert set(crosswalk["nlr_atb_class"]) == {
+    assert set(crosswalk.loc[crosswalk["vehicle_scope"].eq("ldv"), "nlr_atb_class"]) == {
         "Compact",
         "Midsize",
         "Small SUV",
         "Midsize SUV",
         "Pickup",
     }
-    assert not (
+    ford_crg = crosswalk.loc[
         crosswalk["mto_make_code"].eq("FORD")
         & crosswalk["mto_model_code"].eq("CRG")
-    ).any()
+    ]
+    assert set(ford_crg["vehicle_scope"]) == {"non_ldv_unclassified"}
+    assert not ford_crg["nlr_atb_class"].any()
     ford_gt_codes = crosswalk.loc[
         crosswalk["mto_make_code"].eq("FORD")
         & crosswalk["mto_model_code"].isin(["MGT", "SGT"])
     ]
-    assert set(ford_gt_codes["canonical_model"]) == {"Mustang"}
-    assert set(ford_gt_codes["nlr_atb_class"]) == {"Compact"}
-    assert not ford_gt_codes["canonical_model"].eq("GT").any()
+    assert set(ford_gt_codes["canonical_model"]) == {"GT"}
+    assert set(ford_gt_codes["nlr_atb_class"]) == {"Midsize"}
     assert not crosswalk["match_method"].str.contains(
         "ordered_model_abbreviation",
         regex=False,
@@ -615,4 +616,4 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
         ["vehicle_class", "measure"]
     )
 
-    assert coverage.loc[("ALL", "fit_active_stock"), "coverage"] >= 0.40
+    assert coverage.loc[("ALL", "fit_active_stock"), "mapped_ldv_share"] >= 0.40

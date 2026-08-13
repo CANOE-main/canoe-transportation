@@ -251,11 +251,14 @@ def mto_key_transition_observations(
     *,
     implausible_change_ratio: float | None = None,
     ignored_missing_years: set[int] | None = None,
+    maximum_transition_age: int | None = None,
 ) -> tuple[pd.DataFrame, list[int]]:
     """Estimate eligible FIT_ACTIVE make-model-vintage annual transitions.
 
     Both endpoints must exist in consecutive editions.  The estimator never
     manufactures zero endpoints and never clips growth (negative retirement).
+    An optional age ceiling applies to the starting age of the transition, not
+    to the source model year, so older vintages can still contribute evidence.
     """
     key = [
         "population_group",
@@ -324,9 +327,10 @@ def mto_key_transition_observations(
         paired["report_year"] = report_year
         paired["next_report_year"] = next_report_year
         paired["age"] = report_year - paired["model_year"]
-        paired = paired.loc[
-            paired["cohort_count_t"].gt(0) & paired["age"].ge(0)
-        ].copy()
+        eligible = paired["cohort_count_t"].gt(0) & paired["age"].ge(0)
+        if maximum_transition_age is not None:
+            eligible &= paired["age"].le(maximum_transition_age)
+        paired = paired.loc[eligible].copy()
         if paired.empty:
             continue
         paired["zero_denominator"] = False
@@ -377,7 +381,6 @@ def map_mto_key_transitions(
     mapping: pd.DataFrame,
     *,
     accepted_statuses: set[str],
-    medium_truck_redirects: set[tuple[str, str]] | None = None,
 ) -> pd.DataFrame:
     """Attach accepted classes only after raw key transitions are estimated."""
     if observations.empty:
@@ -395,19 +398,6 @@ def map_mto_key_transitions(
         mapping,
         accepted_statuses=accepted_statuses,
     )
-    redirected = medium_truck_redirects or set()
-    if redirected:
-        redirect_mask = pd.Series(
-            [
-                (str(make).upper(), str(model).upper()) in redirected
-                for make, model in zip(mapped["MAKE"], mapped["MODEL"], strict=True)
-            ],
-            index=mapped.index,
-        )
-        mapped.loc[redirect_mask, "mapping_accepted"] = False
-        mapped.loc[redirect_mask, "mapping_status"] = "medium_truck_redirect"
-        mapped.loc[redirect_mask, "nrcan_ceud_class"] = "Medium Truck"
-        mapped.loc[redirect_mask, "nlr_atb_class"] = "Medium Truck"
     result = mapped.rename(
         columns={
             "MAKE": "mto_make_code",
@@ -647,6 +637,11 @@ def transition_mapping_coverage(mapped_observations: pd.DataFrame) -> pd.DataFra
     accepted = frame.get(
         "mapping_accepted", pd.Series(True, index=frame.index)
     ).fillna(False) & relevant
+    outcomes = frame.get(
+        "mapping_outcome", pd.Series("mapped_ldv", index=frame.index)
+    )
+    non_ldv = outcomes.eq("mapped_non_ldv")
+    unresolved = outcomes.eq("unmapped")
     rows: list[dict[str, object]] = []
     for source_category, group in frame.groupby("vehicle_class", sort=True):
         group_accepted = accepted.loc[group.index]
@@ -654,17 +649,32 @@ def transition_mapping_coverage(mapped_observations: pd.DataFrame) -> pd.DataFra
         mapped_exposure = float(
             group.loc[group_accepted, "cohort_count_t"].sum()
         )
+        non_ldv_exposure = float(
+            group.loc[non_ldv.loc[group.index], "cohort_count_t"].sum()
+        )
+        unmapped_exposure = float(
+            group.loc[unresolved.loc[group.index], "cohort_count_t"].sum()
+        )
         rows.append(
             {
                 "source_category": str(source_category),
                 "fit_active_exposure": exposure,
                 "mapped_fit_active_exposure": mapped_exposure,
-                "unmapped_fit_active_exposure": exposure - mapped_exposure,
+                "mapped_non_ldv_fit_active_exposure": non_ldv_exposure,
+                "unmapped_fit_active_exposure": unmapped_exposure,
                 "mapped_exposure_share": (
                     mapped_exposure / exposure if exposure else pd.NA
                 ),
+                "mapped_non_ldv_exposure_share": (
+                    non_ldv_exposure / exposure if exposure else pd.NA
+                ),
+                "unmapped_exposure_share": (
+                    unmapped_exposure / exposure if exposure else pd.NA
+                ),
                 "number_of_transitions": len(group),
                 "mapped_transitions": int(group_accepted.sum()),
+                "mapped_non_ldv_transitions": int(non_ldv.loc[group.index].sum()),
+                "unmapped_transitions": int(unresolved.loc[group.index].sum()),
             }
         )
     return pd.DataFrame(rows)
@@ -1516,15 +1526,16 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         ignored_missing_years={
             int(year) for year in report_rules.get("excluded_years", [])
         },
+        maximum_transition_age=(
+            int(rules["maximum_transition_age"])
+            if rules.get("maximum_transition_age") is not None
+            else None
+        ),
     )
     mapped_key_observations = map_mto_key_transitions(
         raw_key_observations,
         mapping,
         accepted_statuses=accepted_statuses,
-        medium_truck_redirects={
-            tuple(str(value).upper().split("/", maxsplit=1))
-            for value in rules.get("medium_truck_redirects", [])
-        },
     )
     mapped_key_observations = annotate_latest_snapshot_presence(
         mapped_key_observations,

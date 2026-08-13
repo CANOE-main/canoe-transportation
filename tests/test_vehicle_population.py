@@ -12,6 +12,7 @@ from fetching.vehicle_population import (
     current_stock_input,
     discover_ckan_resources,
     fetch_to_cache,
+    make_model_key_inventory,
     module_rules,
     normalize_report_a,
     report_a_cohort_usability,
@@ -193,6 +194,10 @@ def test_ontario_rules_load_paths_and_extraction_parameters_from_config() -> Non
     ]
     assert rules["reports"][4]["kept_weight_class"] == "COMMERCIAL"
     assert rules["reports"][5]["max_age"] == 30
+    assert (
+        rules["all_edition_make_model_keys_file"]
+        == "ontario_vehicle_population_all_edition_make_model_keys.csv"
+    )
 
 
 def test_read_vehicle_population_txt_and_zip_members(tmp_path: Path) -> None:
@@ -372,6 +377,62 @@ def test_current_stock_input_keeps_passenger_and_commercial() -> None:
         "COMMERCIAL": 200,
         "PASSENGER": 100,
     }
+
+
+def test_make_model_key_inventory_spans_editions_and_excludes_suppressed_keys() -> None:
+    def row(
+        report_year: int,
+        vehicle_class: str,
+        make: str,
+        model: str,
+        model_year: int,
+        fit_active: int,
+    ) -> dict[str, object]:
+        return {
+            "source_id": "ontario_ministry_transport_vehicle_population",
+            "report_year": report_year,
+            "VEHICLE_CLASS": vehicle_class,
+            "MAKE": make,
+            "MODEL": model,
+            "MODEL_YEAR": model_year,
+            "FIT_ACTIVE": fit_active,
+        }
+
+    edition_2014 = pd.DataFrame(
+        [
+            row(2014, "PASSENGER", "ACUR", "RDX", 2014, 10),
+            row(2014, "COMMERCIAL", "FORD", "F15", 1999, 5),
+            row(2014, "PASSENGER", "****", "***", 2014, 99),
+        ]
+    )
+    edition_2016 = pd.DataFrame(
+        [
+            row(2016, "PASSENGER", "ACUR", "RDX", 2014, 8),
+            row(2016, "PASSENGER", "FORD", "F15", 2000, 7),
+            row(2016, "PASSENGER", "TOYT", "RAV", 2016, 0),
+            row(2016, "PASSENGER", "HOND", "UNKNOWN", 2016, 50),
+        ]
+    )
+
+    inventory = make_model_key_inventory(
+        [edition_2014, edition_2016],
+        rules=ontario_rules(),
+    ).set_index(["mto_make_code", "mto_model_code"])
+
+    assert set(inventory.index) == {
+        ("ACUR", "RDX"),
+        ("FORD", "F15"),
+        ("TOYT", "RAV"),
+    }
+    assert inventory.loc[("ACUR", "RDX"), "report_years"] == "2014 | 2016"
+    assert inventory.loc[("ACUR", "RDX"), "fit_active_stock_across_editions"] == 18
+    assert (
+        inventory.loc[("FORD", "F15"), "source_vehicle_classes"]
+        == "COMMERCIAL | PASSENGER"
+    )
+    assert inventory.loc[("FORD", "F15"), "model_year_from"] == 1999
+    assert inventory.loc[("FORD", "F15"), "model_year_to"] == 2000
+    assert inventory.loc[("TOYT", "RAV"), "latest_fit_active_stock"] == 0
 
 
 def test_normalize_report4_assigns_epa_gvwr_bins_and_distribution() -> None:
