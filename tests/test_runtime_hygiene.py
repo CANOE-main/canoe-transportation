@@ -94,14 +94,15 @@ def test_doctor_runs_without_mutating_by_default() -> None:
         "files": [
             "cost_invest_multipliers.csv",
             "cost_variable_multipliers.csv",
-            "efficiency_multipliers.csv",
-            "lifetime_process.csv",
-            "vehicle_class_market_shares.csv",
-        ],
-        "file_count": 5,
-        "component_count": 11,
-        "selected_cited_rows": 78,
-    }
+                "efficiency_multipliers.csv",
+                "lifetime_process.csv",
+                "mapped_mto_make_model_keys.csv",
+                "vehicle_class_market_shares.csv",
+            ],
+            "file_count": 6,
+            "component_count": 12,
+            "selected_cited_rows": 1965,
+        }
 
 
 def test_pytest_defaults_do_not_pin_runtime_directories() -> None:

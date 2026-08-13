@@ -84,8 +84,8 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
         rules=rules,
     )
 
-    assert registry["manual_file"].nunique() == 5
-    assert len(registry) == 11
+    assert registry["manual_file"].nunique() == 6
+    assert len(registry) == 12
     assert len(resolution) == 103
     assert resolution["tech"].nunique() == 35
     assert not resolution.duplicated(

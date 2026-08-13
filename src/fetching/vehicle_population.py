@@ -6,6 +6,7 @@ import io
 import logging
 import os
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -688,6 +689,162 @@ def _code_quality_masks(
     }
     unknown = normalized_values.str.upper().isin(unknown_labels)
     return blank, suppressed, unknown
+
+
+def make_model_key_inventory(
+    normalized_frames: Iterable[pd.DataFrame],
+    *,
+    rules: dict[str, Any],
+) -> pd.DataFrame:
+    """Summarize unique nonsuppressed Report A make-model keys across editions.
+
+    The output remains source-native: it describes MTO keys and their observed
+    support without attaching or inferring a target vehicle class.  Future
+    provincial vehicle-population adapters can publish the same review handoff
+    after normalizing their source-specific columns.
+    """
+    report_rules = rules["reports"]["A"]
+    class_column = str(report_rules["vehicle_class_column"])
+    make_column = str(report_rules["make_column"])
+    model_column = str(report_rules["model_column"])
+    model_year_column = str(report_rules["model_year_column"])
+    kept_classes = {
+        str(value).strip().upper()
+        for value in report_rules["kept_vehicle_classes"]
+    }
+    required_columns = [
+        "source_id",
+        "report_year",
+        class_column,
+        make_column,
+        model_column,
+        model_year_column,
+        "FIT_ACTIVE",
+    ]
+    selected_frames: list[pd.DataFrame] = []
+    for frame in normalized_frames:
+        missing = sorted(set(required_columns) - set(frame.columns))
+        if missing:
+            raise ValueError(
+                "Normalized vehicle-population frame missing inventory columns: "
+                + ", ".join(missing)
+            )
+        selected = frame.loc[
+            frame[class_column].astype(str).str.upper().isin(kept_classes),
+            required_columns,
+        ].copy()
+        make_masks = _code_quality_masks(
+            selected[make_column],
+            report_rules=report_rules,
+        )
+        model_masks = _code_quality_masks(
+            selected[model_column],
+            report_rules=report_rules,
+        )
+        usable = ~(
+            make_masks[0]
+            | make_masks[1]
+            | make_masks[2]
+            | model_masks[0]
+            | model_masks[1]
+            | model_masks[2]
+        )
+        selected = selected.loc[usable].copy()
+        if selected.empty:
+            continue
+        selected[make_column] = selected[make_column].astype(str).str.strip()
+        selected[model_column] = selected[model_column].astype(str).str.strip()
+        selected[class_column] = selected[class_column].astype(str).str.strip()
+        selected["report_year"] = pd.to_numeric(
+            selected["report_year"], errors="raise"
+        ).astype(int)
+        selected[model_year_column] = pd.to_numeric(
+            selected[model_year_column], errors="coerce"
+        )
+        selected["FIT_ACTIVE"] = pd.to_numeric(
+            selected["FIT_ACTIVE"], errors="coerce"
+        ).fillna(0)
+        selected_frames.append(selected)
+
+    output_columns = [
+        "source_id",
+        "mto_make_code",
+        "mto_model_code",
+        "source_vehicle_classes",
+        "first_report_year",
+        "last_report_year",
+        "observed_report_editions",
+        "report_years",
+        "model_year_from",
+        "model_year_to",
+        "observed_model_years",
+        "source_rows_across_editions",
+        "fit_active_stock_across_editions",
+        "latest_report_year",
+        "latest_fit_active_stock",
+    ]
+    if not selected_frames:
+        return pd.DataFrame(columns=output_columns)
+
+    combined = pd.concat(selected_frames, ignore_index=True)
+
+    def joined_values(values: pd.Series) -> str:
+        present = values.dropna().astype(str).str.strip()
+        return " | ".join(sorted(set(present.loc[present.ne("")])))
+
+    def joined_years(values: pd.Series) -> str:
+        years = sorted(
+            pd.to_numeric(values, errors="coerce")
+            .dropna()
+            .astype(int)
+            .unique()
+        )
+        return " | ".join(map(str, years))
+
+    group_columns = ["source_id", make_column, model_column]
+    inventory = combined.groupby(
+        group_columns,
+        as_index=False,
+        dropna=False,
+    ).agg(
+        source_vehicle_classes=(class_column, joined_values),
+        first_report_year=("report_year", "min"),
+        last_report_year=("report_year", "max"),
+        observed_report_editions=("report_year", "nunique"),
+        report_years=("report_year", joined_years),
+        model_year_from=(model_year_column, "min"),
+        model_year_to=(model_year_column, "max"),
+        observed_model_years=(model_year_column, "nunique"),
+        source_rows_across_editions=("report_year", "size"),
+        fit_active_stock_across_editions=("FIT_ACTIVE", "sum"),
+    )
+    latest_report_year = int(combined["report_year"].max())
+    latest_stock = (
+        combined.loc[combined["report_year"].eq(latest_report_year)]
+        .groupby(group_columns, as_index=False, dropna=False)["FIT_ACTIVE"]
+        .sum(min_count=1)
+        .rename(columns={"FIT_ACTIVE": "latest_fit_active_stock"})
+    )
+    inventory = inventory.merge(
+        latest_stock,
+        on=group_columns,
+        how="left",
+        validate="one_to_one",
+    )
+    inventory["latest_fit_active_stock"] = inventory[
+        "latest_fit_active_stock"
+    ].fillna(0)
+    inventory["latest_report_year"] = latest_report_year
+    inventory = inventory.rename(
+        columns={
+            make_column: "mto_make_code",
+            model_column: "mto_model_code",
+        }
+    )
+    return inventory.loc[:, output_columns].sort_values(
+        ["mto_make_code", "mto_model_code"],
+        kind="stable",
+    ).reset_index(drop=True)
 
 
 def report_a_cohort_usability(
@@ -1446,6 +1603,16 @@ def fetch_and_normalize(
     if long_temporary.exists():
         long_temporary.unlink()
     normalized_current: pd.DataFrame | None = None
+    inventory_frames: list[pd.DataFrame] = []
+    inventory_columns = [
+        "source_id",
+        "report_year",
+        str(report_a_rules["vehicle_class_column"]),
+        str(report_a_rules["make_column"]),
+        str(report_a_rules["model_column"]),
+        str(report_a_rules["model_year_column"]),
+        "FIT_ACTIVE",
+    ]
     reconciliation_frames: list[pd.DataFrame] = []
     finding_frames: list[pd.DataFrame] = []
     manifest_rows: list[dict[str, Any]] = []
@@ -1487,6 +1654,7 @@ def fetch_and_normalize(
                 "normalized_output_template"
             ].format(year=request.year)
             write_dataframe_atomic(normalized, output_dir / output_name)
+            inventory_frames.append(normalized.loc[:, inventory_columns].copy())
             status_long.to_csv(
                 long_temporary,
                 mode="a",
@@ -1563,6 +1731,22 @@ def fetch_and_normalize(
         current_stock,
         output_dir / str(rules["current_stock_file"]),
     )
+    if year is None:
+        key_inventory = make_model_key_inventory(inventory_frames, rules=rules)
+        write_dataframe_atomic(
+            key_inventory,
+            output_dir / str(rules["all_edition_make_model_keys_file"]),
+        )
+        logging.info(
+            "Published %d unique nonsuppressed MTO make-model keys across %d editions",
+            len(key_inventory),
+            len(requests_to_process),
+        )
+    else:
+        logging.info(
+            "Skipped all-edition MTO key inventory during single-year override %d",
+            year,
+        )
     report4_rules = rules["reports"][4]
     report5_rules = rules["reports"][5]
     write_dataframe_atomic(

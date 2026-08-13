@@ -42,6 +42,7 @@ def mapping_row(**overrides: object) -> dict[str, object]:
         "model_year_to": 2025,
         "canonical_make": "Ford",
         "canonical_model": "Escape",
+        "vehicle_scope": "ldv",
         "nrcan_vehicle_class": "Sport utility vehicle: Small",
         "nlr_atb_class": "Small SUV",
         "nrcan_ceud_class": "Light Truck",
@@ -272,6 +273,34 @@ def test_mapping_selects_make_model_key_by_model_year_range() -> None:
     assert mapped.loc[mapped["MODEL_YEAR"].eq(2022), "mapping_accepted"].item()
 
 
+def test_non_ldv_mapping_is_resolved_but_not_ldv_eligible() -> None:
+    mapping = mapping_frame(
+        mapping_row(
+            vehicle_scope="mhdv",
+            nrcan_vehicle_class="",
+            nlr_atb_class="",
+            nrcan_ceud_class="",
+        )
+    )
+    stock = pd.DataFrame(
+        {
+            "report_year": [2025],
+            "VEHICLE_CLASS": ["COMMERCIAL"],
+            "MAKE": ["FORD"],
+            "MODEL": ["SPE"],
+            "MODEL_YEAR": [2022],
+            "FIT_ACTIVE": [20],
+        }
+    )
+
+    mapped = apply_vehicle_mapping(stock, mapping, accepted_statuses={"reviewed"})
+
+    assert mapped.loc[0, "mapping_outcome"] == "mapped_non_ldv"
+    assert not mapped.loc[0, "mapping_accepted"]
+    assert mapped.loc[0, "canonical_model"] == "Escape"
+    assert pd.isna(mapped.loc[0, "nrcan_vehicle_class"])
+
+
 def test_ontario_weights_sum_within_ceud_class_and_vintage() -> None:
     mapped = pd.DataFrame(
         {
@@ -353,6 +382,7 @@ def test_unresolved_reason_summary_has_absolute_and_relative_stock() -> None:
             "MODEL_YEAR": [2026, 2014, 2020, 2020, 2024],
             "FIT_ACTIVE": [10, 20, 30, 40, 50],
             "mapping_accepted": [False] * 5,
+            "mapping_outcome": ["unmapped"] * 5,
         }
     )
     candidates = pd.DataFrame(

@@ -95,7 +95,7 @@ wheels = [
 [[package]]
 name = "canoe-schema"
 version = "4.0.0"
-source = { git = "https://github.com/CANOE-main/canoe-schema.git?rev=32740578f62fe9cfc760034be0201b4dcaf7c653#32740578f62fe9cfc760034be0201b4dcaf7c653" }
+source = { git = "https://github.com/CANOE-main/canoe-schema.git?branch=main#1e68c377d5a7499c78b009d7c472ffd5a6b44901" }
 dependencies = [
     { name = "loguru" },
     { name = "pydantic" },
@@ -131,7 +131,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "canoe-schema", git = "https://github.com/CANOE-main/canoe-schema.git?rev=32740578f62fe9cfc760034be0201b4dcaf7c653" },
+    { name = "canoe-schema", git = "https://github.com/CANOE-main/canoe-schema.git?branch=main" },
     { name = "numpy", specifier = ">=2.4.4" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=3.0.2" },

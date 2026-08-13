@@ -269,7 +269,7 @@ R^{\mathrm{app}}_{k,v,t}
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
 | Map after raw MTO transition estimation (see `efficiency`) | Cars and light trucks | Attach accepted vintage-range mappings only after each make-model-vintage ratio has been estimated; then pool counts through NLR and CEUD class-vintage and class stages. |
-| MTO-only curve support is evidence bounded | Ontario LDVs | Publish fitted rates only through the quality-controlled supported age. Do not fill an unsupported tail from NHTSA or EIA. |
+| MTO-only curve support is evidence bounded | Ontario LDVs | Retain all source vintages that contribute an eligible transition, but estimate annual MTO rates only for starting ages 0 through 35. Do not fill the older-age tail from NHTSA or EIA. |
 | Median lifetimes compiled by default | All | When survival curves are disabled, use the median of a road-vehicle profile and configured average lifetimes for remaining classes. |
 
 **Notes:**
@@ -298,10 +298,14 @@ R^{\mathrm{app}}_{k,v,t}
   NLR class-vintage, NLR class, CEUD class-vintage, and CEUD class pooling stages. Each
   pooled ratio divides summed next-edition counts by summed fit-active exposure. It does
   not yet insert an MTO-derived physical survival curve. The survival-evidence interface
-  retains every source-reported vintage and begins with the age-0 to age-1 transition;
-  the separate model-year-2000 floor applies only to existing-fleet aggregation weights
-  and age distributions. The
-  exact executed filters, aggregation steps, support measures, and interpretation are
+  retains every source-reported vintage that can contribute through starting age 35 and
+  begins with the age-0 to age-1 transition. The separate model-year-2000 floor applies
+  only to existing-fleet aggregation weights and age distributions; it is not a survival
+  evidence floor. Survival is indexed as \(S(0)=1\), with the observed age-\(a\)
+  conditional rate updating \(S(a+1)\), so the age-35 rate produces a terminal cumulative
+  point at age 36. This keeps the empirical horizon relevant to the forward CANOE model
+  while avoiding the increasingly sparse and noisy older-age MTO tail. The exact executed
+  filters, aggregation steps, support measures, and interpretation are
   documented beside the diagnostics in
   `docs/insights/vehicle_population_aggregation_mapping.py`.
 - **External schedules remain separate.** NHTSA and EIA NEMS survival schedules and

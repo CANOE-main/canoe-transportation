@@ -18,6 +18,7 @@ from utils import (
     resolve_input_path,
     resolve_parameter_path,
 )
+from utils.vehicle_labels import is_unresolved_vehicle_label
 
 
 ONTARIO_RULE_KEY = "ontario_vehicle_population"
@@ -433,6 +434,7 @@ def build_rating_model_catalog(
     grouped.insert(0, "entry_type", "ratings_catalog")
     grouped.insert(1, "mto_make_code", "")
     grouped.insert(2, "mto_model_code", "")
+    grouped["vehicle_scope"] = "ldv"
     grouped["match_method"] = "ratings_family_token_prefix"
     grouped["mapping_status"] = "evidence_only"
     grouped["review_notes"] = (
@@ -490,8 +492,33 @@ def validate_vehicle_mapping(
     if invalid_ranges.any():
         raise ValueError("Reviewed mapping has model_year_from after model_year_to")
 
+    allowed_scopes = {"ldv", "mhdv", "non_ldv_unclassified"}
+    validated["vehicle_scope"] = validated["vehicle_scope"].fillna("").astype(str)
+    unexpected_scopes = sorted(set(validated["vehicle_scope"]) - allowed_scopes)
+    if unexpected_scopes:
+        raise ValueError(
+            "Reviewed mapping has unsupported vehicle_scope values: "
+            + ", ".join(unexpected_scopes)
+        )
+    if ~validated.loc[catalog, "vehicle_scope"].eq("ldv").all():
+        raise ValueError("Ratings catalogue rows must have vehicle_scope='ldv'")
+    non_ldv = validated["vehicle_scope"].isin(
+        {"mhdv", "non_ldv_unclassified"}
+    )
+    hierarchy_columns = [
+        "nrcan_vehicle_class",
+        "nlr_atb_class",
+        "nrcan_ceud_class",
+    ]
+    if validated.loc[non_ldv, hierarchy_columns].ne("").any().any():
+        raise ValueError("Non-LDV mapping rows must leave the LDV hierarchy blank")
+    if validated.loc[non_ldv, ["canonical_make", "canonical_model"]].eq("").any().any():
+        raise ValueError("Non-LDV mapping rows require canonical make/model evidence")
+
     inverse = nrcan_to_nlr_map(rating_class_rules)
     for row in validated.itertuples(index=False):
+        if row.vehicle_scope != "ldv":
+            continue
         expected_nlr = inverse.get(str(row.nrcan_vehicle_class))
         if expected_nlr is None:
             raise ValueError(
@@ -771,6 +798,7 @@ def apply_vehicle_mapping(
         for column in [
             "canonical_make",
             "canonical_model",
+            "vehicle_scope",
             "nrcan_vehicle_class",
             "nlr_atb_class",
             "nrcan_ceud_class",
@@ -781,6 +809,7 @@ def apply_vehicle_mapping(
         ]:
             stock[column] = pd.NA
         stock["mapping_status"] = "unmatched"
+        stock["mapping_outcome"] = "unmapped"
         stock["mapping_accepted"] = False
         return stock.drop(columns="_stock_row_id")
 
@@ -816,7 +845,21 @@ def apply_vehicle_mapping(
             unmatched[column] = pd.NA
     joined = pd.concat([matched, unmatched], ignore_index=True, sort=False)
     joined["mapping_status"] = joined["mapping_status"].fillna("unmatched")
-    joined["mapping_accepted"] = joined["mapping_status"].isin(accepted_statuses)
+    if "vehicle_scope" not in joined:
+        joined["vehicle_scope"] = "ldv"
+    resolved = joined["mapping_status"].isin(accepted_statuses)
+    scope = joined["vehicle_scope"].fillna("")
+    joined["mapping_outcome"] = "unmapped"
+    joined.loc[resolved & scope.eq("ldv"), "mapping_outcome"] = "mapped_ldv"
+    joined.loc[
+        resolved & scope.isin({"mhdv", "non_ldv_unclassified"}),
+        "mapping_outcome",
+    ] = "mapped_non_ldv"
+    joined["mapping_accepted"] = joined["mapping_outcome"].eq("mapped_ldv")
+    joined.loc[
+        joined["mapping_outcome"].eq("mapped_non_ldv"),
+        ["nrcan_vehicle_class", "nlr_atb_class", "nrcan_ceud_class"],
+    ] = pd.NA
     rejected_class_columns = [
         "canonical_make",
         "canonical_model",
@@ -824,7 +867,7 @@ def apply_vehicle_mapping(
         "nlr_atb_class",
         "nrcan_ceud_class",
     ]
-    joined.loc[~joined["mapping_accepted"], rejected_class_columns] = pd.NA
+    joined.loc[joined["mapping_outcome"].eq("unmapped"), rejected_class_columns] = pd.NA
     return (
         joined.sort_values("_stock_row_id", kind="stable")
         .drop(columns="_stock_row_id")
@@ -833,7 +876,7 @@ def apply_vehicle_mapping(
 
 
 def mapping_coverage(mapped: pd.DataFrame) -> pd.DataFrame:
-    """Report absolute and relative mapped/unmapped fleet coverage."""
+    """Report LDV, non-LDV, and unresolved fleet coverage."""
     frame = mapped.copy()
     frame["FIT_ACTIVE"] = pd.to_numeric(frame["FIT_ACTIVE"], errors="coerce")
     groups = [
@@ -843,31 +886,38 @@ def mapping_coverage(mapped: pd.DataFrame) -> pd.DataFrame:
     groups.append(("ALL", frame))
     output: list[dict[str, Any]] = []
     for vehicle_class, rows in groups:
-        accepted = rows["mapping_accepted"].fillna(False)
         rows_total = len(rows)
         stock_total = rows["FIT_ACTIVE"].sum(min_count=1)
-        rows_mapped = int(accepted.sum())
-        stock_mapped = rows.loc[accepted, "FIT_ACTIVE"].sum()
         values = {
-            "rows": (rows_mapped, rows_total),
-            "fit_active_stock": (stock_mapped, stock_total),
+            "rows": rows_total,
+            "fit_active_stock": stock_total,
         }
-        for measure, (mapped_value, total_value) in values.items():
-            unmapped_value = total_value - mapped_value
+        for measure, total_value in values.items():
+            category_values: dict[str, float | int] = {}
+            for category in ["mapped_ldv", "mapped_non_ldv", "unmapped"]:
+                selected = rows["mapping_outcome"].eq(category)
+                category_values[category] = (
+                    int(selected.sum())
+                    if measure == "rows"
+                    else rows.loc[selected, "FIT_ACTIVE"].sum()
+                )
             output.append(
                 {
                     "scope": "latest_fit_active_retained_stock",
                     "vehicle_class": vehicle_class,
                     "measure": measure,
-                    "mapped": mapped_value,
-                    "unmapped": unmapped_value,
+                    **category_values,
                     "total": total_value,
-                    "coverage": (
-                        mapped_value / total_value if total_value else pd.NA
-                    ),
-                    "unmapped_share": (
-                        unmapped_value / total_value if total_value else pd.NA
-                    ),
+                    "mapped_ldv_share": category_values["mapped_ldv"] / total_value
+                    if total_value
+                    else pd.NA,
+                    "mapped_non_ldv_share": category_values["mapped_non_ldv"]
+                    / total_value
+                    if total_value
+                    else pd.NA,
+                    "unmapped_share": category_values["unmapped"] / total_value
+                    if total_value
+                    else pd.NA,
                 }
             )
     return pd.DataFrame(output)
@@ -877,9 +927,22 @@ def unresolved_mapping_reasons(
     mapped: pd.DataFrame,
     candidates: pd.DataFrame,
     mapping: pd.DataFrame,
+    manual_evidence: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Attribute unresolved stock to auditable evidence limitations."""
-    unresolved = mapped.loc[~mapped["mapping_accepted"].fillna(False)].copy()
+    outcomes = mapped.get(
+        "mapping_outcome",
+        pd.Series(
+            pd.NA,
+            index=mapped.index,
+            dtype="string",
+        ),
+    ).fillna(
+        mapped.get("mapping_accepted", pd.Series(False, index=mapped.index)).map(
+            {True: "mapped_ldv", False: "unmapped"}
+        )
+    )
+    unresolved = mapped.loc[outcomes.eq("unmapped")].copy()
     unresolved["FIT_ACTIVE"] = pd.to_numeric(
         unresolved["FIT_ACTIVE"],
         errors="coerce",
@@ -955,6 +1018,33 @@ def unresolved_mapping_reasons(
         how="left",
         validate="many_to_one",
     )
+    manual_columns = [
+        "mto_make_code",
+        "mto_model_code",
+        "canonical_make",
+        "candidate_pass_agreement",
+        "agreed_model_candidate",
+        "highest_confidence_candidate",
+        "vpic_second_pass_candidate",
+    ]
+    if manual_evidence is not None and not manual_evidence.empty:
+        manual = manual_evidence.loc[:, manual_columns].rename(
+            columns={"canonical_make": "manual_canonical_make"}
+        )
+        unresolved = unresolved.merge(
+            manual,
+            left_on=["MAKE", "MODEL"],
+            right_on=["mto_make_code", "mto_model_code"],
+            how="left",
+            validate="many_to_one",
+            suffixes=("", "_manual"),
+        )
+    else:
+        for column in manual_columns[2:]:
+            output_column = (
+                "manual_canonical_make" if column == "canonical_make" else column
+            )
+            unresolved[output_column] = pd.NA
     make_text = unresolved["MAKE"].fillna("").astype(str).str.strip().str.upper()
     model_text = unresolved["MODEL"].fillna("").astype(str).str.strip().str.upper()
     suppressed = (
@@ -976,6 +1066,19 @@ def unresolved_mapping_reasons(
         suppressed,
         "suppressed_or_unknown_code",
         "MTO make or model is blank, suppressed, or explicitly unknown.",
+    )
+    usable_manual_agreement = unresolved["candidate_pass_agreement"].eq(
+        "agreement"
+    ) & ~unresolved["agreed_model_candidate"].map(is_unresolved_vehicle_label)
+    assign(
+        usable_manual_agreement,
+        "weak_model_label_agreement",
+        "The two manual passes agree on a model family, but the promotion hierarchy did not produce an accepted mapping for this row.",
+    )
+    assign(
+        unresolved["candidate_pass_agreement"].notna(),
+        "ambiguous_top_candidate",
+        "Manual candidates remain unresolved or conflict with the pipeline family; no family is promoted.",
     )
     assign(
         unresolved["candidate_status"].eq("no_make_prefix_match")
@@ -1073,6 +1176,11 @@ def unresolved_mapping_reasons(
         "rating_model_year_to",
         "overlap_years",
         "rating_model_labels",
+        "manual_canonical_make",
+        "candidate_pass_agreement",
+        "agreed_model_candidate",
+        "highest_confidence_candidate",
+        "vpic_second_pass_candidate",
     ]
     detail = unresolved.loc[:, detail_columns].sort_values(
         "FIT_ACTIVE",
@@ -1472,10 +1580,19 @@ def build_road_aggregation_artifacts(
         mapped,
         candidates,
         validated_mapping,
+        pd.read_csv(
+            resolve_input_path(
+                bundle,
+                "manual",
+                str(rules["mapping_bootstrap"]["manual_evidence_file"]),
+            ),
+            dtype=str,
+            keep_default_na=False,
+        ),
     )
     unresolved_worklist = latest_unresolved_key_worklist(unresolved_detail)
     unresolved = (
-        mapped.loc[~mapped["mapping_accepted"]]
+        mapped.loc[mapped["mapping_outcome"].eq("unmapped")]
         .sort_values("FIT_ACTIVE", ascending=False, kind="stable")
         .head(int(rules["highest_stock_unresolved_limit"]))
     )

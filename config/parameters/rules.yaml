@@ -145,6 +145,7 @@ parameterization:
     reconciliation_file: ontario_vehicle_population_report_a_reconciliation.csv
     findings_file: ontario_vehicle_population_report_a_data_quality_findings.csv
     current_stock_file: ontario_vehicle_population_report_a_current_fit_active.csv
+    all_edition_make_model_keys_file: ontario_vehicle_population_all_edition_make_model_keys.csv
     reports:
       A:
         report_label: "Report A"
@@ -228,10 +229,13 @@ parameterization:
     vehicle_size_class_map_ownership_note: >-
       Reviewed version-controlled configuration. Ordinary fetching and
       parameterization commands read this file but never regenerate or
-      overwrite it; only the explicit vehicle_mapping_bootstrap maintainer
-      command may write a requested replacement. The reviewed file contains
-      accepted MTO crosswalk rows only; the exhaustive source-family catalogue
-      is a generated interim diagnostic artifact.
+      overwrite it. The explicit vehicle_mapping_bootstrap maintainer command
+      is development-only, is never part of default ETL, and may write a
+      requested replacement only when deliberately invoked. Once the manual
+      MTO review is complete, ordinary installations use this reviewed file
+      directly and do not reproduce mapping inference. The reviewed file
+      contains accepted MTO crosswalk rows only; source-native key inventories
+      and source-family catalogues are generated interim evidence.
     accepted_mapping_statuses: [reviewed]
     mapping_bootstrap:
       reviewed_crosswalk_policy: rebuild
@@ -254,6 +258,12 @@ parameterization:
       evidence_source_priority:
         - nrcan_fuel_consumption_ratings
         - fueleconomy_gov_vehicle_data
+      manual_evidence_file: mapped_mto_make_model_keys.csv
+      manual_evidence_source_selector: >-
+        Reviewed two-pass MTO make/model inference using NCIC model-code
+        abbreviations and NHTSA vPIC make/model examples (2026-08-12).
+      reviewed_scope_overrides:
+        FORD/DRW: mhdv
       reviewed_model_label_hints:
         CHEV/CZT: {canonical_make: Chevrolet, canonical_model: Cruze}
         DODG/RPC: {canonical_make: Dodge, canonical_model: Ram 1500 Pickup}
@@ -316,6 +326,42 @@ parameterization:
         MAZD/RX7: RX-7
         RAM/RTR: Ram pickup
         NISS/ARI: ARIYA
+      manual_make_aliases:
+        AMER: American Motors
+        ASTO: Aston Martin
+        AUST: Austin
+        AUT0: Autocar
+        BENT: Bentley
+        BMW: BMW
+        FCCC: Freightliner Custom Chassis
+        FERR: Ferrari
+        FIAT: Fiat
+        FRHT: Freightliner
+        GENS: Genesis
+        GMC: GMC
+        HINO: Hino
+        INTE: International
+        INTL: International
+        ISU: Isuzu
+        KW: Kenworth
+        LAMO: Lamborghini
+        LNDR: Land Rover
+        MACK: Mack
+        MERC: Mercury
+        MG: MG
+        PLSR: Polaris
+        PTRB: Peterbilt
+        SMRT: smart
+        SPAR: Spartan
+        STRN: Saturn
+        STRG: Sterling
+        SUZI: Suzuki
+        TRIU: Triumph
+        VNFS: VinFast
+        VOLV: Volvo
+        WEST: Western Star
+        WRKH: Workhorse
+        WSTR: Western Star
     mapping_columns:
       - entry_type
       - mto_make_code
@@ -324,6 +370,7 @@ parameterization:
       - model_year_to
       - canonical_make
       - canonical_model
+      - vehicle_scope
       - nrcan_vehicle_class
       - nlr_atb_class
       - nrcan_ceud_class
@@ -335,6 +382,8 @@ parameterization:
       - review_notes
     candidate_file: ontario_vehicle_population_mapping_candidates.csv
     bootstrap_evidence_file: vehicle_size_class_map_bootstrap.csv
+    manual_reconciliation_file: ontario_vehicle_population_manual_mapping_reconciliation.csv
+    vpic_eligible_request_file: ontario_vehicle_population_vpic_eligible_requests.csv
     coverage_file: ontario_vehicle_population_mapping_coverage.csv
     unresolved_file: ontario_vehicle_population_highest_stock_unresolved.csv
     unresolved_reason_detail_file: ontario_vehicle_population_unresolved_mapping_reasons.csv
@@ -375,6 +424,27 @@ parameterization:
       MERZ: Mercedes-Benz
       MNNI: Mini
 
+  vpic_vehicle_types:
+    eligible_request_file: ontario_vehicle_population_vpic_eligible_requests.csv
+    interim_subdir: fetched_vpic_vehicle_types
+    output_file: vpic_vehicle_type_evidence.csv
+    manifest_file: manifest.csv
+    warnings_file: warnings.csv
+    truck_vehicle_types: [Truck, Incomplete Vehicle]
+    vehicle_types_to_probe:
+      - Bus
+      - Incomplete Vehicle
+      - Low Speed Vehicle (LSV)
+      - Motorcycle
+      - Multipurpose Passenger Vehicle (MPV)
+      - Off Road Vehicle
+      - Passenger Car
+      - Trailer
+      - Truck
+    request_timeout_seconds: 60
+    request_delay_seconds: 0.25
+    maximum_requests: 1000
+
   stocks_and_demands:
     ontario_report_a:
       age_distribution_file: ontario_vehicle_population_ldv_age_distribution.csv
@@ -410,7 +480,7 @@ parameterization:
     interpolation: none
     implausible_change_ratio: null
     minimum_transition_model_year: null
-    medium_truck_redirects: [FORD/DRW]
+    maximum_transition_age: 35
     mto_survival_decision_criteria:
       minimum_mapped_exposure_share: 0.5
       minimum_in_bounds_rate_share: 0.8

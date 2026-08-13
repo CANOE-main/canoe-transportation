@@ -48,6 +48,8 @@ def test_yaml_order_pins_current_source_mapping(bundle) -> None:
         "canada_energy_policy_simulator_3_4_7": "T19",
         "argonne_hdsam_4_5": "T20",
         "fueleconomy_gov_vehicle_data": "T21",
+        "reviewed_mto_make_model_evidence": "T22",
+        "nhtsa_vpic_vehicle_models": "T23",
     }
 
 

@@ -14,9 +14,12 @@ from canoe_schema.v4_0 import (
 from pydantic import ValidationError
 
 from validation.schema_contract import (
+    SCHEMA_BRANCH,
     SCHEMA_COMMIT,
+    SCHEMA_REPOSITORY,
     TransportationTechnology,
     create_v4_schema,
+    installed_vcs_evidence,
     packaged_ddl,
     schema_evidence,
 )
@@ -28,13 +31,47 @@ EXPECTED_DDL_SHA256 = "cc949df14e654c0b2e549ea02ae165fe646974ddd5454c3f4ebf5a088
 
 def test_schema_dependency_and_ddl_are_commit_pinned() -> None:
     project = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    lock = tomllib.loads((REPO_ROOT / "uv.lock").read_text(encoding="utf-8"))
     evidence = schema_evidence()
 
-    assert project["tool"]["uv"]["sources"]["canoe-schema"]["rev"] == SCHEMA_COMMIT
-    assert SCHEMA_COMMIT in (REPO_ROOT / "uv.lock").read_text(encoding="utf-8")
+    source = project["tool"]["uv"]["sources"]["canoe-schema"]
+    assert source == {
+        "git": SCHEMA_REPOSITORY,
+        "branch": SCHEMA_BRANCH,
+    }
+    locked_package = next(
+        package for package in lock["package"] if package["name"] == "canoe-schema"
+    )
+    assert locked_package["source"]["git"] == (
+        f"{SCHEMA_REPOSITORY}?branch={SCHEMA_BRANCH}#{SCHEMA_COMMIT}"
+    )
+    assert evidence["package_repository"] == SCHEMA_REPOSITORY
+    assert evidence["package_vcs"] == "git"
+    assert evidence["package_requested_revision"] == SCHEMA_BRANCH
+    assert evidence["package_commit"] == SCHEMA_COMMIT
     assert evidence["package_version"] == "4.0.0"
     assert evidence["ddl_sha256"] == EXPECTED_DDL_SHA256
     assert "CREATE TABLE IF NOT EXISTS technology" in packaged_ddl()
+
+
+def test_installed_schema_commit_mismatch_is_rejected(monkeypatch) -> None:
+    class WrongCommitDistribution:
+        @staticmethod
+        def read_text(filename: str) -> str | None:
+            assert filename == "direct_url.json"
+            return (
+                '{"url":"https://github.com/CANOE-main/canoe-schema.git",'
+                '"vcs_info":{"vcs":"git","requested_revision":"main",'
+                '"commit_id":"wrong-commit"}}'
+            )
+
+    monkeypatch.setattr(
+        "validation.schema_contract.importlib.metadata.distribution",
+        lambda package: WrongCommitDistribution(),
+    )
+
+    with pytest.raises(RuntimeError, match="VCS contract changed"):
+        installed_vcs_evidence()
 
 
 def test_package_models_enums_and_parameterized_sql_contract() -> None:

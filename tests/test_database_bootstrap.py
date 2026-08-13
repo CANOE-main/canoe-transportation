@@ -48,7 +48,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
     }
     assert database.is_file()
     assert report["ok"] is True
-    assert report["schema"]["package_commit"].startswith("32740578")
+    assert report["schema"]["package_commit"].startswith("1e68c377")
     assert report["preflight"]["packaged_rates"] == {
         "global_discount_rate": 0.03,
         "default_loan_rate": 0.03,
@@ -79,6 +79,9 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "epa_moves4_population_activity_2023": "T18",
         "canada_energy_policy_simulator_3_4_7": "T19",
         "argonne_hdsam_4_5": "T20",
+        "fueleconomy_gov_vehicle_data": "T21",
+        "reviewed_mto_make_model_evidence": "T22",
+        "nhtsa_vpic_vehicle_models": "T23",
     }
     assert report["template"]["kind"] == "backend_internal_reference"
     assert report["template"]["data_id"].startswith("canoe-transport-template:")

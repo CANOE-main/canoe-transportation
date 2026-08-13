@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.metadata
+import json
 import sqlite3
 from typing import Any
 
@@ -20,7 +21,9 @@ from canoe_schema.v4_0 import (
 
 SCHEMA_VERSION = "4.0"
 SCHEMA_PACKAGE = "canoe-schema"
-SCHEMA_COMMIT = "32740578f62fe9cfc760034be0201b4dcaf7c653"
+SCHEMA_REPOSITORY = "https://github.com/CANOE-main/canoe-schema.git"
+SCHEMA_BRANCH = "main"
+SCHEMA_COMMIT = "1e68c377d5a7499c78b009d7c472ffd5a6b44901"
 TECHNOLOGY_NOTES_EXTENSION_SQL = "ALTER TABLE technology ADD COLUMN notes TEXT;"
 
 
@@ -43,13 +46,52 @@ def sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def installed_vcs_evidence() -> dict[str, str]:
+    """Verify the installed package came from the reviewed main-branch commit."""
+    distribution = importlib.metadata.distribution(SCHEMA_PACKAGE)
+    direct_url_text = distribution.read_text("direct_url.json")
+    if direct_url_text is None:
+        raise RuntimeError(f"Installed {SCHEMA_PACKAGE} has no direct_url.json")
+    try:
+        direct_url = json.loads(direct_url_text)
+        repository = str(direct_url["url"])
+        vcs_info = direct_url["vcs_info"]
+        vcs = str(vcs_info["vcs"])
+        requested_revision = str(vcs_info["requested_revision"])
+        commit = str(vcs_info["commit_id"])
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            f"Installed {SCHEMA_PACKAGE} has invalid VCS direct_url.json"
+        ) from exc
+
+    actual = {
+        "package_repository": repository,
+        "package_vcs": vcs,
+        "package_requested_revision": requested_revision,
+        "package_commit": commit,
+    }
+    expected = {
+        "package_repository": SCHEMA_REPOSITORY,
+        "package_vcs": "git",
+        "package_requested_revision": SCHEMA_BRANCH,
+        "package_commit": SCHEMA_COMMIT,
+    }
+    if actual != expected:
+        raise RuntimeError(
+            f"Installed {SCHEMA_PACKAGE} VCS contract changed: {actual}; "
+            f"expected {expected}"
+        )
+    return actual
+
+
 def schema_evidence() -> dict[str, str]:
     """Return reproducibility evidence for the installed schema contract."""
     ddl = packaged_ddl()
+    vcs_evidence = installed_vcs_evidence()
     return {
         "package": SCHEMA_PACKAGE,
         "package_version": importlib.metadata.version(SCHEMA_PACKAGE),
-        "package_commit": SCHEMA_COMMIT,
+        **vcs_evidence,
         "schema_version": SCHEMA_VERSION,
         "ddl_sha256": sha256_text(ddl),
         "technology_notes_extension_sha256": sha256_text(

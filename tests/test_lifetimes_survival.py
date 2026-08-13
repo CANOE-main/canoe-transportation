@@ -345,6 +345,58 @@ def test_raw_transition_estimator_requires_both_endpoints_and_nonnegative_age() 
     ].item() == pytest.approx(2.0)
 
 
+def test_raw_transition_estimator_caps_starting_age_without_vintage_floor() -> None:
+    snapshots = pd.DataFrame(
+        {
+            "population_group": ["raw_passenger"] * 6,
+            "vehicle_class": ["PASSENGER"] * 6,
+            "mto_make_code": ["FORD"] * 6,
+            "mto_model_code": ["MUS", "OLD", "OLDER"] * 2,
+            "model_year": [2020, 1985, 1984] * 2,
+            "stock_status": ["FIT_ACTIVE"] * 6,
+            "report_year": [2020] * 3 + [2021] * 3,
+            "cohort_count": [100, 50, 25, 90, 40, 20],
+        }
+    )
+
+    observations, missing = mto_key_transition_observations(
+        snapshots,
+        maximum_transition_age=35,
+    )
+
+    assert missing == []
+    assert observations[["model_year", "age"]].to_records(index=False).tolist() == [
+        (2020, 0),
+        (1985, 35),
+    ]
+
+
+def test_age_zero_rate_is_first_factor_in_cumulative_survival() -> None:
+    observations = pd.DataFrame(
+        {
+            "nlr_atb_class": ["Compact", "Compact"],
+            "nrcan_ceud_class": ["Car", "Car"],
+            "model_year": [2020, 2020],
+            "age": [0, 1],
+            "cohort_count_t": [100, 90],
+            "cohort_count_t1": [90, 72],
+            "apparent_retirements": [10, 18],
+            "zero_denominator": [False, False],
+            "mapping_accepted": [True, True],
+        }
+    )
+
+    *_, curve = aggregate_mto_survival_stages(observations)
+
+    assert curve.loc[curve["age"].eq(0), "cumulative_survival"].item() == 1
+    assert curve.loc[curve["age"].eq(1), "cumulative_survival"].item() == pytest.approx(
+        0.9
+    )
+    assert curve.loc[curve["age"].eq(2), "cumulative_survival"].item() == pytest.approx(
+        0.72
+    )
+
+
 def test_raw_key_snapshots_can_preserve_pre_2000_survival_evidence() -> None:
     frame = pd.DataFrame(
         {
