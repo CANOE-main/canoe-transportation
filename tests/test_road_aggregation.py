@@ -50,7 +50,6 @@ def mapping_row(**overrides: object) -> dict[str, object]:
         "mapping_status": "reviewed",
         "evidence_source": "NRCan Fuel Consumption Ratings",
         "supporting_rating_rows": 1,
-        "supporting_model_labels": "Escape",
         "review_notes": "fixture",
     }
     row.update(overrides)
@@ -154,11 +153,6 @@ def test_rating_catalog_exhausts_labels_and_collapses_rav4_variants() -> None:
 
     rav4 = catalog.loc[catalog["canonical_model"].eq("RAV4")]
     assert rav4["supporting_rating_rows"].item() == 3
-    assert set(rav4["supporting_model_labels"].item().split(" | ")) == {
-        "RAV4",
-        "RAV4 AWD",
-        "RAV4 Hybrid AWD",
-    }
     assert "Corolla Cross" in set(catalog["canonical_model"])
 
 
@@ -189,7 +183,7 @@ def test_rating_catalog_normalizes_pickup_variants_without_base_label() -> None:
     assert catalog.loc[0, "supporting_rating_rows"] == 3
 
 
-def test_rating_catalog_casefold_ties_have_deterministic_label_order() -> None:
+def test_rating_catalog_casefold_ties_have_deterministic_family() -> None:
     _, rules, _ = config()
     ratings = pd.DataFrame(
         [
@@ -212,9 +206,8 @@ def test_rating_catalog_casefold_ties_have_deterministic_label_order() -> None:
         mapping_columns=rules["mapping_columns"],
     )
 
-    assert catalog.loc[0, "supporting_model_labels"] == (
-        "GranTurismo | Granturismo"
-    )
+    assert catalog.loc[0, "canonical_model"].casefold() == "granturismo"
+    assert catalog.loc[0, "supporting_rating_rows"] == 2
 
 
 def test_candidate_generation_supports_aliases_longer_than_six_characters() -> None:

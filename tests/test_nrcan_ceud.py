@@ -210,16 +210,18 @@ def test_nrcan_rules_load_paths_and_extraction_parameters_from_config() -> None:
     )
     shares = pd.read_csv(market_path)
     assert list(shares.columns) == market_source.adapter["expected_columns"]
-    assert len(shares) == 26
+    assert len(shares) == 32
     assert not shares.duplicated(
         market_source.adapter["unique_key"]
     ).any()
     assert shares["market_share"].between(0, 1).all()
-    assert set(shares["year"]) == {2018, 2021}
+    assert set(shares["year"]) == {2018, 2020, 2021}
     assert set(shares["data_year -> dq_time"]) == {2022}
-    assert shares.groupby("year").size().to_dict() == {2018: 13, 2021: 13}
+    assert shares.groupby("year").size().to_dict() == {2018: 13, 2020: 6, 2021: 13}
+    ldv_shares = shares.loc[shares["vehicle_scope"].eq("ldv")].copy()
+    mhdv_shares = shares.loc[shares["vehicle_scope"].eq("mhdv")].copy()
     hierarchy = set(
-        shares[
+        ldv_shares[
             ["nrcan_vehicle_class", "nlr_atb_class", "nrcan_ceud_class"]
         ]
         .drop_duplicates()
@@ -241,7 +243,7 @@ def test_nrcan_rules_load_paths_and_extraction_parameters_from_config() -> None:
         ("Van: Passenger", "Pickup", "Light Truck"),
     }
     source_to_ratings = dict(
-        shares[["wards_size_class", "nrcan_vehicle_class"]]
+        ldv_shares[["wards_size_class", "nrcan_vehicle_class"]]
         .drop_duplicates()
         .itertuples(index=False, name=None)
     )
@@ -252,8 +254,15 @@ def test_nrcan_rules_load_paths_and_extraction_parameters_from_config() -> None:
         "market_share"
     ].sum()
     assert all(value == pytest.approx(1.0) for value in group_sums)
+    assert mhdv_shares.loc[
+        mhdv_shares["nrcan_ceud_class"].eq("Medium Trucks"), "wards_size_class"
+    ].tolist() == ["Class 3", "Class 4", "Class 5", "Class 6", "Class 7"]
+    assert mhdv_shares.loc[
+        mhdv_shares["nrcan_ceud_class"].eq("Heavy Trucks"), "wards_size_class"
+    ].tolist() == ["Class 8"]
+    assert mhdv_shares[["nrcan_vehicle_class", "nlr_atb_class"]].isna().all().all()
 
-    nlr_sums = shares.groupby(
+    nlr_sums = ldv_shares.groupby(
         ["year", "nrcan_ceud_class", "nlr_atb_class"]
     )["market_share"].sum()
     expected_nlr_sums = {

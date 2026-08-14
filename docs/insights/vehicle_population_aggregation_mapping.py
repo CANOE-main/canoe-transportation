@@ -105,6 +105,31 @@ def introduction(mo):
     modify configuration, or render notebook exports. The noisy 2015 edition is
     excluded. `PASSENGER` and `COMMERCIAL` are treated equally by the mapping and
     cohort logic, while remaining visible as source categories in the diagnostics.
+
+    **Mapping bootstrap and promotion policy.** The development-only bootstrap first
+    pools positive fit-active stock by MTO make/model/model-year across Report A
+    editions. It normalizes punctuation and case, resolves configured make aliases,
+    and compares each MTO model label with canonical model families assembled from
+    NRCan Fuel Consumption Ratings and FuelEconomy.gov. Candidates are ranked within
+    the normalized make; ties at the best score remain ambiguous. The best unambiguous
+    family is then resolved to a single NRCan → NLR ATB → CEUD hierarchy, checked
+    against exact-year public evidence and the dedicated vPIC temporal audit where
+    applicable, and collapsed into non-overlapping vintage ranges. Ordinary backend
+    runs only read the resulting reviewed CSV and never repeat this inference.
+
+    The model similarity is deterministic. After removing punctuation, spacing, and
+    case, identical labels score **1.00**, a prefix relationship scores **0.95**, and
+    an MTO label contained within the canonical family scores **0.90**. All other
+    pairs use Python's sequence-matching ratio: twice the total length of matching
+    blocks divided by the combined label lengths, on a 0–1 scale. As an explicit
+    review decision, every unambiguous rank-one candidate scoring **at least 0.70** is
+    now promoted; this includes all pending exact and prefix strong-label candidates
+    and supersedes conflicting lower-impact manual-pass arbitration for that unique
+    approved family.
+    Explicit configured make/model corrections remain stronger than the generic
+    similarity rule.
+    The original score and match method remain in generated evidence. Manual candidates
+    superseded by the high-stock re-audit are not restored by this rule.
     """)
     return
 
@@ -550,7 +575,7 @@ def mapping_progress_heading(mo):
 def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
     def _build_view():
         coverage = evidence["coverage"].copy()
-        for _column in ["mapped_ldv", "mapped_non_ldv", "unmapped", "total", "mapped_ldv_share", "mapped_non_ldv_share", "unmapped_share"]:
+        for _column in ["mapped_ldv", "mapped_non_ldv", "unmapped", "out_of_scope", "total", "mapped_ldv_share", "mapped_non_ldv_share", "unmapped_share", "out_of_scope_share"]:
             coverage[_column] = pd.to_numeric(coverage[_column], errors="coerce")
         mapping_cohorts = pd.concat(
             [evidence["passenger_cohorts"], evidence["commercial_cohorts"]],
@@ -616,6 +641,9 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
         accepted_mapping_years = accepted_mapping_years[
             ["mto_make_code", "mto_model_code", "MODEL_YEAR", "mapping_outcome"]
         ].drop_duplicates()
+        mapping_model_year_floor = int(
+            accepted_mapping_ranges["model_year_from"].min()
+        )
         mapping_row_source = mapping_status_totals.loc[
             mapping_status_totals["stock_status"].eq("FIT_ACTIVE")
             & mapping_status_totals["VEHICLE_CLASS"].isin(
@@ -631,6 +659,10 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
         mapping_row_source["mapping_outcome"] = mapping_row_source[
             "mapping_outcome"
         ].fillna("unmapped")
+        mapping_row_source.loc[
+            mapping_row_source["MODEL_YEAR"].lt(mapping_model_year_floor),
+            "mapping_outcome",
+        ] = "out_of_scope"
         mapping_reason_labels = {
             "weak_model_label_agreement": "Weak model-label agreement",
             "ambiguous_top_candidate": "Ambiguous best candidate",
@@ -673,6 +705,7 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
         ] = "not_present_in_latest_snapshot"
         mapping_row_source.loc[mapping_row_source["mapping_outcome"].eq("mapped_ldv"), "row_reason"] = "mapped_ldv"
         mapping_row_source.loc[mapping_row_source["mapping_outcome"].eq("mapped_non_ldv"), "row_reason"] = "mapped_non_ldv"
+        mapping_row_source.loc[mapping_row_source["mapping_outcome"].eq("out_of_scope"), "row_reason"] = "out_of_scope"
         top_row_reasons = (
             mapping_row_source.loc[mapping_row_source["mapping_outcome"].eq("unmapped")]
             .groupby("row_reason", as_index=False)
@@ -681,13 +714,14 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             .tolist()
         )
         mapping_row_source["row_reason_group"] = mapping_row_source["row_reason"].where(
-            mapping_row_source["row_reason"].isin(["mapped_ldv", "mapped_non_ldv"])
+            mapping_row_source["row_reason"].isin(["mapped_ldv", "mapped_non_ldv", "out_of_scope"])
             | mapping_row_source["row_reason"].isin(top_row_reasons),
             "other",
         )
         mapping_row_labels = {
             "mapped_ldv": "Mapped to Car or Light Truck",
             "mapped_non_ldv": "Mapped, non-LDV",
+            "out_of_scope": "Outside 1981+ scope",
             "other": "Other",
             **mapping_reason_labels,
         }
@@ -704,6 +738,7 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
         mapping_row_order = [
             "Mapped to Car or Light Truck",
             "Mapped, non-LDV",
+            "Outside 1981+ scope",
             *[mapping_row_labels[reason] for reason in top_row_reasons],
             "Other",
         ]
@@ -767,7 +802,7 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
                 .encode(
                     x=alt.X("share:Q", title="Share of Report A rows", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
                     y=alt.Y("report_year:O", title="Report edition", sort="descending", axis=alt.Axis(labelAngle=0)),
-                    color=alt.Color("mapping_status:N", title="Mapping result", scale=alt.Scale(domain=mapping_row_order, range=["#2a9d8f", "#457b9d", "#e76f51", "#f4a261", "#8d99ae", "#d9d9d9", "#b8b8b8"][:len(mapping_row_order)])),
+                    color=alt.Color("mapping_status:N", title="Mapping result", scale=alt.Scale(domain=mapping_row_order, range=["#2a9d8f", "#457b9d", "#8d99ae", "#e76f51", "#f4a261", "#c77dff", "#d9d9d9", "#b8b8b8"][:len(mapping_row_order)])),
                     order=alt.Order("status_order:Q"),
                     tooltip=["VEHICLE_CLASS:N", "report_year:O", "mapping_status:N", alt.Tooltip("rows:Q", format=",", title="Rows"), alt.Tooltip("share:Q", format=".2%", title="Row share")],
                 )
@@ -913,7 +948,7 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             their canonical Ratings family.
             """),
             mo.ui.tabs({
-                "Coverage": mo.ui.table(coverage, selection=None, pagination=False, page_size=10, format_mapping={"mapped_ldv_share": "{:.2%}", "mapped_non_ldv_share": "{:.2%}", "unmapped_share": "{:.2%}"}),
+                "Coverage": mo.ui.table(coverage, selection=None, pagination=False, page_size=10, format_mapping={"mapped_ldv_share": "{:.2%}", "mapped_non_ldv_share": "{:.2%}", "unmapped_share": "{:.2%}", "out_of_scope_share": "{:.2%}"}),
                 "Ratings-family use": mo.ui.table(family_use_summary.sort_values(["nlr_atb_class", "share"], ascending=[True, False]), selection=None, pagination=False, page_size=10, format_mapping={"share": "{:.2%}"}),
                 "Edition row coverage": mo.ui.table(mapping_edition_row_parts.sort_values(["VEHICLE_CLASS", "report_year", "status_order"]), selection=None, pagination=True, page_size=10, format_mapping={"share": "{:.2%}"}),
                 "Model-year coverage": mo.ui.table(mapping_model_year_coverage.sort_values(["vehicle_class", "report_year", "model_year"]), selection=None, pagination=True, page_size=10, format_mapping={"mapping_coverage": "{:.2%}"}),
@@ -1289,12 +1324,14 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
             `normalized_substring` = the MTO label occurs within the family label, and
             `string_similarity` = the fallback sequence comparison.
             `candidate_model_similarity` is the resulting 0-1 score (1.00 exact, 0.95
-            prefix, 0.90 substring, otherwise the sequence-similarity ratio). Ratings
-            year bounds and `overlap_years` are provenance and diagnostics only; model
-            year does not accept, reject, or rank a make-model mapping.
+            prefix, 0.90 substring, otherwise the sequence-similarity ratio). The
+            approved bootstrap promotes an unambiguous rank-one candidate at 0.70 or
+            above. Ratings year bounds and `overlap_years` remain provenance and
+            diagnostics; model year does not change the candidate similarity rank.
 
-            The strong-candidate review gate now contains no FIT_ACTIVE stock after the
-            displayed matches were promoted. The **Not present in latest snapshot** tab
+            The strong-candidate review gate contains no FIT_ACTIVE stock after all
+            unambiguous exact/prefix candidates and the broader 0.70+ candidate set are
+            promoted. The **Not present in latest snapshot** tab
             instead shows historical exposure summed across observed editions; those
             keys are lower priority for latest-fleet composition, but latest presence is
             never used to exclude a mapped historical key from survival estimation.
@@ -2638,7 +2675,7 @@ def survival_comparison_heading(mo):
 def _(alt, chart_ui, evidence, mo, pd):
     def _build_view():
         coverage = evidence["transition_mapping_coverage"].copy()
-        for _column in ["fit_active_exposure", "mapped_fit_active_exposure", "mapped_non_ldv_fit_active_exposure", "unmapped_fit_active_exposure", "mapped_exposure_share", "mapped_non_ldv_exposure_share", "unmapped_exposure_share"]:
+        for _column in ["fit_active_exposure", "mapped_fit_active_exposure", "mapped_non_ldv_fit_active_exposure", "unmapped_fit_active_exposure", "out_of_scope_fit_active_exposure", "mapped_exposure_share", "mapped_non_ldv_exposure_share", "unmapped_exposure_share", "out_of_scope_exposure_share"]:
             coverage[_column] = pd.to_numeric(coverage[_column], errors="coerce")
         coverage_parts = pd.concat([
             coverage[["source_category", "fit_active_exposure", "mapped_fit_active_exposure"]]
@@ -2650,6 +2687,9 @@ def _(alt, chart_ui, evidence, mo, pd):
             coverage[["source_category", "fit_active_exposure", "unmapped_fit_active_exposure"]]
             .rename(columns={"unmapped_fit_active_exposure": "exposure"})
             .assign(mapping_status="Unmapped", status_order=2),
+            coverage[["source_category", "fit_active_exposure", "out_of_scope_fit_active_exposure"]]
+            .rename(columns={"out_of_scope_fit_active_exposure": "exposure"})
+            .assign(mapping_status="Outside 1981+ scope", status_order=3),
         ], ignore_index=True)
         coverage_parts["exposure_share"] = coverage_parts["exposure"] / coverage_parts["fit_active_exposure"]
         coverage_chart = (
@@ -2658,7 +2698,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             .encode(
                 x=alt.X("exposure_share:Q", title="Share of starting FIT_ACTIVE exposure", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
                 y=alt.Y("source_category:N", title="Report A source category", sort=["PASSENGER", "COMMERCIAL"]),
-                color=alt.Color("mapping_status:N", title="Transition mapping", scale=alt.Scale(domain=["Mapped to Car or Light Truck", "Mapped, non-LDV", "Unmapped"], range=["#2a9d8f", "#457b9d", "#d9d9d9"])),
+                color=alt.Color("mapping_status:N", title="Transition mapping", scale=alt.Scale(domain=["Mapped to Car or Light Truck", "Mapped, non-LDV", "Unmapped", "Outside 1981+ scope"], range=["#2a9d8f", "#457b9d", "#d9d9d9", "#8d99ae"])),
                 order=alt.Order("status_order:Q"),
                 tooltip=["source_category:N", "mapping_status:N", alt.Tooltip("exposure:Q", format=","), alt.Tooltip("exposure_share:Q", format=".2%")],
             )
@@ -2764,8 +2804,9 @@ def _(alt, chart_ui, evidence, mo, pd):
             `FIT_ACTIVE` keys observed in consecutive Report A editions, with positive
             starting exposure and nonnegative starting age. Age 0 to 1 is the first
             empirical transition. Class mapping is attached afterwards. Raw and pooled
-            negative retirement rates are preserved, never clipped. Latest-snapshot
-            composition weights do not enter these rates.
+            negative retirement rates are preserved, never clipped. Production rates use
+            only make-model-vintage series that remain present in the latest snapshot;
+            latest-snapshot composition weights still do not enter the rate calculation.
 
             #### 1. Stock-weighted historical mapping coverage
 
@@ -2775,7 +2816,8 @@ def _(alt, chart_ui, evidence, mo, pd):
             contributes its starting exposure to each pair. The mapped share is the part
             of that exposure whose reviewed vintage-specific crosswalk resolves to CEUD
             Car or Light Truck. Mapped non-LDV exposure is shown separately and remains
-            excluded from the LDV retirement-rate pools.
+            excluded from the LDV retirement-rate pools. Vintages older than the dynamic
+            1981 mapping floor are reported separately rather than treated as unresolved.
             """),
             chart_ui(coverage_chart),
             mo.md("""
@@ -2819,20 +2861,12 @@ def _(alt, chart_ui, evidence, mo, pd):
             mo.ui.tabs({
                 "Decision gate": mo.ui.table(decision, selection=None, pagination=False, page_size=10, format_mapping={"mapped_fit_active_exposure_share": "{:.2%}", "in_bounds_rate_share": "{:.2%}"}),
                 "Final MTO class-age output": mo.ui.table(mto_curves.sort_values(["vehicle_class", "age"]), selection=None, pagination=True, page_size=10, format_mapping={"annual_retirement_rate": "{:.2%}", "annual_survival_factor": "{:.2%}", "cumulative_survival": "{:.2%}", "cumulative_scrappage": "{:.2%}"}),
-                "Transition mapping coverage": mo.ui.table(coverage, selection=None, pagination=False, page_size=10, format_mapping={"mapped_exposure_share": "{:.2%}", "mapped_non_ldv_exposure_share": "{:.2%}", "unmapped_exposure_share": "{:.2%}"}),
+                "Transition mapping coverage": mo.ui.table(coverage, selection=None, pagination=False, page_size=10, format_mapping={"mapped_exposure_share": "{:.2%}", "mapped_non_ldv_exposure_share": "{:.2%}", "unmapped_exposure_share": "{:.2%}", "out_of_scope_exposure_share": "{:.2%}"}),
             }),
         ])
         return survival_comparison_output
 
     _build_view()
-    return
-
-
-@app.cell(hide_code=True)
-def survival_scope_comparison_heading(mo):
-    mo.md("""
-    ### All-history versus latest-survivor-conditioned aggregation
-    """)
     return
 
 
@@ -2854,15 +2888,15 @@ def _(alt, chart_ui, evidence, mo, pd):
                 scope_curves[column], errors="coerce"
             )
         scope_labels = {
-            "all_historical_transitions": "All historical series",
-            "latest_snapshot_survivors": "Series present in latest snapshot",
+            "latest_snapshot_survivors_dynamic_floor": "Production: latest survivors, 1981+",
+            "latest_snapshot_survivors_1990_plus": "Sensitivity: latest survivors, 1990+",
         }
         scope_curves["aggregation_method"] = scope_curves[
             "aggregation_scope"
         ].map(scope_labels)
         scope_line_types = {
-            "all_historical_transitions": "Solid: all historical transitions",
-            "latest_snapshot_survivors": "Dashed: latest-snapshot survivors",
+            "latest_snapshot_survivors_dynamic_floor": "Solid: production 1981+ floor",
+            "latest_snapshot_survivors_1990_plus": "Dashed: 1990+ sensitivity",
         }
         scope_curves["line_type"] = scope_curves["aggregation_scope"].map(
             scope_line_types
@@ -2892,8 +2926,8 @@ def _(alt, chart_ui, evidence, mo, pd):
             title="Aggregation scope",
             scale=alt.Scale(
                 domain=[
-                    "Solid: all historical transitions",
-                    "Dashed: latest-snapshot survivors",
+                    "Solid: production 1981+ floor",
+                    "Dashed: 1990+ sensitivity",
                 ],
                 range=[[1, 0], [7, 4]],
             ),
@@ -2933,7 +2967,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             .properties(
                 width=700,
                 height=300,
-                title="Same raw transitions, alternative post-transition series scope",
+                title="Latest-survivor retirement rates under alternative vintage floors",
             )
         )
         scope_cumulative_chart = (
@@ -2959,7 +2993,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             .properties(
                 width=700,
                 height=300,
-                title="Cumulative effect of the two empirical aggregation scopes",
+                title="Cumulative effect of the 1990+ sensitivity floor",
             )
         )
         exposure_support_chart = (
@@ -3003,36 +3037,30 @@ def _(alt, chart_ui, evidence, mo, pd):
         )
         scope_comparison_output = mo.vstack([
             mo.md("""
-            Both methods begin with exactly the same raw FIT_ACTIVE make-model-vintage
-            transitions. **All historical series** pools every transition that can be
-            mapped at its own vintage. **Series present in latest snapshot** applies one
-            additional filter after mapping: its Passenger/Commercial make-model-vintage
-            key must also exist in the latest Report A snapshot. No latest-snapshot class
-            shares or stock weights are used in either rate.
+            #### 4. Production vintage scope and 1990+ sensitivity
 
-            The all-history method is the defensible estimator because historical cohorts
-            remain valid exposure even if they later disappear. Latest-survivor conditioning
-            is shown only to quantify survivorship bias: it preferentially retains cohorts
-            that survived long enough to reach the latest edition and can change both the
-            class mix and apparent retirement rates.
+            Both methods use only raw FIT_ACTIVE make-model-vintage series present in the
+            latest snapshot. The production series retains every vintage capable of
+            contributing to an observed starting age from 0 through 35; given the first
+            eligible 2016 transition, that dynamic floor is 1981. The sensitivity series
+            imposes a 1990 floor after transition construction. It therefore loses the
+            age-35 rate and sharply reduces exposure in the oldest ages.
             """),
             chart_ui(scope_annual_chart),
             mo.md("""
             The cumulative curves below are independently compounded from each method's
             own annual MTO rates. NHTSA does not enter this comparison. Differences between
-            the lines arise only from the post-transition latest-presence filter.
+            the lines arise only from excluding 1981-1989 vintages.
             """),
             chart_ui(scope_cumulative_chart),
             mo.md(f"""
             Exposure and distinct-vintage support show what the conditioning removes.
-            The survival estimator now retains all source-reported vintages and begins with
-            the empirical age-0 transition. In these generated artifacts annual evidence
+            The production estimator begins with the empirical age-0 transition. In these generated artifacts annual evidence
             extends through starting age {scope_rate_age_domain[1]}, and the terminal
             cumulative point at age {scope_cumulative_age_max} applies that final factor.
             The 2000 floor remains confined to existing-fleet aggregation weights and does
-            not truncate this forward-looking evidence. Color identifies vehicle class;
-            the separate line-type legend identifies continuous all-history and dashed
-            latest-snapshot-survivor conditioning.
+            not truncate this evidence. Color identifies vehicle class; the separate
+            line-type legend identifies the production dynamic floor and 1990+ sensitivity.
             """),
             chart_ui(exposure_support_chart),
             chart_ui(vintage_support_chart),
@@ -3049,7 +3077,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                     "cumulative_survival": "{:.2%}",
                     "cumulative_scrappage": "{:.2%}",
                 },
-                label="All-history and latest-survivor-conditioned class-age output",
+                label="Latest-survivor dynamic-floor and 1990+ class-age output",
             ),
         ])
         return scope_comparison_output

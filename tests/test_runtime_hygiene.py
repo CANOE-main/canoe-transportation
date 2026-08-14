@@ -101,7 +101,7 @@ def test_doctor_runs_without_mutating_by_default() -> None:
             ],
             "file_count": 6,
             "component_count": 12,
-            "selected_cited_rows": 1965,
+            "selected_cited_rows": 1971,
         }
 
 

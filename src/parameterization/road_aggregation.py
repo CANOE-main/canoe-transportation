@@ -784,7 +784,7 @@ def apply_vehicle_mapping(
     *,
     accepted_statuses: set[str],
 ) -> pd.DataFrame:
-    """Apply accepted MTO make/model mappings selected by stock model year."""
+    """Apply accepted mappings and retain vintages outside the reviewed scope."""
     stock = current_stock.copy()
     stock["_stock_row_id"] = range(len(stock))
     stock["MODEL_YEAR"] = pd.to_numeric(
@@ -850,6 +850,9 @@ def apply_vehicle_mapping(
     resolved = joined["mapping_status"].isin(accepted_statuses)
     scope = joined["vehicle_scope"].fillna("")
     joined["mapping_outcome"] = "unmapped"
+    mapping_floor = int(pd.to_numeric(crosswalk["model_year_from"]).min())
+    outside_scope = joined["MODEL_YEAR"].lt(mapping_floor).fillna(False)
+    joined.loc[outside_scope, "mapping_outcome"] = "out_of_scope"
     joined.loc[resolved & scope.eq("ldv"), "mapping_outcome"] = "mapped_ldv"
     joined.loc[
         resolved & scope.isin({"mhdv", "non_ldv_unclassified"}),
@@ -867,7 +870,10 @@ def apply_vehicle_mapping(
         "nlr_atb_class",
         "nrcan_ceud_class",
     ]
-    joined.loc[joined["mapping_outcome"].eq("unmapped"), rejected_class_columns] = pd.NA
+    joined.loc[
+        joined["mapping_outcome"].isin({"unmapped", "out_of_scope"}),
+        rejected_class_columns,
+    ] = pd.NA
     return (
         joined.sort_values("_stock_row_id", kind="stable")
         .drop(columns="_stock_row_id")
@@ -876,7 +882,7 @@ def apply_vehicle_mapping(
 
 
 def mapping_coverage(mapped: pd.DataFrame) -> pd.DataFrame:
-    """Report LDV, non-LDV, and unresolved fleet coverage."""
+    """Report LDV, non-LDV, unresolved, and out-of-scope coverage."""
     frame = mapped.copy()
     frame["FIT_ACTIVE"] = pd.to_numeric(frame["FIT_ACTIVE"], errors="coerce")
     groups = [
@@ -894,7 +900,12 @@ def mapping_coverage(mapped: pd.DataFrame) -> pd.DataFrame:
         }
         for measure, total_value in values.items():
             category_values: dict[str, float | int] = {}
-            for category in ["mapped_ldv", "mapped_non_ldv", "unmapped"]:
+            for category in [
+                "mapped_ldv",
+                "mapped_non_ldv",
+                "unmapped",
+                "out_of_scope",
+            ]:
                 selected = rows["mapping_outcome"].eq(category)
                 category_values[category] = (
                     int(selected.sum())
@@ -916,6 +927,10 @@ def mapping_coverage(mapped: pd.DataFrame) -> pd.DataFrame:
                     if total_value
                     else pd.NA,
                     "unmapped_share": category_values["unmapped"] / total_value
+                    if total_value
+                    else pd.NA,
+                    "out_of_scope_share": category_values["out_of_scope"]
+                    / total_value
                     if total_value
                     else pd.NA,
                 }
@@ -1026,6 +1041,8 @@ def unresolved_mapping_reasons(
         "agreed_model_candidate",
         "highest_confidence_candidate",
         "vpic_second_pass_candidate",
+        "manual_promotion_eligible",
+        "manual_evidence_disposition",
     ]
     if manual_evidence is not None and not manual_evidence.empty:
         manual = manual_evidence.loc[:, manual_columns].rename(
@@ -1067,16 +1084,25 @@ def unresolved_mapping_reasons(
         "suppressed_or_unknown_code",
         "MTO make or model is blank, suppressed, or explicitly unknown.",
     )
-    usable_manual_agreement = unresolved["candidate_pass_agreement"].eq(
-        "agreement"
-    ) & ~unresolved["agreed_model_candidate"].map(is_unresolved_vehicle_label)
+    promotion_eligible = (
+        unresolved["manual_promotion_eligible"]
+        .fillna(False)
+        .astype(str)
+        .str.casefold()
+        .isin({"true", "1", "yes"})
+    )
+    usable_manual_agreement = (
+        promotion_eligible
+        & unresolved["candidate_pass_agreement"].eq("agreement")
+        & ~unresolved["agreed_model_candidate"].map(is_unresolved_vehicle_label)
+    )
     assign(
         usable_manual_agreement,
         "weak_model_label_agreement",
         "The two manual passes agree on a model family, but the promotion hierarchy did not produce an accepted mapping for this row.",
     )
     assign(
-        unresolved["candidate_pass_agreement"].notna(),
+        promotion_eligible & unresolved["candidate_pass_agreement"].notna(),
         "ambiguous_top_candidate",
         "Manual candidates remain unresolved or conflict with the pipeline family; no family is promoted.",
     )
@@ -1525,6 +1551,8 @@ def load_wards_legacy_comparison(bundle: ConfigBundle) -> pd.DataFrame:
         component.adapter["manual_parameter_path"],
     )
     wards = pd.read_csv(path)
+    if "vehicle_scope" not in wards:
+        wards.insert(1, "vehicle_scope", "ldv")
     wards.insert(0, "region_scope", "outside_ontario_or_legacy_comparison")
     wards.insert(1, "weight_source", WARDS_SOURCE_ID)
     return wards

@@ -600,23 +600,33 @@ def aggregate_mto_survival_stages(
 def mto_survival_scope_comparison(
     mapped_observations: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Compare all historical transitions with latest-survivor conditioning."""
+    """Compare production latest survivors with a 1990+ vintage sensitivity."""
     if "present_in_latest_snapshot" not in mapped_observations.columns:
         raise ValueError(
             "Mapped transitions require present_in_latest_snapshot annotation"
         )
     scope_frames: list[pd.DataFrame] = []
+    latest = mapped_observations.loc[
+        mapped_observations["present_in_latest_snapshot"].fillna(False).astype(bool)
+    ].copy()
+    maximum_age = int(pd.to_numeric(latest["age"], errors="raise").max())
+    earliest_report_year = int(
+        pd.to_numeric(latest["report_year"], errors="raise").min()
+    )
+    dynamic_floor = earliest_report_year - maximum_age
     scopes = [
         (
-            "all_historical_transitions",
-            mapped_observations,
+            "latest_snapshot_survivors_dynamic_floor",
+            latest.loc[
+                pd.to_numeric(latest["model_year"], errors="coerce").ge(
+                    dynamic_floor
+                )
+            ],
         ),
         (
-            "latest_snapshot_survivors",
-            mapped_observations.loc[
-                mapped_observations["present_in_latest_snapshot"]
-                .fillna(False)
-                .astype(bool)
+            "latest_snapshot_survivors_1990_plus",
+            latest.loc[
+                pd.to_numeric(latest["model_year"], errors="coerce").ge(1990)
             ],
         ),
     ]
@@ -642,6 +652,7 @@ def transition_mapping_coverage(mapped_observations: pd.DataFrame) -> pd.DataFra
     )
     non_ldv = outcomes.eq("mapped_non_ldv")
     unresolved = outcomes.eq("unmapped")
+    out_of_scope = outcomes.eq("out_of_scope")
     rows: list[dict[str, object]] = []
     for source_category, group in frame.groupby("vehicle_class", sort=True):
         group_accepted = accepted.loc[group.index]
@@ -655,6 +666,9 @@ def transition_mapping_coverage(mapped_observations: pd.DataFrame) -> pd.DataFra
         unmapped_exposure = float(
             group.loc[unresolved.loc[group.index], "cohort_count_t"].sum()
         )
+        out_of_scope_exposure = float(
+            group.loc[out_of_scope.loc[group.index], "cohort_count_t"].sum()
+        )
         rows.append(
             {
                 "source_category": str(source_category),
@@ -662,6 +676,7 @@ def transition_mapping_coverage(mapped_observations: pd.DataFrame) -> pd.DataFra
                 "mapped_fit_active_exposure": mapped_exposure,
                 "mapped_non_ldv_fit_active_exposure": non_ldv_exposure,
                 "unmapped_fit_active_exposure": unmapped_exposure,
+                "out_of_scope_fit_active_exposure": out_of_scope_exposure,
                 "mapped_exposure_share": (
                     mapped_exposure / exposure if exposure else pd.NA
                 ),
@@ -670,6 +685,9 @@ def transition_mapping_coverage(mapped_observations: pd.DataFrame) -> pd.DataFra
                 ),
                 "unmapped_exposure_share": (
                     unmapped_exposure / exposure if exposure else pd.NA
+                ),
+                "out_of_scope_exposure_share": (
+                    out_of_scope_exposure / exposure if exposure else pd.NA
                 ),
                 "number_of_transitions": len(group),
                 "mapped_transitions": int(group_accepted.sum()),
@@ -1187,6 +1205,8 @@ def legacy_wards_survival_curves(
 ) -> pd.DataFrame:
     """Aggregate legacy Car/Light Truck curves with reviewed Wards shares."""
     legacy_rules = rules["legacy_survival"]
+    if "vehicle_scope" in wards:
+        wards = wards.loc[wards["vehicle_scope"].eq("ldv")].copy()
     nhtsa = transformed.loc[
         transformed["source_id"].eq("nhtsa_cafe_2024_ldv_survival")
     ].copy()
@@ -1544,12 +1564,17 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
     transition_coverage = transition_mapping_coverage(
         mapped_key_observations
     )
+    latest_survivor_observations = mapped_key_observations.loc[
+        mapped_key_observations["present_in_latest_snapshot"]
+        .fillna(False)
+        .astype(bool)
+    ].copy()
     (
         nlr_vintage_retention,
         nlr_class_retention,
         ceud_vintage_retention,
         ceud_class_retention,
-    ) = aggregate_mto_survival_stages(mapped_key_observations)
+    ) = aggregate_mto_survival_stages(latest_survivor_observations)
     survival_scope_comparison = mto_survival_scope_comparison(
         mapped_key_observations
     )
