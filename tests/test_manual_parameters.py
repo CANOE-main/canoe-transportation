@@ -175,7 +175,7 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
     wards = reconciliation.loc[
         reconciliation["manual_file"].eq("vehicle_class_market_shares.csv")
     ]
-    assert len(wards) == 26
+    assert len(wards) == 32
     assert set(wards["resolution_status"]) == {"not_technology_scoped"}
 
 

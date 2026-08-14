@@ -45,6 +45,8 @@ MANUAL_DERIVED_COLUMNS = [
     "canonical_make",
     "candidate_pass_agreement",
     "agreed_model_candidate",
+    "manual_promotion_eligible",
+    "manual_evidence_disposition",
     "notes",
     "source -> data_source",
 ]
@@ -62,6 +64,7 @@ def prepare_manual_evidence(
     *,
     canonical_make_aliases: dict[str, str],
     source_selector: str,
+    reaudit_keys: set[tuple[str, str]] | None = None,
 ) -> pd.DataFrame:
     """Validate and deterministically derive reviewed two-pass evidence fields."""
     required = {
@@ -100,6 +103,18 @@ def prepare_manual_evidence(
     output["agreed_model_candidate"] = agreements.map(
         lambda value: value.agreed_candidate or ""
     )
+    reaudited = output[["mto_make_code", "mto_model_code"]].apply(
+        tuple, axis=1
+    ).isin(reaudit_keys or set())
+    output["manual_promotion_eligible"] = reaudited.map(
+        {True: "false", False: "true"}
+    )
+    output["manual_evidence_disposition"] = reaudited.map(
+        {
+            True: "superseded_high_stock_reaudit",
+            False: "promotion_eligible",
+        }
+    )
     output["notes"] = (
         "Latest-active reviewed MTO key; pass agreement is recomputed using "
         "case-insensitive model-family equivalence."
@@ -113,6 +128,7 @@ def load_manual_evidence(
     *,
     bootstrap_rules: dict[str, Any],
     canonical_make_aliases: dict[str, str],
+    reaudit_keys: set[tuple[str, str]],
 ) -> pd.DataFrame:
     """Load the registered manual inventory and verify persisted derived fields."""
     path = resolve_input_path(
@@ -125,6 +141,7 @@ def load_manual_evidence(
         persisted,
         canonical_make_aliases=canonical_make_aliases,
         source_selector=str(bootstrap_rules["manual_evidence_source_selector"]),
+        reaudit_keys=reaudit_keys,
     )
     if list(persisted.columns) != list(expected.columns):
         raise ValueError(
@@ -135,6 +152,8 @@ def load_manual_evidence(
         if not persisted[column].equals(expected[column]):
             raise ValueError(f"Manual MTO evidence has stale derived column: {column}")
     return expected
+
+
 def _make_match_method(
     mto_make: object,
     rating_make: object,
@@ -260,6 +279,49 @@ def _fit_active_stock_rows(
             kind="stable",
         )
     )
+
+
+def derive_mapping_model_year_floor(
+    historical_stock: pd.DataFrame,
+    *,
+    maximum_transition_age: int,
+) -> int:
+    """Return the oldest vintage that can enter the observed transition window."""
+    report_years = sorted(
+        pd.to_numeric(historical_stock["report_year"], errors="raise")
+        .astype(int)
+        .unique()
+    )
+    transition_starts = [year for year in report_years if year + 1 in report_years]
+    if not transition_starts:
+        raise ValueError("Cannot derive a mapping floor without Report A editions")
+    return min(transition_starts) - int(maximum_transition_age)
+
+
+def latest_stock_reaudit_keys(
+    current_stock: pd.DataFrame,
+    *,
+    minimum_model_year: int | None,
+    quantile: float,
+) -> tuple[set[tuple[str, str]], float, pd.DataFrame]:
+    """Select the tied upper quantile of latest positive-stock MTO keys."""
+    if not 0 <= quantile <= 1:
+        raise ValueError("High-stock re-audit quantile must be in [0, 1]")
+    stock = _fit_active_stock_rows(
+        current_stock,
+        exclude_future_model_years=False,
+        minimum_model_year=minimum_model_year,
+    )
+    by_key = (
+        stock.groupby(["MAKE", "MODEL"], as_index=False)["FIT_ACTIVE"]
+        .sum()
+        .sort_values(["FIT_ACTIVE", "MAKE", "MODEL"], ascending=[False, True, True])
+        .reset_index(drop=True)
+    )
+    cutoff = float(by_key["FIT_ACTIVE"].quantile(quantile))
+    selected = by_key.loc[by_key["FIT_ACTIVE"].ge(cutoff)].copy()
+    keys = set(selected[["MAKE", "MODEL"]].apply(tuple, axis=1))
+    return keys, cutoff, selected
 
 
 def _covered_by_seed(
@@ -603,16 +665,19 @@ def automatically_supported_years(
 def reviewed_strong_candidate_years(
     current_stock: pd.DataFrame,
     candidates: pd.DataFrame,
+    *,
+    minimum_similarity: float = 0.7,
 ) -> pd.DataFrame:
-    """Return current exact/prefix candidates explicitly approved for review."""
+    """Return unambiguous rank-one candidates approved by the similarity rule."""
     if candidates.empty:
         return pd.DataFrame()
+    if not 0 <= minimum_similarity <= 1:
+        raise ValueError("Candidate model-similarity threshold must be in [0, 1]")
+    similarity = pd.to_numeric(candidates["model_similarity"], errors="coerce")
     top = candidates.loc[
         pd.to_numeric(candidates["candidate_rank"], errors="coerce").eq(1)
         & candidates["candidate_status"].eq("ranked_candidate")
-        & candidates["match_method"].isin(
-            ["exact_normalized", "normalized_prefix"]
-        )
+        & similarity.ge(minimum_similarity)
     ].copy()
     if top.empty:
         return pd.DataFrame()
@@ -647,10 +712,23 @@ def reviewed_strong_candidate_years(
             "evidence_source": "supporting_evidence_sources",
         }
     )
-    supported["supporting_rating_rows"] = 1
-    supported["make_match_method"] = "reviewed_current_strong_candidate"
-    supported["model_match_method"] = "reviewed_canonical_label"
-    supported["year_resolution"] = "reviewed_current_strong_candidate"
+    rating_rows = (
+        supported["rating_rows"]
+        if "rating_rows" in supported
+        else pd.Series(1, index=supported.index)
+    )
+    supported["supporting_rating_rows"] = pd.to_numeric(
+        rating_rows, errors="coerce"
+    ).fillna(1).astype(int)
+    supported["make_match_method"] = "approved_current_candidate"
+    supported["candidate_match_method"] = supported["match_method"].astype(str)
+    supported["candidate_model_similarity"] = pd.to_numeric(
+        supported["model_similarity"], errors="raise"
+    )
+    supported["model_match_method"] = (
+        "approved_similarity_" + supported["candidate_match_method"]
+    )
+    supported["year_resolution"] = "approved_current_candidate_similarity"
     columns = [
         "first_report_year",
         "last_report_year",
@@ -670,13 +748,17 @@ def reviewed_strong_candidate_years(
         "supporting_model_labels",
         "supporting_evidence_sources",
         "year_resolution",
+        "candidate_match_method",
+        "candidate_model_similarity",
     ]
     return supported.loc[:, columns].reset_index(drop=True)
 
 
 def _manual_label_hints(manual: pd.DataFrame) -> pd.DataFrame:
+    promotion_eligible = manual["manual_promotion_eligible"].eq("true")
     promoted = manual.loc[
-        manual["candidate_pass_agreement"].eq("agreement")
+        promotion_eligible
+        & manual["candidate_pass_agreement"].eq("agreement")
         & ~manual["agreed_model_candidate"].map(is_unresolved_vehicle_label)
     ].copy()
     if promoted.empty:
@@ -762,6 +844,144 @@ def load_vpic_scope_evidence(bundle: ConfigBundle) -> pd.DataFrame:
     return evidence
 
 
+def load_vpic_temporal_evidence(bundle: ConfigBundle) -> pd.DataFrame:
+    """Load optional cached make-model-year corroboration without network access."""
+    rules = load_harmonization_rules(bundle, "vpic_model_years")
+    path = resolve_input_path(
+        bundle,
+        "interim",
+        str(rules["interim_subdir"]),
+        str(rules["output_file"]),
+    )
+    columns = [
+        "mto_make_code",
+        "mto_model_code",
+        "model_year",
+        "canonical_make",
+        "canonical_model",
+        "temporal_validation_status",
+    ]
+    if not path.is_file():
+        return pd.DataFrame(columns=columns)
+    evidence = pd.read_csv(path, dtype=str, keep_default_na=False)
+    missing = sorted(set(columns) - set(evidence.columns))
+    if missing:
+        raise ValueError("vPIC temporal evidence is missing columns: " + ", ".join(missing))
+    return evidence
+
+
+def build_temporal_request_rows(
+    supported: pd.DataFrame,
+    current_stock: pd.DataFrame,
+    *,
+    reaudit_keys: set[tuple[str, str]],
+    minimum_model_year: int,
+) -> pd.DataFrame:
+    """Publish proposed mapped key-years for the dedicated temporal adapter."""
+    columns = [
+        "mto_make_code",
+        "mto_model_code",
+        "model_year",
+        "canonical_make",
+        "canonical_model",
+        "exact_public_year_evidence",
+        "high_stock_reaudit",
+        "latest_fit_active_stock",
+    ]
+    if supported.empty:
+        return pd.DataFrame(columns=columns)
+    requests = supported.loc[
+        pd.to_numeric(supported["model_year"], errors="coerce").ge(
+            minimum_model_year
+        )
+    ].copy()
+    if requests.empty:
+        return pd.DataFrame(columns=columns)
+    requests["model_year"] = pd.to_numeric(
+        requests["model_year"], errors="raise"
+    ).astype(int)
+    requests["exact_public_year_evidence"] = requests["year_resolution"].astype(
+        str
+    ).str.contains("exact_mto_model_year", regex=False)
+    request_keys = requests[["mto_make_code", "mto_model_code"]].apply(tuple, axis=1)
+    requests["high_stock_reaudit"] = request_keys.isin(reaudit_keys)
+    latest = _fit_active_stock_rows(
+        current_stock,
+        exclude_future_model_years=False,
+        minimum_model_year=None,
+    )
+    latest = latest.groupby(["MAKE", "MODEL"], as_index=False)["FIT_ACTIVE"].sum()
+    requests = requests.merge(
+        latest,
+        left_on=["mto_make_code", "mto_model_code"],
+        right_on=["MAKE", "MODEL"],
+        how="left",
+        validate="many_to_one",
+    ).rename(columns={"FIT_ACTIVE": "latest_fit_active_stock"})
+    requests["latest_fit_active_stock"] = requests["latest_fit_active_stock"].fillna(0)
+    for column in ["exact_public_year_evidence", "high_stock_reaudit"]:
+        requests[column] = requests[column].map({True: "true", False: "false"})
+    return (
+        requests.loc[:, columns]
+        .drop_duplicates()
+        .sort_values(
+            ["canonical_make", "model_year", "canonical_model", "mto_make_code", "mto_model_code"],
+            kind="stable",
+        )
+        .reset_index(drop=True)
+    )
+
+
+def apply_high_stock_temporal_gate(
+    supported: pd.DataFrame,
+    temporal_evidence: pd.DataFrame,
+    *,
+    reaudit_keys: set[tuple[str, str]],
+    minimum_model_year: int,
+) -> pd.DataFrame:
+    """Require affirmative year evidence for the high-stock re-audit cohort."""
+    output = supported.copy()
+    if output.empty:
+        output["temporal_validation_status"] = pd.Series(dtype=str)
+        return output
+    evidence_status = {
+        (
+            str(row.mto_make_code),
+            str(row.mto_model_code),
+            int(row.model_year),
+            str(row.canonical_make),
+            str(row.canonical_model),
+        ): str(row.temporal_validation_status)
+        for row in temporal_evidence.itertuples(index=False)
+    }
+    statuses: list[str] = []
+    keep: list[bool] = []
+    for row in output.itertuples(index=False):
+        key = (str(row.mto_make_code), str(row.mto_model_code))
+        year = int(row.model_year)
+        exact = "exact_mto_model_year" in str(row.year_resolution)
+        status = evidence_status.get(
+            (
+                key[0],
+                key[1],
+                year,
+                str(row.canonical_make),
+                str(row.canonical_model),
+            ),
+            "not_requested",
+        )
+        statuses.append(status)
+        approved_candidate = (
+            str(row.year_resolution) == "approved_current_candidate_similarity"
+        )
+        requires_gate = key in reaudit_keys and year >= minimum_model_year
+        keep.append(
+            not requires_gate or exact or status == "confirmed" or approved_candidate
+        )
+    output["temporal_validation_status"] = statuses
+    return output.loc[keep].reset_index(drop=True)
+
+
 def reconcile_manual_supported_years(
     historical_stock: pd.DataFrame,
     pipeline_supported: pd.DataFrame,
@@ -775,13 +995,26 @@ def reconcile_manual_supported_years(
     manual_classed = manual_supported.copy()
     if not manual_classed.empty:
         manual_classed["vehicle_scope"] = "ldv"
+    promotion_eligible = manual["manual_promotion_eligible"].eq("true")
+    approved_candidate_rows = pipeline["year_resolution"].eq(
+        "approved_current_candidate_similarity"
+    )
+    approved_candidate_keys = set(
+        pipeline.loc[
+            approved_candidate_rows,
+            ["mto_make_code", "mto_model_code"],
+        ].apply(tuple, axis=1)
+    )
     manual_keys = set(
-        manual[["mto_make_code", "mto_model_code"]].apply(tuple, axis=1)
+        manual.loc[promotion_eligible, ["mto_make_code", "mto_model_code"]]
+        .apply(tuple, axis=1)
+    )
+    pipeline_keys = pipeline[["mto_make_code", "mto_model_code"]].apply(
+        tuple, axis=1
     )
     retained = pipeline.loc[
-        ~pipeline[["mto_make_code", "mto_model_code"]]
-        .apply(tuple, axis=1)
-        .isin(manual_keys)
+        ~pipeline_keys.isin(manual_keys)
+        | pipeline_keys.isin(approved_candidate_keys)
     ].copy()
     vpic_scopes = {
         (str(row.mto_make_code), str(row.mto_model_code)): str(row.vehicle_scope)
@@ -801,6 +1034,53 @@ def reconcile_manual_supported_years(
     ].copy()
     for _, manual_row in manual.iterrows():
         key = (manual_row["mto_make_code"], manual_row["mto_model_code"])
+        if manual_row["manual_promotion_eligible"] != "true":
+            reconciliation_rows.append(
+                {
+                    "mto_make_code": key[0],
+                    "mto_model_code": key[1],
+                    "canonical_make": manual_row["canonical_make"],
+                    "candidate_pass_agreement": manual_row["candidate_pass_agreement"],
+                    "agreed_model_candidate": manual_row["agreed_model_candidate"],
+                    "pipeline_model_families": "",
+                    "selected_model_family": "",
+                    "promotion_status": "superseded",
+                    "class_evidence_status": "not_applicable",
+                    "vehicle_scope": "",
+                    "reconciliation_reason": "superseded_high_stock_reaudit",
+                }
+            )
+            continue
+        if key in approved_candidate_keys:
+            approved_rows = pipeline.loc[
+                pipeline["mto_make_code"].eq(key[0])
+                & pipeline["mto_model_code"].eq(key[1])
+            ]
+            selected_families = " | ".join(
+                sorted(set(approved_rows["canonical_model"].astype(str)))
+            )
+            reconciliation_rows.append(
+                {
+                    "mto_make_code": key[0],
+                    "mto_model_code": key[1],
+                    "canonical_make": manual_row["canonical_make"],
+                    "candidate_pass_agreement": manual_row[
+                        "candidate_pass_agreement"
+                    ],
+                    "agreed_model_candidate": manual_row[
+                        "agreed_model_candidate"
+                    ],
+                    "pipeline_model_families": selected_families,
+                    "selected_model_family": selected_families,
+                    "promotion_status": "promoted",
+                    "class_evidence_status": "ldv_class_resolved",
+                    "vehicle_scope": "ldv",
+                    "reconciliation_reason": (
+                        "approved_candidate_similarity_supersedes_manual_arbitration"
+                    ),
+                }
+            )
+            continue
         base_rows = pipeline.loc[
             pipeline["mto_make_code"].eq(key[0])
             & pipeline["mto_model_code"].eq(key[1])
@@ -910,6 +1190,7 @@ def fill_stable_family_years(
     supported: pd.DataFrame,
     *,
     hierarchy_dominance_share: float,
+    excluded_keys: set[tuple[str, str]] | None = None,
 ) -> pd.DataFrame:
     """Fill internal vintage gaps for keys with one stable canonical family."""
     if supported.empty:
@@ -924,6 +1205,13 @@ def fill_stable_family_years(
         ["mto_make_code", "mto_model_code"], sort=False
     ):
         key_rows = key_rows.sort_values("model_year", kind="stable").copy()
+        key = (
+            str(key_rows["mto_make_code"].iloc[0]),
+            str(key_rows["mto_model_code"].iloc[0]),
+        )
+        if key in (excluded_keys or set()):
+            output.append(key_rows)
+            continue
         families = key_rows[["canonical_make", "canonical_model"]].drop_duplicates()
         if len(families) != 1:
             output.append(key_rows)
@@ -1014,6 +1302,21 @@ def apply_reviewed_scope_overrides(
     return output
 
 
+def apply_canonical_model_overrides(
+    supported: pd.DataFrame,
+    overrides: dict[str, str],
+) -> pd.DataFrame:
+    """Apply reviewed canonical spelling before temporal corroboration."""
+    output = supported.copy()
+    for mto_key, canonical_model in overrides.items():
+        make_code, model_code = str(mto_key).split("/", maxsplit=1)
+        mask = output["mto_make_code"].eq(make_code) & output[
+            "mto_model_code"
+        ].eq(model_code)
+        output.loc[mask, "canonical_model"] = str(canonical_model)
+    return output
+
+
 def collapse_supported_years(
     supported: pd.DataFrame,
     *,
@@ -1036,7 +1339,6 @@ def collapse_supported_years(
         "mapping_status",
         "evidence_source",
         "supporting_rating_rows",
-        "supporting_model_labels",
         "review_notes",
     ]
     if supported.empty:
@@ -1129,23 +1431,26 @@ def collapse_supported_years(
     ranges["evidence_source"] = ranges["supporting_evidence_sources"].map(
         lambda value: f"{value}; Ontario Vehicle Population Report A historical fit-active stock"
     )
-    ranges["review_notes"] = ranges.apply(
-        lambda row: (
-            "Deterministic cached-evidence bootstrap; "
-            f"{int(round(row.fit_active_stock)):,} historical fit-active exposure; "
-            f"{int(row.supporting_rating_rows)} supporting source rows; "
-            f"year resolution={row.year_resolution}; MTO model year selects this "
-            "non-overlapping range and all best model-label matches agree on the "
-            "recorded NLR/CEUD hierarchy."
-        ),
-        axis=1,
-    )
+    ranges["review_notes"] = ranges["vehicle_scope"].map(
+        {
+            "mhdv": "Public evidence supports a mapped non-LDV truck family.",
+            "non_ldv_unclassified": (
+                "Public evidence supports the family but not an LDV class hierarchy."
+            ),
+        }
+    ).fillna("")
     return ranges.loc[:, columns].reset_index(drop=True)
 
 
 def build_bootstrap_mapping(
     bundle: ConfigBundle,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]:
     """Build the reviewed map and its automatically supported year evidence."""
     rules = module_rules(bundle)
     rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
@@ -1196,10 +1501,6 @@ def build_bootstrap_mapping(
         reviewed_mapping.insert(0, "entry_type", "mto_crosswalk")
     if "supporting_rating_rows" not in reviewed_mapping.columns:
         reviewed_mapping["supporting_rating_rows"] = ""
-    if "supporting_model_labels" not in reviewed_mapping.columns:
-        reviewed_mapping["supporting_model_labels"] = reviewed_mapping[
-            "canonical_model"
-        ]
     if "vehicle_scope" not in reviewed_mapping.columns:
         reviewed_mapping.insert(
             reviewed_mapping.columns.get_loc("nrcan_vehicle_class"),
@@ -1208,6 +1509,22 @@ def build_bootstrap_mapping(
         )
     reviewed_mapping = reviewed_mapping.loc[:, rules["mapping_columns"]]
     bootstrap_rules = rules["mapping_bootstrap"]
+    lifetime_rules = load_harmonization_rules(bundle, "lifetimes_survival")
+    mapping_floor = derive_mapping_model_year_floor(
+        historical_stock,
+        maximum_transition_age=int(lifetime_rules["maximum_transition_age"]),
+    )
+    reaudit_keys, reaudit_cutoff, reaudit_inventory = latest_stock_reaudit_keys(
+        current_stock,
+        minimum_model_year=None,
+        quantile=float(bootstrap_rules["high_stock_reaudit_quantile"]),
+    )
+    LOGGER.info(
+        "High-stock re-audit selects %d keys at FIT_ACTIVE >= %s; mapping floor=%d",
+        len(reaudit_keys),
+        f"{reaudit_cutoff:g}",
+        mapping_floor,
+    )
     canonical_make_aliases = {
         str(source): str(target)
         for source, target in {
@@ -1236,12 +1553,18 @@ def build_bootstrap_mapping(
         bundle,
         bootstrap_rules=bootstrap_rules,
         canonical_make_aliases=canonical_make_aliases,
+        reaudit_keys=reaudit_keys,
     )
     seed = reviewed_crosswalk_seed(
         reviewed_mapping,
         policy=str(bootstrap_rules["reviewed_crosswalk_policy"]),
     )
     label_hints = reviewed_label_hints(reviewed_mapping)
+    label_hints = label_hints.loc[
+        ~label_hints[["mto_make_code", "mto_model_code"]]
+        .apply(tuple, axis=1)
+        .isin(reaudit_keys)
+    ].copy()
     configured_hints: list[dict[str, Any]] = []
     for mto_key, hint in bootstrap_rules.get(
         "reviewed_model_label_hints", {}
@@ -1302,12 +1625,7 @@ def build_bootstrap_mapping(
         minimum_model_prefix_length=int(
             bootstrap_rules["minimum_model_prefix_length"]
         ),
-        minimum_model_year=int(
-            bootstrap_rules.get(
-                "candidate_minimum_model_year",
-                bootstrap_rules["minimum_model_year"],
-            )
-        ),
+        minimum_model_year=mapping_floor,
         exclude_future_model_years=bool(
             bootstrap_rules["exclude_future_model_years"]
         ),
@@ -1331,12 +1649,7 @@ def build_bootstrap_mapping(
             bootstrap_rules["minimum_make_prefix_length"]
         ),
         minimum_model_prefix_length=2,
-        minimum_model_year=int(
-            bootstrap_rules.get(
-                "candidate_minimum_model_year",
-                bootstrap_rules["minimum_model_year"],
-            )
-        ),
+        minimum_model_year=mapping_floor,
         exclude_future_model_years=bool(
             bootstrap_rules["exclude_future_model_years"]
         ),
@@ -1353,19 +1666,59 @@ def build_bootstrap_mapping(
         strong_supported = reviewed_strong_candidate_years(
             current_stock,
             current_candidates,
+            minimum_similarity=float(
+                bootstrap_rules["accepted_candidate_model_similarity"]
+            ),
         )
-        if not strong_supported.empty:
+        if not strong_supported.empty and configured_hints:
             supported_keys = set(
-                supported[["mto_make_code", "mto_model_code", "model_year"]]
-                .apply(tuple, axis=1)
-                .tolist()
+                supported[["mto_make_code", "mto_model_code"]].apply(tuple, axis=1)
             )
+            configured_supported_keys = configured_keys & supported_keys
+            configured_approved = strong_supported.loc[
+                strong_supported[["mto_make_code", "mto_model_code"]]
+                .apply(tuple, axis=1)
+                .isin(configured_supported_keys)
+            ].copy()
+            for key, approved_rows in configured_approved.groupby(
+                ["mto_make_code", "mto_model_code"], sort=False
+            ):
+                approved_row = approved_rows.iloc[0]
+                configured_mask = supported["mto_make_code"].eq(key[0]) & supported[
+                    "mto_model_code"
+                ].eq(key[1])
+                supported.loc[
+                    configured_mask, "year_resolution"
+                ] = "approved_current_candidate_similarity"
+                supported.loc[
+                    configured_mask, "candidate_match_method"
+                ] = approved_row["candidate_match_method"]
+                supported.loc[
+                    configured_mask, "candidate_model_similarity"
+                ] = approved_row["candidate_model_similarity"]
             strong_supported = strong_supported.loc[
-                ~strong_supported[
+                ~strong_supported[["mto_make_code", "mto_model_code"]]
+                .apply(tuple, axis=1)
+                .isin(configured_supported_keys)
+            ].copy()
+        if not strong_supported.empty:
+            strong_supported = strong_supported.loc[
+                pd.to_numeric(strong_supported["model_year"], errors="coerce").ge(
+                    mapping_floor
+                )
+            ].copy()
+        if not strong_supported.empty:
+            approved_key_years = set(
+                strong_supported[
+                    ["mto_make_code", "mto_model_code", "model_year"]
+                ].apply(tuple, axis=1)
+            )
+            supported = supported.loc[
+                ~supported[
                     ["mto_make_code", "mto_model_code", "model_year"]
                 ]
                 .apply(tuple, axis=1)
-                .isin(supported_keys)
+                .isin(approved_key_years)
             ]
             supported = pd.concat(
                 [supported, strong_supported], ignore_index=True, sort=False
@@ -1377,12 +1730,9 @@ def build_bootstrap_mapping(
         manual,
         load_vpic_scope_evidence(bundle),
     )
-    supported = fill_stable_family_years(
-        supported,
-        hierarchy_dominance_share=float(
-            bootstrap_rules["stable_family_hierarchy_dominance_share"]
-        ),
-    )
+    supported = supported.loc[
+        pd.to_numeric(supported["model_year"], errors="coerce").ge(mapping_floor)
+    ].copy()
     supported = apply_reviewed_class_overrides(
         supported,
         {
@@ -1400,6 +1750,37 @@ def build_bootstrap_mapping(
                 "reviewed_scope_overrides", {}
             ).items()
         },
+    )
+    canonical_model_overrides = {
+        str(key): str(value)
+        for key, value in bootstrap_rules.get("canonical_model_overrides", {}).items()
+    }
+    supported = apply_canonical_model_overrides(
+        supported,
+        canonical_model_overrides,
+    )
+    temporal_requests = build_temporal_request_rows(
+        supported,
+        current_stock,
+        reaudit_keys=reaudit_keys,
+        minimum_model_year=int(
+            bootstrap_rules["temporal_validation_minimum_model_year"]
+        ),
+    )
+    supported = apply_high_stock_temporal_gate(
+        supported,
+        load_vpic_temporal_evidence(bundle),
+        reaudit_keys=reaudit_keys,
+        minimum_model_year=int(
+            bootstrap_rules["temporal_validation_minimum_model_year"]
+        ),
+    )
+    supported = fill_stable_family_years(
+        supported,
+        hierarchy_dominance_share=float(
+            bootstrap_rules["stable_family_hierarchy_dominance_share"]
+        ),
+        excluded_keys=reaudit_keys,
     )
     for mto_key, scope in bootstrap_rules.get(
         "reviewed_scope_overrides", {}
@@ -1429,13 +1810,7 @@ def build_bootstrap_mapping(
         supported_for_generation = supported.loc[~already_reviewed].copy()
     generated = collapse_supported_years(
         supported_for_generation,
-        canonical_model_overrides={
-            str(key): str(value)
-            for key, value in bootstrap_rules.get(
-                "canonical_model_overrides",
-                {},
-            ).items()
-        },
+        canonical_model_overrides=canonical_model_overrides,
     )
     combined = pd.concat([seed, generated], ignore_index=True)
     combined = validate_vehicle_mapping(
@@ -1455,7 +1830,10 @@ def build_bootstrap_mapping(
         ],
         kind="stable",
     ).reset_index(drop=True)
-    return combined, supported, reconciliation, eligible_requests
+    reconciliation["mapping_model_year_floor"] = mapping_floor
+    reconciliation["high_stock_reaudit_cutoff"] = reaudit_cutoff
+    reconciliation["high_stock_reaudit_key_count"] = len(reaudit_inventory)
+    return combined, supported, reconciliation, eligible_requests, temporal_requests
 
 
 def bootstrap_coverage(
@@ -1505,9 +1883,13 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
     bundle = load_config_bundle(args.scenario)
-    mapping, supported, reconciliation, eligible_requests = build_bootstrap_mapping(
-        bundle
-    )
+    (
+        mapping,
+        supported,
+        reconciliation,
+        eligible_requests,
+        temporal_requests,
+    ) = build_bootstrap_mapping(bundle)
     configured_path = resolve_parameter_path(
         bundle,
         module_rules(bundle)["vehicle_size_class_map_file"],
@@ -1544,6 +1926,10 @@ def main() -> None:
             eligible_requests,
             interim_dir / str(module_rules(bundle)["vpic_eligible_request_file"]),
         )
+        write_dataframe_atomic(
+            temporal_requests,
+            interim_dir / str(module_rules(bundle)["vpic_temporal_request_file"]),
+        )
     coverage = bootstrap_coverage(bundle, mapping)
     LOGGER.info(
         "Wrote %d reviewed mapping ranges (%d automatically supported years) to %s",
@@ -1553,11 +1939,12 @@ def main() -> None:
     )
     for row in coverage.itertuples(index=False):
         LOGGER.info(
-            "%s LDV/non-LDV/unmapped: %s/%s/%s of %s",
+            "%s LDV/non-LDV/unmapped/out-of-scope: %s/%s/%s/%s of %s",
             row.measure,
             row.mapped_ldv,
             row.mapped_non_ldv,
             row.unmapped,
+            row.out_of_scope,
             row.total,
         )
 

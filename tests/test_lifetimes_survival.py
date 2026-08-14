@@ -283,17 +283,15 @@ def test_latest_snapshot_annotation_and_scope_comparison_are_post_transition() -
         "aggregation_scope"
     )
     assert age_two.loc[
-        "all_historical_transitions", "annual_retirement_rate"
-    ] == pytest.approx(50 / 400)
-    assert age_two.loc[
-        "latest_snapshot_survivors", "annual_retirement_rate"
+        "latest_snapshot_survivors_dynamic_floor", "annual_retirement_rate"
     ] == pytest.approx(20 / 100)
     assert age_two.loc[
-        "all_historical_transitions", "number_of_transitions"
-    ] == 2
-    assert age_two.loc[
-        "latest_snapshot_survivors", "number_of_transitions"
+        "latest_snapshot_survivors_dynamic_floor", "number_of_transitions"
     ] == 1
+    assert set(comparison["aggregation_scope"]) == {
+        "latest_snapshot_survivors_dynamic_floor",
+        "latest_snapshot_survivors_1990_plus",
+    }
 
 
 def test_raw_transition_estimator_requires_both_endpoints_and_nonnegative_age() -> None:

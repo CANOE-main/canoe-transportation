@@ -240,7 +240,10 @@ parameterization:
     mapping_bootstrap:
       reviewed_crosswalk_policy: rebuild
       accept_reviewed_strong_candidates: true
+      accepted_candidate_model_similarity: 0.7
       stable_family_hierarchy_dominance_share: 0.95
+      high_stock_reaudit_quantile: 0.5
+      temporal_validation_minimum_model_year: 1990
       accepted_model_match_methods:
         reviewed_canonical_label: 0
         exact_normalized_model: 0
@@ -251,7 +254,7 @@ parameterization:
       minimum_make_prefix_length: 3
       minimum_model_prefix_length: 3
       minimum_model_year: 2000
-      candidate_minimum_model_year: 1950
+      candidate_minimum_model_year: derive_from_transition_window
       exclude_future_model_years: false
       model_year_role: crosswalk_range_selector_and_evidence_priority
       class_resolution: exact_mto_year_then_nearest_source_year
@@ -272,6 +275,8 @@ parameterization:
         FORD/F/E: {canonical_make: Ford, canonical_model: F-150}
         FORD/F/L: {canonical_make: Ford, canonical_model: F-150}
         FORD/FSE: {canonical_make: Ford, canonical_model: Focus}
+        FORD/MGT: {canonical_make: Ford, canonical_model: Mustang}
+        FORD/SGT: {canonical_make: Ford, canonical_model: Mustang}
         FORD/SRW: {canonical_make: Ford, canonical_model: F-250}
         FORD/TST: {canonical_make: Ford, canonical_model: Transit T150}
         HOND/CCL: {canonical_make: Honda, canonical_model: Civic}
@@ -321,6 +326,8 @@ parameterization:
         FORD/F/L: F-Series
         FORD/SRW: F-Series
         FORD/TST: Transit
+        FORD/MGT: Mustang
+        FORD/SGT: Mustang
         CHRY/LEB: LeBaron
         GMC/SAV: Savana 2500
         MAZD/RX7: RX-7
@@ -378,12 +385,12 @@ parameterization:
       - mapping_status
       - evidence_source
       - supporting_rating_rows
-      - supporting_model_labels
       - review_notes
     candidate_file: ontario_vehicle_population_mapping_candidates.csv
     bootstrap_evidence_file: vehicle_size_class_map_bootstrap.csv
     manual_reconciliation_file: ontario_vehicle_population_manual_mapping_reconciliation.csv
     vpic_eligible_request_file: ontario_vehicle_population_vpic_eligible_requests.csv
+    vpic_temporal_request_file: ontario_vehicle_population_vpic_temporal_requests.csv
     coverage_file: ontario_vehicle_population_mapping_coverage.csv
     unresolved_file: ontario_vehicle_population_highest_stock_unresolved.csv
     unresolved_reason_detail_file: ontario_vehicle_population_unresolved_mapping_reasons.csv
@@ -444,6 +451,18 @@ parameterization:
     request_timeout_seconds: 60
     request_delay_seconds: 0.25
     maximum_requests: 1000
+
+  vpic_model_years:
+    eligible_request_file: ontario_vehicle_population_vpic_temporal_requests.csv
+    interim_subdir: fetched_vpic_model_years
+    output_file: vpic_model_year_evidence.csv
+    manifest_file: manifest.csv
+    warnings_file: warnings.csv
+    models_endpoint_minimum_year: 1996
+    canadian_specifications_minimum_year: 1990
+    request_timeout_seconds: 60
+    request_delay_seconds: 0.25
+    maximum_requests: 2500
 
   stocks_and_demands:
     ontario_report_a:
