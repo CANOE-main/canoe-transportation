@@ -24,6 +24,7 @@ from pydantic_core import PydanticUndefined
 
 from utils import (
     ConfigBundle,
+    file_sha256,
     load_config_bundle,
     resolve_configured_path,
     resolve_input_path,
@@ -40,6 +41,7 @@ from validation.schema_contract import (
     create_v4_schema,
     schema_evidence,
 )
+from validation.sqlite_utils import quote_identifier
 
 
 LOGGER = logging.getLogger(__name__)
@@ -98,10 +100,6 @@ class TemplateLoadError(ValueError):
     """Raised when a template cannot be mapped safely to its v4 row model."""
 
 
-def _quote_identifier(identifier: str) -> str:
-    return '"' + identifier.replace('"', '""') + '"'
-
-
 def _read_template(path: Path) -> tuple[list[str], list[dict[str, str | None]], str]:
     if not path.is_file():
         raise FileNotFoundError(f"Template CSV does not exist: {path}")
@@ -137,7 +135,7 @@ def _table_columns(connection: sqlite3.Connection, table: str) -> list[str]:
     columns = [
         str(row[1])
         for row in connection.execute(
-            f"PRAGMA table_info({_quote_identifier(table)})"
+            f"PRAGMA table_info({quote_identifier(table)})"
         ).fetchall()
     ]
     if not columns:
@@ -440,14 +438,6 @@ def bootstrap_database(
     }
 
 
-def _file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def write_validation_report(report: dict[str, Any], path: Path) -> None:
     """Write the concise configured validation artifact atomically."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -487,15 +477,15 @@ def build_from_scenario(
             "config": {
                 "scenario": {
                     "path": str(bundle.scenario_path),
-                    "sha256": _file_sha256(bundle.scenario_path),
+                    "sha256": file_sha256(bundle.scenario_path),
                 },
                 "paths": {
                     "path": str(bundle.paths_path),
-                    "sha256": _file_sha256(bundle.paths_path),
+                    "sha256": file_sha256(bundle.paths_path),
                 },
                 "sources": {
                     "path": str(bundle.sources_path),
-                    "sha256": _file_sha256(bundle.sources_path),
+                    "sha256": file_sha256(bundle.sources_path),
                 },
             },
         }

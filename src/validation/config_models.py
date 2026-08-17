@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
-from typing import Any, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from canoe_schema.v4_0 import (
     DataQualityCredibilityLevel,
@@ -12,7 +12,7 @@ from canoe_schema.v4_0 import (
     DataQualityTechnologyLevel,
     DataQualityTimeLevel,
 )
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 
 class MappingModel(BaseModel, Mapping[str, Any]):
@@ -63,6 +63,7 @@ class InputPaths(MappingModel):
     manual: str
     interim: str
     processed: str
+    validation: str
     template: str
 
 
@@ -82,6 +83,30 @@ class LegacyPaths(MappingModel):
     constraints: str
 
 
+class ArtifactRoute(MappingModel):
+    """Stable ownership and impact route for one artifact family."""
+
+    path: str = Field(min_length=1)
+    layer: Literal[
+        "interim",
+        "processed",
+        "input_validation",
+        "database",
+        "output_validation",
+    ]
+    owner: str = Field(min_length=1)
+    producers: list[str] = Field(min_length=1)
+    consumers: list[str] = Field(min_length=1)
+    validation_surfaces: list[
+        Annotated[
+            str,
+            StringConstraints(
+                pattern=r"^[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+$"
+            ),
+        ]
+    ] = Field(min_length=1)
+
+
 class PathsConfig(MappingModel):
     version: int
     root: str
@@ -89,6 +114,37 @@ class PathsConfig(MappingModel):
     inputs: InputPaths
     outputs: OutputPaths
     legacy: LegacyPaths
+    artifacts: dict[str, ArtifactRoute] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_artifact_layers(self) -> Self:
+        layer_roots = {
+            "interim": self.inputs.interim,
+            "processed": self.inputs.processed,
+            "input_validation": self.inputs.validation,
+            "database": self.outputs.sqlite,
+            "output_validation": self.outputs.validation,
+        }
+        duplicate_paths: dict[str, list[str]] = {}
+        for name, route in self.artifacts.items():
+            normalized = route.path.replace("\\", "/").rstrip("/")
+            root = layer_roots[route.layer].replace("\\", "/").rstrip("/")
+            if normalized.startswith("/") or ".." in normalized.split("/"):
+                raise ValueError(
+                    f"artifacts.{name}.path must be a repository-relative path"
+                )
+            if normalized != root and not normalized.startswith(f"{root}/"):
+                raise ValueError(
+                    f"artifacts.{name}.path must be within the {route.layer} root "
+                    f"{root}"
+                )
+            duplicate_paths.setdefault(normalized, []).append(name)
+        collisions = {
+            path: names for path, names in duplicate_paths.items() if len(names) > 1
+        }
+        if collisions:
+            raise ValueError(f"artifact family paths must be unique: {collisions}")
+        return self
 
 
 class ScenarioIdentity(MappingModel):

@@ -5,9 +5,15 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+
+SCRIPT_REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_SRC = str(SCRIPT_REPO_ROOT / "src")
+if SCRIPT_SRC not in sys.path:
+    sys.path.insert(0, SCRIPT_SRC)
 
 RUNTIME_GLOBS = (
     ".pytest_cache",
@@ -26,6 +32,7 @@ SNAKEMAKE_RUNTIME = (
 GENERATED_PATHS = (
     "inputs/1_interim",
     "inputs/2_processed",
+    "inputs/validation",
     "outputs",
 )
 CACHE_PATHS = ("inputs/0_cache",)
@@ -50,12 +57,10 @@ class CleanupResult:
 
 
 def find_repo_root(start: Path | None = None) -> Path:
-    """Find the repository root by walking up to pyproject.toml."""
-    current = (start or Path.cwd()).resolve()
-    for candidate in (current, *current.parents):
-        if (candidate / "pyproject.toml").exists():
-            return candidate
-    raise FileNotFoundError("Could not find repository root containing pyproject.toml")
+    """Delegate repository discovery to the shared package utility."""
+    from utils import find_repo_root as shared_find_repo_root
+
+    return shared_find_repo_root(start)
 
 
 def resolve_under_root(repo_root: Path, path: Path) -> Path:

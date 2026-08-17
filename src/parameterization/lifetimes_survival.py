@@ -7,7 +7,6 @@ from typing import Any
 
 import pandas as pd
 
-from fetching.vehicle_population import write_dataframe_atomic
 from parameterization.road_aggregation import (
     apply_vehicle_mapping,
     validate_vehicle_mapping,
@@ -16,8 +15,10 @@ from utils import (
     ConfigBundle,
     load_config_bundle,
     load_harmonization_rules,
+    resolve_artifact_path,
     resolve_input_path,
     resolve_parameter_path,
+    write_dataframe_atomic,
 )
 
 
@@ -1492,16 +1493,15 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
     road_rules = load_harmonization_rules(bundle, ROAD_RULE_KEY)
     rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
     assorted_rules = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
-    output_dir = resolve_input_path(
-        bundle,
-        "interim",
-        ontario_rules["interim_subdir"],
-    )
-    manifest = pd.read_csv(output_dir / ontario_rules["manifest_file"])
+    source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
+    interim_dir = resolve_artifact_path(bundle, "vehicle_survival_interim")
+    output_dir = resolve_artifact_path(bundle, "lifetimes_survival")
+    validation_dir = resolve_artifact_path(bundle, "lifetime_validation")
+    manifest = pd.read_csv(source_dir / ontario_rules["manifest_file"])
     report_rules = ontario_rules["reports"]["A"]
     status_columns = [str(value) for value in report_rules["status_columns"]]
     normalized_frames = _load_normalized_frames(
-        output_dir,
+        source_dir,
         manifest,
         status_columns=status_columns,
     )
@@ -1640,7 +1640,10 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         ],
     )
     class_mappings = survival_class_mappings(rules)
-    wards = pd.read_csv(output_dir / road_rules["wards_comparison_file"])
+    wards = pd.read_csv(
+        resolve_artifact_path(bundle, "road_aggregation")
+        / road_rules["wards_comparison_file"]
+    )
     legacy_curves = legacy_wards_survival_curves(
         transformed,
         wards,
@@ -1666,23 +1669,20 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         interpolation=str(rules["interpolation"]),
     )
 
-    outputs = {
+    interim_outputs = {
         rules["raw_key_snapshot_file"]: raw_snapshots,
         rules["raw_key_transition_file"]: raw_key_observations,
         rules["mapped_key_transition_file"]: mapped_key_observations,
-        rules["nlr_class_vintage_retention_file"]: nlr_vintage_retention,
-        rules["nlr_class_retention_file"]: nlr_class_retention,
-        rules["ceud_class_vintage_retention_file"]: ceud_vintage_retention,
-        rules["ceud_class_retention_file"]: ceud_class_retention,
-        rules["ceud_scope_comparison_file"]: survival_scope_comparison,
-        rules["transition_mapping_coverage_file"]: transition_coverage,
-        rules["mto_survival_decision_file"]: mto_survival_decision,
         rules["cohort_snapshot_file"]: mapped_snapshot,
         rules["commercial_snapshot_file"]: commercial_snapshot,
         rules["transition_observations_file"]: observations,
         rules["pooled_estimates_file"]: pooled,
-        rules["transition_findings_file"]: findings,
-        rules["retention_comparison_file"]: retention_comparison,
+    }
+    processed_outputs = {
+        rules["nlr_class_vintage_retention_file"]: nlr_vintage_retention,
+        rules["nlr_class_retention_file"]: nlr_class_retention,
+        rules["ceud_class_vintage_retention_file"]: ceud_vintage_retention,
+        rules["ceud_class_retention_file"]: ceud_class_retention,
         rules["legacy_survival_curves_file"]: legacy_curves,
         rules["nlr_survival_curves_file"]: nlr_curves,
         rules["source_curves_file"]: source_curves,
@@ -1690,8 +1690,20 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         rules["class_mapping_file"]: class_mappings,
         rules["median_lifetimes_file"]: medians,
     }
-    for filename, frame in outputs.items():
-        write_dataframe_atomic(frame, output_dir / str(filename))
+    validation_outputs = {
+        rules["ceud_scope_comparison_file"]: survival_scope_comparison,
+        rules["transition_mapping_coverage_file"]: transition_coverage,
+        rules["mto_survival_decision_file"]: mto_survival_decision,
+        rules["transition_findings_file"]: findings,
+        rules["retention_comparison_file"]: retention_comparison,
+    }
+    for directory, outputs in (
+        (interim_dir, interim_outputs),
+        (output_dir, processed_outputs),
+        (validation_dir, validation_outputs),
+    ):
+        for filename, frame in outputs.items():
+            write_dataframe_atomic(frame, directory / str(filename))
     return output_dir
 
 

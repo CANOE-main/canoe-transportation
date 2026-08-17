@@ -53,6 +53,16 @@ parameter family or direct shared dependency from `docs/etl_flowcharts.md`. Read
 the relevant sections. Before implementing planned documentation, verify it against
 current code, config, tests, schemas, and validation evidence.
 
+For changes that cross a repository or artifact-layer seam, retrieve
+`docs/backend_architecture.md` and the affected artifact families in
+`config/paths.yaml`. Use each family's owner, producers, principal consumers, and
+validation surfaces to bound impact and tests; retrieve deeper flow documentation only
+for those affected families. New modules and artifacts need one clear owner and a
+canonical configured layer. Keep opt-in development/review workflows out of normal
+reproducible ETL and readiness. When references disagree, current code, configuration,
+tests, schemas, and generated validation evidence outrank stale architecture prose;
+update the prose after the executable boundary is verified.
+
 When you need to search external library/API docs, use Context7.
 
 ## Data, provenance, and parity

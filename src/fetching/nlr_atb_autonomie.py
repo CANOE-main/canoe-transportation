@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
-import hashlib
 import io
 import logging
 import math
@@ -23,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from utils import (
     ConfigBundle,
+    file_sha256,
     load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
@@ -1289,15 +1289,6 @@ def extract_bean_coefficients(request: ManualWorkbookRequest) -> pd.DataFrame:
     frame["source_sheet"] = request.sheet_name
     frame["source_range"] = request.cell_range
     return frame
-
-
-def file_sha256(path: Path) -> str:
-    """Return a stable SHA-256 checksum for one physical source artifact."""
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def write_outputs(

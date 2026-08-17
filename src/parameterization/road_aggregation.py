@@ -10,13 +10,14 @@ from typing import Any
 
 import pandas as pd
 
-from fetching.vehicle_population import write_dataframe_atomic
 from utils import (
     ConfigBundle,
     load_config_bundle,
     load_harmonization_rules,
+    resolve_artifact_path,
     resolve_input_path,
     resolve_parameter_path,
+    write_dataframe_atomic,
 )
 from utils.vehicle_labels import is_unresolved_vehicle_label
 
@@ -1561,17 +1562,15 @@ def load_wards_legacy_comparison(bundle: ConfigBundle) -> pd.DataFrame:
 def build_road_aggregation_artifacts(
     scenario_path: str | Path,
 ) -> Path:
-    """Generate candidates, apply reviewed mappings, and publish weights."""
+    """Apply the reviewed mapping and publish runtime aggregation products."""
     bundle = load_config_bundle(scenario_path)
     rules = module_rules(bundle)
     ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
     rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
-    output_dir = resolve_input_path(
-        bundle,
-        "interim",
-        ontario_rules["interim_subdir"],
-    )
-    current_path = output_dir / str(ontario_rules["current_stock_file"])
+    source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
+    output_dir = resolve_artifact_path(bundle, "road_aggregation")
+    validation_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
+    current_path = source_dir / str(ontario_rules["current_stock_file"])
     if not current_path.is_file():
         raise FileNotFoundError(current_path)
     current_stock = pd.read_csv(current_path, low_memory=False)
@@ -1586,15 +1585,6 @@ def build_road_aggregation_artifacts(
         rules=rules,
         rating_class_rules=rating_rules["vehicle_class_harmonization"],
     )
-    ratings = load_rating_evidence(bundle, rules=rules)
-    candidates = generate_mapping_candidates(
-        current_stock,
-        ratings,
-        canonical_aliases={
-            str(source): str(target)
-            for source, target in rules.get("canonical_aliases", {}).items()
-        },
-    )
     mapped = apply_vehicle_mapping(
         current_stock,
         validated_mapping,
@@ -1604,26 +1594,6 @@ def build_road_aggregation_artifacts(
         },
     )
     coverage = mapping_coverage(mapped)
-    unresolved_detail, unresolved_summary = unresolved_mapping_reasons(
-        mapped,
-        candidates,
-        validated_mapping,
-        pd.read_csv(
-            resolve_input_path(
-                bundle,
-                "manual",
-                str(rules["mapping_bootstrap"]["manual_evidence_file"]),
-            ),
-            dtype=str,
-            keep_default_na=False,
-        ),
-    )
-    unresolved_worklist = latest_unresolved_key_worklist(unresolved_detail)
-    unresolved = (
-        mapped.loc[mapped["mapping_outcome"].eq("unmapped")]
-        .sort_values("FIT_ACTIVE", ascending=False, kind="stable")
-        .head(int(rules["highest_stock_unresolved_limit"]))
-    )
     nrcan_weights, nlr_weights = derive_aggregation_weights(
         mapped,
         vintage_bin_years=int(rules["vintage_bin_years"]),
@@ -1635,11 +1605,80 @@ def build_road_aggregation_artifacts(
             rules["mapping_bootstrap"]["minimum_model_year"]
         ),
     )
-    evidence_catalog = build_rating_model_catalog(
-        ratings,
-        mapping_columns=[str(column) for column in rules["mapping_columns"]],
-    )
     wards = load_wards_legacy_comparison(bundle)
+    outputs = {
+        rules["mapped_current_stock_file"]: mapped,
+        rules["nrcan_weights_file"]: nrcan_weights,
+        rules["nlr_weights_file"]: nlr_weights,
+        rules["fleet_composition_weights_file"]: fleet_weights,
+        rules["wards_comparison_file"]: wards,
+    }
+    for filename, frame in outputs.items():
+        write_dataframe_atomic(frame, output_dir / str(filename))
+    write_dataframe_atomic(
+        coverage,
+        validation_dir / str(rules["coverage_file"]),
+    )
+    return output_dir
+
+
+def build_mapping_diagnostic_artifacts(scenario_path: str | Path) -> Path:
+    """Explicitly regenerate mapping candidates and review diagnostics."""
+    bundle = load_config_bundle(scenario_path)
+    rules = module_rules(bundle)
+    ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
+    rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
+    source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
+    output_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
+    current_stock = pd.read_csv(
+        source_dir / str(ontario_rules["current_stock_file"]),
+        low_memory=False,
+    )
+    mapping = validate_vehicle_mapping(
+        pd.read_csv(
+            resolve_parameter_path(bundle, rules["vehicle_size_class_map_file"]),
+            dtype=str,
+            keep_default_na=False,
+        ),
+        rules=rules,
+        rating_class_rules=rating_rules["vehicle_class_harmonization"],
+    )
+    ratings = load_rating_evidence(bundle, rules=rules)
+    candidates = generate_mapping_candidates(
+        current_stock,
+        ratings,
+        canonical_aliases={
+            str(source): str(target)
+            for source, target in rules.get("canonical_aliases", {}).items()
+        },
+    )
+    mapped = apply_vehicle_mapping(
+        current_stock,
+        mapping,
+        accepted_statuses={
+            str(status) for status in rules["accepted_mapping_statuses"]
+        },
+    )
+    coverage = mapping_coverage(mapped)
+    unresolved_detail, unresolved_summary = unresolved_mapping_reasons(
+        mapped,
+        candidates,
+        mapping,
+        pd.read_csv(
+            resolve_input_path(
+                bundle,
+                "manual",
+                str(rules["mapping_bootstrap"]["manual_evidence_file"]),
+            ),
+            dtype=str,
+            keep_default_na=False,
+        ),
+    )
+    unresolved = (
+        mapped.loc[mapped["mapping_outcome"].eq("unmapped")]
+        .sort_values("FIT_ACTIVE", ascending=False, kind="stable")
+        .head(int(rules["highest_stock_unresolved_limit"]))
+    )
     top = (
         mapped.loc[mapped["mapping_accepted"]]
         .groupby(
@@ -1665,20 +1704,19 @@ def build_road_aggregation_artifacts(
         .groupby("nrcan_ceud_class", group_keys=False)
         .head(int(rules["top_observations_per_ceud_class"]))
     )
-
     outputs = {
         rules["candidate_file"]: candidates,
         rules["coverage_file"]: coverage,
         rules["unresolved_file"]: unresolved,
         rules["unresolved_reason_detail_file"]: unresolved_detail,
         rules["unresolved_reason_summary_file"]: unresolved_summary,
-        rules["latest_unresolved_worklist_file"]: unresolved_worklist,
-        rules["mapped_current_stock_file"]: mapped,
-        rules["nrcan_weights_file"]: nrcan_weights,
-        rules["nlr_weights_file"]: nlr_weights,
-        rules["fleet_composition_weights_file"]: fleet_weights,
-        rules["vehicle_class_evidence_file"]: evidence_catalog,
-        rules["wards_comparison_file"]: wards,
+        rules["latest_unresolved_worklist_file"]: latest_unresolved_key_worklist(
+            unresolved_detail
+        ),
+        rules["vehicle_class_evidence_file"]: build_rating_model_catalog(
+            ratings,
+            mapping_columns=[str(column) for column in rules["mapping_columns"]],
+        ),
         rules["top_observations_file"]: top,
     }
     for filename, frame in outputs.items():
@@ -1692,14 +1730,23 @@ def parse_args() -> argparse.Namespace:
         "--scenario",
         default="config/scenarios/legacy_reproduction.yaml",
     )
+    parser.add_argument(
+        "--mapping-diagnostics",
+        action="store_true",
+        help="Regenerate candidate/rating/review evidence instead of runtime products.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
-    output_dir = build_road_aggregation_artifacts(args.scenario)
-    logging.info("Wrote Ontario road-aggregation artifacts to %s", output_dir)
+    if args.mapping_diagnostics:
+        output_dir = build_mapping_diagnostic_artifacts(args.scenario)
+        logging.info("Wrote Ontario mapping diagnostics to %s", output_dir)
+    else:
+        output_dir = build_road_aggregation_artifacts(args.scenario)
+        logging.info("Wrote Ontario road-aggregation artifacts to %s", output_dir)
 
 
 if __name__ == "__main__":

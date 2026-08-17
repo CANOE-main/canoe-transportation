@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import logging
 import os
 from pathlib import Path
@@ -17,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from utils import (
     ConfigBundle,
+    file_sha256,
     load_config_bundle,
     load_harmonization_rules,
     resolve_input_path,
@@ -395,15 +395,6 @@ def normalize_component(
         "open_government_record_id",
     ]
     return selected[first + provenance].sort_values(keys).reset_index(drop=True)
-
-
-def file_sha256(path: Path) -> str:
-    """Return a stable checksum for a cached source artifact."""
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def write_outputs(

@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 import pandas as pd
 import pytest
@@ -20,6 +21,7 @@ from parameterization.vehicle_mapping_bootstrap import (
 from utils import (
     load_config_bundle,
     load_harmonization_rules,
+    resolve_artifact_path,
     resolve_input_path,
     resolve_parameter_path,
 )
@@ -723,12 +725,36 @@ def test_runtime_reads_but_does_not_overwrite_reviewed_mapping(
         "write_dataframe_atomic",
         capture_write,
     )
+    for development_function in (
+        "load_rating_evidence",
+        "generate_mapping_candidates",
+        "unresolved_mapping_reasons",
+        "build_rating_model_catalog",
+    ):
+        monkeypatch.setattr(
+            road_aggregation,
+            development_function,
+            lambda *_args, **_kwargs: pytest.fail(
+                "normal runtime invoked mapping development inference"
+            ),
+        )
 
     road_aggregation.build_road_aggregation_artifacts(SCENARIO)
 
     assert mapping_path.read_bytes() == before
     assert mapping_path.resolve() not in written_paths
     assert written_paths
+    runtime_dir = resolve_artifact_path(bundle, "road_aggregation")
+    review_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
+    assert any(path.is_relative_to(runtime_dir) for path in written_paths)
+    assert any(path.is_relative_to(review_dir) for path in written_paths)
+    assert not any(path.name == str(rules["candidate_file"]) for path in written_paths)
+
+
+def test_mapping_diagnostics_remain_explicitly_callable(monkeypatch) -> None:
+    assert callable(road_aggregation.build_mapping_diagnostic_artifacts)
+    monkeypatch.setattr(sys, "argv", ["road_aggregation", "--mapping-diagnostics"])
+    assert road_aggregation.parse_args().mapping_diagnostics is True
 
 
 def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
@@ -807,10 +833,9 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
     assert len(reaudit_keys) == 983
 
     bootstrap = pd.read_csv(
-        resolve_input_path(
+        resolve_artifact_path(
             bundle,
-            "interim",
-            ontario_rules["interim_subdir"],
+            "vehicle_mapping_review",
             rules["bootstrap_evidence_file"],
         ),
         low_memory=False,

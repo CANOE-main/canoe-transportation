@@ -13,7 +13,6 @@ from typing import Any
 
 import pandas as pd
 
-from fetching.vehicle_population import write_dataframe_atomic
 from parameterization.road_aggregation import (
     ONTARIO_RULE_KEY,
     apply_vehicle_mapping,
@@ -29,8 +28,10 @@ from utils import (
     ConfigBundle,
     load_config_bundle,
     load_harmonization_rules,
+    resolve_artifact_path,
     resolve_input_path,
     resolve_parameter_path,
+    write_dataframe_atomic,
 )
 from utils.vehicle_labels import (
     candidate_matches_any,
@@ -1907,12 +1908,7 @@ def main() -> None:
     write_dataframe_atomic(mapping, output_path)
     bootstrap_file = module_rules(bundle).get("bootstrap_evidence_file")
     if bootstrap_file:
-        ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
-        interim_dir = resolve_input_path(
-            bundle,
-            "interim",
-            ontario_rules["interim_subdir"],
-        )
+        interim_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
         if supported.empty:
             raise ValueError(
                 "Historical mapping bootstrap evidence is unexpectedly empty"

@@ -20,8 +20,15 @@ import requests
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 from typing import Annotated
 
-from fetching.vehicle_population import write_dataframe_atomic
-from utils import ConfigBundle, load_config_bundle, load_harmonization_rules, resolve_input_path
+from utils import (
+    ConfigBundle,
+    file_sha256,
+    load_config_bundle,
+    load_harmonization_rules,
+    resolve_artifact_path,
+    resolve_input_path,
+    write_dataframe_atomic,
+)
 from utils.vehicle_labels import vehicle_families_equivalent
 
 
@@ -120,15 +127,6 @@ def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
     return load_harmonization_rules(bundle, RULE_KEY)
 
 
-def file_sha256(path: Path) -> str:
-    """Return a lowercase SHA-256 digest."""
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def _cache_name(make: str, year: int, vehicle_type: str | None = None) -> str:
     slug = re.sub(r"[^a-z0-9]+", "_", make.casefold()).strip("_") or "make"
     type_slug = re.sub(
@@ -143,12 +141,8 @@ def _cache_name(make: str, year: int, vehicle_type: str | None = None) -> str:
 def load_eligible_rows(bundle: ConfigBundle) -> pd.DataFrame:
     """Load only the bootstrap-produced vPIC eligibility interface."""
     rules = module_rules(bundle)
-    ontario_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
-    path = resolve_input_path(
-        bundle,
-        "interim",
-        ontario_rules["interim_subdir"],
-        rules["eligible_request_file"],
+    path = resolve_artifact_path(
+        bundle, "vehicle_mapping_review", rules["eligible_request_file"]
     )
     if not path.is_file():
         raise FileNotFoundError(

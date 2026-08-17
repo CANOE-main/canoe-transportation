@@ -10,6 +10,9 @@ import yaml
 
 from validation.config_models import PathsConfig, ScenarioConfig, SourcesConfig
 
+from .files import file_sha256 as file_sha256
+from .files import write_dataframe_atomic as write_dataframe_atomic
+
 
 @dataclass(frozen=True)
 class ConfigBundle:
@@ -65,6 +68,20 @@ def resolve_configured_path(
 def resolve_input_path(bundle: ConfigBundle, key: str, *parts: str | Path) -> Path:
     """Resolve an input path from paths.yaml."""
     return resolve_configured_path(bundle, "inputs", key, *parts)
+
+
+def resolve_artifact_path(
+    bundle: ConfigBundle,
+    family: str,
+    *parts: str | Path,
+) -> Path:
+    """Resolve a stable artifact-family route from paths.yaml."""
+    try:
+        route = bundle.paths.artifacts[family]
+    except KeyError as exc:
+        raise KeyError(f"Unknown artifact family: {family}") from exc
+    base = resolve_repo_path(bundle.repo_root, route.path)
+    return base.joinpath(*map(Path, parts)) if parts else base
 
 
 def resolve_parameter_path(bundle: ConfigBundle, filename: str | Path) -> Path:
@@ -143,6 +160,7 @@ def configured_directories(bundle: ConfigBundle) -> list[Path]:
         bundle.paths.inputs.manual,
         bundle.paths.inputs.interim,
         bundle.paths.inputs.processed,
+        bundle.paths.inputs.validation,
         bundle.paths.outputs.sqlite,
         bundle.paths.outputs.validation,
         bundle.paths.outputs.logs,
