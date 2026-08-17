@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import logging
 import os
 import re
@@ -17,7 +16,14 @@ import pandas as pd
 import requests
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from utils import ConfigBundle, load_config_bundle, load_harmonization_rules, resolve_input_path
+from utils import (
+    ConfigBundle,
+    file_sha256,
+    load_config_bundle,
+    load_harmonization_rules,
+    resolve_input_path,
+    write_dataframe_atomic,
+)
 from validation.config_models import SourceComponent
 
 
@@ -120,15 +126,6 @@ def build_request(bundle: ConfigBundle) -> FuelEconomyVehicleRequest:
         ),
         output_file=str(rules["output_file"]),
     )
-
-
-def file_sha256(path: Path) -> str:
-    """Return a lowercase SHA-256 for one file."""
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def validate_cache(request: FuelEconomyVehicleRequest) -> None:
@@ -274,23 +271,6 @@ def normalize_vehicle_classes(
         if label in observed
     ]
     return normalized, warnings
-
-
-def write_dataframe_atomic(frame: pd.DataFrame, path: Path) -> None:
-    """Publish a CSV by atomic same-directory replacement."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        dir=path.parent,
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        delete=False,
-    ) as handle:
-        temporary = Path(handle.name)
-    try:
-        frame.to_csv(temporary, index=False)
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
 
 
 def write_text_atomic(lines: list[str], path: Path) -> None:

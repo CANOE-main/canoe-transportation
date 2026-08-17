@@ -6,9 +6,7 @@ import sqlite3
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-
-def _quote_identifier(identifier: str) -> str:
-    return '"' + identifier.replace('"', '""') + '"'
+from validation.sqlite_utils import quote_identifier
 
 
 def validate_database(
@@ -33,7 +31,7 @@ def validate_database(
             errors.append(f"Schema is missing loaded table: {table}")
             continue
         table_info = connection.execute(
-            f"PRAGMA table_info({_quote_identifier(table)})"
+            f"PRAGMA table_info({quote_identifier(table)})"
         ).fetchall()
         primary_key_columns = [
             row[1] for row in sorted(table_info, key=lambda row: row[5]) if row[5]
@@ -42,17 +40,17 @@ def validate_database(
             errors.append(f"Loaded table has no primary key: {table}")
             continue
         selected_columns = ", ".join(
-            _quote_identifier(column) for column in primary_key_columns
+            quote_identifier(column) for column in primary_key_columns
         )
         actual_keys = {
             tuple(row)
             for row in connection.execute(
-                f"SELECT {selected_columns} FROM {_quote_identifier(table)}"
+                f"SELECT {selected_columns} FROM {quote_identifier(table)}"
             ).fetchall()
         }
         expected_keys = {tuple(key) for key in expected_keys_sequence}
         row_count = connection.execute(
-            f"SELECT COUNT(*) FROM {_quote_identifier(table)}"
+            f"SELECT COUNT(*) FROM {quote_identifier(table)}"
         ).fetchone()[0]
         keys_match = actual_keys == expected_keys
         if row_count != len(expected_keys_sequence):
@@ -75,12 +73,12 @@ def validate_database(
         columns = {
             row[1]
             for row in connection.execute(
-                f"PRAGMA table_info({_quote_identifier(table)})"
+                f"PRAGMA table_info({quote_identifier(table)})"
             ).fetchall()
         }
         row_count = int(
             connection.execute(
-                f"SELECT COUNT(*) FROM {_quote_identifier(table)}"
+                f"SELECT COUNT(*) FROM {quote_identifier(table)}"
             ).fetchone()[0]
         )
         audit = {"row_count": row_count, "null_data_id": 0, "unregistered_data_id": 0,
@@ -88,13 +86,13 @@ def validate_database(
         if "data_id" in columns and table != "data_set":
             audit["null_data_id"] = int(
                 connection.execute(
-                    f"SELECT COUNT(*) FROM {_quote_identifier(table)} "
+                    f"SELECT COUNT(*) FROM {quote_identifier(table)} "
                     "WHERE data_id IS NULL"
                 ).fetchone()[0]
             )
             audit["unregistered_data_id"] = int(
                 connection.execute(
-                    f"SELECT COUNT(*) FROM {_quote_identifier(table)} AS touched "
+                    f"SELECT COUNT(*) FROM {quote_identifier(table)} AS touched "
                     "LEFT JOIN data_set AS registered ON registered.data_id = touched.data_id "
                     "WHERE touched.data_id IS NOT NULL AND registered.data_id IS NULL"
                 ).fetchone()[0]
@@ -102,7 +100,7 @@ def validate_database(
         if {"data_source", "data_id"}.issubset(columns) and table != "data_source":
             audit["unregistered_source_pair"] = int(
                 connection.execute(
-                    f"SELECT COUNT(*) FROM {_quote_identifier(table)} AS touched "
+                    f"SELECT COUNT(*) FROM {quote_identifier(table)} AS touched "
                     "LEFT JOIN data_source AS registered "
                     "ON registered.source_id = touched.data_source "
                     "AND registered.data_id = touched.data_id "

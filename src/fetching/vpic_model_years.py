@@ -19,9 +19,16 @@ import pandas as pd
 import requests
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError, model_validator
 
-from fetching.vehicle_population import write_dataframe_atomic
-from fetching.vpic_vehicle_types import VPicResponse, file_sha256
-from utils import ConfigBundle, load_config_bundle, load_harmonization_rules, resolve_input_path
+from fetching.vpic_vehicle_types import VPicResponse
+from utils import (
+    ConfigBundle,
+    file_sha256,
+    load_config_bundle,
+    load_harmonization_rules,
+    resolve_artifact_path,
+    resolve_input_path,
+    write_dataframe_atomic,
+)
 from utils.vehicle_labels import vehicle_families_equivalent
 
 
@@ -148,12 +155,8 @@ def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
 
 def load_eligible_rows(bundle: ConfigBundle) -> pd.DataFrame:
     rules = module_rules(bundle)
-    ontario_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
-    path = resolve_input_path(
-        bundle,
-        "interim",
-        ontario_rules["interim_subdir"],
-        rules["eligible_request_file"],
+    path = resolve_artifact_path(
+        bundle, "vehicle_mapping_review", rules["eligible_request_file"]
     )
     if not path.is_file():
         raise FileNotFoundError(

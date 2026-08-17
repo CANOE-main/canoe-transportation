@@ -7,16 +7,15 @@ from typing import Any
 
 import pandas as pd
 
-from fetching.vehicle_population import write_dataframe_atomic
 from utils import (
     ConfigBundle,
     load_config_bundle,
     load_harmonization_rules,
-    resolve_input_path,
+    resolve_artifact_path,
+    write_dataframe_atomic,
 )
 
 
-ONTARIO_RULE_KEY = "ontario_vehicle_population"
 ROAD_RULE_KEY = "road_aggregation"
 STOCK_RULE_KEY = "stocks_and_demands"
 LIFETIME_RULE_KEY = "lifetimes_survival"
@@ -186,19 +185,18 @@ def build_existing_stock_age_artifacts(scenario_path: str | Path) -> Path:
     """Publish scenario-dependent Ontario LDV existing-stock age cohorts."""
     bundle = load_config_bundle(scenario_path)
     rules = module_rules(bundle)["ontario_report_a"]
-    ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
     road_rules = load_harmonization_rules(bundle, ROAD_RULE_KEY)
     lifetime_rules = load_harmonization_rules(bundle, LIFETIME_RULE_KEY)
-    output_dir = resolve_input_path(
-        bundle,
-        "interim",
-        ontario_rules["interim_subdir"],
-    )
+    output_dir = resolve_artifact_path(bundle, "stocks_and_demands")
     mapped = pd.read_csv(
-        output_dir / road_rules["mapped_current_stock_file"],
+        resolve_artifact_path(bundle, "road_aggregation")
+        / road_rules["mapped_current_stock_file"],
         low_memory=False,
     )
-    medians = pd.read_csv(output_dir / lifetime_rules["median_lifetimes_file"])
+    medians = pd.read_csv(
+        resolve_artifact_path(bundle, "lifetimes_survival")
+        / lifetime_rules["median_lifetimes_file"]
+    )
     age_distribution, findings = derive_ldv_age_distributions(
         mapped,
         survival_curves=bundle.scenario.switches.survival_curves,
@@ -211,7 +209,8 @@ def build_existing_stock_age_artifacts(scenario_path: str | Path) -> Path:
     )
     write_dataframe_atomic(
         findings,
-        output_dir / str(rules["truncation_findings_file"]),
+        resolve_artifact_path(bundle, "lifetime_validation")
+        / str(rules["truncation_findings_file"]),
     )
     return output_dir
 

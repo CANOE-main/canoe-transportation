@@ -12,6 +12,7 @@ inputs:
   manual: inputs/0_manual_params
   interim: inputs/1_interim
   processed: inputs/2_processed
+  validation: inputs/validation
   template: inputs/0_canoe_template
 
 outputs:
@@ -27,3 +28,85 @@ legacy:
   transportation_compiler: legacy_backend/transportation[deprecated]/compile_transport.py
   charging_profiles: legacy_backend/charging_profiles[deprecated]
   constraints: legacy_backend/model_constraints[deprecated]
+
+# Stable artifact-family routes for ownership and change-impact retrieval. These are
+# intentionally coarser than module imports or individual files.
+artifacts:
+  ontario_vehicle_population:
+    path: inputs/1_interim/fetched_ontario_vehicle_population
+    layer: interim
+    owner: fetching.vehicle_population
+    producers: [fetching.vehicle_population.fetch_and_normalize]
+    consumers: [parameterization.road_aggregation, parameterization.lifetimes_survival]
+    validation_surfaces: [fetching.vehicle_population.validate_source]
+  vehicle_survival_interim:
+    path: inputs/1_interim/vehicle_survival
+    layer: interim
+    owner: parameterization.lifetimes_survival
+    producers: [parameterization.lifetimes_survival.build_lifetime_artifacts]
+    consumers: [parameterization.lifetimes_survival]
+    validation_surfaces: [parameterization.lifetimes_survival.transition_findings]
+  road_aggregation:
+    path: inputs/2_processed/road_aggregation
+    layer: processed
+    owner: parameterization.road_aggregation
+    producers: [parameterization.road_aggregation.build_road_aggregation_artifacts]
+    consumers: [parameterization.lifetimes_survival, parameterization.stocks_and_demands]
+    validation_surfaces:
+      - parameterization.road_aggregation.validate_vehicle_mapping
+      - parameterization.road_aggregation.mapping_coverage
+  lifetimes_survival:
+    path: inputs/2_processed/lifetimes_survival
+    layer: processed
+    owner: parameterization.lifetimes_survival
+    producers: [parameterization.lifetimes_survival.build_lifetime_artifacts]
+    consumers: [parameterization.stocks_and_demands, build_transport]
+    validation_surfaces: [parameterization.lifetimes_survival.median_equivalent_lifetimes]
+  stocks_and_demands:
+    path: inputs/2_processed/stocks_and_demands
+    layer: processed
+    owner: parameterization.stocks_and_demands
+    producers: [parameterization.stocks_and_demands.build_existing_stock_age_artifacts]
+    consumers: [build_transport]
+    validation_surfaces: [parameterization.stocks_and_demands.derive_ldv_age_distributions]
+  vehicle_mapping_review:
+    path: inputs/validation/vehicle_mapping
+    layer: input_validation
+    owner: parameterization.vehicle_mapping_bootstrap
+    producers:
+      - parameterization.road_aggregation.build_mapping_diagnostic_artifacts
+      - parameterization.vehicle_mapping_bootstrap.main
+    consumers: [fetching.vpic_vehicle_types, fetching.vpic_model_years, reviewers]
+    validation_surfaces:
+      - parameterization.road_aggregation.mapping_coverage
+      - parameterization.vehicle_mapping_bootstrap.bootstrap_coverage
+  lifetime_validation:
+    path: inputs/validation/lifetimes_survival
+    layer: input_validation
+    owner: parameterization.lifetimes_survival
+    producers:
+      - parameterization.lifetimes_survival.build_lifetime_artifacts
+      - parameterization.stocks_and_demands.build_existing_stock_age_artifacts
+    consumers: [reviewers]
+    validation_surfaces:
+      - parameterization.lifetimes_survival.evaluate_mto_survival_decision
+      - parameterization.lifetimes_survival.transition_findings
+  database:
+    path: outputs/sqlite
+    layer: database
+    owner: build_transport
+    producers: [build_transport.build_from_scenario]
+    consumers: [temoa, validation.legacy_compare]
+    validation_surfaces:
+      - validation.schema_contract.create_v4_schema
+      - validation.insertion.insert_models
+      - validation.database_bootstrap.validate_database
+  database_validation:
+    path: outputs/validation
+    layer: output_validation
+    owner: build_transport
+    producers: [build_transport.build_from_scenario]
+    consumers: [reviewers]
+    validation_surfaces:
+      - validation.database_bootstrap.validate_database
+      - validation.legacy_compare.compare_legacy_tables

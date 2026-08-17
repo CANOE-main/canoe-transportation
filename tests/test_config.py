@@ -11,6 +11,7 @@ from utils import (
     configured_directories,
     load_config_bundle,
     load_parameter_yaml,
+    resolve_artifact_path,
     resolve_input_path,
 )
 from validation.config_models import ScenarioRowNoteOverrides, SourceComponent
@@ -25,6 +26,7 @@ def test_config_bundle_loads_typed_contracts() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
 
     assert bundle.paths.inputs.template == "inputs/0_canoe_template"
+    assert bundle.paths.inputs.validation == "inputs/validation"
     assert bundle.scenario.scenario.name == "legacy_reproduction"
     assert bundle.scenario.geography.regions == ["ON"]
     assert bundle.scenario.periods.existing == [2021]
@@ -148,6 +150,36 @@ def test_path_resolution_and_directory_list() -> None:
     assert resolve_input_path(bundle, "manual") == (
         REPO_ROOT / "inputs" / "0_manual_params"
     )
+    assert resolve_artifact_path(bundle, "road_aggregation") == (
+        REPO_ROOT / "inputs" / "2_processed" / "road_aggregation"
+    )
+    assert REPO_ROOT / "inputs" / "validation" in directories
+
+
+def test_artifact_route_cannot_escape_its_declared_layer(tmp_path: Path) -> None:
+    paths, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(paths.read_text(encoding="utf-8"))
+    payload["artifacts"]["road_aggregation"]["path"] = (
+        "outputs/validation/road_aggregation"
+    )
+    paths.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValidationError, match="must be within the processed root"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+def test_artifact_validation_surface_must_be_a_dotted_interface(
+    tmp_path: Path,
+) -> None:
+    paths, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(paths.read_text(encoding="utf-8"))
+    payload["artifacts"]["road_aggregation"]["validation_surfaces"] = [
+        "tests/test_road_aggregation.py"
+    ]
+    paths.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValidationError, match="validation_surfaces"):
+        load_config_bundle(scenario, repo_root=tmp_path)
 
 
 def test_shared_energy_conversion_is_not_scenario_local() -> None:

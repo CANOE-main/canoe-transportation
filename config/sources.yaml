@@ -1289,6 +1289,7 @@ sources:
           unique_key: [mto_make_code, mto_model_code]
           source_selector: "Reviewed two-pass MTO make/model inference using NCIC model-code abbreviations and NHTSA vPIC make/model examples (2026-08-12)."
           expected_rows: 1887
+          development_only: true
 
   nhtsa_vpic_vehicle_models:
     title: "NHTSA Vehicle Product Information Catalog"

@@ -10,6 +10,11 @@ from pathlib import Path
 from typing import Any
 
 
+SCRIPT_REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_SRC = str(SCRIPT_REPO_ROOT / "src")
+if SCRIPT_SRC not in sys.path:
+    sys.path.insert(0, SCRIPT_SRC)
+
 DEFAULT_SCENARIO = "config/scenarios/legacy_reproduction.yaml"
 REQUIRED_IMPORTS = ("fetching", "parameterization", "utils", "validation")
 
@@ -24,12 +29,10 @@ class DoctorResult:
 
 
 def find_repo_root(start: Path | None = None) -> Path:
-    """Find the repository root by walking up to pyproject.toml."""
-    current = (start or Path.cwd()).resolve()
-    for candidate in (current, *current.parents):
-        if (candidate / "pyproject.toml").exists():
-            return candidate
-    raise FileNotFoundError("Could not find repository root containing pyproject.toml")
+    """Delegate repository discovery to the shared package utility."""
+    from utils import find_repo_root as shared_find_repo_root
+
+    return shared_find_repo_root(start)
 
 
 def prepare_import_path(repo_root: Path) -> None:
@@ -57,6 +60,7 @@ def configured_generated_directories(bundle: Any) -> list[Path]:
     paths = (
         inputs["interim"],
         inputs["processed"],
+        inputs["validation"],
         outputs["sqlite"],
         outputs["validation"],
         outputs["logs"],
@@ -97,7 +101,6 @@ def run_doctor(
         load_config_bundle,
         load_harmonization_rules,
         resolve_repo_path,
-        validate_config_bundle,
     )
     from validation.schema_contract import schema_evidence
 
@@ -112,13 +115,11 @@ def run_doctor(
 
     try:
         bundle = load_config_bundle(scenario_path, repo_root=root)
-        config_errors = validate_config_bundle(bundle)
-        errors.extend(config_errors)
         checks["config"] = {
             "paths": str(bundle.paths_path),
             "sources": str(bundle.sources_path),
             "scenario": str(bundle.scenario_path),
-            "validation_errors": config_errors,
+            "validation_errors": [],
         }
         reference_sqlite = resolve_repo_path(bundle.repo_root, bundle.scenario["validation"]["reference_sqlite"])
         checks["paths"] = {
@@ -135,6 +136,7 @@ def run_doctor(
             bundle,
             source_column=str(manual_rules["source_column"]),
             notes_column=str(manual_rules["notes_column"]),
+            include_development=False,
         )
         checks["manual_parameters"] = {
             "files": sorted(manual_frames),

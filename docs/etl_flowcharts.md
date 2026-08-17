@@ -21,8 +21,7 @@ each operation. The legend below is local to these diagrams.
 - [`cost_invest`](#cost_invest)
 - [`cost_variable`](#cost_variable)
 
-
-## Flowchart legends
+## Flowchart Legends
 
 ```mermaid
 ---
@@ -41,11 +40,13 @@ flowchart LR
   s2@{shape: win-pane, label: "**External model outputs**<br>Soft-linked outputs from external models, can be entire models (e.g., GREET), or results alone (e.g., RAMP-mobility)" }
 
   %% --- Processes ---
+  p0@{shape: hex, label: "**Conditional switch**<br>*feature:* true or false"}
+  p0_2@{shape: hex, label: "**Scenario selector**<br>*scenario:* current measures, net-zero, etc."}
   p1["`**Harmonization protocol**<br>• Briefly describes parameter-handling rules, declared in *config/parameters/rules.yaml*<br><br>• There can be several processes and/or rules, usually described in a table below the chart`"]
 
-  s0 -- required process --> p1
-  s1 -. conditional process .-> p1
-  s2 --> p1
+  s0 -- required process ---> p1
+  s1 -. conditional process .-> p0 -. true .-> p1
+  s2 -- required process --> p0_2 --> p1
 
   p1 --> o1[/"`**Parameter-ready output**<br>Parameter values inserted into SQLite databases<br>[describes units]`"/]
 ```
@@ -67,7 +68,7 @@ flowchart LR
   s0[("`**NRCan CEUD**<br>Provincial vehicle sales, stocks, off-road energy use, and energy intensities`")]
   s1[("`**ON Transportation**<br>Fit-active vehicle age cohort by inferred size class`")]
 
-  subgraph expansion["`**Other provincial sources**`"]
+  subgraph expansion["`**Other provincial sources #to-do**`"]
     direction LR
     s2[("`**Quebec SAAQ**<br>Active vehicle age cohort by inferred size class`")]
     s3[("`**Insurance Corp. of BC**<br>Vehicle age cohort by size class`")]
@@ -83,7 +84,7 @@ flowchart LR
   expansion -. "vehicle_population.py" .-> p1
 
   p2["`**Fleet powertrain distribution**<br>• *Road:* distribute age-specific stock by powertrain<br><br>• *Off-road:* incumbent techs mostly use diesel or jet fuel<br><br>• Aggregate into 5-year vintages`"]
-  p1 -- stocks_and_demands.py --> p2
+  p1 -- road_aggregation.py --> p2
   s4 -- statcan_tables.py --> p2
   s5 -- statcan_tables.py --> p2
 
@@ -102,10 +103,11 @@ flowchart LR
 | ------------------------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Fetch vehicle counts by inferred size class            | Cars and light trucks | Map MTO make-model-vintage keys with the reviewed NRCan and FuelEconomy.gov evidence crosswalk                                       |
 | Distribute stock by age                                | Road vehicles         | Use latest-snapshot fit-active weights at age x NRCan Ratings class x NLR ATB class x NRCan CEUD class                               |
-| Treat energy use<sub>province</sub>÷intensity as stock | Off-road modes        | Air, rail and marine fleet size are estimated from the available supply capacity to satisfy demand by vintage (in demand units)      |
+| Treat energy use<sub>province</sub>÷intensity as stock | Off-road modes        | Air, rail, and marine fleet size are estimated from the available supply capacity to satisfy demand by vintage (in demand units)      |
 | Distribute stock by age                                | Off-road modes        | Available demand supply by vintage is estimated with a fleet turnover approximation assuming an avg. annual retirement of 1÷lifetime |
 | Distribute stock<sub>age</sub> by powertrain           | Cars and light trucks | Each stock by vintage gets distributed over vehicle market shares by fuel type                                                       |
 | Distribute stock<sub>age</sub> by powertrain           | MD trucks             | Each stock by vintage gets distributed over vehicle registration shares by fuel type – mainly diesel and gasoline                    |
+
 ## `demand`
 
 ```mermaid
@@ -124,11 +126,13 @@ flowchart LR
   s1[("`**CER Canada's Energy Future**<br>Real GDP projections<br>*Def. scenario:* current measures`")]
 
   %% --- Processes ---
+  p0@{shape: hex, label: "**config/scenarios/**<br>*scenario:* higher, lower, net-zero"}
   p1["`**Baseline and projection**<br>• *Off-road:* estimate provincial activity as energy use ÷ intensity<br><br>• Index future demand to GDP growth by scenario`"]
 
   s0 -- nrcan_ceud.py --> p1
-  s1 -- cer_enerfuture.py --> p1
+  s1 -- cer_enerfuture.py --> p0
 
+  p0 --> p1
   p1 -- stocks_and_demands.py --> o1[/"`**demand**<br>[bn passenger-km]<br>[bn tonne-km]`"/]
 
   %% --- Hyperlinks ---
@@ -140,6 +144,7 @@ flowchart LR
 | ----------------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
 | Estimate provincial activity as energy use<sub>province</sub>÷intensity | Off-road modes   | Provincial energy consumption [PJ] divided by national energy intensity [PJ/bn-tkm] as provincial demand proxy |
 | Index future demand to GDP growth                                       | All              | Base year demand is indexed to future GDP growth projections by scenario                                       |
+
 ## `limit_annual_capacity_factor`
 
 ```mermaid
@@ -155,19 +160,15 @@ config:
 flowchart LR
   %% --- Sources ---
   s0[("`**NRCan CEUD**<br>Provincial vehicle activity [bn tonne-km] and stock [k vehicles]`")]
-  s1[("`**NLR Annual Tech. Baseline**<br>Age-based annual mileage profiles (VMT schedules) of cars and LD, MD, and HD trucks`")]
-  s2@{shape: processes, label: "**Road aggregation maps**<br>Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes"}
+  s1[("`**NLR Annual Tech. Baseline**<br>Age-based annual mileage profiles (VMT schedules) of cars and LD/MD/HD trucks`")]
+  s2@{shape: processes, label: "**Road aggregation maps**<br>Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
   %% --- Processes ---
-  subgraph utilization[" "]
-	  direction TB
-	  p0["`**Annual vehicle utilization (UF)**<br>**eq. (i)** 5-year avg of activity ÷ stock excluding 2020-2021, then scaled by **capacity_to_activity**`"]
-	  s0 -- nrcan_ceud.py --> p0
-  end
-  style utilization fill:transparent,color:transparent
+  p0["`**Annual vehicle utilization (UF)**<br>**eq. (i)** 5-year avg of activity ÷ stock excluding 2020-2021, then scaled by **capacity_to_activity**`"]
+  s0 -- nrcan_ceud.py --> p0
 
   p1@{shape: hex, label: "**config/scenarios/**<br>*vkt_schedules:* true or false"}
-  utilization -- stocks_and_demands.py --> p1
+  p0 -- stocks_and_demands.py --> p1
 
   p2["`**Flat utilization trajectory**<br>Assume constant annual vehicle utilization across all periods`"]
   p1 -- false --> p2
@@ -187,6 +188,7 @@ flowchart LR
   click s0 "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm"
   click s1 "https://atb.nlr.gov/transportation/2024/data"
 ```
+
 ### Equations
 
 ```math
@@ -221,16 +223,15 @@ flowchart LR
   end
   subgraph provincial["`**Provincial granularity (CA)**`"]
     direction LR
-    s0[("`**ON Transportation**<br>Fleet age cohorts for survival-rate estimation`")]
-    s1[("`**Quebec SAAQ**<br>Fleet age cohorts for survival-rate estimation`")]
+    s1[("`**Quebec SAAQ #to-do**<br>Fleet age cohorts for survival-rate estimation`")]
   end
 
   %% --- Processes ---
   p1@{shape: hex, label: "**config/scenarios/**<br>*survival_curves:* true or false"}
-  provincial -. "vehicle_population.py" .-> p1
+  provincial -. "vehicle_population.py" .-> p2
   national -- assorted_sources.py --> p1
 
-  s6@{shape: processes, label: "**Road aggregation maps**<br>Attach LDV classes only after raw MTO make-model-vintage transitions; reuse latest-snapshot age/class weights; see *efficiency*"}
+  s6@{shape: processes, label: "**Road aggregation maps**<br>Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
   s4[("`**StatCan table**<br>Buses avg. lifetime by province`")]
   s5@{shape: doc, label: "**SFU CIMS model assumptions**<br>Lifetime of remaining modes"}
 
@@ -317,11 +318,13 @@ R^{\mathrm{app}}_{k,v,t}
   category-level average or median lifetimes from `inputs/0_manual_params/`.
   Source-derived road medians and survival curves remain generated audit artifacts;
   a scenario-enabled curve supersedes the generated fixed median for that road class.
+- As per the analysis in `docs/insights/vehicle_population_aggregation_mapping.py`, it was concluded that survival curves derived from MTO vehicle population data are very similar to NHTSA CAFE model curves, therefore MTO curves are not used for CANOE parameters.
 
 ## `efficiency`
 
 *Note: Some technologies are not represented in this diagram; see
 `config/parameters/rules.yaml` for implemented harmonization entries.*
+
 ```mermaid
 ---
 config:
@@ -335,10 +338,10 @@ config:
 flowchart LR
   %% --- Sources ---
   subgraph agg["`**Road aggregation weights**`"]
-	  s3@{shape: doc, label: "**Wards Intelligence**<br>Vehicle sales by vintage, make, and model"}
+	  s3@{shape: doc, label: "**Wards Intelligence**<br>Vehicle sales by vintage, make, and model; covers aggregation in provinces without detailed vehicle population data"}
 	  s4[("`**ON Transportation**<br>Fit-active vehicles by vintage, make, and model`")]
 	  s10[("`**StatCan Tables**<br>Truck shipment distance and tonne-km where province is origin or destination`")]
-	  subgraph expansion["`Other provincial sources`"]
+	  subgraph expansion["`Other provincial sources #to-do`"]
       direction LR
 	    s5[("`**Quebec SAAQ**<br>Vehicles in operation by vintage, make, and model`")]
 	    s6[("`**Insurance Corp. of BC**<br>Vehicle counts by vintage, make, and model`")]
@@ -346,7 +349,7 @@ flowchart LR
   end
   subgraph road["`**Road efficiencies**`"]
 	  s1[("`**NRCan Fuel Consum. Ratings**<br>Car and light-truck ratings by make and model`")]
-	  s2[("`**Autonomie TEA via NLR ATB**<br>Future vehicle efficiencies and powertrain multipliers<br>*Def. scenario:* conservative trajectory`")]
+	  s2[("`**Autonomie TEA via NLR ATB**<br>Future vehicle efficiencies and powertrain multipliers<br>*Def. scenario:* mid trajectory`")]
 	  s2_2[("`**JGCRI GCAM model**<br>Motorcycle (>250 cc) efficiencies for Canada`")]
   end
   subgraph off["`**Off-road efficiencies**`"]
@@ -358,24 +361,25 @@ flowchart LR
 
   %% --- Processes ---
   p0["`**Road aggregation mapping**<br>• *LDVs:* map vehicle size classes and derive efficiency aggregation weights<br><br>• *MD/HD trucks:* map truck weight classes and derive efficiency aggregation weights<br><br>• *HD trucks:* derive regional- and long-haul activity weights`"]
-	  s3 -- inputs/0_manual_params/ --> p0
+	s3 -- inputs/0_manual_params/ --> p0
   s4 -- vehicle_population.py --> p0
   expansion -. "vehicle_population.py" .-> p0
   s10 -- statcan_tables.py --> p0
-
+  
+  p0_2@{shape: hex, label: "**config/scenarios/**<br>*scenario:* conservative, advanced"}
   p2["`**Road baseline and indexing**<br>• *Existing LDVs:* aggregate fuel consumption ratings using mappings<br><br>• *Existing MD/HD trucks:* use incumbent fleet energy intensity<br><br>• *New road vehicles:* index existing efficiencies to aggregated future multipliers`"]
   s1 -- nrcan_ceud.py --> p2
-  s2 -- nlr_atb_autonomie.py --> p2
+  s2 -- nlr_atb_autonomie.py --> p0_2 --> p2
   s2_2 -- assorted_sources.py --> p2
   p0 -- road_aggregation.py --> p2
 
+  s0 -- nrcan_ceud.py --> p2 & p3
   s9 -- nrcan_ceud.py --> p4
 
   p3["`**Off-road baseline and indexing**<br>• *Existing off-road modes:* use incumbent fleet energy intensity<br><br>• *New off-road modes:* index existing efficiencies to future multipliers`"]
   s7 -- inputs/0_manual_params/ --> p3
   s8 -- inputs/0_manual_params/ --> p3
 
-  s0 -- nrcan_ceud.py --> p2 & p3
 
   p4["`**Period & unit harmonization**<br>• Aggregate existing efficiencies into 5-year vintages<br><br>• Convert to service-output efficiency using load factors`"]
   p2 -- efficiencies.py --> p4
@@ -397,21 +401,23 @@ flowchart LR
   click s2_2 "https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy"
 ```
 
-| Harmonization rule                                | Affected classes           | Description                                                                                                                                                                                                      |
-| ------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Map size classes and derive aggregation weights   | Cars and light trucks      | Resolve MTO make-model-vintage keys from normalized NRCan and FuelEconomy.gov evidence; derive latest-snapshot weights by age, NRCan Ratings, NLR ATB, and NRCan CEUD class                                  |
-| Map weight classes and derive aggregation weights | MD/HD trucks               | Map truck weight-rating counts to classes that align with Autonomie truck projection classes                                                                                                                     |
-| Derive regional- and long-haul activity weights   | Heavy-duty trucks          | Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes                                                                                                        |
-| Aggregate efficiency ratings using mappings       | Cars and light trucks      | Use size-class aggregation weights to convert model-level fuel consumption ratings into fleet-average efficiencies by powertrain                                                                                 |
-| Use incumbent fleet energy intensity              | MD/HD trucks and off-road  | Use NRCan incumbent fleet energy intensities as proxies for existing technology efficiencies where fuel use is dominated by one fuel type                                                                        |
-| Index existing efficiencies to future multipliers | All                        | Apply alternative-powertrain and future-period multipliers to existing efficiencies (e.g., 2030 battery-electric and 2040 fuel-cell multipliers)                                                                 |
-| Special handling of buses                         | Transit, school, intercity | Use reported Autonomie values for existing and future transit and school bus efficiencies; use EPRI REGEN inputs for intercity buses                                                                             |
-| Special handling of motorcycles                   | Motorcycles                | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) efficiencies |
-| Convert to service-output efficiency units        | All                        | Convert source efficiencies (e.g., L/100 km or mpg) into demand units (e.g., bn tonne-km/PJ) with NRCan CEUD load factors; using HHVs.                                                                           |
+| Harmonization rule | Affected classes | Description |
+| --- | --- | --- |
+| Map size classes and derive aggregation weights | Cars and light trucks | Resolve MTO make-model-vintage keys from normalized NRCan and FuelEconomy.gov evidence; derive latest-snapshot weights by age, NRCan Ratings, NLR ATB, and NRCan CEUD class |
+| Map weight classes and derive aggregation weights | MD/HD trucks | Map truck weight-rating counts to classes that align with Autonomie truck projection classes |
+| Derive regional- and long-haul activity weights | Heavy-duty trucks | Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
+| Aggregate efficiency ratings using mappings | Cars and light trucks | Use size-class aggregation weights to convert model-level fuel consumption ratings into fleet-average efficiencies by powertrain |
+| Use incumbent fleet energy intensity | MD/HD trucks and off-road | Use NRCan incumbent fleet energy intensities as proxies for existing technology efficiencies where fuel use is dominated by one fuel type |
+| Index existing efficiencies to future multipliers | All | Apply alternative-powertrain and future-period multipliers to existing efficiencies (e.g., 2030 battery-electric and 2040 fuel-cell multipliers) |
+| Special handling of buses | Transit, school, intercity | Use reported Autonomie values for existing and future transit and school bus efficiencies; use EPRI REGEN inputs for intercity buses |
+| Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) efficiencies |
+| Convert to service-output efficiency units | All | Convert source efficiencies (e.g., L/100 km or mpg) into demand units (e.g., bn tonne-km/PJ) with NRCan CEUD load factors; using HHVs. |
+
 ## `cost_invest`
 
 *Note: Some technologies are not represented in this diagram; see
 `config/parameters/rules.yaml` for implemented harmonization entries.*
+
 ```mermaid
 ---
 config:
@@ -423,7 +429,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  s3[("`**CER Canada's Energy Future**<br>Currency exchange rates and GDP deflator index<br>*Def. scenario:* mid trajectory`")]
+  s3[("`**CER Canada's Energy Future**<br>Currency exchange rates and GDP deflator<br>*Def. scenario:* current measures`")]
   subgraph offroad["`**Off-road CAPEX**`"]
 	  %% --- Sources ---
 	  s7@{shape: docs, label: "**SFU CIMS model assumptions**<br>Capital cost allocation of new off-road transportation in normalized units of demand"}
@@ -437,20 +443,22 @@ flowchart LR
   subgraph road["`**Road vehicle costs**`"]
 	  %% --- Sources ---
 	  s1@{shape: processes, label: "**Road aggregation maps**<br>Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
-	  s2[("`**Autonomie TEA via NLR ATB**<br>Modeled vehicle price by class and powertrain<br>*Def. scenario:* conservative trajectory`")]
+	  s2[("`**Autonomie TEA via NLR ATB**<br>Modeled vehicle price by class and powertrain<br>*Def. scenario:* mid trajectory`")]
     s8_bus@{shape: doc, label: "**EPRI REGEN model assumptions**<br>Vehicle price projections of intercity buses"}
   end
 
   %% --- Processes ---
+  p0_2@{shape: hex, label: "**config/scenarios/**<br>*scenario:* conservative, advanced"}
   p2["`**Vehicle manufacturing costs**<br>• Revert vehicle prices back to manufacturing costs, divide by the RPE markup factor of 1.5<br><br>• Aggregate manufacturing cost projections by vehicle class using efficiency mappings`"]
-  s2 -- nlr_atb_autonomie.py --> p2
+  s2 -- nlr_atb_autonomie.py --> p0_2 --> p2
   s1 -- road_aggregation.py --> p2
   s8_bus -- assorted_sources.py --> p2
 
+  p0@{shape: hex, label: "**config/scenarios/**<br>*scenario:* higher, lower, net-zero"}
   p4["`**Harmonize currency units**<br>• Apply exchange rate to CAD<br>(e.g., 2023USD → 2023CAD)<br><br>• Discount to reference year<br>(e.g., 2023CAD → 2020CAD)<br><br>• Harmonize magnitude of denominators`"]
   p2 -- capex_opex.py --> p4
   p3 -- capex_opex.py --> p4
-  s3 -- cer_enerfuture.py --> p4
+  s3 -- cer_enerfuture.py --> p0 --> p4
 
   p4 -- capex_opex.py --> o1[/"`***cost_invest***<br>[$M 2020CAD/k vehicles]<br>[$M 2020CAD/bn passenger-km]<br>[$M 2020CAD/bn tonne-km]`"/]
 
@@ -462,20 +470,21 @@ flowchart LR
   click s3 "https://open.canada.ca/data/en/dataset/07c42deb-9435-43b9-a416-7ce316f3893d"
 ```
 
-| Harmonization rule                                  | Affected classes                                                 | Description                                                                                                                                                                                                                                                                                                                         |     |
-| --------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| Reuse road aggregation maps                         | - Cars and light trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with NRCan efficiency ratings and Autonomie projections<br>- Map truck weight-rating counts to classes that align with Autonomie truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |     |
-| Revert vehicle prices back into manufacturing costs | Road vehicles                                                    | A manufacturing to retail price equivalent markup factor (RPE) of 1.5 is generally used in Autonomie TEA and TCO study series                                                                                                                                                                                                       |     |
-| Aggregate manufacturing costs using mappings        | Cars and trucks                                                  | Use mapped weights to aggregate Autonomie projected manufacturing costs of cars, LD, MD, and HD trucks, and school and transit buses                                                                                                                                                                                                |     |
-| CAPEX of new off-road demand capacity               | Off-road modes                                                   | Obtain input capital costs of building new supply capacity that satisfies off-road demand, derived as dollars per demand unit                                                                                                                                                                                                       |     |
-| Special handling of buses                           | Intercity buses                                                  | Use EPRI REGEN vehicle purchase cost assumptions for intercity buses                                                                                                                                                                                                                                                                |     |
-| Special handling of motorcycles                     | Motorcycles                                                      | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) purchase costs                                                                                                                  |     |
-| Harmonize currency units                            | All                                                              | Convert values using foreign currencies and/or different dollar years into reference currency-year                                                                                        |
+| Harmonization rule | Affected classes | Description |
+| --- | --- | --- |
+| Reuse road aggregation maps | - Cars and light trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with NRCan efficiency ratings and Autonomie projections<br>- Map truck weight-rating counts to classes that align with Autonomie truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
+| Revert vehicle prices back into manufacturing costs | Road vehicles | A manufacturing to retail price equivalent markup factor (RPE) of 1.5 is generally used in Autonomie TEA and TCO study series |
+| Aggregate manufacturing costs using mappings | Cars and trucks | Use mapped weights to aggregate Autonomie projected manufacturing costs of cars, LD, MD, and HD trucks, and school and transit buses |
+| CAPEX of new off-road demand capacity | Off-road modes | Obtain input capital costs of building new supply capacity that satisfies off-road demand, derived as dollars per demand unit |
+| Special handling of buses | Intercity buses | Use EPRI REGEN vehicle purchase cost assumptions for intercity buses |
+| Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) purchase costs |
+| Harmonize currency units | All | Convert values using foreign currencies and/or different dollar years into reference currency-year |
 
 ## `cost_variable`
 
 *Note: Some technologies are not represented in this diagram; see
 `config/parameters/rules.yaml` for implemented harmonization entries.*
+
 ```mermaid
 ---
 config:
@@ -501,22 +510,25 @@ flowchart LR
   subgraph road["`**Road M&R costs**`"]
 	  %% --- Sources ---
 	  s1@{shape: processes, label: "**Road aggregation maps**<br>Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
-	  s2[("`**NLR ATB (Burnham et al. 2021)**<br>Avg. maintainance costs per mile, size and powertrain multipliers, and repair cost coefficients for LDVs<br><br>**NLR ATB (Autonomie TEA)**<br>Modeled vehicle price by class and powertrain<br>*Def. scenario:* conservative trajectory`")]
+	  s2[("`**NLR ATB (Burnham et al. 2021)**<br>Avg. maintainance costs per mile, size and powertrain multipliers, and repair cost coefficients for LDVs<br><br>**NLR ATB (Autonomie TEA)**<br>Modeled vehicle price by class and powertrain<br>*Def. scenario:* mid trajectory`")]
 	  s3@{shape: win-pane, label: "**ANL BEAN (Islam et al. 2022)**<br>Maintainance and repair linear model coefficients for MHDVs"}
   end
 
   %% --- Processes ---
+  p0_2@{shape: hex, label: "**config/scenarios/**<br>*scenario:* conservative, advanced"}
   p2["`**Maintainance & repair costs**<br>• *LDVs:* **eq. (i)** get age-dependent repair cost via empirical model;<br>**eq. (ii)** add avg. maintenance costs per mile (Burnham et al. 2021)<br><br>• *MHDVs:* **eq. (iii)** age-dependent M&R costs via empirical model (Islam et al. 2022)<br><br>• Aggregate M&R cost-per-mile curves by vehicle class using efficiency mappings`"]
-  s2 -- nlr_atb_autonomie.py --> p2
+  s2 -- nlr_atb_autonomie.py --> p0_2 --> p2
   s3 -- inputs/0_external_models/ --> p2
   s1 -- road_aggregation.py --> p2
 
-  s0[("`**CER Canada's Energy Future**<br>Currency exchange rates and GDP deflator index<br>*Def. scenario:* mid trajectory`")]
+  s0[("`**CER Canada's Energy Future**<br>Currency exchange rates and GDP deflator<br>*Def. scenario:* current measures`")]
   s9[("`**NRCan CEUD**<br>Vehicle occupancy and payload factors`")]
+
+  p0@{shape: hex, label: "**config/scenarios/**<br>*scenario:* higher, lower, net-zero"}
   p4["`**Harmonize currency units**<br>• Apply exchange rate to CAD<br>(e.g., 2023USD → 2023CAD)<br><br>• Discount to reference year<br>(e.g., 2023CAD → 2020CAD)<br><br>• Harmonize magnitude and units of denominators`"]
   p2 -- capex_opex.py --> p4
   p3 -- capex_opex.py --> p4
-  s0 -- cer_enerfuture.py --> p4
+  s0 -- cer_enerfuture.py --> p0 --> p4
   s9 -- nrcan_ceud.py --> p4
 
   p4 -- capex_opex.py --> o1[/"`***cost_variable***<br>[$M 2020CAD/k vehicles]<br>[$M 2020CAD/bn passenger-km]<br>[$M 2020CAD/bn tonne-km]`"/]
@@ -555,20 +567,56 @@ flowchart LR
 (ii)\; \mathrm{M\&R}^{Air}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Tonnes}\cdot \mathrm{Load\;factor}}
 ```
 
-| Harmonization rule                                  | Affected classes                                                 | Description                                                                                                                                                                                                                                                                                                                         |     |
-| --------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| Reuse road aggregation maps                         | - Cars and light trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with NRCan efficiency ratings and Autonomie projections<br>- Map truck weight-rating counts to classes that align with Autonomie truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |     |
-| Vehicle prices used in repair cost empirical model | Road vehicles                                                    | Minimum suggested retail prices (MSRP) are simply manufacturing cost outputs from Autonomie scaled evenly by a markup factor of 1.5; these are used for repair cost estimates, as done in Burnham et al. 2021                                                                                                                                                                                                       |     |
-| Aggregate M&R costs using mappings        | Cars and trucks                                                  | Use mapped weights to aggregate M&R cost curves of cars, LD, MD, and HD trucks, and and transit buses                                                                                                                                                                                                |     |
-| Variable costs from off-road               | Off-road modes                                                   | - Estimate annual variable costs of rail and marine vessels with CAPEX-to-OPEX ratios used in the OEO model<br> - Estimate M&R costs per demand unit with empirical data from the FAA, converting miles to km and tons to tonnes; same annual utilization and load factors are used for CAPEX and OPEX                                                                                                                                                                                                        |     |
-| Special handling of buses                           | School and intercity buses                                                  | Assume same CAPEX-to-OPEX ratios as those from transit buses                                                                                                                                                                                                                                                                |     |
-| Special handling of motorcycles                     | Motorcycles                                                      | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) M&R costs                                                                                                                  |     |
-| Harmonize currency units                            | All                                                              | - Convert values using foreign currencies and/or different dollar years into reference currency-year<br>- Harmonize denominators; convert miles into km and multiply by NRCan CEUD load factors
+| Harmonization rule | Affected classes | Description |
+| --- | --- | --- |
+| Reuse road aggregation maps | - Cars and light trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with NRCan efficiency ratings and Autonomie projections<br>- Map truck weight-rating counts to classes that align with Autonomie truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
+| Vehicle prices used in repair cost empirical model | Road vehicles | Minimum suggested retail prices (MSRP) are simply manufacturing cost outputs from Autonomie scaled evenly by a markup factor of 1.5; these are used for repair cost estimates, as done in Burnham et al. 2021 |
+| Aggregate M&R costs using mappings | Cars and trucks | Use mapped weights to aggregate M&R cost curves of cars, LD, MD, and HD trucks, and transit buses |
+| Variable costs from off-road | Off-road modes | - Estimate annual variable costs of rail and marine vessels with CAPEX-to-OPEX ratios used in the OEO model<br>- Estimate M&R costs per demand unit with empirical data from the FAA, converting miles to km and tons to tonnes; same annual utilization and load factors are used for CAPEX and OPEX |
+| Special handling of buses | School and intercity buses | Assume same CAPEX-to-OPEX ratios as those from transit buses |
+| Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) M&R costs |
+| Harmonize currency units | All | - Convert values using foreign currencies and/or different dollar years into reference currency-year<br>- Harmonize denominators; convert miles into km and multiply by NRCan CEUD load factors |
 
 ### Notes
 
 FAA source PDFs: [Section 3 — Aircraft Capacity and Utilization Factors](https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost/econ-value-section-3-capacity.pdf) and [Section 4 — Aircraft Operating Costs](https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost/econ-value-section-4-op-costs.pdf).
 
+## `emission_embodied`
+
+```mermaid
+---
+config:
+  layout: dagre
+  flowchart:
+    nodeSpacing: 35
+    rankSpacing: 50
+    wrappingWidth: 250
+    curve: linear
+---
+flowchart LR
+  %% --- Sources ---
+
+  s1@{shape: win-pane, label: "**ANL GREET Excel model**<br>Vehicle-cycle lifetime emissions;<br>default inputs, solved for model year 2025:<br>• Cars and Class 6 trucks<br>• SUVs and Class 8 Day cab trucks<br>• Pickup and Class 8 Sleeper cab trucks<br><br>*Def. scenario*: conventional materials"}
+
+  %% --- Processes ---
+  p1@{shape: hex, label: "**config/scenarios/**<br>*embodied_emissions:* true or false<br>*scenario*: lightweight materials"}
+  s2@{shape: processes, label: "**Road aggregation maps**<br>Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
+  s1 -. inputs/0_external_models/ .-> p1
+
+  p2["`**Vehicle manufacturing emissions**<br>• Normalize units as k tonnes/k vehicles, including CO<sub>2</sub>, CH<sub>4</sub>, and N<sub>2</sub>O factors <br><br>• Aggregate light, medium, and heavy truck classes using efficiency mappings`"]
+  p1 -. true .-> p2
+  s2 -- road_aggregation.py --> p2
+
+  p2 -. "emissions.py" .-> o1[/"`**emission_embodied**<br>[k tonnes/k vehicles]`"/]
+
+  %% --- Hyperlinks ---
+  click s1 "https://greet.anl.gov/"
+```
+
+| Harmonization rule | Affected classes | Description |
+| --- | --- | --- |
+| Reuse road aggregation maps | - Cars and LD trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with NRCan efficiency ratings and Autonomie projections<br>- Map truck weight-rating counts to classes that align with Autonomie truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
+| Vehicle manufacturing emissions | Cars and trucks | - Default vehicle-lifetime emissions from GREET-2 are extracted directly, solved for model year 2025 and normalized by k tonnes per thousand vehicles manufactured; model years 2030 through 2050 remain available.<br>- GREET 2 calculates the emissions associated with the production and processing of vehicle materials, the manufacturing and assembly of the vehicle, and the EOL decomissioning. EOL credits from material recycling are not considered. Emissions from the transportation of raw and processed materials for each process step are neglected. |
 
 ## Compact manual parameter selectors
 

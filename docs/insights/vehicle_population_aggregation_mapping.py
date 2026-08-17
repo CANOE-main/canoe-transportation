@@ -17,6 +17,7 @@ def _():
     from utils import (
         load_config_bundle,
         load_harmonization_rules,
+        resolve_artifact_path,
         resolve_input_path,
         resolve_parameter_path,
     )
@@ -85,6 +86,7 @@ def _():
         load_harmonization_rules,
         mo,
         pd,
+        resolve_artifact_path,
         resolve_input_path,
         resolve_parameter_path,
     )
@@ -140,6 +142,7 @@ def load_evidence(
     load_config_bundle,
     load_harmonization_rules,
     pd,
+    resolve_artifact_path,
     resolve_input_path,
     resolve_parameter_path,
 ):
@@ -152,46 +155,50 @@ def load_evidence(
         road_rules = load_harmonization_rules(bundle, "road_aggregation")
         stock_rules = load_harmonization_rules(bundle, "stocks_and_demands")["ontario_report_a"]
         lifetime_rules = load_harmonization_rules(bundle, "lifetimes_survival")
-        output_dir = resolve_input_path(bundle, "interim", ontario_rules["interim_subdir"])
-        artifact_names = {
-            "coverage": road_rules["coverage_file"],
-            "unresolved_reason_detail": road_rules["unresolved_reason_detail_file"],
-            "unresolved_reason_summary": road_rules["unresolved_reason_summary_file"],
-            "latest_unresolved_worklist": road_rules["latest_unresolved_worklist_file"],
-            "mapped_fleet": road_rules["mapped_current_stock_file"],
-            "age_distribution": stock_rules["age_distribution_file"],
-            "nlr_weights": road_rules["nlr_weights_file"],
-            "fleet_composition_weights": road_rules["fleet_composition_weights_file"],
-            "vehicle_class_evidence": road_rules["vehicle_class_evidence_file"],
-            "mapping_bootstrap": road_rules["bootstrap_evidence_file"],
-            "wards_comparison": road_rules["wards_comparison_file"],
-            "reconciliation": ontario_rules["reconciliation_file"],
-            "status_long": ontario_rules["long_status_file"],
-            "top_observations": road_rules["top_observations_file"],
-            "passenger_cohorts": lifetime_rules["cohort_snapshot_file"],
-            "commercial_cohorts": lifetime_rules["commercial_snapshot_file"],
-            "cohort_transitions": lifetime_rules["transition_observations_file"],
-            "raw_key_snapshots": lifetime_rules["raw_key_snapshot_file"],
-            "raw_key_transitions": lifetime_rules["raw_key_transition_file"],
-            "mapped_key_transitions": lifetime_rules["mapped_key_transition_file"],
-            "nlr_vintage_retention": lifetime_rules["nlr_class_vintage_retention_file"],
-            "nlr_class_retention": lifetime_rules["nlr_class_retention_file"],
-            "ceud_vintage_retention": lifetime_rules["ceud_class_vintage_retention_file"],
-            "ceud_class_retention": lifetime_rules["ceud_class_retention_file"],
-            "ceud_scope_comparison": lifetime_rules["ceud_scope_comparison_file"],
-            "transition_mapping_coverage": lifetime_rules["transition_mapping_coverage_file"],
-            "mto_survival_decision": lifetime_rules["mto_survival_decision_file"],
-            "pooled_retention": lifetime_rules["pooled_estimates_file"],
-            "retention_comparison": lifetime_rules["retention_comparison_file"],
-            "legacy_survival": lifetime_rules["legacy_survival_curves_file"],
-            "nlr_survival": lifetime_rules["nlr_survival_curves_file"],
-            "source_survival": lifetime_rules["source_curves_file"],
-            "transformed_survival": lifetime_rules["transformed_curves_file"],
-            "median_lifetimes": lifetime_rules["median_lifetimes_file"],
+        source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
+        road_dir = resolve_artifact_path(bundle, "road_aggregation")
+        stock_dir = resolve_artifact_path(bundle, "stocks_and_demands")
+        review_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
+        survival_interim_dir = resolve_artifact_path(bundle, "vehicle_survival_interim")
+        lifetime_dir = resolve_artifact_path(bundle, "lifetimes_survival")
+        lifetime_validation_dir = resolve_artifact_path(bundle, "lifetime_validation")
+        artifact_paths = {
+            "coverage": review_dir / road_rules["coverage_file"],
+            "unresolved_reason_detail": review_dir / road_rules["unresolved_reason_detail_file"],
+            "unresolved_reason_summary": review_dir / road_rules["unresolved_reason_summary_file"],
+            "latest_unresolved_worklist": review_dir / road_rules["latest_unresolved_worklist_file"],
+            "mapped_fleet": road_dir / road_rules["mapped_current_stock_file"],
+            "age_distribution": stock_dir / stock_rules["age_distribution_file"],
+            "nlr_weights": road_dir / road_rules["nlr_weights_file"],
+            "fleet_composition_weights": road_dir / road_rules["fleet_composition_weights_file"],
+            "vehicle_class_evidence": review_dir / road_rules["vehicle_class_evidence_file"],
+            "mapping_bootstrap": review_dir / road_rules["bootstrap_evidence_file"],
+            "wards_comparison": road_dir / road_rules["wards_comparison_file"],
+            "reconciliation": source_dir / ontario_rules["reconciliation_file"],
+            "status_long": source_dir / ontario_rules["long_status_file"],
+            "top_observations": review_dir / road_rules["top_observations_file"],
+            "passenger_cohorts": survival_interim_dir / lifetime_rules["cohort_snapshot_file"],
+            "commercial_cohorts": survival_interim_dir / lifetime_rules["commercial_snapshot_file"],
+            "cohort_transitions": survival_interim_dir / lifetime_rules["transition_observations_file"],
+            "raw_key_snapshots": survival_interim_dir / lifetime_rules["raw_key_snapshot_file"],
+            "raw_key_transitions": survival_interim_dir / lifetime_rules["raw_key_transition_file"],
+            "mapped_key_transitions": survival_interim_dir / lifetime_rules["mapped_key_transition_file"],
+            "nlr_vintage_retention": lifetime_dir / lifetime_rules["nlr_class_vintage_retention_file"],
+            "nlr_class_retention": lifetime_dir / lifetime_rules["nlr_class_retention_file"],
+            "ceud_vintage_retention": lifetime_dir / lifetime_rules["ceud_class_vintage_retention_file"],
+            "ceud_class_retention": lifetime_dir / lifetime_rules["ceud_class_retention_file"],
+            "ceud_scope_comparison": lifetime_validation_dir / lifetime_rules["ceud_scope_comparison_file"],
+            "transition_mapping_coverage": lifetime_validation_dir / lifetime_rules["transition_mapping_coverage_file"],
+            "mto_survival_decision": lifetime_validation_dir / lifetime_rules["mto_survival_decision_file"],
+            "pooled_retention": survival_interim_dir / lifetime_rules["pooled_estimates_file"],
+            "legacy_survival": lifetime_dir / lifetime_rules["legacy_survival_curves_file"],
+            "nlr_survival": lifetime_dir / lifetime_rules["nlr_survival_curves_file"],
+            "source_survival": lifetime_dir / lifetime_rules["source_curves_file"],
+            "transformed_survival": lifetime_dir / lifetime_rules["transformed_curves_file"],
+            "median_lifetimes": lifetime_dir / lifetime_rules["median_lifetimes_file"],
         }
         frames: dict[str, pd.DataFrame] = {}
-        for key, filename in artifact_names.items():
-            artifact_path = output_dir / str(filename)
+        for key, artifact_path in artifact_paths.items():
             if not artifact_path.is_file():
                 raise FileNotFoundError(
                     "Generate Ontario backend artifacts before opening the diagnostic: "

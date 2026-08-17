@@ -1,7 +1,6 @@
 """Fetch and source-normalize Ontario vehicle population Reports A, 4, and 5."""
 
 import argparse
-import hashlib
 import io
 import logging
 import os
@@ -19,10 +18,12 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from utils import (
     ConfigBundle,
+    file_sha256,
     load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
     resolve_input_path,
+    write_dataframe_atomic,
 )
 from validation.config_models import SourceComponent, SourceSpec
 
@@ -436,13 +437,7 @@ def build_requests(
     return [request_from_resource(bundle, resource) for resource in resources], gaps
 
 
-def sha256_file(path: Path) -> str:
-    """Return a streaming SHA-256 digest."""
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+sha256_file = file_sha256
 
 
 def validate_zip_integrity(path: Path) -> None:
@@ -1412,20 +1407,6 @@ def current_stock_input(
         )
         .reset_index(drop=True)
     )
-
-
-def write_dataframe_atomic(frame: pd.DataFrame, path: Path) -> None:
-    """Write one CSV and atomically publish it."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    if temporary.exists():
-        temporary.unlink()
-    try:
-        frame.to_csv(temporary, index=False)
-        os.replace(temporary, path)
-    finally:
-        if temporary.exists():
-            temporary.unlink()
 
 
 def write_text_atomic(text: str, path: Path) -> None:

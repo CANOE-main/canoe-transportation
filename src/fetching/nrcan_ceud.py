@@ -16,7 +16,13 @@ import pandas as pd
 import requests
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from utils import ConfigBundle, load_config_bundle, load_harmonization_rules, resolve_input_path
+from utils import (
+    ConfigBundle,
+    load_config_bundle,
+    load_harmonization_rules,
+    resolve_input_path,
+    write_dataframe_atomic,
+)
 from validation.config_models import SourceComponent, SourceSpec
 
 
@@ -784,19 +790,6 @@ def fetch_and_normalize(
 
     write_outputs(rows, manifest_rows, warnings, output_dir, rules)
     return output_dir
-
-
-def write_dataframe_atomic(frame: pd.DataFrame, path: Path) -> None:
-    """Write one CSV and atomically publish it at the configured path."""
-    temporary = path.with_suffix(f"{path.suffix}.tmp")
-    if temporary.exists():
-        temporary.unlink()
-    try:
-        frame.to_csv(temporary, index=False)
-        temporary.replace(path)
-    finally:
-        if temporary.exists():
-            temporary.unlink()
 
 
 def write_rating_outputs(

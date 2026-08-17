@@ -1,9 +1,7 @@
 """Validate compact manual parameters and resolve them to technology rows."""
 
 import argparse
-import os
 import re
-import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +15,7 @@ from utils import (
     load_config_bundle,
     load_harmonization_rules,
     resolve_input_path,
+    write_dataframe_atomic,
 )
 from validation.config_models import SourceComponent
 
@@ -42,6 +41,7 @@ class ManualAdapterContract(BaseModel):
     unique_key: list[NonEmptyString] = Field(min_length=1)
     source_selector: NonEmptyString
     expected_rows: int = Field(ge=0)
+    development_only: bool = False
 
     @model_validator(mode="after")
     def validate_columns(self) -> "ManualAdapterContract":
@@ -145,20 +145,30 @@ def validate_manual_registry(
     *,
     source_column: str,
     notes_column: str,
+    include_development: bool = True,
 ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
-    """Validate every manual CSV, citation selector, and component ownership."""
+    """Validate selected manual CSVs, citation selectors, and component ownership."""
     manual_dir = resolve_input_path(bundle, "manual")
     actual_files = {path.name for path in manual_dir.glob("*.csv")}
-    registrations = registered_manual_components(bundle)
-    registered_files = {
+    all_registrations = registered_manual_components(bundle)
+    registrations = [
+        registration
+        for registration in all_registrations
+        if include_development or not registration.adapter.development_only
+    ]
+    all_registered_files = {
+        registration.adapter.manual_parameter_path
+        for registration in all_registrations
+    }
+    required_files = {
         registration.adapter.manual_parameter_path
         for registration in registrations
     }
-    if actual_files != registered_files:
+    if actual_files - all_registered_files or required_files - actual_files:
         raise ManualParameterError(
             "Manual file registry mismatch: "
-            f"unregistered={sorted(actual_files - registered_files)}, "
-            f"missing={sorted(registered_files - actual_files)}"
+            f"unregistered={sorted(actual_files - all_registered_files)}, "
+            f"missing={sorted(required_files - actual_files)}"
         )
 
     by_file: dict[str, list[ManualRegistration]] = defaultdict(list)
@@ -658,28 +668,6 @@ def resolve_manual_parameters(
     return resolution, reconciliation, findings
 
 
-def _write_dataframe_atomic(frame: pd.DataFrame, path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_name: str | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            newline="",
-            suffix=".csv.tmp",
-            dir=path.parent,
-            delete=False,
-        ) as temporary:
-            temporary_name = temporary.name
-            frame.to_csv(temporary, index=False, lineterminator="\n")
-        os.replace(temporary_name, path)
-    finally:
-        if temporary_name is not None:
-            temporary_path = Path(temporary_name)
-            if temporary_path.exists():
-                temporary_path.unlink()
-
-
 def build_manual_parameter_artifacts(scenario_path: str | Path) -> Path:
     """Validate current manual inputs and publish selector resolution evidence."""
     bundle = load_config_bundle(scenario_path)
@@ -715,7 +703,7 @@ def build_manual_parameter_artifacts(scenario_path: str | Path) -> Path:
         str(rules["findings_file"]): findings,
     }
     for filename, frame in outputs.items():
-        _write_dataframe_atomic(frame, output_dir / filename)
+        write_dataframe_atomic(frame, output_dir / filename)
     return output_dir
 
 

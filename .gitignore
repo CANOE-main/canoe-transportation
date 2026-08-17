@@ -12,6 +12,7 @@ dist/
 inputs/0_cache/
 inputs/1_interim/
 inputs/2_processed/
+inputs/validation/
 inputs/playground/
 # Temporary proprietary Wards model-level inputs; retain aggregate shares only.
 inputs/0_manual_params/Cars2021.csv

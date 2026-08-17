@@ -34,6 +34,7 @@ def test_cleanup_plan_separates_runtime_generated_cache_and_external(tmp_path: P
     touch(tmp_path / ".snakemake" / "locks" / "0.input.lock")
     touch(tmp_path / "inputs" / "1_interim" / "generated.csv")
     touch(tmp_path / "inputs" / "2_processed" / "processed.csv")
+    touch(tmp_path / "inputs" / "validation" / "review.csv")
     touch(tmp_path / "outputs" / "logs" / "run.log")
     touch(tmp_path / "inputs" / "0_cache" / "source.xls")
     touch(tmp_path / "inputs" / "0_external_models" / "model.csv")
@@ -56,7 +57,12 @@ def test_cleanup_plan_separates_runtime_generated_cache_and_external(tmp_path: P
     assert "outputs" not in default_targets
     assert "inputs/0_cache" not in default_targets
     assert "inputs/0_external_models" not in generated_targets
-    assert {"inputs/1_interim", "inputs/2_processed", "outputs"}.issubset(generated_targets)
+    assert {
+        "inputs/1_interim",
+        "inputs/2_processed",
+        "inputs/validation",
+        "outputs",
+    }.issubset(generated_targets)
     assert "inputs/0_cache" in cache_targets
     assert "inputs/0_external_models" not in cache_targets
 
@@ -96,12 +102,11 @@ def test_doctor_runs_without_mutating_by_default() -> None:
             "cost_variable_multipliers.csv",
                 "efficiency_multipliers.csv",
                 "lifetime_process.csv",
-                "mapped_mto_make_model_keys.csv",
                 "vehicle_class_market_shares.csv",
             ],
-            "file_count": 6,
-            "component_count": 12,
-            "selected_cited_rows": 1971,
+            "file_count": 5,
+            "component_count": 11,
+            "selected_cited_rows": 84,
         }
 
 

@@ -1,7 +1,6 @@
 """Fetch, validate, and source-normalize small public transportation inputs."""
 
 import argparse
-import hashlib
 import io
 import json
 import logging
@@ -28,6 +27,7 @@ from pypdf.errors import PdfReadError
 
 from utils import (
     ConfigBundle,
+    file_sha256,
     load_config_bundle,
     load_harmonization_rules,
     resolve_input_path,
@@ -211,15 +211,6 @@ def build_requests(
             file_type="pdf",
         ),
     }
-
-
-def file_sha256(path: Path) -> str:
-    """Return a stable SHA-256 checksum without loading the file into memory."""
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def fetch_to_cache(

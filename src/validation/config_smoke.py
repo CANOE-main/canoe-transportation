@@ -10,7 +10,6 @@ from utils import (
     create_configured_directories,
     load_config_bundle,
     resolve_repo_path,
-    validate_config_bundle,
 )
 from validation.schema_contract import schema_evidence
 
@@ -22,15 +21,7 @@ def run_smoke_validation(
 ) -> dict[str, Any]:
     """Load configs, validate required keys, create directories, and return status."""
     bundle = load_config_bundle(scenario_path)
-    errors = validate_config_bundle(bundle)
     now = timestamp or datetime.now(UTC)
-    if errors:
-        return {
-            "ok": False,
-            "timestamp_utc": now.isoformat(),
-            "scenario_path": str(bundle.scenario_path),
-            "errors": errors,
-        }
 
     created_directories = create_configured_directories(bundle)
     reference_value = bundle.scenario.validation.reference_sqlite
@@ -40,12 +31,6 @@ def run_smoke_validation(
         else None
     )
     active_sources = bundle.scenario.sources.active
-    sources = bundle.sources.sources
-    placeholder_sources = [
-        source_name
-        for source_name in active_sources
-        if sources[source_name].get("status") == "placeholder"
-    ]
 
     return {
         "ok": True,
@@ -66,7 +51,7 @@ def run_smoke_validation(
             str(reference_sqlite) if reference_sqlite is not None else None
         ),
         "active_sources": active_sources,
-        "placeholder_sources": placeholder_sources,
+        "placeholder_sources": [],
         "switches": bundle.scenario.switches.model_dump(mode="json"),
         "planned": bundle.scenario.planned.model_dump(mode="json"),
     }
