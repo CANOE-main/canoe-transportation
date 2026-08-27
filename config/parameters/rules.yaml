@@ -222,7 +222,7 @@ parameterization:
         output_count_column: NATIVE_COUNT
         age_column: AGE
         age_distribution_column: AGE_DIST
-        max_age: 30
+        max_age: 35
 
   road_aggregation:
     vehicle_size_class_map_file: vehicle_size_class_map.csv
@@ -270,16 +270,20 @@ parameterization:
       reviewed_model_label_hints:
         CHEV/CZT: {canonical_make: Chevrolet, canonical_model: Cruze}
         DODG/RPC: {canonical_make: Dodge, canonical_model: Ram 1500 Pickup}
-        FORD/EPR: {canonical_make: Ford, canonical_model: Escape}
+        FORD/EPR: {canonical_make: Ford, canonical_model: Explorer}
         FORD/DRW: {canonical_make: Ford, canonical_model: F-250}
         FORD/F/E: {canonical_make: Ford, canonical_model: F-150}
         FORD/F/L: {canonical_make: Ford, canonical_model: F-150}
         FORD/FSE: {canonical_make: Ford, canonical_model: Focus}
         FORD/MGT: {canonical_make: Ford, canonical_model: Mustang}
         FORD/SGT: {canonical_make: Ford, canonical_model: Mustang}
-        FORD/SRW: {canonical_make: Ford, canonical_model: F-250}
+        FORD/SPE: {canonical_make: Ford, canonical_model: Escape}
+        FORD/SRW: {canonical_make: Ford, canonical_model: F-Series}
         FORD/TST: {canonical_make: Ford, canonical_model: Transit T150}
         HOND/CCL: {canonical_make: Honda, canonical_model: Civic}
+        HOND/UAX: {canonical_make: Honda, canonical_model: Civic}
+        HOND/UCL: {canonical_make: Honda, canonical_model: Civic}
+        HOND/UDY: {canonical_make: Honda, canonical_model: Odyssey}
         HYUN/ESM: {canonical_make: Hyundai, canonical_model: Elantra}
         HYUN/SFT: {canonical_make: Hyundai, canonical_model: Santa Fe}
         JEEP/GCK: {canonical_make: Jeep, canonical_model: Grand Cherokee}
@@ -295,10 +299,12 @@ parameterization:
         JAGU/XET: {canonical_make: Jaguar, canonical_model: XE}
         ACUR/TLT: {canonical_make: Acura, canonical_model: TL}
         MASE/QSS: {canonical_make: Maserati, canonical_model: Q}
+        NISS/PFI: {canonical_make: Nissan, canonical_model: Pathfinder}
         AUDI/TTP: {canonical_make: Audi, canonical_model: TT}
         PORS/9/4: {canonical_make: Porsche, canonical_model: "944"}
         RAM/RTR: {canonical_make: Ram, canonical_model: "1500"}
         TESL/YGE: {canonical_make: Tesla, canonical_model: Model Y}
+        TOYT/MTL: {canonical_make: Toyota, canonical_model: Corolla}
         TOYT/RG4: {canonical_make: Toyota, canonical_model: RAV4}
       reviewed_class_overrides:
         FORD/F/E: {canonical_make: Ford, canonical_model: F-Series, nrcan_vehicle_class: "Pickup truck: Standard", nlr_atb_class: Pickup, nrcan_ceud_class: Light Truck}

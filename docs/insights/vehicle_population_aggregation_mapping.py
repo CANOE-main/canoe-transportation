@@ -1,8 +1,8 @@
-"""Ontario Report A vehicle mapping and aggregation diagnostic."""
+"""Ontario vehicle-population mapping and parameter diagnostic."""
 
 import marimo
 
-__generated_with = "0.23.16"
+__generated_with = "0.24.0"
 app = marimo.App(width="full")
 
 
@@ -94,46 +94,133 @@ def _():
 
 @app.cell
 def introduction(mo):
-    mo.md("""
-    # Ontario Report A vehicle mapping and survival diagnostic
+    mo.vstack(
+        [
+            mo.md("""
+            # Ontario vehicle-population mapping and parameter diagnostic
 
-    This notebook asks four questions: how much latest fit-active stock is mapped;
-    why the remainder cannot be mapped reliably; what class and vintage weights the
-    accepted subset implies; and what the available annual cohorts can actually say
-    about retention and survival.
+            | Evidence question | What is shown |
+            |---|---|
+            | Mapped fit-active stock | How much of the latest Ontario stock is covered by the reviewed map. |
+            | Stock that cannot be mapped reliably | Which evidence limits leave make-model keys unresolved. |
+            | Class and vintage weights | What the accepted mapped stock implies for class shares and fleet age. |
+            | Report A versus Report 5 age profiles | How mapped Car/Light Truck shapes compare with broader Passenger/Commercial stock. |
+            | Report 4 versus Wards truck shares | How the sources distribute medium-duty stock across GVWR classes. |
+            | MTO versus NRCan CEUD | Whether mapped stock and same-model-year registration proxies resemble Ontario stock and sales totals. |
+            | Mapped-cohort retention | What consecutive Report A editions can—and cannot—say about apparent retirement and survival. |
 
-    It is a minimal exploratory UI over version-controlled configuration and
-    backend artifacts. It does not fetch sources, duplicate ETL transformations,
-    modify configuration, or render notebook exports. The noisy 2015 edition is
-    excluded. `PASSENGER` and `COMMERCIAL` are treated equally by the mapping and
-    cohort logic, while remaining visible as source categories in the diagnostics.
+            """),
+            mo.md("""
+            ### Reading boundary
+            This is an artifact-backed diagnostic over
+            version-controlled configuration. It does not fetch sources, repeat ETL,
+            modify configuration, promote diagnostic evidence, or create notebook
+            exports. Open it after a complete scenario build has published the expected
+            source, interim, processed, and diagnostic artifacts.
 
-    **Mapping bootstrap and promotion policy.** The development-only bootstrap first
-    pools positive fit-active stock by MTO make/model/model-year across Report A
-    editions. It normalizes punctuation and case, resolves configured make aliases,
-    and compares each MTO model label with canonical model families assembled from
-    NRCan Fuel Consumption Ratings and FuelEconomy.gov. Candidates are ranked within
-    the normalized make; ties at the best score remain ambiguous. The best unambiguous
-    family is then resolved to a single NRCan → NLR ATB → CEUD hierarchy, checked
-    against exact-year public evidence and the dedicated vPIC temporal audit where
-    applicable, and collapsed into non-overlapping vintage ranges. Ordinary backend
-    runs only read the resulting reviewed CSV and never repeat this inference.
+            The selector only points the notebook to the configuration and artifact routes
+            used by that completed build; it is not a scenario-comparison control. The MTO
+            mapping and diagnostic evidence is expected to remain the same across modelling
+            scenarios unless their source configuration or artifact routes differ. Select
+            the scenario that was built rather than cycling through scenarios to reinterpret
+            the evidence. `PASSENGER` and `COMMERCIAL` pass through the same mapping and
+            cohort logic but remain visible as distinct MTO source categories.
+            """),
+            mo.md("""
+            ### Working assumptions, owners, and interpretation boundaries
 
-    The model similarity is deterministic. After removing punctuation, spacing, and
-    case, identical labels score **1.00**, a prefix relationship scores **0.95**, and
-    an MTO label contained within the canonical family scores **0.90**. All other
-    pairs use Python's sequence-matching ratio: twice the total length of matching
-    blocks divided by the combined label lengths, on a 0–1 scale. As an explicit
-    review decision, every unambiguous rank-one candidate scoring **at least 0.70** is
-    now promoted; this includes all pending exact and prefix strong-label candidates
-    and supersedes conflicting lower-impact manual-pass arbitration for that unique
-    approved family.
-    Explicit configured make/model corrections remain stronger than the generic
-    similarity rule.
-    The original score and match method remain in generated evidence. Manual candidates
-    superseded by the high-stock re-audit are not restored by this rule.
-    """)
+            | Topic | Owner or generator | Interpretation in this notebook |
+            |---|---|---|
+            | Ontario Report A, 4, and 5 evidence | `fetching.vehicle_population` | `FIT_ACTIVE` is the administrative proxy for vehicles available for road use; Report A supplies make-model-vintage cohorts, Report 4 supplies GVWR evidence, and Report 5 supplies Passenger/Commercial model-year totals. |
+            | Reviewed vehicle mapping | `config/parameters/vehicle_size_class_map.csv`, read by `parameterization.road_aggregation` | Only accepted `reviewed` ranges attach an LDV class. The consolidated, version-controlled map is runtime read-only and is reused across scenario builds. |
+            | Mapping review evidence | `parameterization.road_aggregation --mapping-diagnostics` | Candidate, coverage, and unresolved-key tables are explicit review diagnostics. Row coverage counts make-model-vintage rows; stock coverage sums `FIT_ACTIVE`. |
+            | Mapped-fleet composition | `parameterization.road_aggregation` | Class and vintage composition is conditional on accepted mapped LDV stock. Unmapped stock remains visible in coverage diagnostics and is not imputed across mapped classes. |
+            | Existing-fleet age weights | `parameterization.stocks_and_demands` | The raw comparison charts use the latest snapshot and a common model-year floor of 2000. The downstream stock-cohort cutoff is separate from technology lifetimes: `survival_curve_max_age` only bounds represented cohorts when curves are enabled. |
+            | MHDV weight-class shares | `fetching.vehicle_population` and `parameterization.road_aggregation`, compared with `inputs/0_manual_params/vehicle_class_market_shares.csv` | Report 4 and Wards are alternative diagnostic bases for combining NLR ATB MHDV efficiency and cost parameters only. |
+            | NRCan CEUD comparison | `fetching.nrcan_ceud` | CEUD is an external plausibility benchmark. MTO stock is the accepted mapped subset; the MTO “sales” series is a same-model-year registration proxy. |
+            | Accepted lifetime inputs | `parameterization.lifetimes_survival` | NHTSA CAFE supplies accepted LDV survival evidence and NEMS supplies accepted MHDV evidence. With `survival_curves: false`, manual technology lifetimes remain and accepted median lifetimes fill missing values; with it `true`, the accepted CAFE/NEMS curves are selected for car and truck technologies. |
+            | MTO apparent-retention diagnostics | `parameterization.lifetimes_survival --mto-diagnostics` | A rate compares the same source category, make code, model code, and vintage in consecutive editions. Starting ages 0–35 are eligible, transition coverage sums starting exposure, and rates above 100% retention remain visible. These independently derived diagnostics do not become accepted parameters; future SAAQ evidence can reopen the source decision. |
+            """),
+            mo.md("""
+            ### Preparing the artifact-backed notebook
+
+            A complete Snakemake scenario build is the notebook-readiness step: it is
+            expected to fetch and parameterize the scenario and publish the diagnostic and
+            interim products read here. The notebook fails fast when one of those products
+            is missing, but it does not require a separate notebook-specific build sequence.
+
+            The reviewed `config/parameters/vehicle_size_class_map.csv` is included in a
+            blank checkout. During a normal scenario build, `road_aggregation` applies its
+            accepted make/model/vintage ranges row by row, while the mapping-diagnostic
+            stage calculates ranked similarity scores and unresolved-key evidence for the
+            latest Report A stock. Neither operation reconstructs the reviewed map.
+
+            `parameterization.vehicle_mapping_bootstrap` is the separate, computationally
+            expensive maintainer operation. It rereads every usable Report A edition,
+            evaluates historical make/model/model-year support, incorporates the scored
+            candidate evidence, and collapses accepted years into reviewed vintage ranges.
+            The notebook does not load its `vehicle_size_class_map_bootstrap.csv` evidence,
+            so the bootstrap is not a prerequisite for opening a fully built scenario.
+
+            Run the bootstrap once only when the all-edition mapping reconstruction must be
+            audited or repeated and that evidence is missing. Write the reconstructed map
+            to a separate review file so the audit does not replace the committed map:
+
+            ```text
+            uv run python -m parameterization.vehicle_mapping_bootstrap --scenario config/scenarios/legacy_reproduction.yaml --output inputs/validation/vehicle_mapping/vehicle_size_class_map_rebuilt.csv
+            ```
+            """),
+            mo.md("""
+            ### Mapping bootstrap and promotion policy
+
+            The development-only bootstrap pools positive fit-active stock by MTO
+            make/model/model-year across all available Report A editions. It normalizes
+            punctuation and case, resolves configured make aliases, and compares each MTO
+            model label with canonical model families assembled from NRCan Fuel
+            Consumption Ratings and FuelEconomy.gov.
+
+            Candidates are ranked within the normalized make; ties at the best score remain
+            ambiguous. The best unambiguous family is resolved to one NRCan → NLR ATB →
+            CEUD hierarchy, checked against exact-year public evidence and the dedicated
+            vPIC temporal audit where applicable, and collapsed into non-overlapping
+            vintage ranges. Ordinary backend runs only read the reviewed CSV and never
+            repeat this inference.
+
+            Model similarity is deterministic. After punctuation, spacing, and case are
+            normalized, identical labels score **1.00**, a prefix relationship scores
+            **0.95**, and an MTO label contained within the canonical family scores
+            **0.90**. All other pairs use Python's sequence-matching ratio on a 0–1 scale.
+            Every unambiguous rank-one candidate scoring **at least 0.70** is promoted;
+            explicit configured make/model corrections remain stronger than this generic
+            rule. Original scores and match methods remain in the generated evidence.
+            """),
+        ]
+    )
     return
+
+
+@app.cell
+def _(Path, mo):
+    repo_root = Path(__file__).resolve().parents[2]
+    scenario_options = [
+        path.relative_to(repo_root).as_posix()
+        for path in sorted((repo_root / "config/scenarios").glob("*.yaml"))
+    ]
+    if not scenario_options:
+        raise FileNotFoundError("No scenario YAML files exist under config/scenarios")
+    default_scenario = (
+        "config/scenarios/legacy_reproduction.yaml"
+        if "config/scenarios/legacy_reproduction.yaml" in scenario_options
+        else scenario_options[0]
+    )
+    scenario_selector = mo.ui.dropdown(
+        options=scenario_options,
+        value=default_scenario,
+        label="Scenario configuration",
+        full_width=True,
+    )
+    scenario_selector
+    return repo_root, scenario_selector
 
 
 @app.cell
@@ -146,56 +233,57 @@ def load_evidence(
     resolve_input_path,
     resolve_parameter_path,
 ):
-    scenario_path = Path("config/scenarios/legacy_reproduction.yaml")
-
-
     def load_evidence(selected_scenario: str | Path) -> dict[str, pd.DataFrame]:
         bundle = load_config_bundle(selected_scenario)
         ontario_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
+        ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
         road_rules = load_harmonization_rules(bundle, "road_aggregation")
-        stock_rules = load_harmonization_rules(bundle, "stocks_and_demands")["ontario_report_a"]
         lifetime_rules = load_harmonization_rules(bundle, "lifetimes_survival")
         source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
+        ceud_dir = resolve_input_path(bundle, "interim", ceud_rules["interim_subdir"])
         road_dir = resolve_artifact_path(bundle, "road_aggregation")
-        stock_dir = resolve_artifact_path(bundle, "stocks_and_demands")
         review_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
         survival_interim_dir = resolve_artifact_path(bundle, "vehicle_survival_interim")
         lifetime_dir = resolve_artifact_path(bundle, "lifetimes_survival")
         lifetime_validation_dir = resolve_artifact_path(bundle, "lifetime_validation")
+        manifest_path = source_dir / ontario_rules["manifest_file"]
+        if not manifest_path.is_file():
+            raise FileNotFoundError(
+                "Generate Ontario source artifacts before opening the diagnostic: "
+                f"{manifest_path}"
+            )
+        source_manifest = pd.read_csv(manifest_path, low_memory=False)
+        latest_source_year = int(
+            pd.to_numeric(source_manifest["year"], errors="raise").max()
+        )
+        report4_rules = ontario_rules["reports"][4]
+        report5_rules = ontario_rules["reports"][5]
         artifact_paths = {
             "coverage": review_dir / road_rules["coverage_file"],
             "unresolved_reason_detail": review_dir / road_rules["unresolved_reason_detail_file"],
             "unresolved_reason_summary": review_dir / road_rules["unresolved_reason_summary_file"],
-            "latest_unresolved_worklist": review_dir / road_rules["latest_unresolved_worklist_file"],
             "mapped_fleet": road_dir / road_rules["mapped_current_stock_file"],
-            "age_distribution": stock_dir / stock_rules["age_distribution_file"],
-            "nlr_weights": road_dir / road_rules["nlr_weights_file"],
-            "fleet_composition_weights": road_dir / road_rules["fleet_composition_weights_file"],
+            "nrcan_ceud": ceud_dir
+            / ceud_rules["region_output_template"].format(region="on"),
             "vehicle_class_evidence": review_dir / road_rules["vehicle_class_evidence_file"],
-            "mapping_bootstrap": review_dir / road_rules["bootstrap_evidence_file"],
             "wards_comparison": road_dir / road_rules["wards_comparison_file"],
-            "reconciliation": source_dir / ontario_rules["reconciliation_file"],
             "status_long": source_dir / ontario_rules["long_status_file"],
-            "top_observations": review_dir / road_rules["top_observations_file"],
+            "report4_distribution": source_dir
+            / report4_rules["distribution_output_template"].format(
+                year=latest_source_year
+            ),
+            "report5_distribution": source_dir
+            / report5_rules["distribution_output_template"].format(
+                year=latest_source_year
+            ),
             "passenger_cohorts": survival_interim_dir / lifetime_rules["cohort_snapshot_file"],
             "commercial_cohorts": survival_interim_dir / lifetime_rules["commercial_snapshot_file"],
-            "cohort_transitions": survival_interim_dir / lifetime_rules["transition_observations_file"],
-            "raw_key_snapshots": survival_interim_dir / lifetime_rules["raw_key_snapshot_file"],
             "raw_key_transitions": survival_interim_dir / lifetime_rules["raw_key_transition_file"],
-            "mapped_key_transitions": survival_interim_dir / lifetime_rules["mapped_key_transition_file"],
-            "nlr_vintage_retention": lifetime_dir / lifetime_rules["nlr_class_vintage_retention_file"],
-            "nlr_class_retention": lifetime_dir / lifetime_rules["nlr_class_retention_file"],
-            "ceud_vintage_retention": lifetime_dir / lifetime_rules["ceud_class_vintage_retention_file"],
-            "ceud_class_retention": lifetime_dir / lifetime_rules["ceud_class_retention_file"],
+            "ceud_class_retention": lifetime_validation_dir / lifetime_rules["ceud_class_retention_file"],
             "ceud_scope_comparison": lifetime_validation_dir / lifetime_rules["ceud_scope_comparison_file"],
             "transition_mapping_coverage": lifetime_validation_dir / lifetime_rules["transition_mapping_coverage_file"],
             "mto_survival_decision": lifetime_validation_dir / lifetime_rules["mto_survival_decision_file"],
-            "pooled_retention": survival_interim_dir / lifetime_rules["pooled_estimates_file"],
             "legacy_survival": lifetime_dir / lifetime_rules["legacy_survival_curves_file"],
-            "nlr_survival": lifetime_dir / lifetime_rules["nlr_survival_curves_file"],
-            "source_survival": lifetime_dir / lifetime_rules["source_curves_file"],
-            "transformed_survival": lifetime_dir / lifetime_rules["transformed_curves_file"],
-            "median_lifetimes": lifetime_dir / lifetime_rules["median_lifetimes_file"],
         }
         frames: dict[str, pd.DataFrame] = {}
         for key, artifact_path in artifact_paths.items():
@@ -207,89 +295,54 @@ def load_evidence(
             frames[key] = pd.read_csv(artifact_path, low_memory=False)
         mapping_path = resolve_parameter_path(bundle, road_rules["vehicle_size_class_map_file"])
         frames["mapping_config"] = pd.read_csv(mapping_path, low_memory=False)
+        frames["source_manifest"] = source_manifest
+        frames["scenario_switches"] = pd.DataFrame(
+            [
+                {
+                    "scenario": str(selected_scenario),
+                    "switch": switch,
+                    "value": value,
+                }
+                for switch, value in bundle.scenario.switches.model_dump().items()
+            ]
+        )
         return frames
 
-    return load_evidence, scenario_path
+    return (load_evidence,)
 
 
 @app.cell
-def _(load_evidence, scenario_path):
-    evidence = load_evidence(scenario_path)
+def _(load_evidence, repo_root, scenario_selector):
+    evidence = load_evidence(repo_root / scenario_selector.value)
     return (evidence,)
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## Source integrity
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def source_reconciliation_heading(mo):
-    mo.md("""
-    ### Source reconciliation
-    """)
-    return
-
-
-@app.cell
-def _(alt, chart_ui, evidence, mo, pd):
-    def _build_view():
-        reconciliation = evidence["reconciliation"].copy()
-        for _column in ["source_count", "long_count", "difference"]:
-            reconciliation[_column] = pd.to_numeric(reconciliation[_column], errors="coerce")
-        reconciliation_summary = (
-            reconciliation.groupby("report_year", as_index=False)
-            .agg(
-                source_count=("source_count", "sum"),
-                normalized_count=("long_count", "sum"),
-                status_groups=("stock_status", "size"),
-                unreconciled_groups=("reconciled", lambda values: int((~values.astype(str).str.lower().eq("true")).sum())),
-                absolute_difference=("difference", lambda values: values.abs().sum()),
-            )
-            .sort_values("report_year")
-        )
-        reconciliation_long = reconciliation_summary.melt(
-            id_vars=["report_year"],
-            value_vars=["source_count", "normalized_count"],
-            var_name="measure",
-            value_name="vehicles",
-        )
-        reconciliation_chart = (
-            alt.Chart(reconciliation_long)
-            .mark_line(point=True)
-            .encode(
-                x=alt.X("report_year:O", title="Report year"),
-                y=alt.Y("vehicles:Q", title="Vehicles across statuses", scale=alt.Scale(domain=[50_000_000, 80_000_000])),
-                color=alt.Color("measure:N", title="Count"),
-                strokeDash=alt.StrokeDash("measure:N", title="Count"),
-                tooltip=["report_year:O", "measure:N", alt.Tooltip("vehicles:Q", format=",")],
-            )
-            .properties(width=700, height=300)
-        )
-        reconciliation_difference = reconciliation_summary["absolute_difference"].sum()
-        source_reconciliation_output = mo.vstack([
+def _(evidence, mo):
+    mo.vstack(
+        [
             mo.md("""
-            This tests conservation during normalization, not mapping
-            correctness. `source_count` is the annual Report A total before reshaping;
-            `normalized_count` is the long-status total afterward. A zero absolute
-            difference means registrations were neither created nor lost.
+            The table records the switches used to resolve this notebook's current
+            artifacts and interpretation gates. Changing the selector reloads the routes
+            and switches; it does not regenerate artifacts, so scenario-dependent products
+            must already have been built for the selected configuration.
             """),
-            mo.stat(f"{int(reconciliation_difference):,}", "Absolute reconciliation difference", "Zero means every annual status total is conserved", bordered=True, target_direction="decrease"),
-            chart_ui(reconciliation_chart),
-        ])
-        return source_reconciliation_output
-
-    _build_view()
+            mo.ui.table(
+                evidence["scenario_switches"],
+                selection=None,
+                pagination=False,
+                page_size=10,
+                label="Selected scenario switches",
+            ),
+        ]
+    )
     return
 
 
 @app.cell(hide_code=True)
 def mapping_quality_section(mo):
     mo.md("""
-    ## Mapping quality and unresolved evidence
+    ## 1. Reviewed mapping evidence and unresolved stock
     """)
     return
 
@@ -297,7 +350,7 @@ def mapping_quality_section(mo):
 @app.cell(hide_code=True)
 def registration_status_heading(mo):
     mo.md("""
-    ### Registration-status evidence
+    ### Registration-status context
     """)
     return
 
@@ -504,11 +557,17 @@ def _(STATUS_COLORS, STATUS_ORDER, alt, chart_ui, evidence, mo, pd):
         registration_status_output = mo.vstack(
             [
                 mo.md("""
+                **Summary:** This subsection defines the Report A registration-status
+                context used by the later mapping and transition diagnostics.
+
                 The percentage bars use every fetched Report A edition and their
                 eight registration statuses. Passenger and Commercial use the same
                 status order and colors. 
                 The MTO vehicle population dictionary provides codes and short labels, not complete
-                lifecycle definitions. The interpretations below are working inferences:
+                lifecycle definitions. The interpretations below are working inferences,
+                not source-authored lifecycle transitions. A vehicle can move among these
+                administrative buckets, leave Ontario, re-enter the active stock, or be
+                recoded between editions.
 
                 - **FIT_ACTIVE:** registered, insured, and currently allowed on public roads with valid plates.
                 - **FIT_INACTIVE:** meets fit requirements, but is not currently plated or insured for active road use.
@@ -573,7 +632,7 @@ def _(STATUS_COLORS, STATUS_ORDER, alt, chart_ui, evidence, mo, pd):
 @app.cell(hide_code=True)
 def mapping_progress_heading(mo):
     mo.md("""
-    ### Mapping progress
+    ### Reviewed mapping coverage
     """)
     return
 
@@ -902,6 +961,9 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
         used_family_count = int(family_use["used_by_crosswalk"].fillna(False).sum())
         mapping_progress_output = mo.vstack([
             mo.md("""
+            **Summary:** This subsection measures reviewed mapping coverage by source
+            category, stock, row, model year, and supporting model-family evidence.
+
             This measures the usable scale of the reviewed map and the
             evidence breadth behind it. A Report A *row* is one make/model/model-year
             cohort; fit-active stock is the vehicle count carried by those rows.
@@ -918,11 +980,14 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
 
             mo.md("""
             The row charts partition every edition into LDV-mapped, mapped non-LDV,
-            the four largest
-            unresolved reasons by row count, and an `Other` remainder. These are row
+            the four largest unresolved reasons by row count, and an `Other` remainder. These are row
             shares rather than stock shares; the reasons and their evidence are explained
             in detail immediately below. Non-LDV stock is identified but excluded from
-            LDV weights and survival pooling.
+            LDV weights and survival pooling. “Outside 1981+ scope” is an accounting
+            category, not a failed or unreliable mapping: 1981 is derived as the first
+            eligible transition year, 2016, minus the configured maximum starting age of 35.
+            Older vintages cannot enter the selected age window and are separated so
+            they do not inflate the unresolved-mapping denominator.
             """),
 
             mo.md("""
@@ -935,12 +1000,18 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             chart_ui(family_use_chart),
 
             mo.md("""
-            #### Fit-active mapping coverage by model year and edition
+            ## Coverage by model year and report edition
+
+            **Summary:** These charts show how accepted `FIT_ACTIVE` mapping coverage
+            changes by exact model year in each Report A edition.
+
             The model-year bars reconcile mapped `FIT_ACTIVE` cohort snapshots against
             raw `FIT_ACTIVE` totals for every fetched edition. Grouped bars retain the
             edition dimension instead of averaging coverage across repeated snapshots;
             only model years from 2000 through each report edition are included. The row
             charts apply the reviewed make/model keys directly to every Report A edition.
+            This 2000+ view supports existing-fleet composition; it is separate from the
+            1981 dynamic mapping floor and the age-based survival transition window.
             """),
             mo.vstack([
                 chart_ui(mapping_model_year_chart("PASSENGER")),
@@ -970,7 +1041,7 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
 @app.cell(hide_code=True)
 def unmapped_reasons_heading(mo):
     mo.md("""
-    ### Why stock remains unmapped
+    ### Why reviewed coverage remains incomplete
     """)
     return
 
@@ -1099,6 +1170,9 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
 
         unmapped_reasons_output = mo.vstack([
             mo.md(f"""
+            **Summary:** This subsection partitions unresolved `FIT_ACTIVE` stock by the
+            specific evidence limitation that prevents reviewed mapping.
+
             Each horizontal bar partitions one category and edition's
             unmapped fit-active stock, so every bar sums to 100%. Reason labels are
             assigned from the latest candidate pass by MTO make/model key and projected
@@ -1122,10 +1196,10 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
               composition and age weights, but it does **not** exclude an otherwise
               eligible historical key from the cohort-transition survival estimator.
             - **Strong label candidate, crosswalk not accepted:** this is not a runtime
-              error or a failed model-year test. These {strong_candidate_stock:,} vehicles have an exact or
-              normalized-prefix Ratings label candidate, but mapping acceptance is
-              now carry zero FIT_ACTIVE stock after the approved strong candidates were
-              promoted. Only nonzero unresolved evidence affects the charts below.
+              error or a failed model-year test. After the approved strong candidates were
+              promoted, this reason now carries {strong_candidate_stock:,} FIT_ACTIVE
+              vehicles. A future nonzero value would still require reviewed acceptance;
+              candidate strength alone does not change runtime mapping.
             """),
             mo.vstack([
                 chart_ui(unmapped_share_chart("PASSENGER")),
@@ -1143,7 +1217,7 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
 @app.cell(hide_code=True)
 def highest_unresolved_heading(mo):
     mo.md("""
-    ### Highest-stock unresolved keys
+    ### Highest-stock unresolved make-model keys
     """)
     return
 
@@ -1316,7 +1390,16 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
 
         highest_unresolved_output = mo.vstack([
             mo.md("""
-            **Insight:** one bar now represents one Passenger/Commercial MTO make-model
+            **Summary:** This subsection ranks the highest-stock unresolved MTO make-model
+            keys within each evidence-limitation category.
+
+            - **New review:** `HOND/UDY`→Odyssey, `FORD/SPE`→Escape, `HOND/UCL,UAX`→Civic, `TOYT/MTL`→Corolla, and `NISS/PFI`→Pathfinder have repeated explicit model/VIN-family associations.
+            - **Ford correction:** `EPR`→Explorer and `SPE`→Escape have repeated VIN-family support; `CPE` is a multi-model coupe/body code, while `CEP` and `CPS` lack direct model evidence and remain unresolved.
+            - **Class only:** `FORD/SRW`→F-Series/standard pickup; SRW identifies a configuration, not one exact model.
+            - **Still unresolved:** `FORD/COF` spans Ford commercial models; `HOND/UCS` lacks reliable model/VIN resolution; `NISS/CXT` has early X-Trail evidence but unresolved later use through 2026.
+            - **Earlier reviews retained:** `CHEV/{CZT,SSM}`, `DODG/RPC`, `FORD/{DRW,F/E,F/L,FSE,MGT,SGT,TST}`, `HOND/CCL`, `HYUN/{ESM,SFT}`, `JEEP/GCK`, `MAZD/{M3I,3TR,3SP,3GT,6TR}`, `RAM/RTR`, `TESL/YGE`, and `TOYT/RG4`.
+
+            One bar represents one Passenger/Commercial MTO make-model
             key, with model-year stock shown as colored segments. This exposes twenty
             high-impact keys per reason without repeating one table row for every year.
             For `no normalized make agreement`, candidate columns are omitted because
@@ -1356,7 +1439,7 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
 @app.cell(hide_code=True)
 def fleet_representation_section(mo):
     mo.md("""
-    ## Mapped fleet representation
+    ## 2. Fleet composition and source comparisons
     """)
     return
 
@@ -1364,7 +1447,7 @@ def fleet_representation_section(mo):
 @app.cell(hide_code=True)
 def mapped_composition_heading(mo):
     mo.md("""
-    ### Mapped fleet composition
+    ### Mapped class composition across editions
     """)
     return
 
@@ -1518,21 +1601,38 @@ def _(NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
             .mark_area(interpolate="monotone", opacity=0.85)
             .encode(
                 x=alt.X("model_year:Q", title="Model-year vintage", axis=alt.Axis(format="d", tickMinStep=1)),
-                y=alt.Y("share_of_2000_plus_mapped_stock:Q", title="Share of mapped 2000+ FIT_ACTIVE stock", stack="zero", axis=alt.Axis(format="%")),
+                y=alt.Y(
+                    "fit_active_stock:Q",
+                    title="Mapped FIT_ACTIVE stock",
+                    stack="zero",
+                    axis=alt.Axis(format="~s"),
+                ),
                 color=alt.Color("nlr_atb_class:N", title="NLR ATB class", sort=latest_nlr_order),
-                tooltip=["model_year:O", "nlr_atb_class:N", alt.Tooltip("fit_active_stock:Q", format=","), alt.Tooltip("share_of_2000_plus_mapped_stock:Q", format=".2%")],
+                tooltip=[
+                    "model_year:O",
+                    "nlr_atb_class:N",
+                    alt.Tooltip("fit_active_stock:Q", format=",", title="Mapped FIT_ACTIVE stock"),
+                    alt.Tooltip("share_of_2000_plus_mapped_stock:Q", format=".2%", title="Share of mapped 2000+ stock"),
+                ],
             )
-            .properties(width=760, height=300, title=f"{latest_mapped_year} mapped fleet: 2000-{latest_eligible_vintage} vintage composition")
+            .properties(width=760, height=300, title=f"{latest_mapped_year} mapped fleet: 2000-{latest_eligible_vintage} vintage stock")
         )
 
 
         mapped_composition_output = mo.vstack([
             mo.md("""
-            **Insight:** each horizontal bar is one Report A edition and partitions the
+            **Summary:** This subsection shows how accepted mapped `FIT_ACTIVE` stock is
+            distributed across source-native NRCan classes in each Report A edition.
+
+            Each horizontal bar is one Report A edition and partitions the
             accepted fit-active fleet into source-native NRCan Ratings classes. Car and
             Light Truck are separated because their class vocabularies differ. These are
             relative shares of mapped stock, so a changing segment can reflect both fleet
-            evolution and changing mapping coverage. NRCan class order is fixed from
+            evolution and changing mapping coverage. The calculation does not reweight
+            mapped classes to represent unresolved stock, so every composition result is
+            conditional on the accepted crosswalk.
+
+            NRCan class order is fixed from
             smaller to larger size classes within each source body-type family, so both
             stack position and color remain stable across editions. Two-seaters and vans
             follow the size-ordered classes because they are separate source categories.
@@ -1541,9 +1641,10 @@ def _(NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
             chart_ui(edition_composition_chart("Light Truck")),
             mo.md("""
             The area chart below isolates the latest snapshot and model-year vintages
-            from 2000 onward. Each colored area is an NLR ATB class contribution divided
-            by all mapped 2000+ FIT_ACTIVE stock; the class-vintage contributions sum to
-            100% across the displayed data.
+            from 2000 onward. Each colored area is an NLR ATB class contribution in
+            absolute mapped FIT_ACTIVE stock from the 2025 fleet; the class-vintage
+            contributions accumulate to the total mapped 2000+ stock across the
+            displayed data.
             """),
             chart_ui(latest_vintage_area),
             mo.ui.table(edition_ratings_composition.sort_values(["nrcan_ceud_class", "report_year", "within_edition_ceud_share"], ascending=[True, True, False]), selection=None, pagination=True, page_size=10, format_mapping={"within_edition_ceud_share": "{:.2%}"}),
@@ -1555,9 +1656,167 @@ def _(NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
 
 
 @app.cell(hide_code=True)
-def top_mapped_heading(mo):
-    mo.md("""
-    ### Top mapped observations
+def _(mo):
+    mo.md(r"""
+    ### Latest mapped fleet by model year
+    """)
+    return
+
+
+@app.cell
+def _(NLR_ORDER, NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
+    def _build_view():
+        age_source = evidence["mapped_fleet"].loc[evidence["mapped_fleet"]["mapping_accepted"].astype(str).str.lower().eq("true")].copy()
+        for _column in ["FIT_ACTIVE", "MODEL_YEAR", "report_year"]:
+            age_source[_column] = pd.to_numeric(age_source[_column], errors="coerce")
+        latest_report_year = int(age_source["report_year"].max())
+        age_source = age_source.loc[
+            age_source["report_year"].eq(latest_report_year)
+            & age_source["MODEL_YEAR"].between(2000, latest_report_year)
+            & age_source["FIT_ACTIVE"].gt(0)
+        ].copy()
+        age_source["age"] = latest_report_year - age_source["MODEL_YEAR"]
+
+
+        def empirical_composition(class_column: str) -> pd.DataFrame:
+            result = (
+                age_source.groupby(["nrcan_ceud_class", class_column, "MODEL_YEAR", "age"], as_index=False, dropna=False)["FIT_ACTIVE"]
+                .sum()
+                .rename(columns={"MODEL_YEAR": "model_year", "FIT_ACTIVE": "fit_active_stock"})
+            )
+            result["within_model_year_share"] = result["fit_active_stock"] / result.groupby(["nrcan_ceud_class", "model_year"])["fit_active_stock"].transform("sum")
+            return result
+
+
+        nlr_model_year_composition = empirical_composition("nlr_atb_class")
+        nrcan_model_year_composition = empirical_composition("nrcan_vehicle_class")
+        wards = evidence["wards_comparison"].copy()
+        wards["year"] = pd.to_numeric(wards["year"], errors="coerce").astype("Int64")
+        wards["market_share"] = pd.to_numeric(wards["market_share"], errors="coerce")
+        wards = wards.loc[wards["year"].isin([2018, 2021])].copy()
+        wards_nlr = wards.groupby(["nrcan_ceud_class", "nlr_atb_class", "year"], as_index=False)["market_share"].sum()
+        wards_nrcan = wards.groupby(["nrcan_ceud_class", "nrcan_vehicle_class", "year"], as_index=False)["market_share"].sum()
+
+
+        def model_year_comparison_chart(empirical: pd.DataFrame, wards_frame: pd.DataFrame, ceud_class: str, class_column: str, legend_title: str) -> alt.Chart:
+            empirical_rows = empirical.loc[
+                empirical["nrcan_ceud_class"].eq(ceud_class)
+            ].copy()
+            wards_rows = wards_frame.loc[
+                wards_frame["nrcan_ceud_class"].eq(ceud_class)
+            ].copy()
+            observed_classes = set(
+                pd.concat(
+                    [empirical_rows[class_column], wards_rows[class_column]],
+                    ignore_index=True,
+                )
+                .dropna()
+                .astype(str)
+            )
+            preferred_order = (
+                NLR_ORDER
+                if class_column == "nlr_atb_class"
+                else NRCAN_CLASS_ORDER[ceud_class]
+            )
+            class_domain = [
+                vehicle_class
+                for vehicle_class in preferred_order
+                if vehicle_class in observed_classes
+            ]
+            class_domain.extend(sorted(observed_classes - set(class_domain)))
+            stack_order = {
+                vehicle_class: order
+                for order, vehicle_class in enumerate(class_domain)
+            }
+            empirical_rows["stack_order"] = empirical_rows[class_column].map(
+                stack_order
+            )
+            wards_rows["stack_order"] = wards_rows[class_column].map(stack_order)
+            areas = (
+                alt.Chart(empirical_rows)
+                .mark_area()
+                .encode(
+                    x=alt.X("model_year:Q", title="Model year", scale=alt.Scale(domain=[2000, latest_report_year]), axis=alt.Axis(format="d")),
+                    y=alt.Y(
+                        "fit_active_stock:Q",
+                        title="Mapped FIT_ACTIVE stock",
+                        stack="zero",
+                        axis=alt.Axis(format="~s"),
+                        scale=alt.Scale(zero=True, nice=True),
+                    ),
+                    color=alt.Color(f"{class_column}:N", title=legend_title, scale=alt.Scale(domain=class_domain, scheme="tableau10"), legend=alt.Legend(orient="right")),
+                    order=alt.Order("stack_order:Q", sort="ascending"),
+                    tooltip=[alt.Tooltip(f"{class_column}:N", title=legend_title), "model_year:Q", "age:Q", alt.Tooltip("fit_active_stock:Q", format=","), alt.Tooltip("within_model_year_share:Q", format=".2%")],
+                )
+                .properties(width=650, height=280, title="Ontario mapped stock")
+            )
+            wards_bars = (
+                alt.Chart(wards_rows)
+                .mark_bar()
+                .encode(
+                    x=alt.X("year:O", title="Wards year", axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y("market_share:Q", title="Wards new-sales share", stack="zero", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
+                    color=alt.Color(f"{class_column}:N", title=legend_title, scale=alt.Scale(domain=class_domain, scheme="tableau10"), legend=alt.Legend(orient="right")),
+                    order=alt.Order("stack_order:Q", sort="ascending"),
+                    tooltip=[alt.Tooltip(f"{class_column}:N", title=legend_title), alt.Tooltip("year:Q", title="Wards sales year"), alt.Tooltip("market_share:Q", format=".2%", title="Wards market share")],
+                )
+                .properties(width=150, height=280, title="Wards sales")
+            )
+            return (
+                alt.hconcat(areas, wards_bars, spacing=18)
+                .resolve_scale(color="shared", y="independent")
+                .configure_legend(orient="right")
+                .properties(title=ceud_class)
+            )
+
+
+        def composition_tab(empirical: pd.DataFrame, wards_frame: pd.DataFrame, class_column: str, legend_title: str) -> mo.Html:
+            return mo.vstack([
+                chart_ui(model_year_comparison_chart(empirical, wards_frame, "Car", class_column, legend_title)),
+                chart_ui(model_year_comparison_chart(empirical, wards_frame, "Light Truck", class_column, legend_title)),
+                mo.ui.tabs({
+                    "MTO latest-stock table": mo.ui.table(empirical.sort_values(["nrcan_ceud_class", class_column, "model_year"]), selection=None, pagination=True, page_size=10, format_mapping={"within_model_year_share": "{:.2%}"}),
+                    "Wards 2018/2021 table": mo.ui.table(wards_frame.sort_values(["nrcan_ceud_class", "year", class_column]), selection=None, pagination=False, page_size=10, format_mapping={"market_share": "{:.2%}"}),
+                }),
+            ])
+
+
+        age_distribution_output = mo.vstack([
+            mo.md("""
+            **Summary:** This subsection shows the model-year distribution of the latest
+            accepted mapped Car and Light Truck stock.
+
+            This uses only accepted `FIT_ACTIVE` stock from the latest
+            Report A and retains model years 2000 through the report year. It does not
+            use the scenario median-lifetime or maximum-age cutoff. The 2000 floor is the
+            existing-fleet representation scope; it is not the 1981 mapping-eligibility
+            floor and is not applied to survival-transition evidence. Unmapped LDV stock
+            is not assigned to the displayed classes or used to normalize them.
+
+            The stacked areas show the absolute mapped `FIT_ACTIVE` stock observed at each
+            model year, with an automatically scaled stock axis so the fleet-size trend is
+            visible without a fixed percentage ceiling. The compact stacked bars at right
+            remain Wards 2018 and 2021 new-sales percentages and therefore use their own
+            labelled 0-100% axis. Wards describes Canadian new sales, while the areas
+            describe Ontario surviving registered stock, so differences reflect geography,
+            retirement, migration, mapping coverage, and sales history; the bars are
+            benchmarks, not inputs to the empirical composition.
+            """),
+            mo.ui.tabs({
+                "NLR ATB aggregation": composition_tab(nlr_model_year_composition, wards_nlr, "nlr_atb_class", "NLR ATB class"),
+                "NRCan Ratings aggregation": composition_tab(nrcan_model_year_composition, wards_nrcan, "nrcan_vehicle_class", "NRCan Ratings class"),
+            }),
+        ])
+        return age_distribution_output
+
+    _build_view()
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Highest-stock mapped families
     """)
     return
 
@@ -1667,9 +1926,9 @@ def _(alt, chart_ui, evidence, mo, pd):
                 alt.Chart(rows)
                 .mark_rect(stroke="white", strokeWidth=0.5)
                 .encode(
-                    x=alt.X("model_year:O", 
-                            title="Model year", 
-                            sort="ascending", 
+                    x=alt.X("model_year:O",
+                            title="Model year",
+                            sort="ascending",
                             axis=alt.Axis(labelAngle=0, labelExpr="\"'\"+substring(datum.label, 2)"),
                     ),
                     y=alt.Y(
@@ -1691,7 +1950,10 @@ def _(alt, chart_ui, evidence, mo, pd):
 
         top_mapped_output = mo.vstack([
             mo.md("""
-            **Insight:** each heat-map cell is the accepted fit-active stock for one
+            **Summary:** This subsection identifies the highest-stock accepted mapped
+            families and shows their exact model-year composition.
+
+            Each heat-map cell is the accepted fit-active stock for one
             normalized make-model and exact model year. Only model years from 1990
             through the latest report year are shown. Families are ranked once by their
             total observation count across those years, and the categorical y-axis is
@@ -1728,9 +1990,9 @@ def _(alt, chart_ui, evidence, mo, pd):
 
 
 @app.cell(hide_code=True)
-def least_mapped_heading(mo):
-    mo.md("""
-    ### Mapped observations by Q1-Q3 buckets
+def _(mo):
+    mo.md(r"""
+    ### Mapped-family samples by stock percentile
     """)
     return
 
@@ -1906,7 +2168,10 @@ def _(alt, chart_ui, evidence, mo, pd):
         least_mapped_output = mo.vstack(
             [
                 mo.md("""
-                **Insight:** each heat map draws ten random Car families and ten random
+                **Summary:** This subsection samples mapped families from the first three
+                within-class stock quartiles to expose lower-volume mapping examples.
+
+                Each heat map draws ten random Car families and ten random
                 Light Truck families from one within-class fit-active-stock percentile
                 bucket. Rows are then ordered by descending family stock so the scale
                 remains interpretable even though the sampled families change. Re-run
@@ -1981,152 +2246,702 @@ def _(alt, chart_ui, evidence, mo, pd):
 
 
 @app.cell(hide_code=True)
-def existing_stock_heading(mo):
+def fleet_age_source_comparison_heading(mo):
     mo.md("""
-    ### Existing-stock model-year composition
+    ### Age-distribution sensitivity: Report A versus Report 5
     """)
     return
 
 
 @app.cell
-def _(NLR_ORDER, NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
+def _(alt, chart_ui, evidence, mo, pd):
     def _build_view():
-        age_source = evidence["mapped_fleet"].loc[evidence["mapped_fleet"]["mapping_accepted"].astype(str).str.lower().eq("true")].copy()
-        for _column in ["FIT_ACTIVE", "MODEL_YEAR", "report_year"]:
-            age_source[_column] = pd.to_numeric(age_source[_column], errors="coerce")
-        latest_report_year = int(age_source["report_year"].max())
-        age_source = age_source.loc[
-            age_source["report_year"].eq(latest_report_year)
-            & age_source["MODEL_YEAR"].between(2000, latest_report_year)
-            & age_source["FIT_ACTIVE"].gt(0)
+        report_a = evidence["mapped_fleet"].copy()
+        for column in ["report_year", "MODEL_YEAR", "FIT_ACTIVE"]:
+            report_a[column] = pd.to_numeric(report_a[column], errors="coerce")
+        latest_report_a_year = int(report_a["report_year"].max())
+        report_a = report_a.loc[
+            report_a["report_year"].eq(latest_report_a_year)
+            & report_a["mapping_accepted"].astype(str).str.casefold().eq("true")
+            & report_a["nrcan_ceud_class"].isin(["Car", "Light Truck"])
+            & report_a["MODEL_YEAR"].between(2000, latest_report_a_year)
+            & report_a["FIT_ACTIVE"].gt(0)
         ].copy()
-        age_source["age"] = latest_report_year - age_source["MODEL_YEAR"]
-
-
-        def empirical_composition(class_column: str) -> pd.DataFrame:
-            result = (
-                age_source.groupby(["nrcan_ceud_class", class_column, "MODEL_YEAR", "age"], as_index=False, dropna=False)["FIT_ACTIVE"]
-                .sum()
-                .rename(columns={"MODEL_YEAR": "model_year", "FIT_ACTIVE": "fit_active_stock"})
+        report_a["age"] = latest_report_a_year - report_a["MODEL_YEAR"]
+        report_a_distribution = (
+            report_a.groupby(
+                ["nrcan_ceud_class", "MODEL_YEAR", "age"], as_index=False
+            )["FIT_ACTIVE"]
+            .sum()
+            .rename(
+                columns={
+                    "nrcan_ceud_class": "source_class",
+                    "MODEL_YEAR": "model_year",
+                    "FIT_ACTIVE": "fit_active_stock",
+                }
             )
-            result["within_model_year_share"] = result["fit_active_stock"] / result.groupby(["nrcan_ceud_class", "model_year"])["fit_active_stock"].transform("sum")
-            return result
-
-
-        nlr_model_year_composition = empirical_composition("nlr_atb_class")
-        nrcan_model_year_composition = empirical_composition("nrcan_vehicle_class")
-        wards = evidence["wards_comparison"].copy()
-        wards["year"] = pd.to_numeric(wards["year"], errors="coerce").astype("Int64")
-        wards["market_share"] = pd.to_numeric(wards["market_share"], errors="coerce")
-        wards = wards.loc[wards["year"].isin([2018, 2021])].copy()
-        wards_nlr = wards.groupby(["nrcan_ceud_class", "nlr_atb_class", "year"], as_index=False)["market_share"].sum()
-        wards_nrcan = wards.groupby(["nrcan_ceud_class", "nrcan_vehicle_class", "year"], as_index=False)["market_share"].sum()
-
-
-        def model_year_comparison_chart(empirical: pd.DataFrame, wards_frame: pd.DataFrame, ceud_class: str, class_column: str, legend_title: str) -> alt.Chart:
-            empirical_rows = empirical.loc[
-                empirical["nrcan_ceud_class"].eq(ceud_class)
-            ].copy()
-            wards_rows = wards_frame.loc[
-                wards_frame["nrcan_ceud_class"].eq(ceud_class)
-            ].copy()
-            observed_classes = set(
-                pd.concat(
-                    [empirical_rows[class_column], wards_rows[class_column]],
-                    ignore_index=True,
-                )
-                .dropna()
-                .astype(str)
-            )
-            preferred_order = (
-                NLR_ORDER
-                if class_column == "nlr_atb_class"
-                else NRCAN_CLASS_ORDER[ceud_class]
-            )
-            class_domain = [
-                vehicle_class
-                for vehicle_class in preferred_order
-                if vehicle_class in observed_classes
-            ]
-            class_domain.extend(sorted(observed_classes - set(class_domain)))
-            stack_order = {
-                vehicle_class: order
-                for order, vehicle_class in enumerate(class_domain)
+        )
+        report_a_distribution["age_share"] = report_a_distribution[
+            "fit_active_stock"
+        ] / report_a_distribution.groupby("source_class")[
+            "fit_active_stock"
+        ].transform("sum")
+        report_a_distribution["report_year"] = latest_report_a_year
+        report_a_distribution["data_source"] = "Report A: mapped FIT_ACTIVE"
+        report_a_distribution["series"] = report_a_distribution[
+            "source_class"
+        ].map(
+            {
+                "Car": "Report A: Car",
+                "Light Truck": "Report A: Light Truck",
             }
-            empirical_rows["stack_order"] = empirical_rows[class_column].map(
-                stack_order
+        )
+        report_a_distribution["comparison"] = report_a_distribution[
+            "source_class"
+        ].map(
+            {
+                "Car": "Car versus Passenger",
+                "Light Truck": "Light Truck versus Commercial",
+            }
+        )
+
+        report5 = evidence["report5_distribution"].copy()
+        for column in ["year", "AGE", "VALUE", "NATIVE_COUNT"]:
+            report5[column] = pd.to_numeric(report5[column], errors="coerce")
+        latest_report5_year = int(report5["year"].max())
+        report5 = report5.loc[
+            report5["year"].eq(latest_report5_year)
+            & report5["VEHICLE_CLASS"].isin(["PASSENGER", "COMMERCIAL"])
+            & report5["VALUE"].between(2000, latest_report5_year)
+            & report5["NATIVE_COUNT"].gt(0)
+        ].copy()
+        report5_distribution = (
+            report5.groupby(
+                ["VEHICLE_CLASS", "VALUE", "AGE"], as_index=False
+            )["NATIVE_COUNT"]
+            .sum()
+            .rename(
+                columns={
+                    "VEHICLE_CLASS": "source_class",
+                    "VALUE": "model_year",
+                    "AGE": "age",
+                    "NATIVE_COUNT": "fit_active_stock",
+                }
             )
-            wards_rows["stack_order"] = wards_rows[class_column].map(stack_order)
-            areas = (
-                alt.Chart(empirical_rows)
-                .mark_area()
+        )
+        report5_distribution["age_share"] = report5_distribution[
+            "fit_active_stock"
+        ] / report5_distribution.groupby("source_class")[
+            "fit_active_stock"
+        ].transform("sum")
+        report5_distribution["report_year"] = latest_report5_year
+        report5_distribution["data_source"] = "Report 5: all FIT_ACTIVE"
+        report5_distribution["series"] = report5_distribution[
+            "source_class"
+        ].map(
+            {
+                "PASSENGER": "Report 5: Passenger",
+                "COMMERCIAL": "Report 5: Commercial",
+            }
+        )
+        report5_distribution["comparison"] = report5_distribution[
+            "source_class"
+        ].map(
+            {
+                "PASSENGER": "Car versus Passenger",
+                "COMMERCIAL": "Light Truck versus Commercial",
+            }
+        )
+
+        age_comparison = pd.concat(
+            [report_a_distribution, report5_distribution],
+            ignore_index=True,
+            sort=False,
+        )
+
+        def age_distribution_chart(comparison: str) -> alt.Chart:
+            rows = age_comparison.loc[
+                age_comparison["comparison"].eq(comparison)
+            ]
+            series_order = (
+                ["Report A: Car", "Report 5: Passenger"]
+                if comparison == "Car versus Passenger"
+                else ["Report A: Light Truck", "Report 5: Commercial"]
+            )
+            series_encoding = alt.Color(
+                "series:N",
+                title="Source class",
+                sort=series_order,
+                scale=alt.Scale(
+                    domain=series_order,
+                    range=["#457b9d", "#e76f51"],
+                ),
+                legend=alt.Legend(orient="right"),
+            )
+            lines = (
+                alt.Chart(rows)
+                .mark_line(interpolate="linear", strokeWidth=2.5)
                 .encode(
-                    x=alt.X("model_year:Q", title="Model year", scale=alt.Scale(domain=[2000, latest_report_year]), axis=alt.Axis(format="d")),
-                    y=alt.Y(
-                        "fit_active_stock:Q",
-                        title="Mapped FIT_ACTIVE stock",
-                        stack="zero",
-                        axis=alt.Axis(format="~s"),
-                        scale=alt.Scale(zero=True, nice=True),
+                    x=alt.X(
+                        "age:Q",
+                        title="Vehicle age",
+                        axis=alt.Axis(format="d", tickMinStep=1),
                     ),
-                    color=alt.Color(f"{class_column}:N", title=legend_title, scale=alt.Scale(domain=class_domain, scheme="tableau10"), legend=alt.Legend(orient="right")),
-                    order=alt.Order("stack_order:Q", sort="ascending"),
-                    tooltip=[alt.Tooltip(f"{class_column}:N", title=legend_title), "model_year:Q", "age:Q", alt.Tooltip("fit_active_stock:Q", format=","), alt.Tooltip("within_model_year_share:Q", format=".2%")],
+                    y=alt.Y(
+                        "age_share:Q",
+                        title="Share of 2000+ class stock",
+                        axis=alt.Axis(format="%"),
+                    ),
+                    color=series_encoding,
                 )
-                .properties(width=650, height=280, title="Ontario mapped stock")
             )
-            wards_bars = (
-                alt.Chart(wards_rows)
+            points = (
+                alt.Chart(rows)
+                .mark_circle(size=50, opacity=0.8)
+                .encode(
+                    x="age:Q",
+                    y="age_share:Q",
+                    color=series_encoding,
+                    tooltip=[
+                        alt.Tooltip("series:N", title="Source class"),
+                        alt.Tooltip("report_year:O", title="Snapshot year"),
+                        alt.Tooltip("model_year:O", title="Model year"),
+                        alt.Tooltip("age:Q", title="Age"),
+                        alt.Tooltip(
+                            "fit_active_stock:Q",
+                            format=",",
+                            title="FIT_ACTIVE stock",
+                        ),
+                        alt.Tooltip(
+                            "age_share:Q",
+                            format=".2%",
+                            title="Within-class share",
+                        ),
+                    ],
+                )
+            )
+            return (lines + points).properties(
+                width=700,
+                height=300,
+                title=comparison,
+            )
+
+        age_comparison_output = mo.vstack(
+            [
+                mo.md("""
+                **Summary:** This subsection compares the 2000+ fleet-age shapes implied
+                by mapped Report A classes and unmapped Report 5 source classes.
+
+                Both series are reconstructed from absolute `FIT_ACTIVE` counts, filtered
+                to model years 2000 through each source's latest snapshot, and normalized
+                again within the displayed source class. Report A uses only reviewed mapped
+                LDV rows and produces Car/Light Truck; Report 5 uses its broader
+                Passenger/Commercial classes without make-model mapping. The paired labels
+                are therefore deliberately approximate rather than equivalent.
+
+                These shapes diagnose the source choice for distributing NRCan CEUD stock
+                over existing-fleet vintages. They do not replace the published age weights:
+                those remain conditional on mapping and on the downstream stock-cohort
+                cutoff. When `survival_curves` is false, accepted median-equivalent ages
+                bound those cohort distributions; when it is true, `survival_curve_max_age`
+                bounds represented cohorts. Neither cutoff creates or replaces an individual
+                technology-lifetime parameter. Differences can reflect class scope, mapping
+                coverage, and Report-specific construction as well as genuine fleet
+                composition.
+                """),
+                chart_ui(age_distribution_chart("Car versus Passenger")),
+                chart_ui(
+                    age_distribution_chart("Light Truck versus Commercial")
+                ),
+                mo.ui.table(
+                    age_comparison.sort_values(
+                        ["comparison", "series", "age"]
+                    ),
+                    selection=None,
+                    pagination=True,
+                    page_size=10,
+                    format_mapping={"age_share": "{:.2%}"},
+                    label="Report A and Report 5 age-distribution audit rows",
+                ),
+            ]
+        )
+        return age_comparison_output
+
+    _build_view()
+    return
+
+
+@app.cell(hide_code=True)
+def mhdv_weight_source_comparison_heading(mo):
+    mo.md("""
+    ### MHDV GVWR shares: Report 4 versus Wards
+    """)
+    return
+
+
+@app.cell
+def _(alt, chart_ui, evidence, mo, pd):
+    def _build_view():
+        weight_class_order = [
+            "Class 3",
+            "Class 4",
+            "Class 5",
+            "Class 6",
+            "Class 7",
+            "Class 8",
+        ]
+        epa_to_weight_class = {
+            "MDV3": "Class 3",
+            "MDV4": "Class 4",
+            "MDV5": "Class 5",
+            "MDV6": "Class 6",
+            "MDV7": "Class 7",
+            "MDV8": "Class 8",
+        }
+        target_class = {
+            "Class 3": "Medium Trucks",
+            "Class 4": "Medium Trucks",
+            "Class 5": "Medium Trucks",
+            "Class 6": "Medium Trucks",
+            "Class 7": "Medium Trucks",
+            "Class 8": "Heavy Trucks",
+        }
+
+        report4 = evidence["report4_distribution"].copy()
+        for column in ["year", "NATIVE_COUNT", "SHARE"]:
+            report4[column] = pd.to_numeric(report4[column], errors="coerce")
+        report4 = report4.loc[
+            report4["EPA_GVWR"].isin(epa_to_weight_class)
+        ].copy()
+        report4["weight_class"] = report4["EPA_GVWR"].map(
+            epa_to_weight_class
+        )
+        report4["target_vehicle_class"] = report4["weight_class"].map(
+            target_class
+        )
+        report4["source_share"] = report4["NATIVE_COUNT"] / report4.groupby(
+            "target_vehicle_class"
+        )["NATIVE_COUNT"].transform("sum")
+        report4["data_source"] = "MTO Report 4"
+        report4 = report4.rename(
+            columns={"year": "source_year", "NATIVE_COUNT": "native_count"}
+        )
+
+        wards = evidence["wards_comparison"].copy()
+        for column in ["year", "market_share"]:
+            wards[column] = pd.to_numeric(wards[column], errors="coerce")
+        wards = wards.loc[
+            wards["vehicle_scope"].eq("mhdv")
+            & wards["wards_size_class"].isin(weight_class_order)
+        ].copy()
+        wards = wards.rename(
+            columns={
+                "wards_size_class": "weight_class",
+                "nrcan_ceud_class": "target_vehicle_class",
+                "year": "source_year",
+                "market_share": "source_share",
+            }
+        )
+        wards["native_count"] = pd.NA
+        wards["EPA_GVWR"] = pd.NA
+        wards["data_source"] = "Wards reviewed shares"
+
+        weight_comparison = pd.concat(
+            [
+                report4[
+                    [
+                        "target_vehicle_class",
+                        "weight_class",
+                        "source_year",
+                        "source_share",
+                        "native_count",
+                        "EPA_GVWR",
+                        "data_source",
+                    ]
+                ],
+                wards[
+                    [
+                        "target_vehicle_class",
+                        "weight_class",
+                        "source_year",
+                        "source_share",
+                        "native_count",
+                        "EPA_GVWR",
+                        "data_source",
+                    ]
+                ],
+            ],
+            ignore_index=True,
+        )
+        weight_comparison["weight_class_order"] = weight_comparison[
+            "weight_class"
+        ].map(
+            {weight_class: order for order, weight_class in enumerate(weight_class_order)}
+        )
+
+        source_order = ["MTO Report 4", "Wards reviewed shares"]
+        source_encoding = alt.Color(
+            "data_source:N",
+            title="Evidence source",
+            sort=source_order,
+            scale=alt.Scale(
+                domain=source_order,
+                range=["#457b9d", "#e76f51"],
+            ),
+            legend=alt.Legend(orient="right"),
+        )
+
+        def weight_share_chart(vehicle_class: str) -> alt.Chart:
+            rows = weight_comparison.loc[
+                weight_comparison["target_vehicle_class"].eq(vehicle_class)
+            ]
+            return (
+                alt.Chart(rows)
                 .mark_bar()
                 .encode(
-                    x=alt.X("year:O", title="Wards year", axis=alt.Axis(labelAngle=0)),
-                    y=alt.Y("market_share:Q", title="Wards new-sales share", stack="zero", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
-                    color=alt.Color(f"{class_column}:N", title=legend_title, scale=alt.Scale(domain=class_domain, scheme="tableau10"), legend=alt.Legend(orient="right")),
-                    order=alt.Order("stack_order:Q", sort="ascending"),
-                    tooltip=[alt.Tooltip(f"{class_column}:N", title=legend_title), alt.Tooltip("year:Q", title="Wards sales year"), alt.Tooltip("market_share:Q", format=".2%", title="Wards market share")],
+                    x=alt.X(
+                        "weight_class:N",
+                        title="GVWR class",
+                        sort=weight_class_order,
+                        axis=alt.Axis(labelAngle=0),
+                    ),
+                    xOffset=alt.XOffset("data_source:N", sort=source_order),
+                    y=alt.Y(
+                        "source_share:Q",
+                        title="Share within target truck class",
+                        axis=alt.Axis(format="%"),
+                        scale=alt.Scale(domain=[0, 1]),
+                    ),
+                    color=source_encoding,
+                    tooltip=[
+                        alt.Tooltip(
+                            "target_vehicle_class:N", title="Target truck class"
+                        ),
+                        alt.Tooltip("weight_class:N", title="GVWR class"),
+                        alt.Tooltip("data_source:N", title="Evidence source"),
+                        alt.Tooltip("source_year:O", title="Source year"),
+                        alt.Tooltip(
+                            "native_count:Q",
+                            format=",",
+                            title="Report 4 FIT_ACTIVE",
+                        ),
+                        alt.Tooltip(
+                            "source_share:Q",
+                            format=".2%",
+                            title="Within-class share",
+                        ),
+                    ],
                 )
-                .properties(width=150, height=280, title="Wards sales")
-            )
-            return (
-                alt.hconcat(areas, wards_bars, spacing=18)
-                .resolve_scale(color="shared", y="independent")
-                .configure_legend(orient="right")
-                .properties(title=ceud_class)
+                .properties(width=700, height=280, title=vehicle_class)
             )
 
+        mhdv_weight_output = mo.vstack(
+            [
+                mo.md("""
+                **Summary:** This subsection compares Report 4 and Wards shares for
+                disaggregating medium-duty truck NLR ATB parameters.
 
-        def composition_tab(empirical: pd.DataFrame, wards_frame: pd.DataFrame, class_column: str, legend_title: str) -> mo.Html:
-            return mo.vstack([
-                chart_ui(model_year_comparison_chart(empirical, wards_frame, "Car", class_column, legend_title)),
-                chart_ui(model_year_comparison_chart(empirical, wards_frame, "Light Truck", class_column, legend_title)),
-                mo.ui.tabs({
-                    "MTO latest-stock table": mo.ui.table(empirical.sort_values(["nrcan_ceud_class", class_column, "model_year"]), selection=None, pagination=True, page_size=10, format_mapping={"within_model_year_share": "{:.2%}"}),
-                    "Wards 2018/2021 table": mo.ui.table(wards_frame.sort_values(["nrcan_ceud_class", "year", class_column]), selection=None, pagination=False, page_size=10, format_mapping={"market_share": "{:.2%}"}),
-                }),
-            ])
+                Report 4 assigns the latest Ontario Commercial `FIT_ACTIVE` stock to EPA
+                GVWR bins using each source interval's upper kilogram bound converted to
+                pounds. This comparison keeps MDV3–MDV8, maps them to Classes 3–8, and
+                renormalizes Report 4 within Medium Trucks (Classes 3–7) and Heavy Trucks
+                (Class 8). LDT1–2, LDT3–4, and MDV2b are outside this MHDV comparison.
+
+                Wards uses the reviewed Class 3–8 shares from
+                `vehicle_class_market_shares.csv`: Classes 3–7 sum to one within Medium
+                Trucks and Class 8 is the sole Heavy Truck class. The sources are not
+                like-for-like—Report 4 is Ontario registered stock, while Wards is Canadian
+                sales evidence from a different year—so the bars diagnose the choice of
+                weight-class disaggregation rather than validate one source against the
+                other. These shares are relevant only when combining NLR ATB MHDV
+                efficiency and cost parameters; they do not alter CEUD stock totals,
+                LDV age weights, or survival schedules.
+
+                Only Medium Trucks are charted because Classes 3–7 contain a meaningful
+                within-class distribution. Heavy Trucks contain only Class 8 in both
+                sources, so their normalized share is mechanically 100%; the table retains
+                the Class 8 audit rows, but a separate Heavy Truck chart would add no
+                information.
+                """),
+                chart_ui(weight_share_chart("Medium Trucks")),
+                # chart_ui(weight_share_chart("Heavy Trucks")),
+                mo.ui.table(
+                    weight_comparison.sort_values(
+                        [
+                            "target_vehicle_class",
+                            "weight_class_order",
+                            "data_source",
+                        ]
+                    ),
+                    selection=None,
+                    pagination=True,
+                    page_size=10,
+                    format_mapping={"source_share": "{:.2%}"},
+                    label="Report 4 and Wards MHDV disaggregation audit rows",
+                ),
+            ]
+        )
+        return mhdv_weight_output
+
+    _build_view()
+    return
 
 
-        age_distribution_output = mo.vstack([
-            mo.md("""
-            **Insight:** this uses only accepted `FIT_ACTIVE` stock from the latest
-            Report A and retains model years 2000 through the report year. It does not
-            use the scenario median-lifetime or maximum-age cutoff.
+@app.cell(hide_code=True)
+def mapped_stock_sales_validation_heading(mo):
+    mo.md("""
+    ### Mapped MTO versus NRCan CEUD stock and sales
+    """)
+    return
 
-            The stacked areas show the absolute mapped `FIT_ACTIVE` stock observed at each
-            model year, with an automatically scaled stock axis so the fleet-size trend is
-            visible without a fixed percentage ceiling. The compact stacked bars at right
-            remain Wards 2018 and 2021 new-sales percentages and therefore use their own
-            labelled 0-100% axis. Wards describes Canadian new sales, while the areas
-            describe Ontario surviving registered stock, so differences reflect geography,
-            retirement, migration, mapping coverage, and sales history; the bars are
-            benchmarks, not inputs to the empirical composition.
-            """),
-            mo.ui.tabs({
-                "NLR ATB aggregation": composition_tab(nlr_model_year_composition, wards_nlr, "nlr_atb_class", "NLR ATB class"),
-                "NRCan Ratings aggregation": composition_tab(nrcan_model_year_composition, wards_nrcan, "nrcan_vehicle_class", "NRCan Ratings class"),
-            }),
-        ])
-        return age_distribution_output
+
+@app.cell
+def _(alt, chart_ui, evidence, mo, pd):
+    def _build_view():
+        comparison_years = list(range(2016, 2024))
+        vehicle_class_order = ["Car", "Light Truck"]
+        data_source_order = ["MTO mapped FIT_ACTIVE", "NRCan CEUD"]
+
+        mto_rows = evidence["status_long"].copy()
+        for column in ["report_year", "MODEL_YEAR", "native_count"]:
+            mto_rows[column] = pd.to_numeric(mto_rows[column], errors="coerce")
+
+        mto_crosswalk = evidence["mapping_config"].loc[
+            evidence["mapping_config"]["entry_type"].eq("mto_crosswalk"),
+            [
+                "mto_make_code",
+                "mto_model_code",
+                "model_year_from",
+                "model_year_to",
+                "nrcan_ceud_class",
+            ],
+        ].copy()
+        for column in ["model_year_from", "model_year_to"]:
+            mto_crosswalk[column] = pd.to_numeric(
+                mto_crosswalk[column], errors="coerce"
+            ).astype(int)
+        mto_crosswalk = mto_crosswalk.assign(
+            MODEL_YEAR=mto_crosswalk.apply(
+                lambda row: list(
+                    range(int(row["model_year_from"]), int(row["model_year_to"]) + 1)
+                ),
+                axis=1,
+            )
+        ).explode("MODEL_YEAR")
+        mto_crosswalk["MODEL_YEAR"] = mto_crosswalk["MODEL_YEAR"].astype(int)
+        mto_crosswalk = mto_crosswalk.drop_duplicates(
+            ["mto_make_code", "mto_model_code", "MODEL_YEAR"]
+        )
+
+        mapped_mto_rows = mto_rows.loc[
+            mto_rows["stock_status"].eq("FIT_ACTIVE")
+            & mto_rows["VEHICLE_CLASS"].isin(["PASSENGER", "COMMERCIAL"])
+            & mto_rows["report_year"].isin(comparison_years)
+        ].merge(
+            mto_crosswalk,
+            left_on=["MAKE", "MODEL", "MODEL_YEAR"],
+            right_on=["mto_make_code", "mto_model_code", "MODEL_YEAR"],
+            how="inner",
+            validate="many_to_one",
+        )
+
+        mto_stock = (
+            mapped_mto_rows.groupby(
+                ["report_year", "nrcan_ceud_class"], as_index=False
+            )["native_count"]
+            .sum()
+            .rename(
+                columns={
+                    "report_year": "year",
+                    "nrcan_ceud_class": "vehicle_class",
+                    "native_count": "value",
+                }
+            )
+        )
+        mto_stock["measure"] = "Stock"
+        mto_sales = (
+            mapped_mto_rows.loc[
+                mapped_mto_rows["MODEL_YEAR"].eq(mapped_mto_rows["report_year"])
+            ]
+            .groupby(["report_year", "nrcan_ceud_class"], as_index=False)[
+                "native_count"
+            ]
+            .sum()
+            .rename(
+                columns={
+                    "report_year": "year",
+                    "nrcan_ceud_class": "vehicle_class",
+                    "native_count": "value",
+                }
+            )
+        )
+        mto_sales["measure"] = "Sales"
+        mto_comparison = pd.concat([mto_stock, mto_sales], ignore_index=True)
+        mto_comparison["value_k"] = mto_comparison["value"] / 1_000
+        mto_comparison["data_source"] = data_source_order[0]
+
+        ceud_rows = evidence["nrcan_ceud"].copy()
+        for column in ["year", "value"]:
+            ceud_rows[column] = pd.to_numeric(ceud_rows[column], errors="coerce")
+        ceud_comparison = ceud_rows.loc[
+            ceud_rows["year"].isin(comparison_years)
+            & ceud_rows["series_group"].isin(
+                ["Sales (thousands)", "Stock (thousands)"]
+            )
+            & ceud_rows["series_name"].isin(
+                ["Cars", "Passenger Light Trucks", "Freight Light Trucks"]
+            )
+            & ceud_rows["unit"].eq("thousands")
+        ].copy()
+        ceud_comparison["vehicle_class"] = ceud_comparison["series_name"].map(
+            {
+                "Cars": "Car",
+                "Passenger Light Trucks": "Light Truck",
+                "Freight Light Trucks": "Light Truck",
+            }
+        )
+        ceud_comparison["measure"] = ceud_comparison["series_group"].str.replace(
+            " (thousands)", "", regex=False
+        )
+        ceud_comparison = (
+            ceud_comparison.groupby(
+                ["year", "vehicle_class", "measure"], as_index=False
+            )["value"]
+            .sum()
+            .rename(columns={"value": "value_k"})
+        )
+        ceud_comparison["data_source"] = data_source_order[1]
+
+        comparison = pd.concat(
+            [
+                mto_comparison[
+                    ["year", "vehicle_class", "measure", "value_k", "data_source"]
+                ],
+                ceud_comparison[
+                    ["year", "vehicle_class", "measure", "value_k", "data_source"]
+                ],
+            ],
+            ignore_index=True,
+        )
+
+        color_encoding = alt.Color(
+            "vehicle_class:N",
+            title="Vehicle class",
+            sort=vehicle_class_order,
+            scale=alt.Scale(
+                domain=vehicle_class_order,
+                range=["#457b9d", "#e76f51"],
+            ),
+            legend=alt.Legend(orient="right"),
+        )
+        source_encoding = alt.StrokeDash(
+            "data_source:N",
+            title="Data source",
+            sort=data_source_order,
+            scale=alt.Scale(
+                domain=data_source_order,
+                range=[[1, 0], [7, 4]],
+            ),
+            legend=alt.Legend(
+                orient="right",
+                symbolType="stroke",
+                symbolStrokeWidth=3,
+                symbolSize=320,
+            ),
+        )
+
+        def comparison_chart(measure: str) -> alt.Chart:
+            rows = comparison.loc[comparison["measure"].eq(measure)]
+            comparison_lines = (
+                alt.Chart(rows)
+                .mark_line(interpolate="linear", strokeWidth=2.5)
+                .encode(
+                    x=alt.X(
+                        "year:Q",
+                        title="Year",
+                        scale=alt.Scale(domain=[2016, 2023], nice=False),
+                        axis=alt.Axis(format="d", values=comparison_years),
+                    ),
+                    y=alt.Y("value_k:Q", title=f"{measure} (k vehicles)"),
+                    color=color_encoding,
+                    strokeDash=source_encoding,
+                )
+            )
+            comparison_points = (
+                alt.Chart(rows)
+                .mark_circle(opacity=0.8, size=55)
+                .encode(
+                    x="year:Q",
+                    y="value_k:Q",
+                    color=color_encoding,
+                    tooltip=[
+                        alt.Tooltip("year:O", title="Year"),
+                        alt.Tooltip("vehicle_class:N", title="Vehicle class"),
+                        alt.Tooltip("data_source:N", title="Data source"),
+                        alt.Tooltip(
+                            "value_k:Q",
+                            format=",.1f",
+                            title=f"{measure} (k vehicles)",
+                        ),
+                    ],
+                )
+            )
+            return (comparison_lines + comparison_points).properties(
+                width=700,
+                height=300,
+                title=f"Ontario {measure.lower()}: mapped MTO versus NRCan CEUD",
+            )
+
+        observed_ceud_years = set(
+            ceud_comparison.loc[
+                ceud_comparison["vehicle_class"].isin(vehicle_class_order), "year"
+            ].astype(int)
+        )
+        missing_ceud_years = sorted(set(comparison_years) - observed_ceud_years)
+        coverage_note = (
+            mo.md(
+                "NRCan CEUD covers every requested comparison year from 2016 through 2023."
+            )
+            if not missing_ceud_years
+            else mo.callout(
+                mo.md(
+                    "The normalized NRCan CEUD artifact is missing requested year(s): "
+                    + ", ".join(map(str, missing_ceud_years))
+                    + ". The MTO lines retain the full 2016–2023 window; refresh the "
+                    "configured CEUD source before treating the visual comparison as "
+                    "complete."
+                ),
+                kind="warn",
+            )
+        )
+
+        validation_output = mo.vstack(
+            [
+                mo.md("""
+                **Summary:** This subsection compares mapped Ontario MTO stock and a
+                same-model-year registration proxy with NRCan CEUD stock and sales.
+
+                This visual check compares only accepted mapped `FIT_ACTIVE` MTO rows
+                with Ontario NRCan CEUD car and light-truck totals. MTO stock sums all the
+                mapped fit-active stock in each Report A edition; its sales proxy retains only
+                rows whose model year equals that edition year. NRCan light trucks combine
+                the source-native passenger and freight light-truck series. All values are
+                shown in thousands of vehicles.
+
+                The comparison is directional rather than a reconciliation. MTO is an
+                administrative Ontario registration extract restricted to mapped rows;
+                CEUD is a separate Ontario stock/sales series with its own definitions and
+                revisions. The same-model-year MTO proxy can include registration timing,
+                migration, imports, or vehicles first observed after sale, and it omits
+                unmapped vehicles. No ratio between the lines is used to expand the map,
+                rescale fleet weights, calibrate retention, or alter accepted parameters.
+                """),
+                coverage_note,
+                chart_ui(comparison_chart("Stock")),
+                chart_ui(comparison_chart("Sales")),
+            ]
+        )
+        return validation_output
 
     _build_view()
     return
@@ -2135,7 +2950,7 @@ def _(NLR_ORDER, NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
 @app.cell(hide_code=True)
 def retention_survival_section(mo):
     mo.md("""
-    ## Retention and survival evidence
+    ## 3. Retirement-rate diagnostics and accepted survival context
     """)
     return
 
@@ -2143,7 +2958,7 @@ def retention_survival_section(mo):
 @app.cell(hide_code=True)
 def retention_method_heading(mo):
     mo.md("""
-    ### From Report A transitions to partial MTO retention
+    ### MTO apparent-retention construction
     """)
     return
 
@@ -2198,6 +3013,15 @@ def _(evidence, mo, pd):
         maximum_recurrence_error = max(recurrence_errors, default=0.0)
         mto_retention_method_output = mo.vstack([
             mo.md(r"""
+            **Execution boundary.** Everything in this section derived from Report A is
+            MTO diagnostic evidence published to interim or validation routes. The default
+            accepted lifetime build publishes NHTSA CAFE schedules for LDVs and NEMS
+            schedules for MHDVs; this notebook cannot promote an MTO curve into those
+            accepted lifetime products. The MTO gates organize evidence quality for future
+            review, including later comparison with Quebec SAAQ, but a source change would
+            require a separate reviewed decision at the owning configuration/runtime
+            interface.
+
             The raw transition file is the audit-grain estimator input. Class mapping is
             deliberately absent from it: Passenger/Commercial, MTO make-model key,
             vintage, report-year pair, and both FIT_ACTIVE counts are preserved before
@@ -2242,6 +3066,12 @@ def _(evidence, mo, pd):
 
             Raw growth cases retain \(q<0\) and \(r>1\); they are never clipped. Only
             after these quantities exist does the reviewed crosswalk attach class labels.
+            Because no vehicle-level identifier links editions, apparent retirements mix
+            physical retirement with administrative status changes, migration, imports,
+            re-registration, and coding changes. Requiring both observed endpoints avoids
+            inventing a zero terminal cohort, but it also means a series absent from the
+            next edition contributes no transition rather than a 100% retirement event.
+
             For class \(c\), vintage \(v\), and age \(a\), the backend pools counts—not
             percentages—and then aggregates vintages with starting exposure:
 
@@ -2283,7 +3113,14 @@ def _(evidence, mo, pd):
             NHTSA values are loaded only after the MTO transition, mapping, pooling, and
             cumulative-product outputs have been constructed. They are comparison evidence
             and are not parameters, targets, calibration points, or force-fitting inputs
-            for the MTO curves.
+            for the MTO curves. The decision gate requires, for both Car and Light Truck:
+            at least 50% mapped starting exposure; at least 80% of annual retirement rates
+            within [0, 1]; no internal age gaps; non-increasing cumulative survival within
+            a tolerance of \(10^{-12}\); at least three vintages and ten transitions at
+            every observed age; and at least ten ages overlapping the legacy comparison.
+            These gates do not automatically select a parameter source. The current
+            modelling decision retains NHTSA CAFE for LDVs even where the independently
+            derived MTO shape appears similar.
 
             #### Implemented source-to-diagnostic stages
 
@@ -2294,7 +3131,7 @@ def _(evidence, mo, pd):
             | Mapped key transition | eligible raw transition plus reviewed vintage-range crosswalk | Attach class evidence without recomputing or filtering the raw rate by latest-snapshot presence. |
             | NLR and CEUD class-vintage | class x vintage x age | Sum starting exposure and apparent retirements. |
             | Final CEUD class-age | Car/Light Truck x age | Sum across vintages, calculate annual rates, support counts, and the cumulative product. |
-            | Decision gate | class-level diagnostic | Retain NHTSA schedules unless coverage, bounds, continuity, monotonicity, support, and comparison gates all pass. |
+            | Decision gate | class-level diagnostic | Report coverage, bounds, continuity, monotonicity, support, and comparison readiness without publishing a parameter schedule. |
             """),
             mo.stat(f"{maximum_recurrence_error:.3g}", "Maximum cumulative-survival recurrence error", "Zero within numerical precision confirms the displayed curve is the product of the empirical annual factors", bordered=True, target_direction="decrease"),
             mo.ui.table(transition_support, selection=None, pagination=False, page_size=10, format_mapping={"share_survival_factor_above_one": "{:.2%}"}, label="Passenger and Commercial audit support"),
@@ -2308,7 +3145,7 @@ def _(evidence, mo, pd):
 @app.cell(hide_code=True)
 def transition_rate_distribution_heading(mo):
     mo.md("""
-    ### Make-model-vintage retirement-rate distributions by age
+    ### Raw make-model-vintage retirement-rate distributions
     """)
     return
 
@@ -2511,6 +3348,9 @@ def _(alt, chart_ui, evidence, mo, pd):
 
         rate_distribution_output = mo.vstack([
             mo.md("""
+            **Summary:** This subsection shows the unweighted distribution of raw annual
+            apparent retirement rates at each starting age before class pooling.
+
             Each small histogram describes the cross-sectional distribution of raw
             one-year rates across eligible MTO make-model-vintage series at one starting
             age. Every series receives one observation per eligible report-year pair;
@@ -2562,7 +3402,7 @@ def _(alt, chart_ui, evidence, mo, pd):
 @app.cell(hide_code=True)
 def status_proxy_heading(mo):
     mo.md("""
-    ### Fit-active versus fit-inactive
+    ### Registration-status comparison: FIT_ACTIVE versus FIT_INACTIVE
     """)
     return
 
@@ -2655,8 +3495,11 @@ def passenger_status_proxy(
 
         status_proxy_output = mo.vstack([
             mo.md("""
-            **Insight:** Passenger and Commercial remain separate, and this comparison
-            now uses only the raw `FIT_ACTIVE` and `FIT_INACTIVE` Report A columns. No
+            **Summary:** This subsection compares the two fit-status buckets by source
+            category and vehicle age without treating either as physical retirement.
+
+            Passenger and Commercial remain separate, and this comparison
+            uses only the raw `FIT_ACTIVE` and `FIT_INACTIVE` Report A columns. No
             unfit, wrecked, sold, suspended, temporary, or out-of-province records are
             folded into the second bucket. It remains an administrative-status view,
             not physical retirement or scrappage.
@@ -2673,7 +3516,7 @@ def passenger_status_proxy(
 @app.cell(hide_code=True)
 def survival_comparison_heading(mo):
     mo.md("""
-    ### Legacy survival curves versus MTO-only evidence
+    ### MTO apparent survival versus accepted NHTSA curves
     """)
     return
 
@@ -2807,15 +3650,27 @@ def _(alt, chart_ui, evidence, mo, pd):
         decision_outcome = str(decision["decision_outcome"].iloc[0])
         survival_comparison_output = mo.vstack([
             mo.md(f"""
-            **Decision: {decision_outcome}.** The estimator uses only strictly
+            **Summary:** This subsection compares independently derived MTO apparent
+            survival with accepted NHTSA CAFE curves and audits the MTO evidence scope.
+
+            **Decision: {decision_outcome}.** This is the diagnostic decision recorded by
+            the generated validation artifact; it does not itself publish or overwrite an
+            accepted lifetime schedule. The estimator uses only strictly
             `FIT_ACTIVE` keys observed in consecutive Report A editions, with positive
             starting exposure and nonnegative starting age. Age 0 to 1 is the first
             empirical transition. Class mapping is attached afterwards. Raw and pooled
-            negative retirement rates are preserved, never clipped. Production rates use
+            negative retirement rates are preserved, never clipped. The primary MTO
+            diagnostic rates use
             only make-model-vintage series that remain present in the latest snapshot;
             latest-snapshot composition weights still do not enter the rate calculation.
+            This presence condition is a deliberate relevance filter, but it introduces
+            survivorship conditioning: families that disappeared before the latest edition
+            cannot influence the primary pooled curve.
 
             #### 1. Stock-weighted historical mapping coverage
+
+            **Summary:** This audit partitions eligible historical starting exposure by
+            whether a reviewed mapping reaches an LDV, a non-LDV, or no in-scope class.
 
             This is not the share of unique make-model-vintage series. Its denominator is
             the sum of `N_{{p,k,v,t}}`, the FIT_ACTIVE stock at the beginning of every
@@ -2825,10 +3680,18 @@ def _(alt, chart_ui, evidence, mo, pd):
             Car or Light Truck. Mapped non-LDV exposure is shown separately and remains
             excluded from the LDV retirement-rate pools. Vintages older than the dynamic
             1981 mapping floor are reported separately rather than treated as unresolved.
+            The “Outside 1981+ scope” legend entry is therefore an eligibility/accounting
+            class, not evidence that pre-1981 vehicles are intrinsically harder or less
+            reliable to map. With the first usable consecutive pair beginning in 2016 and
+            a maximum starting age of 35, the oldest contributing vintage is
+            `2016 - 35 = 1981`.
             """),
             chart_ui(coverage_chart),
             mo.md("""
             #### 2. Empirical annual rates, exposure, and vintage support
+
+            **Summary:** This audit shows the pooled annual MTO rates together with the
+            exposure and vintage support behind every class-age estimate.
 
             At each class and age, the empirical rate is total apparent retirements divided
             by total starting exposure. Starting exposure is therefore the summed stock of
@@ -2846,6 +3709,9 @@ def _(alt, chart_ui, evidence, mo, pd):
             noisy older-age tail.
 
             #### 3. Like-for-like cumulative-survival comparison
+
+            **Summary:** This comparison places the direct cumulative product of MTO rates
+            beside accepted NHTSA curves over the same age horizon.
 
             Both series display an age-zero baseline. For MTO, the age-0 annual rate is the
             first empirical factor and determines survival at age 1; the age-1 rate then
@@ -3044,10 +3910,15 @@ def _(alt, chart_ui, evidence, mo, pd):
         )
         scope_comparison_output = mo.vstack([
             mo.md("""
-            #### 4. Production vintage scope and 1990+ sensitivity
+            #### 4. Primary MTO diagnostic vintage scope and 1990+ sensitivity
+
+            **Summary:** This sensitivity isolates how excluding 1981–1989 vintages changes
+            MTO rates, cumulative survival, exposure, and age coverage.
 
             Both methods use only raw FIT_ACTIVE make-model-vintage series present in the
-            latest snapshot. The production series retains every vintage capable of
+            latest snapshot. The chart's “production” label names the primary MTO
+            diagnostic aggregation branch; it does not mean the curve is the accepted
+            backend lifetime parameter. That branch retains every vintage capable of
             contributing to an observed starting age from 0 through 35; given the first
             eligible 2016 transition, that dynamic floor is 1981. The sensitivity series
             imposes a 1990 floor after transition construction. It therefore loses the

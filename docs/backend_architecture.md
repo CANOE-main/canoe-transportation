@@ -6,6 +6,22 @@ read_scope: Read only the relevant tree branches and descriptions.
 verify: Check planned content against current code, config, tests, schemas, and validation evidence before implementation.
 ---
 
+## Application and operating model
+
+This repository is an **agent-native ETL backend** for compiling configured Canadian
+transport-sector scenarios into auditable, CANOE/Temoa-ready SQLite databases. It turns
+registered external, external-model, and reviewed manual inputs into normalized evidence,
+model parameters, provenance records, and a schema-validated database published atomically. 
+The resulting transport database is one independently compiled sector contribution to
+CANOE. Downstream model assembly merges it with SQLite outputs from the other sector
+backends into one CANOE-model database for use in the Temoa framework. 
+
+*Agent-native* means
+the repository deliberately exposes bounded context, explicit ownership and artifact
+routing, task-local plans, and executable validation so coding agents can work safely and
+effectively; it remains directly usable and reviewable by human contributors and does not
+require an agent at runtime.
+
 ```text
 .
 ├── AGENTS.md                               # Stable repository policy
@@ -39,16 +55,16 @@ verify: Check planned content against current code, config, tests, schemas, and 
 │   ├── parameterization/                   # Transform normalized inputs into model parameters
 │   │   ├── manual_parameters.py            # Resolve compact manual category/powertrain selectors
 │   │   ├── stocks_and_demands.py           # Ontario LDV existing-stock age products
-│   │   ├── lifetimes_survival.py           # Survival evidence and parameter-ready curves
+│   │   ├── lifetimes_survival.py           # Accepted lifetime products and MTO diagnostics
 │   │   ├── road_aggregation.py             # Reviewed mapping application and aggregation weights
 │   │   ├── vehicle_mapping_bootstrap.py    # Explicit mapping-development entrypoint
-│   │   ├── efficiencies.py                 # Technology efficiencies - TODO
-│   │   ├── capex_opex.py                   # Investment and operating costs - TODO
-│   │   ├── ldv_charging.py                 # BEV charging profiles and time slices - TODO
-│   │   ├── emissions.py                    # Vehicle-cycle and operating emissions - TODO
-│   │   ├── market_constraints.py           # Market shares, policy limits, and SCC rules - TODO
-│   │   ├── adoption_constraints.py         # Adoption and growth constraints - TODO
-│   │   └── sector_coupling.py              # Fuel, electricity, hydrogen, and blends - TODO
+│   │   ├── efficiencies.py                 # Technology efficiencies - #to-do
+│   │   ├── capex_opex.py                   # Investment and operating costs - #to-do
+│   │   ├── ev_chargers.py                  # BEV charging profiles and charger infrastructure - #to-do
+│   │   ├── emissions.py                    # Vehicle-cycle and operating emissions - #to-do
+│   │   ├── market_constraints.py           # Market shares, policy limits, and SCC rules - #to-do
+│   │   ├── adoption_constraints.py         # Adoption and growth constraints - #to-do
+│   │   └── sector_coupling.py              # Fuel, electricity, hydrogen, and blends - #to-do
 │   ├── utils/
 │   │   ├── __init__.py                     # Typed config loading and artifact path resolution
 │   │   ├── files.py                        # Shared hashing and atomic CSV publication
@@ -97,9 +113,10 @@ input-validation, database, or output-validation root.
 Ontario MTO normalized reports remain owned by `fetching.vehicle_population` in
 `inputs/1_interim/fetched_ontario_vehicle_population`. Reviewed mapping application and
 road aggregation products are owned by `parameterization.road_aggregation` in
-`inputs/2_processed/road_aggregation`. Survival intermediates, parameter-ready lifetime
-products, stock products, and diagnostic evidence have separate routes in
-`inputs/1_interim`, `inputs/2_processed`, and `inputs/validation`.
+`inputs/2_processed/road_aggregation`. Accepted NHTSA/NEMS/Wards lifetime products are
+published under `inputs/2_processed/lifetimes_survival`; MTO apparent-retention
+intermediates and review evidence are routed separately through `inputs/1_interim` and
+`inputs/validation`. #to-review
 
 ## Runtime and development boundaries
 
@@ -112,6 +129,13 @@ explicit
 distinct API/cache/offline contracts and consume only bootstrap-produced request files.
 The default doctor excludes development-only mapping evidence, while explicit manual
 registry validation still checks it.
+
+`parameterization.lifetimes_survival` defaults to accepted source-derived lifetime
+generation and does not load Ontario Report A history or the reviewed vehicle mapping.
+Historical MTO apparent-retention, mapping-coverage, scope, and decision evidence requires
+the explicit `--mto-diagnostics` mode; `--all` and the retained
+`build_lifetime_artifacts` Python function provide the combined compatibility path.
+#to-review
 
 Configuration structure is validated by `validation.config_models` during
 `utils.load_config_bundle`; `scripts/doctor.py` adds non-mutating readiness checks.

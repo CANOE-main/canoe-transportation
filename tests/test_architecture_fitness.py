@@ -60,3 +60,25 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
         "database",
         "output_validation",
     }
+
+
+def test_lifetime_routes_separate_accepted_and_mto_diagnostic_publishers() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    accepted = (
+        "parameterization.lifetimes_survival.build_accepted_lifetime_artifacts"
+    )
+    diagnostics = (
+        "parameterization.lifetimes_survival."
+        "build_mto_survival_diagnostic_artifacts"
+    )
+
+    processed = bundle.paths.artifacts["lifetimes_survival"]
+    interim = bundle.paths.artifacts["vehicle_survival_interim"]
+    validation = bundle.paths.artifacts["lifetime_validation"]
+
+    assert accepted in processed.producers
+    assert accepted not in interim.producers
+    assert accepted not in validation.producers
+    assert diagnostics not in processed.producers
+    assert diagnostics in interim.producers
+    assert diagnostics in validation.producers

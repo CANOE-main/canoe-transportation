@@ -5,6 +5,22 @@ agent or contributor research, execute, and verify a task without relying on con
 history. They constrain scope and acceptance criteria; they do not replace durable policy
 in `AGENTS.md` or freeze an initial design after repository evidence contradicts it.
 
+## Active plans and historical retrieval
+
+Keep `.agents/plans/` as a small working set of active or immediately relevant plans and
+compact `HISTORY_*.md` files. Number monotonically from the highest active or historical
+plan; archival never resets or reuses a number.
+
+Use history as the first retrieval layer and open an original only for exact rationale,
+supersession, implementation evidence, or validation records. `.agents/plans/archive/`
+is cold audit evidence: never recursively ingest it or treat it as current authority.
+
+Search the active set and history before planning. A plan remains in the root only while
+work is incomplete or it is genuinely needed for an immediate, closely related follow-up.
+Once complete and no longer serving that context, preserve it unchanged in `archive/`
+and update the relevant history; possible future usefulness is not a reason to retain it.
+Never reactivate or edit an archived plan.
+
 ## When an ExecPlan is required
 
 Create or update a plan when a task:
@@ -15,24 +31,16 @@ Create or update a plan when a task:
 - has staged, risky, ambiguous, or explicitly requested work;
 - needs progress, decisions, deviations, or validation evidence preserved.
 
-Skip a plan for a small isolated edit unless the user requests one.
-
-Store plans under `.agents/plans/` using the next numbered descriptive name, for example
-`NNN_descriptive_task.md`. Completed plans are audit trails, not permanent
-architecture references.
-
-Before creating a numbered plan, search existing plans for the same source,
-parameter family, or diagnostic subject. An adjacent follow-up should reopen and
-update the latest plan that owns that subject, marking older findings or decisions
-as superseded where necessary. Create another plan only when the work establishes
-a genuinely distinct responsibility or interface, or when the user explicitly asks
-for a separate plan.
+Skip a plan for a small isolated edit unless requested. Store a new active plan as
+`.agents/plans/NNN_descriptive_task.md`; use a distinct plan for a new responsibility or
+interface, an archived predecessor, or an explicit user request.
 
 ## Research and task boundary
 
 Before editing:
 
-1. Read `AGENTS.md`, the user-named files, and the current working-tree state.
+1. Read `AGENTS.md`, the user-named files, the current working-tree state, and a relevant
+   history entry before retrieving an archived plan.
 2. Inspect the implementation and focused tests at the interface being changed.
 3. Retrieve parameter, source, scenario, workflow, or legacy context only when the task
    crosses that seam; do not load whole directories for possible relevance.
@@ -54,18 +62,11 @@ unresolved choice and keep it out of implementation until its owner supplies evi
 
 ### ETL refinement
 
-For ETL work, classify the changed slice as acquisition, physical validation,
-normalization, parameter transformation, insertion, orchestration, or parity. Retrieve
-only context that crosses that seam.
-
-When applicable, the plan should pin down source-native structure and units; cache
-identity and offline behavior; interim grain, keys, provenance, nulls, and duplicates;
-and the final row model or target table. Validate from the first changed interface
-inward: config/request, physical artifact, parser, transformation/conversion, output
-contract, provenance/reconciliation, then SQLite integrity or parity.
-
-ETL outcomes must record generated artifacts, logs or reports, warned or dropped
-records, offline behavior, and unresolved source or parity issues.
+Classify the changed slice as acquisition, physical validation, normalization,
+transformation, insertion, orchestration, or parity, and retrieve only context crossing
+that seam. Pin down the applicable source/cache, interim, output, provenance, and offline
+contracts. Validate from the first changed interface inward and record material artifacts,
+warnings or drops, offline behavior, and unresolved source or parity issues.
 
 ## Required plan content
 
@@ -96,10 +97,9 @@ Choose the lightest tier that can exercise the changed contract:
   database, or source-to-output reconciliation.
 - **End-to-end/parity:** full build and comparison against accepted reference outputs.
 
-Escalate only when the lower tier cannot observe the risk. A successful command is not
-proof of correctness: define what output, invariant, row count, warning, reconciliation,
-or tolerance makes the result acceptable. Plans must list exact commands, required
-inputs, expected artifacts, and where logs or reports will be written.
+Escalate only when a lower tier cannot observe the risk. Define the output, invariant,
+warning, reconciliation, or tolerance that proves success; list exact commands, required
+inputs, expected artifacts, and report locations.
 
 ## Execute and update
 
@@ -120,7 +120,8 @@ the plan rather than forcing implementation to satisfy an obsolete assumption. R
 - any unresolved follow-up.
 
 Durable truth belongs in the owning code, config, tests, validation reports, or focused
-documentation. Do not turn an ExecPlan into a second architecture manual.
+documentation. Move it there before archival when needed; do not turn an ExecPlan or
+history synthesis into a second architecture manual.
 
 ## Completion
 
