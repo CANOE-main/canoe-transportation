@@ -1,7 +1,12 @@
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
+import parameterization.lifetimes_survival as lifetime_module
 from parameterization.lifetimes_survival import (
+    build_accepted_lifetime_artifacts,
+    build_mto_survival_diagnostic_artifacts,
     aggregate_mto_survival_stages,
     aggregate_report_a_snapshots,
     annotate_latest_snapshot_presence,
@@ -11,6 +16,7 @@ from parameterization.lifetimes_survival import (
     mto_key_transition_observations,
     mto_survival_scope_comparison,
     pool_cohort_retention,
+    parse_args,
     raw_mto_key_snapshots,
     retention_source_comparison,
     transform_source_survival_curves,
@@ -578,3 +584,106 @@ def test_median_equivalent_age_is_first_age_at_or_below_half() -> None:
 
     assert median.loc[0, "median_equivalent_age"] == 2
     assert median.loc[0, "interpolation_method"] == "none"
+
+
+def _accepted_frames_fixture() -> dict[str, pd.DataFrame]:
+    return {
+        "legacy_curves": pd.DataFrame({"value": [1]}),
+        "nlr_curves": pd.DataFrame({"value": [2]}),
+        "source_curves": pd.DataFrame({"value": [3]}),
+        "transformed_curves": pd.DataFrame({"value": [4]}),
+        "class_mappings": pd.DataFrame({"value": [5]}),
+        "medians": pd.DataFrame({"value": [6]}),
+    }
+
+
+def test_accepted_publisher_does_not_invoke_mto_diagnostics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_resolve = lifetime_module.resolve_artifact_path
+
+    def resolve_route(bundle, family: str) -> Path:
+        if family == "lifetimes_survival":
+            return tmp_path
+        return real_resolve(bundle, family)
+
+    def fail_mto(*args, **kwargs):
+        raise AssertionError("accepted lifetime generation invoked MTO diagnostics")
+
+    monkeypatch.setattr(
+        lifetime_module,
+        "_derive_accepted_lifetime_frames",
+        lambda *args, **kwargs: _accepted_frames_fixture(),
+    )
+    monkeypatch.setattr(
+        lifetime_module,
+        "_derive_mto_diagnostic_outputs",
+        fail_mto,
+    )
+    monkeypatch.setattr(lifetime_module, "resolve_artifact_path", resolve_route)
+
+    output_dir = build_accepted_lifetime_artifacts(
+        "config/scenarios/legacy_reproduction.yaml"
+    )
+
+    assert output_dir == tmp_path
+    assert {path.name for path in tmp_path.iterdir()} == {
+        "road_vehicle_legacy_wards_survival_curves.csv",
+        "road_vehicle_nlr_source_survival_curves.csv",
+        "road_vehicle_source_survival_curves.csv",
+        "road_vehicle_survival_class_mappings.csv",
+        "road_vehicle_transformed_survival_curves.csv",
+        "source_derived_median_lifetimes.csv",
+    }
+
+
+def test_mto_diagnostic_publisher_writes_only_diagnostic_routes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    interim_dir = tmp_path / "interim"
+    validation_dir = tmp_path / "validation"
+    real_resolve = lifetime_module.resolve_artifact_path
+
+    def resolve_route(bundle, family: str) -> Path:
+        if family == "vehicle_survival_interim":
+            return interim_dir
+        if family == "lifetime_validation":
+            return validation_dir
+        if family == "lifetimes_survival":
+            raise AssertionError("MTO diagnostics published accepted products")
+        return real_resolve(bundle, family)
+
+    monkeypatch.setattr(
+        lifetime_module,
+        "_derive_accepted_lifetime_frames",
+        lambda *args, **kwargs: _accepted_frames_fixture(),
+    )
+    monkeypatch.setattr(
+        lifetime_module,
+        "_derive_mto_diagnostic_outputs",
+        lambda *args, **kwargs: (
+            {"interim_evidence.csv": pd.DataFrame({"value": [1]})},
+            {"validation_evidence.csv": pd.DataFrame({"value": [2]})},
+        ),
+    )
+    monkeypatch.setattr(lifetime_module, "resolve_artifact_path", resolve_route)
+
+    output_dir = build_mto_survival_diagnostic_artifacts(
+        "config/scenarios/legacy_reproduction.yaml"
+    )
+
+    assert output_dir == validation_dir
+    assert (interim_dir / "interim_evidence.csv").is_file()
+    assert (validation_dir / "validation_evidence.csv").is_file()
+
+
+def test_cli_modes_keep_accepted_generation_as_the_default() -> None:
+    default = parse_args([])
+    diagnostics = parse_args(["--mto-diagnostics"])
+    combined = parse_args(["--all"])
+
+    assert not default.mto_diagnostics and not default.all
+    assert diagnostics.mto_diagnostics and not diagnostics.all
+    assert combined.all and not combined.mto_diagnostics

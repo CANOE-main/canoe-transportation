@@ -1485,18 +1485,90 @@ def _load_normalized_frames(
     return frames
 
 
-def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
-    """Publish Report A transitions, transformed curves, and medians."""
-    bundle = load_config_bundle(scenario_path)
-    rules = module_rules(bundle)
+def accepted_lifetime_frames(
+    nhtsa: pd.DataFrame,
+    eia: pd.DataFrame,
+    wards: pd.DataFrame,
+    *,
+    rules: dict[str, Any],
+) -> dict[str, pd.DataFrame]:
+    """Derive accepted source-based curves and medians without MTO evidence."""
+    source_curves, transformed = transform_source_survival_curves(nhtsa, eia)
+    class_mappings = survival_class_mappings(rules)
+    legacy_curves = legacy_wards_survival_curves(
+        transformed,
+        wards,
+        rules=rules,
+    )
+    nlr_curves = nlr_source_survival_curves(transformed, class_mappings)
+    transformed_with_aggregates = pd.concat(
+        [transformed, legacy_curves, nlr_curves],
+        ignore_index=True,
+        sort=False,
+    )
+    medians = median_equivalent_lifetimes(
+        transformed_with_aggregates,
+        interpolation=str(rules["interpolation"]),
+    )
+    return {
+        "legacy_curves": legacy_curves,
+        "nlr_curves": nlr_curves,
+        "source_curves": source_curves,
+        "transformed_curves": transformed_with_aggregates,
+        "class_mappings": class_mappings,
+        "medians": medians,
+    }
+
+
+def _derive_accepted_lifetime_frames(
+    bundle: ConfigBundle,
+    *,
+    rules: dict[str, Any],
+    road_rules: dict[str, Any],
+    assorted_rules: dict[str, Any],
+) -> dict[str, pd.DataFrame]:
+    assorted_dir = resolve_input_path(
+        bundle,
+        "interim",
+        assorted_rules["interim_subdir"],
+    )
+    nhtsa = pd.read_csv(
+        assorted_dir / assorted_rules["nhtsa_cafe"]["output_file"]
+    )
+    eia = pd.read_csv(
+        assorted_dir / assorted_rules["eia_nems"]["output_file"]
+    )
+    wards = pd.read_csv(
+        resolve_artifact_path(bundle, "road_aggregation")
+        / road_rules["wards_comparison_file"]
+    )
+    return accepted_lifetime_frames(nhtsa, eia, wards, rules=rules)
+
+
+def _accepted_output_files(
+    frames: dict[str, pd.DataFrame],
+    rules: dict[str, Any],
+) -> dict[str, pd.DataFrame]:
+    return {
+        str(rules["legacy_survival_curves_file"]): frames["legacy_curves"],
+        str(rules["nlr_survival_curves_file"]): frames["nlr_curves"],
+        str(rules["source_curves_file"]): frames["source_curves"],
+        str(rules["transformed_curves_file"]): frames["transformed_curves"],
+        str(rules["class_mapping_file"]): frames["class_mappings"],
+        str(rules["median_lifetimes_file"]): frames["medians"],
+    }
+
+
+def _derive_mto_diagnostic_outputs(
+    bundle: ConfigBundle,
+    *,
+    rules: dict[str, Any],
+    accepted_frames: dict[str, pd.DataFrame],
+) -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
     ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
     road_rules = load_harmonization_rules(bundle, ROAD_RULE_KEY)
     rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
-    assorted_rules = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
     source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
-    interim_dir = resolve_artifact_path(bundle, "vehicle_survival_interim")
-    output_dir = resolve_artifact_path(bundle, "lifetimes_survival")
-    validation_dir = resolve_artifact_path(bundle, "lifetime_validation")
     manifest = pd.read_csv(source_dir / ontario_rules["manifest_file"])
     report_rules = ontario_rules["reports"]["A"]
     status_columns = [str(value) for value in report_rules["status_columns"]]
@@ -1517,8 +1589,7 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         rating_class_rules=rating_rules["vehicle_class_harmonization"],
     )
     accepted_statuses = {
-        str(status)
-        for status in road_rules["accepted_mapping_statuses"]
+        str(status) for status in road_rules["accepted_mapping_statuses"]
     }
     threshold = rules.get("implausible_change_ratio")
     raw_snapshots = raw_mto_key_snapshots(
@@ -1561,9 +1632,7 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         mapped_key_observations,
         raw_snapshots,
     )
-    transition_coverage = transition_mapping_coverage(
-        mapped_key_observations
-    )
+    transition_coverage = transition_mapping_coverage(mapped_key_observations)
     latest_survivor_observations = mapped_key_observations.loc[
         mapped_key_observations["present_in_latest_snapshot"]
         .fillna(False)
@@ -1597,13 +1666,10 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
     observations, _missing_years = cohort_transition_observations(
         all_snapshots,
         implausible_change_ratio=(
-            float(threshold)
-            if threshold is not None
-            else None
+            float(threshold) if threshold is not None else None
         ),
         ignored_missing_years={
-            int(year)
-            for year in report_rules.get("excluded_years", [])
+            int(year) for year in report_rules.get("excluded_years", [])
         },
     )
     pooled = nlr_class_retention.rename(
@@ -1613,114 +1679,169 @@ def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
         raw_key_observations,
         missing_years=raw_missing_years,
         implausible_threshold=(
-            float(threshold)
-            if threshold is not None
-            else None
+            float(threshold) if threshold is not None else None
         ),
     )
-
-    assorted_dir = resolve_input_path(
-        bundle,
-        "interim",
-        assorted_rules["interim_subdir"],
-    )
-    nhtsa = pd.read_csv(
-        assorted_dir / assorted_rules["nhtsa_cafe"]["output_file"]
-    )
-    eia = pd.read_csv(
-        assorted_dir / assorted_rules["eia_nems"]["output_file"]
-    )
-    source_curves, transformed = transform_source_survival_curves(nhtsa, eia)
     retention_comparison = retention_source_comparison(
         pooled,
-        source_curves,
+        accepted_frames["source_curves"],
         eia_classes=[
             str(value)
             for value in rules["eia_retention_comparison_classes"]
         ],
     )
-    class_mappings = survival_class_mappings(rules)
-    wards = pd.read_csv(
-        resolve_artifact_path(bundle, "road_aggregation")
-        / road_rules["wards_comparison_file"]
-    )
-    legacy_curves = legacy_wards_survival_curves(
-        transformed,
-        wards,
-        rules=rules,
-    )
     mto_survival_decision = evaluate_mto_survival_decision(
         ceud_class_retention,
         transition_coverage,
-        legacy_curves,
+        accepted_frames["legacy_curves"],
         criteria={
             str(key): value
             for key, value in rules["mto_survival_decision_criteria"].items()
         },
     )
-    nlr_curves = nlr_source_survival_curves(transformed, class_mappings)
-    transformed_with_aggregates = pd.concat(
-        [transformed, legacy_curves, nlr_curves],
-        ignore_index=True,
-        sort=False,
-    )
-    medians = median_equivalent_lifetimes(
-        transformed_with_aggregates,
-        interpolation=str(rules["interpolation"]),
-    )
 
     interim_outputs = {
-        rules["raw_key_snapshot_file"]: raw_snapshots,
-        rules["raw_key_transition_file"]: raw_key_observations,
-        rules["mapped_key_transition_file"]: mapped_key_observations,
-        rules["cohort_snapshot_file"]: mapped_snapshot,
-        rules["commercial_snapshot_file"]: commercial_snapshot,
-        rules["transition_observations_file"]: observations,
-        rules["pooled_estimates_file"]: pooled,
-    }
-    processed_outputs = {
-        rules["nlr_class_vintage_retention_file"]: nlr_vintage_retention,
-        rules["nlr_class_retention_file"]: nlr_class_retention,
-        rules["ceud_class_vintage_retention_file"]: ceud_vintage_retention,
-        rules["ceud_class_retention_file"]: ceud_class_retention,
-        rules["legacy_survival_curves_file"]: legacy_curves,
-        rules["nlr_survival_curves_file"]: nlr_curves,
-        rules["source_curves_file"]: source_curves,
-        rules["transformed_curves_file"]: transformed_with_aggregates,
-        rules["class_mapping_file"]: class_mappings,
-        rules["median_lifetimes_file"]: medians,
+        str(rules["raw_key_snapshot_file"]): raw_snapshots,
+        str(rules["raw_key_transition_file"]): raw_key_observations,
+        str(rules["mapped_key_transition_file"]): mapped_key_observations,
+        str(rules["cohort_snapshot_file"]): mapped_snapshot,
+        str(rules["commercial_snapshot_file"]): commercial_snapshot,
+        str(rules["transition_observations_file"]): observations,
+        str(rules["pooled_estimates_file"]): pooled,
     }
     validation_outputs = {
-        rules["ceud_scope_comparison_file"]: survival_scope_comparison,
-        rules["transition_mapping_coverage_file"]: transition_coverage,
-        rules["mto_survival_decision_file"]: mto_survival_decision,
-        rules["transition_findings_file"]: findings,
-        rules["retention_comparison_file"]: retention_comparison,
+        str(rules["nlr_class_vintage_retention_file"]): nlr_vintage_retention,
+        str(rules["nlr_class_retention_file"]): nlr_class_retention,
+        str(rules["ceud_class_vintage_retention_file"]): ceud_vintage_retention,
+        str(rules["ceud_class_retention_file"]): ceud_class_retention,
+        str(rules["ceud_scope_comparison_file"]): survival_scope_comparison,
+        str(rules["transition_mapping_coverage_file"]): transition_coverage,
+        str(rules["mto_survival_decision_file"]): mto_survival_decision,
+        str(rules["transition_findings_file"]): findings,
+        str(rules["retention_comparison_file"]): retention_comparison,
     }
-    for directory, outputs in (
-        (interim_dir, interim_outputs),
-        (output_dir, processed_outputs),
-        (validation_dir, validation_outputs),
-    ):
-        for filename, frame in outputs.items():
-            write_dataframe_atomic(frame, directory / str(filename))
+    return interim_outputs, validation_outputs
+
+
+def _publish_outputs(
+    directory: Path,
+    outputs: dict[str, pd.DataFrame],
+) -> None:
+    for filename, frame in outputs.items():
+        write_dataframe_atomic(frame, directory / filename)
+
+
+def _lifetime_context(
+    scenario_path: str | Path,
+) -> tuple[ConfigBundle, dict[str, Any], dict[str, Any], dict[str, Any]]:
+    bundle = load_config_bundle(scenario_path)
+    return (
+        bundle,
+        module_rules(bundle),
+        load_harmonization_rules(bundle, ROAD_RULE_KEY),
+        load_harmonization_rules(bundle, ASSORTED_RULE_KEY),
+    )
+
+
+def build_accepted_lifetime_artifacts(scenario_path: str | Path) -> Path:
+    """Publish accepted source-derived lifetime products without MTO diagnostics."""
+    bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
+    frames = _derive_accepted_lifetime_frames(
+        bundle,
+        rules=rules,
+        road_rules=road_rules,
+        assorted_rules=assorted_rules,
+    )
+    output_dir = resolve_artifact_path(bundle, "lifetimes_survival")
+    _publish_outputs(output_dir, _accepted_output_files(frames, rules))
     return output_dir
 
 
-def parse_args() -> argparse.Namespace:
+def build_mto_survival_diagnostic_artifacts(scenario_path: str | Path) -> Path:
+    """Publish historical MTO apparent-retention and decision evidence."""
+    bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
+    accepted_frames = _derive_accepted_lifetime_frames(
+        bundle,
+        rules=rules,
+        road_rules=road_rules,
+        assorted_rules=assorted_rules,
+    )
+    interim_outputs, validation_outputs = _derive_mto_diagnostic_outputs(
+        bundle,
+        rules=rules,
+        accepted_frames=accepted_frames,
+    )
+    _publish_outputs(
+        resolve_artifact_path(bundle, "vehicle_survival_interim"),
+        interim_outputs,
+    )
+    validation_dir = resolve_artifact_path(bundle, "lifetime_validation")
+    _publish_outputs(validation_dir, validation_outputs)
+    return validation_dir
+
+
+def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
+    """Compatibility publisher for accepted products and MTO diagnostics."""
+    bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
+    accepted_frames = _derive_accepted_lifetime_frames(
+        bundle,
+        rules=rules,
+        road_rules=road_rules,
+        assorted_rules=assorted_rules,
+    )
+    output_dir = resolve_artifact_path(bundle, "lifetimes_survival")
+    _publish_outputs(
+        output_dir,
+        _accepted_output_files(accepted_frames, rules),
+    )
+    interim_outputs, validation_outputs = _derive_mto_diagnostic_outputs(
+        bundle,
+        rules=rules,
+        accepted_frames=accepted_frames,
+    )
+    _publish_outputs(
+        resolve_artifact_path(bundle, "vehicle_survival_interim"),
+        interim_outputs,
+    )
+    _publish_outputs(
+        resolve_artifact_path(bundle, "lifetime_validation"),
+        validation_outputs,
+    )
+    return output_dir
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--scenario",
         default="config/scenarios/legacy_reproduction.yaml",
     )
-    return parser.parse_args()
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--mto-diagnostics",
+        action="store_true",
+        help="Publish historical MTO apparent-retention and review evidence only.",
+    )
+    mode.add_argument(
+        "--all",
+        action="store_true",
+        help="Publish accepted lifetime products and MTO diagnostic evidence.",
+    )
+    return parser.parse_args(argv)
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
-    output_dir = build_lifetime_artifacts(args.scenario)
-    logging.info("Wrote cohort and lifetime artifacts to %s", output_dir)
+    if args.mto_diagnostics:
+        output_dir = build_mto_survival_diagnostic_artifacts(args.scenario)
+        logging.info("Wrote MTO survival diagnostic artifacts to %s", output_dir)
+    elif args.all:
+        output_dir = build_lifetime_artifacts(args.scenario)
+        logging.info("Wrote accepted and diagnostic lifetime artifacts to %s", output_dir)
+    else:
+        output_dir = build_accepted_lifetime_artifacts(args.scenario)
+        logging.info("Wrote accepted lifetime artifacts to %s", output_dir)
 
 
 if __name__ == "__main__":

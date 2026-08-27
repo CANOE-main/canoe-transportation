@@ -75,7 +75,7 @@ switches:
   # Legacy reproduction uses source-derived median-equivalent lifetimes.
   # Newer scenarios may enable empirical survival curves instead.
   survival_curves: false
-  survival_curve_max_age: 30
+  survival_curve_max_age: 25  # must not exceed the time horizon
 
 # Scenario-authored notes take precedence when a consuming row builder supports them.
 # Technology overrides are operational; parameter overrides remain planned.

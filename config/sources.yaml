@@ -6,6 +6,15 @@
 # their intended downstream roles. Source-specific discovery fields belong only under
 # `adapter` and are validated by the adapter that consumes them.
 #
+# DQ is represented by the named v4 fields `dq_cred`, `dq_geog`, `dq_struc`, `dq_tech`,
+# and `dq_time`; omitted fields currently resolve to level 5 in the typed config model.
+# Every registered external source/component intended to support final parameter rows
+# must resolve the full applicable contract through source values or a reviewed component
+# override before insertion. DQ is source-owned, reviewable provenance evidence, not
+# optional metadata. Automatic `dq_time` derivation from registered year/edition evidence
+# is a deferred reviewed enhancement; the current contract defines no `auto` value,
+# scoring algorithm, or thresholds.
+#
 # Extraction selectors, mappings, formulas, bins, and interim output names belong in
 # `config/parameters/rules.yaml`; run-specific source choices belong in scenario YAML.
 # Backend-owned templates are not external sources and do not belong in this registry.

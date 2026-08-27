@@ -37,21 +37,28 @@ artifacts:
     layer: interim
     owner: fetching.vehicle_population
     producers: [fetching.vehicle_population.fetch_and_normalize]
-    consumers: [parameterization.road_aggregation, parameterization.lifetimes_survival]
+    consumers:
+      - parameterization.road_aggregation
+      - parameterization.lifetimes_survival.build_mto_survival_diagnostic_artifacts
     validation_surfaces: [fetching.vehicle_population.validate_source]
   vehicle_survival_interim:
     path: inputs/1_interim/vehicle_survival
     layer: interim
     owner: parameterization.lifetimes_survival
-    producers: [parameterization.lifetimes_survival.build_lifetime_artifacts]
-    consumers: [parameterization.lifetimes_survival]
+    producers:
+      - parameterization.lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.lifetimes_survival.build_lifetime_artifacts
+    consumers: [reviewers]
     validation_surfaces: [parameterization.lifetimes_survival.transition_findings]
   road_aggregation:
     path: inputs/2_processed/road_aggregation
     layer: processed
     owner: parameterization.road_aggregation
     producers: [parameterization.road_aggregation.build_road_aggregation_artifacts]
-    consumers: [parameterization.lifetimes_survival, parameterization.stocks_and_demands]
+    consumers:
+      - parameterization.lifetimes_survival.build_accepted_lifetime_artifacts
+      - parameterization.lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.stocks_and_demands
     validation_surfaces:
       - parameterization.road_aggregation.validate_vehicle_mapping
       - parameterization.road_aggregation.mapping_coverage
@@ -59,7 +66,9 @@ artifacts:
     path: inputs/2_processed/lifetimes_survival
     layer: processed
     owner: parameterization.lifetimes_survival
-    producers: [parameterization.lifetimes_survival.build_lifetime_artifacts]
+    producers:
+      - parameterization.lifetimes_survival.build_accepted_lifetime_artifacts
+      - parameterization.lifetimes_survival.build_lifetime_artifacts
     consumers: [parameterization.stocks_and_demands, build_transport]
     validation_surfaces: [parameterization.lifetimes_survival.median_equivalent_lifetimes]
   stocks_and_demands:
@@ -85,6 +94,7 @@ artifacts:
     layer: input_validation
     owner: parameterization.lifetimes_survival
     producers:
+      - parameterization.lifetimes_survival.build_mto_survival_diagnostic_artifacts
       - parameterization.lifetimes_survival.build_lifetime_artifacts
       - parameterization.stocks_and_demands.build_existing_stock_age_artifacts
     consumers: [reviewers]

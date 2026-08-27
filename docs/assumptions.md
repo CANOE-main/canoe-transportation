@@ -1,3 +1,11 @@
+---
+title: CANOE-Transportation assumptions
+role: Review record for source limitations, data gaps, modelling challenges, and their current handling.
+retrieve_when: A task changes or discovers a transportation assumption, source limitation, data gap, or modelling challenge.
+read_scope: Read only the affected parameter section and relevant rows.
+verify: "Check current code, config, tests, and evidence; mark Codex-added or changed review content #to-review."
+---
+
 # CANOE-Transportation Assumptions
 
 Each parameter section is presented as a single table. Rows are grouped by vehicle class, and assumptions that apply to multiple classes remain consolidated rather than duplicated.
@@ -61,3 +69,10 @@ Each parameter section is presented as a single table. Rows are grouped by vehic
 | Vehicle class | Source / challenge | Assumption |
 | --- | --- | --- |
 | Cars and Light Trucks | Burnham et al. (2021) and Islam et al. (2022) — empirical model coefficients are based on US mileage profiles | The same empirical-model coefficients used in these studies are applied to estimate maintenance and repair (M&R) costs per mile by vehicle age. |
+
+## `capacity_factor_tech` for BEV charging profiles
+
+| Vehicle class | Source / challenge | Assumption |
+| --- | --- | --- |
+| Cars and Light Trucks | StatCan Table 23-10-0308-01 — registered vehicle size class shares | Shares are irrespective of powertrain type given that charging profiles are also meant to represent future vehicle compositions, not just present-day fleets. |
+| Cars and Light Trucks | StatCan 2021 Census — occupation demographics by province | Occupation shares between workers, students, and inactive individuals aged 15+ in private households do not differentiate between drivers and non-drivers |
