@@ -33,6 +33,18 @@ def config():
     return bundle, rules, rating_rules
 
 
+def candidate_policy() -> dict[str, object]:
+    _, rules, _ = config()
+    bootstrap = rules["mapping_bootstrap"]
+    return {
+        "candidates_per_key": int(bootstrap["candidate_rows_per_key"]),
+        "similarity_scores": {
+            str(name): float(score)
+            for name, score in bootstrap["candidate_similarity_scores"].items()
+        },
+    }
+
+
 def mapping_row(**overrides: object) -> dict[str, object]:
     row: dict[str, object] = {
         "entry_type": "mto_crosswalk",
@@ -113,6 +125,7 @@ def test_candidate_generation_uses_reviewed_make_alias_without_accepting() -> No
     candidates = generate_mapping_candidates(
         current,
         ratings,
+        **candidate_policy(),
         canonical_aliases={"TOYT": "Toyota"},
     )
 
@@ -235,6 +248,7 @@ def test_candidate_generation_supports_aliases_longer_than_six_characters() -> N
     candidates = generate_mapping_candidates(
         current,
         ratings,
+        **candidate_policy(),
         canonical_aliases={"HYUN": "Hyundai"},
     )
 
@@ -307,7 +321,12 @@ def test_ontario_weights_sum_within_ceud_class_and_vintage() -> None:
         }
     )
 
-    nrcan, nlr = derive_aggregation_weights(mapped)
+    _, rules, _ = config()
+    nrcan, nlr = derive_aggregation_weights(
+        mapped,
+        vintage_bin_years=int(rules["vintage_bin_years"]),
+        vintage_alignment=str(rules["vintage_alignment"]),
+    )
 
     annual = nrcan.loc[nrcan["weight_basis"].eq("model_year")]
     assert annual.groupby("nrcan_ceud_class")["aggregation_weight"].sum().to_dict() == (
@@ -339,7 +358,11 @@ def test_fleet_composition_weights_use_latest_snapshot_and_age_grain() -> None:
         }
     )
 
-    weights = derive_fleet_composition_weights(mapped)
+    _, rules, _ = config()
+    weights = derive_fleet_composition_weights(
+        mapped,
+        minimum_model_year=int(rules["mapping_bootstrap"]["minimum_model_year"]),
+    )
 
     assert set(weights["report_year"]) == {2025}
     assert set(weights["age"]) == {3, 5}

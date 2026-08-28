@@ -40,6 +40,7 @@ def test_median_mode_truncates_by_class_and_reports_exclusions() -> None:
         survival_curves=False,
         maximum_age=30,
         median_lifetimes={"Car": 14, "Light Truck": 15},
+        historical_review_minimum_model_year=2000,
     )
 
     car = distribution.loc[distribution["nrcan_ceud_class"].eq("Car")]
@@ -51,7 +52,7 @@ def test_median_mode_truncates_by_class_and_reports_exclusions() -> None:
     assert light_truck["over_cutoff_fit_active_stock"] == 60
     assert findings.loc[
         findings["nrcan_ceud_class"].eq("Car"),
-        "pre_2000_fit_active_stock",
+        "before_historical_review_year_fit_active_stock",
     ].item() == 40
     assert car["age_distribution"].sum() == pytest.approx(1.0)
 
@@ -62,6 +63,7 @@ def test_survival_curve_mode_uses_configured_maximum_age() -> None:
         survival_curves=True,
         maximum_age=30,
         median_lifetimes={"Car": 14, "Light Truck": 15},
+        historical_review_minimum_model_year=2000,
     )
 
     car = distribution.loc[distribution["nrcan_ceud_class"].eq("Car")]

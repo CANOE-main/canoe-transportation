@@ -7,7 +7,7 @@
 # `adapter` and are validated by the adapter that consumes them.
 #
 # DQ is represented by the named v4 fields `dq_cred`, `dq_geog`, `dq_struc`, `dq_tech`,
-# and `dq_time`; omitted fields currently resolve to level 5 in the typed config model.
+# and `dq_time`; omitted source values resolve through the registry-owned defaults below.
 # Every registered external source/component intended to support final parameter rows
 # must resolve the full applicable contract through source values or a reviewed component
 # override before insertion. DQ is source-owned, reviewable provenance evidence, not
@@ -23,6 +23,11 @@
 # YAML order. Append by default and explicitly review any insertion or reorder.
 
 version: 2
+
+defaults:
+  required: true
+  component_required: true
+  data_quality: {dq_cred: 5, dq_geog: 5, dq_struc: 5, dq_tech: 5, dq_time: 5}
 
 sources:
   nrcan_ceud_transport_provincial:

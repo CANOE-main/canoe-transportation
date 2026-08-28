@@ -498,6 +498,8 @@ def _pooled_retention(
 
 def aggregate_mto_survival_stages(
     mapped_observations: pd.DataFrame,
+    *,
+    ceud_classes: list[str],
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Pool raw transitions through NLR and CEUD exposure-weighted stages."""
     nlr_vintage = _pooled_retention(
@@ -534,7 +536,7 @@ def aggregate_mto_survival_stages(
     if "mapping_accepted" in usable:
         usable = usable.loc[usable["mapping_accepted"].fillna(False)].copy()
     usable = usable.loc[
-        usable["nrcan_ceud_class"].isin(["Car", "Light Truck"])
+        usable["nrcan_ceud_class"].isin(ceud_classes)
     ].copy()
     ceud_class = (
         usable.groupby(["nrcan_ceud_class", "age"], as_index=False)
@@ -600,8 +602,11 @@ def aggregate_mto_survival_stages(
 
 def mto_survival_scope_comparison(
     mapped_observations: pd.DataFrame,
+    *,
+    ceud_classes: list[str],
+    sensitivity_minimum_model_year: int,
 ) -> pd.DataFrame:
-    """Compare production latest survivors with a 1990+ vintage sensitivity."""
+    """Compare production latest survivors with a configured vintage sensitivity."""
     if "present_in_latest_snapshot" not in mapped_observations.columns:
         raise ValueError(
             "Mapped transitions require present_in_latest_snapshot annotation"
@@ -625,26 +630,35 @@ def mto_survival_scope_comparison(
             ],
         ),
         (
-            "latest_snapshot_survivors_1990_plus",
+            f"latest_snapshot_survivors_{sensitivity_minimum_model_year}_plus",
             latest.loc[
-                pd.to_numeric(latest["model_year"], errors="coerce").ge(1990)
+                pd.to_numeric(latest["model_year"], errors="coerce").ge(
+                    sensitivity_minimum_model_year
+                )
             ],
         ),
     ]
     for aggregation_scope, scope_observations in scopes:
-        *_, curves = aggregate_mto_survival_stages(scope_observations)
+        *_, curves = aggregate_mto_survival_stages(
+            scope_observations,
+            ceud_classes=ceud_classes,
+        )
         curves.insert(0, "aggregation_scope", aggregation_scope)
         scope_frames.append(curves)
     return pd.concat(scope_frames, ignore_index=True, sort=False)
 
 
-def transition_mapping_coverage(mapped_observations: pd.DataFrame) -> pd.DataFrame:
+def transition_mapping_coverage(
+    mapped_observations: pd.DataFrame,
+    *,
+    ceud_classes: list[str],
+) -> pd.DataFrame:
     """Measure historical starting exposure mapped to relevant CEUD classes."""
     frame = mapped_observations.copy()
     frame["cohort_count_t"] = pd.to_numeric(
         frame["cohort_count_t"], errors="coerce"
     ).fillna(0)
-    relevant = frame["nrcan_ceud_class"].isin(["Car", "Light Truck"])
+    relevant = frame["nrcan_ceud_class"].isin(ceud_classes)
     accepted = frame.get(
         "mapping_accepted", pd.Series(True, index=frame.index)
     ).fillna(False) & relevant
@@ -705,19 +719,18 @@ def evaluate_mto_survival_decision(
     legacy_curves: pd.DataFrame,
     *,
     criteria: dict[str, float | int],
+    source_class_by_ceud: dict[str, str],
 ) -> pd.DataFrame:
     """Evaluate transparent class-specific usability gates without clipping."""
-    source_for_class = {"Car": "PASSENGER", "Light Truck": "COMMERCIAL"}
     rows: list[dict[str, object]] = []
     tolerance = float(criteria["monotonic_tolerance"])
-    for vehicle_class in ["Car", "Light Truck"]:
+    for vehicle_class, source_category in source_class_by_ceud.items():
         class_rows = curves.loc[
             curves["vehicle_class"].eq(vehicle_class)
         ].sort_values("age")
         observed = class_rows.loc[
             class_rows["annual_retirement_rate"].notna()
         ].copy()
-        source_category = source_for_class[vehicle_class]
         coverage_rows = coverage.loc[
             coverage["source_category"].eq(source_category),
             "mapped_exposure_share",
@@ -947,6 +960,7 @@ def transition_findings(
     *,
     missing_years: list[int],
     implausible_threshold: float | None,
+    tail_review_start_age: int,
 ) -> pd.DataFrame:
     """Summarize data-quality flags without changing observations."""
     rows: list[dict[str, Any]] = []
@@ -967,10 +981,12 @@ def transition_findings(
                 "detail": "Raw observations retained.",
             }
         )
-    tail = observations.loc[observations["age"].gt(30)]
+    tail = observations.loc[
+        observations["age"].gt(tail_review_start_age)
+    ]
     rows.append(
         {
-            "issue_type": "vintage_tail_over_age_30",
+            "issue_type": f"vintage_tail_over_age_{tail_review_start_age}",
             "observation_count": len(tail),
             "cohort_count_t": tail["cohort_count_t"].sum(),
             "cohort_count_t1": tail["cohort_count_t1"].sum(),
@@ -1292,13 +1308,22 @@ def nlr_source_survival_curves(
 def survival_class_mappings(rules: dict[str, Any]) -> pd.DataFrame:
     """Publish explicit source-to-target class mappings and comparison scope."""
     rows: list[dict[str, Any]] = []
+    legacy_rules = rules["legacy_survival"]
+    car_source_class = str(legacy_rules["car_source_class"])
+    light_truck_source_classes = set(
+        map(str, legacy_rules["light_truck_source_classes"])
+    )
+    ceud_labels = rules["ceud_labels"]
     for source_class, nlr_classes in rules["nhtsa_class_to_nlr"].items():
-        for nlr_class in nlr_classes:
-            ceud_class = (
-                "Car"
-                if str(nlr_class) in {"Compact", "Midsize"}
-                else "Light Truck"
+        if str(source_class) == car_source_class:
+            ceud_class = str(ceud_labels["Car"])
+        elif str(source_class) in light_truck_source_classes:
+            ceud_class = str(ceud_labels["Light Truck"])
+        else:
+            raise ValueError(
+                f"NHTSA class {source_class!r} has no configured CEUD mapping"
             )
+        for nlr_class in nlr_classes:
             rows.append(
                 {
                     "source_family": "nhtsa_cafe_2024_ldv_survival",
@@ -1591,22 +1616,22 @@ def _derive_mto_diagnostic_outputs(
     accepted_statuses = {
         str(status) for status in road_rules["accepted_mapping_statuses"]
     }
-    threshold = rules.get("implausible_change_ratio")
+    threshold = rules["implausible_change_ratio"]
     raw_snapshots = raw_mto_key_snapshots(
         normalized_frames,
         passenger_class=str(report_rules["passenger_class"]),
         commercial_class=str(report_rules["commercial_class"]),
         minimum_model_year=(
             int(rules["minimum_transition_model_year"])
-            if rules.get("minimum_transition_model_year") is not None
+            if rules["minimum_transition_model_year"] is not None
             else None
         ),
         suppressed_code_patterns=[
             str(pattern)
-            for pattern in report_rules.get("suppressed_code_patterns", [])
+            for pattern in report_rules["suppressed_code_patterns"]
         ],
         unknown_code_labels=[
-            str(label) for label in report_rules.get("unknown_code_labels", [])
+            str(label) for label in report_rules["unknown_code_labels"]
         ],
     )
     raw_key_observations, raw_missing_years = mto_key_transition_observations(
@@ -1615,11 +1640,11 @@ def _derive_mto_diagnostic_outputs(
             float(threshold) if threshold is not None else None
         ),
         ignored_missing_years={
-            int(year) for year in report_rules.get("excluded_years", [])
+            int(year) for year in report_rules["excluded_years"]
         },
         maximum_transition_age=(
             int(rules["maximum_transition_age"])
-            if rules.get("maximum_transition_age") is not None
+            if rules["maximum_transition_age"] is not None
             else None
         ),
     )
@@ -1632,7 +1657,11 @@ def _derive_mto_diagnostic_outputs(
         mapped_key_observations,
         raw_snapshots,
     )
-    transition_coverage = transition_mapping_coverage(mapped_key_observations)
+    ceud_classes = [str(value) for value in rules["ceud_labels"].values()]
+    transition_coverage = transition_mapping_coverage(
+        mapped_key_observations,
+        ceud_classes=ceud_classes,
+    )
     latest_survivor_observations = mapped_key_observations.loc[
         mapped_key_observations["present_in_latest_snapshot"]
         .fillna(False)
@@ -1643,9 +1672,16 @@ def _derive_mto_diagnostic_outputs(
         nlr_class_retention,
         ceud_vintage_retention,
         ceud_class_retention,
-    ) = aggregate_mto_survival_stages(latest_survivor_observations)
+    ) = aggregate_mto_survival_stages(
+        latest_survivor_observations,
+        ceud_classes=ceud_classes,
+    )
     survival_scope_comparison = mto_survival_scope_comparison(
-        mapped_key_observations
+        mapped_key_observations,
+        ceud_classes=ceud_classes,
+        sensitivity_minimum_model_year=int(
+            rules["scope_sensitivity_minimum_model_year"]
+        ),
     )
     mapped_snapshot, commercial_snapshot = aggregate_report_a_snapshots(
         normalized_frames,
@@ -1669,7 +1705,7 @@ def _derive_mto_diagnostic_outputs(
             float(threshold) if threshold is not None else None
         ),
         ignored_missing_years={
-            int(year) for year in report_rules.get("excluded_years", [])
+            int(year) for year in report_rules["excluded_years"]
         },
     )
     pooled = nlr_class_retention.rename(
@@ -1681,6 +1717,7 @@ def _derive_mto_diagnostic_outputs(
         implausible_threshold=(
             float(threshold) if threshold is not None else None
         ),
+        tail_review_start_age=int(rules["tail_review_start_age"]),
     )
     retention_comparison = retention_source_comparison(
         pooled,
@@ -1697,6 +1734,12 @@ def _derive_mto_diagnostic_outputs(
         criteria={
             str(key): value
             for key, value in rules["mto_survival_decision_criteria"].items()
+        },
+        source_class_by_ceud={
+            str(rules["ceud_labels"]["Car"]): str(report_rules["passenger_class"]),
+            str(rules["ceud_labels"]["Light Truck"]): str(
+                report_rules["commercial_class"]
+            ),
         },
     )
 

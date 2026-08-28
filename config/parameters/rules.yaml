@@ -241,6 +241,11 @@ parameterization:
       reviewed_crosswalk_policy: rebuild
       accept_reviewed_strong_candidates: true
       accepted_candidate_model_similarity: 0.7
+      candidate_rows_per_key: 5
+      candidate_similarity_scores:
+        exact_normalized: 1.0
+        normalized_prefix: 0.95
+        normalized_substring: 0.9
       stable_family_hierarchy_dominance_share: 0.95
       high_stock_reaudit_quantile: 0.5
       temporal_validation_minimum_model_year: 1990
@@ -253,6 +258,7 @@ parameterization:
         anchored_consonant_abbreviation: 3
       minimum_make_prefix_length: 3
       minimum_model_prefix_length: 3
+      manual_minimum_model_prefix_length: 2
       minimum_model_year: 2000
       candidate_minimum_model_year: derive_from_transition_window
       exclude_future_model_years: false
@@ -478,6 +484,7 @@ parameterization:
       age_column: age
       maximum_age_switch: survival_curve_max_age
       survival_curve_switch: survival_curves
+      historical_review_minimum_model_year: 2000
 
   lifetimes_survival:
     raw_key_snapshot_file: ontario_vehicle_population_mto_key_snapshots.csv
@@ -506,6 +513,8 @@ parameterization:
     implausible_change_ratio: null
     minimum_transition_model_year: null
     maximum_transition_age: 35
+    tail_review_start_age: 30
+    scope_sensitivity_minimum_model_year: 1990
     mto_survival_decision_criteria:
       minimum_mapped_exposure_share: 0.5
       minimum_in_bounds_rate_share: 0.8
@@ -965,6 +974,7 @@ parameterization:
           currency_year: null
     faa:
       source_id: faa_economic_values_2024
+      minimum_extracted_text_characters: 1000
       capacity_component_id: section_3_capacity
       costs_component_id: section_4_operating_costs
       capacity_output_file: faa_aircraft_capacity_load_speed.csv

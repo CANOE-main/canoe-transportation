@@ -7,20 +7,53 @@ import parameterization.lifetimes_survival as lifetime_module
 from parameterization.lifetimes_survival import (
     build_accepted_lifetime_artifacts,
     build_mto_survival_diagnostic_artifacts,
-    aggregate_mto_survival_stages,
+    aggregate_mto_survival_stages as _aggregate_mto_survival_stages,
     aggregate_report_a_snapshots,
     annotate_latest_snapshot_presence,
     cohort_transition_observations,
     legacy_wards_survival_curves,
     median_equivalent_lifetimes,
     mto_key_transition_observations,
-    mto_survival_scope_comparison,
+    mto_survival_scope_comparison as _mto_survival_scope_comparison,
     pool_cohort_retention,
     parse_args,
     raw_mto_key_snapshots,
     retention_source_comparison,
     transform_source_survival_curves,
 )
+from utils import load_config_bundle
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+
+
+def _lifetime_rules() -> dict[str, object]:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    return dict(lifetime_module.module_rules(bundle))
+
+
+def aggregate_mto_survival_stages(
+    mapped_observations: pd.DataFrame,
+):
+    rules = _lifetime_rules()
+    return _aggregate_mto_survival_stages(
+        mapped_observations,
+        ceud_classes=[str(value) for value in rules["ceud_labels"].values()],
+    )
+
+
+def mto_survival_scope_comparison(
+    mapped_observations: pd.DataFrame,
+) -> pd.DataFrame:
+    rules = _lifetime_rules()
+    return _mto_survival_scope_comparison(
+        mapped_observations,
+        ceud_classes=[str(value) for value in rules["ceud_labels"].values()],
+        sensitivity_minimum_model_year=int(
+            rules["scope_sensitivity_minimum_model_year"]
+        ),
+    )
 
 
 def test_report_a_snapshots_bucket_passenger_status_and_collapse_commercial() -> None:

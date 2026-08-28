@@ -97,7 +97,12 @@ def load_parameter_yaml(bundle: ConfigBundle, filename: str | Path) -> dict[str,
 def load_harmonization_rules(bundle: ConfigBundle, module_name: str) -> dict[str, Any]:
     """Load harmonization rules for one parameterization module."""
     rules = load_parameter_yaml(bundle, "rules.yaml")
-    module_rules = rules.get("parameterization", {}).get(module_name, {})
+    try:
+        module_rules = rules["parameterization"][module_name]
+    except KeyError as exc:
+        raise KeyError(
+            f"Missing parameterization rules for module: {module_name}"
+        ) from exc
     if not isinstance(module_rules, dict):
         raise ValueError(f"Expected mapping for harmonization rules: {module_name}")
     return module_rules

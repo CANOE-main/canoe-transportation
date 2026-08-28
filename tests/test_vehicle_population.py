@@ -193,7 +193,7 @@ def test_ontario_rules_load_paths_and_extraction_parameters_from_config() -> Non
         "COMMERCIAL",
     ]
     assert rules["reports"][4]["kept_weight_class"] == "COMMERCIAL"
-    assert rules["reports"][5]["max_age"] == 30
+    assert rules["reports"][5]["max_age"] == 35
     assert (
         rules["all_edition_make_model_keys_file"]
         == "ontario_vehicle_population_all_edition_make_model_keys.csv"
@@ -304,8 +304,6 @@ def test_normalize_report_a_preserves_statuses_and_reconciles_long_table() -> No
     assert set(normalized["VEHICLE_CLASS"]) == {"PASSENGER", "COMMERCIAL"}
     assert {
         "model_year_after_report_year",
-        "pre_2000_stock",
-        "stock_over_age_30",
         "suppressed_make_code",
         "suppressed_model_code",
         "excluded_vehicle_class",
@@ -489,7 +487,9 @@ def test_normalize_report5_calculates_age_and_class_normalized_shares() -> None:
         {"VEHICLE_CLASS": "PASSENGER", "VALUE": 1991, "AGE": 31, "FIT-ACTIVE": 100},
     ]
     passenger = distribution[distribution["VEHICLE_CLASS"] == "PASSENGER"].sort_values("AGE")
-    assert passenger["AGE_DIST"].tolist() == pytest.approx([0.25, 0.75])
+    assert passenger["AGE_DIST"].tolist() == pytest.approx(
+        [10 / 140, 30 / 140, 100 / 140]
+    )
 
 
 def test_fetch_to_cache_reuses_existing_zip_without_request(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

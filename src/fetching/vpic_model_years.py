@@ -127,7 +127,7 @@ class VPicTemporalRequest(BaseModel):
 
     source_id: Literal["nhtsa_vpic_vehicle_models"]
     canonical_make: NonEmptyString
-    query_model_year: int = Field(ge=1990, le=2100)
+    query_model_year: int = Field(gt=0)
     endpoint: Endpoint
     url: NonEmptyString
     cache_path: Path
