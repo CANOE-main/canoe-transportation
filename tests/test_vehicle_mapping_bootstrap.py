@@ -8,14 +8,14 @@ import parameterization.road_aggregation as road_aggregation
 from parameterization.vehicle_mapping_bootstrap import (
     apply_high_stock_temporal_gate,
     apply_reviewed_class_overrides,
-    automatically_supported_years,
+    automatically_supported_years as _automatically_supported_years,
     collapse_supported_years,
     derive_mapping_model_year_floor,
     fill_stable_family_years,
     latest_stock_reaudit_keys,
     prepare_manual_evidence,
     reconcile_manual_supported_years,
-    reviewed_strong_candidate_years,
+    reviewed_strong_candidate_years as _reviewed_strong_candidate_years,
     reviewed_crosswalk_seed,
 )
 from utils import (
@@ -29,6 +29,53 @@ from utils import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+
+
+def _bootstrap_rules() -> dict[str, object]:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    return dict(road_aggregation.module_rules(bundle)["mapping_bootstrap"])
+
+
+def automatically_supported_years(
+    current_stock: pd.DataFrame,
+    rating_evidence: pd.DataFrame,
+    **overrides: object,
+) -> pd.DataFrame:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    road_rules = road_aggregation.module_rules(bundle)
+    rules = _bootstrap_rules()
+    policy: dict[str, object] = {
+        "canonical_aliases": road_rules["canonical_aliases"],
+        "model_match_priority": rules["accepted_model_match_methods"],
+        "evidence_source_priority": rules["evidence_source_priority"],
+        "minimum_make_prefix_length": rules["minimum_make_prefix_length"],
+        "minimum_model_prefix_length": rules["minimum_model_prefix_length"],
+        "minimum_model_year": None,
+        "exclude_future_model_years": rules["exclude_future_model_years"],
+    }
+    policy.update(overrides)
+    return _automatically_supported_years(
+        current_stock,
+        rating_evidence,
+        **policy,
+    )
+
+
+def reviewed_strong_candidate_years(
+    current_stock: pd.DataFrame,
+    candidates: pd.DataFrame,
+    **overrides: object,
+) -> pd.DataFrame:
+    rules = _bootstrap_rules()
+    policy: dict[str, object] = {
+        "minimum_similarity": rules["accepted_candidate_model_similarity"]
+    }
+    policy.update(overrides)
+    return _reviewed_strong_candidate_years(
+        current_stock,
+        candidates,
+        **policy,
+    )
 
 
 def test_dynamic_mapping_floor_uses_first_consecutive_transition_start() -> None:
@@ -592,12 +639,17 @@ def test_similarity_promotion_supersedes_lower_impact_manual_arbitration() -> No
         }
     )
 
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    vpic_rules = load_harmonization_rules(bundle, "vpic_model_years")
     combined, reconciliation, _ = reconcile_manual_supported_years(
         historical_stock,
         pipeline,
         pd.DataFrame(),
         manual,
         pd.DataFrame(),
+        models_endpoint_minimum_year=int(
+            vpic_rules["models_endpoint_minimum_year"]
+        ),
     )
 
     assert combined.loc[0, "canonical_model"] == "3"
@@ -827,7 +879,9 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
     reaudit_keys, reaudit_cutoff, _ = latest_stock_reaudit_keys(
         current_stock,
         minimum_model_year=None,
-        quantile=0.5,
+        quantile=float(
+            rules["mapping_bootstrap"]["high_stock_reaudit_quantile"]
+        ),
     )
     assert reaudit_cutoff == 932
     assert len(reaudit_keys) == 983
@@ -844,18 +898,22 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
         list(zip(bootstrap["mto_make_code"], bootstrap["mto_model_code"])),
         index=bootstrap.index,
     )
-    upper_half_1990_plus = bootstrap.loc[
-        bootstrap_keys.isin(reaudit_keys) & bootstrap["model_year"].ge(1990)
+    temporal_floor = int(
+        rules["mapping_bootstrap"]["temporal_validation_minimum_model_year"]
+    )
+    upper_half_temporal_scope = bootstrap.loc[
+        bootstrap_keys.isin(reaudit_keys)
+        & bootstrap["model_year"].ge(temporal_floor)
     ]
-    assert not upper_half_1990_plus.empty
+    assert not upper_half_temporal_scope.empty
     assert (
-        upper_half_1990_plus["year_resolution"].eq("exact_mto_model_year")
-        | upper_half_1990_plus["temporal_validation_status"].eq("confirmed")
-        | upper_half_1990_plus["year_resolution"].eq(
+        upper_half_temporal_scope["year_resolution"].eq("exact_mto_model_year")
+        | upper_half_temporal_scope["temporal_validation_status"].eq("confirmed")
+        | upper_half_temporal_scope["year_resolution"].eq(
             "approved_current_candidate_similarity"
         )
     ).all()
-    assert not upper_half_1990_plus["model_match_method"].str.contains(
+    assert not upper_half_temporal_scope["model_match_method"].str.contains(
         "manual", case=False, na=False
     ).any()
     approved_similarity = bootstrap.loc[
@@ -864,7 +922,11 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
         )
     ]
     assert not approved_similarity.empty
-    assert approved_similarity["candidate_model_similarity"].ge(0.7).all()
+    assert approved_similarity["candidate_model_similarity"].ge(
+        float(
+            rules["mapping_bootstrap"]["accepted_candidate_model_similarity"]
+        )
+    ).all()
     assert approved_similarity["candidate_match_method"].notna().all()
 
     superseded_amg_gt_codes = {
@@ -887,12 +949,16 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
     assert superseded_amg_gt_codes.isdisjoint(
         set(retained_amg_gt["mto_model_code"])
     )
-    retained_amg_gt_1990_plus = retained_amg_gt.loc[
-        retained_amg_gt["model_year"].ge(1990)
+    retained_amg_gt_temporal_scope = retained_amg_gt.loc[
+        retained_amg_gt["model_year"].ge(temporal_floor)
     ]
     assert (
-        retained_amg_gt_1990_plus["year_resolution"].eq("exact_mto_model_year")
-        | retained_amg_gt_1990_plus["temporal_validation_status"].eq("confirmed")
+        retained_amg_gt_temporal_scope["year_resolution"].eq(
+            "exact_mto_model_year"
+        )
+        | retained_amg_gt_temporal_scope["temporal_validation_status"].eq(
+            "confirmed"
+        )
     ).all()
 
     mapped = road_aggregation.apply_vehicle_mapping(

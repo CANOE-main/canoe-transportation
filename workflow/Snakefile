@@ -18,6 +18,10 @@ CER_INTERIM = (
     f"{CER_RULES['interim_subdir_template'].format(edition=CER_EDITION)}"
 )
 STATCAN_INTERIM = f"{INTERIM_ROOT}/{STATCAN_RULES['interim_subdir']}"
+STATCAN_MANIFEST = f"{STATCAN_INTERIM}/{STATCAN_RULES['manifest_file']}"
+STATCAN_WARNINGS = f"{STATCAN_INTERIM}/{STATCAN_RULES['warnings_file']}"
+CER_MANIFEST = f"{CER_INTERIM}/{CER_RULES['manifest_file']}"
+CER_WARNINGS = f"{CER_INTERIM}/{CER_RULES['warnings_file']}"
 DOCTOR_OUTPUT = f"{LOG_ROOT}/doctor.ok"
 TRANSPORT_DATABASE = f"{SQLITE_ROOT}/{SCENARIO.scenario.outputs.sqlite_name}"
 TRANSPORT_VALIDATION = SCENARIO.scenario.outputs.validation_report
@@ -27,10 +31,10 @@ CACHE_FLAG = "" if SCENARIO.scenario.switches.download_sources else "--no-downlo
 rule all:
     input:
         DOCTOR_OUTPUT,
-        f"{STATCAN_INTERIM}/manifest.csv",
-        f"{STATCAN_INTERIM}/warnings.log",
-        f"{CER_INTERIM}/manifest.csv",
-        f"{CER_INTERIM}/warnings.log",
+        STATCAN_MANIFEST,
+        STATCAN_WARNINGS,
+        CER_MANIFEST,
+        CER_WARNINGS,
         TRANSPORT_DATABASE,
         TRANSPORT_VALIDATION,
 
@@ -55,8 +59,8 @@ rule doctor_smoke:
 
 rule statcan_transport_tables:
     output:
-        manifest=f"{STATCAN_INTERIM}/manifest.csv",
-        warnings=f"{STATCAN_INTERIM}/warnings.log",
+        manifest=STATCAN_MANIFEST,
+        warnings=STATCAN_WARNINGS,
     params:
         scenario=SCENARIO_PATH,
         cache_flag=CACHE_FLAG,
@@ -67,8 +71,8 @@ rule statcan_transport_tables:
 
 rule cer_enerfuture:
     output:
-        manifest=f"{CER_INTERIM}/manifest.csv",
-        warnings=f"{CER_INTERIM}/warnings.log",
+        manifest=CER_MANIFEST,
+        warnings=CER_WARNINGS,
     params:
         scenario=SCENARIO_PATH,
         edition=CER_EDITION,

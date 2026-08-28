@@ -52,6 +52,7 @@ def derive_ldv_age_distributions(
     survival_curves: bool,
     maximum_age: int,
     median_lifetimes: dict[str, float],
+    historical_review_minimum_model_year: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Apply the scenario-owned cutoff and report all excluded stock."""
     required = {
@@ -81,7 +82,9 @@ def derive_ldv_age_distributions(
         errors="coerce",
     )
     accepted["age"] = accepted["report_year"] - accepted["MODEL_YEAR"]
-    accepted["pre_2000"] = accepted["MODEL_YEAR"].lt(2000)
+    accepted["before_historical_review_year"] = accepted["MODEL_YEAR"].lt(
+        historical_review_minimum_model_year
+    )
     accepted["negative_age"] = accepted["age"].lt(0)
     if survival_curves:
         accepted["cutoff_age"] = float(maximum_age)
@@ -128,9 +131,14 @@ def derive_ldv_age_distributions(
                     rows["negative_age"],
                     "FIT_ACTIVE",
                 ].sum(),
-                "pre_2000_rows": int(rows["pre_2000"].sum()),
-                "pre_2000_fit_active_stock": rows.loc[
-                    rows["pre_2000"],
+                "historical_review_minimum_model_year": (
+                    historical_review_minimum_model_year
+                ),
+                "before_historical_review_year_rows": int(
+                    rows["before_historical_review_year"].sum()
+                ),
+                "before_historical_review_year_fit_active_stock": rows.loc[
+                    rows["before_historical_review_year"],
                     "FIT_ACTIVE",
                 ].sum(),
                 "over_cutoff_rows": int(rows["over_cutoff"].sum()),
@@ -202,6 +210,9 @@ def build_existing_stock_age_artifacts(scenario_path: str | Path) -> Path:
         survival_curves=bundle.scenario.switches.survival_curves,
         maximum_age=bundle.scenario.switches.survival_curve_max_age,
         median_lifetimes=median_lifetime_map(medians),
+        historical_review_minimum_model_year=int(
+            rules["historical_review_minimum_model_year"]
+        ),
     )
     write_dataframe_atomic(
         age_distribution,

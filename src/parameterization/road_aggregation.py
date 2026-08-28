@@ -575,13 +575,18 @@ def validate_vehicle_mapping(
     return validated
 
 
-def _model_similarity(mto_model: str, canonical_model: str) -> tuple[float, str]:
+def _model_similarity(
+    mto_model: str,
+    canonical_model: str,
+    *,
+    scores: dict[str, float],
+) -> tuple[float, str]:
     if mto_model == canonical_model:
-        return 1.0, "exact_normalized"
+        return float(scores["exact_normalized"]), "exact_normalized"
     if canonical_model.startswith(mto_model) or mto_model.startswith(canonical_model):
-        return 0.95, "normalized_prefix"
+        return float(scores["normalized_prefix"]), "normalized_prefix"
     if mto_model and mto_model in canonical_model:
-        return 0.9, "normalized_substring"
+        return float(scores["normalized_substring"]), "normalized_substring"
     return (
         SequenceMatcher(None, mto_model, canonical_model).ratio(),
         "string_similarity",
@@ -592,7 +597,8 @@ def generate_mapping_candidates(
     current_stock: pd.DataFrame,
     rating_evidence: pd.DataFrame,
     *,
-    candidates_per_key: int = 5,
+    candidates_per_key: int,
+    similarity_scores: dict[str, float],
     canonical_aliases: dict[str, str] | None = None,
 ) -> pd.DataFrame:
     """Generate ranked evidence without accepting or overwriting mappings."""
@@ -678,6 +684,7 @@ def generate_mapping_candidates(
             model_score, method = _model_similarity(
                 model_code,
                 str(rating["normalized_canonical_model"]),
+                scores=similarity_scores,
             )
             overlap_start = max(
                 int(stock_row["observed_model_year_from"]),
@@ -1337,8 +1344,8 @@ def latest_unresolved_key_worklist(
 def derive_aggregation_weights(
     mapped: pd.DataFrame,
     *,
-    vintage_bin_years: int = 5,
-    vintage_alignment: str = "ceiling",
+    vintage_bin_years: int,
+    vintage_alignment: str,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Derive NRCan and NLR class weights from accepted fit-active stock."""
     accepted = mapped.loc[mapped["mapping_accepted"]].copy()
@@ -1458,7 +1465,7 @@ def derive_aggregation_weights(
 def derive_fleet_composition_weights(
     mapped: pd.DataFrame,
     *,
-    minimum_model_year: int = 2000,
+    minimum_model_year: int,
 ) -> pd.DataFrame:
     """Derive latest-snapshot fit-active weights at the full class-age grain."""
     columns = [
@@ -1647,9 +1654,18 @@ def build_mapping_diagnostic_artifacts(scenario_path: str | Path) -> Path:
     candidates = generate_mapping_candidates(
         current_stock,
         ratings,
+        candidates_per_key=int(
+            rules["mapping_bootstrap"]["candidate_rows_per_key"]
+        ),
+        similarity_scores={
+            str(name): float(score)
+            for name, score in rules["mapping_bootstrap"][
+                "candidate_similarity_scores"
+            ].items()
+        },
         canonical_aliases={
             str(source): str(target)
-            for source, target in rules.get("canonical_aliases", {}).items()
+            for source, target in rules["canonical_aliases"].items()
         },
     )
     mapped = apply_vehicle_mapping(

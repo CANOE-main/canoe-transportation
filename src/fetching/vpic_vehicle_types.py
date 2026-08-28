@@ -105,7 +105,7 @@ class VPicRequest(BaseModel):
 
     source_id: Literal["nhtsa_vpic_vehicle_models"]
     canonical_make: NonEmptyString
-    query_model_year: int = Field(ge=1996, le=2100)
+    query_model_year: int = Field(gt=0)
     vehicle_type: str | None = None
     url: NonEmptyString
     cache_path: Path

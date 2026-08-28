@@ -210,7 +210,7 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
         "transform_parameters": False,
         "include_existing_capacity": True,
         "survival_curves": False,
-        "survival_curve_max_age": 30,
+        "survival_curve_max_age": 25,
     }
 
 
@@ -293,6 +293,31 @@ def test_invalid_scenario_choices_are_rejected(
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
+@pytest.mark.parametrize(
+    ("section", "field"),
+    [
+        ("validation", "behavior"),
+        ("validation", "compare_legacy"),
+        ("switches", "debug"),
+        ("switches", "include_existing_capacity"),
+        ("switches", "survival_curves"),
+        ("switches", "survival_curve_max_age"),
+    ],
+)
+def test_user_selectable_scenario_values_have_no_python_fallback(
+    tmp_path: Path,
+    section: str,
+    field: str,
+) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload[section].pop(field)
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValidationError, match=field):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
 def test_data_quality_outside_v4_enum_is_rejected(tmp_path: Path) -> None:
     _, sources, scenario = _write_config_copy(tmp_path)
     payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
@@ -304,7 +329,7 @@ def test_data_quality_outside_v4_enum_is_rejected(tmp_path: Path) -> None:
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
-def test_source_data_quality_defaults_to_fives() -> None:
+def test_source_data_quality_defaults_are_registry_owned() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     quality = bundle.sources.sources[
         "nrcan_ceud_transport_provincial"
@@ -319,9 +344,19 @@ def test_source_data_quality_defaults_to_fives() -> None:
     }
 
 
+def test_source_registry_defaults_are_required(tmp_path: Path) -> None:
+    _, sources, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
+    payload.pop("defaults")
+    sources.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValidationError, match="defaults"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
 def test_collection_defaults_are_not_shared() -> None:
-    first = SourceComponent(label="first", short_name="first")
-    second = SourceComponent(label="second", short_name="second")
+    first = SourceComponent(label="first", short_name="first", required=True)
+    second = SourceComponent(label="second", short_name="second", required=True)
 
     first.adapter["x"] = 1
     first.inputs.append("stock")

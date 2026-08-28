@@ -771,8 +771,11 @@ def test_faa_category_compatibility_failure(
     request_3 = _faa_request(tmp_path, "section_3_capacity")
     request_4 = _faa_request(tmp_path, "section_4_operating_costs")
 
-    def fake_extract(request, *, document_title, checksum=None):
+    def fake_extract(
+        request, *, document_title, minimum_text_characters, checksum=None
+    ):
         assert document_title
+        assert minimum_text_characters == source_rules["minimum_extracted_text_characters"]
         text = section_3 if request.component_id == "section_3_capacity" else section_4
         return text, checksum or request.expected_sha256
 
@@ -856,8 +859,11 @@ def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_output
         lambda *_args, **_kwargs: (payload_request, "fixture-payload.js"),
     )
 
-    def fake_extract(request, *, document_title, checksum=None):
+    def fake_extract(
+        request, *, document_title, minimum_text_characters, checksum=None
+    ):
         assert document_title
+        assert minimum_text_characters == rules["faa"]["minimum_extracted_text_characters"]
         text = section_3 if request.component_id == "section_3_capacity" else section_4
         return text, checksum or request.expected_sha256
 

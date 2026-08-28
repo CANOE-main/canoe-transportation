@@ -1063,6 +1063,7 @@ def extract_pdf_text(
     request: ArtifactRequest,
     *,
     document_title: str,
+    minimum_text_characters: int,
     checksum: str | None = None,
 ) -> tuple[str, str]:
     """Validate a PDF and return its normal layout text layer."""
@@ -1079,7 +1080,7 @@ def extract_pdf_text(
             f"FAA PDF is not readable: {request.cache_path}"
         ) from exc
     text = "\n".join(pages)
-    if len(_normalize_whitespace(text)) < 1000:
+    if len(_normalize_whitespace(text)) < minimum_text_characters:
         raise AssortedSourcesError(
             f"FAA PDF text layer is empty or unusable: {request.cache_path}"
         )
@@ -1203,6 +1204,7 @@ def normalize_faa(
         document_title=str(
             rules["documents"][section_3_request.component_id]["document_title"]
         ),
+        minimum_text_characters=int(rules["minimum_extracted_text_characters"]),
         checksum=section_3_checksum,
     )
     section_4_text, digest_4 = extract_pdf_text(
@@ -1210,6 +1212,7 @@ def normalize_faa(
         document_title=str(
             rules["documents"][section_4_request.component_id]["document_title"]
         ),
+        minimum_text_characters=int(rules["minimum_extracted_text_characters"]),
         checksum=section_4_checksum,
     )
     tables: dict[str, pd.DataFrame] = {}

@@ -415,7 +415,7 @@ def build_requests(
     )
     report_rules = module_rules(bundle)["reports"]["A"]
     excluded_years = {
-        int(value) for value in report_rules.get("excluded_years", [])
+        int(value) for value in report_rules["excluded_years"]
     }
     gaps = [
         gap for gap in missing_resource_years(resources) if gap not in excluded_years
@@ -676,11 +676,11 @@ def _code_quality_masks(
     normalized_values = values.fillna("").astype(str).str.strip()
     blank = normalized_values.eq("")
     suppressed = pd.Series(False, index=normalized_values.index)
-    for pattern in report_rules.get("suppressed_code_patterns", []):
+    for pattern in report_rules["suppressed_code_patterns"]:
         suppressed |= normalized_values.str.fullmatch(re.compile(str(pattern)))
     unknown_labels = {
         str(label).strip().upper()
-        for label in report_rules.get("unknown_code_labels", [])
+        for label in report_rules["unknown_code_labels"]
     }
     unknown = normalized_values.str.upper().isin(unknown_labels)
     return blank, suppressed, unknown
@@ -1029,28 +1029,6 @@ def normalize_report_a(
         _finding_rows(
             normalized,
             report_year=year,
-            issue_type="pre_2000_stock",
-            mask=normalized[model_year_column].lt(2000),
-            detail="Pre-2000 model-year stock retained in the source-normalized audit table.",
-            class_column=class_column,
-            fit_active_column=fit_active_column,
-        )
-    )
-    findings.extend(
-        _finding_rows(
-            normalized,
-            report_year=year,
-            issue_type="stock_over_age_30",
-            mask=normalized["AGE"].gt(30),
-            detail="Stock older than 30 years retained; truncation is parameterization-owned.",
-            class_column=class_column,
-            fit_active_column=fit_active_column,
-        )
-    )
-    findings.extend(
-        _finding_rows(
-            normalized,
-            report_year=year,
             issue_type="newest_model_year_cohort",
             mask=normalized[model_year_column].eq(year),
             detail="Report-year model cohort may be incomplete; row retained.",
@@ -1289,7 +1267,6 @@ def normalize_report5(
     raw_file: str,
     cached_zip: Path,
     rules: dict[str, Any],
-    max_age: int | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Retain Report 5 audit rows and produce its legacy truncated distribution."""
     report_rules = rules["reports"][5]
@@ -1307,9 +1284,7 @@ def normalize_report5(
         str(vehicle_class).upper()
         for vehicle_class in report_rules["kept_vehicle_classes"]
     ]
-    selected_max_age = int(
-        max_age if max_age is not None else report_rules["max_age"]
-    )
+    selected_max_age = int(report_rules["max_age"])
 
     cleaned = raw.loc[
         (raw[descriptor_column].str.upper() == kept_descriptor)
@@ -1532,7 +1507,6 @@ def fetch_and_normalize(
     year: int | None = None,
     download: bool = True,
     package_metadata: dict[str, Any] | None = None,
-    max_age: int | None = None,
 ) -> Path:
     """Fetch/cache all usable editions and publish source-normalized artifacts."""
     bundle = load_config_bundle(scenario_path)
@@ -1569,7 +1543,7 @@ def fetch_and_normalize(
     current_year = max(request.year for request in requests_to_process)
     output_dir.mkdir(parents=True, exist_ok=True)
     report_a_rules = rules["reports"]["A"]
-    for excluded_year in report_a_rules.get("excluded_years", []):
+    for excluded_year in report_a_rules["excluded_years"]:
         excluded_output = output_dir / str(
             report_a_rules["normalized_output_template"]
         ).format(year=int(excluded_year))
@@ -1679,7 +1653,6 @@ def fetch_and_normalize(
                     raw_file=resolved["5"].display_name,
                     cached_zip=request.cache_path,
                     rules=rules,
-                    max_age=max_age,
                 )
         os.replace(long_temporary, long_path)
     finally:
@@ -1777,12 +1750,6 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional single-edition override; omitted processes every usable edition.",
     )
-    parser.add_argument(
-        "--max-age",
-        type=int,
-        default=None,
-        help="Legacy Report 5 comparison only; Report A remains untruncated.",
-    )
     parser.add_argument("--no-download", action="store_true")
     return parser.parse_args()
 
@@ -1794,7 +1761,6 @@ def main() -> None:
         args.scenario,
         year=args.year,
         download=not args.no_download,
-        max_age=args.max_age,
     )
     logging.info(
         "Wrote Ontario vehicle population interim outputs to %s",

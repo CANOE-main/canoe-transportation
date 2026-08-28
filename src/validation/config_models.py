@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from collections.abc import Iterator, Mapping
 from typing import Annotated, Any, Literal, Self
 
@@ -38,15 +39,15 @@ class MappingModel(BaseModel, Mapping[str, Any]):
 
 
 class DataQuality(MappingModel):
-    """The five v4 data-quality scores, defaulting to unreviewed score 5."""
+    """The five source-owned v4 data-quality scores."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    dq_cred: DataQualityCredibilityLevel = DataQualityCredibilityLevel(5)
-    dq_geog: DataQualityGeographyLevel = DataQualityGeographyLevel(5)
-    dq_struc: DataQualityStructureLevel = DataQualityStructureLevel(5)
-    dq_tech: DataQualityTechnologyLevel = DataQualityTechnologyLevel(5)
-    dq_time: DataQualityTimeLevel = DataQualityTimeLevel(5)
+    dq_cred: DataQualityCredibilityLevel
+    dq_geog: DataQualityGeographyLevel
+    dq_struc: DataQualityStructureLevel
+    dq_tech: DataQualityTechnologyLevel
+    dq_time: DataQualityTimeLevel
 
     def row_fields(self) -> dict[str, int]:
         return {name: int(getattr(self, name)) for name in type(self).model_fields}
@@ -233,10 +234,10 @@ class ScenarioOutputs(MappingModel):
 
 
 class ScenarioValidation(MappingModel):
-    behavior: Literal["error", "warn"] = "error"
+    behavior: Literal["error", "warn"]
     reference_sqlite: str | None = None
-    compare_legacy: bool = False
-    parameter_tolerances: dict[str, float] = Field(default_factory=dict)
+    compare_legacy: bool
+    parameter_tolerances: dict[str, float]
 
     @model_validator(mode="after")
     def validate_reference_and_tolerances(self) -> Self:
@@ -258,13 +259,13 @@ class ScenarioValidation(MappingModel):
 
 class ScenarioSwitches(MappingModel):
     legacy_equivalent: bool
-    debug: bool = False
+    debug: bool
     download_sources: bool
     compile_sqlite: bool
     transform_parameters: bool
-    include_existing_capacity: bool = True
-    survival_curves: bool = False
-    survival_curve_max_age: int = Field(default=30, gt=0)
+    include_existing_capacity: bool
+    survival_curves: bool
+    survival_curve_max_age: int = Field(gt=0)
 
 
 class ScenarioRowNoteOverrides(MappingModel):
@@ -336,8 +337,8 @@ class SourceSpec(MappingModel):
     validation_rule: str
     refresh_notes: str
     units: str | None = None
-    required: bool = True
-    data_quality: DataQuality = Field(default_factory=DataQuality)
+    required: bool
+    data_quality: DataQuality
     components: dict[str | int, SourceComponent] = Field(default_factory=dict)
     adapter: dict[str, Any] = Field(default_factory=dict)
 
@@ -350,9 +351,44 @@ class SourceSpec(MappingModel):
         raise KeyError(key)
 
 
+class SourceDefaults(MappingModel):
+    """Registry-owned defaults applied before individual source validation."""
+
+    required: bool
+    component_required: bool
+    data_quality: DataQuality
+
+
 class SourcesConfig(MappingModel):
     version: int
+    defaults: SourceDefaults
     sources: dict[str, SourceSpec]
+
+    @model_validator(mode="before")
+    @classmethod
+    def apply_registry_defaults(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        defaults = value.get("defaults")
+        sources = value.get("sources")
+        if not isinstance(defaults, dict) or not isinstance(sources, dict):
+            return value
+        resolved = deepcopy(value)
+        resolved_defaults = resolved["defaults"]
+        for source in resolved["sources"].values():
+            if not isinstance(source, dict):
+                continue
+            source.setdefault("required", resolved_defaults["required"])
+            source.setdefault("data_quality", resolved_defaults["data_quality"])
+            components = source.get("components", {})
+            if not isinstance(components, dict):
+                continue
+            for component in components.values():
+                if isinstance(component, dict):
+                    component.setdefault(
+                        "required", resolved_defaults["component_required"]
+                    )
+        return resolved
 
     @model_validator(mode="after")
     def validate_registry(self) -> Self:

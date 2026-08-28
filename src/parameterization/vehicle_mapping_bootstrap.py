@@ -41,6 +41,7 @@ from utils.vehicle_labels import (
 
 LOGGER = logging.getLogger(__name__)
 RATINGS_RULE_KEY = "nrcan_fuel_consumption_ratings"
+VPIC_MODEL_YEAR_RULE_KEY = "vpic_model_years"
 DEFAULT_SCENARIO = "config/scenarios/legacy_reproduction.yaml"
 MANUAL_DERIVED_COLUMNS = [
     "canonical_make",
@@ -51,14 +52,6 @@ MANUAL_DERIVED_COLUMNS = [
     "notes",
     "source -> data_source",
 ]
-
-DEFAULT_MODEL_MATCH_PRIORITY = {
-    "exact_normalized_model": 0,
-    "canonical_model_plus_mto_suffix": 1,
-    "normalized_model_prefix": 2,
-    "anchored_consonant_abbreviation": 3,
-}
-
 
 def prepare_manual_evidence(
     manual: pd.DataFrame,
@@ -425,12 +418,12 @@ def automatically_supported_years(
     canonical_aliases: dict[str, str] | None = None,
     seed_mapping: pd.DataFrame | None = None,
     label_hints: pd.DataFrame | None = None,
-    model_match_priority: dict[str, int] | None = None,
-    evidence_source_priority: list[str] | None = None,
-    minimum_make_prefix_length: int = 3,
-    minimum_model_prefix_length: int = 3,
-    minimum_model_year: int | None = None,
-    exclude_future_model_years: bool = True,
+    model_match_priority: dict[str, int],
+    evidence_source_priority: list[str],
+    minimum_make_prefix_length: int,
+    minimum_model_prefix_length: int,
+    minimum_model_year: int | None,
+    exclude_future_model_years: bool,
 ) -> pd.DataFrame:
     """Return stock years with unambiguous make/model/class evidence."""
     rating_evidence = assign_rating_model_families(rating_evidence)
@@ -462,11 +455,8 @@ def automatically_supported_years(
         normalize_vehicle_text(source): str(target)
         for source, target in (canonical_aliases or {}).items()
     }
-    match_priority = model_match_priority or DEFAULT_MODEL_MATCH_PRIORITY
-    source_priority = evidence_source_priority or [
-        "nrcan_fuel_consumption_ratings",
-        "fueleconomy_gov_vehicle_data",
-    ]
+    match_priority = model_match_priority
+    source_priority = evidence_source_priority
     stock = _fit_active_stock_rows(
         current_stock,
         exclude_future_model_years=exclude_future_model_years,
@@ -667,7 +657,7 @@ def reviewed_strong_candidate_years(
     current_stock: pd.DataFrame,
     candidates: pd.DataFrame,
     *,
-    minimum_similarity: float = 0.7,
+    minimum_similarity: float,
 ) -> pd.DataFrame:
     """Return unambiguous rank-one candidates approved by the similarity rule."""
     if candidates.empty:
@@ -989,6 +979,8 @@ def reconcile_manual_supported_years(
     manual_supported: pd.DataFrame,
     manual: pd.DataFrame,
     vpic_evidence: pd.DataFrame,
+    *,
+    models_endpoint_minimum_year: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Apply the reviewed two-pass hierarchy and publish gated vPIC requests."""
     pipeline = pipeline_supported.copy()
@@ -1030,7 +1022,7 @@ def reconcile_manual_supported_years(
         minimum_model_year=None,
     )
     eligible_vpic_stock = all_stock.loc[
-        all_stock["MODEL_YEAR"].ge(1996)
+        all_stock["MODEL_YEAR"].ge(models_endpoint_minimum_year)
         & all_stock["MODEL_YEAR"].le(all_stock["last_report_year"])
     ].copy()
     for _, manual_row in manual.iterrows():
@@ -1456,6 +1448,9 @@ def build_bootstrap_mapping(
     rules = module_rules(bundle)
     rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
     ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
+    vpic_model_year_rules = load_harmonization_rules(
+        bundle, VPIC_MODEL_YEAR_RULE_KEY
+    )
     output_dir = resolve_input_path(
         bundle,
         "interim",
@@ -1529,8 +1524,8 @@ def build_bootstrap_mapping(
     canonical_make_aliases = {
         str(source): str(target)
         for source, target in {
-            **rules.get("canonical_aliases", {}),
-            **bootstrap_rules.get("manual_make_aliases", {}),
+            **rules["canonical_aliases"],
+            **bootstrap_rules["manual_make_aliases"],
         }.items()
     }
     reviewed_make_names = (
@@ -1567,9 +1562,7 @@ def build_bootstrap_mapping(
         .isin(reaudit_keys)
     ].copy()
     configured_hints: list[dict[str, Any]] = []
-    for mto_key, hint in bootstrap_rules.get(
-        "reviewed_model_label_hints", {}
-    ).items():
+    for mto_key, hint in bootstrap_rules["reviewed_model_label_hints"].items():
         make_code, model_code = str(mto_key).split("/", maxsplit=1)
         configured_hints.append(
             {
@@ -1606,7 +1599,7 @@ def build_bootstrap_mapping(
         ratings,
         canonical_aliases={
             str(source): str(target)
-            for source, target in rules.get("canonical_aliases", {}).items()
+            for source, target in rules["canonical_aliases"].items()
         },
         seed_mapping=None,
         label_hints=label_hints,
@@ -1649,19 +1642,28 @@ def build_bootstrap_mapping(
         minimum_make_prefix_length=int(
             bootstrap_rules["minimum_make_prefix_length"]
         ),
-        minimum_model_prefix_length=2,
+        minimum_model_prefix_length=int(
+            bootstrap_rules["manual_minimum_model_prefix_length"]
+        ),
         minimum_model_year=mapping_floor,
         exclude_future_model_years=bool(
             bootstrap_rules["exclude_future_model_years"]
         ),
     )
-    if bool(bootstrap_rules.get("accept_reviewed_strong_candidates", False)):
+    if bool(bootstrap_rules["accept_reviewed_strong_candidates"]):
         current_candidates = generate_mapping_candidates(
             current_stock,
             ratings,
+            candidates_per_key=int(bootstrap_rules["candidate_rows_per_key"]),
+            similarity_scores={
+                str(name): float(score)
+                for name, score in bootstrap_rules[
+                    "candidate_similarity_scores"
+                ].items()
+            },
             canonical_aliases={
                 str(source): str(target)
-                for source, target in rules.get("canonical_aliases", {}).items()
+                for source, target in rules["canonical_aliases"].items()
             },
         )
         strong_supported = reviewed_strong_candidate_years(
@@ -1730,6 +1732,9 @@ def build_bootstrap_mapping(
         manual_supported,
         manual,
         load_vpic_scope_evidence(bundle),
+        models_endpoint_minimum_year=int(
+            vpic_model_year_rules["models_endpoint_minimum_year"]
+        ),
     )
     supported = supported.loc[
         pd.to_numeric(supported["model_year"], errors="coerce").ge(mapping_floor)
@@ -1738,23 +1743,19 @@ def build_bootstrap_mapping(
         supported,
         {
             str(key): {str(column): str(value) for column, value in values.items()}
-            for key, values in bootstrap_rules.get(
-                "reviewed_class_overrides", {}
-            ).items()
+            for key, values in bootstrap_rules["reviewed_class_overrides"].items()
         },
     )
     supported = apply_reviewed_scope_overrides(
         supported,
         {
             str(key): str(value)
-            for key, value in bootstrap_rules.get(
-                "reviewed_scope_overrides", {}
-            ).items()
+            for key, value in bootstrap_rules["reviewed_scope_overrides"].items()
         },
     )
     canonical_model_overrides = {
         str(key): str(value)
-        for key, value in bootstrap_rules.get("canonical_model_overrides", {}).items()
+        for key, value in bootstrap_rules["canonical_model_overrides"].items()
     }
     supported = apply_canonical_model_overrides(
         supported,
@@ -1783,9 +1784,7 @@ def build_bootstrap_mapping(
         ),
         excluded_keys=reaudit_keys,
     )
-    for mto_key, scope in bootstrap_rules.get(
-        "reviewed_scope_overrides", {}
-    ).items():
+    for mto_key, scope in bootstrap_rules["reviewed_scope_overrides"].items():
         make_code, model_code = str(mto_key).split("/", maxsplit=1)
         mask = reconciliation["mto_make_code"].eq(make_code) & reconciliation[
             "mto_model_code"
