@@ -10,6 +10,10 @@ Baseline reproduction is the first priority. Reproduce legacy-equivalent outputs
 documented tolerances and explain or accept parity gaps before adding new assumptions,
 scenarios, representation experiments, or sensitivity workflows.
 
+Standalone transport compilation remains first-class. Any future integrated assembly must
+reuse the same transport parameterization and validated-insertion behavior rather than
+create a parallel transport implementation.
+
 ## Repository responsibilities
 
 - `config/paths.yaml` is the machine-readable artifact topology: canonical paths,
@@ -22,7 +26,11 @@ scenarios, representation experiments, or sensitivity workflows.
 - `config/parameters/*.yaml` owns extraction maps, harmonization rules, class mappings,
   filters, bins, conversion factors, units, and parameter metadata.
 - `src/fetching/` acquires, validates, caches, and normalizes source artifacts.
-- `src/parameterization/` transforms normalized inputs into model parameters.
+- `src/parameterization/` transforms normalized inputs into parameter-ready model
+  contracts organized around coherent modeling behavior. It must not own SQLite transactions
+  or CANOE-main orchestration.
+- `src/build_transport.py` exposes caller-owned contribution preparation/insertion and owns
+  standalone atomic database publication for reproducibility and legacy parity.
 - `src/validation/` owns configuration, provenance, schema, insertion, integrity,
   parity, and validation-report logic.
 - `workflow/` provides lightweight scenario-level dependency and artifact orchestration;
@@ -50,8 +58,8 @@ representations unless the task explicitly places them in scope.
 
 Do not discover or retrieve Markdown trees by default. Normal agent-facing docs are limited
 to `docs/backend_architecture.md`, `docs/etl_flowcharts.md`, `docs/assumptions.md`,
-`docs/codebase_diagnostic_snapshot.md`, and documents the user explicitly names.
-Frontmatter routes them; it cannot enroll new ones.
+`docs/codebase_diagnostic_snapshot.md`, `docs/canoe_main_orchestrator.md`, and documents
+the user explicitly names. Frontmatter routes them; it cannot enroll new ones.
 
 `README.md` is normally unnecessary implementation context and is the intentional human
 presentation/redundancy exception. Never routinely redesign, deduplicate, condense,
@@ -68,6 +76,10 @@ fitness, structural complexity, shared infrastructure, development/runtime separ
 an efficiency/refactor decision is in scope. Read only the relevant diagnostic sections,
 never use it as ordinary source or parameter context, and verify its point-in-time findings
 against current executable evidence before acting.
+
+Retrieve `docs/canoe_main_orchestrator.md` only for a CANOE-main integration seam. Treat it
+as a routing snapshot: verify the referenced upstream branch and affected interfaces before
+acting, and do not turn unfinished upstream details into durable transport policy.
 
 Edit docs only for a concrete task reason. Unless exact content is user-approved or the edit
 is mechanical, every Codex-authored substantive reviewable change—assumption, interpretation,
