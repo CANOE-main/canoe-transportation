@@ -19,7 +19,6 @@ inputs/0_manual_params/Cars2021.csv
 inputs/0_manual_params/LightTrucks2021.csv
 inputs/0_manual_params/MHDV2020.csv
 outputs/
-docs/insights/__marimo__/
-.agents/skills/
+.agents/skills/*
 .agents/plans/
 tmp/

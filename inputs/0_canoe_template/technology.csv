@@ -114,13 +114,10 @@ T_HDV_WTF_MDO_N,p,freight_marine,mdo,,1,New marine freight ship (marine diesel o
 T_HDV_WTF_HFO_N,p,freight_marine,hfo,,1,New marine freight ship (heavy fuel oil) ,Vehicle class corresponds to “Marine Transportation” from NRCan Comprehensive Energy Use Database; excluding passenger transportation and recreative boating.
 T_HDV_WTF_LNG_N,p,freight_marine,lng,,1,New marine freight ship (liquified natural gas ICE) ,Vehicle class corresponds to “Marine Transportation” from NRCan Comprehensive Energy Use Database; excluding passenger transportation and recreative boating.
 T_OFF,p,off_road,diesel,1,1,"Off-road transportation (assumed to consume diesel only), passed directly as demand in PJ. ","Vehicle class corresponds to “Off Road” from NRCan Comprehensive Energy Use Database; including off-road vehicles - ATVs, snowmobiles, golf carts and some military vehicles."
-T_LDV_BEV_CHRG,p,charger,bev_ldv,,1,Charging infrastructure for light-duty battery-electric vehicles and motorcycles,
-T_LDV_PHEV_CHRG,p,charger,phev_ldv,,,Charging infrastructure for light-duty plug-in hybrid vehicles and motorcycles,
-T_MDV_CHRG,p,charger,bev_mdv,,,Charging infrastructure for medium-duty vehicles,
-T_HDV_CHRG,p,charger,bev_hdv,,,Charging infrastructure for on-road heavy-duty vehicles,
+T_LDV_CHRG,p,charger,ldv,,,Charging infrastructure for light-duty electric vehicles and motorcycles,
+T_MHDV_CHRG,p,charger,mhdv,,,Charging infrastructure for medium- and heavy-duty trucks,
 T_H2_LDV_REFUEL,p,h2_refuel,ldv,,,Hydrogen refuelling station for light-duty vehicles,
-T_H2_MDV_REFUEL,p,h2_refuel,mdv,,,Hydrogen refuelling station for medium-duty vehicles,
-T_H2_HDV_REFUEL,p,h2_refuel,hdv,,,Hydrogen refuelling station for on-road heavy-duty vehicles,
+T_H2_MHDV_REFUEL,p,h2_refuel,mhdv,,,Hydrogen refuelling station for on-road heavy-duty vehicles,
 T_BLND_ETH_GSL,p,,,1,1,Blending technology for ethanol and gasoline blendstock,
 T_BLND_RDSL_DSL,p,,,1,1,Blending technology for renewable diesel and diesel,
 T_BLND_DSL_ELC_MDV,p,,,1,1,Blending technology for diesel and electricity (MD-PHEV),

@@ -11,16 +11,15 @@ verify: Check planned content against current code, config, tests, schemas, and 
 This repository is an **agent-native ETL backend** for compiling configured Canadian
 transport-sector scenarios into auditable, CANOE/Temoa-ready SQLite databases. It turns
 registered external, external-model, and reviewed manual inputs into normalized evidence,
-model parameters, provenance records, and a schema-validated database published atomically. 
-The resulting transport database is one independently compiled sector contribution to
-CANOE. Downstream model assembly merges it with SQLite outputs from the other sector
-backends into one CANOE-model database for use in the Temoa framework. 
+model parameters, provenance records, and a schema-validated database published atomically.
 
-*Agent-native* means
-the repository deliberately exposes bounded context, explicit ownership and artifact
-routing, task-local plans, and executable validation so coding agents can work safely and
-effectively; it remains directly usable and reviewable by human contributors and does not
-require an agent at runtime.
+The standalone transport SQLite remains a first-class output for legacy parity, focused
+validation, and independent transport research. The planned CANOE-main integration is a
+second assembly path: the broader compiler currently initializes one shared CANOE SQLite
+database and invokes sector modules against it. Transportation should therefore reuse the
+same parameterization contracts either to build its standalone database or to contribute
+rows to an already initialized master database; multi-sector integration should not require
+a second transport transformation implementation.
 
 ```text
 .
@@ -42,6 +41,7 @@ require an agent at runtime.
 ├── src/
 │   ├── setup.py                            # Configuration/schema smoke entrypoint
 │   ├── build_transport.py                  # Atomic database build, publication, and report owner
+│   ├── canoe_adapter.py                    # Canoe-main orchestrator adapter for running this backend; exact upstream contract is WIP - #to-do
 │   ├── fetching/                           # Upstream download, cache, and interim normalization
 │   │   ├── nrcan_ceud.py                   # NRCan CEUD transport tables
 │   │   ├── vehicle_population.py           # Ontario MTO report acquisition and normalization
@@ -53,18 +53,22 @@ require an agent at runtime.
 │   │   ├── vpic_model_years.py             # Opt-in vPIC make/model-year evidence
 │   │   └── assorted_sources.py             # Smaller registered source adapters
 │   ├── parameterization/                   # Transform normalized inputs into model parameters
-│   │   ├── manual_parameters.py            # Resolve compact manual category/powertrain selectors
-│   │   ├── stocks_and_demands.py           # Ontario LDV existing-stock age products
-│   │   ├── lifetimes_survival.py           # Accepted lifetime products and MTO diagnostics
+│   │   ├── manual_parameters.py            # Resolve compact category/powertrain selectors
+│   │   ├── road_stocks_and_demands.py      # Existing stock and demand products from road modes
+│   │   ├── offroad_stocks_and_demands.py   # Existing stock and demand products from off-road modes
+│   │   ├── ev_chargers.py                  # EV charging infrastructure capacity
+│   │   ├── road_lifetimes_survival.py      # Accepted road lifetime, survival, and MTO diagnostics
+│   │   ├── offroad_lifetimes.py            # Lifetimes of remaining technologies
 │   │   ├── road_aggregation.py             # Reviewed mapping application and aggregation weights
 │   │   ├── vehicle_mapping_bootstrap.py    # Explicit mapping-development entrypoint
-│   │   ├── efficiencies.py                 # Technology efficiencies - #to-do
-│   │   ├── capex_opex.py                   # Investment and operating costs - #to-do
-│   │   ├── ev_chargers.py                  # BEV charging profiles and charger infrastructure - #to-do
-│   │   ├── emissions.py                    # Vehicle-cycle and operating emissions - #to-do
+│   │   ├── road_efficiencies.py            # Road technology efficiencies - #to-do
+│   │   ├── offroad_efficiencies.py         # Off-road technology efficiencies - #to-do
+│   │   ├── road_capex_opex.py              # Investment and operating costs - #to-do
+│   │   ├── offroad_capex_opex.py           # Investment and operating costs - #to-do
+│   │   ├── ldv_charging_profiles.py        # Hourly LDEV charging demand profiles - #to-do
+│   │   ├── road_embodied_emissions.py      # Vehicle-cycle and operating emissions - #to-do
 │   │   ├── market_constraints.py           # Market shares, policy limits, and SCC rules - #to-do
-│   │   ├── adoption_constraints.py         # Adoption and growth constraints - #to-do
-│   │   └── sector_coupling.py              # Fuel, electricity, hydrogen, and blends - #to-do
+│   │   └── adoption_constraints.py         # Adoption and growth constraints - #to-do
 │   ├── utils/
 │   │   ├── __init__.py                     # Typed config loading and artifact path resolution
 │   │   ├── files.py                        # Shared hashing and atomic CSV publication
@@ -92,6 +96,7 @@ require an agent at runtime.
 │   └── logs/                               # Run logs and warnings
 ├── docs/
 │   ├── backend_architecture.md             # Repository structure and ownership reference
+│   ├── canoe_main_orchestrator.md          # Verified upstream CANOE-main integration context
 │   └── etl_flowcharts.md                   # Parameter-specific lineage reference
 ├── legacy_backend/                         # Read-mostly parity evidence
 ├── scripts/
@@ -100,6 +105,24 @@ require an agent at runtime.
 ├── tests/                                  # Focused and integration tests
 └── pyproject.toml                          # uv dependencies and tool configuration
 ```
+
+## Parameterization and assembly boundary
+
+Parameterization should be organized around coherent behavior and materially different
+data/transformation contracts rather than one backend-wide module per SQLite parameter.
+Road versus off-road is a useful middle-level seam where source evidence, capacity
+representation, units, and harmonization differ; it should not be applied mechanically
+when a shared behavior is genuinely common. Behavioral owners such as EV infrastructure,
+charging profiles, road aggregation, market constraints, and adoption constraints remain
+appropriate where they form the clearer seam.
+
+`src/parameterization/` should produce deterministic parameter-ready artifacts or row-builder
+outputs and remain independent of SQLite transactions. `build_transport.py` consumes those
+contracts to create the standalone transport database. The future CANOE-main boundary should
+consume the same contracts against the shared initialized CANOE database and follow the
+then-current upstream `CANOEModule`/sector-config lifecycle documented in
+`docs/canoe_main_orchestrator.md`. Generic schema validation, provenance registration, and
+insertion remain shared infrastructure rather than being reimplemented by each module.
 
 ## Artifact ownership and impact routing
 
@@ -114,9 +137,9 @@ Ontario MTO normalized reports remain owned by `fetching.vehicle_population` in
 `inputs/1_interim/fetched_ontario_vehicle_population`. Reviewed mapping application and
 road aggregation products are owned by `parameterization.road_aggregation` in
 `inputs/2_processed/road_aggregation`. Accepted NHTSA/NEMS/Wards lifetime products are
-published under `inputs/2_processed/lifetimes_survival`; MTO apparent-retention
+published under `inputs/2_processed/road_lifetimes_survival`; MTO apparent-retention
 intermediates and review evidence are routed separately through `inputs/1_interim` and
-`inputs/validation`. #to-review
+`inputs/validation`.
 
 ## Runtime and development boundaries
 
@@ -130,12 +153,11 @@ distinct API/cache/offline contracts and consume only bootstrap-produced request
 The default doctor excludes development-only mapping evidence, while explicit manual
 registry validation still checks it.
 
-`parameterization.lifetimes_survival` defaults to accepted source-derived lifetime
+`parameterization.road_lifetimes_survival` defaults to accepted source-derived lifetime
 generation and does not load Ontario Report A history or the reviewed vehicle mapping.
 Historical MTO apparent-retention, mapping-coverage, scope, and decision evidence requires
 the explicit `--mto-diagnostics` mode; `--all` and the retained
 `build_lifetime_artifacts` Python function provide the combined compatibility path.
-#to-review
 
 Configuration structure is validated by `validation.config_models` during
 `utils.load_config_bundle`; `scripts/doctor.py` adds non-mutating readiness checks.
