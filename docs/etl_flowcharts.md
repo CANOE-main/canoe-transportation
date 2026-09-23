@@ -20,6 +20,8 @@ each operation. The legend below is local to these diagrams.
 - [`efficiency`](#efficiency)
 - [`cost_invest`](#cost_invest)
 - [`cost_variable`](#cost_variable)
+- [`emission_embodied`](#emission_embodied)
+- [EV charger parameters](#ev-charger-parameters)
 
 ## Flowchart Legends
 
@@ -52,9 +54,9 @@ flowchart LR
     p1["`**Harmonization protocol**
       • Briefly describes parameter-handling rules, declared in *config/parameters/rules.yaml*<br>
       • There can be several processes and/or rules, usually described in a table below the chart`"]
-    p2("`**Marimo diagnostic notebook**
-      Visualizes and compares inputs and evidence, and tests assumptions during development to diagnose ETL decisions and derive insights from sources`")
-    p1 -- notebook.py --> p2
+    p2@{shape: notch-rect, label: "**Marimo diagnostic notebook**
+      Visualizes and compares inputs and evidence, and tests assumptions during development to diagnose ETL decisions and derive insights from sources"}
+    p1 -- marimo_notebook.py --> p2
   end
 
   s0 -- required process ---> process
@@ -116,20 +118,22 @@ flowchart LR
       *MTO Report A is mapped into NRCan CEUD cars and light trucks via MTO code-to-model inference; and Report 5 distributes bus and motorcycle age cohorts*<br>
       • *Off-road:* treat provincial energy use ÷ intensity as stock, then distribute by age`"]
 
-    p1_2("`**Vehicle population mapping diagnosis**`"
+    p1_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
       MTO make-model codes are difficult to map. This notebook visualizes:<br>
       • mapped fit-active stock
       • stock that cannot be mapped reliably
       • vehicle class and vintage weights
       • Report A vs Report 5 age cohorts
       • MTO stock vs NRCan CEUD data
-      • survival rates from mapped cohorts)
+      • survival rates from mapped cohorts"}
     p1 -- vehicle_population_aggregation_mapping.py --> p1_2
   end
   s0 -- nrcan_ceud.py --> age
   s1 -- vehicle_population.py --> age
   s1_2 -- nrcan_ceud.py --> age
-  s1_3 -- epa_ldv_classes.py --> age
+  s1_3 -- fueleconomy_vehicles.py
+  vpic_model_years.py
+  vpic_vehicle_types.py --> age
 
   p2["`**Fleet powertrain distribution**
     • *Road:* distribute age-specific stock by powertrain<br>
@@ -140,7 +144,8 @@ flowchart LR
   s5 -- statcan_tables.py --> p2
   s6 -- assorted_sources.py --> p2
 
-  p2 -- stocks_and_demands.py --> o1[/"`**existing_capacity**
+  p2 -- road_stocks_and_demands.py
+  offroad_stocks_and_demands.py --> o1[/"`**existing_capacity**
     [k vehicles]
     [bn tonne-km]
     [bn passenger-km]`"/]
@@ -165,6 +170,17 @@ flowchart LR
 | Distribute stock by age                                | Off-road modes        | Available demand supply by vintage is estimated with a fleet turnover approximation assuming an avg. annual retirement of 1÷lifetime |
 | Distribute stock<sub>age</sub> by powertrain           | Cars and light trucks | Each stock by vintage gets distributed over vehicle market shares by fuel type                                                       |
 | Distribute stock<sub>age</sub> by powertrain           | MD trucks             | Each stock by vintage gets distributed over vehicle registration shares by fuel type – mainly diesel and gasoline                    |
+
+Vintages mapped into 5-year periods are aggregated the following way:
+- 2015 → 2015
+- 2016 → 2020
+- 2017 → 2020
+- 2018 → 2020
+- 2019 → 2020
+- 2020 → 2020
+- 2021 → 2023; truncated to the last available vintage from NRCan CEUD 
+- 2022 → 2023
+- 2023 → 2023
 
 ## `demand`
 
@@ -197,7 +213,8 @@ flowchart LR
   s1 -- cer_enerfuture.py --> p0
 
   p0 --> p1
-  p1 -- stocks_and_demands.py --> o1[/"`**demand**
+  p1 -- road_stocks_and_demands.py
+  offroad_stocks_and_demands.py --> o1[/"`**demand**
     [bn passenger-km]
     [bn tonne-km]`"/]
 
@@ -239,7 +256,7 @@ flowchart LR
 
   p1@{shape: hex, label: "**config/scenarios/**
     *vkt_schedules:* true or false"}
-  p0 -- stocks_and_demands.py --> p1
+  p0 -- road_stocks_and_demands.py --> p1
 
   p2["`**Flat utilization trajectory**
     Assume constant annual vehicle utilization across all periods`"]
@@ -248,7 +265,7 @@ flowchart LR
   o1[/"`**limit_annual_capacity_factor**
     *Operator: =*
     *Indexed by period*`"/]
-  p2 -- stocks_and_demands.py --> o1
+  p2 -- road_stocks_and_demands.py --> o1
 
   p3["`**Age-based trajectory**
     • Aggregate mileage profiles by vehicle class using mappings<br>
@@ -263,7 +280,7 @@ flowchart LR
     *Operator: =*
     *Indexed by vintage and period*
     #to-do: must be reconciled with canoe-schema`"/]
-  p3 -. "stocks_and_demands.py" .-> o2
+  p3 -. "road_stocks_and_demands.py" .-> o2
 
   %% --- Hyperlinks ---
   click s0 "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm"
@@ -325,24 +342,24 @@ flowchart LR
       • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
       • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only the latter are promoted as parameters**`"]
 
-    p0_2("`**Vehicle population mapping diagnosis**`"
+    p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
       MTO make-model codes are difficult to map. This notebook visualizes:<br>
       • mapped fit-active stock
       • stock that cannot be mapped reliably
       • vehicle class and vintage weights
       • Report A vs Report 5 age cohorts
       • MTO stock vs NRCan CEUD data
-      • survival rates from mapped cohorts)
+      • survival rates from mapped cohorts"}
     p0 -- vehicle_population_aggregation_mapping.py --> p0_2
   end
   survival -- "assorted_sources.py" --> age
   s0 -. "`vehicle_population.py
-    *diagnostic-only*`" .-> age
+    *\*diagnostic-only*`" .-> age
   s6 -- road_aggregation.py --> age
 
   p1@{shape: hex, label: "**config/scenarios/**
     *survival_curves:* true or false"}
-  age -- lifetimes_survival.py --> p1
+  age -- road_lifetimes_survival.py --> p1
 
   s4[("`**StatCan table**
     Buses avg. lifetime by province`")]
@@ -361,9 +378,10 @@ flowchart LR
   s4 -- statcan_tables.py --> p3
   s5 -- inputs/0_manual_params/ --> p3
 
-  p2 -. "lifetimes_survival.py" .-> o1[/"`**lifetime_survival_curve**
+  p2 -. "road_lifetimes_survival.py" .-> o1[/"`**lifetime_survival_curve**
     [-]`"/]
-  p3 -- lifetimes_survival.py --> o2[/"`**lifetime_tech**
+  p3 -- road_lifetimes_survival.py
+  offroad_lifetimes.py --> o2[/"`**lifetime_tech**
     [years]`"/]
 
   %% --- Hyperlinks ---
@@ -450,14 +468,15 @@ flowchart LR
         • *MD/HD trucks:* map truck weight classes and derive efficiency aggregation weights
         *Report 4 distributes medium truck gross weight class cohorts*<br>
         • *HD trucks:* derive regional- and long-haul activity weights`"]
-      p0_2("`**Vehicle population mapping diagnosis**`"
+      
+      p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
         MTO make-model codes are difficult to map. This notebook visualizes:<br>
         • mapped fit-active stock
         • what cannot be mapped reliably
         • vehicle class and vintage weights
         • Report A vs Wards LDV class shares
         • Report 4 vs Wards MD truck shares
-        • survival rates from mapped cohorts)
+        • survival rates from mapped cohorts"}
       p0 -- vehicle_population_aggregation_mapping.py --> p0_2
     end
     s3 -- inputs/0_manual_params/ --> aggregation
@@ -511,8 +530,9 @@ flowchart LR
     • Aggregate existing efficiencies into 5-year vintages<br>
     • Convert to service-output efficiency using load factors`"]
   s9 -- nrcan_ceud.py --> p4
-  p2 -- efficiencies.py --> p4
-  p3 -- efficiencies.py --> p4 -- efficiencies.py --> o1[/"`***efficiency***
+  p2 -- road_efficiencies.py --> p4
+  p3 -- offroad_efficiencies.py --> p4 -- road_efficiencies.py
+  offroad_efficiencies.py --> o1[/"`***efficiency***
     [bn passenger-km/PJ]
     [bn tonne-km/PJ]`"/]
   
@@ -549,7 +569,7 @@ flowchart LR
 | ------------------ | ---------------- | ---------------------- | ----------------- | -------------- |
 | KIA OSL, KIA SOU   | **Kia Soul**     | Station Wagon: Small   | Midsize           | Car            |
 | FORD F/E, FORD SRW | **Ford F-150**   | Pickup truck: Standard | Pickup            | Light Truck    |
-| HON UDY, HON ODY   | **Toyota RV4**   | Minivan                | Midsize SUV       | Light Truck    |
+| HON UDY, HON ODY   | **Honda Odyssey** | Minivan                | Midsize SUV       | Light Truck    |
 
 ## `cost_invest`
 
@@ -573,16 +593,20 @@ flowchart LR
     ***Def. scenario:*** current measures`")]
   subgraph offroad["`**Off-road CAPEX**`"]
     s7@{shape: docs, label: "**SFU CIMS model assumptions**
-      Capital cost allocation of new off-road transportation in normalized units of demand"}
+      Capital cost allocation of new off-road transportation and service output for demand-unit normalization"}
     s8@{shape: docs, label: "**EPRI REGEN model assumptions**
       CAPEX multipliers of alternative off-road modes"}
+    s9@{shape: docs, label: "**FAA Benefit-Cost Analysis**
+      • *Table 3-6 & 3-9:* Average block speeds, aircraft capacities, and load factors<br>
+      • *Table 3-7 & 3-10:* Avg. daily utilization"}
   end
 
   %% ########### Processes ###########
   p3["`**Cost of new off-road demand**
-    • Capital cost of building supply capacity to satisfy off-road demand *[dollars/demand unit]*<br>
-    • Aircraft CAPEX normalized with utilization and load factors used in OPEX`"]
+    • Capital cost of building new transport capacity to satisfy off-road demand *[dollars/demand unit]*<br>
+    • *Aircraft:* CAPEX normalized with utilization and load factors from FAA`"]
   s7 & s8 -- inputs/0_manual_params/ --> p3
+  s9 -- assorted_sources.py --> p3
 
   %% ########### Sources ###########
   subgraph road["`**Road vehicle costs**`"]
@@ -613,11 +637,12 @@ flowchart LR
     • Discount to reference year
     (e.g., 2023CAD → 2020CAD)<br>
     • Harmonize magnitude of denominators`"]
-  p2 -- capex_opex.py --> p4
-  p3 -- capex_opex.py --> p4
+  p2 -- road_capex_opex.py --> p4
+  p3 -- offroad_capex_opex.py --> p4
   s3 -- cer_enerfuture.py --> p0 --> p4
 
-  p4 -- capex_opex.py --> o1[/"`***cost_invest***
+  p4 -- road_capex_opex.py
+  offroad_capex_opex.py --> o1[/"`***cost_invest***
     [$M 2020CAD/k vehicles]
     [$M 2020CAD/bn passenger-km]
     [$M 2020CAD/bn tonne-km]`"/]
@@ -667,7 +692,7 @@ flowchart LR
 
   %% ########### Processes ###########
   p3["`**Variable costs from off-road**
-    • *Aircraft:* **eq. (i-ii)** normalized maintenance costs per demand unit (CAPEX uses same factors)<br>
+    • *Aircraft:* **eq. (i-ii)** normalized maintenance costs per demand unit<br>
     • *Other off-road:* estimate variable costs with OEO ratios`"]
   s7 -- inputs/0_manual_params/ --> p3
   s8 -- assorted_sources.py --> p3
@@ -711,12 +736,13 @@ flowchart LR
     • Discount to reference year
     (e.g., 2023CAD → 2020CAD)<br>
     • Harmonize magnitude and units of denominators`"]
-  p2 -- capex_opex.py --> p4
-  p3 -- capex_opex.py --> p4
+  p2 -- road_capex_opex.py --> p4
+  p3 -- offroad_capex_opex.py --> p4
   s0 -- cer_enerfuture.py --> p0 --> p4
   s9 -- nrcan_ceud.py --> p4
 
-  p4 -- capex_opex.py --> o1[/"`***cost_variable***
+  p4 -- road_capex_opex.py
+  offroad_capex_opex.py --> o1[/"`***cost_variable***
     [$M 2020CAD/k vehicles]
     [$M 2020CAD/bn passenger-km]
     [$M 2020CAD/bn tonne-km]`"/]
@@ -748,11 +774,11 @@ flowchart LR
 ### Off-road M&R equations
 
 ```math
-(i)\; \mathrm{M\&R}^{Air}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Seats}\cdot \mathrm{Load\;factor}}
+(i)\; \mathrm{M\&R}^\mathrm{Air\;travel}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Seats}\cdot \mathrm{Load\;factor}}
 ```
 
 ```math
-(ii)\; \mathrm{M\&R}^{Air}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Tonnes}\cdot \mathrm{Load\;factor}}
+(ii)\; \mathrm{M\&R}^\mathrm{Air\;freight}=\frac{\mathrm{Cost\;per\;block\text{-}hour}}{\mathrm{Block\;speed}\cdot \mathrm{Tonnes}\cdot \mathrm{Load\;factor}}
 ```
 
 | Harmonization rule | Affected classes | Description |
@@ -810,7 +836,7 @@ flowchart LR
   p1 -. true .-> p2
   s2 -- road_aggregation.py --> p2
 
-  p2 -. "emissions.py" .-> o1[/"`**emission_embodied**
+  p2 -. "road_embodied_emissions.py" .-> o1[/"`**emission_embodied**
     [k tonnes/k vehicles]`"/]
 
   %% --- Hyperlinks ---
@@ -821,6 +847,124 @@ flowchart LR
 | --- | --- | --- |
 | Reuse road aggregation maps | - Cars and LD trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with NRCan efficiency ratings and Autonomie projections<br>- Map truck weight-rating counts to classes that align with Autonomie truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
 | Vehicle manufacturing emissions | Cars and trucks | - Default vehicle-lifetime emissions from GREET-2 are extracted directly, solved for model year 2025 and normalized by k tonnes per thousand vehicles manufactured; model years 2030 through 2050 remain available.<br>- GREET 2 calculates the emissions associated with the production and processing of vehicle materials, the manufacturing and assembly of the vehicle, and the EOL decomissioning. EOL credits from material recycling are not considered. Emissions from the transportation of raw and processed materials for each process step are neglected. |
+
+## EV charger parameters
+
+```mermaid
+---
+config:
+  layout: dagre
+  flowchart:
+    nodeSpacing: 35
+    rankSpacing: 50
+    wrappingWidth: 250
+    curve: linear
+---
+flowchart LR
+  %% ########### Sources ###########
+  s1@{shape: doc, label: "**NRCan/Dunsky 2024 EV Charging Infrastructure Assessment**
+    • *Annual LD UFs:* Table 31; average LDV charging port utilization rate<br>
+    • *EV-to-port ratios*: Tables 7 and 37; 1 LDEV: 1 LD charger, including residential ports, and 1.5 MHDEV: 1 MHD charger<br>
+    • *MHD chargers:* Table 19 assumptions for power levels, charging time, and daily throughput<br>
+    • *LDV and MHDV charger CAPEX:* Tables 12 and 21; per-port installation and equipment cost estimates<br>
+    • *LDV and MHDV charger type shares:* Tables 6 and 38; estimated charging infrastructure needs, used only to aggregate capital and fixed costs"}
+  s2[("`**Transport Canada (TC) EV Dashboard**
+    • *Public LD chargers by type:* Cumulative number of public L2 and DCFC chargers<br>
+    • *Public LD chargers by province:* Latest aggregated total public LD charger count`")]
+  s3@{shape: doc, label: "**Pollution Probe 2024 Charging Experience Survey**
+    Home charging access to L1 and L2 chargers, based on responses from ~2,000 representative EV owners; 84% and 15% of owners had L2 and L1 chargers, respectively"}
+  s4@{shape: doc, label: "**NLR 2024 Assessment of Alternative Fueling Infrastructure**
+    L1 residential charger installation cost per port; excluding charger cost since these tend to be included with PEV acquisition"}
+  s5@{shape: docs, label: "**CMU OEO model assumptions**
+      Fixed costs of charging infrastructure set to 1% of CAPEX (Borlaug et al. 2021)"}
+  oi[/"`***existing_capacity***
+    [k vehicles]
+    *Retrieve LD and MHD EV stock`"/]  
+
+  %% ########### Processes ###########
+  p0["`**Aggregated capital and fixed costs**
+    Cost of GW installed of charging ports, aggregated from projected type shares:<br>
+    • *LDVs*: Derived type shares from Table 6 used to aggregate Table 12 per-port installation and equipment costs<br>
+    • *LDVs L1*: Estimated capital costs of L1 residential from Table 2 (NRL, 2024) <br>
+    • *MHDVs*: Derived type shares from Table 38, primary scenario, to aggregate Table 21 per-port power and capital cost assumptions<br>
+    • *Fixed costs*: 1% of capital costs, as per OEO assumptions from Borlaug et al. 2021
+    `"]
+  p0_2@{shape: hex, label: "**inputs/0_manual_params/**
+    Cost aggregation weights; defaults are:
+    • *(L1, L2, DCFC)* = [0.12, 0.87, 0.01]
+    • *(50, 350, 2000) kW* = [0.82, 0.16, 0.02]"}
+  s4 & s5 -- inputs/0_manual_params/ --> p0
+  s1 --> p0_2 -- ev_chargers.py --> p0
+  p0 -- ev_chargers.py --> o0 & o0_2
+  o0[/"`***cost_invest***
+    [$M 2020CAD/GW]`"/]
+  o0_2[/"`***cost_fixed***
+    [$M 2020CAD/GW]`"/]
+
+  p1["`**Annual EV charger utilization rate**
+    Maximum utilization represents amount of load chargers can provide annually:<br>
+    • *LDVs*: 15% in 2025 to 20% through 2050<br>
+    • *MHDVs*: Dunsky estimates of charging time, vehicles/day served, and charger type shares yields an UF of ~30%`"]
+  p1_2@{shape: hex, label: "**inputs/0_manual_params/**
+    *LDV/MHD charger UF* ∈ (0, 1) ∀ future_period; defaults are:
+    • *LDV charger UF* = [0.15, 0.2, 0.2, ...]
+    • *MHDV charger UF* = [0.3, 0.3, 0.3, ...]"}
+  s1 --> p1_2 -- ev_chargers.py --> p1
+  p1 -- ev_chargers.py --> o1[/"`***limit_annual_capacity_factor***
+    *Operator: ≤*
+    *Indexed by period
+    #to-do: must be reconciled with canoe-schema`"/]
+
+  p2["`**Existing charging infrastructure capacity**
+    • Fetch TC total public LD chargers by province and distribute by type using national shares<br>
+    • EV-to-charger port ratios determine total ports, from which public port capacity is known<br>
+    • Thus, the remainder LD charger capacity is private, distributed by L1/L2 shares from Pollution Probe survey<br>
+    • MHD charger capacity derived with EV-to-port ratio and distributed with Dunsky's share estimates`"]
+  p2_2@{shape: hex, label: "**config/scenarios/**
+    • *LDEV_to_port_ratio* = 1
+    • *MHDEV_to_port_ratio* = 1.5"}
+  s1 --> p2_2 -- ev_chargers.py --> p2
+  s1 -- inputs/0_manual_params/ --> p2
+  s2 -- assorted_sources.py --> p2
+  s3 -- inputs/0_manual_params/ --> p2
+  oi -- ev_chargers.py --> p2
+  p2 -- ev_chargers.py --> o2[/"`***existing_capacity***
+    [GW]`"/]
+
+  %% --- Hyperlinks ---
+  click s1 "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada#a34"
+  click s2 "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
+  click s3 "https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"
+  click s4 "https://docs.nlr.gov/docs/fy24osti/88513.pdf"
+  click s5 "https://github.com/TemoaProject/oeo/blob/master/database_documentation/TransportationSector.ipynb"
+```
+
+| Harmonization rule | Affected classes | Description |
+| --- | --- | --- |
+| Aggregated capital and fixed costs | LDV and MHDV chargers | Use per-port capital and installation cost assumptions through 2040 from Dunsky's assessment and aggregate using average fixed type shares; fixed costs are assumed to be 1% of capital costs as per OEO assumptions |
+| Annual EV charger UF | LDV and MHDV chargers | Use average annual charging port utilization rate assumptions from Dunsky's assessment; public LDV charger ports are used up to 6 hours/day, and depot MHDV ports up to 8 hours/day, as per discussion with operators (ICCT EV CHARGE, 2024) |
+| Existing charging capacity | LDV and MHDV chargers | - Fetch total public LD charger counts from TC EV dashboard<br>- Use EV-to-port ratios from Dunsky's assessment to determine remaining private port counts<br>- Distribute L1/L2 shares using Pollution Probe's survey estimates |
+| Charger efficiency | LDV and MHDV chargers | Use charger efficiencies from ICCT EV CHARGE and HDV CHARGE model assumptions |
+
+## Market share and technology adoption constraints #to-do
+
+```mermaid
+---
+config:
+  layout: dagre
+  flowchart:
+    nodeSpacing: 35
+    rankSpacing: 50
+    wrappingWidth: 250
+    curve: linear
+---
+flowchart LR
+  %% ########### Sources ###########
+
+  %% ########### Processes ###########
+
+  %% --- Hyperlinks ---
+```
 
 ## `capacity_factor_tech` for BEV charging profiles; pending refactor
 
@@ -906,7 +1050,7 @@ flowchart LR
   legacy -- charging_profiles/ --> ramp
   vehicle -- spreadsheet_database/ --> ramp
 
-  ramp -- ev_chargers.py --> o1[/"`***capacity_factor_tech***
+  ramp -- ldv_charging_profiles.py --> o1[/"`***capacity_factor_tech***
     [-]`"/]
 
   %% --- Hyperlinks ---
@@ -921,95 +1065,6 @@ flowchart LR
   click s8 "https://atb.nlr.gov/transportation/2024/data"
   click s9 "https://www.epa.gov/regulations-emissions-vehicles-and-engines/optimization-model-reducing-emissions-greenhouse-gases"
   click p2 "https://github.com/RAMP-project/RAMP-mobility"
-```
-
-## EV charger parameters
-
-```mermaid
----
-config:
-  layout: dagre
-  flowchart:
-    nodeSpacing: 35
-    rankSpacing: 50
-    wrappingWidth: 250
-    curve: linear
----
-flowchart LR
-  %% ########### Sources ###########
-  s1@{shape: doc, label: "**NRCan/Dunsky 2024 EV Charging Infrastructure Assessment**
-    • *Annual LD UFs:* Table 31; average LDV charging port utilization rate<br>
-    • *EV-to-port ratios*: Tables 7 and 37; 1 LDEV: 1 LD charger, including residential ports, and 1.5 MHDEV: 1 MHD charger<br>
-    • *MHD chargers:* Table 19 assumptions for power levels, daily throughput, and charger type shares<br>
-    • *LDV and MHDV Charger CAPEX:* Tables 12 and 21; per-port installation and equipment cost estimates"}
-  s2[("`**Transport Canada (TC) EV Dashboard**
-    • *Public LD chargers by type:* Cumulative number of public L2 and DCFC chargers<br>
-    • *Public LD chargers by province:* Latest aggregated total public LD charger count`")]
-  s3@{shape: doc, label: "**Pollution Probe 2024 Charging Experience Survey**
-    Home charging access to L1 and L2 chargers, based on responses from ~2,000 representative EV owners; 84% and 15% of owners had L2 and L1 chargers, respectively"}
-  
-
-  %% ########### Processes ###########
-  p1["`**Annual EV charger utilization rate**
-    Maximum utilization represents amount of load chargers can provide annually:<br>
-    • *LDVs*: 15% in 2025 to 20% through 2050<br>
-    • *MHDVs*: Dunsky estimates of charging time, vehicles/day served, and charger type shares yields an UF of ~30%`"]
-  p1_2@{shape: hex, label: "**inputs/0_manual_params/**
-    *LDV/MHD_charger_UF* ∈ (0, 1.0) ∀ future_period; defaults are:
-    • *LDV_charger_UF* = [0.15, 0.2, 0.2, ...]
-    • *MHDV_charger_UF* = [0.3, 0.3, 0.3, ...]"}
-  s1 --> p1_2 -- ev_chargers.py --> p1
-  p1 -- ev_chargers.py --> o1[/"`***limit_annual_capacity_factor***
-    *Operator: ≤*
-    *Indexed by period
-    #to-do: must be reconciled with canoe-schema`"/]
-
-  o0[/"`***existing_capacity***
-    [k vehicles]
-    *Retrieve LD and MHD EV stock`"/]
-  p2["`**Existing charging infrastructure capacity**
-    • Fetch TC total public LD chargers by province and distribute by type using national shares<br>
-    • EV-to-charger port ratios determine total ports, from which public port capacity is known<br>
-    • Thus, the remainder LD charger capacity is private, distributed by L1/L2 Pollution Probe survey shares<br>
-    • MHD charger capacity derived with EV-to-port ratio and distributed with Dunsky's share estimates`"]
-  p2_2@{shape: hex, label: "**config/scenarios/**
-    • *LDEV_to_charger_ratio* = 1
-    • *MHDEV_to_charger_ratio* = 1.5"}
-  p2_3@{shape: hex, label: "**config/scenarios/**
-    *private_L2_charger_share* = 0.85
-    *The remaining share is allocated to existing private L1 capacity"}
-  s2 -- assorted_sources.py --> p2
-  s3 --> p2_3 -- ev_chargers.py --> p2
-  s1 --> p2_2 -- ev_chargers.py --> p2
-  s1 -- inputs/0_manual_params/ --> p2
-  o0 -- ev_chargers.py --> p2
-
-
-
-  %% --- Hyperlinks ---
-  click s1 "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada#a34"
-  click s2 "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
-  click s3 "https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"
-```
-
-## Market share and technology adoption constraints
-
-```mermaid
----
-config:
-  layout: dagre
-  flowchart:
-    nodeSpacing: 35
-    rankSpacing: 50
-    wrappingWidth: 250
-    curve: linear
----
-flowchart LR
-  %% ########### Sources ###########
-
-  %% ########### Processes ###########
-
-  %% --- Hyperlinks ---
 ```
 
 ## Compact manual parameter selectors

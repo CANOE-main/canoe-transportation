@@ -5,7 +5,6 @@ retrieve_when: A task affects module boundaries, architecture fitness, codebase 
 read_scope: Read only the relevant diagnostic sections unless the task is explicitly repository-wide.
 verify: Reconcile snapshot findings against current code, config, tests, schemas, workflow, and generated evidence before acting.
 last_diagnostic_run: 2026-08-20
-review_status: "#to-review"
 ---
 
 # Codebase diagnostic snapshot
@@ -13,7 +12,6 @@ review_status: "#to-review"
 This document replaces the 2026-08-13 diagnostic. It is a point-in-time assessment, not
 an architecture authority, artifact registry, cumulative decision log, or refactor plan.
 Current code, configuration, tests, schemas, workflow, and generated evidence outrank it.
-The `#to-review` status applies to the complete diagnostic.
 
 ## 1. Diagnostic context and method
 

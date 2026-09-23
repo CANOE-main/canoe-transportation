@@ -408,6 +408,9 @@ def resolve_manual_parameters(
     remainder = _normal_form(str(rules["remainder_selector"]))
     technology_classes = set(technology["category"])
     technology_class_column = str(rules["technology_class_column"])
+    behavior_specific_files = {
+        str(filename) for filename in rules.get("behavior_specific_files", [])
+    }
 
     resolution_rows: list[dict[str, Any]] = []
     reconciliation_rows: list[dict[str, Any]] = []
@@ -415,6 +418,34 @@ def resolve_manual_parameters(
 
     for filename in sorted(frames):
         frame = frames[filename]
+        if filename in behavior_specific_files:
+            for index, row in frame.iterrows():
+                reconciliation_rows.append(
+                    {
+                        "manual_file": filename,
+                        "manual_row": int(index) + 2,
+                        "registered_source_id": row.get(
+                            "registered_source_id",
+                            "",
+                        ),
+                        "registered_component_id": row.get(
+                            "registered_component_id",
+                            "",
+                        ),
+                        "technology_class": row.get(technology_class_column, ""),
+                        "powertrain": row.get("sub_category", ""),
+                        "powertrain_base": "",
+                        "parameter": row.get("parameter", ""),
+                        "selector_year": pd.NA,
+                        "matched_technology_count": pd.NA,
+                        "resolution_status": "behavior_specific_owner",
+                        "detail": (
+                            "Registry validation is complete; selector expansion belongs "
+                            "to the configured behavior-specific parameter module."
+                        ),
+                    }
+                )
+            continue
         if technology_class_column not in frame:
             for index, row in frame.iterrows():
                 reconciliation_rows.append(

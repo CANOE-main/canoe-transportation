@@ -135,11 +135,11 @@ def introduction(mo):
             | Reviewed vehicle mapping | `config/parameters/vehicle_size_class_map.csv`, read by `parameterization.road_aggregation` | Only accepted `reviewed` ranges attach an LDV class. The consolidated, version-controlled map is runtime read-only and is reused across scenario builds. |
             | Mapping review evidence | `parameterization.road_aggregation --mapping-diagnostics` | Candidate, coverage, and unresolved-key tables are explicit review diagnostics. Row coverage counts make-model-vintage rows; stock coverage sums `FIT_ACTIVE`. |
             | Mapped-fleet composition | `parameterization.road_aggregation` | Class and vintage composition is conditional on accepted mapped LDV stock. Unmapped stock remains visible in coverage diagnostics and is not imputed across mapped classes. |
-            | Existing-fleet age weights | `parameterization.stocks_and_demands` | The raw comparison charts use the latest snapshot and a common model-year floor of 2000. The downstream stock-cohort cutoff is separate from technology lifetimes: `survival_curve_max_age` only bounds represented cohorts when curves are enabled. |
+            | Existing-fleet age weights | `parameterization.road_stocks_and_demands` | The raw comparison charts use the latest snapshot and a common model-year floor of 2000. The downstream stock-cohort cutoff is separate from technology lifetimes: `survival_curve_max_age` only bounds represented cohorts when curves are enabled. |
             | MHDV weight-class shares | `fetching.vehicle_population` and `parameterization.road_aggregation`, compared with `inputs/0_manual_params/vehicle_class_market_shares.csv` | Report 4 and Wards are alternative diagnostic bases for combining NLR ATB MHDV efficiency and cost parameters only. |
             | NRCan CEUD comparison | `fetching.nrcan_ceud` | CEUD is an external plausibility benchmark. MTO stock is the accepted mapped subset; the MTO “sales” series is a same-model-year registration proxy. |
-            | Accepted lifetime inputs | `parameterization.lifetimes_survival` | NHTSA CAFE supplies accepted LDV survival evidence and NEMS supplies accepted MHDV evidence. With `survival_curves: false`, manual technology lifetimes remain and accepted median lifetimes fill missing values; with it `true`, the accepted CAFE/NEMS curves are selected for car and truck technologies. |
-            | MTO apparent-retention diagnostics | `parameterization.lifetimes_survival --mto-diagnostics` | A rate compares the same source category, make code, model code, and vintage in consecutive editions. Starting ages 0–35 are eligible, transition coverage sums starting exposure, and rates above 100% retention remain visible. These independently derived diagnostics do not become accepted parameters; future SAAQ evidence can reopen the source decision. |
+            | Accepted lifetime inputs | `parameterization.road_lifetimes_survival` | NHTSA CAFE supplies accepted LDV survival evidence and NEMS supplies accepted MHDV evidence. With `survival_curves: false`, manual technology lifetimes remain and accepted median lifetimes fill missing values; with it `true`, the accepted CAFE/NEMS curves are selected for car and truck technologies. |
+            | MTO apparent-retention diagnostics | `parameterization.road_lifetimes_survival --mto-diagnostics` | A rate compares the same source category, make code, model code, and vintage in consecutive editions. Starting ages 0–35 are eligible, transition coverage sums starting exposure, and rates above 100% retention remain visible. These independently derived diagnostics do not become accepted parameters; future SAAQ evidence can reopen the source decision. |
             """),
             mo.md("""
             ### Preparing the artifact-backed notebook
@@ -238,13 +238,13 @@ def load_evidence(
         ontario_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
         ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
         road_rules = load_harmonization_rules(bundle, "road_aggregation")
-        lifetime_rules = load_harmonization_rules(bundle, "lifetimes_survival")
+        lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
         source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
         ceud_dir = resolve_input_path(bundle, "interim", ceud_rules["interim_subdir"])
         road_dir = resolve_artifact_path(bundle, "road_aggregation")
         review_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
         survival_interim_dir = resolve_artifact_path(bundle, "vehicle_survival_interim")
-        lifetime_dir = resolve_artifact_path(bundle, "lifetimes_survival")
+        lifetime_dir = resolve_artifact_path(bundle, "road_lifetimes_survival")
         lifetime_validation_dir = resolve_artifact_path(bundle, "lifetime_validation")
         manifest_path = source_dir / ontario_rules["manifest_file"]
         if not manifest_path.is_file():
