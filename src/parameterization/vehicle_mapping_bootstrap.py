@@ -1505,7 +1505,7 @@ def build_bootstrap_mapping(
         )
     reviewed_mapping = reviewed_mapping.loc[:, rules["mapping_columns"]]
     bootstrap_rules = rules["mapping_bootstrap"]
-    lifetime_rules = load_harmonization_rules(bundle, "lifetimes_survival")
+    lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
     mapping_floor = derive_mapping_model_year_floor(
         historical_stock,
         maximum_transition_age=int(lifetime_rules["maximum_transition_age"]),

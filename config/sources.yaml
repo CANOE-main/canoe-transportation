@@ -35,13 +35,13 @@ sources:
     status: active
     source_type: upstream_download
     file_type: xls
-    version: "2021"
+    version: "2025"
     required: true
     adapter:
       url_template: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/Excel/{year}/tran_{region}_e_{table_id}.xls"
       cache_path_template: "nrcan_ceud_transport/{year}_tran_{region}_e_{table_id}.xls"
       years:
-        default: 2021
+        default: latest
       regions:
         default: "ON"    # any or all provinces
         allowed: ["AB", "BCT", "MB", "NB", "NL", "NS", "ON", "PE", "QC", "SK"]
@@ -58,132 +58,132 @@ sources:
         inputs: [sales, stock, average_distance]
         applies_to: [cars]
         produces: [fleet_turnover, occupancy_from_activity]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       37:
         label: "Truck Explanatory"
         short_name: truck_fleet
         inputs: [sales, stock, fleet_efficiency, average_distance]
         applies_to: [passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
         produces: [fleet_turnover, md_truck_efficiency, hd_truck_efficiency, occupancy_from_activity]
-        parameter_modules: [stocks_and_demands, efficiencies]
+        parameter_modules: [road_stocks_and_demands, road_efficiencies]
       31:
         label: "Bus Explanatory"
         short_name: bus_fleet
         inputs: [stock, average_distance]
         applies_to: [school_buses, transit_buses, inter_city_buses]
         produces: [fleet_size, occupancy_from_activity]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       20:
         label: "Cars"
         short_name: car_activity
         inputs: [activity]
         applies_to: [cars]
         produces: [demand, utilization_from_stock]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       34:
         label: "Passenger Light Trucks"
         short_name: passenger_light_trucks_activity
         inputs: [activity]
         applies_to: [passenger_light_trucks]
         produces: [demand, utilization_from_stock]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       35:
         label: "Freight Light Trucks"
         short_name: freight_light_trucks_activity
         inputs: [activity]
         applies_to: [freight_light_trucks]
         produces: [demand, utilization_from_stock]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       36:
         label: ["Medium Trucks", "Heavy Trucks"]
         short_name: medium_heavy_trucks_activity
         inputs: [activity]
         applies_to: [medium_trucks, heavy_trucks]
         produces: [demand, utilization_from_stock]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       32:
         label: "Motorcycle"
         short_name: motorcycle_fleet_activity
         inputs: [activity, stock, average_distance]
         applies_to: [motorcycles]
         produces: [demand, utilization_from_stock, fleet_size, occupancy_from_activity]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       28:
         label: "School Buses"
         short_name: school_buses_activity
         inputs: [activity, fuel_use_by_source]
         applies_to: [school_buses]
         produces: [demand, utilization_from_stock, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       29:
         label: "Urban Transit"
         short_name: urban_transit_activity
         inputs: [activity, fuel_use_by_source]
         applies_to: [transit_buses]
         produces: [demand, utilization_from_stock, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       30:
         label: "Inter-City Buses"
         short_name: inter_city_buses_activity
         inputs: [activity, fuel_use_by_source]
         applies_to: [inter_city_buses]
         produces: [demand, utilization_from_stock, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
       14:
         label: "Passenger Air"
         short_name: passenger_air_provincial_fuel_use_by_source
         inputs: [fuel_use_by_source]
         applies_to: [passenger_air]
         produces: [stock_from_activity, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       15:
         label: "Freight Air"
         short_name: freight_air_provincial_fuel_use_by_source
         inputs: [fuel_use_by_source]
         applies_to: [freight_air]
         produces: [stock_from_activity, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       17:
         label: "Passenger Rail"
         short_name: passenger_rail_provincial_fuel_use_by_source
         inputs: [fuel_use_by_source]
         applies_to: [passenger_rail]
         produces: [stock_from_activity]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       18:
         label: "Freight Rail"
         short_name: freight_rail_provincial_fuel_use_by_source
         inputs: [fuel_use_by_source]
         applies_to: [freight_rail]
         produces: [stock_from_activity]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       19:
         label: "Marine Freight"
         short_name: freight_marine_provincial_fuel_use_by_source
         inputs: [fuel_use_by_source]
         applies_to: [freight_marine]
         produces: [stock_from_activity, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       7:
         label: "Off-Road"
         short_name: off_road_fuel_use_by_source
         inputs: [fuel_use_by_source]
         applies_to: [off_road]
         produces: [demand]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
 
   nrcan_ceud_transport_national:
     title: "NRCan Comprehensive Energy Use Database Transportation Sector national tables"
     status: active
     source_type: upstream_download
     file_type: xls
-    version: "2021"
+    version: "2025"
     required: true
     adapter:
       url_template: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/Excel/{year}/tran_ca_e_{table_id}.xls"
       cache_path_template: "nrcan_ceud_transport/{year}_tran_ca_e_{table_id}.xls"
       years:
-        default: 2021
+        default: latest
       regions:
         default: "global"   # CANOE label for national-level data
     units: "varies"
@@ -199,35 +199,35 @@ sources:
         inputs: [activity, energy_intensity, fuel_use_by_source]
         applies_to: [passenger_air]
         produces: [demand, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       21:
         label: "Freight Air"
         short_name: freight_air_national_activity
         inputs: [activity, energy_intensity, fuel_use_by_source]
         applies_to: [freight_air]
         produces: [demand, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       26:
         label: "Passenger Rail"
         short_name: passenger_rail_national_activity
         inputs: [activity, energy_intensity, fuel_use_by_source]
         applies_to: [passenger_rail]
         produces: [demand]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       27:
         label: "Freight Rail"
         short_name: freight_rail_national_activity
         inputs: [activity, energy_intensity, fuel_use_by_source]
         applies_to: [freight_rail]
         produces: [demand]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
       28:
         label: "Marine Freight"
         short_name: freight_marine_national_activity
         inputs: [activity, energy_intensity, fuel_use_by_source]
         applies_to: [freight_marine]
         produces: [demand, fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [offroad_stocks_and_demands]
 
   ontario_ministry_transport_vehicle_population:
     title: "Ontario Ministry of Transportation vehicle population data"
@@ -256,7 +256,7 @@ sources:
         inputs: [vehicle_class, vehicle_make_code, vehicle_model_code, vehicle_model_year, registration_status_counts]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [fleet_age_disaggregation, vehicle_class_aggregation_weights, apparent_cohort_retention]
-        parameter_modules: [road_aggregation, lifetimes_survival]
+        parameter_modules: [road_aggregation, road_lifetimes_survival]
         adapter:
           raw_member_templates:
             - "{year}_Reg_Veh_ReportA_Class&Make&Model&Year.TXT"
@@ -322,7 +322,7 @@ sources:
         inputs: [sales, fuel_type, vehicle_size_class]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
         version: "2011-2021"
         citation: "Statistics Canada. Table 20-10-0021-01. https://doi.org/10.25318/2010002101-eng"
         validation_rule: "Archived annual table must expose 2011-2021 geography, fuel type, LDV type, and number-of-vehicles series."
@@ -333,7 +333,7 @@ sources:
         inputs: [sales, fuel_type, vehicle_size_class]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
         version: "2017-present"
         citation: "Statistics Canada. Table 20-10-0025-01. https://doi.org/10.25318/2010002501-eng"
         validation_rule: "Current quarterly table must expose exact province-level geography, fuel type, LDV type, and number-of-vehicles series."
@@ -344,7 +344,7 @@ sources:
         inputs: [stock, fuel_type, vehicle_size_class]
         applies_to: [medium_trucks]
         produces: [fuel_type_disaggregation]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
         version: "2017-present"
         citation: "Statistics Canada. Table 23-10-0308-01. https://doi.org/10.25318/2310030801-eng"
         validation_rule: "Annual table must expose the 4,536-11,793 kg vehicle class, configured fuel types, and number-of-vehicles series by province."
@@ -355,7 +355,7 @@ sources:
         inputs: [average_useful_life]
         applies_to: [transit_buses, school_buses, inter_city_buses]
         produces: [lifetime]
-        parameter_modules: [lifetimes_survival]
+        parameter_modules: [road_lifetimes_survival]
         version: "2016-2020"
         citation: "Statistics Canada. Table 34-10-0254-01. https://doi.org/10.25318/3410025401-eng"
         validation_rule: "Occasional table must expose the six configured bus asset useful-life members in average years by province."
@@ -413,7 +413,11 @@ sources:
         inputs: [real_gdp, gdp_deflator, cad_per_usd_exchange_rate]
         applies_to: [all_classes]
         produces: [demand_growth_index, currency_harmonization]
-        parameter_modules: [stocks_and_demands, capex_opex]
+        parameter_modules:
+          - road_stocks_and_demands
+          - offroad_stocks_and_demands
+          - road_capex_opex
+          - offroad_capex_opex
         units: "Variable-labelled: real GDP in constant CAD millions, GDP deflator index, and C$/US$."
         validation_rule: "Must contain Canada-level real GDP, GDP deflator, and Canada-US exchange-rate series for every edition scenario."
         adapter: {resource: macro-indicators}
@@ -434,7 +438,7 @@ sources:
         inputs: [gasoline_price, diesel_price]
         applies_to: [all_classes]
         produces: [fuel_price_scenarios]
-        parameter_modules: [sector_coupling]
+        parameter_modules: []
         units: "2022 CAD/GJ"
         notes: "Retained provisionally because fuel prices currently belong to the CANOE fuel-sector backend."
         validation_rule: "Must contain Transportation gasoline and diesel prices by region, year, and scenario in 2022 CAD/GJ."
@@ -467,7 +471,7 @@ sources:
         inputs: [scenario, vehicle_class, size_weight_class, powertrain, fuel_economy, modeled_price, all_electric_range, usable_battery_capacity]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
         produces: [vehicle_efficiency, vehicle_cost, all_electric_range, usable_battery_capacity]
-        parameter_modules: [efficiencies, capex_opex]
+        parameter_modules: [road_efficiencies, road_capex_opex]
         units: "Metric-labelled: mi/dge, mi/gge, 2022 USD, miles, and kWh."
         validation_rule: "Must retain Advanced, Conservative, Constant, and Mid trajectories and expose configured vehicle dimensions, metric, value, and reference columns. PHEV fuel economy is reconciliation evidence only; other PHEV metrics and all configured non-PHEV metrics remain authoritative."
         adapter:
@@ -481,7 +485,7 @@ sources:
         inputs: [scenario, vehicle_class, size_weight_class, powertrain, combined_cs_fuel_economy_mi_per_gge, combined_cd_electricity_consumption_wh_per_mi, cycle_contributions, cycle_fuel_economy, cycle_electricity_consumption, all_electric_range]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
         produces: [utility_weighted_energy_consumption, phev_energy_input_shares]
-        parameter_modules: [efficiencies]
+        parameter_modules: [road_efficiencies]
         units: "mi/gge, mi/dge, Wh/mi, miles, and dimensionless cycle contributions."
         validation_rule: "Must expose one PHEV source-input row per configured vehicle dimension, year, and trajectory. LDV combined fields and MHDV cycle fields are validated before any utility weighting."
         adapter:
@@ -495,7 +499,7 @@ sources:
         inputs: [size_weight_class, all_electric_range, fleet_utility_factor]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [utility_weighted_energy_consumption]
-        parameter_modules: [efficiencies]
+        parameter_modules: [road_efficiencies]
         units: "Miles and dimensionless fraction of distance in charge-depleting operation."
         validation_rule: "Weight-category/range keys must be unique, utility factors must lie in [0,1], and only configured bounded interpolation may fill a missing PHEV range."
         adapter:
@@ -509,7 +513,7 @@ sources:
         inputs: [vehicle_class, weight_class, fleet_utility_factor]
         applies_to: [medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
         produces: [utility_weighted_energy_consumption]
-        parameter_modules: [efficiencies]
+        parameter_modules: [road_efficiencies]
         units: "Dimensionless fraction of distance in charge-depleting operation."
         validation_rule: "Weight-category/class keys must be unique, cover every MHDV PHEV exactly once, and utility factors must lie in [0,1]."
         adapter:
@@ -523,7 +527,7 @@ sources:
         inputs: [class_multiplier, powertrain_multiplier, baseline_repair_cost, maintenance_cost]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_variable_costs]
-        parameter_modules: [capex_opex]
+        parameter_modules: [road_capex_opex]
         units: "Source-labelled dimensionless multipliers and USD per mile."
         validation_rule: "Workbook must expose all configured worksheets and expected columns."
         adapter:
@@ -545,7 +549,7 @@ sources:
         inputs: [vehicle_age, annual_vmt]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [annual_mileage_profiles]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
         units: "vehicle-miles traveled"
         validation_rule: "Must expose source vehicle classes, age index, annual VMT, references, and notes."
         adapter:
@@ -560,7 +564,7 @@ sources:
         inputs: [vehicle_age, annual_vmt]
         applies_to: [medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
         produces: [annual_mileage_profiles]
-        parameter_modules: [stocks_and_demands]
+        parameter_modules: [road_stocks_and_demands]
         units: "vehicle-miles traveled"
         validation_rule: "Must expose source vehicle classes, references, notes, and contiguous numeric age columns."
         adapter:
@@ -599,7 +603,7 @@ sources:
         inputs: [maintenance_slope, maintenance_intercept, powertrain_multiplier]
         applies_to: [medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
         produces: [vehicle_variable_costs]
-        parameter_modules: [capex_opex]
+        parameter_modules: [road_capex_opex]
         required: false
         units: "Source-labelled maintenance-and-repair coefficients."
         validation_rule: "The rules.yaml extraction mapping must yield non-empty numeric long-form coefficients with source labels and cell coordinates."
@@ -631,7 +635,7 @@ sources:
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, combined_electricity_consumption, motor_power, all_electric_range]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing, all_electric_range]
-        parameter_modules: [road_aggregation, efficiencies]
+        parameter_modules: [road_aggregation, road_efficiencies]
         units: "kWh/100 km, kW, km"
         adapter:
           resource_id: "026e45b4-eb63-451f-b34f-d9308ea3a3d9"
@@ -649,7 +653,7 @@ sources:
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, combined_charge_depleting_energy_consumption, combined_charge_sustaining_fuel_consumption, motor_power, engine_size, all_electric_range]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing, all_electric_range]
-        parameter_modules: [road_aggregation, efficiencies]
+        parameter_modules: [road_aggregation, road_efficiencies]
         units: "Le/100 km, kW, L, km"
         adapter:
           resource_id: "8812228b-a6aa-4303-b3d0-66489225120d"
@@ -667,7 +671,7 @@ sources:
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing]
-        parameter_modules: [road_aggregation, efficiencies]
+        parameter_modules: [road_aggregation, road_efficiencies]
         units: "L, L/100 km"
         adapter:
           resource_id: "42495676-28b7-40f3-b0e0-3d7fe005ca56"
@@ -685,7 +689,7 @@ sources:
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing]
-        parameter_modules: [road_aggregation, efficiencies]
+        parameter_modules: [road_aggregation, road_efficiencies]
         units: "L, Le/100 km"
         adapter:
           resource_id: "c98b9dc8-b23f-4cd8-8b19-e892da1e4688"
@@ -703,7 +707,7 @@ sources:
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing]
-        parameter_modules: [road_aggregation, efficiencies]
+        parameter_modules: [road_aggregation, road_efficiencies]
         units: "L, L/100 km"
         adapter:
           resource_id: "d589f2bc-9a85-4f65-be2f-20f17debfcb1"
@@ -721,7 +725,7 @@ sources:
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing]
-        parameter_modules: [road_aggregation, efficiencies]
+        parameter_modules: [road_aggregation, road_efficiencies]
         units: "L, Le/100 km"
         adapter:
           resource_id: "9df1b18d-d036-4783-a61c-99f1f75b3ac5"
@@ -761,7 +765,7 @@ sources:
         inputs: [vehicle_age, vehicle_class, survival_rate]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [survival_rates, median_equivalent_lifetime]
-        parameter_modules: [lifetimes_survival]
+        parameter_modules: [road_lifetimes_survival]
         units: "dimensionless survival rate"
         validation_rule: "Vehicle Age Data!A3:E45 must retain the configured headers, four source vehicle classes, ages 0-39, numeric bounded values, and unique class-age keys."
 
@@ -796,7 +800,7 @@ sources:
         inputs: [vehicle_age, weight_class, annual_scrappage_rate]
         applies_to: [medium_trucks, heavy_trucks]
         produces: [survival_rates, median_equivalent_lifetime]
-        parameter_modules: [lifetimes_survival]
+        parameter_modules: [road_lifetimes_survival]
         units: "annual scrappage-rate fraction"
         validation_rule: "Retain the source Cls 3, Cls 4-6, and Cls 7-8 labels and annual scrappage rates without conversion to survival."
 
@@ -830,7 +834,7 @@ sources:
         inputs: [powertrain, fuel_type, energy_intensity, vehicle_cost, maintenance_cost]
         applies_to: [motorcycles]
         produces: [vehicle_efficiency, vehicle_cost, vehicle_variable_costs]
-        parameter_modules: [efficiencies, capex_opex]
+        parameter_modules: [road_efficiencies, road_capex_opex]
         units: "MJ/vkm, 2005$/veh, and 2005$/veh/yr."
         validation_rule: "Select only intensity, Capital costs (purchase), and Operating costs (maintenance) for Liquids and BEV, preserving all 20 source years."
 
@@ -866,7 +870,7 @@ sources:
         inputs: [powertrain, vehicle_cost, vehicle_efficiency]
         applies_to: [inter_city_buses]
         produces: [vehicle_cost, vehicle_efficiency]
-        parameter_modules: [efficiencies, capex_opex]
+        parameter_modules: [road_efficiencies, road_capex_opex]
         units: "Source-labelled $/vehicle and mpg-e."
         validation_rule: "Retain only Intercity Bus rows and fail on chart, measure, technology, year, unit, unexpected null, or payload-structure drift; exact configured all-null exclusions must remain present, entirely null, and warning-audited."
       nonroad_cost_invest_multipliers:
@@ -875,7 +879,7 @@ sources:
         inputs: [technology_class, powertrain, parameter, value]
         applies_to: [passenger_rail, freight_rail, freight_marine]
         produces: [cost_invest_multiplier]
-        parameter_modules: [capex_opex]
+        parameter_modules: [offroad_capex_opex]
         units: "dimensionless capital-cost ratio relative to the petroleum incumbent"
         notes: "EPRI rows in a mixed-source, version-controlled manual parameter table transcribed from the rendered non-road section; source blank cells are not inferred."
         validation_rule: "Select exactly the twelve cited Passenger rail, Freight rail, and Domestic Freight maritime rows from Tables 4 and 6, preserving 2035 and 2050 values and excluding other sources and the internal HFO assumption."
@@ -892,7 +896,7 @@ sources:
         inputs: [technology_class, powertrain, parameter, value]
         applies_to: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
         produces: [efficiency_multiplier]
-        parameter_modules: [efficiencies]
+        parameter_modules: [offroad_efficiencies]
         units: "dimensionless relative energy intensity or annual improvement rate"
         notes: "EPRI rows selected from the mixed-source efficiency multiplier table."
         validation_rule: "Select exactly the seventeen rows carrying the EPRI v2025 citation and preserve their technology, powertrain, parameter, and value fields."
@@ -928,7 +932,7 @@ sources:
         inputs: [passenger_capacity, cargo_capacity, passenger_load_factor, cargo_load_factor, average_block_speed_mph]
         applies_to: [passenger_air, freight_air]
         produces: [mode_variable_costs, mode_capital_costs]
-        parameter_modules: [capex_opex]
+        parameter_modules: [offroad_capex_opex]
         units: "Seats, source-labelled tons, percent, and miles per hour."
         validation_rule: "Tables 3-6 and 3-9 must retain their exact titles and All Aircraft rows."
         adapter:
@@ -943,7 +947,7 @@ sources:
         inputs: [maintenance_cost_per_block_hour]
         applies_to: [passenger_air, freight_air]
         produces: [mode_variable_costs]
-        parameter_modules: [capex_opex]
+        parameter_modules: [offroad_capex_opex]
         units: "Source-labelled USD per block hour."
         validation_rule: "Tables 4-7 and 4-8 must retain their exact titles and All Aircraft maintenance-cost rows."
         adapter:
@@ -1018,7 +1022,7 @@ sources:
         inputs: [technology_class, powertrain, parameter, value]
         applies_to: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
         produces: [cost_invest]
-        parameter_modules: [capex_opex]
+        parameter_modules: [offroad_capex_opex]
         units: "thousand passenger-km, thousand tonne-km, or 2015 CAD per service unit"
         validation_rule: "Select exactly the ten rows carrying the 2025 CIMS citation."
         adapter:
@@ -1035,7 +1039,7 @@ sources:
         inputs: [technology_class, lifetime]
         applies_to: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
         produces: [lifetime]
-        parameter_modules: [lifetimes_survival]
+        parameter_modules: [offroad_lifetimes]
         units: "years"
         validation_rule: "Select the five compact category rows carrying the 2026 CIMS citation and resolve each technology_class through technology.category."
         adapter:
@@ -1069,7 +1073,7 @@ sources:
         inputs: [technology_class, powertrain, parameter, value]
         applies_to: [passenger_rail, freight_rail, freight_marine]
         produces: [cost_variable_multiplier]
-        parameter_modules: [capex_opex]
+        parameter_modules: [offroad_capex_opex]
         units: "dimensionless operating cost relative to capital cost"
         validation_rule: "Select exactly three OEO variable-cost rows."
         adapter:
@@ -1084,7 +1088,7 @@ sources:
         inputs: [technology_class, lifetime]
         applies_to: [charger]
         produces: [lifetime]
-        parameter_modules: [lifetimes_survival]
+        parameter_modules: [offroad_lifetimes]
         units: "years"
         validation_rule: "Select the compact charger category row and resolve it through technology.category."
         adapter:
@@ -1118,7 +1122,7 @@ sources:
         inputs: [technology_class, powertrain, parameter, value]
         applies_to: [freight_marine]
         produces: [efficiency_multiplier]
-        parameter_modules: [efficiencies]
+        parameter_modules: [offroad_efficiencies]
         units: "dimensionless energy-intensity ratio"
         validation_rule: "Select exactly one GREET row."
         adapter:
@@ -1152,7 +1156,7 @@ sources:
         inputs: [technology_class, lifetime]
         applies_to: [heavy_trucks]
         produces: [lifetime]
-        parameter_modules: [lifetimes_survival]
+        parameter_modules: [road_lifetimes_survival]
         units: "years"
         validation_rule: "Select the compact heavy_trucks category row and resolve it through technology.category."
         adapter:
@@ -1186,7 +1190,7 @@ sources:
         inputs: [technology_class, lifetime]
         applies_to: [motorcycles]
         produces: [lifetime]
-        parameter_modules: [lifetimes_survival]
+        parameter_modules: [road_lifetimes_survival]
         units: "years"
         validation_rule: "Select the compact motorcycles category row and resolve it through technology.category."
         adapter:
@@ -1220,7 +1224,7 @@ sources:
         inputs: [technology_class, lifetime]
         applies_to: [h2_refuel]
         produces: [lifetime]
-        parameter_modules: [lifetimes_survival]
+        parameter_modules: [offroad_lifetimes]
         units: "years"
         validation_rule: "Select the compact h2_refuel category row and resolve it through technology.category."
         adapter:
@@ -1347,3 +1351,37 @@ sources:
         adapter:
           api_base_url: "https://vpic.nhtsa.dot.gov/api/vehicles"
           cache_subdir: "vpic_vehicle_models"
+
+  dunsky_ev_charging_infrastructure_2024:
+    title: "Electric Vehicle Charging Infrastructure for Canada"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2024 updated forecast; reviewed manual extraction"
+    required: true
+    adapter:
+      access:
+        method: version_controlled_manual_parameter
+        url: "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
+    units: "Dimensionless utilization rates and charger-type shares."
+    citation: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
+    validation_rule: "Select the five reviewed charger rows, require unique class/subcategory/parameter/period keys, and resolve each subcategory through technology.category and technology.sub_category."
+    refresh_notes: >
+      Review the source report tables and all charger utilization/share rows together
+      before changing the version-controlled values or derivation notes.
+    components:
+      charger_shares_and_utilization:
+        label: "EV charger utilization and existing charger-type shares"
+        short_name: dunsky_charger_shares_utilization
+        inputs: [technology_class, sub_category, parameter, period, value]
+        applies_to: [charger]
+        produces: [charger_utilization, charger_type_share]
+        parameter_modules: [ev_chargers]
+        units: "Dimensionless utilization rate or share."
+        validation_rule: "Require all five cited rows and preserve the source-specific derivation notes."
+        adapter:
+          manual_parameter_path: "charger_shares_utilization.csv"
+          expected_columns: [technology_class, sub_category, parameter, period, value, notes, "source -> data_source"]
+          unique_key: [technology_class, sub_category, parameter, period]
+          source_selector: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
+          expected_rows: 5

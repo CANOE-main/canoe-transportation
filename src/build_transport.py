@@ -31,7 +31,7 @@ from utils import (
     resolve_repo_path,
 )
 from validation.database_bootstrap import validate_database
-from validation.insertion import insert_models
+from validation.insertion import ConflictPolicy, insert_models
 from validation.legacy_compare import compare_legacy_tables
 from validation.provenance import (
     source_id_mapping,
@@ -76,6 +76,16 @@ class TableLoadResult:
     blank_values_as_null: dict[str, int]
     primary_key_columns: list[str]
     primary_keys: list[tuple[Any, ...]]
+
+
+@dataclass(frozen=True)
+class TransportContribution:
+    """Validated transport-owned rows prepared for a compatible caller connection."""
+
+    dataset: DataSet
+    labels_by_table: dict[str, list[CanoeBaseModel]]
+    rows_by_table: dict[str, list[CanoeBaseModel]]
+    load_results: list[TableLoadResult]
 
 
 TEMPLATE_TABLES = (
@@ -173,6 +183,13 @@ def prepare_template_table(
     csv_columns, raw_rows, source_encoding = _read_template(template_path)
     model_fields = specification.model.model_fields
     target_columns = _table_columns(connection, specification.table)
+    missing_target_columns = sorted(set(model_fields) - set(target_columns))
+    if missing_target_columns:
+        raise TemplateLoadError(
+            f"Target schema table {specification.table!r} is missing transport "
+            f"columns required by {specification.model.__name__}: "
+            f"{missing_target_columns}"
+        )
     ignored_fields = [field for field in csv_columns if field not in model_fields]
     missing_fields = [field for field in model_fields if field not in csv_columns]
     missing_required = [
@@ -324,6 +341,79 @@ def _internal_template_dataset(template_dir: Path) -> DataSet:
     )
 
 
+def prepare_transport_contribution(
+    connection: sqlite3.Connection,
+    *,
+    bundle: ConfigBundle,
+    template_dir: Path,
+) -> TransportContribution:
+    """Prepare the currently supported transport rows without writing to SQLite."""
+    if not template_dir.is_dir():
+        raise FileNotFoundError(f"Template directory does not exist: {template_dir}")
+    if bundle.scenario.row_note_overrides.parameters:
+        raise TemplateLoadError(
+            "Parameter row-note overrides are reserved for planned parameter insertion"
+        )
+
+    template_dataset = _internal_template_dataset(template_dir)
+    table_rows: dict[str, list[CanoeBaseModel]] = {}
+    table_labels: dict[str, list[CanoeBaseModel]] = {}
+    load_results: list[TableLoadResult] = []
+    for specification in TEMPLATE_TABLES:
+        rows, labels, result = prepare_template_table(
+            connection,
+            specification=specification,
+            template_path=template_dir / specification.filename,
+            data_id=template_dataset.data_id,
+        )
+        if specification.table == "technology":
+            rows = apply_technology_note_overrides(
+                rows, bundle.scenario.row_note_overrides.technology
+            )
+        table_rows[specification.table] = rows
+        table_labels[specification.label_model.table_name()] = labels
+        load_results.append(result)
+
+    return TransportContribution(
+        dataset=template_dataset,
+        labels_by_table=table_labels,
+        rows_by_table=table_rows,
+        load_results=load_results,
+    )
+
+
+def insert_transport_contribution(
+    connection: sqlite3.Connection,
+    contribution: TransportContribution,
+    *,
+    conflict: ConflictPolicy = "error",
+) -> dict[str, list[CanoeBaseModel]]:
+    """Insert a prepared contribution into a transaction owned by the caller."""
+    insert_models(
+        connection,
+        [contribution.dataset],
+        conflict=conflict,
+    )
+    inserted: dict[str, list[CanoeBaseModel]] = {
+        contribution.dataset.table_name(): [contribution.dataset]
+    }
+    for rows in contribution.labels_by_table.values():
+        insert_models(
+            connection,
+            rows,
+            conflict=conflict,
+        )
+        inserted[rows[0].table_name()] = list(rows)
+    for rows in contribution.rows_by_table.values():
+        insert_models(
+            connection,
+            rows,
+            conflict=conflict,
+        )
+        inserted[rows[0].table_name()] = list(rows)
+    return inserted
+
+
 def bootstrap_database(
     *,
     bundle: ConfigBundle,
@@ -337,14 +427,6 @@ def bootstrap_database(
             f"Refusing to overwrite existing SQLite database: {database_path}. "
             "Pass --overwrite to replace it explicitly."
         )
-    if not template_dir.is_dir():
-        raise FileNotFoundError(f"Template directory does not exist: {template_dir}")
-    if bundle.scenario.row_note_overrides.parameters:
-        raise TemplateLoadError(
-            "Parameter row-note overrides are reserved for planned parameter insertion"
-        )
-
-    template_dataset = _internal_template_dataset(template_dir)
     database_path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{database_path.name}.",
@@ -361,34 +443,12 @@ def bootstrap_database(
         preflight["packaged_rates"] = preflight.pop("rates")
         preflight["configured_rates"] = apply_scenario_economics(connection, bundle)
 
-        table_rows: dict[str, list[CanoeBaseModel]] = {}
-        table_labels: dict[str, list[CanoeBaseModel]] = {}
-        load_results: list[TableLoadResult] = []
-        for specification in TEMPLATE_TABLES:
-            rows, labels, result = prepare_template_table(
-                connection,
-                specification=specification,
-                template_path=template_dir / specification.filename,
-                data_id=template_dataset.data_id,
-            )
-            if specification.table == "technology":
-                rows = apply_technology_note_overrides(
-                    rows, bundle.scenario.row_note_overrides.technology
-                )
-            table_rows[specification.table] = rows
-            table_labels[specification.label_model.table_name()] = labels
-            load_results.append(result)
-
-        insert_models(connection, [template_dataset])
-        inserted: dict[str, list[CanoeBaseModel]] = {
-            template_dataset.table_name(): [template_dataset]
-        }
-        for rows in table_labels.values():
-            insert_models(connection, rows)
-            inserted[rows[0].table_name()] = list(rows)
-        for rows in table_rows.values():
-            insert_models(connection, rows)
-            inserted[rows[0].table_name()] = list(rows)
+        contribution = prepare_transport_contribution(
+            connection,
+            bundle=bundle,
+            template_dir=template_dir,
+        )
+        inserted = insert_transport_contribution(connection, contribution)
 
         expected_primary_keys = {
             table: _expected_keys(rows) for table, rows in inserted.items()
@@ -422,13 +482,13 @@ def bootstrap_database(
         "source_id_mapping": source_id_mapping(bundle.sources),
         "template": {
             "kind": "backend_internal_reference",
-            "data_id": template_dataset.data_id,
-            "content_version": template_dataset.version,
+            "data_id": contribution.dataset.data_id,
+            "content_version": contribution.dataset.version,
         },
         "preflight": preflight,
         "templates": [
             {key: value for key, value in asdict(result).items() if key != "primary_keys"}
-            for result in load_results
+            for result in contribution.load_results
         ],
         "touched_table_row_counts": {
             table: audit["row_count"]

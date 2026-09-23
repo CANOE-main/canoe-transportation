@@ -21,6 +21,10 @@ same parameterization contracts either to build its standalone database or to co
 rows to an already initialized master database; multi-sector integration should not require
 a second transport transformation implementation.
 
+The tree below shows implemented files and the selected homes for planned parameterization
+families. Planned entries are labeled explicitly; they are ownership targets, not empty module
+requirements.
+
 ```text
 .
 ├── AGENTS.md                               # Stable repository policy
@@ -40,8 +44,8 @@ a second transport transformation implementation.
 │   └── Snakefile                           # Dependency and artifact orchestration
 ├── src/
 │   ├── setup.py                            # Configuration/schema smoke entrypoint
-│   ├── build_transport.py                  # Atomic database build, publication, and report owner
-│   ├── canoe_adapter.py                    # Canoe-main orchestrator adapter for running this backend; exact upstream contract is WIP - #to-do
+│   ├── build_transport.py                  # Standalone atomic database build owner
+│   ├── canoe_adapter.py                    # CANOE-main orchestrator adapter for running this backend - #to-do
 │   ├── fetching/                           # Upstream download, cache, and interim normalization
 │   │   ├── nrcan_ceud.py                   # NRCan CEUD transport tables
 │   │   ├── vehicle_population.py           # Ontario MTO report acquisition and normalization
@@ -53,18 +57,18 @@ a second transport transformation implementation.
 │   │   ├── vpic_model_years.py             # Opt-in vPIC make/model-year evidence
 │   │   └── assorted_sources.py             # Smaller registered source adapters
 │   ├── parameterization/                   # Transform normalized inputs into model parameters
-│   │   ├── manual_parameters.py            # Resolve compact category/powertrain selectors
-│   │   ├── road_stocks_and_demands.py      # Existing stock and demand products from road modes
-│   │   ├── offroad_stocks_and_demands.py   # Existing stock and demand products from off-road modes
-│   │   ├── ev_chargers.py                  # EV charging infrastructure capacity
+│   │   ├── manual_parameters.py            # Validate registry and resolve generic selectors
+│   │   ├── road_stocks_and_demands.py      # Road existing stock and demand products - #to-do
+│   │   ├── offroad_stocks_and_demands.py   # Off-road existing stock and demand products - #to-do
+│   │   ├── ev_chargers.py                  # EV charging infrastructure parameters - #to-do
 │   │   ├── road_lifetimes_survival.py      # Accepted road lifetime, survival, and MTO diagnostics
-│   │   ├── offroad_lifetimes.py            # Lifetimes of remaining technologies
+│   │   ├── offroad_lifetimes.py            # Lifetimes of remaining technologies - #to-do
 │   │   ├── road_aggregation.py             # Reviewed mapping application and aggregation weights
 │   │   ├── vehicle_mapping_bootstrap.py    # Explicit mapping-development entrypoint
 │   │   ├── road_efficiencies.py            # Road technology efficiencies - #to-do
 │   │   ├── offroad_efficiencies.py         # Off-road technology efficiencies - #to-do
-│   │   ├── road_capex_opex.py              # Investment and operating costs - #to-do
-│   │   ├── offroad_capex_opex.py           # Investment and operating costs - #to-do
+│   │   ├── road_capex_opex.py              # Road investment and operating costs - #to-do
+│   │   ├── offroad_capex_opex.py           # Off-road investment and operating costs - #to-do
 │   │   ├── ldv_charging_profiles.py        # Hourly LDEV charging demand profiles - #to-do
 │   │   ├── road_embodied_emissions.py      # Vehicle-cycle and operating emissions - #to-do
 │   │   ├── market_constraints.py           # Market shares, policy limits, and SCC rules - #to-do
@@ -116,13 +120,23 @@ when a shared behavior is genuinely common. Behavioral owners such as EV infrast
 charging profiles, road aggregation, market constraints, and adoption constraints remain
 appropriate where they form the clearer seam.
 
-`src/parameterization/` should produce deterministic parameter-ready artifacts or row-builder
-outputs and remain independent of SQLite transactions. `build_transport.py` consumes those
-contracts to create the standalone transport database. The future CANOE-main boundary should
-consume the same contracts against the shared initialized CANOE database and follow the
-then-current upstream `CANOEModule`/sector-config lifecycle documented in
-`docs/canoe_main_orchestrator.md`. Generic schema validation, provenance registration, and
-insertion remain shared infrastructure rather than being reimplemented by each module.
+`src/parameterization/` produces deterministic parameter-ready artifacts or row-builder
+outputs and remains independent of SQLite transactions. `build_transport.py` exposes
+`prepare_transport_contribution` and `insert_transport_contribution` for compatible
+caller-owned connections while retaining standalone schema creation, transaction, validation, and atomic
+publication. The contribution currently covers the implemented technology and commodity
+templates; later parameter families should join this same seam as their row contracts become
+executable. A future CANOE-main adapter is intentionally not present until the upstream sector
+contract is ready to consume it.
+
+The former `parameterization.lifetimes_survival` and
+`parameterization.stocks_and_demands` paths remain thin import and CLI forwarders. Canonical
+code, configuration, artifacts, and tests use the road-specific owners; the forwarders contain
+no transformation logic.
+
+In `config/sources.yaml`, `parameter_modules` names the selected behavioral owner for each
+source component, including planned owners. It is lineage metadata, not evidence that every
+listed module is already implemented or part of the normal build. #to-review
 
 ## Artifact ownership and impact routing
 

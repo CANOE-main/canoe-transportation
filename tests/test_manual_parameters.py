@@ -84,23 +84,28 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
         rules=rules,
     )
 
-    assert registry["manual_file"].nunique() == 6
-    assert len(registry) == 12
-    assert len(resolution) == 103
-    assert resolution["tech"].nunique() == 35
+    assert registry["manual_file"].nunique() == 7
+    assert len(registry) == 13
+    assert len(resolution) == 100
+    assert resolution["tech"].nunique() == 32
     assert not resolution.duplicated(
         ["manual_file", "parameter", "tech", "selector_year"]
     ).any()
+    charger_rows = reconciliation.loc[
+        reconciliation["manual_file"].eq("charger_shares_utilization.csv")
+    ]
+    assert len(charger_rows) == 5
+    assert set(charger_rows["resolution_status"]) == {"behavior_specific_owner"}
 
     lifetime = resolution.loc[
         resolution["manual_file"].eq("lifetime_process.csv")
     ]
     assert lifetime.groupby("technology_class")["tech"].nunique().to_dict() == {
-        "charger": 4,
+        "charger": 2,
         "freight_air": 3,
         "freight_marine": 5,
         "freight_rail": 4,
-        "h2_refuel": 3,
+        "h2_refuel": 2,
         "heavy_trucks": 7,
         "motorcycles": 3,
         "passenger_air": 3,

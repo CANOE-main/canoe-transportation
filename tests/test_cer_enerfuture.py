@@ -35,8 +35,10 @@ def test_source_contract_targets_readme_parameter_roles(bundle) -> None:
     source = bundle.sources.sources["cer_canadas_energy_future"]
 
     assert source.component("macro-indicators").parameter_modules == [
-        "stocks_and_demands",
-        "capex_opex",
+        "road_stocks_and_demands",
+        "offroad_stocks_and_demands",
+        "road_capex_opex",
+        "offroad_capex_opex",
     ]
     assert source.component("end-use-demand").parameter_modules == []
     assert source.component("end-use-prices").produces == ["fuel_price_scenarios"]

@@ -50,6 +50,7 @@ def test_yaml_order_pins_current_source_mapping(bundle) -> None:
         "fueleconomy_gov_vehicle_data": "T21",
         "reviewed_mto_make_model_evidence": "T22",
         "nhtsa_vpic_vehicle_models": "T23",
+        "dunsky_ev_charging_infrastructure_2024": "T24",
     }
 
 

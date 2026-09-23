@@ -12,13 +12,14 @@ scenario:
 
 geography:
   # Quote ON because YAML 1.1 parsers otherwise interpret it as a boolean.
-  regions: ["ON"]
+  regions: ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
 
 periods:
-  # Source/base observations are distinct from the regular future model grid.
-  base_year: 2021
-  existing: [2021]
-  model: [2025, 2030, 2035, 2040, 2045, 2050]
+  # Periods begin at the end of a given year (e.g., the 2025 period starts on December 31, 2025, and ends on December 31, 2030)
+  # All inputs for a given period reflect the projections for the END of that period (e.g., 2025 inputs reflect 2030 condition)
+  base_year: 2023
+  existing: [2000, 2005, 2010, 2015, 2020, 2023]
+  model: [2025, 2030, 2035, 2040, 2045]
   step: 5
 
 sources:
@@ -35,8 +36,8 @@ sources:
     - nhtsa_cafe_2024_ldv_survival
     - eia_nems_hd_truck_scrappage
   selections:
-    nrcan_ceud_transport_provincial: {year: 2021}
-    nrcan_ceud_transport_national: {year: 2021}
+    nrcan_ceud_transport_provincial: {year: 2023}
+    nrcan_ceud_transport_national: {year: 2023}
     cer_canadas_energy_future:
       edition: 2026
       scenario: Current Measures
@@ -74,7 +75,7 @@ switches:
   include_existing_capacity: true
   # Legacy reproduction uses source-derived median-equivalent lifetimes.
   # Newer scenarios may enable empirical survival curves instead.
-  survival_curves: false
+  survival_curves: true
   survival_curve_max_age: 25  # must not exceed the time horizon
 
 # Scenario-authored notes take precedence when a consuming row builder supports them.

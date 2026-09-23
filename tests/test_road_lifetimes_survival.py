@@ -3,8 +3,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-import parameterization.lifetimes_survival as lifetime_module
-from parameterization.lifetimes_survival import (
+import parameterization.road_lifetimes_survival as lifetime_module
+from parameterization.road_lifetimes_survival import (
     build_accepted_lifetime_artifacts,
     build_mto_survival_diagnostic_artifacts,
     aggregate_mto_survival_stages as _aggregate_mto_survival_stages,
@@ -637,7 +637,7 @@ def test_accepted_publisher_does_not_invoke_mto_diagnostics(
     real_resolve = lifetime_module.resolve_artifact_path
 
     def resolve_route(bundle, family: str) -> Path:
-        if family == "lifetimes_survival":
+        if family == "road_lifetimes_survival":
             return tmp_path
         return real_resolve(bundle, family)
 
@@ -684,7 +684,7 @@ def test_mto_diagnostic_publisher_writes_only_diagnostic_routes(
             return interim_dir
         if family == "lifetime_validation":
             return validation_dir
-        if family == "lifetimes_survival":
+        if family == "road_lifetimes_survival":
             raise AssertionError("MTO diagnostics published accepted products")
         return real_resolve(bundle, family)
 

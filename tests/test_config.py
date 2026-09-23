@@ -74,13 +74,17 @@ def test_active_sources_are_registered_and_template_is_not_a_source() -> None:
 
 def test_source_component_vocabularies_are_canonical() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
-    current_modules = {
-        "capex_opex",
-        "efficiencies",
-        "lifetimes_survival",
+    architecture_modules = {
+        "ev_chargers",
+        "offroad_capex_opex",
+        "offroad_efficiencies",
+        "offroad_lifetimes",
+        "offroad_stocks_and_demands",
         "road_aggregation",
-        "sector_coupling",
-        "stocks_and_demands",
+        "road_capex_opex",
+        "road_efficiencies",
+        "road_lifetimes_survival",
+        "road_stocks_and_demands",
     }
     forbidden_aliases = {
         "benchmarking",
@@ -90,6 +94,12 @@ def test_source_component_vocabularies_are_canonical() -> None:
         "road_vehicle_class_mapping",
         "urban_transit",
         "weightclass",
+    }
+    displaced_module_owners = {
+        "capex_opex",
+        "efficiencies",
+        "lifetimes_survival",
+        "stocks_and_demands",
     }
 
     for source in bundle.sources.sources.values():
@@ -103,7 +113,31 @@ def test_source_component_vocabularies_are_canonical() -> None:
                 values = getattr(component, field_name)
                 assert not forbidden_aliases.intersection(values)
                 assert all(re.fullmatch(r"[a-z][a-z0-9_]*", value) for value in values)
-            assert set(component.parameter_modules) <= current_modules
+            assert set(component.parameter_modules) <= architecture_modules
+            assert not displaced_module_owners.intersection(
+                component.parameter_modules
+            )
+
+
+def test_source_components_follow_road_and_offroad_owners() -> None:
+    sources = load_config_bundle(SCENARIO, repo_root=REPO_ROOT).sources.sources
+
+    provincial = sources["nrcan_ceud_transport_provincial"]
+    assert provincial.component("20").parameter_modules == [
+        "road_stocks_and_demands"
+    ]
+    assert provincial.component("14").parameter_modules == [
+        "offroad_stocks_and_demands"
+    ]
+    assert sources["nhtsa_cafe_2024_ldv_survival"].component(
+        "ldv_survival_rates"
+    ).parameter_modules == ["road_lifetimes_survival"]
+    assert sources["emrg_sfu_cims_model"].component(
+        "transport_process_lifetimes"
+    ).parameter_modules == ["offroad_lifetimes"]
+    assert sources["dunsky_ev_charging_infrastructure_2024"].component(
+        "charger_shares_and_utilization"
+    ).parameter_modules == ["ev_chargers"]
 
 
 def test_absolute_and_relative_component_roles_are_distinct() -> None:
@@ -152,6 +186,9 @@ def test_path_resolution_and_directory_list() -> None:
     )
     assert resolve_artifact_path(bundle, "road_aggregation") == (
         REPO_ROOT / "inputs" / "2_processed" / "road_aggregation"
+    )
+    assert resolve_artifact_path(bundle, "road_lifetimes_survival") == (
+        REPO_ROOT / "inputs" / "2_processed" / "road_lifetimes_survival"
     )
     assert REPO_ROOT / "inputs" / "validation" in directories
 

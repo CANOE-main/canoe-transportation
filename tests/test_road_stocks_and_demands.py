@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from parameterization.stocks_and_demands import (
+from parameterization.road_stocks_and_demands import (
     derive_ldv_age_distributions,
     median_lifetime_map,
 )

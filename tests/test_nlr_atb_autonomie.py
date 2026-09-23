@@ -345,15 +345,17 @@ def test_source_contract_and_conservative_legacy_default(bundle) -> None:
 
     assert configured_trajectory(bundle) == "Conservative"
     assert source.component("vehicles").parameter_modules == [
-        "efficiencies",
-        "capex_opex",
+        "road_efficiencies",
+        "road_capex_opex",
     ]
     assert {
         "phev_vehicle_inputs",
         "phev_utility_factor_ldv",
         "phev_utility_factor_mdhd",
     }.issubset(source.components)
-    assert source.component("vmt_ldv").parameter_modules == ["stocks_and_demands"]
+    assert source.component("vmt_ldv").parameter_modules == [
+        "road_stocks_and_demands"
+    ]
     assert set(build_atb_request(bundle).expected_trajectories) == {
         "Advanced",
         "Conservative",

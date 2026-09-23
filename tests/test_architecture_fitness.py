@@ -47,8 +47,8 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
     assert {
         "ontario_vehicle_population",
         "road_aggregation",
-        "lifetimes_survival",
-        "stocks_and_demands",
+        "road_lifetimes_survival",
+        "road_stocks_and_demands",
         "vehicle_mapping_review",
         "database",
         "database_validation",
@@ -65,14 +65,14 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
 def test_lifetime_routes_separate_accepted_and_mto_diagnostic_publishers() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     accepted = (
-        "parameterization.lifetimes_survival.build_accepted_lifetime_artifacts"
+        "parameterization.road_lifetimes_survival.build_accepted_lifetime_artifacts"
     )
     diagnostics = (
-        "parameterization.lifetimes_survival."
+        "parameterization.road_lifetimes_survival."
         "build_mto_survival_diagnostic_artifacts"
     )
 
-    processed = bundle.paths.artifacts["lifetimes_survival"]
+    processed = bundle.paths.artifacts["road_lifetimes_survival"]
     interim = bundle.paths.artifacts["vehicle_survival_interim"]
     validation = bundle.paths.artifacts["lifetime_validation"]
 
@@ -82,3 +82,23 @@ def test_lifetime_routes_separate_accepted_and_mto_diagnostic_publishers() -> No
     assert diagnostics not in processed.producers
     assert diagnostics in interim.producers
     assert diagnostics in validation.producers
+
+
+def test_legacy_parameterization_modules_are_thin_compatibility_surfaces() -> None:
+    pairs = (
+        (
+            "parameterization.lifetimes_survival",
+            "parameterization.road_lifetimes_survival",
+            "build_accepted_lifetime_artifacts",
+        ),
+        (
+            "parameterization.stocks_and_demands",
+            "parameterization.road_stocks_and_demands",
+            "build_existing_stock_age_artifacts",
+        ),
+    )
+
+    for legacy_name, canonical_name, entrypoint in pairs:
+        legacy = importlib.import_module(legacy_name)
+        canonical = importlib.import_module(canonical_name)
+        assert getattr(legacy, entrypoint) is getattr(canonical, entrypoint)

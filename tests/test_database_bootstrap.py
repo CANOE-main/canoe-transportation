@@ -8,8 +8,15 @@ from pathlib import Path
 
 import pytest
 
-from build_transport import TemplateLoadError, bootstrap_database
+from build_transport import (
+    TemplateLoadError,
+    bootstrap_database,
+    insert_transport_contribution,
+    prepare_transport_contribution,
+)
 from utils import load_config_bundle
+from validation.database_bootstrap import validate_database
+from validation.schema_contract import create_v4_schema, packaged_ddl
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -82,6 +89,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "fueleconomy_gov_vehicle_data": "T21",
         "reviewed_mto_make_model_evidence": "T22",
         "nhtsa_vpic_vehicle_models": "T23",
+        "dunsky_ev_charging_infrastructure_2024": "T24",
     }
     assert report["template"]["kind"] == "backend_internal_reference"
     assert report["template"]["data_id"].startswith("canoe-transport-template:")
@@ -107,6 +115,63 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         assert connection.execute(
             "SELECT COUNT(*) FROM data_source_label"
         ).fetchone()[0] == 0
+
+
+def test_transport_contribution_uses_a_caller_owned_transaction(
+    bundle, tmp_path: Path
+) -> None:
+    database = tmp_path / "caller-owned.sqlite"
+    connection = sqlite3.connect(database, isolation_level=None)
+    create_v4_schema(connection)
+
+    contribution = prepare_transport_contribution(
+        connection,
+        bundle=bundle,
+        template_dir=TEMPLATES,
+    )
+
+    assert connection.execute("SELECT COUNT(*) FROM data_set").fetchone()[0] == 0
+    assert connection.execute("SELECT COUNT(*) FROM technology").fetchone()[0] == 0
+
+    connection.execute("BEGIN IMMEDIATE")
+    inserted = insert_transport_contribution(connection, contribution)
+    validation = validate_database(
+        connection,
+        expected_primary_keys={
+            table: [tuple(getattr(row, field) for field in row.__primary_key__)
+                    for row in rows]
+            for table, rows in inserted.items()
+        },
+        touched_tables=list(inserted),
+    )
+
+    assert validation["ok"] is True
+    assert set(inserted) == {
+        "data_set",
+        "technology_label",
+        "commodity_label",
+        "technology",
+        "commodity",
+    }
+    connection.rollback()
+    assert connection.execute("SELECT COUNT(*) FROM technology").fetchone()[0] == 0
+    connection.close()
+
+
+def test_transport_contribution_rejects_an_incompatible_caller_schema(
+    bundle,
+) -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(packaged_ddl())
+
+    with pytest.raises(TemplateLoadError, match="missing transport columns.*notes"):
+        prepare_transport_contribution(
+            connection,
+            bundle=bundle,
+            template_dir=TEMPLATES,
+        )
+
+    connection.close()
 
 
 def test_bootstrap_applies_scenario_economics_and_technology_note(

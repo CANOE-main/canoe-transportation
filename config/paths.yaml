@@ -39,45 +39,45 @@ artifacts:
     producers: [fetching.vehicle_population.fetch_and_normalize]
     consumers:
       - parameterization.road_aggregation
-      - parameterization.lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
     validation_surfaces: [fetching.vehicle_population.validate_source]
   vehicle_survival_interim:
     path: inputs/1_interim/vehicle_survival
     layer: interim
-    owner: parameterization.lifetimes_survival
+    owner: parameterization.road_lifetimes_survival
     producers:
-      - parameterization.lifetimes_survival.build_mto_survival_diagnostic_artifacts
-      - parameterization.lifetimes_survival.build_lifetime_artifacts
+      - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.road_lifetimes_survival.build_lifetime_artifacts
     consumers: [reviewers]
-    validation_surfaces: [parameterization.lifetimes_survival.transition_findings]
+    validation_surfaces: [parameterization.road_lifetimes_survival.transition_findings]
   road_aggregation:
     path: inputs/2_processed/road_aggregation
     layer: processed
     owner: parameterization.road_aggregation
     producers: [parameterization.road_aggregation.build_road_aggregation_artifacts]
     consumers:
-      - parameterization.lifetimes_survival.build_accepted_lifetime_artifacts
-      - parameterization.lifetimes_survival.build_mto_survival_diagnostic_artifacts
-      - parameterization.stocks_and_demands
+      - parameterization.road_lifetimes_survival.build_accepted_lifetime_artifacts
+      - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.road_stocks_and_demands
     validation_surfaces:
       - parameterization.road_aggregation.validate_vehicle_mapping
       - parameterization.road_aggregation.mapping_coverage
-  lifetimes_survival:
-    path: inputs/2_processed/lifetimes_survival
+  road_lifetimes_survival:
+    path: inputs/2_processed/road_lifetimes_survival
     layer: processed
-    owner: parameterization.lifetimes_survival
+    owner: parameterization.road_lifetimes_survival
     producers:
-      - parameterization.lifetimes_survival.build_accepted_lifetime_artifacts
-      - parameterization.lifetimes_survival.build_lifetime_artifacts
-    consumers: [parameterization.stocks_and_demands, build_transport]
-    validation_surfaces: [parameterization.lifetimes_survival.median_equivalent_lifetimes]
-  stocks_and_demands:
-    path: inputs/2_processed/stocks_and_demands
+      - parameterization.road_lifetimes_survival.build_accepted_lifetime_artifacts
+      - parameterization.road_lifetimes_survival.build_lifetime_artifacts
+    consumers: [parameterization.road_stocks_and_demands, reviewers]
+    validation_surfaces: [parameterization.road_lifetimes_survival.median_equivalent_lifetimes]
+  road_stocks_and_demands:
+    path: inputs/2_processed/road_stocks_and_demands
     layer: processed
-    owner: parameterization.stocks_and_demands
-    producers: [parameterization.stocks_and_demands.build_existing_stock_age_artifacts]
-    consumers: [build_transport]
-    validation_surfaces: [parameterization.stocks_and_demands.derive_ldv_age_distributions]
+    owner: parameterization.road_stocks_and_demands
+    producers: [parameterization.road_stocks_and_demands.build_existing_stock_age_artifacts]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.road_stocks_and_demands.derive_ldv_age_distributions]
   vehicle_mapping_review:
     path: inputs/validation/vehicle_mapping
     layer: input_validation
@@ -92,15 +92,15 @@ artifacts:
   lifetime_validation:
     path: inputs/validation/lifetimes_survival
     layer: input_validation
-    owner: parameterization.lifetimes_survival
+    owner: parameterization.road_lifetimes_survival
     producers:
-      - parameterization.lifetimes_survival.build_mto_survival_diagnostic_artifacts
-      - parameterization.lifetimes_survival.build_lifetime_artifacts
-      - parameterization.stocks_and_demands.build_existing_stock_age_artifacts
+      - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.road_lifetimes_survival.build_lifetime_artifacts
+      - parameterization.road_stocks_and_demands.build_existing_stock_age_artifacts
     consumers: [reviewers]
     validation_surfaces:
-      - parameterization.lifetimes_survival.evaluate_mto_survival_decision
-      - parameterization.lifetimes_survival.transition_findings
+      - parameterization.road_lifetimes_survival.evaluate_mto_survival_decision
+      - parameterization.road_lifetimes_survival.transition_findings
   database:
     path: outputs/sqlite
     layer: database

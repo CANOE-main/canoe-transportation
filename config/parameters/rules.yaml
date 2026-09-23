@@ -29,6 +29,7 @@ parameterization:
     remainder_selector: remainder
     projection_year_pattern: '^(?P<base>.+)_(?P<year>(?:19|20)\d{2})$'
     unmatched_policy: report
+    behavior_specific_files: [charger_shares_utilization.csv]
     powertrain_aliases:
       jet_fuel: [jet_fuel, "jet fuel"]
       mdo: [mdo, "marine diesel oil"]
@@ -476,7 +477,7 @@ parameterization:
     request_delay_seconds: 0.25
     maximum_requests: 2500
 
-  stocks_and_demands:
+  road_stocks_and_demands:
     ontario_report_a:
       age_distribution_file: ontario_vehicle_population_ldv_age_distribution.csv
       truncation_findings_file: ontario_vehicle_population_age_truncation_findings.csv
@@ -486,7 +487,7 @@ parameterization:
       survival_curve_switch: survival_curves
       historical_review_minimum_model_year: 2000
 
-  lifetimes_survival:
+  road_lifetimes_survival:
     raw_key_snapshot_file: ontario_vehicle_population_mto_key_snapshots.csv
     raw_key_transition_file: ontario_vehicle_population_mto_key_transitions.csv
     mapped_key_transition_file: ontario_vehicle_population_mapped_key_transitions.csv
