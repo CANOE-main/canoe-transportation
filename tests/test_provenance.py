@@ -51,6 +51,7 @@ def test_yaml_order_pins_current_source_mapping(bundle) -> None:
         "reviewed_mto_make_model_evidence": "T22",
         "nhtsa_vpic_vehicle_models": "T23",
         "dunsky_ev_charging_infrastructure_2024": "T24",
+        "transport_canada_ev_dashboard": "T25",
     }
 
 
@@ -186,3 +187,40 @@ def test_conflicting_registry_definition_is_rejected(bundle) -> None:
 
     with pytest.raises(ProvenanceError, match="Conflicting data_source_label"):
         registry_rows([resolved, conflicting])
+
+
+def test_composite_preserves_multiple_component_citations_from_one_source(bundle) -> None:
+    ceud = resolve_provenance(
+        bundle.sources,
+        source_key="nrcan_ceud_transport_provincial",
+        component_key=21,
+        transformation="stock",
+        transformation_version="1",
+    )
+    archived = resolve_provenance(
+        bundle.sources,
+        source_key="statcan_transport_tables",
+        component_key="20-10-0021-01",
+        transformation="fuel_mix",
+        transformation_version="1",
+    )
+    current = resolve_provenance(
+        bundle.sources,
+        source_key="statcan_transport_tables",
+        component_key="20-10-0025-01",
+        transformation="fuel_mix",
+        transformation_version="1",
+    )
+
+    combined = resolve_composite_provenance(
+        inputs=[ceud, archived, current],
+        dataset_key="existing_capacity.cars",
+        transformation="disaggregate",
+        transformation_version="1",
+        governing_source_id="T01",
+    )
+
+    statcan = next(item for item in combined.contributors if item.source_id == "T04")
+    assert "2010002101-eng" in statcan.citation
+    assert "2010002501-eng" in statcan.citation
+    assert [item.source_id for item in combined.contributors] == ["T01", "T04"]

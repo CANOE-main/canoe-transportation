@@ -89,7 +89,7 @@ def test_iter_table_requests_uses_raw_cache_names() -> None:
 
     assert requests
     assert requests[0].cache_path.parent == REPO_ROOT / "inputs" / "0_cache" / "nrcan_ceud_transport"
-    assert requests[0].cache_path.name.startswith("2021_tran_on_e_")
+    assert requests[0].cache_path.name.startswith("2023_tran_on_e_")
 
 
 def test_iter_rating_requests_pins_exact_english_resources() -> None:

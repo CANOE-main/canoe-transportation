@@ -58,8 +58,11 @@ requirements.
 │   │   └── assorted_sources.py             # Smaller registered source adapters
 │   ├── parameterization/                   # Transform normalized inputs into model parameters
 │   │   ├── manual_parameters.py            # Validate registry and resolve generic selectors
-│   │   ├── road_stocks_and_demands.py      # Road existing stock and demand products - #to-do
-│   │   ├── offroad_stocks_and_demands.py   # Off-road existing stock and demand products - #to-do
+│   │   ├── road_stocks_and_demands.py      # Road existing stock and demand products #to-review
+│   │   ├── road_utilization.py             # Road capacity-to-activity and annual utilization, including vintage-period artifacts #to-review
+│   │   ├── offroad_stocks_and_demands.py   # Off-road existing stock and demand products #to-review
+│   │   ├── existing_capacity.py            # Shared road/off-road capacity preparation and validation #to-review
+│   │   ├── demand.py                       # Shared CER projection, demand rows, and validation #to-review
 │   │   ├── ev_chargers.py                  # EV charging infrastructure parameters - #to-do
 │   │   ├── road_lifetimes_survival.py      # Accepted road lifetime, survival, and MTO diagnostics
 │   │   ├── offroad_lifetimes.py            # Lifetimes of remaining technologies - #to-do
@@ -82,7 +85,7 @@ requirements.
 │       ├── config_smoke.py                 # Setup-time config/schema status and directory creation
 │       ├── provenance.py                   # Source and dataset provenance
 │       ├── schema_contract.py              # canoe-schema v4 compatibility
-│       ├── insertion.py                    # Validated parameterized insertion
+│       ├── insertion.py                    # Scoped pre-insertion cleanup and validated insertion #to-review
 │       ├── database_bootstrap.py           # Post-insertion database integrity checks
 │       ├── sqlite_utils.py                 # Shared SQLite identifier mechanics
 │       └── legacy_compare.py               # Narrow configured legacy comparison
@@ -120,14 +123,19 @@ when a shared behavior is genuinely common. Behavioral owners such as EV infrast
 charging profiles, road aggregation, market constraints, and adoption constraints remain
 appropriate where they form the clearer seam.
 
+`existing_capacity.py` coordinates the road and off-road capacity builders, validates their
+combined technology/vintage rows, publishes their audit products, and resolves provenance.
+It remains an importable preparation entrypoint for standalone and caller-owned assembly;
+SQLite transactions and publication stay in `build_transport.py`. #to-review
+
 `src/parameterization/` produces deterministic parameter-ready artifacts or row-builder
 outputs and remains independent of SQLite transactions. `build_transport.py` exposes
 `prepare_transport_contribution` and `insert_transport_contribution` for compatible
 caller-owned connections while retaining standalone schema creation, transaction, validation, and atomic
-publication. The contribution currently covers the implemented technology and commodity
-templates; later parameter families should join this same seam as their row contracts become
-executable. A future CANOE-main adapter is intentionally not present until the upstream sector
-contract is ready to consume it.
+publication. The contribution covers the technology and commodity templates plus validated
+`existing_capacity` and `demand` rows with their provenance; later parameter families join
+this seam as their row contracts become executable. A future CANOE-main adapter is
+intentionally not present until the upstream sector contract is ready to consume it. #to-review
 
 The former `parameterization.lifetimes_survival` and
 `parameterization.stocks_and_demands` paths remain thin import and CLI forwarders. Canonical

@@ -126,7 +126,7 @@ def test_snakefile_keeps_coarse_source_and_single_writer_build_layers() -> None:
     assert "load_config_bundle" in snakefile
     assert "SCENARIO.scenario.outputs.sqlite_name" in snakefile
     assert "SCENARIO.scenario.outputs.validation_report" in snakefile
-    assert "SCENARIO.scenario.switches.download_sources" in snakefile
+    assert 'config.get("download_sources", False)' in snakefile
     assert "configured_edition" in snakefile
     assert "scripts/doctor.py" in snakefile
     assert "fetching.statcan_tables" in snakefile

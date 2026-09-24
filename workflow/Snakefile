@@ -25,7 +25,11 @@ CER_WARNINGS = f"{CER_INTERIM}/{CER_RULES['warnings_file']}"
 DOCTOR_OUTPUT = f"{LOG_ROOT}/doctor.ok"
 TRANSPORT_DATABASE = f"{SQLITE_ROOT}/{SCENARIO.scenario.outputs.sqlite_name}"
 TRANSPORT_VALIDATION = SCENARIO.scenario.outputs.validation_report
-CACHE_FLAG = "" if SCENARIO.scenario.switches.download_sources else "--no-download"
+DOWNLOAD_SETTING = config.get("download_sources", False)
+if DOWNLOAD_SETTING not in (True, False, "true", "false"):
+    raise ValueError("download_sources must be true or false")
+DOWNLOAD_SOURCES = DOWNLOAD_SETTING in (True, "true")
+CACHE_FLAG = "" if DOWNLOAD_SOURCES else "--no-download"
 
 
 rule all:

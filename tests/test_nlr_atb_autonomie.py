@@ -338,12 +338,12 @@ def _write_fixture_zip(path: Path, *, prefix: str = "") -> None:
         )
 
 
-def test_source_contract_and_conservative_legacy_default(bundle) -> None:
+def test_source_contract_and_scenario_selected_mid_trajectory(bundle) -> None:
     source = bundle.sources.sources[adapter.ATB_SOURCE_ID]
     anl_source = bundle.sources.sources[adapter.ANL_SOURCE_ID]
     rules = module_rules(bundle)
 
-    assert configured_trajectory(bundle) == "Conservative"
+    assert configured_trajectory(bundle) == "Mid"
     assert source.component("vehicles").parameter_modules == [
         "road_efficiencies",
         "road_capex_opex",

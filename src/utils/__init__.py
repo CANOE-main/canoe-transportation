@@ -144,17 +144,19 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
     """Return cross-file errors after structural Pydantic validation."""
     errors: list[str] = []
     registered = bundle.sources.sources
-    for source_name in bundle.scenario.sources.active:
-        if source_name not in registered:
-            errors.append(f"active source not defined in sources.yaml: {source_name}")
-        elif registered[source_name].status != "active":
-            errors.append(
-                f"scenario activates inactive source from sources.yaml: {source_name}"
-            )
     for source_name in bundle.scenario.sources.selections:
         if source_name not in registered:
             errors.append(f"source selection not defined in sources.yaml: {source_name}")
+        elif registered[source_name].status != "active":
+            errors.append(f"source selection is inactive in sources.yaml: {source_name}")
     return errors
+
+
+def active_source_keys(bundle: ConfigBundle) -> set[str]:
+    """Return sources available for the configured build from the registry."""
+    return {
+        key for key, source in bundle.sources.sources.items() if source.status == "active"
+    }
 
 
 def configured_directories(bundle: ConfigBundle) -> list[Path]:

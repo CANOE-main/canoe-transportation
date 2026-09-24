@@ -119,9 +119,10 @@ the plan rather than forcing implementation to satisfy an obsolete assumption. R
 - the effect on scope or acceptance;
 - any unresolved follow-up.
 
-Durable truth belongs in the owning code, config, tests, validation reports, or focused
-documentation. Move it there before archival when needed; do not turn an ExecPlan or
-history synthesis into a second architecture manual.
+Durable contracts belong in the owning code, config, tests, or validation reports. Keep
+task-local development and operational decisions in ExecPlans; use `docs/assumptions.md`
+only for enduring source and data challenges and how assumptions handle them. Do not turn
+an ExecPlan or history synthesis into a second architecture manual.
 
 ## Completion
 

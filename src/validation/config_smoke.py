@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from utils import (
+    active_source_keys,
     create_configured_directories,
     load_config_bundle,
     resolve_repo_path,
@@ -30,14 +31,13 @@ def run_smoke_validation(
         if reference_value is not None
         else None
     )
-    active_sources = bundle.scenario.sources.active
+    active_sources = sorted(active_source_keys(bundle))
 
     return {
         "ok": True,
         "timestamp_utc": now.isoformat(),
         "scenario": bundle.scenario.scenario.name,
         "periods": bundle.scenario.periods.model_dump(mode="json"),
-        "currency": bundle.scenario.currency.model_dump(mode="json"),
         "economics": bundle.scenario.economics.model_dump(mode="json"),
         "scenario_path": str(bundle.scenario_path),
         "paths_path": str(bundle.paths_path),
@@ -53,5 +53,4 @@ def run_smoke_validation(
         "active_sources": active_sources,
         "placeholder_sources": [],
         "switches": bundle.scenario.switches.model_dump(mode="json"),
-        "planned": bundle.scenario.planned.model_dump(mode="json"),
     }

@@ -6,6 +6,7 @@ version: 1
 
 mass:
   kg_to_lb: 2.20462
+  us_short_ton_to_metric_tonne: 0.90718474
 
 length:
   mile_to_km: 1.609344
@@ -15,18 +16,51 @@ volume:
 
 energy:
   gigawatt_year_to_petajoule: 31.536
+  btu_it_to_joule: 1055.05585262
+  joule_to_mj: 0.000001
+  wh_to_mj: 0.0036
+  kwh_to_mj: 3.6
   wh_to_kwh: 0.001
   wh_per_gge: 33700.0
   wh_per_dge: 37945.66929133858
   nrcan_kwh_per_litre_gasoline_equivalent: 8.9
+
+fuel_hhv:
+  gasoline_btu_it_per_us_gallon: 120438.62
+  diesel_btu_it_per_us_gallon: 138490.0
+  gasoline_mj_per_litre: 33.568202923012876
+  diesel_mj_per_litre: 38.59941622386618
+
+service:
+  million_service_per_thousand_vehicles: 1000.0
+  per_100_km_to_per_km: 0.01
+  mj_per_service_to_pj_per_billion_service: 1.0
 
 derived:
   us_gallon_equivalent_per_mile_to_litre_equivalent_per_100_km: 235.2145833333333
   wh_per_mile_to_kwh_per_100_km: 0.0621371192237334
 
 provenance:
+  btu_it_to_joule:
+    source: International Table Btu; NIST SP 811 Appendix B.9 (published rounded value)
+    url: https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b9
+  si_energy_scaling:
+    source: SI definitions; 1 Wh = 3600 J; mega = 10^6; kilo = 10^3
+    keys: [joule_to_mj, wh_to_mj, kwh_to_mj]
+    url: https://www.bipm.org/en/publications/si-brochure
+  fuel_hhv:
+    source_id: argonne_rd_greet_2025_rev1
+    component: fuel_heating_values
+    source: R&D GREET1_2025_Rev1.xlsm Fuel_Specs D16 (gasoline), D23 (diesel)
+    formula: Btu_IT/US_gallon * btu_it_to_joule * joule_to_mj / us_gallon_to_litre
+    url: https://doi.org/10.11578/GREET-EXCEL-2025REV1/DC.20260610.1
+  service_scaling:
+    source: SI decimal prefixes and per-100-km denominator; 1 MJ/service = 1 PJ/billion-service
   mile_to_km:
     source: "NIST Special Publication 811, Appendix B.8"
+    url: "https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8"
+  us_short_ton_to_metric_tonne:
+    source: "1 U.S. short ton = 2000 pounds; 1 international avoirdupois pound = 0.45359237 kg"
     url: "https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8"
   us_gallon_to_litre:
     source: "NIST Handbook 44 exact U.S. gallon conversion, reproduced in NIST SP 811 Appendix B.8"
