@@ -1,0 +1,819 @@
+report_year,weight_basis,model_year,vintage,nrcan_ceud_class,nrcan_vehicle_class,fit_active_stock,aggregation_weight
+2025,all_vintages,,,Car,Compact,541084,0.348228909839447
+2025,all_vintages,,,Car,Full-size,66680,0.042913676449672
+2025,all_vintages,,,Car,Mid-size,467286,0.3007342563506513
+2025,all_vintages,,,Car,Minicompact,16760,0.010786340991249291
+2025,all_vintages,,,Car,Station wagon: Mid-size,38387,0.024704968474408506
+2025,all_vintages,,,Car,Station wagon: Small,171070,0.1100966201296549
+2025,all_vintages,,,Car,Subcompact,204313,0.1314910314406394
+2025,all_vintages,,,Car,Two-seater,48237,0.03104419632427757
+2025,all_vintages,,,Light Truck,Minivan,547637,0.12218389173578649
+2025,all_vintages,,,Light Truck,Pickup truck: Small,87537,0.019530476083382865
+2025,all_vintages,,,Light Truck,Pickup truck: Standard,877513,0.19578288791433962
+2025,all_vintages,,,Light Truck,Sport utility vehicle: Small,2490372,0.5556296284397038
+2025,all_vintages,,,Light Truck,Sport utility vehicle: Standard,369833,0.0825138462746694
+2025,all_vintages,,,Light Truck,Van: Cargo,19689,0.004392834385525266
+2025,all_vintages,,,Light Truck,Van: Passenger,89491,0.019966435166592595
+2025,five_year_vintage,,1985,Car,Compact,195,0.03302286198137172
+2025,five_year_vintage,,1985,Car,Full-size,147,0.02489415749364945
+2025,five_year_vintage,,1985,Car,Mid-size,815,0.1380186282811177
+2025,five_year_vintage,,1985,Car,Minicompact,392,0.0663844199830652
+2025,five_year_vintage,,1985,Car,Station wagon: Mid-size,25,0.004233700254022015
+2025,five_year_vintage,,1985,Car,Subcompact,3762,0.6370872142252328
+2025,five_year_vintage,,1985,Car,Two-seater,569,0.09635901778154107
+2025,five_year_vintage,,1985,Light Truck,Minivan,4,0.0012468827930174563
+2025,five_year_vintage,,1985,Light Truck,Pickup truck: Small,59,0.01839152119700748
+2025,five_year_vintage,,1985,Light Truck,Pickup truck: Standard,2492,0.7768079800498753
+2025,five_year_vintage,,1985,Light Truck,Sport utility vehicle: Small,42,0.013092269326683292
+2025,five_year_vintage,,1985,Light Truck,Sport utility vehicle: Standard,13,0.004052369077306733
+2025,five_year_vintage,,1985,Light Truck,Van: Cargo,164,0.05112219451371571
+2025,five_year_vintage,,1985,Light Truck,Van: Passenger,434,0.13528678304239403
+2025,five_year_vintage,,1990,Car,Compact,531,0.04135836124308747
+2025,five_year_vintage,,1990,Car,Full-size,627,0.04883557909494509
+2025,five_year_vintage,,1990,Car,Mid-size,1142,0.08894773736272295
+2025,five_year_vintage,,1990,Car,Minicompact,1143,0.08902562504867981
+2025,five_year_vintage,,1990,Car,Station wagon: Mid-size,38,0.0029597320663603084
+2025,five_year_vintage,,1990,Car,Subcompact,6164,0.4800996962380248
+2025,five_year_vintage,,1990,Car,Two-seater,3194,0.2487732689461796
+2025,five_year_vintage,,1990,Light Truck,Minivan,54,0.013432835820895522
+2025,five_year_vintage,,1990,Light Truck,Pickup truck: Small,197,0.04900497512437811
+2025,five_year_vintage,,1990,Light Truck,Pickup truck: Standard,2560,0.6368159203980099
+2025,five_year_vintage,,1990,Light Truck,Sport utility vehicle: Small,293,0.07288557213930348
+2025,five_year_vintage,,1990,Light Truck,Sport utility vehicle: Standard,97,0.024129353233830846
+2025,five_year_vintage,,1990,Light Truck,Van: Cargo,220,0.05472636815920398
+2025,five_year_vintage,,1990,Light Truck,Van: Passenger,599,0.1490049751243781
+2025,five_year_vintage,,1995,Car,Compact,1212,0.1927174431547146
+2025,five_year_vintage,,1995,Car,Full-size,706,0.11225950071553506
+2025,five_year_vintage,,1995,Car,Mid-size,479,0.07616473207187152
+2025,five_year_vintage,,1995,Car,Minicompact,489,0.0777548099856893
+2025,five_year_vintage,,1995,Car,Station wagon: Mid-size,44,0.006996342820798219
+2025,five_year_vintage,,1995,Car,Subcompact,2716,0.43186516139290826
+2025,five_year_vintage,,1995,Car,Two-seater,643,0.10224200985848307
+2025,five_year_vintage,,1995,Light Truck,Minivan,292,0.044648318042813454
+2025,five_year_vintage,,1995,Light Truck,Pickup truck: Small,307,0.04694189602446483
+2025,five_year_vintage,,1995,Light Truck,Pickup truck: Standard,4466,0.6828746177370031
+2025,five_year_vintage,,1995,Light Truck,Sport utility vehicle: Small,769,0.11758409785932722
+2025,five_year_vintage,,1995,Light Truck,Sport utility vehicle: Standard,184,0.028134556574923548
+2025,five_year_vintage,,1995,Light Truck,Van: Cargo,329,0.05030581039755352
+2025,five_year_vintage,,1995,Light Truck,Van: Passenger,193,0.029510703363914374
+2025,five_year_vintage,,2000,Car,Compact,2873,0.14277904780836895
+2025,five_year_vintage,,2000,Car,Full-size,1050,0.05218169168074744
+2025,five_year_vintage,,2000,Car,Mid-size,2838,0.14103965808567737
+2025,five_year_vintage,,2000,Car,Minicompact,462,0.022959944339528873
+2025,five_year_vintage,,2000,Car,Station wagon: Mid-size,421,0.020922373521518736
+2025,five_year_vintage,,2000,Car,Station wagon: Small,43,0.0021369645164496572
+2025,five_year_vintage,,2000,Car,Subcompact,10085,0.5011927243812743
+2025,five_year_vintage,,2000,Car,Two-seater,2350,0.11678759566643475
+2025,five_year_vintage,,2000,Light Truck,Minivan,1943,0.07457874333090239
+2025,five_year_vintage,,2000,Light Truck,Pickup truck: Small,503,0.019306797681648946
+2025,five_year_vintage,,2000,Light Truck,Pickup truck: Standard,16822,0.6456837984109316
+2025,five_year_vintage,,2000,Light Truck,Sport utility vehicle: Small,2414,0.09265727555367904
+2025,five_year_vintage,,2000,Light Truck,Sport utility vehicle: Standard,2916,0.11192568993973823
+2025,five_year_vintage,,2000,Light Truck,Van: Cargo,1314,0.05043565040494377
+2025,five_year_vintage,,2000,Light Truck,Van: Passenger,141,0.005412044678156066
+2025,five_year_vintage,,2005,Car,Compact,26083,0.3454335964401123
+2025,five_year_vintage,,2005,Car,Full-size,5113,0.06771467923928591
+2025,five_year_vintage,,2005,Car,Mid-size,12840,0.17004820681252317
+2025,five_year_vintage,,2005,Car,Minicompact,621,0.00822429411453091
+2025,five_year_vintage,,2005,Car,Station wagon: Mid-size,2241,0.029678974413307198
+2025,five_year_vintage,,2005,Car,Station wagon: Small,4469,0.059185781639031626
+2025,five_year_vintage,,2005,Car,Subcompact,17024,0.22545955395454786
+2025,five_year_vintage,,2005,Car,Two-seater,7117,0.09425491338666102
+2025,five_year_vintage,,2005,Light Truck,Minivan,13378,0.12852092379817853
+2025,five_year_vintage,,2005,Light Truck,Pickup truck: Small,695,0.006676785920147562
+2025,five_year_vintage,,2005,Light Truck,Pickup truck: Standard,57361,0.5510606002382508
+2025,five_year_vintage,,2005,Light Truck,Sport utility vehicle: Small,19572,0.18802597702032817
+2025,five_year_vintage,,2005,Light Truck,Sport utility vehicle: Standard,7724,0.07420358913269032
+2025,five_year_vintage,,2005,Light Truck,Van: Cargo,3834,0.03683280175229604
+2025,five_year_vintage,,2005,Light Truck,Van: Passenger,1528,0.014679322138108596
+2025,five_year_vintage,,2010,Car,Compact,77305,0.37930120848441434
+2025,five_year_vintage,,2010,Car,Full-size,9818,0.04817255371450721
+2025,five_year_vintage,,2010,Car,Mid-size,31048,0.15233870928172946
+2025,five_year_vintage,,2010,Car,Minicompact,3288,0.016132751743053547
+2025,five_year_vintage,,2010,Car,Station wagon: Mid-size,1766,0.008664975540824987
+2025,five_year_vintage,,2010,Car,Station wagon: Small,30471,0.1495076272392289
+2025,five_year_vintage,,2010,Car,Subcompact,42583,0.2089358173584091
+2025,five_year_vintage,,2010,Car,Two-seater,7530,0.03694635663783248
+2025,five_year_vintage,,2010,Light Truck,Minivan,53853,0.13421877063950374
+2025,five_year_vintage,,2010,Light Truck,Pickup truck: Small,18497,0.046100395530776384
+2025,five_year_vintage,,2010,Light Truck,Pickup truck: Standard,110435,0.2752390755496183
+2025,five_year_vintage,,2010,Light Truck,Sport utility vehicle: Small,184821,0.46063260001046774
+2025,five_year_vintage,,2010,Light Truck,Sport utility vehicle: Standard,23953,0.05969847943713503
+2025,five_year_vintage,,2010,Light Truck,Van: Cargo,4902,0.012217340049298038
+2025,five_year_vintage,,2010,Light Truck,Van: Passenger,4772,0.011893338783200784
+2025,five_year_vintage,,2015,Car,Compact,206237,0.5409112010428114
+2025,five_year_vintage,,2015,Car,Full-size,15182,0.03981881938852855
+2025,five_year_vintage,,2015,Car,Mid-size,88989,0.23339724137569273
+2025,five_year_vintage,,2015,Car,Minicompact,4586,0.012028000639954678
+2025,five_year_vintage,,2015,Car,Station wagon: Mid-size,6405,0.016798810313761386
+2025,five_year_vintage,,2015,Car,Station wagon: Small,25347,0.0664792263892131
+2025,five_year_vintage,,2015,Car,Subcompact,21794,0.05716054207308597
+2025,five_year_vintage,,2015,Car,Two-seater,12737,0.03340615877695219
+2025,five_year_vintage,,2015,Light Truck,Minivan,119467,0.12796996427634152
+2025,five_year_vintage,,2015,Light Truck,Pickup truck: Small,18711,0.020042739849285795
+2025,five_year_vintage,,2015,Light Truck,Pickup truck: Standard,166399,0.1782423103084446
+2025,five_year_vintage,,2015,Light Truck,Sport utility vehicle: Small,548385,0.5874158458794607
+2025,five_year_vintage,,2015,Light Truck,Sport utility vehicle: Standard,64879,0.06949670881737016
+2025,five_year_vintage,,2015,Light Truck,Van: Cargo,5991,0.006417404437874576
+2025,five_year_vintage,,2015,Light Truck,Van: Passenger,9723,0.010415026431222585
+2025,five_year_vintage,,2020,Car,Compact,112054,0.23322329943512232
+2025,five_year_vintage,,2020,Car,Full-size,14473,0.030123340645800467
+2025,five_year_vintage,,2020,Car,Mid-size,245176,0.5102964254940078
+2025,five_year_vintage,,2020,Car,Minicompact,2421,0.00503894200949927
+2025,five_year_vintage,,2020,Car,Station wagon: Mid-size,20892,0.04348350948470001
+2025,five_year_vintage,,2020,Car,Station wagon: Small,49793,0.10363653014415412
+2025,five_year_vintage,,2020,Car,Subcompact,30424,0.06332291272077892
+2025,five_year_vintage,,2020,Car,Two-seater,5225,0.010875040065937085
+2025,five_year_vintage,,2020,Light Truck,Minivan,214189,0.14145254525294032
+2025,five_year_vintage,,2020,Light Truck,Pickup truck: Small,24689,0.01630486107946647
+2025,five_year_vintage,,2020,Light Truck,Pickup truck: Standard,245296,0.16199591734573318
+2025,five_year_vintage,,2020,Light Truck,Sport utility vehicle: Small,878924,0.5804501486252577
+2025,five_year_vintage,,2020,Light Truck,Sport utility vehicle: Standard,109641,0.07240800654598335
+2025,five_year_vintage,,2020,Light Truck,Van: Cargo,2234,0.0014753558123669686
+2025,five_year_vintage,,2020,Light Truck,Van: Passenger,39238,0.025913165338252067
+2025,five_year_vintage,,2025,Car,Compact,111451,0.3174057545474481
+2025,five_year_vintage,,2025,Car,Full-size,18918,0.053877327834910616
+2025,five_year_vintage,,2025,Car,Mid-size,80788,0.23007937208620144
+2025,five_year_vintage,,2025,Car,Minicompact,2616,0.007450210889952753
+2025,five_year_vintage,,2025,Car,Station wagon: Mid-size,6187,0.01762020442512908
+2025,five_year_vintage,,2025,Car,Station wagon: Small,55561,0.15823439115315935
+2025,five_year_vintage,,2025,Car,Subcompact,67772,0.1930105857927668
+2025,five_year_vintage,,2025,Car,Two-seater,7838,0.022322153270431834
+2025,five_year_vintage,,2025,Light Truck,Minivan,131024,0.09182095250642804
+2025,five_year_vintage,,2025,Light Truck,Pickup truck: Small,23855,0.016717462617847425
+2025,five_year_vintage,,2025,Light Truck,Pickup truck: Standard,260626,0.18264537464846375
+2025,five_year_vintage,,2025,Light Truck,Sport utility vehicle: Small,823464,0.5770793811420294
+2025,five_year_vintage,,2025,Light Truck,Sport utility vehicle: Standard,154854,0.10852089525148376
+2025,five_year_vintage,,2025,Light Truck,Van: Cargo,701,0.0004912572330794821
+2025,five_year_vintage,,2025,Light Truck,Van: Passenger,32427,0.02272467660066814
+2025,five_year_vintage,,2030,Car,Compact,3143,0.1907275926937314
+2025,five_year_vintage,,2030,Car,Full-size,646,0.03920140785241823
+2025,five_year_vintage,,2030,Car,Mid-size,3171,0.1924267249226288
+2025,five_year_vintage,,2030,Car,Minicompact,742,0.04502700406578069
+2025,five_year_vintage,,2030,Car,Station wagon: Mid-size,368,0.02233145215122277
+2025,five_year_vintage,,2030,Car,Station wagon: Small,5386,0.3268402208871898
+2025,five_year_vintage,,2030,Car,Subcompact,1989,0.1206990715456035
+2025,five_year_vintage,,2030,Car,Two-seater,1034,0.06274652588142485
+2025,five_year_vintage,,2030,Light Truck,Minivan,13433,0.21593338584449195
+2025,five_year_vintage,,2030,Light Truck,Pickup truck: Small,24,0.0003857962674211127
+2025,five_year_vintage,,2030,Light Truck,Pickup truck: Standard,11056,0.1777234805253259
+2025,five_year_vintage,,2030,Light Truck,Sport utility vehicle: Small,31688,0.5093796717516758
+2025,five_year_vintage,,2030,Light Truck,Sport utility vehicle: Standard,5572,0.08956903341960167
+2025,five_year_vintage,,2030,Light Truck,Van: Passenger,436,0.007008632191483548
+2025,model_year,1981,,Car,Compact,48,0.038929440389294405
+2025,model_year,1981,,Car,Full-size,52,0.042173560421735604
+2025,model_year,1981,,Car,Mid-size,220,0.17842660178426603
+2025,model_year,1981,,Car,Minicompact,36,0.029197080291970802
+2025,model_year,1981,,Car,Station wagon: Mid-size,7,0.0056772100567721
+2025,model_year,1981,,Car,Subcompact,840,0.681265206812652
+2025,model_year,1981,,Car,Two-seater,30,0.024330900243309004
+2025,model_year,1981,,Light Truck,Minivan,0,0.0
+2025,model_year,1981,,Light Truck,Pickup truck: Standard,513,0.9790076335877863
+2025,model_year,1981,,Light Truck,Sport utility vehicle: Small,11,0.02099236641221374
+2025,model_year,1981,,Light Truck,Sport utility vehicle: Standard,0,0.0
+2025,model_year,1981,,Light Truck,Van: Cargo,0,0.0
+2025,model_year,1981,,Light Truck,Van: Passenger,0,0.0
+2025,model_year,1982,,Car,Compact,45,0.07908611599297012
+2025,model_year,1982,,Car,Full-size,10,0.01757469244288225
+2025,model_year,1982,,Car,Mid-size,93,0.1634446397188049
+2025,model_year,1982,,Car,Minicompact,35,0.061511423550087874
+2025,model_year,1982,,Car,Station wagon: Mid-size,9,0.015817223198594025
+2025,model_year,1982,,Car,Subcompact,340,0.5975395430579965
+2025,model_year,1982,,Car,Two-seater,37,0.06502636203866433
+2025,model_year,1982,,Light Truck,Minivan,0,0.0
+2025,model_year,1982,,Light Truck,Pickup truck: Standard,289,0.7831978319783198
+2025,model_year,1982,,Light Truck,Sport utility vehicle: Small,3,0.008130081300813009
+2025,model_year,1982,,Light Truck,Sport utility vehicle: Standard,1,0.0027100271002710027
+2025,model_year,1982,,Light Truck,Van: Cargo,12,0.032520325203252036
+2025,model_year,1982,,Light Truck,Van: Passenger,64,0.17344173441734417
+2025,model_year,1983,,Car,Compact,19,0.019832985386221295
+2025,model_year,1983,,Car,Full-size,30,0.031315240083507306
+2025,model_year,1983,,Car,Mid-size,166,0.1732776617954071
+2025,model_year,1983,,Car,Minicompact,77,0.08037578288100208
+2025,model_year,1983,,Car,Station wagon: Mid-size,5,0.005219206680584551
+2025,model_year,1983,,Car,Subcompact,507,0.5292275574112735
+2025,model_year,1983,,Car,Two-seater,154,0.16075156576200417
+2025,model_year,1983,,Light Truck,Minivan,0,0.0
+2025,model_year,1983,,Light Truck,Pickup truck: Small,13,0.03299492385786802
+2025,model_year,1983,,Light Truck,Pickup truck: Standard,299,0.7588832487309645
+2025,model_year,1983,,Light Truck,Sport utility vehicle: Small,10,0.025380710659898477
+2025,model_year,1983,,Light Truck,Sport utility vehicle: Standard,0,0.0
+2025,model_year,1983,,Light Truck,Van: Cargo,26,0.06598984771573604
+2025,model_year,1983,,Light Truck,Van: Passenger,46,0.116751269035533
+2025,model_year,1984,,Car,Compact,28,0.019760056457304165
+2025,model_year,1984,,Car,Full-size,38,0.026817219477769938
+2025,model_year,1984,,Car,Mid-size,160,0.11291460832745237
+2025,model_year,1984,,Car,Minicompact,112,0.07904022582921666
+2025,model_year,1984,,Car,Station wagon: Mid-size,2,0.0014114326040931546
+2025,model_year,1984,,Car,Subcompact,901,0.6358503881439661
+2025,model_year,1984,,Car,Two-seater,176,0.12420606916019761
+2025,model_year,1984,,Light Truck,Minivan,1,0.0011402508551881414
+2025,model_year,1984,,Light Truck,Pickup truck: Small,20,0.02280501710376283
+2025,model_year,1984,,Light Truck,Pickup truck: Standard,612,0.6978335233751425
+2025,model_year,1984,,Light Truck,Sport utility vehicle: Small,6,0.0068415051311288486
+2025,model_year,1984,,Light Truck,Sport utility vehicle: Standard,2,0.002280501710376283
+2025,model_year,1984,,Light Truck,Van: Cargo,64,0.07297605473204105
+2025,model_year,1984,,Light Truck,Van: Passenger,172,0.1961231470923603
+2025,model_year,1985,,Car,Compact,55,0.031828703703703706
+2025,model_year,1985,,Car,Full-size,17,0.009837962962962963
+2025,model_year,1985,,Car,Mid-size,176,0.10185185185185185
+2025,model_year,1985,,Car,Minicompact,132,0.0763888888888889
+2025,model_year,1985,,Car,Station wagon: Mid-size,2,0.0011574074074074073
+2025,model_year,1985,,Car,Subcompact,1174,0.6793981481481481
+2025,model_year,1985,,Car,Two-seater,172,0.09953703703703703
+2025,model_year,1985,,Light Truck,Minivan,3,0.0028735632183908046
+2025,model_year,1985,,Light Truck,Pickup truck: Small,26,0.02490421455938697
+2025,model_year,1985,,Light Truck,Pickup truck: Standard,779,0.7461685823754789
+2025,model_year,1985,,Light Truck,Sport utility vehicle: Small,12,0.011494252873563218
+2025,model_year,1985,,Light Truck,Sport utility vehicle: Standard,10,0.009578544061302681
+2025,model_year,1985,,Light Truck,Van: Cargo,62,0.05938697318007663
+2025,model_year,1985,,Light Truck,Van: Passenger,152,0.14559386973180077
+2025,model_year,1986,,Car,Compact,88,0.0351859256297481
+2025,model_year,1986,,Car,Full-size,18,0.007197121151539384
+2025,model_year,1986,,Car,Mid-size,149,0.059576169532187126
+2025,model_year,1986,,Car,Minicompact,273,0.10915633746501399
+2025,model_year,1986,,Car,Station wagon: Mid-size,6,0.0023990403838464614
+2025,model_year,1986,,Car,Subcompact,1531,0.6121551379448221
+2025,model_year,1986,,Car,Two-seater,436,0.17433026789284287
+2025,model_year,1986,,Light Truck,Minivan,4,0.0030959752321981426
+2025,model_year,1986,,Light Truck,Pickup truck: Small,39,0.03018575851393189
+2025,model_year,1986,,Light Truck,Pickup truck: Standard,1028,0.7956656346749226
+2025,model_year,1986,,Light Truck,Sport utility vehicle: Small,17,0.013157894736842105
+2025,model_year,1986,,Light Truck,Sport utility vehicle: Standard,12,0.009287925696594427
+2025,model_year,1986,,Light Truck,Van: Cargo,51,0.039473684210526314
+2025,model_year,1986,,Light Truck,Van: Passenger,141,0.10913312693498452
+2025,model_year,1987,,Car,Compact,69,0.02149532710280374
+2025,model_year,1987,,Car,Full-size,139,0.04330218068535826
+2025,model_year,1987,,Car,Mid-size,695,0.21651090342679127
+2025,model_year,1987,,Car,Minicompact,290,0.09034267912772585
+2025,model_year,1987,,Car,Station wagon: Mid-size,6,0.001869158878504673
+2025,model_year,1987,,Car,Subcompact,1460,0.45482866043613707
+2025,model_year,1987,,Car,Two-seater,551,0.17165109034267914
+2025,model_year,1987,,Light Truck,Minivan,8,0.01680672268907563
+2025,model_year,1987,,Light Truck,Pickup truck: Small,44,0.09243697478991597
+2025,model_year,1987,,Light Truck,Pickup truck: Standard,181,0.3802521008403361
+2025,model_year,1987,,Light Truck,Sport utility vehicle: Small,13,0.0273109243697479
+2025,model_year,1987,,Light Truck,Sport utility vehicle: Standard,24,0.05042016806722689
+2025,model_year,1987,,Light Truck,Van: Cargo,46,0.09663865546218488
+2025,model_year,1987,,Light Truck,Van: Passenger,160,0.33613445378151263
+2025,model_year,1988,,Car,Compact,130,0.05325686194182712
+2025,model_year,1988,,Car,Full-size,158,0.06472757066775911
+2025,model_year,1988,,Car,Mid-size,75,0.030725112658746414
+2025,model_year,1988,,Car,Minicompact,184,0.07537894305612454
+2025,model_year,1988,,Car,Subcompact,1334,0.546497337156903
+2025,model_year,1988,,Car,Two-seater,560,0.2294141745186399
+2025,model_year,1988,,Light Truck,Minivan,12,0.030927835051546393
+2025,model_year,1988,,Light Truck,Pickup truck: Small,33,0.08505154639175258
+2025,model_year,1988,,Light Truck,Pickup truck: Standard,140,0.36082474226804123
+2025,model_year,1988,,Light Truck,Sport utility vehicle: Small,17,0.04381443298969072
+2025,model_year,1988,,Light Truck,Sport utility vehicle: Standard,30,0.07731958762886598
+2025,model_year,1988,,Light Truck,Van: Cargo,39,0.10051546391752578
+2025,model_year,1988,,Light Truck,Van: Passenger,117,0.3015463917525773
+2025,model_year,1989,,Car,Compact,97,0.04237658366098733
+2025,model_year,1989,,Car,Full-size,133,0.0581039755351682
+2025,model_year,1989,,Car,Mid-size,122,0.05329838357361293
+2025,model_year,1989,,Car,Minicompact,297,0.12975098296199214
+2025,model_year,1989,,Car,Subcompact,1375,0.6006989951944081
+2025,model_year,1989,,Car,Two-seater,265,0.11577107907383137
+2025,model_year,1989,,Light Truck,Minivan,15,0.01488095238095238
+2025,model_year,1989,,Light Truck,Pickup truck: Small,41,0.040674603174603176
+2025,model_year,1989,,Light Truck,Pickup truck: Standard,557,0.5525793650793651
+2025,model_year,1989,,Light Truck,Sport utility vehicle: Small,192,0.19047619047619047
+2025,model_year,1989,,Light Truck,Sport utility vehicle: Standard,27,0.026785714285714284
+2025,model_year,1989,,Light Truck,Van: Cargo,51,0.050595238095238096
+2025,model_year,1989,,Light Truck,Van: Passenger,125,0.12400793650793651
+2025,model_year,1990,,Car,Compact,147,0.061301084236864055
+2025,model_year,1990,,Car,Full-size,179,0.07464553794829024
+2025,model_year,1990,,Car,Mid-size,101,0.042118432026688905
+2025,model_year,1990,,Car,Minicompact,99,0.04128440366972477
+2025,model_year,1990,,Car,Station wagon: Mid-size,26,0.010842368640533779
+2025,model_year,1990,,Car,Subcompact,464,0.19349457881567975
+2025,model_year,1990,,Car,Two-seater,1382,0.5763135946622185
+2025,model_year,1990,,Light Truck,Minivan,15,0.017523364485981307
+2025,model_year,1990,,Light Truck,Pickup truck: Small,40,0.04672897196261682
+2025,model_year,1990,,Light Truck,Pickup truck: Standard,654,0.764018691588785
+2025,model_year,1990,,Light Truck,Sport utility vehicle: Small,54,0.0630841121495327
+2025,model_year,1990,,Light Truck,Sport utility vehicle: Standard,4,0.004672897196261682
+2025,model_year,1990,,Light Truck,Van: Cargo,33,0.038551401869158876
+2025,model_year,1990,,Light Truck,Van: Passenger,56,0.06542056074766354
+2025,model_year,1991,,Car,Compact,122,0.09910641754670999
+2025,model_year,1991,,Car,Full-size,277,0.22502030869212022
+2025,model_year,1991,,Car,Mid-size,80,0.06498781478472786
+2025,model_year,1991,,Car,Minicompact,68,0.05523964256701868
+2025,model_year,1991,,Car,Station wagon: Mid-size,2,0.0016246953696181965
+2025,model_year,1991,,Car,Subcompact,606,0.49228269699431354
+2025,model_year,1991,,Car,Two-seater,76,0.06173842404549147
+2025,model_year,1991,,Light Truck,Minivan,14,0.017676767676767676
+2025,model_year,1991,,Light Truck,Pickup truck: Small,85,0.10732323232323232
+2025,model_year,1991,,Light Truck,Pickup truck: Standard,554,0.6994949494949495
+2025,model_year,1991,,Light Truck,Sport utility vehicle: Small,26,0.03282828282828283
+2025,model_year,1991,,Light Truck,Sport utility vehicle: Standard,14,0.017676767676767676
+2025,model_year,1991,,Light Truck,Van: Cargo,12,0.015151515151515152
+2025,model_year,1991,,Light Truck,Van: Passenger,87,0.10984848484848485
+2025,model_year,1992,,Car,Compact,329,0.3066169617893756
+2025,model_year,1992,,Car,Full-size,191,0.17800559179869524
+2025,model_year,1992,,Car,Mid-size,92,0.08574091332712022
+2025,model_year,1992,,Car,Minicompact,148,0.13793103448275862
+2025,model_year,1992,,Car,Subcompact,240,0.22367194780987884
+2025,model_year,1992,,Car,Two-seater,73,0.06803355079217148
+2025,model_year,1992,,Light Truck,Minivan,47,0.045764362220058426
+2025,model_year,1992,,Light Truck,Pickup truck: Small,88,0.08568646543330087
+2025,model_year,1992,,Light Truck,Pickup truck: Standard,692,0.6738072054527751
+2025,model_year,1992,,Light Truck,Sport utility vehicle: Small,140,0.13631937682570594
+2025,model_year,1992,,Light Truck,Sport utility vehicle: Standard,13,0.012658227848101266
+2025,model_year,1992,,Light Truck,Van: Cargo,18,0.017526777020447908
+2025,model_year,1992,,Light Truck,Van: Passenger,29,0.028237585199610515
+2025,model_year,1993,,Car,Compact,79,0.09154113557358054
+2025,model_year,1993,,Car,Full-size,92,0.10660486674391657
+2025,model_year,1993,,Car,Mid-size,87,0.10081112398609501
+2025,model_year,1993,,Car,Minicompact,131,0.15179606025492468
+2025,model_year,1993,,Car,Station wagon: Mid-size,8,0.009269988412514484
+2025,model_year,1993,,Car,Subcompact,201,0.23290845886442643
+2025,model_year,1993,,Car,Two-seater,265,0.3070683661645423
+2025,model_year,1993,,Light Truck,Minivan,46,0.037337662337662336
+2025,model_year,1993,,Light Truck,Pickup truck: Small,11,0.008928571428571428
+2025,model_year,1993,,Light Truck,Pickup truck: Standard,926,0.7516233766233766
+2025,model_year,1993,,Light Truck,Sport utility vehicle: Small,130,0.10551948051948051
+2025,model_year,1993,,Light Truck,Sport utility vehicle: Standard,47,0.03814935064935065
+2025,model_year,1993,,Light Truck,Van: Cargo,39,0.03165584415584415
+2025,model_year,1993,,Light Truck,Van: Passenger,33,0.026785714285714284
+2025,model_year,1994,,Car,Compact,218,0.1630516080777861
+2025,model_year,1994,,Car,Full-size,63,0.04712041884816754
+2025,model_year,1994,,Car,Mid-size,86,0.0643231114435303
+2025,model_year,1994,,Car,Minicompact,103,0.07703814510097233
+2025,model_year,1994,,Car,Station wagon: Mid-size,15,0.011219147344801795
+2025,model_year,1994,,Car,Subcompact,733,0.5482423335826477
+2025,model_year,1994,,Car,Two-seater,119,0.08900523560209424
+2025,model_year,1994,,Light Truck,Minivan,69,0.05
+2025,model_year,1994,,Light Truck,Pickup truck: Small,36,0.02608695652173913
+2025,model_year,1994,,Light Truck,Pickup truck: Standard,935,0.677536231884058
+2025,model_year,1994,,Light Truck,Sport utility vehicle: Small,175,0.12681159420289856
+2025,model_year,1994,,Light Truck,Sport utility vehicle: Standard,44,0.03188405797101449
+2025,model_year,1994,,Light Truck,Van: Cargo,103,0.0746376811594203
+2025,model_year,1994,,Light Truck,Van: Passenger,18,0.013043478260869565
+2025,model_year,1995,,Car,Compact,464,0.25994397759103643
+2025,model_year,1995,,Car,Full-size,83,0.04649859943977591
+2025,model_year,1995,,Car,Mid-size,134,0.07507002801120448
+2025,model_year,1995,,Car,Minicompact,39,0.021848739495798318
+2025,model_year,1995,,Car,Station wagon: Mid-size,19,0.010644257703081233
+2025,model_year,1995,,Car,Subcompact,936,0.5243697478991597
+2025,model_year,1995,,Car,Two-seater,110,0.06162464985994398
+2025,model_year,1995,,Light Truck,Minivan,116,0.055002370791844474
+2025,model_year,1995,,Light Truck,Pickup truck: Small,87,0.041251778093883355
+2025,model_year,1995,,Light Truck,Pickup truck: Standard,1359,0.6443812233285917
+2025,model_year,1995,,Light Truck,Sport utility vehicle: Small,298,0.14129919393077287
+2025,model_year,1995,,Light Truck,Sport utility vehicle: Standard,66,0.031294452347083924
+2025,model_year,1995,,Light Truck,Van: Cargo,157,0.07444286391654813
+2025,model_year,1995,,Light Truck,Van: Passenger,26,0.012328117591275486
+2025,model_year,1996,,Car,Compact,574,0.3289398280802292
+2025,model_year,1996,,Car,Full-size,60,0.034383954154727794
+2025,model_year,1996,,Car,Mid-size,115,0.0659025787965616
+2025,model_year,1996,,Car,Minicompact,98,0.056160458452722065
+2025,model_year,1996,,Car,Station wagon: Mid-size,14,0.008022922636103151
+2025,model_year,1996,,Car,Subcompact,622,0.3564469914040115
+2025,model_year,1996,,Car,Two-seater,262,0.1501432664756447
+2025,model_year,1996,,Light Truck,Minivan,78,0.03367875647668394
+2025,model_year,1996,,Light Truck,Pickup truck: Small,88,0.037996545768566495
+2025,model_year,1996,,Light Truck,Pickup truck: Standard,1697,0.7327288428324698
+2025,model_year,1996,,Light Truck,Sport utility vehicle: Small,114,0.04922279792746114
+2025,model_year,1996,,Light Truck,Sport utility vehicle: Standard,233,0.10060449050086356
+2025,model_year,1996,,Light Truck,Van: Cargo,102,0.04404145077720207
+2025,model_year,1996,,Light Truck,Van: Passenger,4,0.0017271157167530224
+2025,model_year,1997,,Car,Compact,591,0.2427104722792608
+2025,model_year,1997,,Car,Full-size,172,0.07063655030800821
+2025,model_year,1997,,Car,Mid-size,253,0.10390143737166324
+2025,model_year,1997,,Car,Minicompact,29,0.01190965092402464
+2025,model_year,1997,,Car,Subcompact,1155,0.47433264887063653
+2025,model_year,1997,,Car,Two-seater,235,0.09650924024640657
+2025,model_year,1997,,Light Truck,Minivan,117,0.030421216848673948
+2025,model_year,1997,,Light Truck,Pickup truck: Small,77,0.02002080083203328
+2025,model_year,1997,,Light Truck,Pickup truck: Standard,2327,0.6050442017680707
+2025,model_year,1997,,Light Truck,Sport utility vehicle: Small,357,0.09282371294851795
+2025,model_year,1997,,Light Truck,Sport utility vehicle: Standard,705,0.18330733229329174
+2025,model_year,1997,,Light Truck,Van: Cargo,245,0.06370254810192408
+2025,model_year,1997,,Light Truck,Van: Passenger,18,0.0046801872074883
+2025,model_year,1998,,Car,Compact,370,0.10626076967260195
+2025,model_year,1998,,Car,Full-size,164,0.04709936817920735
+2025,model_year,1998,,Car,Mid-size,605,0.17375071797817346
+2025,model_year,1998,,Car,Minicompact,7,0.002010338885697875
+2025,model_year,1998,,Car,Station wagon: Mid-size,69,0.019816197587593336
+2025,model_year,1998,,Car,Subcompact,1681,0.48276852383687535
+2025,model_year,1998,,Car,Two-seater,586,0.16829408385985067
+2025,model_year,1998,,Light Truck,Minivan,275,0.05335661622041133
+2025,model_year,1998,,Light Truck,Pickup truck: Small,117,0.02270081490104773
+2025,model_year,1998,,Light Truck,Pickup truck: Standard,3418,0.663174233604967
+2025,model_year,1998,,Light Truck,Sport utility vehicle: Small,470,0.09119130772215754
+2025,model_year,1998,,Light Truck,Sport utility vehicle: Standard,577,0.11195188203337214
+2025,model_year,1998,,Light Truck,Van: Cargo,281,0.05452076057431121
+2025,model_year,1998,,Light Truck,Van: Passenger,16,0.0031043849437330227
+2025,model_year,1999,,Car,Compact,476,0.09418282548476455
+2025,model_year,1999,,Car,Full-size,172,0.03403244954491492
+2025,model_year,1999,,Car,Mid-size,694,0.1373169766521567
+2025,model_year,1999,,Car,Minicompact,328,0.06489908982983775
+2025,model_year,1999,,Car,Station wagon: Mid-size,146,0.02888800949742778
+2025,model_year,1999,,Car,Station wagon: Small,0,0.0
+2025,model_year,1999,,Car,Subcompact,2391,0.4730906212900673
+2025,model_year,1999,,Car,Two-seater,847,0.16759002770083103
+2025,model_year,1999,,Light Truck,Minivan,451,0.07236842105263158
+2025,model_year,1999,,Light Truck,Pickup truck: Small,82,0.013157894736842105
+2025,model_year,1999,,Light Truck,Pickup truck: Standard,4233,0.6792362002567394
+2025,model_year,1999,,Light Truck,Sport utility vehicle: Small,609,0.0977214377406932
+2025,model_year,1999,,Light Truck,Sport utility vehicle: Standard,586,0.09403080872913992
+2025,model_year,1999,,Light Truck,Van: Cargo,243,0.038992297817715016
+2025,model_year,1999,,Light Truck,Van: Passenger,28,0.004492939666238768
+2025,model_year,2000,,Car,Compact,862,0.11639211450175534
+2025,model_year,2000,,Car,Full-size,482,0.0650823656494734
+2025,model_year,2000,,Car,Mid-size,1171,0.158115041857953
+2025,model_year,2000,,Car,Minicompact,0,0.0
+2025,model_year,2000,,Car,Station wagon: Mid-size,192,0.02592492573588982
+2025,model_year,2000,,Car,Station wagon: Small,43,0.005806103159600324
+2025,model_year,2000,,Car,Subcompact,4236,0.5719686740480692
+2025,model_year,2000,,Car,Two-seater,420,0.05671077504725898
+2025,model_year,2000,,Light Truck,Minivan,1022,0.12016460905349795
+2025,model_year,2000,,Light Truck,Pickup truck: Small,139,0.016343327454438564
+2025,model_year,2000,,Light Truck,Pickup truck: Standard,5147,0.6051734273956496
+2025,model_year,2000,,Light Truck,Sport utility vehicle: Small,864,0.10158730158730159
+2025,model_year,2000,,Light Truck,Sport utility vehicle: Standard,815,0.09582598471487361
+2025,model_year,2000,,Light Truck,Van: Cargo,443,0.052087007642563195
+2025,model_year,2000,,Light Truck,Van: Passenger,75,0.008818342151675485
+2025,model_year,2001,,Car,Compact,3020,0.35067347886669764
+2025,model_year,2001,,Car,Full-size,757,0.08790060380863911
+2025,model_year,2001,,Car,Mid-size,955,0.11089177891314445
+2025,model_year,2001,,Car,Minicompact,79,0.009173246632605667
+2025,model_year,2001,,Car,Station wagon: Mid-size,320,0.03715745471435207
+2025,model_year,2001,,Car,Station wagon: Small,62,0.007199256850905713
+2025,model_year,2001,,Car,Subcompact,2547,0.295750116117046
+2025,model_year,2001,,Car,Two-seater,872,0.10125406409660938
+2025,model_year,2001,,Light Truck,Minivan,793,0.07764613727602075
+2025,model_year,2001,,Light Truck,Pickup truck: Small,95,0.009301870165475375
+2025,model_year,2001,,Light Truck,Pickup truck: Standard,6946,0.6801135807304416
+2025,model_year,2001,,Light Truck,Sport utility vehicle: Small,1231,0.12053265446000196
+2025,model_year,2001,,Light Truck,Sport utility vehicle: Standard,671,0.06570057769509449
+2025,model_year,2001,,Light Truck,Van: Cargo,335,0.032801331636150004
+2025,model_year,2001,,Light Truck,Van: Passenger,142,0.013903848036815823
+2025,model_year,2002,,Car,Compact,1924,0.17713128337322775
+2025,model_year,2002,,Car,Full-size,1015,0.0934450377462714
+2025,model_year,2002,,Car,Mid-size,1862,0.17142331062419444
+2025,model_year,2002,,Car,Station wagon: Mid-size,360,0.03314306757503222
+2025,model_year,2002,,Car,Station wagon: Small,88,0.008101638740563431
+2025,model_year,2002,,Car,Subcompact,3604,0.33179893205671146
+2025,model_year,2002,,Car,Two-seater,2009,0.18495672988399928
+2025,model_year,2002,,Light Truck,Minivan,1233,0.08841878809609179
+2025,model_year,2002,,Light Truck,Pickup truck: Small,197,0.014126927214055217
+2025,model_year,2002,,Light Truck,Pickup truck: Standard,8646,0.6200071710290427
+2025,model_year,2002,,Light Truck,Sport utility vehicle: Small,2416,0.17325206167084978
+2025,model_year,2002,,Light Truck,Sport utility vehicle: Standard,810,0.058085335245607744
+2025,model_year,2002,,Light Truck,Van: Cargo,466,0.03341699533883112
+2025,model_year,2002,,Light Truck,Van: Passenger,177,0.012692721405521693
+2025,model_year,2003,,Car,Compact,4997,0.3091437762929968
+2025,model_year,2003,,Car,Full-size,1385,0.08568423657510517
+2025,model_year,2003,,Car,Mid-size,3129,0.19357832219747587
+2025,model_year,2003,,Car,Minicompact,0,0.0
+2025,model_year,2003,,Car,Station wagon: Mid-size,429,0.02654046028210839
+2025,model_year,2003,,Car,Station wagon: Small,648,0.0400890868596882
+2025,model_year,2003,,Car,Subcompact,4112,0.2543924771096263
+2025,model_year,2003,,Car,Two-seater,1464,0.09057164068299926
+2025,model_year,2003,,Light Truck,Minivan,1734,0.08348579682233992
+2025,model_year,2003,,Light Truck,Pickup truck: Small,227,0.010929224843524314
+2025,model_year,2003,,Light Truck,Pickup truck: Standard,12621,0.607655272026962
+2025,model_year,2003,,Light Truck,Sport utility vehicle: Small,3740,0.18006740491092924
+2025,model_year,2003,,Light Truck,Sport utility vehicle: Standard,1494,0.07193066923447279
+2025,model_year,2003,,Light Truck,Van: Cargo,683,0.03288396726047183
+2025,model_year,2003,,Light Truck,Van: Passenger,271,0.013047664901299952
+2025,model_year,2004,,Car,Compact,6113,0.3734270006108735
+2025,model_year,2004,,Car,Full-size,807,0.049297495418448384
+2025,model_year,2004,,Car,Mid-size,2630,0.16065974343310935
+2025,model_year,2004,,Car,Minicompact,181,0.011056811240073305
+2025,model_year,2004,,Car,Station wagon: Mid-size,593,0.036224801466096516
+2025,model_year,2004,,Car,Station wagon: Small,829,0.05064141722663409
+2025,model_year,2004,,Car,Subcompact,3701,0.2260843005497862
+2025,model_year,2004,,Car,Two-seater,1516,0.09260843005497862
+2025,model_year,2004,,Light Truck,Minivan,3491,0.1391612851789843
+2025,model_year,2004,,Light Truck,Pickup truck: Small,176,0.007015865422945069
+2025,model_year,2004,,Light Truck,Pickup truck: Standard,13503,0.5382683568524277
+2025,model_year,2004,,Light Truck,Sport utility vehicle: Small,4368,0.1741210236785458
+2025,model_year,2004,,Light Truck,Sport utility vehicle: Standard,2182,0.08698078609583035
+2025,model_year,2004,,Light Truck,Van: Cargo,911,0.03631507613808499
+2025,model_year,2004,,Light Truck,Van: Passenger,455,0.018137606633181855
+2025,model_year,2005,,Car,Compact,10029,0.4267659574468085
+2025,model_year,2005,,Car,Full-size,1149,0.0488936170212766
+2025,model_year,2005,,Car,Mid-size,4264,0.1814468085106383
+2025,model_year,2005,,Car,Minicompact,361,0.015361702127659575
+2025,model_year,2005,,Car,Station wagon: Mid-size,539,0.022936170212765956
+2025,model_year,2005,,Car,Station wagon: Small,2842,0.12093617021276595
+2025,model_year,2005,,Car,Subcompact,3060,0.1302127659574468
+2025,model_year,2005,,Car,Two-seater,1256,0.0534468085106383
+2025,model_year,2005,,Light Truck,Minivan,6127,0.17979341510652033
+2025,model_year,2005,,Light Truck,Pickup truck: Standard,15645,0.45909384353541877
+2025,model_year,2005,,Light Truck,Sport utility vehicle: Small,7817,0.22938552731967837
+2025,model_year,2005,,Light Truck,Sport utility vehicle: Standard,2567,0.07532719056282645
+2025,model_year,2005,,Light Truck,Van: Cargo,1439,0.0422266564939257
+2025,model_year,2005,,Light Truck,Van: Passenger,483,0.014173366981630377
+2025,model_year,2006,,Car,Compact,16815,0.5194143267537763
+2025,model_year,2006,,Car,Full-size,2278,0.07036728137645569
+2025,model_year,2006,,Car,Mid-size,3832,0.11837024681061378
+2025,model_year,2006,,Car,Minicompact,467,0.014425601581564884
+2025,model_year,2006,,Car,Station wagon: Mid-size,112,0.0034596731844438264
+2025,model_year,2006,,Car,Station wagon: Small,3542,0.10941216445803602
+2025,model_year,2006,,Car,Subcompact,3723,0.11500324344361042
+2025,model_year,2006,,Car,Two-seater,1604,0.04954746239149909
+2025,model_year,2006,,Light Truck,Minivan,7881,0.18513037350246653
+2025,model_year,2006,,Light Truck,Pickup truck: Standard,17863,0.4196147521728917
+2025,model_year,2006,,Light Truck,Sport utility vehicle: Small,12567,0.2952078928823115
+2025,model_year,2006,,Light Truck,Sport utility vehicle: Standard,2797,0.06570354709889593
+2025,model_year,2006,,Light Truck,Van: Cargo,633,0.014869626497533475
+2025,model_year,2006,,Light Truck,Van: Passenger,829,0.01947380784590087
+2025,model_year,2007,,Car,Compact,8696,0.23766056299535393
+2025,model_year,2007,,Car,Full-size,943,0.025772068871276307
+2025,model_year,2007,,Car,Mid-size,7853,0.214621481279038
+2025,model_year,2007,,Car,Minicompact,454,0.012407761683520088
+2025,model_year,2007,,Car,Station wagon: Mid-size,201,0.0054933041814703475
+2025,model_year,2007,,Car,Station wagon: Small,5284,0.14441104126810603
+2025,model_year,2007,,Car,Subcompact,11287,0.30847226018037716
+2025,model_year,2007,,Car,Two-seater,1872,0.05116151954085816
+2025,model_year,2007,,Light Truck,Minivan,8122,0.13025001202751896
+2025,model_year,2007,,Light Truck,Pickup truck: Standard,24114,0.3867087897108584
+2025,model_year,2007,,Light Truck,Sport utility vehicle: Small,23374,0.37484163766698203
+2025,model_year,2007,,Light Truck,Sport utility vehicle: Standard,4551,0.07298298506983979
+2025,model_year,2007,,Light Truck,Van: Cargo,890,0.014272655836554035
+2025,model_year,2007,,Light Truck,Van: Passenger,1306,0.020943919688246708
+2025,model_year,2008,,Car,Compact,14716,0.3361198666118496
+2025,model_year,2008,,Car,Full-size,1236,0.028230779772509252
+2025,model_year,2008,,Car,Mid-size,7722,0.17637385226805535
+2025,model_year,2008,,Car,Minicompact,520,0.011877027088757937
+2025,model_year,2008,,Car,Station wagon: Mid-size,275,0.0062811200950162165
+2025,model_year,2008,,Car,Station wagon: Small,5185,0.11842766433694213
+2025,model_year,2008,,Car,Subcompact,11496,0.26257366040838703
+2025,model_year,2008,,Car,Two-seater,2632,0.06011602941848248
+2025,model_year,2008,,Light Truck,Minivan,9301,0.11592631369029814
+2025,model_year,2008,,Light Truck,Pickup truck: Small,6306,0.0785970685013461
+2025,model_year,2008,,Light Truck,Pickup truck: Standard,22232,0.2770964203808954
+2025,model_year,2008,,Light Truck,Sport utility vehicle: Small,34960,0.4357363645428258
+2025,model_year,2008,,Light Truck,Sport utility vehicle: Standard,5308,0.06615814138996909
+2025,model_year,2008,,Light Truck,Van: Cargo,766,0.009547312792900588
+2025,model_year,2008,,Light Truck,Van: Passenger,1359,0.016938378701764883
+2025,model_year,2009,,Car,Compact,13937,0.3266535414615853
+2025,model_year,2009,,Car,Full-size,2167,0.05078985609150143
+2025,model_year,2009,,Car,Mid-size,4987,0.1168846388224816
+2025,model_year,2009,,Car,Minicompact,831,0.019476866826044156
+2025,model_year,2009,,Car,Station wagon: Mid-size,260,0.006093845216331505
+2025,model_year,2009,,Car,Station wagon: Small,7714,0.18079969999531242
+2025,model_year,2009,,Car,Subcompact,11945,0.27996531195799934
+2025,model_year,2009,,Car,Two-seater,825,0.0193362396287442
+2025,model_year,2009,,Light Truck,Minivan,8916,0.10959645003872015
+2025,model_year,2009,,Light Truck,Pickup truck: Small,5159,0.0634149939154057
+2025,model_year,2009,,Light Truck,Pickup truck: Standard,19199,0.235996214030214
+2025,model_year,2009,,Light Truck,Sport utility vehicle: Small,42041,0.5167725836785367
+2025,model_year,2009,,Light Truck,Sport utility vehicle: Standard,4136,0.05084016569763868
+2025,model_year,2009,,Light Truck,Van: Cargo,624,0.007670276449547036
+2025,model_year,2009,,Light Truck,Van: Passenger,1278,0.015709316189937678
+2025,model_year,2010,,Car,Compact,23141,0.4781395925451465
+2025,model_year,2010,,Car,Full-size,3194,0.0659944625810984
+2025,model_year,2010,,Car,Mid-size,6654,0.1374850200421505
+2025,model_year,2010,,Car,Minicompact,1016,0.020992603000123972
+2025,model_year,2010,,Car,Station wagon: Mid-size,918,0.01896772593908839
+2025,model_year,2010,,Car,Station wagon: Small,8746,0.18070994669201207
+2025,model_year,2010,,Car,Subcompact,4132,0.08537542873672466
+2025,model_year,2010,,Car,Two-seater,597,0.012335220463655523
+2025,model_year,2010,,Light Truck,Minivan,19633,0.1457308066299983
+2025,model_year,2010,,Light Truck,Pickup truck: Small,7032,0.052196762197430246
+2025,model_year,2010,,Light Truck,Pickup truck: Standard,27027,0.2006146035139288
+2025,model_year,2010,,Light Truck,Sport utility vehicle: Small,71879,0.5335396857208602
+2025,model_year,2010,,Light Truck,Sport utility vehicle: Standard,7161,0.05315429665753669
+2025,model_year,2010,,Light Truck,Van: Cargo,1989,0.014763845280245842
+2025,model_year,2011,,Car,Compact,19668,0.5086639424817669
+2025,model_year,2011,,Car,Full-size,3199,0.08273418507215642
+2025,model_year,2011,,Car,Mid-size,4480,0.1158640666218383
+2025,model_year,2011,,Car,Minicompact,623,0.01611234676459939
+2025,model_year,2011,,Car,Station wagon: Mid-size,213,0.005508715667511509
+2025,model_year,2011,,Car,Station wagon: Small,5098,0.13184710081208298
+2025,model_year,2011,,Car,Subcompact,4811,0.12442455904412145
+2025,model_year,2011,,Car,Two-seater,574,0.014845083535923034
+2025,model_year,2011,,Light Truck,Minivan,20553,0.13134250146979884
+2025,model_year,2011,,Light Truck,Pickup truck: Small,6683,0.042707241634927534
+2025,model_year,2011,,Light Truck,Pickup truck: Standard,33906,0.21667390915365148
+2025,model_year,2011,,Light Truck,Sport utility vehicle: Small,80788,0.5162700339970859
+2025,model_year,2011,,Light Truck,Sport utility vehicle: Standard,11838,0.07564990669972649
+2025,model_year,2011,,Light Truck,Van: Cargo,2716,0.01735640704480969
+2025,model_year,2012,,Car,Compact,56355,0.6847592315824007
+2025,model_year,2012,,Car,Full-size,1763,0.02142188847981142
+2025,model_year,2012,,Car,Mid-size,10751,0.1306334220342896
+2025,model_year,2012,,Car,Minicompact,1055,0.012819110803290441
+2025,model_year,2012,,Car,Station wagon: Mid-size,1360,0.016525109661113743
+2025,model_year,2012,,Car,Station wagon: Small,3351,0.040717384172347174
+2025,model_year,2012,,Car,Subcompact,3752,0.04558986135919027
+2025,model_year,2012,,Car,Two-seater,3912,0.04753399190755659
+2025,model_year,2012,,Light Truck,Minivan,21741,0.15271953301161148
+2025,model_year,2012,,Light Truck,Pickup truck: Small,2437,0.017118692882079813
+2025,model_year,2012,,Light Truck,Pickup truck: Standard,28904,0.20303598648487275
+2025,model_year,2012,,Light Truck,Sport utility vehicle: Small,76627,0.53826593330945
+2025,model_year,2012,,Light Truck,Sport utility vehicle: Standard,10674,0.07497945335384486
+2025,model_year,2012,,Light Truck,Van: Cargo,1976,0.013880400958141038
+2025,model_year,2013,,Car,Compact,31049,0.5177249383045421
+2025,model_year,2013,,Car,Full-size,4688,0.07816981257920363
+2025,model_year,2013,,Car,Mid-size,10843,0.18080104048555992
+2025,model_year,2013,,Car,Minicompact,2255,0.0376008804108584
+2025,model_year,2013,,Car,Station wagon: Mid-size,565,0.009421063162809312
+2025,model_year,2013,,Car,Station wagon: Small,4998,0.08333889148269193
+2025,model_year,2013,,Car,Subcompact,3067,0.05114053224838258
+2025,model_year,2013,,Car,Two-seater,2507,0.04180284132595211
+2025,model_year,2013,,Light Truck,Minivan,22263,0.12635217198833132
+2025,model_year,2013,,Light Truck,Pickup truck: Small,2158,0.012247585103122623
+2025,model_year,2013,,Light Truck,Pickup truck: Standard,28010,0.15896888727454342
+2025,model_year,2013,,Light Truck,Sport utility vehicle: Small,110655,0.6280150739508962
+2025,model_year,2013,,Light Truck,Sport utility vehicle: Standard,10950,0.06214599484670655
+2025,model_year,2013,,Light Truck,Van: Cargo,307,0.0017423580290355169
+2025,model_year,2013,,Light Truck,Van: Passenger,1855,0.010527928807364442
+2025,model_year,2014,,Car,Compact,41088,0.4582850004461497
+2025,model_year,2014,,Car,Full-size,3520,0.039261176050682606
+2025,model_year,2014,,Car,Mid-size,32505,0.3625524225930222
+2025,model_year,2014,,Car,Minicompact,446,0.004974569465512626
+2025,model_year,2014,,Car,Station wagon: Mid-size,525,0.005855715178013742
+2025,model_year,2014,,Car,Station wagon: Small,5771,0.06436825198536629
+2025,model_year,2014,,Car,Subcompact,4003,0.04464843401445525
+2025,model_year,2014,,Car,Two-seater,1798,0.020054430266797537
+2025,model_year,2014,,Light Truck,Minivan,27714,0.13243431804497624
+2025,model_year,2014,,Light Truck,Pickup truck: Small,2829,0.013518679575277397
+2025,model_year,2014,,Light Truck,Pickup truck: Standard,36155,0.17277054084275514
+2025,model_year,2014,,Light Truck,Sport utility vehicle: Small,125586,0.6001261552282741
+2025,model_year,2014,,Light Truck,Sport utility vehicle: Standard,14385,0.06874026358796938
+2025,model_year,2014,,Light Truck,Van: Cargo,249,0.0011898731757667275
+2025,model_year,2014,,Light Truck,Van: Passenger,2348,0.01122016954498103
+2025,model_year,2015,,Car,Compact,58077,0.5247099851830436
+2025,model_year,2015,,Car,Full-size,2012,0.018177875754399914
+2025,model_year,2015,,Car,Mid-size,30410,0.27474612410104443
+2025,model_year,2015,,Car,Minicompact,207,0.0018701890065411441
+2025,model_year,2015,,Car,Station wagon: Mid-size,3742,0.03380795778974378
+2025,model_year,2015,,Car,Station wagon: Small,6129,0.05537385710671822
+2025,model_year,2015,,Car,Subcompact,6161,0.05566296845072458
+2025,model_year,2015,,Car,Two-seater,3946,0.035651042607784324
+2025,model_year,2015,,Light Truck,Minivan,27196,0.10911220952625497
+2025,model_year,2015,,Light Truck,Pickup truck: Small,4604,0.018471562459879316
+2025,model_year,2015,,Light Truck,Pickup truck: Standard,39424,0.15817178071639493
+2025,model_year,2015,,Light Truck,Sport utility vehicle: Small,154729,0.6207833162151752
+2025,model_year,2015,,Light Truck,Sport utility vehicle: Standard,17032,0.06833354731030941
+2025,model_year,2015,,Light Truck,Van: Cargo,743,0.0029809667479779177
+2025,model_year,2015,,Light Truck,Van: Passenger,5520,0.022146617024008216
+2025,model_year,2016,,Car,Compact,27948,0.32629329970929216
+2025,model_year,2016,,Car,Full-size,3238,0.03780369630952798
+2025,model_year,2016,,Car,Mid-size,38250,0.4465692970473889
+2025,model_year,2016,,Car,Minicompact,121,0.0014126767305289948
+2025,model_year,2016,,Car,Station wagon: Mid-size,4077,0.047599033308815805
+2025,model_year,2016,,Car,Station wagon: Small,5572,0.06505317969014512
+2025,model_year,2016,,Car,Subcompact,5589,0.0652516549332773
+2025,model_year,2016,,Car,Two-seater,858,0.010017162271023783
+2025,model_year,2016,,Light Truck,Minivan,33601,0.12016364657204061
+2025,model_year,2016,,Light Truck,Pickup truck: Small,4735,0.016933271822821117
+2025,model_year,2016,,Light Truck,Pickup truck: Standard,44074,0.15761711136621284
+2025,model_year,2016,,Light Truck,Sport utility vehicle: Small,172262,0.6160420846341734
+2025,model_year,2016,,Light Truck,Sport utility vehicle: Standard,18566,0.0663955912697987
+2025,model_year,2016,,Light Truck,Van: Cargo,230,0.0008225242912880372
+2025,model_year,2016,,Light Truck,Van: Passenger,6159,0.02202577004366531
+2025,model_year,2017,,Car,Compact,17539,0.17890184318165592
+2025,model_year,2017,,Car,Full-size,3039,0.030998500566112794
+2025,model_year,2017,,Car,Mid-size,57891,0.5905015453349246
+2025,model_year,2017,,Car,Minicompact,500,0.005100115262604935
+2025,model_year,2017,,Car,Station wagon: Mid-size,5573,0.0568458847169946
+2025,model_year,2017,,Car,Station wagon: Small,6320,0.06446545691932638
+2025,model_year,2017,,Car,Subcompact,6440,0.06568948458235156
+2025,model_year,2017,,Car,Two-seater,735,0.007497169436029254
+2025,model_year,2017,,Light Truck,Minivan,49396,0.14826687797908486
+2025,model_year,2017,,Light Truck,Pickup truck: Small,5579,0.0167459088234941
+2025,model_year,2017,,Light Truck,Pickup truck: Standard,64370,0.19321278920385646
+2025,model_year,2017,,Light Truck,Sport utility vehicle: Small,181395,0.5444746605193963
+2025,model_year,2017,,Light Truck,Sport utility vehicle: Standard,23443,0.07036643494338989
+2025,model_year,2017,,Light Truck,Van: Cargo,415,0.001245662692552438
+2025,model_year,2017,,Light Truck,Van: Passenger,8558,0.025687665838225935
+2025,model_year,2018,,Car,Compact,36647,0.3090826283873253
+2025,model_year,2018,,Car,Full-size,3329,0.028076952271711354
+2025,model_year,2018,,Car,Mid-size,55686,0.4696585053176685
+2025,model_year,2018,,Car,Minicompact,42,0.0003542300977506389
+2025,model_year,2018,,Car,Station wagon: Mid-size,5198,0.04384019162161478
+2025,model_year,2018,,Car,Station wagon: Small,8909,0.07513895097286766
+2025,model_year,2018,,Car,Subcompact,7512,0.0633565831976857
+2025,model_year,2018,,Car,Two-seater,1244,0.010491958133376066
+2025,model_year,2018,,Light Truck,Minivan,40608,0.12566106048181214
+2025,model_year,2018,,Light Truck,Pickup truck: Small,5446,0.01685259395646052
+2025,model_year,2018,,Light Truck,Pickup truck: Standard,55872,0.172895359811855
+2025,model_year,2018,,Light Truck,Sport utility vehicle: Small,188779,0.5841747768098899
+2025,model_year,2018,,Light Truck,Sport utility vehicle: Standard,23405,0.07242654453745107
+2025,model_year,2018,,Light Truck,Van: Cargo,399,0.0012347016137766707
+2025,model_year,2018,,Light Truck,Van: Passenger,8646,0.02675496278875462
+2025,model_year,2019,,Car,Compact,15905,0.16297609410703856
+2025,model_year,2019,,Car,Full-size,2741,0.028086606346896744
+2025,model_year,2019,,Car,Mid-size,50643,0.5189310489696796
+2025,model_year,2019,,Car,Minicompact,185,0.001895666608601203
+2025,model_year,2019,,Car,Station wagon: Mid-size,3235,0.0331485485341886
+2025,model_year,2019,,Car,Station wagon: Small,16801,0.17215726860058816
+2025,model_year,2019,,Car,Subcompact,6982,0.0715434824932627
+2025,model_year,2019,,Car,Two-seater,1099,0.011261284339744444
+2025,model_year,2019,,Light Truck,Minivan,53093,0.1629654412464356
+2025,model_year,2019,,Light Truck,Pickup truck: Small,5131,0.015749264103280303
+2025,model_year,2019,,Light Truck,Pickup truck: Standard,46919,0.1440147578370315
+2025,model_year,2019,,Light Truck,Sport utility vehicle: Small,188114,0.5774034432906784
+2025,model_year,2019,,Light Truck,Sport utility vehicle: Standard,22235,0.06824885740332051
+2025,model_year,2019,,Light Truck,Van: Cargo,491,0.0015070919264686474
+2025,model_year,2019,,Light Truck,Van: Passenger,9810,0.03011114419278499
+2025,model_year,2020,,Car,Compact,14015,0.17386180374643345
+2025,model_year,2020,,Car,Full-size,2126,0.026373899019972707
+2025,model_year,2020,,Car,Mid-size,42706,0.5297853864284828
+2025,model_year,2020,,Car,Minicompact,1573,0.01951370797667783
+2025,model_year,2020,,Car,Station wagon: Mid-size,2809,0.034846793201836
+2025,model_year,2020,,Car,Station wagon: Small,12191,0.15123433817144274
+2025,model_year,2020,,Car,Subcompact,3901,0.048393499565810696
+2025,model_year,2020,,Car,Two-seater,1289,0.015990571889343753
+2025,model_year,2020,,Light Truck,Minivan,37491,0.14849096958174904
+2025,model_year,2020,,Light Truck,Pickup truck: Small,3798,0.015042775665399239
+2025,model_year,2020,,Light Truck,Pickup truck: Standard,34061,0.1349057351077313
+2025,model_year,2020,,Light Truck,Sport utility vehicle: Small,148374,0.587666349809886
+2025,model_year,2020,,Light Truck,Sport utility vehicle: Standard,21992,0.08710392902408111
+2025,model_year,2020,,Light Truck,Van: Cargo,699,0.002768536121673004
+2025,model_year,2020,,Light Truck,Van: Passenger,6065,0.024021704689480356
+2025,model_year,2021,,Car,Compact,12633,0.20175354541970103
+2025,model_year,2021,,Car,Full-size,8182,0.13066947744985308
+2025,model_year,2021,,Car,Mid-size,13950,0.22278650824070526
+2025,model_year,2021,,Car,Minicompact,1159,0.018509646096844256
+2025,model_year,2021,,Car,Station wagon: Mid-size,2026,0.03235594736169669
+2025,model_year,2021,,Car,Station wagon: Small,11422,0.18241344065414591
+2025,model_year,2021,,Car,Subcompact,10678,0.17053149354797495
+2025,model_year,2021,,Car,Two-seater,2566,0.04097994122907883
+2025,model_year,2021,,Light Truck,Minivan,17376,0.07075581182276842
+2025,model_year,2021,,Light Truck,Pickup truck: Small,4703,0.019150816240934614
+2025,model_year,2021,,Light Truck,Pickup truck: Standard,44994,0.1832174837220098
+2025,model_year,2021,,Light Truck,Sport utility vehicle: Small,147862,0.6021003595613595
+2025,model_year,2021,,Light Truck,Sport utility vehicle: Standard,26064,0.10613371773415263
+2025,model_year,2021,,Light Truck,Van: Cargo,694,0.0028259975486303684
+2025,model_year,2021,,Light Truck,Van: Passenger,3884,0.015815813370144597
+2025,model_year,2022,,Car,Compact,25444,0.37373129066846844
+2025,model_year,2022,,Car,Full-size,2131,0.03130095033856729
+2025,model_year,2022,,Car,Mid-size,18487,0.2715441900089599
+2025,model_year,2022,,Car,Minicompact,342,0.0050234279754997726
+2025,model_year,2022,,Car,Station wagon: Mid-size,776,0.01139818745318077
+2025,model_year,2022,,Car,Station wagon: Small,6922,0.10167300715324393
+2025,model_year,2022,,Car,Subcompact,13126,0.192799753235117
+2025,model_year,2022,,Car,Two-seater,853,0.012529193166962882
+2025,model_year,2022,,Light Truck,Minivan,17510,0.07373811388769572
+2025,model_year,2022,,Light Truck,Pickup truck: Small,4857,0.02045379892361725
+2025,model_year,2022,,Light Truck,Pickup truck: Standard,48143,0.20273980679013906
+2025,model_year,2022,,Light Truck,Sport utility vehicle: Small,140510,0.5917157271479226
+2025,model_year,2022,,Light Truck,Sport utility vehicle: Standard,21394,0.09009441510641703
+2025,model_year,2022,,Light Truck,Van: Passenger,5048,0.021258138144208336
+2025,model_year,2023,,Car,Compact,20729,0.2771330784245568
+2025,model_year,2023,,Car,Full-size,4587,0.061325169122169045
+2025,model_year,2023,,Car,Mid-size,18328,0.24503328966015134
+2025,model_year,2023,,Car,Minicompact,426,0.005695339447578812
+2025,model_year,2023,,Car,Station wagon: Mid-size,1707,0.022821465814593975
+2025,model_year,2023,,Car,Station wagon: Small,12393,0.16568624829540896
+2025,model_year,2023,,Car,Subcompact,15301,0.2045642931629188
+2025,model_year,2023,,Car,Two-seater,1327,0.017741116072622264
+2025,model_year,2023,,Light Truck,Minivan,21173,0.08297735591732441
+2025,model_year,2023,,Light Truck,Pickup truck: Small,5827,0.0228361145293652
+2025,model_year,2023,,Light Truck,Pickup truck: Standard,42228,0.16549226777862255
+2025,model_year,2023,,Light Truck,Sport utility vehicle: Small,145593,0.5705815038053659
+2025,model_year,2023,,Light Truck,Sport utility vehicle: Standard,32103,0.12581221636111395
+2025,model_year,2023,,Light Truck,Van: Cargo,1,3.9190174239514665e-06
+2025,model_year,2023,,Light Truck,Van: Passenger,8241,0.03229662259078404
+2025,model_year,2024,,Car,Compact,26732,0.3868764201050697
+2025,model_year,2024,,Car,Full-size,2759,0.03992937464723505
+2025,model_year,2024,,Car,Mid-size,17807,0.25771017555031334
+2025,model_year,2024,,Car,Minicompact,387,0.005600822032794477
+2025,model_year,2024,,Car,Station wagon: Mid-size,1623,0.023488718757688466
+2025,model_year,2024,,Car,Station wagon: Small,6870,0.09942544538836708
+2025,model_year,2024,,Car,Subcompact,11211,0.16225017005079814
+2025,model_year,2024,,Car,Two-seater,1708,0.024718873467733767
+2025,model_year,2024,,Light Truck,Minivan,34012,0.09720185990151782
+2025,model_year,2024,,Light Truck,Pickup truck: Small,4240,0.01211736698760542
+2025,model_year,2024,,Light Truck,Pickup truck: Standard,63331,0.18099173789906575
+2025,model_year,2024,,Light Truck,Sport utility vehicle: Small,206151,0.5891526702504352
+2025,model_year,2024,,Light Truck,Sport utility vehicle: Standard,34109,0.09747907325005502
+2025,model_year,2024,,Light Truck,Van: Cargo,3,8.573608717645345e-06
+2025,model_year,2024,,Light Truck,Van: Passenger,8065,0.023048718102603234
+2025,model_year,2025,,Car,Compact,25913,0.33855942722011
+2025,model_year,2025,,Car,Full-size,1259,0.01644913050862959
+2025,model_year,2025,,Car,Mid-size,12216,0.15960490730215968
+2025,model_year,2025,,Car,Minicompact,302,0.003945700884516391
+2025,model_year,2025,,Car,Station wagon: Mid-size,55,0.0007185879094317929
+2025,model_year,2025,,Car,Station wagon: Small,17954,0.2345732241079711
+2025,model_year,2025,,Car,Subcompact,17456,0.22806673721893414
+2025,model_year,2025,,Car,Two-seater,1384,0.0180822848482473
+2025,model_year,2025,,Light Truck,Minivan,40953,0.1208641374120147
+2025,model_year,2025,,Light Truck,Pickup truck: Small,4228,0.012478049788245016
+2025,model_year,2025,,Light Truck,Pickup truck: Standard,61930,0.1827733262502398
+2025,model_year,2025,,Light Truck,Sport utility vehicle: Small,183348,0.541112931072646
+2025,model_year,2025,,Light Truck,Sport utility vehicle: Standard,41184,0.12154588516534597
+2025,model_year,2025,,Light Truck,Van: Cargo,3,8.853866926380097e-06
+2025,model_year,2025,,Light Truck,Van: Passenger,7189,0.021216816444582173
+2025,model_year,2026,,Car,Compact,3143,0.1907275926937314
+2025,model_year,2026,,Car,Full-size,646,0.03920140785241823
+2025,model_year,2026,,Car,Mid-size,3171,0.1924267249226288
+2025,model_year,2026,,Car,Minicompact,742,0.04502700406578069
+2025,model_year,2026,,Car,Station wagon: Mid-size,368,0.02233145215122277
+2025,model_year,2026,,Car,Station wagon: Small,5386,0.3268402208871898
+2025,model_year,2026,,Car,Subcompact,1989,0.1206990715456035
+2025,model_year,2026,,Car,Two-seater,1034,0.06274652588142485
+2025,model_year,2026,,Light Truck,Minivan,13433,0.21593338584449195
+2025,model_year,2026,,Light Truck,Pickup truck: Small,24,0.0003857962674211127
+2025,model_year,2026,,Light Truck,Pickup truck: Standard,11056,0.1777234805253259
+2025,model_year,2026,,Light Truck,Sport utility vehicle: Small,31688,0.5093796717516758
+2025,model_year,2026,,Light Truck,Sport utility vehicle: Standard,5572,0.08956903341960167
+2025,model_year,2026,,Light Truck,Van: Passenger,436,0.007008632191483548

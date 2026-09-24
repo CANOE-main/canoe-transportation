@@ -1,0 +1,15 @@
+source_id,target_system,target_class,median_equivalent_age,first_age_at_or_below_0_5,previous_age_above_0_5,interpolation_method
+nlr_atb_source_anchor,nlr_atb,Compact,14.0,14.0,13.0,none
+nlr_atb_source_anchor,nlr_atb,Midsize,14.0,14.0,13.0,none
+nlr_atb_source_anchor,nlr_atb,Midsize SUV,15.0,15.0,14.0,none
+nlr_atb_source_anchor,nlr_atb,Pickup,18.0,18.0,17.0,none
+nlr_atb_source_anchor,nlr_atb,Small SUV,15.0,15.0,14.0,none
+wards_weighted_nhtsa_legacy,nrcan_ceud,Car,14.0,14.0,13.0,none
+wards_weighted_nhtsa_legacy,nrcan_ceud,Light Truck,16.0,16.0,15.0,none
+nhtsa_cafe_2024_ldv_survival,source_class,2b/3 Trucks,18.0,18.0,17.0,none
+nhtsa_cafe_2024_ldv_survival,source_class,Cars,14.0,14.0,13.0,none
+eia_nems_hd_truck_scrappage,source_class,Cls 3,27.0,27.0,26.0,none
+eia_nems_hd_truck_scrappage,source_class,Cls 4-6,25.0,25.0,24.0,none
+eia_nems_hd_truck_scrappage,source_class,Cls 7-8,25.0,25.0,24.0,none
+nhtsa_cafe_2024_ldv_survival,source_class,Pickups,18.0,18.0,17.0,none
+nhtsa_cafe_2024_ldv_survival,source_class,Vans/SUVs,15.0,15.0,14.0,none

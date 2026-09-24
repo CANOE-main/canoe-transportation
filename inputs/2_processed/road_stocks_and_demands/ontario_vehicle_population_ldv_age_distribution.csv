@@ -1,0 +1,131 @@
+report_year,nrcan_ceud_class,nlr_atb_class,model_year,age,cutoff_basis,cutoff_age,fit_active_stock,age_distribution
+2025,Car,Compact,2025,0,scenario_survival_curve_max_age,25.0,43671,0.05971228825320603
+2025,Car,Compact,2024,1,scenario_survival_curve_max_age,25.0,38330,0.05240942521914742
+2025,Car,Compact,2023,2,scenario_survival_curve_max_age,25.0,36456,0.04984706511320737
+2025,Car,Compact,2022,3,scenario_survival_curve_max_age,25.0,38912,0.053205206212561036
+2025,Car,Compact,2021,4,scenario_survival_curve_max_age,25.0,24470,0.033458352077029414
+2025,Car,Compact,2020,5,scenario_survival_curve_max_age,25.0,19489,0.026647724708999846
+2025,Car,Compact,2019,6,scenario_survival_curve_max_age,25.0,23072,0.03154683690728331
+2025,Car,Compact,2018,7,scenario_survival_curve_max_age,25.0,44201,0.06043696853930433
+2025,Car,Compact,2017,8,scenario_survival_curve_max_age,25.0,24479,0.03347065796868014
+2025,Car,Compact,2016,9,scenario_survival_curve_max_age,25.0,33658,0.04602130013112611
+2025,Car,Compact,2015,10,scenario_survival_curve_max_age,25.0,64445,0.08811702082567063
+2025,Car,Compact,2014,11,scenario_survival_curve_max_age,25.0,45537,0.06226370978878988
+2025,Car,Compact,2013,12,scenario_survival_curve_max_age,25.0,36371,0.049730842803172734
+2025,Car,Compact,2012,13,scenario_survival_curve_max_age,25.0,61162,0.0836281050157447
+2025,Car,Compact,2011,14,scenario_survival_curve_max_age,25.0,25102,0.03432249913516928
+2025,Car,Compact,2010,15,scenario_survival_curve_max_age,25.0,28289,0.038680152100820805
+2025,Car,Compact,2009,16,scenario_survival_curve_max_age,25.0,26713,0.03652525374064923
+2025,Car,Compact,2008,17,scenario_survival_curve_max_age,25.0,26732,0.03655123284524521
+2025,Car,Compact,2007,18,scenario_survival_curve_max_age,25.0,20437,0.02794394529620965
+2025,Car,Compact,2006,19,scenario_survival_curve_max_age,25.0,21005,0.02872058379149991
+2025,Car,Compact,2005,20,scenario_survival_curve_max_age,25.0,13450,0.018390471411362713
+2025,Car,Compact,2004,21,scenario_survival_curve_max_age,25.0,9995,0.013666376338778463
+2025,Car,Compact,2003,22,scenario_survival_curve_max_age,25.0,9109,0.012454929671829216
+2025,Car,Compact,2002,23,scenario_survival_curve_max_age,25.0,5528,0.007558552116134801
+2025,Car,Compact,2001,24,scenario_survival_curve_max_age,25.0,5646,0.007719896028888764
+2025,Car,Compact,2000,25,scenario_survival_curve_max_age,25.0,5098,0.0069706039594890044
+2025,Car,Midsize,2025,0,scenario_survival_curve_max_age,25.0,32868,0.042783950681564945
+2025,Car,Midsize,2024,1,scenario_survival_curve_max_age,25.0,30767,0.04004909975111685
+2025,Car,Midsize,2023,2,scenario_survival_curve_max_age,25.0,38342,0.04990940236803466
+2025,Car,Midsize,2022,3,scenario_survival_curve_max_age,25.0,29169,0.03796899894823439
+2025,Car,Midsize,2021,4,scenario_survival_curve_max_age,25.0,38146,0.04965427110560352
+2025,Car,Midsize,2020,5,scenario_survival_curve_max_age,25.0,61121,0.07956060148496809
+2025,Car,Midsize,2019,6,scenario_survival_curve_max_age,25.0,74519,0.09700064563829676
+2025,Car,Midsize,2018,7,scenario_survival_curve_max_age,25.0,74366,0.09680148705078674
+2025,Car,Midsize,2017,8,scenario_survival_curve_max_age,25.0,73558,0.0957497214383155
+2025,Car,Midsize,2016,9,scenario_survival_curve_max_age,25.0,51995,0.06768137750054672
+2025,Car,Midsize,2015,10,scenario_survival_curve_max_age,25.0,46239,0.060188849201803625
+2025,Car,Midsize,2014,11,scenario_survival_curve_max_age,25.0,44119,0.05742926615918108
+2025,Car,Midsize,2013,12,scenario_survival_curve_max_age,25.0,23601,0.030721188391006883
+2025,Car,Midsize,2012,13,scenario_survival_curve_max_age,25.0,21137,0.0275138239490154
+2025,Car,Midsize,2011,14,scenario_survival_curve_max_age,25.0,13564,0.017656124712326485
+2025,Car,Midsize,2010,15,scenario_survival_curve_max_age,25.0,20109,0.02617568651136636
+2025,Car,Midsize,2009,16,scenario_survival_curve_max_age,25.0,15953,0.02076586239573462
+2025,Car,Midsize,2008,17,scenario_survival_curve_max_age,25.0,17050,0.02219381645128034
+2025,Car,Midsize,2007,18,scenario_survival_curve_max_age,25.0,16153,0.02102620041862354
+2025,Car,Midsize,2006,19,scenario_survival_curve_max_age,25.0,11368,0.014797613221006154
+2025,Car,Midsize,2005,20,scenario_survival_curve_max_age,25.0,10050,0.013081985650168179
+2025,Car,Midsize,2004,21,scenario_survival_curve_max_age,25.0,6375,0.008298274479584292
+2025,Car,Midsize,2003,22,scenario_survival_curve_max_age,25.0,7055,0.009183423757406616
+2025,Car,Midsize,2002,23,scenario_survival_curve_max_age,25.0,5334,0.006943215070447469
+2025,Car,Midsize,2001,24,scenario_survival_curve_max_age,25.0,2966,0.0038608128794426684
+2025,Car,Midsize,2000,25,scenario_survival_curve_max_age,25.0,2308,0.0030043007841381248
+2025,Light Truck,Midsize SUV,2025,0,scenario_survival_curve_max_age,25.0,82137,0.09179379950134052
+2025,Light Truck,Midsize SUV,2024,1,scenario_survival_curve_max_age,25.0,68121,0.07612994650195183
+2025,Light Truck,Midsize SUV,2023,2,scenario_survival_curve_max_age,25.0,53276,0.05953962845287042
+2025,Light Truck,Midsize SUV,2022,3,scenario_survival_curve_max_age,25.0,38904,0.04347792073974155
+2025,Light Truck,Midsize SUV,2021,4,scenario_survival_curve_max_age,25.0,43440,0.048547215631667
+2025,Light Truck,Midsize SUV,2020,5,scenario_survival_curve_max_age,25.0,59483,0.06647638184664936
+2025,Light Truck,Midsize SUV,2019,6,scenario_survival_curve_max_age,25.0,75328,0.08418426931634926
+2025,Light Truck,Midsize SUV,2018,7,scenario_survival_curve_max_age,25.0,64013,0.0715389713220511
+2025,Light Truck,Midsize SUV,2017,8,scenario_survival_curve_max_age,25.0,72839,0.08140263902842985
+2025,Light Truck,Midsize SUV,2016,9,scenario_survival_curve_max_age,25.0,52167,0.05830024396540452
+2025,Light Truck,Midsize SUV,2015,10,scenario_survival_curve_max_age,25.0,44228,0.049427860335114364
+2025,Light Truck,Midsize SUV,2014,11,scenario_survival_curve_max_age,25.0,42099,0.04704855503861761
+2025,Light Truck,Midsize SUV,2013,12,scenario_survival_curve_max_age,25.0,33213,0.03711783316700175
+2025,Light Truck,Midsize SUV,2012,13,scenario_survival_curve_max_age,25.0,32415,0.0362260127693482
+2025,Light Truck,Midsize SUV,2011,14,scenario_survival_curve_max_age,25.0,32391,0.036199191103253356
+2025,Light Truck,Midsize SUV,2010,15,scenario_survival_curve_max_age,25.0,26794,0.029944155056051695
+2025,Light Truck,Midsize SUV,2009,16,scenario_survival_curve_max_age,25.0,13052,0.014586516077912469
+2025,Light Truck,Midsize SUV,2008,17,scenario_survival_curve_max_age,25.0,14609,0.016326571665815453
+2025,Light Truck,Midsize SUV,2007,18,scenario_survival_curve_max_age,25.0,12673,0.014162957267498064
+2025,Light Truck,Midsize SUV,2006,19,scenario_survival_curve_max_age,25.0,10678,0.011933406273364186
+2025,Light Truck,Midsize SUV,2005,20,scenario_survival_curve_max_age,25.0,8694,0.00971614854285711
+2025,Light Truck,Midsize SUV,2004,21,scenario_survival_curve_max_age,25.0,5673,0.006339971323168667
+2025,Light Truck,Midsize SUV,2003,22,scenario_survival_curve_max_age,25.0,3228,0.0036075140897564705
+2025,Light Truck,Midsize SUV,2002,23,scenario_survival_curve_max_age,25.0,2043,0.0022831943263235655
+2025,Light Truck,Midsize SUV,2001,24,scenario_survival_curve_max_age,25.0,1464,0.0016361216317854624
+2025,Light Truck,Midsize SUV,2000,25,scenario_survival_curve_max_age,25.0,1837,0.0020529750256761572
+2025,Light Truck,Pickup,2025,0,scenario_survival_curve_max_age,25.0,73350,0.0706839430365475
+2025,Light Truck,Pickup,2024,1,scenario_survival_curve_max_age,25.0,75639,0.07288974461269825
+2025,Light Truck,Pickup,2023,2,scenario_survival_curve_max_age,25.0,56297,0.054250769476871366
+2025,Light Truck,Pickup,2022,3,scenario_survival_curve_max_age,25.0,58048,0.055938125772126916
+2025,Light Truck,Pickup,2021,4,scenario_survival_curve_max_age,25.0,54275,0.05230226323529128
+2025,Light Truck,Pickup,2020,5,scenario_survival_curve_max_age,25.0,44623,0.04300108507320871
+2025,Light Truck,Pickup,2019,6,scenario_survival_curve_max_age,25.0,62351,0.06008472436635001
+2025,Light Truck,Pickup,2018,7,scenario_survival_curve_max_age,25.0,70363,0.06780551170934686
+2025,Light Truck,Pickup,2017,8,scenario_survival_curve_max_age,25.0,78922,0.0760534172096851
+2025,Light Truck,Pickup,2016,9,scenario_survival_curve_max_age,25.0,55198,0.05319171489749624
+2025,Light Truck,Pickup,2015,10,scenario_survival_curve_max_age,25.0,50291,0.048463069928439136
+2025,Light Truck,Pickup,2014,11,scenario_survival_curve_max_age,25.0,41581,0.040069652834392386
+2025,Light Truck,Pickup,2013,12,scenario_survival_curve_max_age,25.0,32330,0.031154899500635047
+2025,Light Truck,Pickup,2012,13,scenario_survival_curve_max_age,25.0,33317,0.03210602495090188
+2025,Light Truck,Pickup,2011,14,scenario_survival_curve_max_age,25.0,43305,0.04173099050030933
+2025,Light Truck,Pickup,2010,15,scenario_survival_curve_max_age,25.0,36048,0.034737761125855
+2025,Light Truck,Pickup,2009,16,scenario_survival_curve_max_age,25.0,26260,0.025305526164140932
+2025,Light Truck,Pickup,2008,17,scenario_survival_curve_max_age,25.0,30663,0.029548490052210715
+2025,Light Truck,Pickup,2007,18,scenario_survival_curve_max_age,25.0,26310,0.025353708811064277
+2025,Light Truck,Pickup,2006,19,scenario_survival_curve_max_age,25.0,19325,0.018622593035872943
+2025,Light Truck,Pickup,2005,20,scenario_survival_curve_max_age,25.0,17567,0.016928491170048125
+2025,Light Truck,Pickup,2004,21,scenario_survival_curve_max_age,25.0,15045,0.01449815845923459
+2025,Light Truck,Pickup,2003,22,scenario_survival_curve_max_age,25.0,13802,0.013300337856720227
+2025,Light Truck,Pickup,2002,23,scenario_survival_curve_max_age,25.0,9486,0.009141211774297064
+2025,Light Truck,Pickup,2001,24,scenario_survival_curve_max_age,25.0,7518,0.007244742791394193
+2025,Light Truck,Pickup,2000,25,scenario_survival_curve_max_age,25.0,5804,0.005593041654861918
+2025,Light Truck,Small SUV,2025,0,scenario_survival_curve_max_age,25.0,183348,0.07465218258734625
+2025,Light Truck,Small SUV,2024,1,scenario_survival_curve_max_age,25.0,206151,0.08393667829790352
+2025,Light Truck,Small SUV,2023,2,scenario_survival_curve_max_age,25.0,145593,0.059279813357328695
+2025,Light Truck,Small SUV,2022,3,scenario_survival_curve_max_age,25.0,140510,0.05721021323029442
+2025,Light Truck,Small SUV,2021,4,scenario_survival_curve_max_age,25.0,147862,0.0602036620073859
+2025,Light Truck,Small SUV,2020,5,scenario_survival_curve_max_age,25.0,148374,0.06041212851634548
+2025,Light Truck,Small SUV,2019,6,scenario_survival_curve_max_age,25.0,188114,0.07659271262973172
+2025,Light Truck,Small SUV,2018,7,scenario_survival_curve_max_age,25.0,188779,0.076863474794689
+2025,Light Truck,Small SUV,2017,8,scenario_survival_curve_max_age,25.0,181395,0.07385699686078753
+2025,Light Truck,Small SUV,2016,9,scenario_survival_curve_max_age,25.0,172262,0.07013839407499094
+2025,Light Truck,Small SUV,2015,10,scenario_survival_curve_max_age,25.0,154729,0.06299963762657622
+2025,Light Truck,Small SUV,2014,11,scenario_survival_curve_max_age,25.0,125586,0.05113374022304288
+2025,Light Truck,Small SUV,2013,12,scenario_survival_curve_max_age,25.0,110655,0.045054417087739156
+2025,Light Truck,Small SUV,2012,13,scenario_survival_curve_max_age,25.0,76627,0.031199537464933248
+2025,Light Truck,Small SUV,2011,14,scenario_survival_curve_max_age,25.0,80788,0.032893735011380154
+2025,Light Truck,Small SUV,2010,15,scenario_survival_curve_max_age,25.0,71879,0.02926633632325338
+2025,Light Truck,Small SUV,2009,16,scenario_survival_curve_max_age,25.0,42041,0.017117461920253416
+2025,Light Truck,Small SUV,2008,17,scenario_survival_curve_max_age,25.0,34960,0.014234353814896399
+2025,Light Truck,Small SUV,2007,18,scenario_survival_curve_max_age,25.0,23374,0.009516984727385252
+2025,Light Truck,Small SUV,2006,19,scenario_survival_curve_max_age,25.0,12567,0.005116794175966906
+2025,Light Truck,Small SUV,2005,20,scenario_survival_curve_max_age,25.0,7817,0.003182778711986417
+2025,Light Truck,Small SUV,2004,21,scenario_survival_curve_max_age,25.0,4368,0.0017784799045614263
+2025,Light Truck,Small SUV,2003,22,scenario_survival_curve_max_age,25.0,3740,0.0015227827021656903
+2025,Light Truck,Small SUV,2002,23,scenario_survival_curve_max_age,25.0,2416,0.0009837013391530234
+2025,Light Truck,Small SUV,2001,24,scenario_survival_curve_max_age,25.0,1231,0.0005012153760336804
+2025,Light Truck,Small SUV,2000,25,scenario_survival_curve_max_age,25.0,864,0.0003517872338692931

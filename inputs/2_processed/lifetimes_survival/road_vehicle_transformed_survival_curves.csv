@@ -1,0 +1,546 @@
+source_id,source_class,age,source_measure,survival_probability,source_unit,transformation,included_weight,weight_year,nrcan_ceud_class
+eia_nems_hd_truck_scrappage,Cls 3,0,annual_scrappage_rate,1.0,dimensionless,age0_equals_1,,,
+eia_nems_hd_truck_scrappage,Cls 3,1,annual_scrappage_rate,0.9977378430417926,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,2,annual_scrappage_rate,0.9948186354212345,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,3,annual_scrappage_rate,0.9911166202425928,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,4,annual_scrappage_rate,0.9864985653141497,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,5,annual_scrappage_rate,0.9808269258810085,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,6,annual_scrappage_rate,0.9739635989544295,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,7,annual_scrappage_rate,0.9657741427294366,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,8,annual_scrappage_rate,0.9561322981583332,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,9,annual_scrappage_rate,0.9449246207004253,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,10,annual_scrappage_rate,0.9320550110764143,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,11,annual_scrappage_rate,0.9174489265716769,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,12,annual_scrappage_rate,0.9010570604109488,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,13,annual_scrappage_rate,0.8828582963789945,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,14,annual_scrappage_rate,0.862861778486798,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,15,annual_scrappage_rate,0.8411079792224486,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,16,annual_scrappage_rate,0.8176687018659139,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,17,annual_scrappage_rate,0.7926460087622059,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,18,annual_scrappage_rate,0.7661701241624675,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,19,annual_scrappage_rate,0.7383964130566034,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,20,annual_scrappage_rate,0.7095015825388372,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,21,annual_scrappage_rate,0.6796792866531656,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,22,annual_scrappage_rate,0.6491353373924738,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,23,annual_scrappage_rate,0.6180827327898601,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,24,annual_scrappage_rate,0.5867367082347569,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,25,annual_scrappage_rate,0.5553100006970473,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,26,annual_scrappage_rate,0.5240084896756866,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,27,annual_scrappage_rate,0.4930273461340281,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,28,annual_scrappage_rate,0.46254778436515803,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,29,annual_scrappage_rate,0.4327344744769149,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,30,annual_scrappage_rate,0.4037336375010253,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,31,annual_scrappage_rate,0.37567181302702873,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,32,annual_scrappage_rate,0.34865526217488885,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,33,annual_scrappage_rate,0.322769947491382,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 3,34,annual_scrappage_rate,0.29808201627242503,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,0,annual_scrappage_rate,1.0,dimensionless,age0_equals_1,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,1,annual_scrappage_rate,0.9995959744609078,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,2,annual_scrappage_rate,0.9986992802096931,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,3,annual_scrappage_rate,0.9969517769061942,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,4,annual_scrappage_rate,0.9938989217363436,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,5,annual_scrappage_rate,0.9890353136375898,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,6,annual_scrappage_rate,0.9818680079012527,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,7,annual_scrappage_rate,0.9719816581313453,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,8,annual_scrappage_rate,0.9590906596833007,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,9,annual_scrappage_rate,0.9430690335049277,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,10,annual_scrappage_rate,0.9239557136299986,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,11,annual_scrappage_rate,0.9019386690882503,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,12,annual_scrappage_rate,0.8773246334554627,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,13,annual_scrappage_rate,0.8505020455802744,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,14,annual_scrappage_rate,0.8219037815733728,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,15,annual_scrappage_rate,0.7919742884372363,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,16,annual_scrappage_rate,0.7611436043543438,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,17,annual_scrappage_rate,0.7298089727508781,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,18,annual_scrappage_rate,0.698323535205838,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,19,annual_scrappage_rate,0.6669909171808598,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,20,annual_scrappage_rate,0.636064283398463,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,21,annual_scrappage_rate,0.605748488003476,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,22,annual_scrappage_rate,0.5762041460934305,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,23,annual_scrappage_rate,0.5475527109069828,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,24,annual_scrappage_rate,0.5198818946228754,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,25,annual_scrappage_rate,0.4932509893617117,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,26,annual_scrappage_rate,0.46769581753598394,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,27,annual_scrappage_rate,0.44323316778024113,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,28,annual_scrappage_rate,0.4198646606227696,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,29,annual_scrappage_rate,0.39758004503506855,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,30,annual_scrappage_rate,0.3763599610115509,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,31,annual_scrappage_rate,0.3561782212171122,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,32,annual_scrappage_rate,0.3370036718692316,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,33,annual_scrappage_rate,0.31880169338348835,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 4-6,34,annual_scrappage_rate,0.3015353977292188,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,0,annual_scrappage_rate,1.0,dimensionless,age0_equals_1,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,1,annual_scrappage_rate,1.0,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,2,annual_scrappage_rate,1.0,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,3,annual_scrappage_rate,0.999999995941518,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,4,annual_scrappage_rate,0.9999700728369543,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,5,annual_scrappage_rate,0.9983779931046731,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,6,annual_scrappage_rate,0.9890130905434781,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,7,annual_scrappage_rate,0.9685423900564533,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,8,annual_scrappage_rate,0.9400034020099425,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,9,annual_scrappage_rate,0.9075768530522869,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,10,annual_scrappage_rate,0.8739874900910558,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,11,annual_scrappage_rate,0.8406098617782117,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,12,annual_scrappage_rate,0.808054082192045,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,13,annual_scrappage_rate,0.7765629117117403,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,14,annual_scrappage_rate,0.746214462485,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,15,annual_scrappage_rate,0.7170157193879408,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,16,annual_scrappage_rate,0.6889439080874773,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,17,annual_scrappage_rate,0.6619644458217556,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,18,annual_scrappage_rate,0.6360386476261648,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,19,annual_scrappage_rate,0.6111270019015715,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,20,annual_scrappage_rate,0.5871905401068037,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,21,annual_scrappage_rate,0.5641913892291993,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,22,annual_scrappage_rate,0.5420929749459166,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,23,annual_scrappage_rate,0.5208600762787805,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,24,annual_scrappage_rate,0.5004588178341126,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,25,annual_scrappage_rate,0.4808566365002618,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,26,annual_scrappage_rate,0.4620222383668312,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,27,annual_scrappage_rate,0.44392555257920074,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,28,annual_scrappage_rate,0.4265376849628728,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,29,annual_scrappage_rate,0.40983087259058604,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,30,annual_scrappage_rate,0.39377843975434057,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,31,annual_scrappage_rate,0.37835475550129954,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,32,annual_scrappage_rate,0.3635351927640673,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,33,annual_scrappage_rate,0.34929608906223836,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+eia_nems_hd_truck_scrappage,Cls 7-8,34,annual_scrappage_rate,0.3356147087305419,dimensionless,cumulative_product_of_one_minus_annual_scrappage_rate,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,0,survival_probability,1.0,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,1,survival_probability,0.992933663,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,2,survival_probability,0.986632767,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,3,survival_probability,0.980631007,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,4,survival_probability,0.973514523,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,5,survival_probability,0.965333294,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,6,survival_probability,0.953145802,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,7,survival_probability,0.938476818,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,8,survival_probability,0.917968036,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,9,survival_probability,0.893661691,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,10,survival_probability,0.859918934,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,11,survival_probability,0.825199748,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,12,survival_probability,0.785191272,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,13,survival_probability,0.742210777,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,14,survival_probability,0.694945584,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,15,survival_probability,0.658681192,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,16,survival_probability,0.606091059,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,17,survival_probability,0.552285652,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,18,survival_probability,0.494962916,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,19,survival_probability,0.442117238,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,20,survival_probability,0.394716566,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,21,survival_probability,0.346365934,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,22,survival_probability,0.302950731,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,23,survival_probability,0.264859431,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,24,survival_probability,0.231752514,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,25,survival_probability,0.201172614,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,26,survival_probability,0.174134416,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,27,survival_probability,0.152922345,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,28,survival_probability,0.1351206,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,29,survival_probability,0.119513433,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,30,survival_probability,0.105697656,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,31,survival_probability,0.093723597,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,32,survival_probability,0.083558148,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,33,survival_probability,0.075147123,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,34,survival_probability,0.068298669,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,35,survival_probability,0.063026763,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,36,survival_probability,0.0457,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,37,survival_probability,0.0374,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,38,survival_probability,0.0306,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,39,survival_probability,0.025,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,0,survival_probability,1.0,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,1,survival_probability,0.993432390246118,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,2,survival_probability,0.985062572570613,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,3,survival_probability,0.9738923005478504,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,4,survival_probability,0.9591923893028744,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,5,survival_probability,0.9407079455013112,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,6,survival_probability,0.9168887987280316,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,7,survival_probability,0.8869960122301214,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,8,survival_probability,0.850496388626437,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,9,survival_probability,0.8067482998740281,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,10,survival_probability,0.755276043410783,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,11,survival_probability,0.6957236714976064,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,12,survival_probability,0.6297536729244139,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,13,survival_probability,0.5602610958657724,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,14,survival_probability,0.4894735422997605,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,15,survival_probability,0.4210374678539818,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,16,survival_probability,0.3583181319489291,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,17,survival_probability,0.3031998680258771,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,18,survival_probability,0.2561965619986988,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,19,survival_probability,0.2169192043447746,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,20,survival_probability,0.1850150085708845,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,21,survival_probability,0.1592435732305992,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,22,survival_probability,0.1385571540553264,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,23,survival_probability,0.1219577714523364,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,24,survival_probability,0.1086744236843994,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,25,survival_probability,0.0979554957833666,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,26,survival_probability,0.0892881878099131,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,27,survival_probability,0.0822980834508385,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,28,survival_probability,0.0765917483193743,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,29,survival_probability,0.0719510542887034,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,30,survival_probability,0.059065440266241,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,31,survival_probability,0.0484874928982468,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,32,survival_probability,0.0398039353801495,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,33,survival_probability,0.0326755040742559,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,34,survival_probability,0.0268236935948594,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,35,survival_probability,0.0220198756975806,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,36,survival_probability,0.0180763668516487,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,37,survival_probability,0.0148390955082134,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,38,survival_probability,0.0121815825773526,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Cars,39,survival_probability,0.0099999999330638,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,0,survival_probability,1.0,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,1,survival_probability,0.992211384792401,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,2,survival_probability,0.983255023484238,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,3,survival_probability,0.9723700214949008,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,4,survival_probability,0.9591983880840096,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,5,survival_probability,0.9438008757124337,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,6,survival_probability,0.9253964255694708,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,7,survival_probability,0.903870297068017,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,8,survival_probability,0.8790469642211319,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,9,survival_probability,0.8508100327022066,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,10,survival_probability,0.8191583490387615,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,11,survival_probability,0.7837241115640902,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,12,survival_probability,0.7449266927772663,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,13,survival_probability,0.7037215386037156,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,14,survival_probability,0.6601975465731165,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,15,survival_probability,0.6153232287305412,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,16,survival_probability,0.570330305257357,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,17,survival_probability,0.5260202250021262,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,18,survival_probability,0.4831806779943129,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,19,survival_probability,0.4421519807144002,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,20,survival_probability,0.4038760344493273,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,21,survival_probability,0.3685181254414261,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,22,survival_probability,0.3362539493598259,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,23,survival_probability,0.306975746357352,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,24,survival_probability,0.2807629031904499,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,25,survival_probability,0.2573124063117901,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,26,survival_probability,0.2363897941985251,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,27,survival_probability,0.2179312734795539,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,28,survival_probability,0.2015392894341337,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,29,survival_probability,0.1871021635130222,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,30,survival_probability,0.1529906634943785,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,31,survival_probability,0.1250981959640521,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,32,survival_probability,0.1022909390417501,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,33,survival_probability,0.0836417833958995,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,34,survival_probability,0.0683926454794904,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,35,survival_probability,0.0559236516220978,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,36,survival_probability,0.0457279403190747,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,37,survival_probability,0.0373910584372246,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,38,survival_probability,0.030574113797834,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Pickups,39,survival_probability,0.0249999992937425,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,0,survival_probability,1.0,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,1,survival_probability,0.993343348797829,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,2,survival_probability,0.985184361232498,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,3,survival_probability,0.974815424638012,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,4,survival_probability,0.9617782001075188,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,5,survival_probability,0.9455522224915976,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,6,survival_probability,0.9252176915079052,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,7,survival_probability,0.9001577414143725,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,8,survival_probability,0.8697797812926183,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,9,survival_probability,0.8333261760585442,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,10,survival_probability,0.7904997078676597,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,11,survival_probability,0.7407196928587644,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,12,survival_probability,0.6848137651238166,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,13,survival_probability,0.6242805550722447,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,14,survival_probability,0.560346621521593,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,15,survival_probability,0.4958117968644341,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,16,survival_probability,0.4336310290495546,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,17,survival_probability,0.3758727737559403,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,18,survival_probability,0.3237983661794721,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,19,survival_probability,0.2782382668947893,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,20,survival_probability,0.23943215594301,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,21,survival_probability,0.2068211032411854,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,22,survival_probability,0.1797808270090977,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,23,survival_probability,0.1574325240967546,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,24,survival_probability,0.1390529223818073,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,25,survival_probability,0.1239375081813067,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,26,survival_probability,0.1114939344848871,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,27,survival_probability,0.1012822050254163,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,28,survival_probability,0.092825120649353,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,29,survival_probability,0.0858613800982386,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,30,survival_probability,0.0758948125706248,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,31,survival_probability,0.0670851384934638,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,32,survival_probability,0.0592980686591631,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,33,survival_probability,0.0524149018049565,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,34,survival_probability,0.0463307152044775,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,35,survival_probability,0.040952765290794,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,36,survival_probability,0.0361990739309974,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,37,survival_probability,0.0319971788023891,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,38,survival_probability,0.0282830288217777,dimensionless,source_survival_probability,,,
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,39,survival_probability,0.0250000077904925,dimensionless,source_survival_probability,,,
+wards_weighted_nhtsa_legacy,Car,0,survival_probability,1.0,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,1,survival_probability,0.993432390246118,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,2,survival_probability,0.985062572570613,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,3,survival_probability,0.9738923005478504,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,4,survival_probability,0.9591923893028744,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,5,survival_probability,0.9407079455013112,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,6,survival_probability,0.9168887987280316,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,7,survival_probability,0.8869960122301214,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,8,survival_probability,0.850496388626437,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,9,survival_probability,0.8067482998740281,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,10,survival_probability,0.755276043410783,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,11,survival_probability,0.6957236714976064,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,12,survival_probability,0.6297536729244139,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,13,survival_probability,0.5602610958657724,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,14,survival_probability,0.4894735422997605,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,15,survival_probability,0.4210374678539818,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,16,survival_probability,0.3583181319489291,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,17,survival_probability,0.3031998680258771,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,18,survival_probability,0.2561965619986988,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,19,survival_probability,0.2169192043447746,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,20,survival_probability,0.1850150085708845,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,21,survival_probability,0.1592435732305992,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,22,survival_probability,0.1385571540553264,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,23,survival_probability,0.1219577714523364,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,24,survival_probability,0.1086744236843994,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,25,survival_probability,0.0979554957833666,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,26,survival_probability,0.0892881878099131,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,27,survival_probability,0.0822980834508385,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,28,survival_probability,0.0765917483193743,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,29,survival_probability,0.0719510542887034,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,30,survival_probability,0.059065440266241,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,31,survival_probability,0.0484874928982468,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,32,survival_probability,0.0398039353801495,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,33,survival_probability,0.0326755040742559,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,34,survival_probability,0.0268236935948594,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,35,survival_probability,0.0220198756975806,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,36,survival_probability,0.0180763668516487,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,37,survival_probability,0.0148390955082134,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,38,survival_probability,0.0121815825773526,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Car,39,survival_probability,0.0099999999330638,dimensionless,NHTSA Cars used directly for legacy Car,1.0,,
+wards_weighted_nhtsa_legacy,Light Truck,0,survival_probability,1.0,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,1,survival_probability,0.9930220463673891,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,2,survival_probability,0.9846367281764266,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,3,survival_probability,0.9741213089510119,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,4,survival_probability,0.961045933119119,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,5,survival_probability,0.9450551112990242,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,6,survival_probability,0.9252684242945557,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,7,survival_probability,0.9012115321258611,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,8,survival_probability,0.8724102257095654,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,9,survival_probability,0.8382888830051738,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,10,survival_probability,0.7986343225879391,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,11,survival_probability,0.7529262861633399,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,12,survival_probability,0.7018765247727956,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,13,survival_probability,0.6468294885743746,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,14,survival_probability,0.5886888168095077,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,15,survival_probability,0.5297345305731074,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,16,survival_probability,0.4724324480649412,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,17,survival_probability,0.4184913912900913,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,18,survival_probability,0.36903825358727144,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,19,survival_probability,0.3247643705342457,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,20,survival_probability,0.28610874422822846,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,21,survival_probability,0.2527180098377816,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,22,survival_probability,0.2241949552576416,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,23,survival_probability,0.19987963419720545,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,24,survival_probability,0.1792766053196742,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,25,survival_probability,0.1617953187861591,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,26,survival_probability,0.14694501162642948,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,27,survival_probability,0.13439247092004414,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,28,survival_probability,0.12368310419504039,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,29,survival_probability,0.11459807986504253,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,30,survival_probability,0.09777809168537996,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,31,survival_probability,0.08355186029130403,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,32,survival_probability,0.07150138402897593,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,33,survival_probability,0.06127849897069544,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,34,survival_probability,0.0525928858950357,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,35,survival_probability,0.045202177940862495,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,36,survival_probability,0.03890379591433383,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,37,survival_probability,0.03352820507872185,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,38,survival_probability,0.02893334205401955,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+wards_weighted_nhtsa_legacy,Light Truck,39,survival_probability,0.02500000537873169,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021,
+nlr_atb_source_anchor,Compact,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,1,survival_probability,0.993432390246118,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,2,survival_probability,0.985062572570613,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,3,survival_probability,0.9738923005478504,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,4,survival_probability,0.9591923893028744,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,5,survival_probability,0.9407079455013112,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,6,survival_probability,0.9168887987280316,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,7,survival_probability,0.8869960122301214,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,8,survival_probability,0.850496388626437,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,9,survival_probability,0.8067482998740281,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,10,survival_probability,0.755276043410783,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,11,survival_probability,0.6957236714976064,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,12,survival_probability,0.6297536729244139,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,13,survival_probability,0.5602610958657724,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,14,survival_probability,0.4894735422997605,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,15,survival_probability,0.4210374678539818,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,16,survival_probability,0.3583181319489291,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,17,survival_probability,0.3031998680258771,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,18,survival_probability,0.2561965619986988,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,19,survival_probability,0.2169192043447746,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,20,survival_probability,0.1850150085708845,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,21,survival_probability,0.1592435732305992,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,22,survival_probability,0.1385571540553264,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,23,survival_probability,0.1219577714523364,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,24,survival_probability,0.1086744236843994,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,25,survival_probability,0.0979554957833666,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,26,survival_probability,0.0892881878099131,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,27,survival_probability,0.0822980834508385,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,28,survival_probability,0.0765917483193743,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,29,survival_probability,0.0719510542887034,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,30,survival_probability,0.059065440266241,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,31,survival_probability,0.0484874928982468,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,32,survival_probability,0.0398039353801495,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,33,survival_probability,0.0326755040742559,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,34,survival_probability,0.0268236935948594,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,35,survival_probability,0.0220198756975806,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,36,survival_probability,0.0180763668516487,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,37,survival_probability,0.0148390955082134,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,38,survival_probability,0.0121815825773526,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Compact,39,survival_probability,0.0099999999330638,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,1,survival_probability,0.993432390246118,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,2,survival_probability,0.985062572570613,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,3,survival_probability,0.9738923005478504,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,4,survival_probability,0.9591923893028744,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,5,survival_probability,0.9407079455013112,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,6,survival_probability,0.9168887987280316,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,7,survival_probability,0.8869960122301214,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,8,survival_probability,0.850496388626437,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,9,survival_probability,0.8067482998740281,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,10,survival_probability,0.755276043410783,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,11,survival_probability,0.6957236714976064,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,12,survival_probability,0.6297536729244139,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,13,survival_probability,0.5602610958657724,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,14,survival_probability,0.4894735422997605,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,15,survival_probability,0.4210374678539818,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,16,survival_probability,0.3583181319489291,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,17,survival_probability,0.3031998680258771,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,18,survival_probability,0.2561965619986988,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,19,survival_probability,0.2169192043447746,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,20,survival_probability,0.1850150085708845,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,21,survival_probability,0.1592435732305992,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,22,survival_probability,0.1385571540553264,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,23,survival_probability,0.1219577714523364,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,24,survival_probability,0.1086744236843994,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,25,survival_probability,0.0979554957833666,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,26,survival_probability,0.0892881878099131,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,27,survival_probability,0.0822980834508385,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,28,survival_probability,0.0765917483193743,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,29,survival_probability,0.0719510542887034,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,30,survival_probability,0.059065440266241,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,31,survival_probability,0.0484874928982468,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,32,survival_probability,0.0398039353801495,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,33,survival_probability,0.0326755040742559,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,34,survival_probability,0.0268236935948594,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,35,survival_probability,0.0220198756975806,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,36,survival_probability,0.0180763668516487,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,37,survival_probability,0.0148390955082134,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,38,survival_probability,0.0121815825773526,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Midsize,39,survival_probability,0.0099999999330638,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Car
+nlr_atb_source_anchor,Small SUV,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,1,survival_probability,0.993343348797829,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,2,survival_probability,0.985184361232498,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,3,survival_probability,0.974815424638012,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,4,survival_probability,0.9617782001075188,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,5,survival_probability,0.9455522224915976,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,6,survival_probability,0.9252176915079052,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,7,survival_probability,0.9001577414143725,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,8,survival_probability,0.8697797812926183,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,9,survival_probability,0.8333261760585442,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,10,survival_probability,0.7904997078676597,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,11,survival_probability,0.7407196928587644,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,12,survival_probability,0.6848137651238166,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,13,survival_probability,0.6242805550722447,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,14,survival_probability,0.560346621521593,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,15,survival_probability,0.4958117968644341,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,16,survival_probability,0.4336310290495546,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,17,survival_probability,0.3758727737559403,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,18,survival_probability,0.3237983661794721,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,19,survival_probability,0.2782382668947893,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,20,survival_probability,0.23943215594301,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,21,survival_probability,0.2068211032411854,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,22,survival_probability,0.1797808270090977,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,23,survival_probability,0.1574325240967546,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,24,survival_probability,0.1390529223818073,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,25,survival_probability,0.1239375081813067,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,26,survival_probability,0.1114939344848871,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,27,survival_probability,0.1012822050254163,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,28,survival_probability,0.092825120649353,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,29,survival_probability,0.0858613800982386,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,30,survival_probability,0.0758948125706248,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,31,survival_probability,0.0670851384934638,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,32,survival_probability,0.0592980686591631,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,33,survival_probability,0.0524149018049565,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,34,survival_probability,0.0463307152044775,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,35,survival_probability,0.040952765290794,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,36,survival_probability,0.0361990739309974,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,37,survival_probability,0.0319971788023891,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,38,survival_probability,0.0282830288217777,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Small SUV,39,survival_probability,0.0250000077904925,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,1,survival_probability,0.993343348797829,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,2,survival_probability,0.985184361232498,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,3,survival_probability,0.974815424638012,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,4,survival_probability,0.9617782001075188,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,5,survival_probability,0.9455522224915976,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,6,survival_probability,0.9252176915079052,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,7,survival_probability,0.9001577414143725,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,8,survival_probability,0.8697797812926183,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,9,survival_probability,0.8333261760585442,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,10,survival_probability,0.7904997078676597,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,11,survival_probability,0.7407196928587644,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,12,survival_probability,0.6848137651238166,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,13,survival_probability,0.6242805550722447,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,14,survival_probability,0.560346621521593,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,15,survival_probability,0.4958117968644341,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,16,survival_probability,0.4336310290495546,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,17,survival_probability,0.3758727737559403,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,18,survival_probability,0.3237983661794721,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,19,survival_probability,0.2782382668947893,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,20,survival_probability,0.23943215594301,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,21,survival_probability,0.2068211032411854,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,22,survival_probability,0.1797808270090977,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,23,survival_probability,0.1574325240967546,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,24,survival_probability,0.1390529223818073,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,25,survival_probability,0.1239375081813067,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,26,survival_probability,0.1114939344848871,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,27,survival_probability,0.1012822050254163,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,28,survival_probability,0.092825120649353,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,29,survival_probability,0.0858613800982386,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,30,survival_probability,0.0758948125706248,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,31,survival_probability,0.0670851384934638,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,32,survival_probability,0.0592980686591631,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,33,survival_probability,0.0524149018049565,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,34,survival_probability,0.0463307152044775,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,35,survival_probability,0.040952765290794,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,36,survival_probability,0.0361990739309974,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,37,survival_probability,0.0319971788023891,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,38,survival_probability,0.0282830288217777,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Midsize SUV,39,survival_probability,0.0250000077904925,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,1,survival_probability,0.992211384792401,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,2,survival_probability,0.983255023484238,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,3,survival_probability,0.9723700214949008,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,4,survival_probability,0.9591983880840096,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,5,survival_probability,0.9438008757124337,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,6,survival_probability,0.9253964255694708,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,7,survival_probability,0.903870297068017,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,8,survival_probability,0.8790469642211319,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,9,survival_probability,0.8508100327022066,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,10,survival_probability,0.8191583490387615,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,11,survival_probability,0.7837241115640902,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,12,survival_probability,0.7449266927772663,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,13,survival_probability,0.7037215386037156,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,14,survival_probability,0.6601975465731165,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,15,survival_probability,0.6153232287305412,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,16,survival_probability,0.570330305257357,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,17,survival_probability,0.5260202250021262,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,18,survival_probability,0.4831806779943129,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,19,survival_probability,0.4421519807144002,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,20,survival_probability,0.4038760344493273,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,21,survival_probability,0.3685181254414261,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,22,survival_probability,0.3362539493598259,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,23,survival_probability,0.306975746357352,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,24,survival_probability,0.2807629031904499,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,25,survival_probability,0.2573124063117901,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,26,survival_probability,0.2363897941985251,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,27,survival_probability,0.2179312734795539,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,28,survival_probability,0.2015392894341337,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,29,survival_probability,0.1871021635130222,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,30,survival_probability,0.1529906634943785,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,31,survival_probability,0.1250981959640521,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,32,survival_probability,0.1022909390417501,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,33,survival_probability,0.0836417833958995,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,34,survival_probability,0.0683926454794904,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,35,survival_probability,0.0559236516220978,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,36,survival_probability,0.0457279403190747,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,37,survival_probability,0.0373910584372246,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,38,survival_probability,0.030574113797834,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
+nlr_atb_source_anchor,Pickup,39,survival_probability,0.0249999992937425,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,,,Light Truck
