@@ -190,41 +190,17 @@ class ScenarioPeriods(MappingModel):
 class ScenarioSourceSelection(MappingModel):
     year: int | None = Field(default=None, gt=0)
     edition: int | None = Field(default=None, gt=0)
-    scenario: str | None = None
     trajectory: str | None = None
 
 
 class ScenarioSources(MappingModel):
-    active: list[str] = Field(min_length=1)
     selections: dict[str, ScenarioSourceSelection] = Field(default_factory=dict)
-
-    @model_validator(mode="after")
-    def validate_source_selections(self) -> Self:
-        if self.active != list(dict.fromkeys(self.active)):
-            raise ValueError("sources.active must contain unique source keys")
-        inactive = sorted(set(self.selections) - set(self.active))
-        if inactive:
-            raise ValueError(
-                f"sources.selections contains inactive source keys: {inactive}"
-            )
-        return self
-
-
-class ScenarioCurrency(MappingModel):
-    target: str = Field(min_length=3, max_length=3)
-    target_year: int = Field(gt=0)
-    inflation_index: str
-
-    @model_validator(mode="after")
-    def validate_currency_code(self) -> Self:
-        if not self.target.isalpha() or not self.target.isupper():
-            raise ValueError("currency.target must be a three-letter uppercase code")
-        return self
-
 
 class ScenarioEconomics(MappingModel):
     global_discount_rate: float = Field(ge=0.0, le=1.0)
     default_loan_rate: float = Field(ge=0.0, le=1.0)
+    cost_reference_currency: Literal["CAD"]
+    cost_reference_year: int = Field(ge=1900, le=2100)
 
 
 class ScenarioOutputs(MappingModel):
@@ -234,58 +210,40 @@ class ScenarioOutputs(MappingModel):
 
 
 class ScenarioValidation(MappingModel):
-    behavior: Literal["error", "warn"]
     reference_sqlite: str | None = None
     compare_legacy: bool
-    parameter_tolerances: dict[str, float]
 
     @model_validator(mode="after")
-    def validate_reference_and_tolerances(self) -> Self:
+    def validate_reference(self) -> Self:
         if self.compare_legacy and not self.reference_sqlite:
             raise ValueError(
                 "validation.reference_sqlite is required when compare_legacy is true"
-            )
-        invalid = {
-            key: value
-            for key, value in self.parameter_tolerances.items()
-            if value < 0
-        }
-        if invalid:
-            raise ValueError(
-                f"validation.parameter_tolerances must be non-negative: {invalid}"
             )
         return self
 
 
 class ScenarioSwitches(MappingModel):
-    legacy_equivalent: bool
-    debug: bool
-    download_sources: bool
-    compile_sqlite: bool
-    transform_parameters: bool
-    include_existing_capacity: bool
     survival_curves: bool
     survival_curve_max_age: int = Field(gt=0)
+    vkt_schedules: bool
 
 
 class ScenarioRowNoteOverrides(MappingModel):
     technology: dict[str, str] = Field(default_factory=dict)
-    parameters: dict[str, str] = Field(default_factory=dict)
 
 
-class ScenarioPlanned(MappingModel):
-    weather_year: int | None = Field(default=None, gt=0)
-    timezone: str | None = None
-    technology_progress: str | None = None
-    demand_projection: str | None = None
-    fuel_price_future: str | None = None
-    utilization: str | None = None
-    bev_charging: str | None = None
-    adoption_constraints: str | None = None
-    retirement_formulation: str | None = None
-    emissions_scope: str | None = None
-    sector_coupling: str | None = None
-    capacity_limits: str | None = None
+class ScenarioExistingCapacity(MappingModel):
+    other_region_vehicle_population_source: str
+    cleanup_epsilon: float = Field(ge=0, allow_inf_nan=False)
+
+
+class ScenarioDemand(MappingModel):
+    cer_scenario: str = Field(min_length=1)
+    future_car_demand: Literal["GDP-indexed", "extrapolated"]
+
+
+class ScenarioRoadUtilization(MappingModel):
+    medium_truck_weight_source: Literal["national_wards", "ontario_report4"]
 
 
 class ScenarioConfig(MappingModel):
@@ -294,15 +252,16 @@ class ScenarioConfig(MappingModel):
     geography: ScenarioGeography
     periods: ScenarioPeriods
     sources: ScenarioSources
-    currency: ScenarioCurrency
     economics: ScenarioEconomics
     outputs: ScenarioOutputs
     validation: ScenarioValidation
     switches: ScenarioSwitches
+    existing_capacity: ScenarioExistingCapacity | None = None
+    demand: ScenarioDemand
+    road_utilization: ScenarioRoadUtilization
     row_note_overrides: ScenarioRowNoteOverrides = Field(
         default_factory=ScenarioRowNoteOverrides
     )
-    planned: ScenarioPlanned = Field(default_factory=ScenarioPlanned)
 
 
 class SourceComponent(MappingModel):

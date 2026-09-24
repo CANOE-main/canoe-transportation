@@ -207,7 +207,6 @@ def resolve_composite_provenance(
     """Resolve one derived dataset with explicit governing source and DQ policy."""
     if not inputs:
         raise ProvenanceError("Composite provenance requires at least one contributor")
-    contributors: list[Contributor] = []
     metadata_by_source: dict[str, tuple[str, str, str, str]] = {}
     for item in inputs:
         for contributor in item.contributors:
@@ -218,12 +217,17 @@ def resolve_composite_provenance(
                 contributor.refresh_notes,
             )
             existing = metadata_by_source.get(contributor.source_id)
-            if existing is not None and existing != metadata:
-                raise ProvenanceError(
-                    f"Conflicting contributor definition for {contributor.source_id}"
+            if existing is not None:
+                if existing[:2] != metadata[:2] or existing[3] != metadata[3]:
+                    raise ProvenanceError(
+                        f"Conflicting contributor definition for {contributor.source_id}"
+                    )
+                citations = sorted(set(existing[2].split("\n") + metadata[2].split("\n")))
+                metadata_by_source[contributor.source_id] = (
+                    existing[0], existing[1], "\n".join(citations), existing[3]
                 )
-            metadata_by_source[contributor.source_id] = metadata
-            contributors.append(contributor)
+            else:
+                metadata_by_source[contributor.source_id] = metadata
     if governing_source_id not in metadata_by_source:
         raise ProvenanceError(
             f"Governing source {governing_source_id!r} is not a contributor"
@@ -246,7 +250,16 @@ def resolve_composite_provenance(
         contributors=input_ids,
     )
     sorted_contributors = tuple(
-        sorted(contributors, key=lambda item: (item.source_id, item.data_id))
+        Contributor(
+            source_key=source_key,
+            source_id=source_id,
+            title=title,
+            citation=citation,
+            refresh_notes=refresh_notes,
+            data_id=data_id,
+        )
+        for source_id, (source_key, title, citation, refresh_notes)
+        in sorted(metadata_by_source.items())
     )
     return ResolvedProvenance(
         source_key="composite",

@@ -20,6 +20,7 @@ from fetching.assorted_sources import (
     normalize_nems,
     normalize_nhtsa,
     normalize_regen,
+    normalize_tc_ev_dashboard_table,
     parse_faa_table_text,
 )
 from utils import load_config_bundle, resolve_input_path
@@ -27,6 +28,34 @@ from utils import load_config_bundle, resolve_input_path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+
+
+def test_tc_dashboard_parser_selects_identified_table_and_rejects_drift() -> None:
+    html = (
+        '<table id="other"><tr><td>Wrong</td></tr></table>'
+        '<h2 id="medium-heavy-duty-zev-market-share">Medium and heavy</h2>'
+        '<table id="tbl-mhzev"><thead><tr><th>Province/territory</th>'
+        '<th>Market share (Q1&nbsp;2026)</th><th>2026 year-to-date</th></tr></thead>'
+        '<tbody><tr><td>Ontario</td><td>3.1%</td><td>3.1%</td></tr>'
+        '<tr><td>Yukon</td><td>n/a</td><td>n/a</td></tr></tbody></table>'
+    )
+    options = {
+        "table_id": "tbl-mhzev",
+        "heading_id": "medium-heavy-duty-zev-market-share",
+        "year": 2026,
+        "quarter_header": "Market share (Q1 2026)",
+        "ytd_header": "2026 year-to-date",
+    }
+
+    result = normalize_tc_ev_dashboard_table(html, **options)
+
+    assert result.loc[0, "source_region"] == "Ontario"
+    assert result.loc[0, "ytd_market_share"] == pytest.approx(0.031)
+    assert pd.isna(result.loc[1, "ytd_market_share"])
+    with pytest.raises(AssortedSourcesError, match="headers changed"):
+        normalize_tc_ev_dashboard_table(
+            html.replace("2026 year-to-date", "2025 year-to-date"), **options
+        )
 
 
 @pytest.fixture
@@ -292,10 +321,18 @@ def _faa_texts(rules: dict[str, object]) -> tuple[str, str]:
     Aircraft Category Passenger Capacity Passenger Load Factor Average Block Speed (MPH)
     All Aircraft 19,879,016 7,984,009 169 84% 24 64% 6 366
     Sources: fixture
+    {tables["3-7"]["title"]}
+    Aircraft Category Block Hours Number of Aircraft Daily Utilization (hours)
+    All Aircraft 19,754,718 6,380 19,735,582 8.5
+    Source: fixture
     {tables["3-9"]["title"]}
     Aircraft Category Cargo Capacity Cargo Load Factor Average Block Speed (MPH)
     All Aircraft 2,142,095 733,310 93 48% 2 399
     Sources: fixture
+    {tables["3-10"]["title"]}
+    Aircraft Category Block Hours Number of Aircraft Daily Utilization (hours)
+    All Aircraft 2,029,840 1,208 2,018,639 4.6
+    Source: fixture
     """
     section_4 = f"""
     {rules["documents"]["section_4_operating_costs"]["document_title"]}
@@ -575,19 +612,19 @@ def test_regen_nonroad_cost_invest_manual_table_matches_tables_4_and_6(
     ].copy()
     assert len(frame) == component.adapter["expected_rows"] == 12
     assert frame["value"].gt(0).all()
-    assert set(frame["technology_class"]) == {
+    assert set(frame["category"]) == {
         "passenger_rail",
         "freight_rail",
         "freight_marine",
     }
-    assert not frame["powertrain"].str.startswith("electric").any()
-    indexed = frame.set_index(["technology_class", "powertrain"])["value"]
-    assert indexed["passenger_rail", "lng_2035"] == pytest.approx(1.03)
-    assert indexed["passenger_rail", "h2_2050"] == pytest.approx(1.01)
-    assert indexed["freight_rail", "lng_2035"] == pytest.approx(1.57)
-    assert indexed["freight_rail", "h2_2050"] == pytest.approx(1.43)
-    assert indexed["freight_marine", "h2_2035"] == pytest.approx(2.58)
-    assert indexed["freight_marine", "h2_2050"] == pytest.approx(1.9)
+    assert not frame["sub_category"].str.startswith("electric").any()
+    indexed = frame.set_index(["category", "sub_category", "period"])["value"]
+    assert indexed["passenger_rail", "lng", "through_2035"] == pytest.approx(1.03)
+    assert indexed["passenger_rail", "h2", "through_2050"] == pytest.approx(1.01)
+    assert indexed["freight_rail", "lng", "through_2035"] == pytest.approx(1.57)
+    assert indexed["freight_rail", "h2", "through_2050"] == pytest.approx(1.43)
+    assert indexed["freight_marine", "h2", "through_2035"] == pytest.approx(2.58)
+    assert indexed["freight_marine", "h2", "through_2050"] == pytest.approx(1.9)
     assert set(component.adapter["table_labels"]) == {"Table 4", "Table 6"}
 
 
@@ -686,7 +723,7 @@ def test_faa_tables_select_only_requested_metrics_and_preserve_raw_units(
     request_3 = _faa_request(tmp_path, "section_3_capacity")
     request_4 = _faa_request(tmp_path, "section_4_operating_costs")
     parsed = {}
-    for table_id in ("3-6", "3-9"):
+    for table_id in ("3-6", "3-7", "3-9", "3-10"):
         parsed[table_id] = parse_faa_table_text(
             section_3,
             table_id=table_id,
@@ -703,7 +740,10 @@ def test_faa_tables_select_only_requested_metrics_and_preserve_raw_units(
             checksum=request_4.expected_sha256,
         )
 
-    capacity = pd.concat([parsed["3-6"], parsed["3-9"]], ignore_index=True)
+    capacity = pd.concat(
+        [parsed[table_id] for table_id in ("3-6", "3-7", "3-9", "3-10")],
+        ignore_index=True,
+    )
     maintenance = pd.concat([parsed["4-7"], parsed["4-8"]], ignore_index=True)
     assert set(capacity["operating_group"]) == {"passenger", "cargo"}
     assert set(capacity["metric"]) == {
@@ -712,7 +752,14 @@ def test_faa_tables_select_only_requested_metrics_and_preserve_raw_units(
         "cargo_capacity",
         "cargo_load_factor",
         "average_block_speed",
+        "average_daily_utilization",
     }
+    utilization = capacity.loc[
+        capacity["metric"].eq("average_daily_utilization")
+    ].set_index("operating_group")
+    assert utilization.loc["passenger", "value"] == 8.5
+    assert utilization.loc["cargo", "value"] == 4.6
+    assert utilization["raw_value"].to_dict() == {"passenger": "8.5", "cargo": "4.6"}
     cargo_capacity = capacity.loc[capacity["metric"].eq("cargo_capacity")].iloc[0]
     assert cargo_capacity["value"] == 93
     assert cargo_capacity["unit"] == "source-labelled tons"
@@ -904,5 +951,5 @@ def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_output
     assert len(pd.read_csv(output_dir / rules["eia_nems"]["output_file"])) == 102
     assert len(pd.read_csv(output_dir / rules["jgcri_gcam"]["output_file"])) == 120
     assert len(pd.read_csv(output_dir / rules["epri_us_regen"]["output_file"])) == 76
-    assert len(pd.read_csv(output_dir / rules["faa"]["capacity_output_file"])) == 6
+    assert len(pd.read_csv(output_dir / rules["faa"]["capacity_output_file"])) == 8
     assert len(pd.read_csv(output_dir / rules["faa"]["maintenance_output_file"])) == 2

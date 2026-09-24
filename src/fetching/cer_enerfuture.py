@@ -67,7 +67,8 @@ class CerTableRequest(BaseModel):
 
 def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
     """Load CER selectors and output rules."""
-    return load_harmonization_rules(bundle, "cer_enerfuture")
+    return {**load_harmonization_rules(bundle, "cer_enerfuture"),
+            "default_scenario": bundle.scenario.demand.cer_scenario}
 
 
 def _source(bundle: ConfigBundle) -> SourceSpec:
@@ -111,11 +112,8 @@ def configured_edition(bundle: ConfigBundle, requested: int | None = None) -> in
 
 
 def configured_scenario(bundle: ConfigBundle, rules: dict[str, Any]) -> str:
-    """Resolve the CER scenario marker from scenario YAML or rule default."""
-    selection = bundle.scenario.sources.selections.get(SOURCE_ID)
-    if selection is not None and selection.scenario is not None:
-        return selection.scenario
-    return str(rules["default_scenario"])
+    """Resolve the single scenario-owned CER trajectory selector."""
+    return bundle.scenario.demand.cer_scenario
 
 
 def scenario_region_labels(

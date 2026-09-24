@@ -1,0 +1,11 @@
+﻿category,sub_category,units,c2a,notes
+cars,all,bn passenger-km/k units,3.504,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 4 passengers for 8,760 hours each year. "
+passenger_light_trucks,all,bn passenger-km/k units,4.38,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 5 passengers for 8,760 hours each year. "
+freight_light_trucks,all,bn tonne-km/k units,0.876,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 1 tonne for 8,760 hours each year. "
+medium_trucks,all,bn tonne-km/k units,2.628,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 3 tonnes for 8,760 hours each year. "
+heavy_trucks,all,bn tonne-km/k units,8.76,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 10 tonnes for 8,760 hours each year. "
+motorcycles,all,bn passenger-km/k units,1.752,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 2 passengers for 8,760 hours each year. "
+school_buses,all,bn passenger-km/k units,43.8,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 50 passengers for 8,760 hours each year. "
+urban_transit,all,bn passenger-km/k units,43.8,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 50 passengers for 8,760 hours each year. "
+inter_city_buses,all,bn passenger-km/k units,43.8,"An estimate of how much activity a unit of capacity can deliver in a year. Assuming this vehicle class can be driven at an avg. speed of 100 km/h carrying 50 passengers for 8,760 hours each year. "
+charger,all,PJ/GW,31.536,"1 GW x 8,760 hours = 8,760 GWh = 31.54 PJ"

@@ -783,9 +783,18 @@ def fetch_and_normalize(
         validate_source(request)
         metadata = read_cached_metadata(request)
         validate_metadata_contract(metadata, request)
+        table_regions = selected_regions
+        if request.normalizer in {"ldv_archived", "ldv_current"} and set(
+            selected_regions
+        ).intersection(rules["ldv_history"]["canada_proxy_regions"]):
+            table_regions = [*selected_regions, "Canada"]
+        if request.table_rules.get("include_canada"):
+            table_regions = list(dict.fromkeys([*table_regions, "Canada"]))
+        if "BCT" in selected_regions and request.table_rules.get("include_bc_for_bct"):
+            table_regions = list(dict.fromkeys([*table_regions, "BC"]))
         selected, member, input_rows = read_selected_table(
             request,
-            regions=selected_regions,
+            regions=table_regions,
             geography_rules=rules["geography"],
             chunksize=int(rules["read_chunksize"]),
             provenance_columns=rules["provenance_columns"],
@@ -803,7 +812,7 @@ def fetch_and_normalize(
                 "table_id": request.table_id,
                 "product_id": request.product_id,
                 "title": request.title,
-                "regions": "|".join(selected_regions),
+                "regions": "|".join(table_regions),
                 "metadata_cache": str(request.metadata_cache_path),
                 "archive_cache": str(request.archive_cache_path),
                 "source_member": member,

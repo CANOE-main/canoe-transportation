@@ -45,7 +45,7 @@ def request_for(bundle, table_id: str):
 
 
 def test_scenario_region_resolution_uses_quoted_config_and_geography_map(bundle, rules) -> None:
-    assert scenario_regions(bundle) == ["ON"]
+    assert scenario_regions(bundle) == ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
     assert rules["geography"]["ON"] == {
         "label": "Ontario",
         "freight_contains": ["Ontario"],

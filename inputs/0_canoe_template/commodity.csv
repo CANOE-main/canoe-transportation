@@ -1,13 +1,7 @@
 name,flag,description,units
-gsl,p,Gasoline blendstock,PJ
-eth,p,Ethanol (100% corn-based ethanol),PJ
 T_gsl,p,Gasoline with at least 10% ethanol; blend mandates as per the Cleaner Transportation Fuels regulation. ,PJ
-dsl,p,Low-sulfur diesel,PJ
-rdsl,p,Renewable diesel (50% soy-based biodiesel and 50% HDRD),PJ
 T_dsl,p,Diesel with 4% renewable diesel; blend mandates as per the Cleaner Transportation Fuels regulation. ,PJ
 T_cng,p,Compressed natural gas ,PJ
-jtf,p,Petroleum conventional jet fuel,PJ
-spk,p,Renewable synthetic jet fuel,PJ
 T_jtf,p,"Conv. jet fuel, after potential blending with renewable jet fuel ",PJ
 T_spk,p,Conventional jet fuel with 50% HEFA SPK; blend limit in compliance with ASTM D7566 standards.,PJ
 T_mdo,p,"Marine diesel oil, 0.1% sulfur content ",PJ
@@ -19,14 +13,10 @@ T_dsl_elc_mdv,p,Diesel and electricity for plug-in hybrid vehicles (medium-duty 
 T_dsl_elc_hdv,p,Diesel and electricity for plug-in hybrid vehicles (heavy-duty class),PJ
 T_gsl_elc_phev35,p,Gasoline and electricity for plug-in hybrid vehicles (35-mile CD range ratio),PJ
 T_gsl_elc_phev50,p,Gasoline and electricity for plug-in hybrid vehicles (50-mile CD range ratio),PJ
-T_elc_ldv_bev_chrg,p,Electricity from light-duty BEV charger,PJ
-T_elc_ldv_phev_chrg,p,Electricity from light-duty PHEV charger,PJ
-T_elc_mdv_chrg,p,Electricity from medium-duty EV charger,PJ
-T_elc_hdv_chrg,p,Electricity from heavy-duty EV charger,PJ
-h2_700,p,Gaseous H2 @ 700 bar,PJ
+T_elc_ldv_chrg,p,Electricity from light-duty EV charger,PJ
+T_elc_mhdv_chrg,p,Electricity from heavy-duty EV charger,PJ
 T_h2_ldv,p,Gaseous H2 @ 700 bar for use in light-duty vehicles,PJ
-T_h2_mdv,p,Gaseous H2 @ 700 bar for use in medium-duty vehicles,PJ
-T_h2_hdv,p,Gaseous H2 @ 700 bar for use in heavy-duty vehicles,PJ
+T_h2_mhdv,p,Gaseous H2 @ 700 bar for use in medium- and heavy-duty vehicles,PJ
 T_D_pkm_ldv_c,d,Demand for total passenger-kilometers driven by cars,billion passenger-km
 T_D_pkm_ldv_t,d,Demand for total passenger-kilometers driven by light-duty passenger trucks,billion passenger-km
 T_D_tkm_ldv_t,d,Demand for total tonne-kilometers driven by light-duty freight trucks,billion tonne-km

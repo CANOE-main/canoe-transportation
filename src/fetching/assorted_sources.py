@@ -27,9 +27,11 @@ from pypdf.errors import PdfReadError
 
 from utils import (
     ConfigBundle,
+    active_source_keys,
     file_sha256,
     load_config_bundle,
     load_harmonization_rules,
+    resolve_artifact_path,
     resolve_input_path,
 )
 from validation.config_models import SourceSpec
@@ -37,6 +39,117 @@ from validation.config_models import SourceSpec
 
 class AssortedSourcesError(ValueError):
     """Raised when a configured small-source contract is missing or has changed."""
+
+
+class _HtmlTableParser(HTMLParser):
+    """Read cells from one identified source table without a browser dependency."""
+
+    def __init__(self, table_id: str) -> None:
+        super().__init__(convert_charrefs=True)
+        self.table_id = table_id
+        self.found = False
+        self.active = False
+        self.depth = 0
+        self.cell_kind: str | None = None
+        self.cell_text: list[str] = []
+        self.row: list[str] = []
+        self.row_is_header = False
+        self.headers: list[str] = []
+        self.rows: list[list[str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "table":
+            if self.active:
+                self.depth += 1
+            elif dict(attrs).get("id") == self.table_id:
+                if self.found:
+                    raise AssortedSourcesError(f"Duplicate dashboard table ID {self.table_id}")
+                self.found = True
+                self.active = True
+                self.depth = 1
+        elif self.active and tag == "tr":
+            self.row = []
+            self.row_is_header = False
+        elif self.active and tag in {"th", "td"}:
+            self.cell_kind = tag
+            self.cell_text = []
+
+    def handle_data(self, data: str) -> None:
+        if self.active and self.cell_kind is not None:
+            self.cell_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if not self.active:
+            return
+        if tag in {"th", "td"} and self.cell_kind == tag:
+            self.row.append(" ".join(" ".join(self.cell_text).split()))
+            self.row_is_header |= tag == "th"
+            self.cell_kind = None
+        elif tag == "tr" and self.row:
+            if self.row_is_header:
+                if self.headers:
+                    raise AssortedSourcesError("Dashboard table has multiple header rows")
+                self.headers = self.row
+            else:
+                self.rows.append(self.row)
+            self.row = []
+        elif tag == "table":
+            self.depth -= 1
+            if self.depth == 0:
+                self.active = False
+
+
+def normalize_tc_ev_dashboard_table(
+    html: str,
+    *,
+    table_id: str,
+    heading_id: str,
+    year: int,
+    quarter_header: str,
+    ytd_header: str,
+) -> pd.DataFrame:
+    """Normalize the identified TC medium/heavy provincial market-share table."""
+    if f'id="{heading_id}"' not in html:
+        raise AssortedSourcesError(f"Dashboard heading ID {heading_id!r} is missing")
+    parser = _HtmlTableParser(table_id)
+    parser.feed(html)
+    if not parser.found:
+        raise AssortedSourcesError(f"Dashboard table ID {table_id!r} is missing")
+    expected_headers = ["Province/territory", quarter_header, ytd_header]
+    if parser.headers != expected_headers:
+        raise AssortedSourcesError(
+            f"Dashboard table headers changed: {parser.headers} != {expected_headers}"
+        )
+    if not parser.rows or any(len(row) != 3 for row in parser.rows):
+        raise AssortedSourcesError("Dashboard table has no complete provincial rows")
+    if len({row[0] for row in parser.rows}) != len(parser.rows):
+        raise AssortedSourcesError("Dashboard table has duplicate province labels")
+
+    def share(raw: str) -> float | None:
+        if raw.casefold() == "n/a":
+            return None
+        if not raw.endswith("%"):
+            raise AssortedSourcesError(f"Dashboard share is not a percentage: {raw!r}")
+        try:
+            value = float(raw[:-1].strip()) / 100.0
+        except ValueError as exc:
+            raise AssortedSourcesError(f"Dashboard share is invalid: {raw!r}") from exc
+        if not math.isfinite(value) or not 0 <= value <= 1:
+            raise AssortedSourcesError(f"Dashboard share is outside [0, 1]: {raw!r}")
+        return value
+
+    return pd.DataFrame(
+        [
+            {
+                "source_region": region,
+                "source_year": year,
+                "quarter_market_share": share(quarter),
+                "ytd_market_share": share(ytd),
+                "units": "fraction",
+            }
+            for region, quarter, ytd in parser.rows
+        ]
+    )
 
 
 class ArtifactRequest(BaseModel):
@@ -1121,12 +1234,14 @@ def parse_faa_table_text(
     start = normalized.find(title)
     if start < 0:
         raise AssortedSourcesError(f"FAA PDF missing expected table title {title!r}")
-    source_marker = normalized.find(" Sources:", start)
-    if source_marker < 0:
-        source_marker = normalized.find(" Source:", start)
-    if source_marker < 0:
+    source_markers = [
+        marker
+        for label in (" Sources:", " Source:")
+        if (marker := normalized.find(label, start)) >= 0
+    ]
+    if not source_markers:
         raise AssortedSourcesError(f"FAA Table {table_id} has no source boundary")
-    segment = normalized[start:source_marker]
+    segment = normalized[start : min(source_markers)]
     for label in rules["required_header_labels"]:
         if _normalize_whitespace(str(label)) not in segment:
             raise AssortedSourcesError(
@@ -1216,7 +1331,7 @@ def normalize_faa(
         checksum=section_4_checksum,
     )
     tables: dict[str, pd.DataFrame] = {}
-    for table_id in ("3-6", "3-9"):
+    for table_id in ("3-6", "3-7", "3-9", "3-10"):
         table_rules = {**rules, **rules["tables"][table_id]}
         tables[table_id] = parse_faa_table_text(
             section_3_text,
@@ -1242,7 +1357,18 @@ def normalize_faa(
                 f"FAA aircraft categories mismatch between Tables {capacity_table} "
                 f"and {cost_table}: {capacity_categories} != {cost_categories}"
             )
-    capacity = pd.concat([tables["3-6"], tables["3-9"]], ignore_index=True)
+    for performance_table, utilization_table in (("3-6", "3-7"), ("3-9", "3-10")):
+        if set(tables[performance_table]["aircraft_category"]) != set(
+            tables[utilization_table]["aircraft_category"]
+        ):
+            raise AssortedSourcesError(
+                f"FAA aircraft categories mismatch between Tables {performance_table} "
+                f"and {utilization_table}"
+            )
+    capacity = pd.concat(
+        [tables[table_id] for table_id in ("3-6", "3-7", "3-9", "3-10")],
+        ignore_index=True,
+    )
     maintenance = pd.concat([tables["4-7"], tables["4-8"]], ignore_index=True)
     capacity = capacity.sort_values(
         ["operating_group", "source_table", "metric"]
@@ -1269,7 +1395,7 @@ def normalize_faa(
     selected = len(capacity) + len(maintenance)
     all_aircraft_cells = sum(
         len(rules["tables"][table_id]["ordered_columns"])
-        for table_id in ("3-6", "3-9", "4-7", "4-8")
+        for table_id in ("3-6", "3-7", "3-9", "3-10", "4-7", "4-8")
     )
     return capacity, maintenance, warnings, SelectionStats(
         input_records=all_aircraft_cells,
@@ -1335,6 +1461,62 @@ def write_outputs(
         encoding="utf-8",
         newline="\n",
     )
+
+
+def fetch_and_normalize_tc_dashboard(
+    scenario_path: str | Path,
+    *,
+    download: bool = True,
+    session: requests.Session | None = None,
+) -> Path:
+    """Fetch the pinned dashboard and publish its provincial YTD share table."""
+    bundle = load_config_bundle(scenario_path)
+    rules = module_rules(bundle)["tc_ev_dashboard"]
+    source_id = str(rules["source_id"])
+    if source_id not in active_source_keys(bundle):
+        raise AssortedSourcesError(f"Dashboard source is inactive: {source_id}")
+    selection = bundle.scenario.sources.selections[source_id]
+    if selection.year is None:
+        raise AssortedSourcesError("Dashboard selection requires sources.selections year")
+    request = _top_level_request(
+        bundle,
+        source_id=source_id,
+        component_id=str(rules["component_id"]),
+        file_type="html",
+    )
+    cache_status = ensure_cached(request, download=download, session=session)
+    checksum = validate_cached_identity(request)
+    shares = normalize_tc_ev_dashboard_table(
+        request.cache_path.read_text(encoding="utf-8"),
+        table_id=str(rules["table_id"]),
+        heading_id=str(rules["heading_id"]),
+        year=selection.year,
+        quarter_header=str(rules["quarter_header"]),
+        ytd_header=str(rules["ytd_header"]),
+    )
+    output_dir = resolve_artifact_path(bundle, "tc_ev_dashboard_interim")
+    write_outputs(
+        outputs={str(rules["output_file"]): shares},
+        manifest_rows=[
+            _manifest_row(
+                request,
+                checksum=checksum,
+                cache_status=cache_status,
+                stats=SelectionStats(
+                    input_records=len(shares),
+                    selected_records=int(shares["ytd_market_share"].notna().sum()),
+                    excluded_records=int(shares["ytd_market_share"].isna().sum()),
+                ),
+                selection=f"{selection.year} year-to-date medium/heavy-duty EV market share",
+                output_files=[str(rules["output_file"])],
+                warning_count=0,
+            )
+        ],
+        warnings=[],
+        output_dir=output_dir,
+        rules=module_rules(bundle),
+    )
+    return output_dir
 
 
 def fetch_and_normalize(
@@ -1466,16 +1648,16 @@ def fetch_and_normalize(
             stats=SelectionStats(
                 input_records=sum(
                     len(rules["faa"]["tables"][table_id]["ordered_columns"])
-                    for table_id in ("3-6", "3-9")
+                    for table_id in ("3-6", "3-7", "3-9", "3-10")
                 ),
                 selected_records=len(capacity),
                 excluded_records=sum(
                     len(rules["faa"]["tables"][table_id]["ordered_columns"])
-                    for table_id in ("3-6", "3-9")
+                    for table_id in ("3-6", "3-7", "3-9", "3-10")
                 )
                 - len(capacity),
             ),
-            selection="Tables 3-6 and 3-9; All Aircraft requested metrics",
+            selection="Tables 3-6, 3-7, 3-9, and 3-10; All Aircraft requested metrics",
             output_files=[str(rules["faa"]["capacity_output_file"])],
             warning_count=0,
         ),
@@ -1487,14 +1669,14 @@ def fetch_and_normalize(
                 input_records=faa_stats.input_records
                 - sum(
                     len(rules["faa"]["tables"][table_id]["ordered_columns"])
-                    for table_id in ("3-6", "3-9")
+                    for table_id in ("3-6", "3-7", "3-9", "3-10")
                 ),
                 selected_records=len(maintenance),
                 excluded_records=faa_stats.excluded_records
                 - (
                     sum(
                         len(rules["faa"]["tables"][table_id]["ordered_columns"])
-                        for table_id in ("3-6", "3-9")
+                        for table_id in ("3-6", "3-7", "3-9", "3-10")
                     )
                     - len(capacity)
                 ),
@@ -1530,6 +1712,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Require and reuse every configured cache artifact without network access.",
     )
+    parser.add_argument("--tc-dashboard-only", action="store_true")
     return parser.parse_args()
 
 
@@ -1537,9 +1720,14 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
     try:
-        output_dir = fetch_and_normalize(
-            args.scenario, download=not args.no_download
-        )
+        if args.tc_dashboard_only:
+            output_dir = fetch_and_normalize_tc_dashboard(
+                args.scenario, download=not args.no_download
+            )
+        else:
+            output_dir = fetch_and_normalize(
+                args.scenario, download=not args.no_download
+            )
     except (
         AssortedSourcesError,
         FileNotFoundError,

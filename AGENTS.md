@@ -36,7 +36,9 @@ create a parallel transport implementation.
 - `workflow/` provides lightweight scenario-level dependency and artifact orchestration;
   substantive transformations remain in importable Python modules.
 - `docs/` and `docs/insights/` provide targeted explanation, diagnostics, and research
-  context. They are not runtime ETL owners or authorities for accepted assumptions.
+  context. `docs/assumptions.md` records enduring source and data challenges and the
+  assumptions used to handle them. Docs are not runtime ETL owners or authorities for
+  accepted development decisions.
 
 User-selectable values belong in YAML. Python may contain source-invariant
 implementation constants, but not modelling choices, source selections, reproducibility

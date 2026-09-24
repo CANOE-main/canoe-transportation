@@ -28,29 +28,36 @@ def test_config_bundle_loads_typed_contracts() -> None:
     assert bundle.paths.inputs.template == "inputs/0_canoe_template"
     assert bundle.paths.inputs.validation == "inputs/validation"
     assert bundle.scenario.scenario.name == "legacy_reproduction"
-    assert bundle.scenario.geography.regions == ["ON"]
-    assert bundle.scenario.periods.existing == [2021]
+    assert bundle.scenario.geography.regions == ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
+    assert bundle.scenario.periods.existing == [2000, 2005, 2010, 2015, 2020, 2023]
     assert bundle.scenario.periods.model == [
         2025,
         2030,
         2035,
         2040,
         2045,
-        2050,
     ]
     assert bundle.scenario.periods.all_years() == [
-        2021,
+        2000,
+        2005,
+        2010,
+        2015,
+        2020,
+        2023,
         2025,
         2030,
         2035,
         2040,
         2045,
-        2050,
     ]
     assert bundle.scenario.sources.selections[
         "cer_canadas_energy_future"
     ].edition == 2026
-    assert bundle.scenario.currency.target == "CAD"
+    assert bundle.scenario.demand.cer_scenario == "Current Measures"
+    assert bundle.scenario.demand.future_car_demand == "GDP-indexed"
+    assert bundle.scenario.sources.selections["transport_canada_ev_dashboard"].year == 2026
+    assert bundle.scenario.existing_capacity.other_region_vehicle_population_source == "ontario_ministry_transport_vehicle_population"
+    assert bundle.scenario.existing_capacity.cleanup_epsilon == 0.001
     assert bundle.scenario.economics.global_discount_rate == 0.03
     assert bundle.sources.sources["statcan_transport_tables"].component(
         "20-10-0021-01"
@@ -60,14 +67,14 @@ def test_config_bundle_loads_typed_contracts() -> None:
     ).short_name == "macro_indicators_for_demand_and_currency_conversion"
 
 
-def test_active_sources_are_registered_and_template_is_not_a_source() -> None:
+def test_registry_owns_source_availability_and_template_is_not_a_source() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
 
-    for source_name in bundle.scenario.sources.active:
-        assert bundle.sources.sources[source_name].status == "active"
+    assert "active" not in type(bundle.scenario.sources).model_fields
+    assert bundle.sources.sources["cer_canadas_energy_future"].status == "active"
     assert (
         bundle.sources.sources["wards_intelligence_2022_sales_shares"].status
-        == "inactive"
+        == "active"
     )
     assert "canoe_transport_template" not in bundle.sources.sources
 
@@ -81,6 +88,7 @@ def test_source_component_vocabularies_are_canonical() -> None:
         "offroad_lifetimes",
         "offroad_stocks_and_demands",
         "road_aggregation",
+        "road_utilization",
         "road_capex_opex",
         "road_efficiencies",
         "road_lifetimes_survival",
@@ -165,13 +173,18 @@ def test_absolute_and_relative_component_roles_are_distinct() -> None:
     ).produces == ["vehicle_efficiency", "vehicle_cost", "vehicle_variable_costs"]
 
 
-def test_inactive_registry_source_cannot_be_scenario_active(tmp_path: Path) -> None:
-    _, _, scenario = _write_config_copy(tmp_path)
+def test_inactive_registry_source_cannot_be_selected(tmp_path: Path) -> None:
+    _, sources_path, scenario = _write_config_copy(tmp_path)
+    source_payload = yaml.safe_load(sources_path.read_text(encoding="utf-8"))
+    source_payload["sources"]["wards_intelligence_2022_sales_shares"]["status"] = "inactive"
+    sources_path.write_text(yaml.safe_dump(source_payload, sort_keys=False), encoding="utf-8")
     payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
-    payload["sources"]["active"].append("wards_intelligence_2022_sales_shares")
+    payload["sources"]["selections"]["wards_intelligence_2022_sales_shares"] = {
+        "year": 2022
+    }
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="scenario activates inactive source"):
+    with pytest.raises(ValueError, match="source selection is inactive"):
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
@@ -232,22 +245,19 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert status["ok"] is True
     assert status["scenario"] == "legacy_reproduction"
     assert status["periods"] == {
-        "base_year": 2021,
-        "existing": [2021],
-        "model": [2025, 2030, 2035, 2040, 2045, 2050],
+        "base_year": 2023,
+        "existing": [2000, 2005, 2010, 2015, 2020, 2023],
+        "model": [2025, 2030, 2035, 2040, 2045],
         "step": 5,
     }
     assert status["packaged_schema"]["package_commit"].startswith("1e68c377")
     assert status["reference_sqlite_exists"] is True
+    assert "cer_canadas_energy_future" in status["active_sources"]
+    assert "wards_intelligence_2022_sales_shares" in status["active_sources"]
     assert status["switches"] == {
-        "legacy_equivalent": True,
-        "debug": False,
-        "download_sources": False,
-        "compile_sqlite": True,
-        "transform_parameters": False,
-        "include_existing_capacity": True,
-        "survival_curves": False,
+        "survival_curves": True,
         "survival_curve_max_age": 25,
+        "vkt_schedules": False,
     }
 
 
@@ -283,6 +293,30 @@ def test_extra_nested_config_field_is_rejected(tmp_path: Path) -> None:
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
+def test_cer_scenario_has_one_scenario_authority(tmp_path: Path) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["sources"]["selections"]["cer_canadas_energy_future"]["scenario"] = "Lower Scenario"
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match="scenario"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+@pytest.mark.parametrize("selector", [None, "unreviewed"])
+def test_future_car_demand_requires_a_supported_selector(
+    tmp_path: Path, selector: str | None,
+) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    if selector is None:
+        payload["demand"].pop("future_car_demand")
+    else:
+        payload["demand"]["future_car_demand"] = selector
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match="future_car_demand"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
 @pytest.mark.parametrize(
     ("mutate", "message"),
     [
@@ -296,7 +330,7 @@ def test_extra_nested_config_field_is_rejected(tmp_path: Path) -> None:
             lambda payload: payload["sources"]["selections"].update(
                 {"inactive_source": {"year": 2021}}
             ),
-            "sources.selections contains inactive source keys",
+            "source selection not defined in sources.yaml",
         ),
         (
             lambda payload: payload["economics"].update(
@@ -305,16 +339,16 @@ def test_extra_nested_config_field_is_rejected(tmp_path: Path) -> None:
             "global_discount_rate",
         ),
         (
-            lambda payload: payload["validation"]["parameter_tolerances"].update(
-                {"efficiency": -0.01}
-            ),
-            "must be non-negative",
-        ),
-        (
             lambda payload: payload["switches"].update(
                 {"survival_curve_max_age": 0}
             ),
             "survival_curve_max_age",
+        ),
+        (
+            lambda payload: payload["existing_capacity"].update(
+                {"cleanup_epsilon": -1}
+            ),
+            "cleanup_epsilon",
         ),
     ],
 )
@@ -326,19 +360,18 @@ def test_invalid_scenario_choices_are_rejected(
     mutate(payload)
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
-    with pytest.raises(ValidationError, match=message):
+    with pytest.raises((ValidationError, ValueError), match=message):
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
 @pytest.mark.parametrize(
     ("section", "field"),
     [
-        ("validation", "behavior"),
         ("validation", "compare_legacy"),
-        ("switches", "debug"),
-        ("switches", "include_existing_capacity"),
         ("switches", "survival_curves"),
         ("switches", "survival_curve_max_age"),
+        ("existing_capacity", "cleanup_epsilon"),
+        ("demand", "cer_scenario"),
     ],
 )
 def test_user_selectable_scenario_values_have_no_python_fallback(

@@ -347,7 +347,7 @@ sources:
         parameter_modules: [road_stocks_and_demands]
         version: "2017-present"
         citation: "Statistics Canada. Table 23-10-0308-01. https://doi.org/10.25318/2310030801-eng"
-        validation_rule: "Annual table must expose the 4,536-11,793 kg vehicle class, configured fuel types, and number-of-vehicles series by province."
+        validation_rule: "Annual table must expose configured medium and heavy vehicle classes, fuel types, and number-of-vehicles series by province."
         adapter: {product_id: 23100308, frequency: annual, archive_status: current}
       "34-10-0254-01":
         label: "Average expected useful life of new publicly owned public transit assets, Infrastructure Canada"
@@ -358,10 +358,10 @@ sources:
         parameter_modules: [road_lifetimes_survival]
         version: "2016-2020"
         citation: "Statistics Canada. Table 34-10-0254-01. https://doi.org/10.25318/3410025401-eng"
-        validation_rule: "Occasional table must expose the six configured bus asset useful-life members in average years by province."
+        validation_rule: "Occasional table must expose the six configured bus asset useful-life members in average years by province and for Canada in 2020."
         adapter: {product_id: 34100254, frequency: occasional, archive_status: current}
         notes: >
-          Get the average years of useful life from diesel buses, electric buses, natural gas buses, and hybrid buses; assume that gasoline buses have diesel-like lifetimes.
+          Use each province's latest reported 2016-2020 useful life, falling back to Canada 2020 for missing powertrains and BCT. Gasoline buses inherit diesel useful life; emerging PHEV, FCEV, and FCHEV buses inherit electric useful life.
       "23-10-0142-01":
         label: "Origin and destination of transported commodities, Canadian Freight Analysis Framework"
         short_name: freight_shipments_weight_distance
@@ -475,6 +475,8 @@ sources:
         units: "Metric-labelled: mi/dge, mi/gge, 2022 USD, miles, and kWh."
         validation_rule: "Must retain Advanced, Conservative, Constant, and Mid trajectories and expose configured vehicle dimensions, metric, value, and reference columns. PHEV fuel economy is reconciliation evidence only; other PHEV metrics and all configured non-PHEV metrics remain authoritative."
         adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2022
           member_patterns: ["output/vehicles.csv", "*/output/vehicles.csv"]
           format: csv
           normalizer: vehicles
@@ -531,6 +533,8 @@ sources:
         units: "Source-labelled dimensionless multipliers and USD per mile."
         validation_rule: "Workbook must expose all configured worksheets and expected columns."
         adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2020
           member_patterns: ["input/maintenance_ldv.xlsx", "*/input/maintenance_ldv.xlsx"]
           format: xlsx
           normalizer: maintenance_ldv
@@ -600,6 +604,11 @@ sources:
       mhdv_maintenance_coefficients:
         label: "BEAN MHDV maintenance-and-repair coefficients"
         short_name: bean_mhdv_maintenance_repair_coefficients
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2020
+          cost_metadata_status: provisional_review
+          cost_metadata_note: "The workbook coefficient cells omit a currency year; 2020 USD is a provisional Burnham-era basis for review."
         inputs: [maintenance_slope, maintenance_intercept, powertrain_multiplier]
         applies_to: [medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
         produces: [vehicle_variable_costs]
@@ -831,6 +840,11 @@ sources:
       canada_motorcycle_inputs:
         label: "Canadian passenger motorcycle cost and intensity inputs"
         short_name: gcam_canada_motorcycle_inputs
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2005
+          cost_metadata_status: provisional_review
+          cost_metadata_note: "GCAM labels costs as 2005$ without a currency code; USD is provisional for review."
         inputs: [powertrain, fuel_type, energy_intensity, vehicle_cost, maintenance_cost]
         applies_to: [motorcycles]
         produces: [vehicle_efficiency, vehicle_cost, vehicle_variable_costs]
@@ -867,6 +881,11 @@ sources:
       intercity_bus_charts:
         label: ["Chart 3: Medium-Duty and Heavy-Duty Vehicle Purchase Cost Assumptions", "Chart 4: Medium-Duty and Heavy-Duty Vehicle Efficiency Assumptions"]
         short_name: regen_intercity_bus_purchase_cost_efficiency
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2025
+          cost_metadata_status: provisional_review
+          cost_metadata_note: "Chart 3 labels purchase cost only as $; USD and the v2025 publication year are provisional for review."
         inputs: [powertrain, vehicle_cost, vehicle_efficiency]
         applies_to: [inter_city_buses]
         produces: [vehicle_cost, vehicle_efficiency]
@@ -876,7 +895,7 @@ sources:
       nonroad_cost_invest_multipliers:
         label: ["Table 4: Maritime technology capital costs relative to petroleum incumbent in 2035 and 2050", "Table 6: Rail technology capital costs relative to petroleum incumbent in 2035 and 2050"]
         short_name: regen_nonroad_cost_invest_multipliers
-        inputs: [technology_class, powertrain, parameter, value]
+        inputs: [category, sub_category, parameter, period, value]
         applies_to: [passenger_rail, freight_rail, freight_marine]
         produces: [cost_invest_multiplier]
         parameter_modules: [offroad_capex_opex]
@@ -885,15 +904,15 @@ sources:
         validation_rule: "Select exactly the twelve cited Passenger rail, Freight rail, and Domestic Freight maritime rows from Tables 4 and 6, preserving 2035 and 2050 values and excluding other sources and the internal HFO assumption."
         adapter:
           manual_parameter_path: "cost_invest_multipliers.csv"
-          expected_columns: [technology_class, powertrain, parameter, value, notes, "source -> data_source"]
-          unique_key: [technology_class, powertrain, parameter]
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
           source_selector: "EPRI. (2025). U.S. Regional Economy, Greenhouse Gas, and Energy (US-REGEN)—V2025 Model Documentation. Electric Power Research Institute. https://us-regen-docs.epri.com/v2025/"
           expected_rows: 12
           table_labels: ["Table 4", "Table 6"]
       nonroad_efficiency_multipliers:
         label: "Non-road and aviation technology efficiency assumptions"
         short_name: regen_nonroad_efficiency_multipliers
-        inputs: [technology_class, powertrain, parameter, value]
+        inputs: [category, sub_category, parameter, period, value]
         applies_to: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
         produces: [efficiency_multiplier]
         parameter_modules: [offroad_efficiencies]
@@ -902,8 +921,8 @@ sources:
         validation_rule: "Select exactly the seventeen rows carrying the EPRI v2025 citation and preserve their technology, powertrain, parameter, and value fields."
         adapter:
           manual_parameter_path: "efficiency_multipliers.csv"
-          expected_columns: [technology_class, powertrain, parameter, value, notes, "source -> data_source"]
-          unique_key: [technology_class, powertrain, parameter]
+          expected_columns: [category, sub_category, parameter, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
           source_selector: "EPRI. (2025). U.S. Regional Economy, Greenhouse Gas, and Energy (US-REGEN)—V2025 Model Documentation. Electric Power Research Institute. https://us-regen-docs.epri.com/v2025/"
           expected_rows: 17
 
@@ -929,12 +948,12 @@ sources:
         label: "Section 3 — Aircraft Capacity and Utilization Factors"
         short_name: faa_aircraft_capacity_utilization
         version: "2024 report; YE June 2023"
-        inputs: [passenger_capacity, cargo_capacity, passenger_load_factor, cargo_load_factor, average_block_speed_mph]
+        inputs: [passenger_capacity, cargo_capacity, passenger_load_factor, cargo_load_factor, average_block_speed_mph, average_daily_utilization]
         applies_to: [passenger_air, freight_air]
         produces: [mode_variable_costs, mode_capital_costs]
         parameter_modules: [offroad_capex_opex]
-        units: "Seats, source-labelled tons, percent, and miles per hour."
-        validation_rule: "Tables 3-6 and 3-9 must retain their exact titles and All Aircraft rows."
+        units: "Seats, source-labelled tons, percent, miles per hour, and block hours per aircraft-day."
+        validation_rule: "Tables 3-6, 3-7, 3-9, and 3-10 must retain their exact titles and All Aircraft rows."
         adapter:
           url: "https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost/econ-value-section-3-capacity.pdf"
           cache_path: "assorted_sources/faa_economic_values_2024_section_3_capacity.pdf"
@@ -951,6 +970,10 @@ sources:
         units: "Source-labelled USD per block hour."
         validation_rule: "Tables 4-7 and 4-8 must retain their exact titles and All Aircraft maintenance-cost rows."
         adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2023
+          cost_metadata_status: provisional_review
+          cost_metadata_note: "Maintenance costs are USD from YE June 2023 carrier data; a 2023 price basis is provisional because the table does not explicitly define its dollar year."
           url: "https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost/econ-value-section-4-op-costs.pdf"
           cache_path: "assorted_sources/faa_economic_values_2024_section_4_operating_costs.pdf"
           expected_sha256: "c0157057f0105535b764889f4a6a1bd571bfcf7a47034d24a9dfd8f13dbbe8d8"
@@ -958,7 +981,7 @@ sources:
 
   wards_intelligence_2022_sales_shares:
     title: "Canada Car, Light truck, and Truck Sales by Line and GVWR in 2021 and 2020—Aggregated sales shares by line and GVWR"
-    status: inactive
+    status: active
     source_type: manual_parameter
     file_type: csv
     version: "2022 publication; aggregate LDV years 2018/2021 and MHDV year 2020"
@@ -984,9 +1007,9 @@ sources:
         inputs: [wards_size_class, vehicle_scope, nrcan_vehicle_class, nlr_atb_class, nrcan_ceud_class, year, market_share]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
         produces: [vehicle_class_aggregation_weights]
-        parameter_modules: [road_aggregation]
+        parameter_modules: [road_aggregation, road_utilization]
         units: "dimensionless sales share"
-        notes: "Legacy-reproduction comparison evidence only. The complete aggregate is at NRCan Fuel Consumption Ratings class grain; explicit NLR ATB and NRCan CEUD mappings support higher-level weighting without disclosing proprietary line-level sales records."
+        notes: "Reviewed aggregate class shares support national medium-truck VMT aggregation when selected by the scenario. LDV shares remain comparison evidence. No proprietary line-level records are exposed."
         citation: "Wards Intelligence. (2022). Canada Car, Light truck, and Truck Sales by Line and GVWR in 2021 and 2020—Aggregated sales shares by line and GVWR [Dataset]."
         validation_rule: "LDV source classes retain the NRCan Ratings and NLR hierarchy; GVWR Classes 3-7 map to Medium Trucks and Class 8 maps to Heavy Trucks; each CEUD-class/year must sum to one."
         adapter:
@@ -1019,18 +1042,18 @@ sources:
         short_name: cims_transport_service_output_capex
         version: "2025 review"
         citation: "Jaccard, M., Rivers, N., & Bataille, C. (2025). CIMS Model—Canadian Integrated Modelling System. Simon Fraser University - Energy and Materials Research Group (EMRG). EMRG-SFU. https://github.com/EMRG-SFU/cims/tree/main"
-        inputs: [technology_class, powertrain, parameter, value]
+        inputs: [category, sub_category, parameter, unit, currency_year, period, value]
         applies_to: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
         produces: [cost_invest]
         parameter_modules: [offroad_capex_opex]
         units: "thousand passenger-km, thousand tonne-km, or 2015 CAD per service unit"
-        validation_rule: "Select exactly the ten rows carrying the 2025 CIMS citation."
+        validation_rule: "Select exactly the eight rows carrying the 2025 CIMS citation."
         adapter:
           manual_parameter_path: "cost_invest_multipliers.csv"
-          expected_columns: [technology_class, powertrain, parameter, value, notes, "source -> data_source"]
-          unique_key: [technology_class, powertrain, parameter]
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
           source_selector: "Jaccard, M., Rivers, N., & Bataille, C. (2025). CIMS Model—Canadian Integrated Modelling System. Simon Fraser University - Energy and Materials Research Group (EMRG). EMRG-SFU. https://github.com/EMRG-SFU/cims/tree/main"
-          expected_rows: 10
+          expected_rows: 8
       transport_process_lifetimes:
         label: "Transport process lifetime assumptions"
         short_name: cims_transport_process_lifetimes
@@ -1041,11 +1064,12 @@ sources:
         produces: [lifetime]
         parameter_modules: [offroad_lifetimes]
         units: "years"
+        data_quality: {dq_cred: 3, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 1}
         validation_rule: "Select the five compact category rows carrying the 2026 CIMS citation and resolve each technology_class through technology.category."
         adapter:
           manual_parameter_path: "lifetime_process.csv"
-          expected_columns: [technology_class, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
-          unique_key: [technology_class]
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
           source_selector: "Jaccard, M., Rivers, N., & Bataille, C. (2026). CIMS Model—Canadian Integrated Modelling System. Simon Fraser University - Energy and Materials Research Group (EMRG). EMRG-SFU. https://github.com/EMRG-SFU/cims/tree/main"
           expected_rows: 5
 
@@ -1070,7 +1094,7 @@ sources:
       transport_variable_cost_multipliers:
         label: "Transport variable-cost multipliers"
         short_name: oeo_transport_variable_cost_multipliers
-        inputs: [technology_class, powertrain, parameter, value]
+        inputs: [category, sub_category, parameter, value]
         applies_to: [passenger_rail, freight_rail, freight_marine]
         produces: [cost_variable_multiplier]
         parameter_modules: [offroad_capex_opex]
@@ -1078,8 +1102,8 @@ sources:
         validation_rule: "Select exactly three OEO variable-cost rows."
         adapter:
           manual_parameter_path: "cost_variable_multipliers.csv"
-          expected_columns: [technology_class, powertrain, parameter, value, notes, "source -> data_source"]
-          unique_key: [technology_class, powertrain, parameter]
+          expected_columns: [category, sub_category, parameter, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter]
           source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akin-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
           expected_rows: 3
       transport_process_lifetimes:
@@ -1090,11 +1114,12 @@ sources:
         produces: [lifetime]
         parameter_modules: [offroad_lifetimes]
         units: "years"
+        data_quality: {dq_cred: 3, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 1}
         validation_rule: "Select the compact charger category row and resolve it through technology.category."
         adapter:
           manual_parameter_path: "lifetime_process.csv"
-          expected_columns: [technology_class, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
-          unique_key: [technology_class]
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
           source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akin-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
           expected_rows: 1
 
@@ -1119,7 +1144,7 @@ sources:
       marine_hfo_energy_intensity:
         label: "Marine HFO energy intensity relative to MDO"
         short_name: greet_marine_hfo_energy_intensity
-        inputs: [technology_class, powertrain, parameter, value]
+        inputs: [category, sub_category, parameter, period, value]
         applies_to: [freight_marine]
         produces: [efficiency_multiplier]
         parameter_modules: [offroad_efficiencies]
@@ -1127,10 +1152,24 @@ sources:
         validation_rule: "Select exactly one GREET row."
         adapter:
           manual_parameter_path: "efficiency_multipliers.csv"
-          expected_columns: [technology_class, powertrain, parameter, value, notes, "source -> data_source"]
-          unique_key: [technology_class, powertrain, parameter]
+          expected_columns: [category, sub_category, parameter, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
           source_selector: "Wang, M., Cai, H., Ou, L., Benvenutti, L., Elgowainy, A., Englander, J., Masum, F., Gan, Y., Hernandez, J., Kim, T., Kelly, J., Kwon, H., Leonhardt, B., Liu, X., Lu, Z., Martinez, S., Sykora, T., & Vyawahare, P. (2026). R&D Greenhouse gases, Regulated Emissions, and Energy use in Technologies Model ® (2025 Rev.1 Excel) [Computer software]. Argonne National Laboratory (ANL), Argonne, IL (United States). https://doi.org/10.11578/GREET-EXCEL-2025REV1/DC.20260610.1"
           expected_rows: 1
+
+      fuel_heating_values:
+        label: Gasoline and diesel higher heating values
+        short_name: greet_gasoline_diesel_hhv
+        inputs: [gasoline_hhv, diesel_hhv]
+        applies_to: [road]
+        produces: [energy_conversion]
+        parameter_modules: [road_efficiencies]
+        units: Btu_IT/US gallon
+        validation_rule: Verify configured constants against the registered workbook cells; SI conversions remain in conversion.yaml.
+        adapter:
+          external_model_path: R&D GREET2025_Rev1/R&D GREET1_2025_Rev1.xlsm
+          worksheet: Fuel_Specs
+          cells: {gasoline: D16, diesel: D23}
 
   epa_moves4_population_activity_2023:
     title: "Population and Activity of Onroad Vehicles in MOVES4"
@@ -1158,11 +1197,12 @@ sources:
         produces: [lifetime]
         parameter_modules: [road_lifetimes_survival]
         units: "years"
+        data_quality: {dq_cred: 1, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 1}
         validation_rule: "Select the compact heavy_trucks category row and resolve it through technology.category."
         adapter:
           manual_parameter_path: "lifetime_process.csv"
-          expected_columns: [technology_class, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
-          unique_key: [technology_class]
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
           source_selector: "EPA. (2023). Population and Activity of Onroad Vehicles in MOVES4 (EPA-420-R-23-005). https://www.epa.gov/system/files/documents/2023-08/420r23005.pdf"
           expected_rows: 1
 
@@ -1192,11 +1232,12 @@ sources:
         produces: [lifetime]
         parameter_modules: [road_lifetimes_survival]
         units: "years"
+        data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 4}
         validation_rule: "Select the compact motorcycles category row and resolve it through technology.category."
         adapter:
           manual_parameter_path: "lifetime_process.csv"
-          expected_columns: [technology_class, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
-          unique_key: [technology_class]
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
           source_selector: "Energy Innovation & Pembina Institute. (2023). Canada Energy Policy Simulator v3.4.7. Retrieved May 29, 2023, from https://docs.energypolicy.solutions/models/canada"
           expected_rows: 1
 
@@ -1226,11 +1267,12 @@ sources:
         produces: [lifetime]
         parameter_modules: [offroad_lifetimes]
         units: "years"
+        data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 1}
         validation_rule: "Select the compact h2_refuel category row and resolve it through technology.category."
         adapter:
           manual_parameter_path: "lifetime_process.csv"
-          expected_columns: [technology_class, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
-          unique_key: [technology_class]
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
           source_selector: "Argonne National Laboratory, Amgad Elgowainy, & Krishna Reddi. (2022). Hydrogen Delivery Scenario Analysis Model (HDSAM) v4.5. Hydrogen Delivery Infrastructure Analysis. https://hdsam.es.anl.gov/index.php"
           expected_rows: 1
 
@@ -1385,3 +1427,34 @@ sources:
           unique_key: [technology_class, sub_category, parameter, period]
           source_selector: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
           expected_rows: 5
+
+  transport_canada_ev_dashboard:
+    title: "Transport Canada Canada electric vehicle dashboard"
+    status: active
+    source_type: upstream_download
+    file_type: html
+    version: "2026 Q1; page updated August 2026"
+    required: true
+    adapter:
+      access:
+        method: https
+        url: "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
+      cache_path: assorted_sources/transport_canada_ev_dashboard_2026_q1.html
+      expected_sha256: 4ffdbdda087b6a361decfb21b49557d058ef571ced34a4f45d731546a3544091
+      expected_bytes: 91590
+    units: "Percent of new medium- and heavy-duty vehicle registrations that are zero emission."
+    citation: "Transport Canada. (2026). Canada's electric vehicle dashboard, medium- and heavy-duty EV market share. https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
+    validation_rule: "Pinned HTML must contain the configured medium/heavy market-share heading and table, with unique provincial rows and bounded 2026 year-to-date percentages."
+    refresh_notes: >
+      Re-pin the HTML hash and byte count and review the table headers, reporting
+      period, and regional coverage before changing the selected edition.
+    components:
+      medium_heavy_ev_market_share:
+        label: "2026 year-to-date medium/heavy EV market share by province"
+        short_name: medium_heavy_ev_market_share
+        inputs: [province, quarter_share, year_to_date_share]
+        applies_to: [medium_trucks, heavy_trucks]
+        produces: [existing_capacity]
+        parameter_modules: [road_stocks_and_demands]
+        units: fraction
+        validation_rule: "Require all CEUD regional share proxies to resolve to a numeric bounded provincial 2026 year-to-date value."

@@ -1,16 +1,21 @@
 """Derive apparent cohort retention and source-based road-vehicle lifetimes."""
 
 import argparse
+import hashlib
 import logging
+from math import isfinite
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from canoe_schema.v4_0 import LifetimeSurvivalCurve, LifetimeTech
 
 from parameterization.road_aggregation import (
+    WARDS_SOURCE_ID,
     apply_vehicle_mapping,
     validate_vehicle_mapping,
 )
+from parameterization.road_stocks_and_demands import fixed_existing_lifetimes
 from utils import (
     ConfigBundle,
     load_config_bundle,
@@ -19,6 +24,13 @@ from utils import (
     resolve_input_path,
     resolve_parameter_path,
     write_dataframe_atomic,
+)
+from validation.insertion import validate_parameter_rows
+from validation.provenance import (
+    ResolvedProvenance,
+    resolve_composite_provenance,
+    resolve_provenance,
+    source_id_mapping,
 )
 
 
@@ -1123,6 +1135,48 @@ def transform_source_survival_curves(
     )
 
 
+def validate_accepted_survival_inputs(
+    nhtsa: pd.DataFrame,
+    eia: pd.DataFrame,
+    *,
+    assorted_rules: dict[str, Any],
+) -> None:
+    """Check normalized accepted schedules before lifetime harmonization."""
+    specifications = (
+        (nhtsa, assorted_rules["nhtsa_cafe"], "survival_rate"),
+        (eia, assorted_rules["eia_nems"], "annual_scrappage_rate"),
+    )
+    for frame, rule, value_column in specifications:
+        source_id = str(rule["source_id"])
+        classes = set(map(str, rule["class_columns"].values()))
+        ages = list(range(
+            int(rule["expected_ages"]["start"]),
+            int(rule["expected_ages"]["end"]) + 1,
+        ))
+        required = {"source_id", "source_vehicle_class_label", "vehicle_age", value_column, "unit"}
+        if not required.issubset(frame):
+            raise ValueError(f"{source_id} lacks normalized survival fields: {sorted(required - set(frame))}")
+        if frame[list(required)].isna().any().any():
+            raise ValueError(f"{source_id} has null survival fields")
+        if set(frame["source_id"]) != {source_id} or set(frame["unit"]) != {str(rule["unit"])}:
+            raise ValueError(f"{source_id} source identity or units differ from the registered schedule")
+        if set(frame["source_vehicle_class_label"]) != classes:
+            raise ValueError(f"{source_id} source-class coverage differs from the registered schedule")
+        numeric_ages = pd.to_numeric(frame["vehicle_age"], errors="raise")
+        values = pd.to_numeric(frame[value_column], errors="raise")
+        if any(not isfinite(value) or not 0 <= value <= 1 for value in values):
+            raise ValueError(f"{source_id} survival values must be finite fractions")
+        for source_class, group in frame.assign(_age=numeric_ages, _value=values).groupby(
+            "source_vehicle_class_label"
+        ):
+            ordered = group.sort_values("_age")
+            if ordered["_age"].tolist() != ages:
+                raise ValueError(f"{source_id} {source_class} has missing or duplicate ages")
+            if value_column == "survival_rate":
+                if ordered["_value"].iloc[0] != 1 or (ordered["_value"].diff().dropna() > 0).any():
+                    raise ValueError(f"{source_id} {source_class} is not a cumulative survival curve")
+
+
 def retention_source_comparison(
     pooled: pd.DataFrame,
     source_curves: pd.DataFrame,
@@ -1238,6 +1292,22 @@ def legacy_wards_survival_curves(
 
     weight_year = int(pd.to_numeric(wards["year"], errors="raise").max())
     latest = wards.loc[pd.to_numeric(wards["year"]).eq(weight_year)].copy()
+    expected_nlr = {
+        str(nlr_class)
+        for nlr_classes in legacy_rules["light_truck_source_classes"].values()
+        for nlr_class in nlr_classes
+    }
+    light_shares = (
+        latest.loc[latest["nrcan_ceud_class"].eq("Light Truck")]
+        if "nrcan_ceud_class" in latest else latest
+    )
+    shares = pd.to_numeric(light_shares["market_share"], errors="raise")
+    if (
+        set(light_shares["nlr_atb_class"]) != expected_nlr
+        or any(not isfinite(share) or share < 0 for share in shares)
+        or abs(float(shares.sum()) - 1.0) > 1e-9
+    ):
+        raise ValueError("Latest reviewed Wards light-truck shares lack complete unit weight")
     source_weights: list[dict[str, Any]] = []
     for source_class, nlr_classes in legacy_rules[
         "light_truck_source_classes"
@@ -1485,6 +1555,213 @@ def median_equivalent_lifetimes(
     )
 
 
+def prepare_fixed_road_lifetimes(
+    bundle: ConfigBundle,
+    *,
+    medians: pd.DataFrame,
+    manual: pd.DataFrame,
+    technology: pd.DataFrame,
+) -> tuple[list[LifetimeTech], list[ResolvedProvenance]]:
+    """Expand established CEUD/NEMS median lifetimes to template technologies."""
+    stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]
+    selectors = stock_rules["fixed_lifetime_sources"]
+    selected_classes = {
+        road_class for road_class, selector in selectors.items()
+        if selector["kind"] in {"ceud_median", "source_median_equal"}
+    }
+    values = fixed_existing_lifetimes(medians, manual, stock_rules)
+    if not {"tech", "category"}.issubset(technology):
+        raise ValueError("Technology template lacks fixed road lifetime owner fields")
+    if technology["tech"].duplicated().any():
+        raise ValueError("Technology template has duplicate owner IDs")
+    source_ids = source_id_mapping(bundle.sources)
+    assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
+    nhtsa_source = assorted["nhtsa_cafe"]["source_id"]
+    output_map = stock_rules["region_output_map"]
+    rows: list[LifetimeTech] = []
+    contexts: list[ResolvedProvenance] = []
+    for road_class in sorted(selected_classes):
+        selector = selectors[road_class]
+        owners = technology.loc[technology["category"].eq(road_class), "tech"]
+        if owners.empty:
+            raise ValueError(f"No technology owner for fixed road lifetime {road_class}")
+        if selector["kind"] == "ceud_median":
+            source_key = nhtsa_source
+            component_key = assorted["nhtsa_cafe"]["component_id"]
+        else:
+            source_key = str(selector["source_id"])
+            component_key = assorted["eia_nems"]["component_id"]
+        source_context = resolve_provenance(
+            bundle.sources,
+            source_key=source_key,
+            component_key=component_key,
+            transformation="accepted_road_median_input",
+            transformation_version="1",
+        )
+        inputs = [source_context]
+        if road_class in {"passenger_light_trucks", "freight_light_trucks"}:
+            inputs.append(resolve_provenance(
+                bundle.sources,
+                source_key=WARDS_SOURCE_ID,
+                component_key="vehicle_class_market_shares",
+                transformation="accepted_road_median_weight_input",
+                transformation_version="1",
+            ))
+        context = resolve_composite_provenance(
+            inputs=inputs,
+            dataset_key=f"lifetime_tech.road.{road_class}",
+            transformation="First accepted cumulative-survival age at or below one half",
+            transformation_version="1",
+            governing_source_id=source_ids[source_key],
+            value_variant={
+                "road_class": road_class,
+                "selector": selector,
+                "median_years": values[road_class],
+            },
+        )
+        records = [
+            {
+                "region": region,
+                "tech": str(tech),
+                "lifetime": values[road_class],
+                "units": "years",
+                "notes": f"Accepted source median-equivalent lifetime for {road_class}.",
+            }
+            for region in sorted({output_map.get(region, region) for region in bundle.scenario.geography.regions})
+            for tech in sorted(owners)
+        ]
+        rows.extend(validate_parameter_rows(LifetimeTech, records, context))
+        contexts.append(context)
+    native_keys = {(row.region, row.tech) for row in rows}
+    expected_keys = {
+        (region, str(tech))
+        for region in {output_map.get(region, region) for region in bundle.scenario.geography.regions}
+        for tech in technology.loc[technology["category"].isin(selected_classes), "tech"]
+    }
+    if len(rows) != len(native_keys) or native_keys != expected_keys:
+        raise ValueError("Fixed road lifetime owner coverage is incomplete or conflicting")
+    rows.sort(key=lambda row: (row.region, row.tech))
+    return rows, contexts
+
+
+def prepare_road_survival_curve_rows(
+    bundle: ConfigBundle,
+    *,
+    transformed: pd.DataFrame,
+    technology: pd.DataFrame,
+) -> tuple[list[LifetimeSurvivalCurve], list[ResolvedProvenance]]:
+    """Average accepted annual schedules over full model periods for each cohort."""
+    stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
+    selectors = stock_rules["fixed_lifetime_sources"]
+    curve_classes = set(stock_rules["survival_curve_classes"])
+    if curve_classes - set(selectors):
+        raise ValueError("Accepted curve classes lack road owner selectors")
+    if technology["tech"].duplicated().any():
+        raise ValueError("Technology template has duplicate owner IDs")
+    scenario = bundle.scenario
+    step = scenario.periods.step
+    max_age = scenario.switches.survival_curve_max_age
+    if step <= 0 or max_age < step - 1:
+        raise ValueError("Survival horizon cannot contain one full model period")
+    assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
+    source_ids = source_id_mapping(bundle.sources)
+    records_by_context: list[tuple[ResolvedProvenance, list[dict[str, Any]]]] = []
+    for road_class in sorted(curve_classes):
+        selector = selectors[road_class]
+        source_class = str(selector.get("target_class", selector.get("curve_source_class", "")))
+        source_key = (
+            str(assorted["nhtsa_cafe"]["source_id"])
+            if selector["kind"] == "ceud_median"
+            else str(selector["source_id"])
+        )
+        accepted_source_id = (
+            "wards_weighted_nhtsa_legacy" if selector["kind"] == "ceud_median"
+            else source_key
+        )
+        selected = transformed.loc[
+            transformed["source_id"].eq(accepted_source_id)
+            & transformed["source_class"].eq(source_class)
+        ].copy()
+        selected["age"] = pd.to_numeric(selected["age"], errors="raise")
+        selected["survival_probability"] = pd.to_numeric(
+            selected["survival_probability"], errors="raise"
+        )
+        if (selected.empty or selected.duplicated("age").any()
+                or selected["age"].isna().any()
+                or selected["age"].mod(1).ne(0).any()
+                or set(selected["source_unit"]) != {"dimensionless"}):
+            raise ValueError(f"Invalid accepted survival schedule for {road_class}")
+        annual = selected.set_index(selected["age"].astype(int))["survival_probability"]
+        if set(range(max_age + 1)) - set(annual.index):
+            raise ValueError(f"Accepted survival schedule lacks ages through {max_age}: {road_class}")
+        annual = annual.sort_index().loc[:max_age]
+        if (abs(float(annual.iloc[0]) - 1.0) > 1e-10
+                or annual.map(lambda value: not isfinite(value) or value < 0 or value > 1).any()
+                or annual.diff().dropna().gt(1e-10).any()):
+            raise ValueError(f"Accepted survival schedule violates age-zero, bounds or monotonicity: {road_class}")
+        component_key = (
+            assorted["nhtsa_cafe"]["component_id"] if selector["kind"] == "ceud_median"
+            else assorted["eia_nems"]["component_id"]
+        )
+        inputs = [resolve_provenance(
+            bundle.sources, source_key=source_key, component_key=component_key,
+            transformation="accepted_annual_survival_input", transformation_version="1",
+        )]
+        if source_class == "Light Truck":
+            inputs.append(resolve_provenance(
+                bundle.sources, source_key=WARDS_SOURCE_ID,
+                component_key="vehicle_class_market_shares",
+                transformation="reviewed_light_truck_weight_input", transformation_version="1",
+            ))
+        digest = hashlib.sha256(annual.to_csv(header=False).encode("utf-8")).hexdigest()
+        context = resolve_composite_provenance(
+            inputs=inputs, dataset_key=f"lifetime_survival_curve.road.{road_class}",
+            transformation="Mean cumulative survival over full model-period age blocks",
+            transformation_version="1", governing_source_id=source_ids[source_key],
+            value_variant={"road_class": road_class, "source_class": source_class,
+                           "annual_sha256": digest, "max_age": max_age,
+                           "periods": scenario.periods.model, "step": step},
+        )
+        owners = technology.loc[technology["category"].eq(road_class), "tech"]
+        if owners.empty:
+            raise ValueError(f"Accepted survival class has no technology owners: {road_class}")
+        records: list[dict[str, Any]] = []
+        for tech in sorted(owners):
+            if tech.endswith("_EX"):
+                vintages = scenario.periods.existing
+            elif tech.endswith("_N"):
+                vintages = scenario.periods.model
+            else:
+                raise ValueError(f"Lifetime curve owner has no vintage convention: {tech}")
+            for vintage in vintages:
+                for period in scenario.periods.model:
+                    start_age = period - vintage
+                    end_age = start_age + step - 1
+                    if start_age < 0 or end_age > max_age:
+                        continue
+                    fraction = float(annual.loc[list(range(start_age, end_age + 1))].mean())
+                    for region in sorted(scenario.geography.regions):
+                        model_region = stock_rules["region_output_map"].get(region, region)
+                        records.append({
+                            "region": model_region, "tech": str(tech),
+                            "period": int(period), "vintage": int(vintage),
+                            "fraction": fraction,
+                            "notes": f"Accepted {source_class} cumulative survival averaged over ages {start_age}-{end_age}.",
+                        })
+        records_by_context.append((context, records))
+    rows = [row for context, records in records_by_context
+            for row in validate_parameter_rows(LifetimeSurvivalCurve, records, context)]
+    if len(rows) != len({(row.region, row.tech, row.period, row.vintage) for row in rows}):
+        raise ValueError("Accepted road survival rows have conflicting keys")
+    expected_owners = set(technology.loc[technology["category"].isin(curve_classes), "tech"])
+    if {row.tech for row in rows} != expected_owners:
+        raise ValueError("Accepted road survival rows lack technology coverage")
+    rows.sort(key=lambda row: (row.region, row.tech, row.vintage, row.period))
+    return rows, [context for context, _ in records_by_context]
+
+
 def _load_normalized_frames(
     output_dir: Path,
     manifest: pd.DataFrame,
@@ -1563,6 +1840,7 @@ def _derive_accepted_lifetime_frames(
     eia = pd.read_csv(
         assorted_dir / assorted_rules["eia_nems"]["output_file"]
     )
+    validate_accepted_survival_inputs(nhtsa, eia, assorted_rules=assorted_rules)
     wards = pd.read_csv(
         resolve_artifact_path(bundle, "road_aggregation")
         / road_rules["wards_comparison_file"]

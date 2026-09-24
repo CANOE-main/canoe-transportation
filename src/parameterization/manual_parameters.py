@@ -146,21 +146,35 @@ def validate_manual_registry(
     source_column: str,
     notes_column: str,
     include_development: bool = True,
+    selected_files: set[str] | None = None,
 ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
     """Validate selected manual CSVs, citation selectors, and component ownership."""
     manual_dir = resolve_input_path(bundle, "manual")
+    internal_specs = load_harmonization_rules(bundle, RULE_KEY).get(
+        "internal_assumption_files", {}
+    )
     actual_files = {path.name for path in manual_dir.glob("*.csv")}
     all_registrations = registered_manual_components(bundle)
+    if selected_files is not None:
+        all_registrations = [
+            registration for registration in all_registrations
+            if registration.adapter.manual_parameter_path in selected_files
+        ]
+        internal_specs = {
+            filename: spec for filename, spec in internal_specs.items()
+            if filename in selected_files
+        }
+        actual_files &= selected_files
     registrations = [
         registration
         for registration in all_registrations
         if include_development or not registration.adapter.development_only
     ]
-    all_registered_files = {
+    all_registered_files = set(internal_specs) | {
         registration.adapter.manual_parameter_path
         for registration in all_registrations
     }
-    required_files = {
+    required_files = set(internal_specs) | {
         registration.adapter.manual_parameter_path
         for registration in registrations
     }
@@ -177,6 +191,18 @@ def validate_manual_registry(
 
     frames: dict[str, pd.DataFrame] = {}
     registry_rows: list[dict[str, Any]] = []
+    for filename, spec in sorted(internal_specs.items()):
+        frame = pd.read_csv(manual_dir / filename, dtype=str, keep_default_na=False)
+        if (
+            list(frame.columns) != list(spec["expected_columns"])
+            or len(frame) != int(spec["expected_rows"])
+            or frame.duplicated(list(spec["unique_key"])).any()
+            or frame["notes"].str.strip().eq("").any()
+        ):
+            raise ManualParameterError(
+                f"Invalid registered internal manual assumption: {filename}"
+            )
+        frames[filename] = frame
     for filename in sorted(by_file):
         file_registrations = by_file[filename]
         expected_column_contracts = {
@@ -239,9 +265,13 @@ def validate_manual_registry(
             registered_component_ids.loc[list(selected)] = (
                 registration.component_id
             )
-            if "technology_class" in frame:
+            scope_column = (
+                "technology_class" if "technology_class" in frame
+                else "category" if "category" in frame else None
+            )
+            if scope_column is not None:
                 selected_classes = set(
-                    frame.loc[list(selected), "technology_class"]
+                    frame.loc[list(selected), scope_column]
                 )
                 applies_to = set(map(str, registration.component.applies_to))
                 if selected_classes != applies_to:
@@ -417,7 +447,18 @@ def resolve_manual_parameters(
     finding_rows: list[dict[str, Any]] = []
 
     for filename in sorted(frames):
-        frame = frames[filename]
+        frame = frames[filename].copy()
+        aliases_for_file = rules.get("input_column_aliases", {}).get(filename, {})
+        if aliases_for_file:
+            if any(column not in frame for column in aliases_for_file):
+                raise ManualParameterError(
+                    f"{filename} lacks configured input alias columns"
+                )
+            if any(column in frame for column in aliases_for_file.values()):
+                raise ManualParameterError(
+                    f"{filename} input alias collides with an existing column"
+                )
+            frame = frame.rename(columns=aliases_for_file)
         if filename in behavior_specific_files:
             for index, row in frame.iterrows():
                 reconciliation_rows.append(

@@ -55,9 +55,10 @@ publication. A future CANOE-main adapter should translate only cross-repository 
 use the same preparation/insertion contracts, and leave the shared database transaction and
 compiler lifecycle with CANOE-main.
 
-The present contribution contains the backend-owned technology and commodity templates only;
-parameter-ready road and off-road artifacts are not yet assembled into SQLite rows. Do not
-describe configured artifact routes as live database consumers until that wiring exists.
+The present contribution includes backend-owned technology and commodity templates and
+validated `existing_capacity` rows for supported road and off-road technologies. The same
+preparation and caller-owned insertion functions serve standalone assembly and a future
+CANOE-main adapter; buses and charger capacity remain outside this layer. #to-review
 
 ## Unsettled upstream seams
 

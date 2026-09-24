@@ -48,7 +48,15 @@ def test_every_manual_csv_and_cited_row_is_registered() -> None:
             assert not covered_rows[filename].intersection(selected)
             covered_rows[filename].update(selected)
 
-    assert registered_files == actual_files
+    internal_specs = load_harmonization_rules(bundle, "manual_parameters")[
+        "internal_assumption_files"
+    ]
+    assert registered_files | set(internal_specs) == actual_files
+    for filename, spec in internal_specs.items():
+        frame = pd.read_csv(manual_dir / filename)
+        assert list(frame.columns) == spec["expected_columns"]
+        assert len(frame) == spec["expected_rows"]
+        assert not frame.duplicated(spec["unique_key"]).any()
 
     for filename, frame in frames.items():
         cited_rows = set(frame.index[frame[SOURCE_COLUMN].fillna("").str.strip().ne("")])

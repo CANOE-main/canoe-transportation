@@ -204,15 +204,16 @@ flowchart LR
 
   %% ########### Processes ###########
   p0@{shape: hex, label: "**config/scenarios/**
+    *future_car_demand:* GDP-indexed or extrapolated<br>
+    When extrapolated, light trucks carry the residual GDP-indexed demand from both passenger LDV classes"}
+  p0_2@{shape: hex, label: "**config/scenarios/**
     *cer_scenario:* current, higher, lower, or net-zero"}
   p1["`**Baseline and projection**
     • *Off-road:* estimate provincial activity as energy use ÷ intensity<br>
     • Index future demand to GDP growth by scenario`"]
 
-  s0 -- nrcan_ceud.py --> p1
-  s1 -- cer_enerfuture.py --> p0
-
-  p0 --> p1
+  s0 -- nrcan_ceud.py --> p0 --> p1
+  s1 -- cer_enerfuture.py --> p0_2 --> p1
   p1 -- road_stocks_and_demands.py
   offroad_stocks_and_demands.py --> o1[/"`**demand**
     [bn passenger-km]
@@ -244,6 +245,8 @@ flowchart LR
   %% ########### Sources ###########
   s0[("`**NRCan CEUD**
     Provincial vehicle activity [bn tonne-km] and stock [k vehicles]`")]
+  s0_2@{shape: doc, label: "***capacity_to_activity***
+    Theoretical upper-bound representing annual activity delivered by a thousand vehicles at 100 km/h for 8,760 h/year"}
   s1[("`**NLR Annual Tech. Baseline**
     Age-based annual mileage profiles (VMT schedules) of cars and LD/MD/HD trucks`")]
   s2@{shape: processes, label: "**Road aggregation maps**
@@ -253,6 +256,7 @@ flowchart LR
   p0["`**Annual vehicle utilization (UF)**
     **eq. (i)** 5-year avg of activity ÷ stock excluding 2020-2021, then scaled by **capacity_to_activity**`"]
   s0 -- nrcan_ceud.py --> p0
+  s0_2 -- inputs/0_manual_params/ --> p0
 
   p1@{shape: hex, label: "**config/scenarios/**
     *vkt_schedules:* true or false"}
@@ -296,6 +300,7 @@ flowchart LR
 | Harmonization rule                          | Affected classes | Description                                                                                                                                                           |
 | ------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Annual utilization as activity÷stock ratios | Road vehicles    | Represents how much activity a unit of capacity can deliver annually. Utilization is scaled with an arbitrary `capacity_to_activity` factor to avoid near-zero values |
+| `capacity_to_activity` | Road vehicles    | An inconsequential scaling constant that represents the theoretical upper-bound of annual activity delivered by a thousand vehicle units operating year-round. |
 | Assume constant annual utilization          | Road vehicles    | Annual utilization derived from 5-year average ratios remains constant across all periods                                                                             |
 | Aggregate profiles and normalize            | Road vehicles    | Aggregate annual mileage profiles by vehicle size/weight class using aggregation mappings (see `efficiency` flowchart) and apply max scaling to each series           |
 | Scale utilization by normalized trajectory  | Road vehicles    | Baseline utilization is indexed through normalized age trajectories to obtain utilization as a function of vehicle age, mostly decaying                               |
@@ -340,7 +345,7 @@ flowchart LR
       • **eq. (i)** Estimate apparent retirement from make-model-vintage cohorts across Report A editions before mapping<br>
       • The MTO make-model mapping separates LDV stock exposure from unmapped and non-LDV; and aggregates evidence accordingly<br>
       • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
-      • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only the latter are promoted as parameters**`"]
+      • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only the latter are promoted as parameters together with NEMS MHDV rates**`"]
 
     p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
       MTO make-model codes are difficult to map. This notebook visualizes:<br>
@@ -367,8 +372,7 @@ flowchart LR
     Lifetime of remaining modes"}
 
   p2@{shape: hex, label: "**config/scenarios/**
-    *survival_curve_max_age:* 25
-    *Must be less than the time horizon"}
+    *survival_curve_max_age:* 25"}
   p1 -. true .-> p2
 
   p3["`**Fixed lifetimes**
@@ -503,7 +507,7 @@ flowchart LR
   end
   
   s0[("`**NRCan CEUD**
-    Fleet energy intensity of medium/heavy trucks and off-road modes`")]
+    Fleet avg. fuel consumption and energy intensity of medium/heavy trucks and off-road modes`")]
   s9[("`**NRCan CEUD**
     Vehicle/mode occupancy and payload factors`")]
 
@@ -513,9 +517,11 @@ flowchart LR
   p2_2@{shape: hex, label: "**config/scenarios/**
     *atb_scenario:* mid, conservative, or advanced"}
   p2["`**Road baseline and indexing**
-    • *Existing LDVs:* aggregate fuel consumption ratings using mappings<br>
-    • *Existing MD/HD trucks:* use incumbent fleet energy intensity<br>
-    • *New road vehicles:* index existing efficiencies to aggregated future multipliers`"]
+    • *Existing LDVs:* aggregate fuel consumption ratings using mappings as baseline<br>
+    • *Existing MD/HD trucks:* use incumbent avg. fuel consumption to backcast NLR ATB baseline<br>
+    • *New LDVs:* index existing efficiencies to aggregated future multipliers<br>
+    • *New MD/HD trucks:* use reported efficiencies from NLR ATB<br>
+    `"]
   s1 -- nrcan_ceud.py --> p2
   s2 -- nlr_atb_autonomie.py --> p2_2 --> p2
   s2_2 -- assorted_sources.py --> p2
@@ -555,7 +561,7 @@ flowchart LR
 | Map weight classes and derive aggregation weights | MD/HD trucks | Map truck weight-rating counts to classes that align with Autonomie truck projection classes |
 | Derive regional- and long-haul activity weights | Heavy-duty trucks | Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
 | Aggregate efficiency ratings using mappings | Cars and light trucks | Use size-class aggregation weights to convert model-level fuel consumption ratings into fleet-average efficiencies by powertrain |
-| Use incumbent fleet energy intensity | MD/HD trucks and off-road | Use NRCan incumbent fleet energy intensities as proxies for existing technology efficiencies where fuel use is dominated by one fuel type |
+| Use incumbent fleet fuel consumption | MD/HD trucks and off-road | Use NRCan incumbent fleet avg. fuel consumptions to backcast NLR ATB gasoline and diesel baselines; future values are used directly |
 | Index existing efficiencies to future multipliers | All | Apply alternative-powertrain and future-period multipliers to existing efficiencies (e.g., 2030 battery-electric and 2040 fuel-cell multipliers) |
 | Special handling of buses | Transit, school, intercity | Use reported Autonomie values for existing and future transit and school bus efficiencies; use EPRI REGEN inputs for intercity buses |
 | Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) efficiencies |
@@ -653,6 +659,7 @@ flowchart LR
   click s7 "https://github.com/EMRG-SFU/cims-models/tree/main/sources/sectors"
   click s2 "https://vms.taps.anl.gov/research-highlights/vehicle-technologies/u-s-doe-vto-hfto-r-d-benefits/"
   click s3 "https://open.canada.ca/data/en/dataset/07c42deb-9435-43b9-a416-7ce316f3893d"
+  click s9 "https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost"
 ```
 
 | Harmonization rule | Affected classes | Description |

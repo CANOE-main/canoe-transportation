@@ -12,13 +12,30 @@ import sqlite3
 import tempfile
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field as dataclass_field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from canoe_schema import CanoeBaseModel
-from canoe_schema.v4_0 import Commodity, CommodityLabel, DataSet, TechnologyLabel
+from canoe_schema.v4_0 import (
+    Commodity,
+    CommodityLabel,
+    DataSet,
+    Region,
+    TechnologyLabel,
+    TimePeriod,
+    ExistingCapacity,
+    Demand,
+    CapacityToActivity,
+    LimitAnnualCapacityFactor,
+    LifetimeTech,
+    LifetimeSurvivalCurve,
+    Efficiency,
+    LimitTechInputSplit,
+    CostInvest,
+    CostVariable,
+)
 from pydantic import ValidationError
 from pydantic_core import PydanticUndefined
 
@@ -26,14 +43,17 @@ from utils import (
     ConfigBundle,
     file_sha256,
     load_config_bundle,
+    load_harmonization_rules,
     resolve_configured_path,
     resolve_input_path,
     resolve_repo_path,
 )
 from validation.database_bootstrap import validate_database
 from validation.insertion import ConflictPolicy, insert_models
-from validation.legacy_compare import compare_legacy_tables
+from validation.legacy_compare import compare_legacy_costs, compare_legacy_demand, compare_legacy_efficiency, compare_legacy_existing_capacity, compare_legacy_lifetime_tech, compare_legacy_tables
 from validation.provenance import (
+    ResolvedProvenance,
+    registry_rows,
     source_id_mapping,
 )
 from validation.schema_contract import (
@@ -54,8 +74,8 @@ class TemplateTable:
     table: str
     filename: str
     model: type[CanoeBaseModel]
-    label_model: type[CanoeBaseModel]
-    label_field: str
+    label_model: type[CanoeBaseModel] | None = None
+    label_field: str | None = None
 
 
 @dataclass(frozen=True)
@@ -86,6 +106,25 @@ class TransportContribution:
     labels_by_table: dict[str, list[CanoeBaseModel]]
     rows_by_table: dict[str, list[CanoeBaseModel]]
     load_results: list[TableLoadResult]
+    parameter_rows: list[ExistingCapacity] = dataclass_field(default_factory=list)
+    demand_rows: list[Demand] = dataclass_field(default_factory=list)
+    road_assumption_dataset: DataSet | None = None
+    capacity_to_activity_rows: list[CapacityToActivity] = dataclass_field(default_factory=list)
+    flat_road_factor_rows: list[LimitAnnualCapacityFactor] = dataclass_field(default_factory=list)
+    lifetime_tech_rows: list[LifetimeTech] = dataclass_field(default_factory=list)
+    lifetime_survival_curve_rows: list[LifetimeSurvivalCurve] = dataclass_field(default_factory=list)
+    efficiency_rows: list[Efficiency] = dataclass_field(default_factory=list)
+    input_split_rows: list[LimitTechInputSplit] = dataclass_field(default_factory=list)
+    cost_invest_rows: list[CostInvest] = dataclass_field(default_factory=list)
+    cost_variable_rows: list[CostVariable] = dataclass_field(default_factory=list)
+    efficiency_assumption_dataset: DataSet | None = None
+    provenance_contexts: list[ResolvedProvenance] = dataclass_field(default_factory=list)
+    parameter_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    demand_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    road_utilization_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    lifetime_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    efficiency_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    cost_audit: dict[str, Any] = dataclass_field(default_factory=dict)
 
 
 TEMPLATE_TABLES = (
@@ -103,6 +142,11 @@ TEMPLATE_TABLES = (
         label_model=CommodityLabel,
         label_field="name",
     ),
+)
+
+STANDALONE_BASE_TABLES = (
+    TemplateTable(table="region", filename="region.csv", model=Region),
+    TemplateTable(table="time_period", filename="time_period.csv", model=TimePeriod),
 )
 
 
@@ -208,7 +252,7 @@ def prepare_template_table(
     rows: list[CanoeBaseModel] = []
     labels: list[CanoeBaseModel] = []
     for row_number, raw in enumerate(raw_rows, start=2):
-        payload: dict[str, Any] = {"data_id": data_id}
+        payload: dict[str, Any] = {"data_id": data_id} if "data_id" in model_fields else {}
         for field in csv_columns:
             if field not in model_fields:
                 continue
@@ -233,10 +277,15 @@ def prepare_template_table(
                 f"Invalid {specification.table} row {row_number} in {template_path}: {exc}"
             ) from exc
         rows.append(row)
-        label_value = getattr(row, specification.label_field)
-        labels.append(specification.label_model.model_validate({
-            specification.label_model.__primary_key__[0]: label_value
-        }))
+        if specification.label_model is not None:
+            if specification.label_field is None:
+                raise TemplateLoadError(
+                    f"Template {specification.table} has a label model without a field"
+                )
+            label_value = getattr(row, specification.label_field)
+            labels.append(specification.label_model.model_validate({
+                specification.label_model.__primary_key__[0]: label_value
+            }))
 
     primary_keys = [_primary_key(row) for row in rows]
     if len(set(primary_keys)) != len(primary_keys):
@@ -252,7 +301,7 @@ def prepare_template_table(
         csv_columns=csv_columns,
         target_columns=target_columns,
         inserted_columns=[field for field in csv_columns if field in model_fields]
-        + ["data_id"],
+        + (["data_id"] if "data_id" in model_fields else []),
         ignored_fields=ignored_fields,
         missing_optional_fields=[
             field for field in missing_fields if field != "data_id"
@@ -346,15 +395,16 @@ def prepare_transport_contribution(
     *,
     bundle: ConfigBundle,
     template_dir: Path,
+    include_existing_capacity: bool | None = None,
+    include_demand: bool | None = None,
+    include_road_utilization: bool | None = None,
+    include_lifetimes: bool | None = None,
+    include_efficiencies: bool | None = None,
+    include_costs: bool | None = None,
 ) -> TransportContribution:
     """Prepare the currently supported transport rows without writing to SQLite."""
     if not template_dir.is_dir():
         raise FileNotFoundError(f"Template directory does not exist: {template_dir}")
-    if bundle.scenario.row_note_overrides.parameters:
-        raise TemplateLoadError(
-            "Parameter row-note overrides are reserved for planned parameter insertion"
-        )
-
     template_dataset = _internal_template_dataset(template_dir)
     table_rows: dict[str, list[CanoeBaseModel]] = {}
     table_labels: dict[str, list[CanoeBaseModel]] = {}
@@ -371,14 +421,119 @@ def prepare_transport_contribution(
                 rows, bundle.scenario.row_note_overrides.technology
             )
         table_rows[specification.table] = rows
-        table_labels[specification.label_model.table_name()] = labels
+        if specification.label_model is not None:
+            table_labels[specification.label_model.table_name()] = labels
         load_results.append(result)
 
+    selected_capacity = True if include_existing_capacity is None else include_existing_capacity
+    parameter_rows: list[ExistingCapacity] = []
+    contexts: list[ResolvedProvenance] = []
+    parameter_audit: dict[str, Any] = {}
+    if selected_capacity:
+        from parameterization.existing_capacity import prepare_existing_capacity_rows
+
+        parameter_rows, contexts, parameter_audit = prepare_existing_capacity_rows(bundle)
+    selected_demand = True if include_demand is None else include_demand
+    demand_rows: list[Demand] = []
+    demand_audit: dict[str, Any] = {}
+    if selected_demand:
+        from parameterization.demand import prepare_demand_rows
+
+        demand_rows, demand_contexts, demand_audit = prepare_demand_rows(bundle)
+        contexts.extend(demand_contexts)
+    selected_road_utilization = (
+        True if include_road_utilization is None else include_road_utilization
+    )
+    road_assumption_dataset: DataSet | None = None
+    c2a_rows: list[CapacityToActivity] = []
+    flat_factor_rows: list[LimitAnnualCapacityFactor] = []
+    road_audit: dict[str, Any] = {}
+    if selected_road_utilization:
+        from parameterization.road_utilization import prepare_road_utilization
+
+        road = prepare_road_utilization(bundle)
+        road_assumption_dataset = road.assumption_dataset
+        c2a_rows = road.capacity_to_activity_rows
+        flat_factor_rows = road.flat_factor_rows
+        contexts.extend(road.provenance_contexts)
+        road_audit = road.audit
+    lifetime_tech_rows: list[LifetimeTech] = []
+    lifetime_curve_rows: list[LifetimeSurvivalCurve] = []
+    lifetime_audit: dict[str, Any] = {}
+    if include_lifetimes is not False:
+        from parameterization.lifetime_parameters import prepare_lifetime_rows
+
+        lifetimes = prepare_lifetime_rows(bundle)
+        lifetime_tech_rows = lifetimes.fixed_rows
+        lifetime_curve_rows = lifetimes.curve_rows
+        contexts.extend(lifetimes.provenance_contexts)
+        lifetime_audit = lifetimes.audit
+    efficiency_rows: list[Efficiency] = []
+    split_rows: list[LimitTechInputSplit] = []
+    efficiency_dataset: DataSet | None = None
+    efficiency_audit: dict[str, Any] = {}
+    if include_efficiencies is not False:
+        from parameterization.efficiencies import prepare_efficiency_rows
+
+        efficiencies = prepare_efficiency_rows(
+            bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
+        )
+        efficiency_rows = efficiencies.efficiency_rows
+        split_rows = efficiencies.split_rows
+        efficiency_dataset = efficiencies.assumption_dataset
+        efficiency_audit = efficiencies.audit
+        contexts.extend(efficiencies.provenance_contexts)
+    cost_invest_rows: list[CostInvest] = []
+    cost_variable_rows: list[CostVariable] = []
+    cost_audit: dict[str, Any] = {}
+    if include_costs is not False:
+        from parameterization.costs import prepare_cost_rows
+
+        costs = prepare_cost_rows(
+            bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
+            fixed_lifetime_rows=lifetime_tech_rows if include_lifetimes is not False else None,
+            survival_curve_rows=lifetime_curve_rows if include_lifetimes is not False else None,
+        )
+        cost_invest_rows = costs.invest_rows
+        cost_variable_rows = costs.variable_rows
+        cost_audit = costs.audit
+        contexts.extend(costs.provenance_contexts)
+        if efficiency_rows:
+            supported = {(r.region, r.tech, r.vintage) for r in efficiency_rows}
+            cost_keys = {
+                (r.region, r.tech, r.vintage)
+                for r in [*cost_invest_rows, *cost_variable_rows]
+            }
+            missing = cost_keys - supported
+            if missing:
+                raise ValueError(
+                    f"Cost technology/vintage lacks prepared efficiency: {sorted(missing)[:8]}"
+                )
+            cost_audit["efficiency_supported_tech_vintages"] = len(cost_keys)
     return TransportContribution(
         dataset=template_dataset,
         labels_by_table=table_labels,
         rows_by_table=table_rows,
         load_results=load_results,
+        parameter_rows=parameter_rows,
+        demand_rows=demand_rows,
+        road_assumption_dataset=road_assumption_dataset,
+        capacity_to_activity_rows=c2a_rows,
+        flat_road_factor_rows=flat_factor_rows,
+        lifetime_tech_rows=lifetime_tech_rows,
+        lifetime_survival_curve_rows=lifetime_curve_rows,
+        efficiency_rows=efficiency_rows,
+        input_split_rows=split_rows,
+        efficiency_assumption_dataset=efficiency_dataset,
+        cost_invest_rows=cost_invest_rows,
+        cost_variable_rows=cost_variable_rows,
+        provenance_contexts=contexts,
+        parameter_audit=parameter_audit,
+        demand_audit=demand_audit,
+        road_utilization_audit=road_audit,
+        lifetime_audit=lifetime_audit,
+        efficiency_audit=efficiency_audit,
+        cost_audit=cost_audit,
     )
 
 
@@ -411,6 +566,52 @@ def insert_transport_contribution(
             conflict=conflict,
         )
         inserted[rows[0].table_name()] = list(rows)
+    if contribution.road_assumption_dataset is not None:
+        insert_models(connection, [contribution.road_assumption_dataset], conflict=conflict)
+        inserted.setdefault("data_set", []).append(contribution.road_assumption_dataset)
+    if contribution.efficiency_assumption_dataset is not None:
+        insert_models(connection, [contribution.efficiency_assumption_dataset], conflict=conflict)
+        inserted.setdefault("data_set", []).append(contribution.efficiency_assumption_dataset)
+    if (contribution.parameter_rows or contribution.demand_rows
+            or contribution.flat_road_factor_rows or contribution.lifetime_tech_rows
+            or contribution.lifetime_survival_curve_rows or contribution.efficiency_rows
+            or contribution.input_split_rows or contribution.cost_invest_rows
+            or contribution.cost_variable_rows):
+        labels, datasets, sources = registry_rows(contribution.provenance_contexts)
+        for registry_batch in (labels, datasets, sources):
+            if registry_batch:
+                insert_models(connection, registry_batch, conflict=conflict)
+                inserted.setdefault(registry_batch[0].table_name(), []).extend(registry_batch)
+        if contribution.parameter_rows:
+            insert_models(connection, contribution.parameter_rows, conflict=conflict)
+            inserted["existing_capacity"] = list(contribution.parameter_rows)
+        if contribution.demand_rows:
+            insert_models(connection, contribution.demand_rows, conflict=conflict)
+            inserted["demand"] = list(contribution.demand_rows)
+        if contribution.flat_road_factor_rows:
+            insert_models(connection, contribution.flat_road_factor_rows, conflict=conflict)
+            inserted["limit_annual_capacity_factor"] = list(contribution.flat_road_factor_rows)
+        if contribution.lifetime_tech_rows:
+            insert_models(connection, contribution.lifetime_tech_rows, conflict=conflict)
+            inserted["lifetime_tech"] = list(contribution.lifetime_tech_rows)
+        if contribution.lifetime_survival_curve_rows:
+            insert_models(connection, contribution.lifetime_survival_curve_rows, conflict=conflict)
+            inserted["lifetime_survival_curve"] = list(contribution.lifetime_survival_curve_rows)
+        if contribution.efficiency_rows:
+            insert_models(connection, contribution.efficiency_rows, conflict=conflict)
+            inserted["efficiency"] = list(contribution.efficiency_rows)
+        if contribution.cost_invest_rows:
+            insert_models(connection, contribution.cost_invest_rows, conflict=conflict)
+            inserted["cost_invest"] = list(contribution.cost_invest_rows)
+        if contribution.cost_variable_rows:
+            insert_models(connection, contribution.cost_variable_rows, conflict=conflict)
+            inserted["cost_variable"] = list(contribution.cost_variable_rows)
+        if contribution.input_split_rows:
+            insert_models(connection, contribution.input_split_rows, conflict=conflict)
+            inserted["limit_tech_input_split"] = list(contribution.input_split_rows)
+    if contribution.capacity_to_activity_rows:
+        insert_models(connection, contribution.capacity_to_activity_rows, conflict=conflict)
+        inserted["capacity_to_activity"] = list(contribution.capacity_to_activity_rows)
     return inserted
 
 
@@ -448,7 +649,19 @@ def bootstrap_database(
             bundle=bundle,
             template_dir=template_dir,
         )
-        inserted = insert_transport_contribution(connection, contribution)
+        base_load_results: list[TableLoadResult] = []
+        inserted: dict[str, list[CanoeBaseModel]] = {}
+        for specification in STANDALONE_BASE_TABLES:
+            base_rows, _, result = prepare_template_table(
+                connection,
+                specification=specification,
+                template_path=template_dir / specification.filename,
+                data_id=contribution.dataset.data_id,
+            )
+            insert_models(connection, base_rows)
+            inserted[specification.table] = base_rows
+            base_load_results.append(result)
+        inserted.update(insert_transport_contribution(connection, contribution))
 
         expected_primary_keys = {
             table: _expected_keys(rows) for table, rows in inserted.items()
@@ -485,10 +698,16 @@ def bootstrap_database(
             "data_id": contribution.dataset.data_id,
             "content_version": contribution.dataset.version,
         },
+        "existing_capacity": contribution.parameter_audit,
+        "demand": contribution.demand_audit,
+        "road_utilization": contribution.road_utilization_audit,
+        "lifetimes": contribution.lifetime_audit,
+        "efficiencies": contribution.efficiency_audit,
+        "costs": contribution.cost_audit,
         "preflight": preflight,
         "templates": [
             {key: value for key, value in asdict(result).items() if key != "primary_keys"}
-            for result in contribution.load_results
+            for result in (*base_load_results, *contribution.load_results)
         ],
         "touched_table_row_counts": {
             table: audit["row_count"]
@@ -513,11 +732,6 @@ def build_from_scenario(
 ) -> tuple[dict[str, Any], Path]:
     """Resolve scenario paths, build the database, and write validation JSON."""
     bundle = load_config_bundle(scenario_path)
-    if not bundle.scenario.switches.compile_sqlite:
-        raise ValueError(
-            "Scenario switch switches.compile_sqlite must be true for database bootstrap"
-        )
-
     database_path = resolve_configured_path(
         bundle,
         "outputs",
@@ -559,6 +773,28 @@ def build_from_scenario(
             reference,
             tables=("technology", "commodity"),
         )
+        if report["existing_capacity"]:
+            report["legacy_comparison"]["existing_capacity"] = compare_legacy_existing_capacity(
+                database_path, reference
+            )
+        if report["demand"]:
+            report["legacy_comparison"]["demand"] = compare_legacy_demand(
+                database_path, reference
+            )
+        if report["lifetimes"]:
+            report["legacy_comparison"]["lifetime_tech"] = compare_legacy_lifetime_tech(
+                database_path, reference
+            )
+        if report["efficiencies"]:
+            report["legacy_comparison"]["efficiency"] = compare_legacy_efficiency(
+                database_path, reference,
+                **load_harmonization_rules(bundle, "efficiencies")["parity"],
+            )
+        if report["costs"]:
+            report["legacy_comparison"]["costs"] = compare_legacy_costs(
+                database_path, reference,
+                **load_harmonization_rules(bundle, "costs")["parity"],
+            )
     else:
         report["legacy_comparison"] = {"enabled": False}
 

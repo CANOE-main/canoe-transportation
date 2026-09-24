@@ -20,12 +20,31 @@ from parameterization.road_lifetimes_survival import (
     raw_mto_key_snapshots,
     retention_source_comparison,
     transform_source_survival_curves,
+    validate_accepted_survival_inputs,
 )
-from utils import load_config_bundle
+from utils import load_config_bundle, load_harmonization_rules
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+
+
+def test_accepted_survival_input_validation_rejects_missing_age_and_changed_value() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    rules = load_harmonization_rules(bundle, "assorted_sources")
+    interim = REPO_ROOT / "inputs/1_interim/fetched_assorted_sources"
+    nhtsa = pd.read_csv(interim / rules["nhtsa_cafe"]["output_file"])
+    eia = pd.read_csv(interim / rules["eia_nems"]["output_file"])
+
+    validate_accepted_survival_inputs(nhtsa, eia, assorted_rules=rules)
+    with pytest.raises(ValueError, match="missing or duplicate ages"):
+        validate_accepted_survival_inputs(
+            nhtsa, eia.drop(index=eia.index[0]), assorted_rules=rules
+        )
+    bad_nhtsa = nhtsa.copy()
+    bad_nhtsa.loc[bad_nhtsa.index[0], "survival_rate"] = 1.1
+    with pytest.raises(ValueError, match="finite fractions"):
+        validate_accepted_survival_inputs(bad_nhtsa, eia, assorted_rules=rules)
 
 
 def _lifetime_rules() -> dict[str, object]:
@@ -601,6 +620,10 @@ def test_legacy_light_truck_curve_uses_latest_wards_weights() -> None:
         "survival_probability",
     ].item()
     assert light_age_one == pytest.approx(0.8 * 0.7 + 0.6 * 0.3)
+    with pytest.raises(ValueError, match="complete unit weight"):
+        legacy_wards_survival_curves(
+            transformed, wards.loc[~wards["nlr_atb_class"].eq("Pickup")], rules=rules
+        )
 
 
 def test_median_equivalent_age_is_first_age_at_or_below_half() -> None:
