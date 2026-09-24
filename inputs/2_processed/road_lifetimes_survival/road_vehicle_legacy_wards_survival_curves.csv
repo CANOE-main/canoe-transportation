@@ -1,0 +1,81 @@
+source_id,source_class,age,source_measure,survival_probability,source_unit,transformation,included_weight,weight_year
+wards_weighted_nhtsa_legacy,Car,0,survival_probability,1.0,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,1,survival_probability,0.993432390246118,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,2,survival_probability,0.985062572570613,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,3,survival_probability,0.9738923005478504,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,4,survival_probability,0.9591923893028744,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,5,survival_probability,0.9407079455013112,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,6,survival_probability,0.9168887987280316,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,7,survival_probability,0.8869960122301214,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,8,survival_probability,0.850496388626437,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,9,survival_probability,0.8067482998740281,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,10,survival_probability,0.755276043410783,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,11,survival_probability,0.6957236714976064,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,12,survival_probability,0.6297536729244139,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,13,survival_probability,0.5602610958657724,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,14,survival_probability,0.4894735422997605,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,15,survival_probability,0.4210374678539818,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,16,survival_probability,0.3583181319489291,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,17,survival_probability,0.3031998680258771,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,18,survival_probability,0.2561965619986988,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,19,survival_probability,0.2169192043447746,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,20,survival_probability,0.1850150085708845,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,21,survival_probability,0.1592435732305992,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,22,survival_probability,0.1385571540553264,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,23,survival_probability,0.1219577714523364,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,24,survival_probability,0.1086744236843994,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,25,survival_probability,0.0979554957833666,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,26,survival_probability,0.0892881878099131,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,27,survival_probability,0.0822980834508385,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,28,survival_probability,0.0765917483193743,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,29,survival_probability,0.0719510542887034,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,30,survival_probability,0.059065440266241,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,31,survival_probability,0.0484874928982468,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,32,survival_probability,0.0398039353801495,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,33,survival_probability,0.0326755040742559,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,34,survival_probability,0.0268236935948594,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,35,survival_probability,0.0220198756975806,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,36,survival_probability,0.0180763668516487,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,37,survival_probability,0.0148390955082134,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,38,survival_probability,0.0121815825773526,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Car,39,survival_probability,0.0099999999330638,dimensionless,NHTSA Cars used directly for legacy Car,1.0,
+wards_weighted_nhtsa_legacy,Light Truck,0,survival_probability,1.0,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,1,survival_probability,0.9930220463673891,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,2,survival_probability,0.9846367281764266,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,3,survival_probability,0.9741213089510119,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,4,survival_probability,0.961045933119119,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,5,survival_probability,0.9450551112990242,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,6,survival_probability,0.9252684242945557,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,7,survival_probability,0.9012115321258611,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,8,survival_probability,0.8724102257095654,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,9,survival_probability,0.8382888830051738,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,10,survival_probability,0.7986343225879391,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,11,survival_probability,0.7529262861633399,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,12,survival_probability,0.7018765247727956,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,13,survival_probability,0.6468294885743746,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,14,survival_probability,0.5886888168095077,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,15,survival_probability,0.5297345305731074,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,16,survival_probability,0.4724324480649412,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,17,survival_probability,0.4184913912900913,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,18,survival_probability,0.36903825358727144,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,19,survival_probability,0.3247643705342457,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,20,survival_probability,0.28610874422822846,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,21,survival_probability,0.2527180098377816,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,22,survival_probability,0.2241949552576416,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,23,survival_probability,0.19987963419720545,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,24,survival_probability,0.1792766053196742,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,25,survival_probability,0.1617953187861591,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,26,survival_probability,0.14694501162642948,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,27,survival_probability,0.13439247092004414,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,28,survival_probability,0.12368310419504039,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,29,survival_probability,0.11459807986504253,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,30,survival_probability,0.09777809168537996,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,31,survival_probability,0.08355186029130403,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,32,survival_probability,0.07150138402897593,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,33,survival_probability,0.06127849897069544,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,34,survival_probability,0.0525928858950357,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,35,survival_probability,0.045202177940862495,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,36,survival_probability,0.03890379591433383,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,37,survival_probability,0.03352820507872185,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,38,survival_probability,0.02893334205401955,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021
+wards_weighted_nhtsa_legacy,Light Truck,39,survival_probability,0.02500000537873169,dimensionless,Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups,1.0,2021

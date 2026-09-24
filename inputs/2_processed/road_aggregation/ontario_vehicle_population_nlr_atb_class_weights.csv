@@ -1,0 +1,286 @@
+report_year,weight_basis,model_year,vintage,nrcan_ceud_class,nlr_atb_class,fit_active_stock,aggregation_weight
+2025,all_vintages,,,Car,Compact,762157,0.4905062822713357
+2025,all_vintages,,,Car,Midsize,791660,0.5094937177286644
+2025,all_vintages,,,Light Truck,Midsize SUV,917470,0.20469773801045588
+2025,all_vintages,,,Light Truck,Pickup,1074230,0.23967263354984034
+2025,all_vintages,,,Light Truck,Small SUV,2490372,0.5556296284397038
+2025,five_year_vintage,,1985,Car,Compact,4349,0.7364944961896698
+2025,five_year_vintage,,1985,Car,Midsize,1556,0.2635055038103302
+2025,five_year_vintage,,1985,Light Truck,Midsize SUV,17,0.00529925187032419
+2025,five_year_vintage,,1985,Light Truck,Pickup,3149,0.9816084788029925
+2025,five_year_vintage,,1985,Light Truck,Small SUV,42,0.013092269326683292
+2025,five_year_vintage,,1990,Car,Compact,7838,0.610483682529792
+2025,five_year_vintage,,1990,Car,Midsize,5001,0.389516317470208
+2025,five_year_vintage,,1990,Light Truck,Midsize SUV,151,0.037562189054726365
+2025,five_year_vintage,,1990,Light Truck,Pickup,3576,0.8895522388059701
+2025,five_year_vintage,,1990,Light Truck,Small SUV,293,0.07288557213930348
+2025,five_year_vintage,,1995,Car,Compact,4417,0.7023374145333121
+2025,five_year_vintage,,1995,Car,Midsize,1872,0.2976625854666879
+2025,five_year_vintage,,1995,Light Truck,Midsize SUV,476,0.072782874617737
+2025,five_year_vintage,,1995,Light Truck,Pickup,5295,0.8096330275229358
+2025,five_year_vintage,,1995,Light Truck,Small SUV,769,0.11758409785932722
+2025,five_year_vintage,,2000,Car,Compact,13420,0.666931716529172
+2025,five_year_vintage,,2000,Car,Midsize,6702,0.33306828347082795
+2025,five_year_vintage,,2000,Light Truck,Midsize SUV,4859,0.18650443327064062
+2025,five_year_vintage,,2000,Light Truck,Pickup,18780,0.7208382911756803
+2025,five_year_vintage,,2000,Light Truck,Small SUV,2414,0.09265727555367904
+2025,five_year_vintage,,2005,Car,Compact,43728,0.5791174445091911
+2025,five_year_vintage,,2005,Car,Midsize,31780,0.42088255549080894
+2025,five_year_vintage,,2005,Light Truck,Midsize SUV,21102,0.20272451293086885
+2025,five_year_vintage,,2005,Light Truck,Pickup,63418,0.609249510048803
+2025,five_year_vintage,,2005,Light Truck,Small SUV,19572,0.18802597702032817
+2025,five_year_vintage,,2010,Car,Compact,123176,0.604369777585877
+2025,five_year_vintage,,2010,Car,Midsize,80633,0.39563022241412305
+2025,five_year_vintage,,2010,Light Truck,Midsize SUV,77806,0.19391725007663876
+2025,five_year_vintage,,2010,Light Truck,Pickup,138606,0.3454501499128935
+2025,five_year_vintage,,2010,Light Truck,Small SUV,184821,0.46063260001046774
+2025,five_year_vintage,,2015,Car,Compact,232617,0.6100997437558521
+2025,five_year_vintage,,2015,Car,Midsize,148660,0.389900256244148
+2025,five_year_vintage,,2015,Light Truck,Midsize SUV,184346,0.19746667309371166
+2025,five_year_vintage,,2015,Light Truck,Pickup,200824,0.21511748102682757
+2025,five_year_vintage,,2015,Light Truck,Small SUV,548385,0.5874158458794607
+2025,five_year_vintage,,2020,Car,Compact,144899,0.3015851541654005
+2025,five_year_vintage,,2020,Car,Midsize,335559,0.6984148458345995
+2025,five_year_vintage,,2020,Light Truck,Midsize SUV,323830,0.21386055179892366
+2025,five_year_vintage,,2020,Light Truck,Pickup,311457,0.2056892995758187
+2025,five_year_vintage,,2020,Light Truck,Small SUV,878924,0.5804501486252577
+2025,five_year_vintage,,2025,Car,Compact,181839,0.5178665512301677
+2025,five_year_vintage,,2025,Car,Midsize,169292,0.48213344876983233
+2025,five_year_vintage,,2025,Light Truck,Midsize SUV,285878,0.2003418477579118
+2025,five_year_vintage,,2025,Light Truck,Pickup,317609,0.2225787711000588
+2025,five_year_vintage,,2025,Light Truck,Small SUV,823464,0.5770793811420294
+2025,five_year_vintage,,2030,Car,Compact,5874,0.3564536683051156
+2025,five_year_vintage,,2030,Car,Midsize,10605,0.6435463316948844
+2025,five_year_vintage,,2030,Light Truck,Midsize SUV,19005,0.3055024192640936
+2025,five_year_vintage,,2030,Light Truck,Pickup,11516,0.18511790898423058
+2025,five_year_vintage,,2030,Light Truck,Small SUV,31688,0.5093796717516758
+2025,model_year,1981,,Car,Compact,924,0.7493917274939172
+2025,model_year,1981,,Car,Midsize,309,0.25060827250608275
+2025,model_year,1981,,Light Truck,Midsize SUV,0,0.0
+2025,model_year,1981,,Light Truck,Pickup,513,0.9790076335877863
+2025,model_year,1981,,Light Truck,Small SUV,11,0.02099236641221374
+2025,model_year,1982,,Car,Compact,420,0.7381370826010545
+2025,model_year,1982,,Car,Midsize,149,0.2618629173989455
+2025,model_year,1982,,Light Truck,Midsize SUV,1,0.0027100271002710027
+2025,model_year,1982,,Light Truck,Pickup,365,0.989159891598916
+2025,model_year,1982,,Light Truck,Small SUV,3,0.008130081300813009
+2025,model_year,1983,,Car,Compact,603,0.6294363256784968
+2025,model_year,1983,,Car,Midsize,355,0.3705636743215031
+2025,model_year,1983,,Light Truck,Midsize SUV,0,0.0
+2025,model_year,1983,,Light Truck,Pickup,384,0.9746192893401016
+2025,model_year,1983,,Light Truck,Small SUV,10,0.025380710659898477
+2025,model_year,1984,,Car,Compact,1041,0.7346506704304869
+2025,model_year,1984,,Car,Midsize,376,0.26534932956951307
+2025,model_year,1984,,Light Truck,Midsize SUV,3,0.0034207525655644243
+2025,model_year,1984,,Light Truck,Pickup,868,0.9897377423033067
+2025,model_year,1984,,Light Truck,Small SUV,6,0.0068415051311288486
+2025,model_year,1985,,Car,Compact,1361,0.7876157407407407
+2025,model_year,1985,,Car,Midsize,367,0.21238425925925927
+2025,model_year,1985,,Light Truck,Midsize SUV,13,0.012452107279693486
+2025,model_year,1985,,Light Truck,Pickup,1019,0.9760536398467433
+2025,model_year,1985,,Light Truck,Small SUV,12,0.011494252873563218
+2025,model_year,1986,,Car,Compact,1892,0.7564974010395842
+2025,model_year,1986,,Car,Midsize,609,0.24350259896041584
+2025,model_year,1986,,Light Truck,Midsize SUV,16,0.01238390092879257
+2025,model_year,1986,,Light Truck,Pickup,1259,0.9744582043343654
+2025,model_year,1986,,Light Truck,Small SUV,17,0.013157894736842105
+2025,model_year,1987,,Car,Compact,1819,0.5666666666666667
+2025,model_year,1987,,Car,Midsize,1391,0.43333333333333335
+2025,model_year,1987,,Light Truck,Midsize SUV,32,0.06722689075630252
+2025,model_year,1987,,Light Truck,Pickup,431,0.9054621848739496
+2025,model_year,1987,,Light Truck,Small SUV,13,0.0273109243697479
+2025,model_year,1988,,Car,Compact,1648,0.6751331421548545
+2025,model_year,1988,,Car,Midsize,793,0.3248668578451454
+2025,model_year,1988,,Light Truck,Midsize SUV,42,0.10824742268041238
+2025,model_year,1988,,Light Truck,Pickup,329,0.8479381443298969
+2025,model_year,1988,,Light Truck,Small SUV,17,0.04381443298969072
+2025,model_year,1989,,Car,Compact,1769,0.7728265618173875
+2025,model_year,1989,,Car,Midsize,520,0.22717343818261249
+2025,model_year,1989,,Light Truck,Midsize SUV,42,0.041666666666666664
+2025,model_year,1989,,Light Truck,Pickup,774,0.7678571428571429
+2025,model_year,1989,,Light Truck,Small SUV,192,0.19047619047619047
+2025,model_year,1990,,Car,Compact,710,0.29608006672226855
+2025,model_year,1990,,Car,Midsize,1688,0.7039199332777314
+2025,model_year,1990,,Light Truck,Midsize SUV,19,0.02219626168224299
+2025,model_year,1990,,Light Truck,Pickup,783,0.9147196261682243
+2025,model_year,1990,,Light Truck,Small SUV,54,0.0630841121495327
+2025,model_year,1991,,Car,Compact,796,0.6466287571080422
+2025,model_year,1991,,Car,Midsize,435,0.35337124289195776
+2025,model_year,1991,,Light Truck,Midsize SUV,28,0.03535353535353535
+2025,model_year,1991,,Light Truck,Pickup,738,0.9318181818181818
+2025,model_year,1991,,Light Truck,Small SUV,26,0.03282828282828283
+2025,model_year,1992,,Car,Compact,717,0.668219944082013
+2025,model_year,1992,,Car,Midsize,356,0.3317800559179869
+2025,model_year,1992,,Light Truck,Midsize SUV,60,0.05842259006815969
+2025,model_year,1992,,Light Truck,Pickup,827,0.8052580331061344
+2025,model_year,1992,,Light Truck,Small SUV,140,0.13631937682570594
+2025,model_year,1993,,Car,Compact,411,0.4762456546929316
+2025,model_year,1993,,Car,Midsize,452,0.5237543453070683
+2025,model_year,1993,,Light Truck,Midsize SUV,93,0.07548701298701299
+2025,model_year,1993,,Light Truck,Pickup,1009,0.8189935064935064
+2025,model_year,1993,,Light Truck,Small SUV,130,0.10551948051948051
+2025,model_year,1994,,Car,Compact,1054,0.7883320867614061
+2025,model_year,1994,,Car,Midsize,283,0.21166791323859388
+2025,model_year,1994,,Light Truck,Midsize SUV,113,0.08188405797101449
+2025,model_year,1994,,Light Truck,Pickup,1092,0.7913043478260869
+2025,model_year,1994,,Light Truck,Small SUV,175,0.12681159420289856
+2025,model_year,1995,,Car,Compact,1439,0.8061624649859944
+2025,model_year,1995,,Car,Midsize,346,0.1938375350140056
+2025,model_year,1995,,Light Truck,Midsize SUV,182,0.0862968231389284
+2025,model_year,1995,,Light Truck,Pickup,1629,0.7724039829302988
+2025,model_year,1995,,Light Truck,Small SUV,298,0.14129919393077287
+2025,model_year,1996,,Car,Compact,1294,0.7415472779369627
+2025,model_year,1996,,Car,Midsize,451,0.25845272206303727
+2025,model_year,1996,,Light Truck,Midsize SUV,311,0.13428324697754748
+2025,model_year,1996,,Light Truck,Pickup,1891,0.8164939550949913
+2025,model_year,1996,,Light Truck,Small SUV,114,0.04922279792746114
+2025,model_year,1997,,Car,Compact,1775,0.728952772073922
+2025,model_year,1997,,Car,Midsize,660,0.27104722792607805
+2025,model_year,1997,,Light Truck,Midsize SUV,822,0.21372854914196568
+2025,model_year,1997,,Light Truck,Pickup,2667,0.6934477379095164
+2025,model_year,1997,,Light Truck,Small SUV,357,0.09282371294851795
+2025,model_year,1998,,Car,Compact,2058,0.5910396323951752
+2025,model_year,1998,,Car,Midsize,1424,0.4089603676048248
+2025,model_year,1998,,Light Truck,Midsize SUV,852,0.16530849825378346
+2025,model_year,1998,,Light Truck,Pickup,3832,0.743500194024059
+2025,model_year,1998,,Light Truck,Small SUV,470,0.09119130772215754
+2025,model_year,1999,,Car,Compact,3195,0.6321725366046695
+2025,model_year,1999,,Car,Midsize,1859,0.36782746339533046
+2025,model_year,1999,,Light Truck,Midsize SUV,1037,0.1663992297817715
+2025,model_year,1999,,Light Truck,Pickup,4586,0.7358793324775353
+2025,model_year,1999,,Light Truck,Small SUV,609,0.0977214377406932
+2025,model_year,2000,,Car,Compact,5098,0.6883607885498245
+2025,model_year,2000,,Car,Midsize,2308,0.31163921145017554
+2025,model_year,2000,,Light Truck,Midsize SUV,1837,0.21599059376837154
+2025,model_year,2000,,Light Truck,Pickup,5804,0.6824221046443268
+2025,model_year,2000,,Light Truck,Small SUV,864,0.10158730158730159
+2025,model_year,2001,,Car,Compact,5646,0.6555968416163492
+2025,model_year,2001,,Car,Midsize,2966,0.3444031583836507
+2025,model_year,2001,,Light Truck,Midsize SUV,1464,0.14334671497111526
+2025,model_year,2001,,Light Truck,Pickup,7518,0.7361206305688828
+2025,model_year,2001,,Light Truck,Small SUV,1231,0.12053265446000196
+2025,model_year,2002,,Car,Compact,5528,0.5089302154299392
+2025,model_year,2002,,Car,Midsize,5334,0.4910697845700608
+2025,model_year,2002,,Light Truck,Midsize SUV,2043,0.14650412334169954
+2025,model_year,2002,,Light Truck,Pickup,9486,0.6802438149874507
+2025,model_year,2002,,Light Truck,Small SUV,2416,0.17325206167084978
+2025,model_year,2003,,Car,Compact,9109,0.5635362534026231
+2025,model_year,2003,,Car,Midsize,7055,0.4364637465973769
+2025,model_year,2003,,Light Truck,Midsize SUV,3228,0.15541646605681272
+2025,model_year,2003,,Light Truck,Pickup,13802,0.6645161290322581
+2025,model_year,2003,,Light Truck,Small SUV,3740,0.18006740491092924
+2025,model_year,2004,,Car,Compact,9995,0.610568112400733
+2025,model_year,2004,,Car,Midsize,6375,0.38943188759926695
+2025,model_year,2004,,Light Truck,Midsize SUV,5673,0.22614207127481464
+2025,model_year,2004,,Light Truck,Pickup,15045,0.5997369050466396
+2025,model_year,2004,,Light Truck,Small SUV,4368,0.1741210236785458
+2025,model_year,2005,,Car,Compact,13450,0.5723404255319149
+2025,model_year,2005,,Car,Midsize,10050,0.4276595744680851
+2025,model_year,2005,,Light Truck,Midsize SUV,8694,0.2551206056693468
+2025,model_year,2005,,Light Truck,Pickup,17567,0.5154938670109748
+2025,model_year,2005,,Light Truck,Small SUV,7817,0.22938552731967837
+2025,model_year,2006,,Car,Compact,21005,0.6488431717789516
+2025,model_year,2006,,Car,Midsize,11368,0.3511568282210484
+2025,model_year,2006,,Light Truck,Midsize SUV,10678,0.25083392060136245
+2025,model_year,2006,,Light Truck,Pickup,19325,0.4539581865163261
+2025,model_year,2006,,Light Truck,Small SUV,12567,0.2952078928823115
+2025,model_year,2007,,Car,Compact,20437,0.5585405848592512
+2025,model_year,2007,,Car,Midsize,16153,0.4414594151407488
+2025,model_year,2007,,Light Truck,Midsize SUV,12673,0.20323299709735876
+2025,model_year,2007,,Light Truck,Pickup,26310,0.4219253652356592
+2025,model_year,2007,,Light Truck,Small SUV,23374,0.37484163766698203
+2025,model_year,2008,,Car,Compact,26732,0.6105705541089945
+2025,model_year,2008,,Car,Midsize,17050,0.3894294458910054
+2025,model_year,2008,,Light Truck,Midsize SUV,14609,0.18208445508026722
+2025,model_year,2008,,Light Truck,Pickup,30663,0.38217918037690696
+2025,model_year,2008,,Light Truck,Small SUV,34960,0.4357363645428258
+2025,model_year,2009,,Car,Compact,26713,0.6260957202456289
+2025,model_year,2009,,Car,Midsize,15953,0.3739042797543712
+2025,model_year,2009,,Light Truck,Midsize SUV,13052,0.16043661573635884
+2025,model_year,2009,,Light Truck,Pickup,26260,0.3227908005851044
+2025,model_year,2009,,Light Truck,Small SUV,42041,0.5167725836785367
+2025,model_year,2010,,Car,Compact,28289,0.5845076242819951
+2025,model_year,2010,,Car,Midsize,20109,0.4154923757180049
+2025,model_year,2010,,Light Truck,Midsize SUV,26794,0.19888510328753498
+2025,model_year,2010,,Light Truck,Pickup,36048,0.26757521099160486
+2025,model_year,2010,,Light Truck,Small SUV,71879,0.5335396857208602
+2025,model_year,2011,,Car,Compact,25102,0.6492008482904877
+2025,model_year,2011,,Car,Midsize,13564,0.35079915170951226
+2025,model_year,2011,,Light Truck,Midsize SUV,32391,0.20699240816952533
+2025,model_year,2011,,Light Truck,Pickup,43305,0.2767375578333887
+2025,model_year,2011,,Light Truck,Small SUV,80788,0.5162700339970859
+2025,model_year,2012,,Car,Compact,61162,0.7431682037448815
+2025,model_year,2012,,Car,Midsize,21137,0.25683179625511854
+2025,model_year,2012,,Light Truck,Midsize SUV,32415,0.22769898636545635
+2025,model_year,2012,,Light Truck,Pickup,33317,0.2340350803250936
+2025,model_year,2012,,Light Truck,Small SUV,76627,0.53826593330945
+2025,model_year,2013,,Car,Compact,36371,0.6064663509637831
+2025,model_year,2013,,Car,Midsize,23601,0.3935336490362169
+2025,model_year,2013,,Light Truck,Midsize SUV,33213,0.18849816683503787
+2025,model_year,2013,,Light Truck,Pickup,32330,0.183486759214066
+2025,model_year,2013,,Light Truck,Small SUV,110655,0.6280150739508962
+2025,model_year,2014,,Car,Compact,45537,0.5079080039261176
+2025,model_year,2014,,Car,Midsize,44119,0.4920919960738824
+2025,model_year,2014,,Light Truck,Midsize SUV,42099,0.20117458163294563
+2025,model_year,2014,,Light Truck,Pickup,41581,0.1986992631387803
+2025,model_year,2014,,Light Truck,Small SUV,125586,0.6001261552282741
+2025,model_year,2015,,Car,Compact,64445,0.5822431426403093
+2025,model_year,2015,,Car,Midsize,46239,0.41775685735969065
+2025,model_year,2015,,Light Truck,Midsize SUV,44228,0.17744575683656438
+2025,model_year,2015,,Light Truck,Pickup,50291,0.20177092694826038
+2025,model_year,2015,,Light Truck,Small SUV,154729,0.6207833162151752
+2025,model_year,2016,,Car,Compact,33658,0.3929576313730984
+2025,model_year,2016,,Car,Midsize,51995,0.6070423686269015
+2025,model_year,2016,,Light Truck,Midsize SUV,52167,0.1865592378418393
+2025,model_year,2016,,Light Truck,Pickup,55198,0.19739867752398732
+2025,model_year,2016,,Light Truck,Small SUV,172262,0.6160420846341734
+2025,model_year,2017,,Car,Compact,24479,0.2496914430266124
+2025,model_year,2017,,Car,Midsize,73558,0.7503085569733876
+2025,model_year,2017,,Light Truck,Midsize SUV,72839,0.21863331292247476
+2025,model_year,2017,,Light Truck,Pickup,78922,0.23689202655812894
+2025,model_year,2017,,Light Truck,Small SUV,181395,0.5444746605193963
+2025,model_year,2018,,Car,Compact,44201,0.37279344168276163
+2025,model_year,2018,,Car,Midsize,74366,0.6272065583172384
+2025,model_year,2018,,Light Truck,Midsize SUV,64013,0.1980876050192632
+2025,model_year,2018,,Light Truck,Pickup,70363,0.2177376181708468
+2025,model_year,2018,,Light Truck,Small SUV,188779,0.5841747768098899
+2025,model_year,2019,,Car,Compact,23072,0.23641524320890245
+2025,model_year,2019,,Car,Midsize,74519,0.7635847567910975
+2025,model_year,2019,,Light Truck,Midsize SUV,75328,0.23121429864975612
+2025,model_year,2019,,Light Truck,Pickup,62351,0.19138225805956544
+2025,model_year,2019,,Light Truck,Small SUV,188114,0.5774034432906784
+2025,model_year,2020,,Car,Compact,19489,0.24176901128892198
+2025,model_year,2020,,Car,Midsize,61121,0.7582309887110781
+2025,model_year,2020,,Light Truck,Midsize SUV,59483,0.23559489860583016
+2025,model_year,2020,,Light Truck,Pickup,44623,0.1767387515842839
+2025,model_year,2020,,Light Truck,Small SUV,148374,0.587666349809886
+2025,model_year,2021,,Car,Compact,24470,0.39079468506452025
+2025,model_year,2021,,Car,Midsize,38146,0.6092053149354798
+2025,model_year,2021,,Light Truck,Midsize SUV,43440,0.17688952955692105
+2025,model_year,2021,,Light Truck,Pickup,54275,0.22101011088171937
+2025,model_year,2021,,Light Truck,Small SUV,147862,0.6021003595613595
+2025,model_year,2022,,Car,Compact,38912,0.5715544718790853
+2025,model_year,2022,,Car,Midsize,29169,0.4284455281209148
+2025,model_year,2022,,Light Truck,Midsize SUV,38904,0.16383252899411274
+2025,model_year,2022,,Light Truck,Pickup,58048,0.24445174385796464
+2025,model_year,2022,,Light Truck,Small SUV,140510,0.5917157271479226
+2025,model_year,2023,,Car,Compact,36456,0.48739271103505444
+2025,model_year,2023,,Car,Midsize,38342,0.5126072889649456
+2025,model_year,2023,,Light Truck,Midsize SUV,53276,0.20878957227843836
+2025,model_year,2023,,Light Truck,Pickup,56297,0.22062892391619573
+2025,model_year,2023,,Light Truck,Small SUV,145593,0.5705815038053659
+2025,model_year,2024,,Car,Compact,38330,0.5547274121886623
+2025,model_year,2024,,Car,Midsize,30767,0.44527258781133766
+2025,model_year,2024,,Light Truck,Midsize SUV,68121,0.19468093315157284
+2025,model_year,2024,,Light Truck,Pickup,75639,0.21616639659799206
+2025,model_year,2024,,Light Truck,Small SUV,206151,0.5891526702504352
+2025,model_year,2025,,Car,Compact,43671,0.5705718653235605
+2025,model_year,2025,,Car,Midsize,32868,0.4294281346764395
+2025,model_year,2025,,Light Truck,Midsize SUV,82137,0.24241002257736066
+2025,model_year,2025,,Light Truck,Pickup,73350,0.21647704634999335
+2025,model_year,2025,,Light Truck,Small SUV,183348,0.541112931072646
+2025,model_year,2026,,Car,Compact,5874,0.3564536683051156
+2025,model_year,2026,,Car,Midsize,10605,0.6435463316948844
+2025,model_year,2026,,Light Truck,Midsize SUV,19005,0.3055024192640936
+2025,model_year,2026,,Light Truck,Pickup,11516,0.18511790898423058
+2025,model_year,2026,,Light Truck,Small SUV,31688,0.5093796717516758

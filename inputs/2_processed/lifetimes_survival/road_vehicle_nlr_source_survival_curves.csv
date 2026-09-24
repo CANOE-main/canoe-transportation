@@ -1,0 +1,201 @@
+source_id,source_class,age,source_measure,survival_probability,source_unit,transformation,nrcan_ceud_class
+nlr_atb_source_anchor,Compact,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,1,survival_probability,0.993432390246118,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,2,survival_probability,0.985062572570613,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,3,survival_probability,0.9738923005478504,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,4,survival_probability,0.9591923893028744,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,5,survival_probability,0.9407079455013112,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,6,survival_probability,0.9168887987280316,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,7,survival_probability,0.8869960122301214,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,8,survival_probability,0.850496388626437,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,9,survival_probability,0.8067482998740281,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,10,survival_probability,0.755276043410783,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,11,survival_probability,0.6957236714976064,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,12,survival_probability,0.6297536729244139,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,13,survival_probability,0.5602610958657724,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,14,survival_probability,0.4894735422997605,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,15,survival_probability,0.4210374678539818,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,16,survival_probability,0.3583181319489291,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,17,survival_probability,0.3031998680258771,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,18,survival_probability,0.2561965619986988,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,19,survival_probability,0.2169192043447746,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,20,survival_probability,0.1850150085708845,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,21,survival_probability,0.1592435732305992,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,22,survival_probability,0.1385571540553264,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,23,survival_probability,0.1219577714523364,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,24,survival_probability,0.1086744236843994,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,25,survival_probability,0.0979554957833666,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,26,survival_probability,0.0892881878099131,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,27,survival_probability,0.0822980834508385,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,28,survival_probability,0.0765917483193743,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,29,survival_probability,0.0719510542887034,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,30,survival_probability,0.059065440266241,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,31,survival_probability,0.0484874928982468,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,32,survival_probability,0.0398039353801495,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,33,survival_probability,0.0326755040742559,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,34,survival_probability,0.0268236935948594,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,35,survival_probability,0.0220198756975806,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,36,survival_probability,0.0180763668516487,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,37,survival_probability,0.0148390955082134,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,38,survival_probability,0.0121815825773526,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Compact,39,survival_probability,0.0099999999330638,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,1,survival_probability,0.993432390246118,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,2,survival_probability,0.985062572570613,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,3,survival_probability,0.9738923005478504,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,4,survival_probability,0.9591923893028744,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,5,survival_probability,0.9407079455013112,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,6,survival_probability,0.9168887987280316,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,7,survival_probability,0.8869960122301214,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,8,survival_probability,0.850496388626437,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,9,survival_probability,0.8067482998740281,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,10,survival_probability,0.755276043410783,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,11,survival_probability,0.6957236714976064,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,12,survival_probability,0.6297536729244139,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,13,survival_probability,0.5602610958657724,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,14,survival_probability,0.4894735422997605,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,15,survival_probability,0.4210374678539818,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,16,survival_probability,0.3583181319489291,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,17,survival_probability,0.3031998680258771,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,18,survival_probability,0.2561965619986988,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,19,survival_probability,0.2169192043447746,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,20,survival_probability,0.1850150085708845,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,21,survival_probability,0.1592435732305992,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,22,survival_probability,0.1385571540553264,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,23,survival_probability,0.1219577714523364,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,24,survival_probability,0.1086744236843994,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,25,survival_probability,0.0979554957833666,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,26,survival_probability,0.0892881878099131,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,27,survival_probability,0.0822980834508385,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,28,survival_probability,0.0765917483193743,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,29,survival_probability,0.0719510542887034,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,30,survival_probability,0.059065440266241,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,31,survival_probability,0.0484874928982468,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,32,survival_probability,0.0398039353801495,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,33,survival_probability,0.0326755040742559,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,34,survival_probability,0.0268236935948594,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,35,survival_probability,0.0220198756975806,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,36,survival_probability,0.0180763668516487,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,37,survival_probability,0.0148390955082134,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,38,survival_probability,0.0121815825773526,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Midsize,39,survival_probability,0.0099999999330638,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Car
+nlr_atb_source_anchor,Small SUV,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,1,survival_probability,0.993343348797829,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,2,survival_probability,0.985184361232498,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,3,survival_probability,0.974815424638012,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,4,survival_probability,0.9617782001075188,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,5,survival_probability,0.9455522224915976,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,6,survival_probability,0.9252176915079052,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,7,survival_probability,0.9001577414143725,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,8,survival_probability,0.8697797812926183,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,9,survival_probability,0.8333261760585442,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,10,survival_probability,0.7904997078676597,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,11,survival_probability,0.7407196928587644,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,12,survival_probability,0.6848137651238166,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,13,survival_probability,0.6242805550722447,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,14,survival_probability,0.560346621521593,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,15,survival_probability,0.4958117968644341,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,16,survival_probability,0.4336310290495546,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,17,survival_probability,0.3758727737559403,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,18,survival_probability,0.3237983661794721,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,19,survival_probability,0.2782382668947893,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,20,survival_probability,0.23943215594301,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,21,survival_probability,0.2068211032411854,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,22,survival_probability,0.1797808270090977,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,23,survival_probability,0.1574325240967546,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,24,survival_probability,0.1390529223818073,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,25,survival_probability,0.1239375081813067,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,26,survival_probability,0.1114939344848871,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,27,survival_probability,0.1012822050254163,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,28,survival_probability,0.092825120649353,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,29,survival_probability,0.0858613800982386,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,30,survival_probability,0.0758948125706248,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,31,survival_probability,0.0670851384934638,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,32,survival_probability,0.0592980686591631,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,33,survival_probability,0.0524149018049565,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,34,survival_probability,0.0463307152044775,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,35,survival_probability,0.040952765290794,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,36,survival_probability,0.0361990739309974,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,37,survival_probability,0.0319971788023891,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,38,survival_probability,0.0282830288217777,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Small SUV,39,survival_probability,0.0250000077904925,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,1,survival_probability,0.993343348797829,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,2,survival_probability,0.985184361232498,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,3,survival_probability,0.974815424638012,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,4,survival_probability,0.9617782001075188,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,5,survival_probability,0.9455522224915976,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,6,survival_probability,0.9252176915079052,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,7,survival_probability,0.9001577414143725,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,8,survival_probability,0.8697797812926183,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,9,survival_probability,0.8333261760585442,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,10,survival_probability,0.7904997078676597,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,11,survival_probability,0.7407196928587644,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,12,survival_probability,0.6848137651238166,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,13,survival_probability,0.6242805550722447,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,14,survival_probability,0.560346621521593,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,15,survival_probability,0.4958117968644341,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,16,survival_probability,0.4336310290495546,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,17,survival_probability,0.3758727737559403,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,18,survival_probability,0.3237983661794721,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,19,survival_probability,0.2782382668947893,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,20,survival_probability,0.23943215594301,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,21,survival_probability,0.2068211032411854,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,22,survival_probability,0.1797808270090977,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,23,survival_probability,0.1574325240967546,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,24,survival_probability,0.1390529223818073,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,25,survival_probability,0.1239375081813067,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,26,survival_probability,0.1114939344848871,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,27,survival_probability,0.1012822050254163,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,28,survival_probability,0.092825120649353,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,29,survival_probability,0.0858613800982386,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,30,survival_probability,0.0758948125706248,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,31,survival_probability,0.0670851384934638,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,32,survival_probability,0.0592980686591631,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,33,survival_probability,0.0524149018049565,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,34,survival_probability,0.0463307152044775,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,35,survival_probability,0.040952765290794,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,36,survival_probability,0.0361990739309974,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,37,survival_probability,0.0319971788023891,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,38,survival_probability,0.0282830288217777,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Midsize SUV,39,survival_probability,0.0250000077904925,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,0,survival_probability,1.0,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,1,survival_probability,0.992211384792401,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,2,survival_probability,0.983255023484238,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,3,survival_probability,0.9723700214949008,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,4,survival_probability,0.9591983880840096,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,5,survival_probability,0.9438008757124337,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,6,survival_probability,0.9253964255694708,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,7,survival_probability,0.903870297068017,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,8,survival_probability,0.8790469642211319,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,9,survival_probability,0.8508100327022066,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,10,survival_probability,0.8191583490387615,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,11,survival_probability,0.7837241115640902,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,12,survival_probability,0.7449266927772663,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,13,survival_probability,0.7037215386037156,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,14,survival_probability,0.6601975465731165,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,15,survival_probability,0.6153232287305412,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,16,survival_probability,0.570330305257357,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,17,survival_probability,0.5260202250021262,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,18,survival_probability,0.4831806779943129,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,19,survival_probability,0.4421519807144002,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,20,survival_probability,0.4038760344493273,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,21,survival_probability,0.3685181254414261,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,22,survival_probability,0.3362539493598259,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,23,survival_probability,0.306975746357352,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,24,survival_probability,0.2807629031904499,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,25,survival_probability,0.2573124063117901,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,26,survival_probability,0.2363897941985251,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,27,survival_probability,0.2179312734795539,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,28,survival_probability,0.2015392894341337,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,29,survival_probability,0.1871021635130222,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,30,survival_probability,0.1529906634943785,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,31,survival_probability,0.1250981959640521,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,32,survival_probability,0.1022909390417501,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,33,survival_probability,0.0836417833958995,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,34,survival_probability,0.0683926454794904,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,35,survival_probability,0.0559236516220978,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,36,survival_probability,0.0457279403190747,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,37,survival_probability,0.0373910584372246,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,38,survival_probability,0.030574113797834,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck
+nlr_atb_source_anchor,Pickup,39,survival_probability,0.0249999992937425,dimensionless,NHTSA source class retained at NLR ATB LDV class grain for MTO calibration,Light Truck

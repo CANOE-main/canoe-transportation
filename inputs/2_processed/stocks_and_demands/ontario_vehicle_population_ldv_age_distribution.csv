@@ -1,0 +1,82 @@
+report_year,nrcan_ceud_class,nlr_atb_class,model_year,age,cutoff_basis,cutoff_age,fit_active_stock,age_distribution
+2025,Car,Compact,2025,0,source_derived_median_equivalent_age,14.0,43671,0.07807385291988093
+2025,Car,Compact,2024,1,source_derived_median_equivalent_age,14.0,38330,0.06852535509649507
+2025,Car,Compact,2023,2,source_derived_median_equivalent_age,14.0,36456,0.0651750677119182
+2025,Car,Compact,2022,3,source_derived_median_equivalent_age,14.0,38912,0.06956583922553655
+2025,Car,Compact,2021,4,source_derived_median_equivalent_age,14.0,24470,0.04374681552859991
+2025,Car,Compact,2020,5,source_derived_median_equivalent_age,14.0,19489,0.03484191613554898
+2025,Car,Compact,2019,6,source_derived_median_equivalent_age,14.0,23072,0.04124750829079923
+2025,Car,Compact,2018,7,source_derived_median_equivalent_age,14.0,44201,0.07902137283120737
+2025,Car,Compact,2017,8,source_derived_median_equivalent_age,14.0,24479,0.04376290548935828
+2025,Car,Compact,2016,9,source_derived_median_equivalent_age,14.0,33658,0.06017287768948164
+2025,Car,Compact,2015,10,source_derived_median_equivalent_age,14.0,64445,0.11521305789704213
+2025,Car,Compact,2014,11,source_derived_median_equivalent_age,14.0,45537,0.08140983811711704
+2025,Car,Compact,2013,12,source_derived_median_equivalent_age,14.0,36371,0.06502310697142244
+2025,Car,Compact,2012,13,source_derived_median_equivalent_age,14.0,61162,0.109343797767071
+2025,Car,Compact,2011,14,source_derived_median_equivalent_age,14.0,25102,0.04487668832852124
+2025,Car,Midsize,2025,0,source_derived_median_equivalent_age,14.0,32868,0.05029448624430193
+2025,Car,Midsize,2024,1,source_derived_median_equivalent_age,14.0,30767,0.047079544185178214
+2025,Car,Midsize,2023,2,source_derived_median_equivalent_age,14.0,38342,0.05867077983385131
+2025,Car,Midsize,2022,3,source_derived_median_equivalent_age,14.0,29169,0.0446342907770489
+2025,Car,Midsize,2021,4,source_derived_median_equivalent_age,14.0,38146,0.05837086139330478
+2025,Car,Midsize,2020,5,source_derived_median_equivalent_age,14.0,61121,0.09352711737063339
+2025,Car,Midsize,2019,6,source_derived_median_equivalent_age,14.0,74519,0.1140286850565637
+2025,Car,Midsize,2018,7,source_derived_median_equivalent_age,14.0,74366,0.11379456504940239
+2025,Car,Midsize,2017,8,source_derived_median_equivalent_age,14.0,73558,0.11255816658021059
+2025,Car,Midsize,2016,9,source_derived_median_equivalent_age,14.0,51995,0.07956254753171714
+2025,Car,Midsize,2015,10,source_derived_median_equivalent_age,14.0,46239,0.07075473863485082
+2025,Car,Midsize,2014,11,source_derived_median_equivalent_age,14.0,44119,0.0675107228493476
+2025,Car,Midsize,2013,12,source_derived_median_equivalent_age,14.0,23601,0.03611415875172721
+2025,Car,Midsize,2012,13,source_derived_median_equivalent_age,14.0,21137,0.032343755499142327
+2025,Car,Midsize,2011,14,source_derived_median_equivalent_age,14.0,13564,0.020755580242719708
+2025,Light Truck,Midsize SUV,2025,0,source_derived_median_equivalent_age,16.0,82137,0.09849742175320782
+2025,Light Truck,Midsize SUV,2024,1,source_derived_median_equivalent_age,16.0,68121,0.08168965103729464
+2025,Light Truck,Midsize SUV,2023,2,source_derived_median_equivalent_age,16.0,53276,0.06388775632569853
+2025,Light Truck,Midsize SUV,2022,3,source_derived_median_equivalent_age,16.0,38904,0.0466530759083823
+2025,Light Truck,Midsize SUV,2021,4,source_derived_median_equivalent_age,16.0,43440,0.05209257704760763
+2025,Light Truck,Midsize SUV,2020,5,source_derived_median_equivalent_age,16.0,59483,0.07133109485549827
+2025,Light Truck,Midsize SUV,2019,6,source_derived_median_equivalent_age,16.0,75328,0.09033217412159732
+2025,Light Truck,Midsize SUV,2018,7,source_derived_median_equivalent_age,16.0,64013,0.07676340088739657
+2025,Light Truck,Midsize SUV,2017,8,source_derived_median_equivalent_age,16.0,72839,0.08734740376543951
+2025,Light Truck,Midsize SUV,2016,9,source_derived_median_equivalent_age,16.0,52167,0.06255786065475477
+2025,Light Truck,Midsize SUV,2015,10,source_derived_median_equivalent_age,16.0,44228,0.053037534476555945
+2025,Light Truck,Midsize SUV,2014,11,source_derived_median_equivalent_age,16.0,42099,0.05048447056001919
+2025,Light Truck,Midsize SUV,2013,12,source_derived_median_equivalent_age,16.0,33213,0.03982851660870608
+2025,Light Truck,Midsize SUV,2012,13,source_derived_median_equivalent_age,16.0,32415,0.03887156733421274
+2025,Light Truck,Midsize SUV,2011,14,source_derived_median_equivalent_age,16.0,32391,0.03884278690490466
+2025,Light Truck,Midsize SUV,2010,15,source_derived_median_equivalent_age,16.0,26794,0.03213095095335172
+2025,Light Truck,Midsize SUV,2009,16,source_derived_median_equivalent_age,16.0,13052,0.015651756805372348
+2025,Light Truck,Pickup,2025,0,source_derived_median_equivalent_age,16.0,73350,0.08221269269825757
+2025,Light Truck,Pickup,2024,1,source_derived_median_equivalent_age,16.0,75639,0.08477826670761424
+2025,Light Truck,Pickup,2023,2,source_derived_median_equivalent_age,16.0,56297,0.06309922236992237
+2025,Light Truck,Pickup,2022,3,source_derived_median_equivalent_age,16.0,58048,0.06506179121674785
+2025,Light Truck,Pickup,2021,4,source_derived_median_equivalent_age,16.0,54275,0.060832909286952
+2025,Light Truck,Pickup,2020,5,source_derived_median_equivalent_age,16.0,44623,0.0500146828394594
+2025,Light Truck,Pickup,2019,6,source_derived_median_equivalent_age,16.0,62351,0.0698847116895577
+2025,Light Truck,Pickup,2018,7,source_derived_median_equivalent_age,16.0,70363,0.07886478113602587
+2025,Light Truck,Pickup,2017,8,source_derived_median_equivalent_age,16.0,78922,0.08845794319198205
+2025,Light Truck,Pickup,2016,9,source_derived_median_equivalent_age,16.0,55198,0.06186743301374807
+2025,Light Truck,Pickup,2015,10,source_derived_median_equivalent_age,16.0,50291,0.0563675327673902
+2025,Light Truck,Pickup,2014,11,source_derived_median_equivalent_age,16.0,41581,0.046605125768047005
+2025,Light Truck,Pickup,2013,12,source_derived_median_equivalent_age,16.0,32330,0.03623635112385367
+2025,Light Truck,Pickup,2012,13,source_derived_median_equivalent_age,16.0,33317,0.03734260780678728
+2025,Light Truck,Pickup,2011,14,source_derived_median_equivalent_age,16.0,43305,0.04853743227400196
+2025,Light Truck,Pickup,2010,15,source_derived_median_equivalent_age,16.0,36048,0.04040358754446883
+2025,Light Truck,Pickup,2009,16,source_derived_median_equivalent_age,16.0,26260,0.029432928565183963
+2025,Light Truck,Small SUV,2025,0,source_derived_median_equivalent_age,16.0,183348,0.07753564627628196
+2025,Light Truck,Small SUV,2024,1,source_derived_median_equivalent_age,16.0,206151,0.08717875851114712
+2025,Light Truck,Small SUV,2023,2,source_derived_median_equivalent_age,16.0,145593,0.06156951452048955
+2025,Light Truck,Small SUV,2022,3,source_derived_median_equivalent_age,16.0,140510,0.05941997544712992
+2025,Light Truck,Small SUV,2021,4,source_derived_median_equivalent_age,16.0,147862,0.06252904711097804
+2025,Light Truck,Small SUV,2020,5,source_derived_median_equivalent_age,16.0,148374,0.06274556570345495
+2025,Light Truck,Small SUV,2019,6,source_derived_median_equivalent_age,16.0,188114,0.0795511298929713
+2025,Light Truck,Small SUV,2018,7,source_derived_median_equivalent_age,16.0,188779,0.07983235033046573
+2025,Light Truck,Small SUV,2017,8,source_derived_median_equivalent_age,16.0,181395,0.0767097462545878
+2025,Light Truck,Small SUV,2016,9,source_derived_median_equivalent_age,16.0,172262,0.07284751128370574
+2025,Light Truck,Small SUV,2015,10,source_derived_median_equivalent_age,16.0,154729,0.0654330181549994
+2025,Light Truck,Small SUV,2014,11,source_derived_median_equivalent_age,16.0,125586,0.053108796786728765
+2025,Light Truck,Small SUV,2013,12,source_derived_median_equivalent_age,16.0,110655,0.04679465791119608
+2025,Light Truck,Small SUV,2012,13,source_derived_median_equivalent_age,16.0,76627,0.03240462926900025
+2025,Light Truck,Small SUV,2011,14,source_derived_median_equivalent_age,16.0,80788,0.03416426572075107
+2025,Light Truck,Small SUV,2010,15,source_derived_median_equivalent_age,16.0,71879,0.03039675763407766
+2025,Light Truck,Small SUV,2009,16,source_derived_median_equivalent_age,16.0,42041,0.017778629192034653

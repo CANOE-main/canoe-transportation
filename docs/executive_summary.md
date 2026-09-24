@@ -26,7 +26,7 @@ config:
     wrappingWidth: 250
     curve: linear
 ---
-flowchart TD
+flowchart LR
   subgraph CONTROL["`**Backend configuration**`"]
       scen_yaml@{shape: hex, label: "***config/scenarios/example_zev35.yaml***<br>Sources, trajectories, regions, periods, outputs, and switches"}
       source_yaml@{shape: hex, label: "***config/sources.yaml***<br>Identity, edition, access, cache, citation, units, refresh, DQI"}
@@ -50,7 +50,7 @@ flowchart TD
   EVIDENCE == fetching/ ==> INTERIM == parameterization/ ==> HARM == validation/ ==> VALID
 
   subgraph VALID["`**Validation and provenance**`"]
-  direction LR
+  direction TB
       ASSURE["`**Validation control: *canoe_schema***<br>Pydantic boundaries, row lineage, schema contracts, and integrity`"]
       DB[("`**CANOE-transport database**<br>Schema-ready insertion into transport-sector database`")]
   end

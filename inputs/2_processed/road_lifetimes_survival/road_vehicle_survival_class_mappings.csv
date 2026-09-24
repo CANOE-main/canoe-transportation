@@ -1,0 +1,9 @@
+source_family,source_class,target_system,target_class,nrcan_ceud_class,mapping_scope
+nhtsa_cafe_2024_ldv_survival,Cars,NLR ATB,Compact,Car,Ontario LDV weighted aggregation
+nhtsa_cafe_2024_ldv_survival,Cars,NLR ATB,Midsize,Car,Ontario LDV weighted aggregation
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,NLR ATB,Small SUV,Light Truck,Ontario LDV weighted aggregation
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,NLR ATB,Midsize SUV,Light Truck,Ontario LDV weighted aggregation
+nhtsa_cafe_2024_ldv_survival,Pickups,NLR ATB,Pickup,Light Truck,Ontario LDV weighted aggregation
+eia_nems_hd_truck_scrappage,Cls 3,comparison,Cls 3,,source class only; no fabricated Wards MHDV weighting
+eia_nems_hd_truck_scrappage,Cls 4-6,comparison,Cls 4-6,,source class only; no fabricated Wards MHDV weighting
+eia_nems_hd_truck_scrappage,Cls 7-8,comparison,Cls 7-8,,source class only; no fabricated Wards MHDV weighting
