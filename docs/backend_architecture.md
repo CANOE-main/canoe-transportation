@@ -38,10 +38,10 @@ requirements.
 │       ├── rules.yaml                       # Extraction and harmonization contracts
 │       └── conversion.yaml                  # Reusable conversion factors
 ├── workflow/
-│   └── Snakefile                            # Dependency and artifact orchestration
+│   └── Snakefile                            # Coarse dependency and artifact orchestration #to-review
 ├── src/
 │   ├── setup.py                             # Configuration/schema smoke entrypoint
-│   ├── build_transport.py                   # Transport contribution and atomic database assembly #to-review
+│   ├── build_transport.py                   # Transport contribution and atomic database assembly
 │   ├── canoe_adapter.py                     # CANOE-main orchestrator adapter for running this backend - #to-do
 │   ├── fetching/                            # Upstream download, cache, and interim normalization
 │   │   ├── nrcan_ceud.py                    # NRCan CEUD transport tables
@@ -54,25 +54,25 @@ requirements.
 │   │   ├── vpic_model_years.py              # Opt-in vPIC make/model-year evidence
 │   │   └── assorted_sources.py              # Smaller registered source adapters
 │   ├── parameterization/                    # Transform normalized inputs into model parameters
+│   │   ├── build_existing_capacity.py       # Combine and validate road/off-road capacity rows
+│   │   ├── build_demand.py                  # Project and validate combined transport demand
+│   │   ├── build_lifetime_parameters.py     # Select and validate fixed/curve lifetime rows
+│   │   ├── build_efficiencies.py            # Combine efficiency rows and PHEV input splits
+│   │   ├── build_costs.py                   # Combine and validate investment/variable costs
 │   │   ├── manual_parameters.py             # Validate registry and resolve generic selectors
 │   │   ├── road_stocks_and_demands.py       # Road existing stock and demand products
 │   │   ├── road_utilization.py              # Road C2A and annual utilization, including vintage-period artifacts
 │   │   ├── offroad_stocks_and_demands.py    # Off-road existing stock and demand products
-│   │   ├── build_existing_capacity.py       # Combine and validate road/off-road capacity rows #to-review
-│   │   ├── build_demand.py                  # Project and validate combined transport demand #to-review
-│   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
 │   │   ├── road_lifetimes_survival.py       # Accepted road lifetime, survival, and MTO diagnostics
 │   │   ├── offroad_lifetimes.py             # Lifetimes of remaining technologies
-│   │   ├── build_lifetime_parameters.py     # Select and validate fixed/curve lifetime rows #to-review
 │   │   ├── road_aggregation.py              # Reviewed mapping application and aggregation weights
 │   │   ├── vehicle_mapping_bootstrap.py     # Explicit mapping-development entrypoint
 │   │   ├── road_efficiencies.py             # Road technology efficiencies
 │   │   ├── offroad_efficiencies.py          # Off-road technology efficiencies
-│   │   ├── build_efficiencies.py            # Combine efficiency rows and PHEV input splits #to-review
 │   │   ├── road_capex_opex.py               # Road investment and operating costs
 │   │   ├── offroad_capex_opex.py            # Off-road investment and operating costs
-│   │   ├── build_costs.py                   # Combine and validate investment/variable costs #to-review
-│   │   ├── currency.py                      # CER-backed currency and price-year conversion #to-review
+│   │   ├── currency.py                      # CER-backed currency and price-year conversion
+│   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
 │   │   ├── ldv_charging_profiles.py         # Hourly LDEV charging demand profiles - #to-do
 │   │   ├── road_embodied_emissions.py       # Vehicle-cycle and operating emissions - #to-do
 │   │   ├── market_constraints.py            # Market shares, policy limits, and SCC rules - #to-do
@@ -120,19 +120,19 @@ The implemented pipeline follows acquisition → normalized evidence → paramet
 → database assembly. `fetching/` owns source-specific I/O and normalization. Within
 `parameterization/`, road/off-road modules own the differing calculations; `road_aggregation`,
 `road_utilization`, and `ev_chargers` own their shared behavioral contracts. Builders compose
-these functions directly, with no forwarding modules or second transformation path. #to-review
+these functions directly, with no forwarding modules or second transformation path.
 
 The shared transport builders have a `build_` prefix to distinguish preparation entrypoints
 from schema tables and sector-wide assembly. They resolve provenance, validate combined
-coverage and keys, and publish configured artifacts without opening SQLite connections: #to-review
+coverage and keys, and publish configured artifacts without opening SQLite connections:
 
 | Builder | Prepared contract |
 | --- | --- |
-| `build_existing_capacity` | Road/off-road technology-vintage capacity and reconciliation evidence. #to-review |
-| `build_demand` | Road/off-road base activity, CER scenario projections, and regional-period demand. #to-review |
-| `build_lifetime_parameters` | Exactly one fixed or survival-curve representation per modeled region/technology. #to-review |
-| `build_efficiencies` | Fuel/service efficiency edges and PHEV input splits, gated by existing capacity. #to-review |
-| `build_costs` | Investment and variable costs, harmonized with `currency` and constrained by capacity/lifetime coverage. #to-review |
+| `build_existing_capacity` | Road/off-road technology-vintage capacity and reconciliation evidence. |
+| `build_demand` | Road/off-road base activity, CER scenario projections, and regional-period demand. |
+| `build_lifetime_parameters` | Exactly one fixed or survival-curve representation per modeled region/technology. |
+| `build_efficiencies` | Fuel/service efficiency edges and PHEV input splits, gated by existing capacity. |
+| `build_costs` | Investment and variable costs, harmonized with `currency` and constrained by capacity/lifetime coverage. |
 
 `build_transport.py` calls the same preparation functions for standalone and caller-owned
 assembly. `prepare_transport_contribution` gathers structural templates, capacity, demand,
@@ -140,7 +140,7 @@ road utilization, lifetimes, efficiencies, costs, and charger rows as selected;
 `insert_transport_contribution` registers provenance and inserts validated rows into a
 compatible caller-owned connection. The standalone path also owns schema initialization,
 transactions, integrity checks, and atomic publication. Schema contracts and insertion
-mechanics remain in `validation/`, backed by the pinned `canoe-schema` package. #to-review
+mechanics remain in `validation/`, backed by the pinned `canoe-schema` package.
 
 ## Running and extending the backend
 
@@ -150,24 +150,38 @@ for readiness checks. Run a prepared scenario with
 `uv run python src/build_transport.py --scenario <scenario.yaml>`; use
 `uv run python -m parameterization.build_<family> --scenario <scenario.yaml>` for an
 individual builder. Preparation also publishes audit CSVs. Fetching entrypoints support
-explicit cache replay with `--no-download` where implemented. #to-review
+explicit cache replay with `--no-download` where implemented.
 
-`workflow/Snakefile` currently declares readiness, StatCan/CER acquisition, and database
-targets. It calls Python entrypoints; it does not yet declare every parameter dependency
-or provide a complete source-to-database DAG. Keep transformations in their importable
-owners as stage dependencies are added. Mapping bootstrap and `--mapping-diagnostics`
-are opt-in development paths; road lifetime generation defaults to accepted evidence,
-with MTO review enabled by `--mto-diagnostics` or `--all`. #to-review
+Use `uv run snakemake --snakefile workflow/Snakefile --cores 1 --config
+scenario=<scenario.yaml>` for coarse orchestration; add `--dry-run` to inspect pending
+jobs. The workflow calls existing Python entrypoints, requires readiness and the declared
+StatCan/CER tables before assembly, and tracks control files, production manual tables,
+templates, implementation files, and offline caches at those boundaries. Downloads require
+`download_sources=true`; this permits fetching missing caches rather than refreshing them.
+The default profile keeps runtime metadata under ignored `.snakemake/`. Failed database
+jobs restore the previous SQLite and validation report.
+
+This is still a partial DAG: other normalized evidence, road aggregation, and accepted
+road lifetime products must already be prepared. Changes to those undeclared prerequisites
+require `--forcerun transport_database`. Parameter CSVs are audit exports rather than
+complete serialized preparation results: assembly also needs provenance contexts, internal
+datasets, and audits returned by the builders. Assembly therefore prepares parameters once
+through the shared Python path. Run one scenario at a time while interim/processed products
+share configured directories.
+
+Mapping bootstrap and `--mapping-diagnostics` are opt-in development paths; road lifetime
+generation defaults to accepted evidence, with MTO review enabled by `--mto-diagnostics`
+or `--all`.
 
 For a change, follow the affected `config/paths.yaml` artifact family to its owner,
 producers, consumers, and validation surfaces, then verify the current code and focused
 tests. Module renames change those references; artifact keys and schema table names retain
 their product meaning. `config/sources.yaml` component `parameter_modules` records source
-lineage, including planned owners, rather than executable build readiness. #to-review
+lineage, including planned owners, rather than executable build readiness.
 
 Use [AGENTS.md](../AGENTS.md) for repository policy and config responsibilities,
 [etl_flowcharts.md](etl_flowcharts.md) for parameter lineage, and
 [assumptions.md](assumptions.md) for enduring data challenges. Retrieve
 [codebase_diagnostic_snapshot.md](codebase_diagnostic_snapshot.md) for a structural review
 and [canoe_main_orchestrator.md](canoe_main_orchestrator.md) for an upstream integration
-change; verify their snapshots against current interfaces. #to-review
+change; verify their snapshots against current interfaces.

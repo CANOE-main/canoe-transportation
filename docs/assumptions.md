@@ -10,19 +10,21 @@ verify: "Check current code, config, tests, and evidence; mark Codex-added or ch
 
 Each parameter section is presented as a single table. Rows are grouped by vehicle class, and assumptions that apply to multiple classes remain consolidated rather than duplicated.
 
+`#to-clarify` tags are manually left on entries where there appears to be an error, the current implementation of those entries is left as context and evidence, where the tag explains what the correct approach should be.
+
 ## `existing_capacity`
 
 | Technology class | Source / challenge | Assumption |
 | --- | --- | --- |
-| Cars and Light Trucks | Ontario MTO is the available vehicle-population evidence | Mapped 2025 Report A age shares distribute 2023 CEUD stocks in every CEUD region.  |
-| Cars and Light Trucks | StatCan LDV vehicle types differ from CEUD classes | Passenger-car fuel shares apply to cars; combined pickup, multipurpose-vehicle, and van shares apply to both light-truck classes.  |
-| Cars and Light Trucks | CEUD and StatCan pickup weight bins differ | CEUD light trucks end at 8,500 lb; StatCan pickups extend to 14,000 lb. Treat the mismatch as negligible for fuel shares. #to-review |
-| Cars and Trucks | StatCan fuel registrations start after some surviving vintages; some fuels lack existing technologies | Earlier vintages repeat the oldest available gasoline/diesel shares after renormalization. Other unsupported shares are excluded and audited. #to-review |
-| Road Vehicles | Regional fuel evidence is incomplete | BC shares proxy BCT; Canada-level LDV shares proxy Alberta and Newfoundland and Labrador. CEUD NL/PE map to native NLLAB/PEI. #to-review |
-| Medium Trucks, Heavy Trucks, and Motorcycles | Ontario MTO Report 5 is the available age evidence | The 2025 COMMERCIAL ages proxy both truck classes; MOTORCYCLE ages proxy motorcycles across CEUD regions. #to-review |
-| Medium and Heavy Trucks | StatCan truck weight groups do not match CEUD exactly | The 10,001–33,000 lb groups proxy medium trucks and Class 8 proxies heavy trucks; 8,501–10,000 lb is uncovered. #to-review |
-| Medium Trucks | Transport Canada's 2026 year-to-date medium/heavy EV share | Treat the reported share as medium-truck BEV stock in the 2023 vintage; split the remainder by StatCan gasoline/diesel proportions. #to-review |
-| Road Vehicles | Fixed-lifetime vintage eligibility | Cars/light trucks use medians derived from accepted NHTSA curves; medium trucks use the NEMS Class 4–6 median; heavy trucks/motorcycles use reviewed manual lifetimes. #to-review |
+| Cars and Light Trucks | Ontario MTO is the available vehicle-population evidence | Mapped latest Report A age shares distribute latest NRCan CEUD stocks in every CEUD region.  |
+| Cars and Light Trucks | StatCan LDV vehicle types differ from CEUD classes | Passenger-car fuel shares apply to cars; combined pickup, multipurpose-vehicle, and van shares apply to light-truck class.  |
+| Cars and Light Trucks | CEUD and StatCan pickup weight bins differ | CEUD light trucks end at 8,500 lb; StatCan pickups extend to 14,000 lb. Treat the mismatch as negligible for fuel shares.  |
+| Medium and Heavy Trucks | StatCan truck weight groups do not match CEUD exactly | The 10,001–33,000 lb groups proxy medium trucks and Class 8 proxies heavy trucks; 8,501–10,000 lb is uncovered.  |
+| Cars and Trucks | StatCan fuel registrations start after some surviving vintages; some fuel types lack existing technologies | Earlier vintages repeat the oldest available gasoline/diesel shares after renormalization. Other unsupported shares are excluded and audited.  |
+| Road Vehicles | StatCan undisclosed AB and NL fuel type share evidence | BC shares proxy BCT; Canada-level LDV shares proxy Alberta and Newfoundland and Labrador. #to-clarify: this only affects LDVs, StatCan table 23-10-0308-01 does disclose shares for medium and heavy trucks |
+| Medium Trucks, Heavy Trucks, and Motorcycles | Ontario MTO Report 5 is the available age evidence | The latest COMMERCIAL ages proxy both truck classes; MOTORCYCLE ages proxy motorcycles across CEUD regions.  |
+| Medium Trucks | Transport Canada's year-to-date medium/heavy EV share | Treat the reported share as medium-truck BEV stock in the latest existing vintage; split the remainder by StatCan gasoline/diesel proportions.  |
+| Road Vehicles | Fixed-lifetime vintage eligibility | Cars/light trucks use medians derived from accepted NHTSA CAFE model curves; medium trucks use the NEMS Class 4–6 median; heavy trucks/motorcycles use reviewed manual lifetimes.  |
 | Heavy Trucks and Motorcycles | Existing incumbent powertrains | Retain diesel heavy trucks and gasoline motorcycles only; exclude and audit non-diesel heavy-truck registration shares. #to-review |
 | Buses | CEUD reports bus stocks by class and annual fuel use by class, but not stock by powertrain | Split 2023 stocks using each cohort year's CEUD fuel energy times its annual bus efficiency. Map ethanol to gasoline and biodiesel to diesel; exclude propane with an audit. #to-review |
 | Buses | Ontario MTO Report 5 provides the available age profile | Apply its 2025 BUS ages to all CEUD bus classes and regions; use 2000 activity shares for pre-2000 cohorts. #to-review |

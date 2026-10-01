@@ -1,4 +1,8 @@
-from fetching.cer_enerfuture import configured_edition
+from pathlib import Path
+
+from fetching.cer_enerfuture import build_requests as cer_requests, configured_edition
+from fetching.statcan_tables import build_requests as statcan_requests
+from parameterization.manual_parameters import registered_manual_components
 from utils import load_config_bundle, load_harmonization_rules
 
 
@@ -22,7 +26,7 @@ STATCAN_MANIFEST = f"{STATCAN_INTERIM}/{STATCAN_RULES['manifest_file']}"
 STATCAN_WARNINGS = f"{STATCAN_INTERIM}/{STATCAN_RULES['warnings_file']}"
 CER_MANIFEST = f"{CER_INTERIM}/{CER_RULES['manifest_file']}"
 CER_WARNINGS = f"{CER_INTERIM}/{CER_RULES['warnings_file']}"
-DOCTOR_OUTPUT = f"{LOG_ROOT}/doctor.ok"
+DOCTOR_OUTPUT = f"{LOG_ROOT}/doctor_{SCENARIO.scenario.scenario.name}.ok"
 TRANSPORT_DATABASE = f"{SQLITE_ROOT}/{SCENARIO.scenario.outputs.sqlite_name}"
 TRANSPORT_VALIDATION = SCENARIO.scenario.outputs.validation_report
 DOWNLOAD_SETTING = config.get("download_sources", False)
@@ -30,13 +34,53 @@ if DOWNLOAD_SETTING not in (True, False, "true", "false"):
     raise ValueError("download_sources must be true or false")
 DOWNLOAD_SOURCES = DOWNLOAD_SETTING in (True, "true")
 CACHE_FLAG = "" if DOWNLOAD_SOURCES else "--no-download"
+PARAMETER_ROOT = SCENARIO.paths.config.parameters
+CONFIG_INPUTS = [
+    "config/paths.yaml", "config/sources.yaml", SCENARIO_PATH,
+    f"{PARAMETER_ROOT}/rules.yaml",
+]
+CONVERSION_INPUT = f"{PARAMETER_ROOT}/conversion.yaml"
+MANUAL_INPUTS = sorted({
+    f"{SCENARIO.paths.inputs.manual}/{registration.adapter.manual_parameter_path}"
+    for registration in registered_manual_components(SCENARIO)
+    if not registration.adapter.development_only
+} | {
+    f"{SCENARIO.paths.inputs.manual}/{filename}"
+    for filename in load_harmonization_rules(SCENARIO, "manual_parameters")[
+        "internal_assumption_files"
+    ]
+})
+TEMPLATE_INPUTS = [
+    f"{SCENARIO.paths.inputs.template}/{filename}"
+    for filename in ("technology.csv", "commodity.csv", "region.csv", "time_period.csv")
+]
+COMMON_CODE = ["pyproject.toml", "uv.lock"] + sorted(
+    path.as_posix()
+    for directory in ("src/utils", "src/validation")
+    for path in Path(directory).glob("*.py")
+)
+CER_REQUESTS = cer_requests(SCENARIO)
+STATCAN_REQUESTS = statcan_requests(SCENARIO)
+CER_TABLES = [f"{CER_INTERIM}/{request.output_file}" for request in CER_REQUESTS]
+STATCAN_TABLES = [
+    f"{STATCAN_INTERIM}/{request.output_file}" for request in STATCAN_REQUESTS
+] + [
+    f"{STATCAN_INTERIM}/{filename}"
+    for filename in (
+        STATCAN_RULES["ldv_history"]["output_file"],
+        STATCAN_RULES["ldv_history"]["overlap_file"],
+        STATCAN_RULES["freight"]["output_file"],
+    )
+]
 
 
 rule all:
     input:
         DOCTOR_OUTPUT,
+        STATCAN_TABLES,
         STATCAN_MANIFEST,
         STATCAN_WARNINGS,
+        CER_TABLES,
         CER_MANIFEST,
         CER_WARNINGS,
         TRANSPORT_DATABASE,
@@ -44,13 +88,17 @@ rule all:
 
 
 rule doctor_smoke:
+    input:
+        controls=CONFIG_INPUTS,
+        manual=MANUAL_INPUTS,
+        templates=TEMPLATE_INPUTS,
+        code=COMMON_CODE + ["scripts/doctor.py", "src/parameterization/manual_parameters.py"],
     output:
         DOCTOR_OUTPUT
     params:
         scenario=SCENARIO_PATH,
     run:
         import subprocess
-        from pathlib import Path
 
         subprocess.run(
             ["uv", "run", "python", "scripts/doctor.py", "--scenario", params.scenario],
@@ -62,7 +110,15 @@ rule doctor_smoke:
 
 
 rule statcan_transport_tables:
+    input:
+        controls=CONFIG_INPUTS + [CONVERSION_INPUT],
+        code=COMMON_CODE + ["src/fetching/statcan_tables.py"],
+        cache=[] if DOWNLOAD_SOURCES else [
+            str(path) for request in STATCAN_REQUESTS
+            for path in (request.archive_cache_path, request.metadata_cache_path)
+        ],
     output:
+        tables=STATCAN_TABLES,
         manifest=STATCAN_MANIFEST,
         warnings=STATCAN_WARNINGS,
     params:
@@ -74,7 +130,12 @@ rule statcan_transport_tables:
 
 
 rule cer_enerfuture:
+    input:
+        controls=CONFIG_INPUTS,
+        code=COMMON_CODE + ["src/fetching/cer_enerfuture.py"],
+        cache=[] if DOWNLOAD_SOURCES else [str(request.cache_path) for request in CER_REQUESTS],
     output:
+        tables=CER_TABLES,
         manifest=CER_MANIFEST,
         warnings=CER_WARNINGS,
     params:
@@ -90,14 +151,18 @@ rule cer_enerfuture:
 rule transport_database:
     input:
         doctor=DOCTOR_OUTPUT,
-        paths="config/paths.yaml",
-        sources="config/sources.yaml",
+        statcan=rules.statcan_transport_tables.output,
+        cer=rules.cer_enerfuture.output,
         scenario=SCENARIO_PATH,
-        technology="inputs/0_canoe_template/technology.csv",
-        commodity="inputs/0_canoe_template/commodity.csv",
+        conversion=CONVERSION_INPUT,
+        templates=TEMPLATE_INPUTS,
+        code=["src/build_transport.py"] + sorted(
+            path.as_posix() for path in Path("src/parameterization").glob("*.py")
+            if path.stem != "vehicle_mapping_bootstrap"
+        ),
     output:
-        database=TRANSPORT_DATABASE,
-        validation=TRANSPORT_VALIDATION,
+        database=update(TRANSPORT_DATABASE),
+        validation=update(TRANSPORT_VALIDATION),
     shell:
         "uv run python src/build_transport.py "
         "--scenario {input.scenario:q} --overwrite"

@@ -4,479 +4,467 @@ role: Point-in-time evidence for codebase complexity, modularity, duplication, o
 retrieve_when: A task affects module boundaries, architecture fitness, codebase complexity, shared infrastructure, development/runtime separation, or an efficiency refactor.
 read_scope: Read only the relevant diagnostic sections unless the task is explicitly repository-wide.
 verify: Reconcile snapshot findings against current code, config, tests, schemas, workflow, and generated evidence before acting.
-last_diagnostic_run: 2026-08-20
+last_diagnostic_run: 2026-10-01
 ---
 
 # Codebase diagnostic snapshot
 
-This document replaces the 2026-08-13 diagnostic. It is a point-in-time assessment, not
-an architecture authority, artifact registry, cumulative decision log, or refactor plan.
-Current code, configuration, tests, schemas, workflow, and generated evidence outrank it.
+This refresh replaces the 2026-08-20 assessment. The main concerns are now long parameter
+assembly functions, incomplete workflow dependency coverage, preparation/publication side
+effects, and a few dispersed helper responsibilities. Large source-specific modules and
+highly reused trust boundaries need different treatment. The findings below support later
+bounded decisions; they do not authorize a refactor or a modelling change.
 
-## 1. Diagnostic context and method
+Current code, configuration, tests, schemas, workflow, and generated evidence outrank this
+point-in-time snapshot. Use [artifact routes](../config/paths.yaml) to bound a subsequent
+change, [backend architecture](backend_architecture.md) for ownership, and
+[CANOE-main context](canoe_main_orchestrator.md) only when working on the integration seam.
+This document does not replace those owners.
+
+## 1. Inspection scope and method
 
 ### Repository state
 
-- Diagnostic completed: 2026-08-20.
-- Branch and commit inspected: `v2.0` at
-  `a8032f0890ca2189c86d749ff221995cd322a278` (2026-08-17,
-  `Refactor parameterization and validation paths; introduce artifact routing`).
-- The working tree was dirty before this task. Tracked `src/`, `tests/`, and `workflow/`
-  matched the inspected commit; unrelated plan-archive moves, config/document edits, the
-  deletion of the former snapshot filename, and this snapshot under its new filename were
-  already present. Conclusions describe the working tree, not a clean checkout.
-- The prior snapshot was committed on 2026-08-13 as
-  `docs/architecture_context_optimization_diagnostic_snapshot.md`. Plan 030 subsequently
-  implemented its artifact-routing, runtime/development, and shared-mechanics findings.
+- Inspected on 2026-10-01, branch `v2.0`, HEAD
+  `23329ea1f368ebef30bb854f9ae4312da72658de`
+  (`feat: Add EV charger parameterization and lifetime parameter builder`). Findings
+  describe the working tree, including uncommitted workflow changes.
+- Pre-existing changes included `docs/backend_architecture.md`,
+  `docs/canoe_main_orchestrator.md`, `workflow/Snakefile`, `tests/test_workflow.py`,
+  `workflow/profiles/`, and efficiency smoke directories.
+  `docs/etl_flowcharts.md` also became dirty during inspection. These unrelated changes
+  were preserved; this task changes the diagnostic and its planning record.
+- All discovered Python under `src/`, `scripts/`, and `tests/` was inventoried and
+  parsed. Every production module received a responsibility/dependency assessment in
+  section 3. The current research notebook, workflow/profile, artifact routes, typed
+  configuration, relevant parameter/source selections, and boundary tests were inspected
+  separately. Legacy code, cached data, generated directories, and `.venv/` were excluded
+  from code metrics.
 
-### Scope inspected
+### What the measurements mean
 
-The inspection covered all current Python files under `src/`, `scripts/`, and `tests/`;
-`workflow/Snakefile`; `config/paths.yaml`; relevant route, source, scenario, and parameter
-configuration; the structural and execution-boundary sections of
-`docs/backend_architecture.md`; and current files under the configured Ontario vehicle,
-road, lifetime, stock, and validation artifact families. Detailed review concentrated on:
+- Physical lines include blanks, comments, and docstrings. Approximate LOC excludes blank
+  and full-line comment lines but includes docstrings. Function span runs from
+  `lineno` to `end_lineno`, including nested helpers. Function counts include methods
+  and nested functions. All 88 Python files parsed successfully.
+- The branch signal counts AST `If`, `For`, `AsyncFor`, `While`, `Try`,
+  `IfExp`, `BoolOp`, `Match`, and comprehension nodes. Nesting counts control-flow
+  and context-manager blocks. Nested helper bodies contribute to their containing
+  function's signal. These are inspection aids, not cyclomatic complexity, runtime cost,
+  defect probability, or reasons to split a module.
+- The production import graph covers 47 source/script files and 117 distinct directed
+  local import edges, including imports inside functions. Fan-in/out excludes tests,
+  external libraries, command-line invocations, and artifact-mediated dependencies.
+  No static import cycles were found. Low import counts do not imply low dependency
+  burden: configuration keys and files supply many runtime dependencies.
+- A narrow duplicate screen normalized function names, removed leading docstrings, and
+  compared location-independent ASTs for functions spanning at least eight lines with
+  at least 20 AST nodes. It found no exact production duplicates. It does not normalize
+  local identifiers or prove the absence of similar mechanics or overlapping ownership.
+  The consolidation findings rely on inspected callers and implementations.
+- Lexical discovery used `rg`; AST inspection located size, calls, and imports.
+  An ast-grep conditional-call rule was checked on positive and negative stdin examples,
+  then confirmed that capacity preparation in the cost/efficiency builders is guarded
+  by missing supplied rows. Matching source and the contribution caller were inspected
+  before drawing the execution conclusion.
 
-- `fetching.vehicle_population`, `fetching.fueleconomy_vehicles`, both vPIC adapters,
-  and `fetching.nrcan_ceud`;
-- `parameterization.road_aggregation`, `vehicle_mapping_bootstrap`,
-  `lifetimes_survival`, `stocks_and_demands`, and `manual_parameters`;
-- `fetching.nlr_atb_autonomie`, `fetching.assorted_sources`, `build_transport`, shared
-  utilities, validation modules, their callers, and focused tests.
-
-### Reproducible inspection method
-
-Read-only commands used included:
+Representative read-only commands are below; the inventory/AST analysis was run through
+`uv run --offline python -B -` without adding a permanent diagnostic framework.
 
 ```powershell
-git status --short --branch
+git status --short
 git rev-parse HEAD
-git log -1 --format="%H%n%cI%n%s"
-git diff --name-status 9f065eb..HEAD -- src tests workflow config/paths.yaml
-rg --files src tests workflow config
-rg -n "^(from|import) (fetching|parameterization|validation|utils)" src scripts tests
-rg -n "resolve_artifact_path|resolve_input_path|write_dataframe_atomic|to_csv|read_csv" src
-rg -n "def (file_sha256|write_.*atomic|find_repo_root|quote_identifier|normalize_vehicle_)" src scripts
+rg --files -g '*.py' -g '!legacy_backend/**' -g '!inputs/**' -g '!outputs/**'
+rg -n '^def |^class |^from |^import ' src scripts
+rg -n 'prepare_|resolve_artifact_path|read_csv|write_dataframe_atomic|to_csv' src
+uv run --offline pytest --collect-only -q
+uv run --offline ruff check src scripts tests --statistics
+uv run --offline snakemake --snakefile workflow/Snakefile --cores 1 --dry-run --config scenario=config/scenarios/legacy_reproduction.yaml
 ```
 
-A temporary in-memory AST script, run with `uv run python -B -`, counted physical lines,
-nonblank/non-full-line-comment LOC, functions, argument counts, function spans, branch-like
-nodes, and maximum control-flow nesting. The branch signal is a screening aid, not a formal
-cyclomatic-complexity grade. Callers, artifacts, and responsibility boundaries were then
-verified directly in code and configuration rather than inferred from metrics.
+No source refresh, production ETL/build, notebook execution, or parity run was performed.
+Behavior checks used temporary fixtures/databases or read existing accepted artifacts.
+The real workflow command above was a dry-run; section 7 states the limits.
 
-No network calls, source refreshes, ETL entrypoints, database builds, notebooks, or artifact
-writers were run. Focused non-network tests are recorded in section 8.
+## 2. Current scale and execution shape
 
-## 2. Repository and execution shape
+| Scope | Python files | Physical lines | Approximate LOC | Change since 2026-08-20 |
+|---|---:|---:|---:|---|
+| `src/` | 44 | 26,213 | 24,523 | +14 files, +8,976 physical lines. |
+| `scripts/` | 3 | 400 | 330 | Unchanged counts. |
+| `tests/` | 40 | 10,805 | 9,540 | +16 files, +3,292 physical lines. |
+| Research notebook under `docs/insights/` | 1 | 3,968 | 3,691 | Measured separately from production. |
 
-### Inventory and size
+There are 39 test modules plus `conftest.py`, 288 statically defined `test_*` functions,
+and 323 collected pytest cases. The older snapshot recorded 204 test functions.
+Collection establishes import/discovery readiness, not that all cases pass.
 
-| Scope | Python files | Physical lines | Approximate Python LOC |
-|---|---:|---:|---:|
-| `src/` | 30 | 17,237 | 15,932 |
-| `tests/` | 24, including `conftest.py` | 7,513 | 6,568 |
-| `scripts/` | 3 | 400 | 330 |
+[build_transport.py](../src/build_transport.py) now prepares templates and seven parameter
+families: existing capacity, demand, road utilization, lifetimes, efficiencies/input splits,
+costs, and EV chargers. Its `TransportContribution` holds package row models, datasets,
+provenance contexts, and audits; `insert_transport_contribution` uses the caller's
+connection without committing it. The standalone path adds packaged-schema initialization,
+validation, and atomic SQLite publication around that same assembly path.
 
-There are 23 `test_*.py` modules with 204 statically defined `test_*` functions. Pytest
-parameterization can produce a larger executed-case count. Size is useful for locating
-inspection effort; it is not used as a disposition criterion.
+The [current Snakefile](../workflow/Snakefile) has five rules: `all`, `doctor_smoke`,
+`statcan_transport_tables`, `cer_enerfuture`, and `transport_database`. Its default
+source jobs require caches and use `--no-download`; `download_sources=true` opts into
+acquisition. It tracks source table outputs, templates, registered manual inputs through
+doctor, shared validation/utilities, conversion inputs, and parameterization code. The
+database rule runs the full contribution build. It is no longer template-only.
 
-The default Snakemake DAG remains deliberately narrow: doctor, StatCan, CER, and a
-template-only SQLite build. It does not invoke Ontario vehicle acquisition, road
-aggregation, lifetime derivation, stock derivation, FuelEconomy, vPIC, or mapping
-bootstrap. Direct Python entrypoints are therefore the only current execution surface for
-the vehicle slice.
+The [workflow profile](../workflow/profiles/default/profile.yaml) places Snakemake source
+cache metadata under `.snakemake/source-cache`. Workflow fixture tests now exercise
+ordering, reuse, missing-table recovery, invalidation, failed-publication restoration, and
+offline missing-cache rejection. Two of those fixtures were rerun for this assessment;
+the real dry-run found five jobs and completed successfully in 2.49 seconds.
 
-This is not inherently wrong: repository policy allows direct entrypoints until stage
-interfaces stabilize. It does mean that “active source,” “configured artifact route,” and
-“participates in normal database compilation” are three different facts.
+### Static hotspots and shared interfaces
 
-### Current vehicle artifact placement
+The table combines size with actual function concentration. Argument counts include
+keyword-only arguments; branch/nesting signals follow section 1.
 
-| Configured family | Current files | Current role and observation |
+| Module / function | Physical module lines | Function start / span | Arguments | Branch signal / nesting | Interpretation |
+|---|---:|---:|---:|---:|---|
+| `build_costs.prepare_cost_rows` | 958 | 226 / 719 | 4 | 133 / 10 | Several source, pathway, row, provenance, and publication stages share one closure. |
+| `build_efficiencies.prepare_efficiency_rows` | 956 | 307 / 555 | 2 | 75 / 7 | Evidence assembly, relationships, vintages, PHEV splits, and publication are concentrated. |
+| `build_existing_capacity.build_existing_capacity_artifacts` | 764 | 210 / 534 | 1 | 51 / 5 | Multi-mode assembly plus prerequisite regeneration and audit/publication. |
+| `ev_chargers.prepare_ev_charger_rows` | 480 | 123 / 337 | 3 | 90 / 5 | Smaller module, but one function assembles several parameter families. |
+| `road_stocks_and_demands.distribute_existing_road_capacity` | 1,308 | 553 / 327 | 14 | 80 / 4 | Many evidence/eligibility inputs; cohort stages merit local decomposition. |
+| `road_stocks_and_demands.distribute_existing_bus_capacity` | 1,308 | 882 / 292 | 9 | 60 / 5 | A separate bus allocation contract, not an interchangeable road/off-road algorithm. |
+| `vehicle_mapping_bootstrap.build_bootstrap_mapping` | 1,948 | 1438 / 399 | 1 | 35 / 3 | Long ordered evidence pipeline, with established stage helpers. |
+| `nlr_atb_autonomie.derive_phev_efficiency` | 1,616 | 776 / 300 | 8 | 18 / 1 | Long joined source calculation; low nesting changes the diagnosis. |
+| `vehicle_population.normalize_report_a` | 1,772 | 886 / 309 | 6 | 9 / 1 | Large source-native normalization with modest control-flow depth. |
+| `manual_parameters.resolve_manual_parameters` | 798 | 429 / 312 | 3 | 41 / 5 | Cohesive selector resolver; local stages are more plausible than a generic rules engine. |
+| `road_aggregation.unresolved_mapping_reasons` | 1,769 | 949 / 276 | 4 | 7 / 2 | Diagnostic responsibility lives beside runtime mapping. |
+| `road_lifetimes_survival._derive_mto_diagnostic_outputs` | 2,173 | 1869 / 180 | 3 | 16 / 0 | Largest production module, with explicit accepted/diagnostic entrypoints. |
+
+The highest direct production fan-ins are `utils` (28), `validation.provenance` (11),
+`validation.config_models` (10), `validation.insertion` (9),
+`road_efficiencies` (6), and `manual_parameters` (5). The first four centralize small,
+stable contracts. Their reuse is useful; it is not evidence of excessive ownership.
+By comparison, `build_transport` imports 14 local modules, `build_costs` 12,
+`build_efficiencies` 10, and `build_existing_capacity` 7: integration responsibility
+is concentrated in a few assemblers.
+
+## 3. Responsibility and disposition map
+
+Every nonempty production module is covered below. Sizes identify inspection surfaces;
+the suggested disposition follows its contracts, callers, side effects, and artifacts.
+“Extract” means a candidate for later review, not an approved module/package design.
+
+### Source adapters
+
+| Module under `src/fetching/` | Lines | Responsibility and disposition |
 |---|---:|---|
-| `ontario_vehicle_population` | 27, about 292 MB | Source-normalized MTO reports, audit tables, manifest, and warnings. One old lifetime-comparison CSV remains here despite current code routing that filename to lifetime validation. |
-| `vehicle_survival_interim` | 7, about 71 MB | Large raw and mapped transition audit tables owned by lifetime derivation. |
-| `road_aggregation` | 5, about 6.4 MB | Mapped stock and runtime aggregation weights. |
-| `lifetimes_survival` | 10, about 0.38 MB | Processed survival curves, mappings, and medians. |
-| `stocks_and_demands` | 1 | Processed Ontario LDV age distribution. |
-| `vehicle_mapping_review` | 15, about 14.5 MB | Candidate, bootstrap, request, coverage, review, and exported-notebook evidence. |
-| `lifetime_validation` | 6 | Decision and review evidence; it also contains an old unconfigured commercial/EIA comparison filename while the currently configured comparison filename is absent. |
-| `outputs/validation` | 0 | Reserved for database validation reports; no database report is currently present. |
+| [vehicle_population.py](../src/fetching/vehicle_population.py) | 1,772 | Ontario CKAN discovery, archive validation, Reports A/4/5 normalization, reconciliation, and source inventories form one source family. Keep that ownership; simplify stage orchestration if needed. A streaming long-status output also makes indiscriminate writer replacement unsuitable. |
+| [nlr_atb_autonomie.py](../src/fetching/nlr_atb_autonomie.py) | 1,616 | ATB archive components, Autonomie/PHEV energy reconciliation, VMT, and maintenance evidence share source-member lineage. Extract internal PHEV/archive stages before considering separate source owners. Its nested dispatcher is an inspection target, not evidence that all ANL/ATB work should be separated. |
+| [assorted_sources.py](../src/fetching/assorted_sources.py) | 1,836 | NHTSA, NEMS, GCAM, ReGen, FAA, and TC dashboard contracts have independent identities and formats. Strong source-family extraction candidate behind the current facade. The default function couples the first five families; TC already has an independent entrypoint. |
+| [nrcan_ceud.py](../src/fetching/nrcan_ceud.py) | 923 | CEUD Excel tables and fuel-rating CSVs have distinct request models, normalizers, and publishers. A defensible future separation follows those contracts, while retaining common path/source mechanics. Do not split CEUD provincial/national series merely by geography. |
+| [statcan_tables.py](../src/fetching/statcan_tables.py) | 913 | StatCan ZIP/metadata contracts and transport-specific historical/candidate tables remain source-owned. Keep the adapter; isolate derivation stages if they grow. Its JSON publisher is a small shared-mechanics candidate. |
+| [cer_enerfuture.py](../src/fetching/cer_enerfuture.py) | 548 | Edition/scenario requests, physical CSV validation, macro/demand/price normalization, and manifest output are cohesive. Keep separate from demand and currency parameterization. |
+| [fueleconomy_vehicles.py](../src/fetching/fueleconomy_vehicles.py) | 370 | Validates one ZIP/vehicle-table family and publishes classification evidence. Keep source ownership; share only proven publication primitives. |
+| [vpic_vehicle_types.py](../src/fetching/vpic_vehicle_types.py) | 526 | Make/year/type endpoint scope evidence, response validation, cache replay, and classification are coherent. Keep endpoint-specific request/eligibility behavior. |
+| [vpic_model_years.py](../src/fetching/vpic_model_years.py) | 453 | Temporal confirmation includes Canadian specifications for older vintages and a distinct normalization contract. Reuses `VPicResponse` from the type adapter; shared response/cache mechanics merit a small common owner, not a wholesale endpoint merge. |
 
-The typed routes added by Plan 030 now distinguish source interim, transformation interim,
-processed, input-validation, database, and output-validation layers. The two stray lifetime
-comparison files show that generated directories are not themselves proof of a current,
-complete run. Neither stray file is a current code consumer, so this is evidence-lifecycle
-drift rather than a normal ETL dependency.
+### Parameter families
 
-## 3. Static complexity signals
+| Module under `src/parameterization/` | Lines | Responsibility and disposition |
+|---|---:|---|
+| [build_existing_capacity.py](../src/parameterization/build_existing_capacity.py) | 764 | Road, bus, and off-road evidence assembly, provenance, cleanup, and publication. Preserve its public preparation seam; extract mode/stage helpers and make prerequisite/publication behavior explicit. |
+| [build_demand.py](../src/parameterization/build_demand.py) | 265 | CEUD baseline service demand, CER GDP indexing, provenance, and output validation. Relatively bounded family assembler; do not merge with stock or currency builders just because inputs overlap. |
+| [road_utilization.py](../src/parameterization/road_utilization.py) | 651 | C2A, annual/age utilization, truck weights, row validation, and audits. Owns the utilization result but imports five utilization algorithms from the stock/demand module. Clarify that code ownership without merging whole families. |
+| [build_lifetime_parameters.py](../src/parameterization/build_lifetime_parameters.py) | 130 | Selects fixed versus curve representation, combines road/manual/bus owners, checks coverage, and exposes a result plus an explicit artifact wrapper. Preserve as the small lifetime assembler. |
+| [build_efficiencies.py](../src/parameterization/build_efficiencies.py) | 956 | Source selection, relationship ownership, historical/future efficiencies, PHEV splits, provenance, and publication. High-priority internal stage extraction; numerical road/off-road helpers already exist. |
+| [build_costs.py](../src/parameterization/build_costs.py) | 958 | Source pricing, currency/service conversion, lifetime-gated variable costs, provenance, and audit/publication. Highest concentration of orchestration and nested state. Extract concrete pathway/stage helpers while preserving `CostPreparation`. |
+| [ev_chargers.py](../src/parameterization/ev_chargers.py) | 480 | Vehicle-stock-to-port capacity, charger costs, efficiency, utilization evidence, and composite provenance. These outputs share one charger pathway. Extract stages within that owner; do not distribute charger modelling across all generic parameter builders. |
+| [road_stocks_and_demands.py](../src/parameterization/road_stocks_and_demands.py) | 1,308 | Now includes utilization algorithms, age artifacts, road/bus cohort allocation, eligibility/redistribution, and demand helpers. The old “small cohesive module” verdict is stale. Clarify utilization ownership and simplify cohort stages before selecting any file split. |
+| [offroad_stocks_and_demands.py](../src/parameterization/offroad_stocks_and_demands.py) | 492 | Service demand, linear additions, survival, and eligible-cohort redistribution use different evidence and dimensions from vehicle stocks. Keep separate; share an arithmetic primitive only after equivalent contracts are demonstrated. |
+| [road_efficiencies.py](../src/parameterization/road_efficiencies.py) | 944 | Ratings/ATB aggregation, load factors, a numerical evidence object, and bus annual evidence are coherent road calculations. Generic interpolation/positivity/CEUD selectors are borrowed by cost/off-road helpers and merit narrower ownership. Preserve the evidence object and its per-instance caches. |
+| [offroad_efficiencies.py](../src/parameterization/offroad_efficiencies.py) | 95 | Bounded CEUD/manual trajectory calculations. Keep separate from road pathways; move genuinely shared numerical selectors rather than merge these modules. |
+| [road_capex_opex.py](../src/parameterization/road_capex_opex.py) | 174 | NLR purchase-price/RPE handling and LDV/BEAN maintenance arithmetic are concrete road-cost helpers. Keep; generic interpolation currently comes from the road-efficiency owner. |
+| [offroad_capex_opex.py](../src/parameterization/offroad_capex_opex.py) | 188 | FAA service denominators and manual off-road cost ratios have their own units/source semantics. Keep separate; shares interpolation, not the full road-cost transformation. |
+| [currency.py](../src/parameterization/currency.py) | 99 | CER-backed FX/deflator harmonization is already reused by vehicle and charger costs. Keep one numerical owner; the source adapter owns acquisition/normalization. |
+| [offroad_lifetimes.py](../src/parameterization/offroad_lifetimes.py) | 207 | Reviewed manual lifetimes plus provincial StatCan road-bus lifetimes. The bus function is consumed by capacity and lifetime builders; its off-road location obscures ownership. Clarify/move that function behind stable callers, rather than merge the road survival machinery here. |
+| [road_lifetimes_survival.py](../src/parameterization/road_lifetimes_survival.py) | 2,173 | Accepted source curves and MTO retention/decision diagnostics coexist, but default execution is now accepted-only. Optional code separation is a lower-priority maintainability question; mandatory diagnostic execution is resolved. |
+| [road_aggregation.py](../src/parameterization/road_aggregation.py) | 1,769 | Reviewed-map validation/application and runtime weights coexist with candidate/reason diagnostics and shared rating catalog logic. Runtime writes are separated already. Extract diagnostic responsibilities only with shared matching contracts preserved. |
+| [vehicle_mapping_bootstrap.py](../src/parameterization/vehicle_mapping_bootstrap.py) | 1,948 | Builds review evidence through ordered automatic/manual/temporal gates, overrides, and coverage. Keep opt-in and distinct from runtime map application; simplify its orchestration before adding more generalized machinery. |
+| [manual_parameters.py](../src/parameterization/manual_parameters.py) | 798 | Registry validation, typed-source reconciliation, technology selectors, and resolution audits serve five production importers. Coherent shared trust boundary; extract local stages if useful, without a universal parameter engine. |
 
-| Module | Lines | Functions | Largest function span | Notable signal |
-|---|---:|---:|---|---|
-| `parameterization.vehicle_mapping_bootstrap` | 1,949 | 29 | `build_bootstrap_mapping`, 392 | `automatically_supported_years` has 11 arguments and the module contains several 120-243 line arbitration stages. |
-| `fetching.vehicle_population` | 1,806 | 48 | `normalize_report_a`, 331 | Long vectorized normalization with low control-flow nesting; `fetch_and_normalize` is 237 lines. |
-| `parameterization.road_aggregation` | 1,753 | 27 | `unresolved_mapping_reasons`, 276 | Runtime and diagnostic entrypoints are separate, but most candidate/review mechanics remain in the same module. |
-| `parameterization.lifetimes_survival` | 1,727 | 25 | `build_lifetime_artifacts`, 220 | One command builds MTO diagnostics, source transforms, parameter-ready curves, and validation evidence across three routes. |
-| `fetching.nlr_atb_autonomie` | 1,616 | 29 | `derive_phev_efficiency`, 300 | `fetch_and_normalize` is 272 lines with the deepest observed control-flow nesting (7). |
-| `fetching.assorted_sources` | 1,550 | 35 | `normalize_regen`, 205 | Five source families with distinct physical parsers share one 179-line dispatcher. |
-| `fetching.nrcan_ceud` | 923 | 33 | `normalize_ceud_dataframe`, 97 | Separate CEUD workbook and fuel-rating CSV contracts share a CLI/module but already have separate request models and fetch functions. |
-| `parameterization.manual_parameters` | 726 | 12 | `resolve_manual_parameters`, 270 | Coherent selector expansion, but its main resolver has the highest branch-like score observed (29). |
-| `build_transport` | 553 | 14 | `bootstrap_database`, 112 | Coherent database orchestration; current supported inputs are only technology and commodity templates. |
-| `fetching.vpic_vehicle_types` | 526 | 14 | `fetch_and_normalize`, 112 | Two-pass endpoint probing and manifest/error handling. |
-| `fetching.vpic_model_years` | 453 | 17 | `fetch_and_normalize`, 85 | Two endpoint schemas and temporal corroboration, with request/cache mechanics similar to the other vPIC adapter. |
-| `fetching.fueleconomy_vehicles` | 370 | 11 | `fetch_and_normalize`, 49 | Small, focused evidence adapter. |
-| `parameterization.stocks_and_demands` | 235 | 6 | `derive_ldv_age_distributions`, 133 | One coherent transformation and one publisher. |
+### Assembly, validation, utilities, scripts, and research
 
-The largest functions are not uniformly the most branch-heavy. In particular,
-`normalize_report_a` is long because it preserves and reconciles a wide source contract,
-whereas shorter manual/validation functions can have denser conditional behavior.
+| Module or group | Lines | Responsibility and disposition |
+|---|---:|---|
+| [build_transport.py](../src/build_transport.py) | 877 | Template/schema preparation, contribution orchestration, caller-owned insertion, standalone publication, and parity reporting. Broad but explicit facade. Keep one transport assembly path; local helpers are preferable to a parallel integrated implementation. |
+| [validation/config_models.py](../src/validation/config_models.py) | 364 | Stable paths/scenario/source/DQ models and validation. High reuse with little orchestration. Keep source-native extensions in adapters, not an enlarged universal schema. |
+| [validation/provenance.py](../src/validation/provenance.py) | 308 | Stable IDs, registry rows, DQ inheritance, composite contributor validation, and conflicts. Keep as one provenance owner; family wrappers still decide meaningful contributors/variants. |
+| [validation/insertion.py](../src/validation/insertion.py) | 217 | Package-row validation, duplicate/conflict checks, cross-table transport cleanup, and parameterized insertion. Cleanup is domain admission logic, not a second parameter derivation. Keep explicit and shared; avoid copying it into an adapter. |
+| [validation/schema_contract.py](../src/validation/schema_contract.py) | 192 | Pinned schema evidence, packaged DDL, preflight checks, and the documented notes compatibility extension. Keep this SQLite trust boundary separate from upstream orchestration. |
+| [validation/database_bootstrap.py](../src/validation/database_bootstrap.py) | 136 | Expected-key coverage, touched-table provenance, foreign keys, and integrity. Its template-era name/docstring understates current callers; function responsibility is focused. |
+| [validation/legacy_compare.py](../src/validation/legacy_compare.py) | 329 | Table/family parity diagnostics with parameter-specific keys/tolerances. Keep diagnostic comparison distinct from accepted transformation and insertion; similar comparison loops do not justify a generic validator. |
+| [validation/config_smoke.py](../src/validation/config_smoke.py) | 56 | Config/schema readiness shared by setup and doctor. Preserve the common check and the different entrypoint effects. |
+| [validation/sqlite_utils.py](../src/validation/sqlite_utils.py) | 6 | Identifier quoting used by build and integrity checks. Small coherent primitive; no need to expand a helper into a framework. |
+| [utils/__init__.py](../src/utils/__init__.py) | 183 | Config bundle loading and configured path/layer resolution. Keep thin despite high fan-in; domain calculations do not belong here. |
+| [utils/files.py](../src/utils/files.py) | 36 | Streaming SHA-256 and same-directory atomic CSV publication. Existing shared mechanism; a bounded JSON/text publication primitive is plausible. |
+| [utils/vehicle_labels.py](../src/utils/vehicle_labels.py) | 106 | Candidate annotation/null handling and agreement comparison. Its semantics differ from road aggregation's ASCII make/model normalization. Preserve distinctions until a contract table proves equivalence. |
+| [setup.py](../src/setup.py) | 45 | Creates configured directories and writes smoke status. Keep as the mutating setup entrypoint, distinct from default read-only doctor. |
+| [scripts/doctor.py](../scripts/doctor.py) | 185 | Import/config/manual/schema/directory checks; creation is opt-in. Keep operational readiness distinct from parameter ETL. |
+| [scripts/clean_runtime.py](../scripts/clean_runtime.py) | 214 | Scoped cleanup planning, root containment, tracked-file protection, and explicit deletion. Keep separate from readiness and production compilation. No cleanup was executed for this task. |
+| Package `__init__.py` entrypoints | 0–1 each | `fetching`, `parameterization`, `validation`, and `scripts` are empty/minimal; their presence does not imply duplicate runtime owners. |
+| [Vehicle mapping research notebook](insights/vehicle_population_aggregation_mapping.py) | 3,968 | Artifact-backed marimo evidence and visualizations; largest cell spans 398 lines, including a 394-line view helper. It imports shared config/path helpers rather than ETL builders. Simplify presentation helpers if necessary; keep research out of runtime readiness and modelling authority. |
 
-## 4. Responsibility, cohesion, and dispositions
+## 4. Verified concerns across module boundaries
 
-### MTO and road-vehicle slice
+### 4.1 Long builders combine several independently testable stages
 
-#### `fetching.vehicle_population` — **healthy large module**
+Cost preparation loads many source families, validates manual/source metadata, selects
+regional/pathway prices, performs currency and service normalization, gates period/vintage
+activity against lifetimes, attaches composite provenance, validates coverage, and publishes
+several CSV/JSON artifacts. Nested `active_period`, `add`, and `road_price` helpers
+capture a large preparation context. Efficiency and capacity builders show a similar
+assembly-to-publication concentration; the charger function is smaller but still spans
+stock/port reconciliation, costs, efficiency, and utilization.
 
-The module owns one external source family end to end: CKAN discovery, immutable ZIP
-requests, physical member resolution, source validation, Reports A/4/5 normalization,
-source-native key inventory, manifest/warnings, and publication to one interim route.
-`road_aggregation` and `lifetimes_survival` are the principal runtime consumers; bootstrap
-also consumes its historical reports as an explicit maintainer workflow.
+The evidence supports named stage/pathway helpers with explicit inputs and the existing
+result types retained. It does not yet select a new package layout. Start with one family,
+keep one public preparation implementation, and compare rows, keys, units, provenance/DQ,
+exclusions, and audit outputs before/after. Preserve consequential choices in YAML and
+baseline behavior while decomposing functions. A function-only extraction within its
+current module can be the first useful step.
 
-Its size is mainly intrinsic to three MTO report shapes and Report A's audit-preserving
-normalization. The 331-line `normalize_report_a` and 237-line publisher are candidates for
-internal staging if they become difficult to change, but the evidence does not support
-splitting acquisition from each report merely to reduce file size. Any later internal
-simplification must preserve report-grain columns, suppression handling, reconciliation,
-deterministic cached reruns, and `tests/test_vehicle_population.py`.
+Affected routes: `costs_interim/processed/validation`,
+`efficiencies_interim/processed/validation`,
+`existing_capacity_interim/processed/validation`, and
+`ev_chargers_processed/validation`. These are separate artifact owners; shared source
+inputs do not make their parameter outputs interchangeable.
 
-#### `parameterization.road_aggregation` — **responsibility-boundary candidate**
+### 4.2 Preparation reuse is partly implemented, with remaining side effects
 
-The runtime entrypoint at lines 1562-1622 now only validates/applies the reviewed mapping,
-derives weights, and publishes five processed artifacts plus coverage. The explicit
-diagnostic entrypoint at lines 1625-1724 loads FuelEconomy/NRCan evidence, generates
-candidates, attributes unresolved reasons, and publishes review artifacts. This resolves
-execution coupling, but not code ownership coupling: about half the module is mapping
-development/review logic, and bootstrap imports eight road helpers.
+[Contribution preparation](../src/build_transport.py), starting at line 396, prepares
+capacity once in the default full build and supplies those rows to efficiency, cost, and
+charger preparation. It also supplies fixed/curve lifetime rows to costs. The cost and
+efficiency fallback capacity calls occur only when supplied rows are `None`.
+Separate parameter CLIs legitimately prepare missing prerequisites; disabling a family's
+insertion can still leave another family needing its evidence. It would be inaccurate to
+claim that default full assembly rebuilds capacity once per dependent family.
 
-A later boundary investigation is justified by two independently callable workflows and
-two artifact roles, not by 1,753 lines. Reasonable options include retaining one module
-with clearer internal sections, moving only candidate/review mechanics behind a development
-module, or keeping compatibility re-exports. Mapping validation/application and aggregation
-weight derivation belong together unless caller evidence demonstrates a better contract.
+Nevertheless, [capacity preparation](../src/parameterization/build_existing_capacity.py)
+always invokes `build_existing_stock_age_artifacts` before reading its result, and its
+public `prepare_existing_capacity_rows` delegates to a publishing builder. Efficiency,
+cost, demand, road-utilization, and charger preparation also write configured artifacts.
+[Lifetime preparation](../src/parameterization/build_lifetime_parameters.py) instead
+returns rows/context/audit, with publication in a separate wrapper. “No SQLite writes”
+therefore does not mean “no filesystem writes”; these interfaces have different effects.
+The charger path also fingerprints the processed vehicle-capacity CSV while consuming
+supplied capacity rows.
 
-#### `parameterization.vehicle_mapping_bootstrap` — **internal simplification candidate**
+There are narrower repeated computations in normal assembly:
+`prepare_statcan_bus_lifetimes` is called by both capacity and lifetime preparation;
+`derive_load_factors` is called by capacity's bus evidence helper and by efficiency/cost
+preparation. Several families reread CEUD, technology templates, and CER macro evidence.
+These are verified call/read paths, not measured performance bottlenecks; the road
+efficiency object already uses caches local to one evidence instance.
 
-This is explicitly a maintainer tool, requires an output path, and refuses to replace the
-reviewed mapping without `--replace-reviewed-config`. Its responsibilities—manual-pass
-reconciliation, vPIC gates, historical support, range collapse, proposed-map validation,
-and review evidence—form one coherent arbitration workflow. It is not called by normal ETL.
+A later change should state each preparation entrypoint's inputs, returned provenance,
+published artifacts, and prerequisite policy. Reuse immutable evidence within a run only
+where its selections/dimensions agree. Any persisted handoff must reconstruct row models,
+datasets, contributor/DQ context, value variants, and audits; a parameter CSV alone is not
+the complete `TransportContribution`. Avoid global mutable caches or a second assembly
+implementation to solve this.
 
-The accidental complexity is inside the pipeline: `build_bootstrap_mapping` spans 392
-lines, several intermediate frames are successively enriched, and three arbitration
-functions span 202-243 lines. Future work should first expose named stage inputs/outputs
-or immutable result objects inside the module; a package split is not yet justified.
-Safety constraints are the reviewed-map byte-preservation test, the explicit replacement
-gate, current mapping coverage, and the artifact-backed arbitration assertions.
+### 4.3 Workflow coverage and artifact freshness remain incomplete
 
-#### `parameterization.lifetimes_survival` — **development/runtime separation candidate**
+The current DAG correctly declares StatCan/CER source products and the full database
+builder, and `all` requests source outputs even when SQLite already exists. Its
+`update(...)` database/report outputs and standalone atomic writer protect publication
+on failure. The selected fixture tests verified source ordering/reuse/missing-table
+recovery and restoration of the previous database/report after a failed writer.
 
-The module contains two related but independently useful chains:
+Other required normalized evidence and processed prerequisites remain outside the DAG:
+CEUD/ratings, Ontario population, ATB/Autonomie, FuelEconomy, assorted/dashboard evidence,
+reviewed-map-derived weights, and accepted lifetime/age products are read by production
+functions without equivalent producer/input declarations in the database rule.
+Some source-adapter helper code imported by parameter builders is likewise absent from
+that rule's direct code list. Broad config/code dependencies can trigger incidental
+rebuilds, but do not guarantee that changing one of these undeclared inputs invalidates
+SQLite or regenerates its upstream evidence.
 
-1. historical MTO snapshot, transition, mapping-coverage, scope, and decision evidence;
-2. NHTSA/NEMS transformation, Wards aggregation, source/target class mapping, survival
-   curves, and median lifetimes.
+The gap is artifact dependency coverage, not competing transformation implementations.
+Before adding fine-grained parameter rules, stabilize the preparation/publication handoff
+in 4.2. Then declare one existing producer and all material inputs for each family,
+including reviewed mappings and accepted prerequisite freshness. Intermediate/processed
+routes are currently shared across scenarios; concurrent scenarios with different source
+selections could overwrite them even if final SQLite names differ. A scenario-specific
+artifact contract is required before promising parallel scenario execution.
 
-`build_lifetime_artifacts` always executes both chains and writes seven interim, ten
-processed, and five configured validation outputs. The final medians are derived from
-the transformed external-source/legacy curves, while the MTO decision remains diagnostic
-evidence. Therefore a consumer needing accepted source curves currently also pays the
-MTO-history/mapping diagnostic dependency.
+[Architecture fitness tests](../tests/test_architecture_fitness.py) verify that declared
+owners/producers/validation symbols exist and that accepted/diagnostic routes differ.
+They do not compare actual reads/writes with route metadata or prove full DAG freshness.
+For example, `ev_chargers` consumes/fingerprints existing capacity, while that route's
+listed consumers currently mention `build_transport` and reviewers. Routes intentionally
+mix logical row consumers with file consumers; a later ownership update should distinguish
+those meanings rather than infer file reads from a “consumer” label.
 
-This is the clearest remaining execution-role coupling in the vehicle slice. A future
-change could use two explicit entrypoints in the same module or separate modules with a
-small shared survival-math layer. The safe boundary must preserve age-zero semantics,
-transition ordering, raw ratios above one, source-labelled curves, Wards weighting,
-configured decision gates, and all focused lifetime tests and artifacts.
+### 4.4 Shared calculations are reused, but some owners are misleading
 
-#### `parameterization.stocks_and_demands` — **healthy cohesive module**
+Five utilization functions at the beginning of
+[road_stocks_and_demands.py](../src/parameterization/road_stocks_and_demands.py) are imported
+only by `road_utilization` in production: C2A reconciliation, annual utilization,
+normalized mileage profiles, flat factor rows, and period age utilization. Their
+responsibility aligns with the utilization family, while stock/demand retains distinct
+age/cohort/demand work. This is a concrete ownership-consolidation candidate; it is not
+evidence for merging the 651-line utilization module with the 1,308-line stock module.
+Corresponding tests currently reside in the stock/demand test module.
 
-Despite a 133-line transformation, this small module has one responsibility: combine
-mapped current stock with configured lifetime evidence to publish an Ontario LDV age
-distribution and exclusion findings. Its processed and validation outputs are separately
-routed, and tests cover both median and survival-curve modes. Internal helper extraction
-may improve readability, but no responsibility split is supported.
+Generic `interpolate` is imported from
+[road_efficiencies.py](../src/parameterization/road_efficiencies.py) by road/off-road cost
+helpers; off-road efficiency also imports `positive` and `ceud_series`. These helpers
+encode real validation semantics, including no extrapolation and positive/zero handling.
+A small numerical/evidence helper owner could reduce unrelated road dependencies if
+existing contract tests follow it. Keep load-factor/ATB/rating pathway calculations with
+their domain owner unless another concrete use requires a shared owner.
 
-#### FuelEconomy and vPIC adapters — **healthy adapters with a shared-mechanics candidate**
+`prepare_statcan_bus_lifetimes` is a road-bus contract in
+[offroad_lifetimes.py](../src/parameterization/offroad_lifetimes.py), used by capacity and
+lifetime assembly. Give that function a clear shared lifetime owner during a bounded
+change. The already shared `CerCurrencyConverter` and `ResolvedProvenance` are examples
+of successful consolidation; duplicate family-specific currency or DQ implementations
+would move the codebase in the opposite direction.
 
-FuelEconomy has a distinct ZIP/CSV/class-harmonization contract and should remain a
-separate source adapter. The two vPIC modules also have different eligibility, endpoint,
-response, and normalization contracts: vehicle-type evidence performs base and typed
-probes, while temporal evidence selects between model-year and Canadian-specification
-endpoints. Merging the adapters would obscure these differences.
+### 4.5 Publication mechanics can be consolidated without merging adapters
 
-Concrete duplication remains in validated JSON cache replay, atomic JSON publication,
-HTTP/error loops, manifest rows, delay handling, and warnings publication. The temporal
-adapter already imports `VPicResponse` from the vehicle-type adapter, which makes the
-latter a partial shared-infrastructure owner. A narrow JSON writer or tested request-result
-executor is a demonstrated candidate; a universal fetch framework is not.
+Both vPIC adapters write validated JSON responses using same-directory temporary files,
+`json.dump`, replacement, and cleanup; StatCan has a separately implemented fixed
+`.part` JSON writer. VehiclePopulation and FuelEconomy have text writers with different
+temporary-file choices and input shapes. Several source output publishers still use direct
+`to_csv` or `write_text`, while parameter CSVs use `write_dataframe_atomic` and their
+JSON audits often use direct writes. The implementations overlap but are not identical;
+publication and cleanup contracts need comparison before replacement.
 
-#### Vehicle-label normalization — **shared-interface clarification candidate**
+The existing [files utility](../src/utils/files.py) is the natural place to evaluate a
+small atomic text/JSON primitive with deterministic serialization and failure cleanup.
+Keep archive validation, response parsing, API retry/cache policy, streaming append
+behavior, and manifests with source adapters. Shared file mechanics do not justify a
+generic fetch engine or merging endpoints/sources. No publication failure was observed
+in this assessment.
 
-`utils.vehicle_labels.normalize_vehicle_label` removes review annotations, handles nulls,
-and supports family-level comparison. `road_aggregation.normalize_vehicle_text` performs
-ASCII transliteration and stricter source-key normalization. Bootstrap uses both concepts.
-They are not drop-in duplicates: accents, nulls, and annotations have different behavior.
-The current evidence supports documenting and testing their domains before considering
-consolidation, not replacing one with the other.
+### 4.6 Independent source families and diagnostics have defensible extraction seams
 
-### Other substantial modules
+[Assorted sources](../src/fetching/assorted_sources.py) now covers six independent families
+across workbook, CSV, JavaScript chart, PDF, and HTML contracts. Its main entrypoint
+requires the five older families together; `fetch_and_normalize_tc_dashboard` and
+`--tc-dashboard-only` already expose a separate sixth path. Source-family helpers behind
+a compatibility facade would reduce change impact without changing source keys,
+normalizers, output paths, or warnings. NRCan's CEUD/rating separation is another concrete
+seam, with distinct source request models and publishers already present.
 
-#### `fetching.nlr_atb_autonomie` — **internal simplification candidate**
+Mapping runtime applies the reviewed crosswalk and publishes weights; candidate generation,
+reason diagnostics, and bootstrap arbitration have opt-in entrypoints. Lifetime default
+execution derives accepted curves without loading MTO history; MTO diagnostics have their
+own publisher and routes. These execution boundaries now work. Diagnostic code still
+shares large modules with runtime logic, so optional extraction can improve navigation
+later, but should retain shared matching/curve primitives and keep review evidence out
+of accepted input readiness. Moving diagnostic files alone would not resolve freshness
+or improve model parity.
 
-ATB archive acquisition, manually registered Autonomie inputs, utility-factor matching,
-PHEV reconciliation, VMT normalization, and BEAN coefficient extraction serve one
-composite source-native evidence contract. The derivations are separately callable and
-well covered. Complexity is concentrated in the 300-line PHEV derivation and the deeply
-nested publisher, so staged orchestration is a better first investigation than separating
-the two sources and duplicating their reconciliation context.
+### 4.7 Integration should reuse the contribution seam, with an explicit object boundary
 
-#### `fetching.assorted_sources` — **responsibility-boundary candidate**
+The current builders still read configured technology/commodity/region/period templates,
+often independently. `prepare_transport_contribution` accepts a template directory for
+structural loading, while dependent builders usually resolve templates through the bundle;
+`prepare_road_utilization` already allows an optional technology frame. Consequently,
+passing upstream objects only to a new outer adapter would not automatically change every
+family's object authority or align fuel names.
 
-NHTSA, NEMS, GCAM, REGEN, and FAA have different physical formats, validation failures,
-and parsers but share one request type, one CLI, one manifest/warnings publication, and one
-large test module. A failure or change in one source crosses the combined dispatcher and
-test surface. There is evidence for source-specific adapter boundaries behind a retained
-orchestrator; there is not evidence for a generic parsing framework. Preserve each
-source-native output contract and the offline all-source smoke if this is investigated.
+A future `canoe_adapter.py` should translate agreed upstream structure/configuration into
+the same transport preparation and insertion path, with inherited commodities/adjacent
+objects and transport-owned pathways made explicit. Fuel/commodity alignment, shared-row
+ownership, geography/schema/provenance compatibility, and renewable blending/hydrogen
+representation still require the integration evidence recorded in
+[canoe_main_orchestrator.md](canoe_main_orchestrator.md). This diagnostic does not turn
+unfinished upstream contracts into backend policy or propose a wholesale object refactor.
+The useful preparation work now is to clarify existing builder inputs and effects.
 
-#### `fetching.nrcan_ceud` — **responsibility-boundary candidate**
+## 5. Boundaries that should remain distinct
 
-The module owns three source IDs and two materially different contracts: CEUD `.xls`
-tables and pinned Fuel Consumption Ratings CSVs. Separate request models, rule groups,
-normalizers, interim directories, and public fetch functions already provide a natural
-seam; only the module and CLI remain combined. A future split could reduce change impact
-without inventing an abstraction, provided current public imports and the dual-mode CLI
-remain compatible.
+- Source acquisition/native normalization and parameterization consume different contracts.
+  Parameter modules import a few source-owned configuration/cache-validation helpers, but
+  inspection found no direct HTTP acquisition or SQLite transactions in parameterization.
+  Preserve offline preparation and caller-owned SQLite insertion.
+- Road/off-road transformations and individual parameter builders share evidence, not
+  interchangeable units, keys, source choices, or validation. Consolidate proven primitives
+  and evidence owners; keep parameter result/audit ownership visible.
+- Charger capacity/cost/efficiency products belong to one charger pathway. Their shared
+  ownership supports staged preparation under that module rather than scattering the
+  modelling across generic cost/capacity/efficiency implementations.
+- Runtime mapping and accepted lifetimes must remain distinct from bootstrap, MTO
+  diagnostics, research visualizations, and parity reports. Shared functions should not
+  make review evidence mandatory for an ordinary build.
+- `normalize_vehicle_text` transliterates ASCII make/model strings; shared
+  `normalize_vehicle_label` handles nulls and candidate annotations differently.
+  A blind merger could change reviewed matches. Record/test these differences first.
+- Setup, doctor, and cleanup have different mutation/authorization contracts. Their small
+  root/path/import mechanics can share helpers if useful; their commands should remain
+  separate. Schema, provenance, insertion, and integrity similarly protect different
+  trust boundaries despite sharing SQLite concepts.
 
-#### `parameterization.manual_parameters` — **internal simplification candidate**
+## 6. Reconciliation with the previous snapshot
 
-Registry validation and compact selector expansion are distinct stages of the same manual
-parameter contract. The 270-line resolver and 158-line registry validator contain dense
-branching, but both protect one trust boundary and share adapter metadata. Named internal
-stages and smaller reconciliation-result builders are better supported than separate
-packages.
+| Previous finding | Current evidence and disposition |
+|---|---|
+| Accepted lifetime generation always runs MTO diagnostics. | Resolved execution coupling: accepted-only default and separate diagnostic publishers/routes, verified by tests. Optional code separation remains a lower-priority question. |
+| Database build is mostly template loading; parameter artifact consumers are aspirational. | Superseded: seven parameter families feed a real contribution and validated insertion. Row-versus-file consumption and preparation side effects still need clearer contracts. |
+| `stocks_and_demands` is a small, cohesive module. | Superseded: road/off-road family names now exist and road stock/demand grew to 1,308 lines with utilization plus two substantial cohort allocators. |
+| Large MTO adapter might warrant a split. | Keep source-family ownership; its 309-line Report A normalization is not deeply nested. Size alone still does not establish excessive ownership. |
+| Mapping runtime/review boundaries need examination. | Execution/publication separation is already explicit; shared module responsibilities and artifact freshness remain review targets. |
+| Shared hashing/atomic writes/provenance may be duplicated. | Hashing/CSV publication and source/DQ provenance already have shared owners. Remaining JSON/text mechanics and numerical helper placement are narrower opportunities. |
+| Workflow coverage needs to match real compilation. | Improved for tracked StatCan/CER outputs, templates/manual/code inputs, and the full build; several required source/processed prerequisites still lack declared DAG edges. |
 
-#### `build_transport` and `src/validation` — **ownership/documentation drift**
+## 7. Validation performed and limits
 
-Schema creation, typed insertion, post-insertion integrity, SQLite identifier quoting,
-legacy comparison, atomic publication, and report writing now have explicit owners. The
-previous duplication/ownership concern is mostly resolved. `build_transport` remains a
-cohesive database orchestrator and currently loads only technology and commodity templates.
+| Check | Result on 2026-10-01 |
+|---|---|
+| Python AST parse/inventory | All 88 discovered files parsed; inventory reconciled with section 2. |
+| Static local imports / exact normalized functions | 117 production edges, no cycles, no exact nontrivial duplicates under the stated narrow screen. |
+| Conditional preparation rule | Positive/negative stdin behavior verified; exactly two parameterization conditional matches, in cost and efficiency preparation. |
+| Pytest collection | 323 cases collected in 2.83 seconds. |
+| Focused behavioral checks | 50 passed in 41.95 seconds; one dependency deprecation warning. |
+| Ruff | `uv run --offline ruff check src scripts tests --statistics` passed. |
+| Real Snakemake dry-run | Five jobs, return code 0, 2.49 seconds, using the current local workflow profile; no ETL jobs executed. |
+| Document verification | Frontmatter and all 60 local links checked; 44 module-size rows and 12 function hotspots reconciled with code; every nonempty production file covered. |
 
-The drift is in declared consumption: `config/paths.yaml` names `build_transport` as a
-consumer of lifetime and stock products, but current build code neither imports nor reads
-those families. `tests/test_architecture_fitness.py` verifies that consumer references
-resolve to live objects, not that consumers actually read routed artifacts. This overstates
-end-to-end integration and should be treated as topology truth debt, not as a reason to
-merge parameterization into the database builder.
+The 50 executed cases cover artifact topology, runtime hygiene, schema contracts, source/DQ
+provenance, parameter validation/insertion, accepted/MTO lifetime separation, reviewed-map
+protection, caller-owned transaction/schema rejection, and two temporary workflow fixtures.
+The workflow fixtures replace substantive ETL entrypoints with fixture writers; they
+verify orchestration/publication behavior, not full production data readiness.
 
-#### `src/utils` — **healthy shared infrastructure**
-
-Typed config/path loading, SHA-256, atomic DataFrame publication, and vehicle-label
-comparison are small and directly reused. Script-local `find_repo_root` functions are now
-compatibility wrappers delegating to the shared utility rather than duplicate algorithms.
-`validation.sqlite_utils` similarly owns the shared identifier-quoting mechanic. The
-utilities have not grown into hidden ETL orchestration.
-
-## 5. Dependency and duplication assessment
-
-### Demonstrated reuse opportunities
-
-- Atomic DataFrame publication and ordinary file SHA-256 are now shared through
-  `utils.files`; vehicle and parameter modules no longer import generic writing behavior
-  from `fetching.vehicle_population`.
-- SQLite identifier quoting is shared through `validation.sqlite_utils`.
-- Atomic JSON/text writers remain repeated in StatCan, FuelEconomy, Ontario vehicle, and
-  vPIC adapters. The JSON implementations are close enough for a narrow shared primitive;
-  archive download replacement and source validation remain source-specific.
-- vPIC request execution repeats enough cache/error/manifest mechanics to merit a tested
-  seam if either adapter next changes. Their endpoint eligibility and response
-  interpretation should stay adapter-owned.
-- No broad normalization, manifest, retry, or parsing framework is supported. Similar
-  method names conceal different physical contracts and failure policies.
-
-### Layer and dependency observations
-
-- Fetchers depend on `utils` and typed config models; parameter modules depend on `utils`
-  and, where justified, other parameter contracts. No fetching module imports
-  parameterization.
-- `lifetimes_survival` imports reviewed mapping validation/application from
-  `road_aggregation`. This is a real shared parameter contract, but it also means a future
-  road development split must keep the runtime mapping surface stable.
-- `vehicle_mapping_bootstrap` imports both runtime mapping and development candidate
-  mechanics from `road_aggregation`. That coupling is the strongest evidence for examining
-  a road development boundary.
-- `utils` imports typed models from `validation.config_models`, while `config_smoke`
-  imports config-loading utilities. There is no runtime import cycle, and the documented
-  split—models protect structure, utilities load/resolve—is small enough to remain healthy.
-- Workflow rules remain thin; the architectural gap is coverage, not duplicated
-  transformation logic in Snakemake.
-
-## 6. Test and evidence boundaries
-
-Most focused tests are fixture-based and exercise parsing, normalization, offline cache
-behavior, mapping, lifetimes, routes, and database trust boundaries independently.
-
-One notable exception is
-`tests/test_vehicle_mapping_bootstrap.py::test_repository_mapping_has_material_scale_and_all_ldv_classes`.
-It reads the reviewed mapping plus ignored current-stock, rating, and bootstrap artifacts,
-then asserts current mapping scale, exact re-audit counts, arbitration outcomes, and
-coverage. This is valuable artifact-backed acceptance evidence, but it is collected as an
-ordinary unmarked pytest test. A fresh checkout without ignored generated artifacts cannot
-reproduce it from versioned files alone.
-
-That coupling does not make mapping bootstrap part of runtime ETL. It does make the
-default test surface dependent on retained development evidence and vulnerable to stale
-artifact combinations. A later test-boundary change should retain the assertions in an
-explicit artifact/integration target with prerequisite checks or a registered fixture,
-while keeping ordinary unit tests hermetic.
-
-## 7. Reconciliation with the 2026-08-13 diagnostic
-
-| Prior finding | Status now | Current evidence |
-|---|---|---|
-| Hashing, atomic DataFrame writing, root discovery, and SQL quoting were duplicated. | **Resolved for the proven generic mechanics.** | `utils.files` and `validation.sqlite_utils` are used broadly; script root functions delegate. Source-specific JSON/text/cache publication remains only partially shared. |
-| Vehicle/parameter modules imported a writer from the Ontario source adapter. | **Resolved.** | Callers import `write_dataframe_atomic` from `utils`. |
-| Runtime road aggregation always invoked candidate/rating/manual inference. | **Resolved.** | Runtime and `--mapping-diagnostics` entrypoints are disjoint; focused tests fail if runtime calls development functions. |
-| Mapping-development evidence leaked into default doctor readiness. | **Resolved.** | Doctor calls `validate_manual_registry(..., include_development=False)`. |
-| Vehicle source, runtime, and review products shared one Ontario interim directory; processed/validation layers were empty or ambiguous. | **Resolved architecturally, partially stale on disk.** | Typed routes and current writers separate the layers; two obsolete lifetime-comparison files remain misplaced/unconfigured. |
-| Three competing mapping-candidate snapshots had unclear identity. | **Resolved.** | Reviewed config, runtime outputs, and mapping-review evidence now have distinct owners/routes; old output-validation candidate copies are gone. |
-| Backend architecture listed a nonexistent vehicle-class facade and omitted actual evidence adapters. | **Resolved.** | The current structural tree lists FuelEconomy and both vPIC adapters and no synthetic facade. |
-| Vehicle-label normalization overlapped. | **Still present but not proven duplicate.** | The two normalizers have distinct null, annotation, transliteration, and comparison semantics. |
-| vPIC request/cache/manifest loops were duplicated. | **Still present, bounded.** | Adapters remain separate; response model and general file mechanics are shared, while endpoint-specific loops remain. |
-| Mapping development and runtime were coupled in one execution path. | **Resolved at execution; partially present in module ownership.** | Separate entrypoints and routes exist, but road development helpers and runtime mapping functions still share one module. |
-| Validation responsibilities and database publication ownership overlapped. | **Largely resolved.** | Config, schema, insertion, integrity, publication, and comparison owners are explicit. Route consumers still overstate current parameter-to-database integration. |
-| Default orchestration omitted the vehicle family. | **Still present.** | The 95-line Snakefile remains doctor/StatCan/CER/template database only; this is now an explicit coverage gap rather than hidden transformation duplication. |
-
-Meaningful growth since the previous run is structural rather than volumetric: `src/`
-grew by roughly 55 physical lines and two utility modules, tests gained the 62-line
-architecture-fitness module, road aggregation gained explicit runtime/diagnostic
-entrypoints, and affected vehicle artifacts moved to typed families. No production source
-module was mechanically split.
-
-## 8. Validation performed
-
-The following focused checks were selected because they exercise the claims changed since
-the prior snapshot without refreshing sources or publishing artifacts:
+Exact focused command:
 
 ```powershell
-uv run pytest -p no:cacheprovider tests/test_architecture_fitness.py tests/test_runtime_hygiene.py tests/test_vehicle_mapping_bootstrap.py::test_runtime_reads_but_does_not_overwrite_reviewed_mapping tests/test_vehicle_mapping_bootstrap.py::test_mapping_diagnostics_remain_explicitly_callable
+uv run --offline pytest -q tests/test_architecture_fitness.py tests/test_runtime_hygiene.py tests/test_schema_contract.py tests/test_provenance.py tests/test_parameter_validation.py tests/test_road_lifetimes_survival.py tests/test_vehicle_mapping_bootstrap.py::test_runtime_reads_but_does_not_overwrite_reviewed_mapping tests/test_vehicle_mapping_bootstrap.py::test_mapping_diagnostics_remain_explicitly_callable tests/test_database_bootstrap.py::test_transport_contribution_uses_a_caller_owned_transaction tests/test_database_bootstrap.py::test_transport_contribution_rejects_an_incompatible_caller_schema tests/test_workflow.py::test_workflow_sequences_sources_reuses_outputs_and_rebuilds_missing_table tests/test_workflow.py::test_workflow_restores_previous_publication_when_writer_fails
 ```
 
-Result: 10 tests passed in 4.65 seconds with one upstream `canoe_schema` deprecation
-warning. The full test suite, ETL commands, notebook execution, and Snakemake dry-run were
-intentionally not required:
-this task changes only diagnostic/retrieval documentation, and those commands would not
-improve the static responsibility or ownership evidence enough to justify broader runtime
-activity. Frontmatter parsing, inventory checks, scoped diff inspection, and whitespace
-validation are also part of completion.
+No full-suite pass, build-runtime/memory profile, fresh source-to-SQLite reconciliation,
+legacy parity acceptance, or CANOE-main integration success is claimed. Existing tests
+include source fixtures and parameter/parity checks, but not all were executed here.
+New architectural checks should target a demonstrated seam: actual artifact dependency
+invalidation, preparation/publication effects, shared-helper semantics, or row/context
+equivalence after an extraction. A LOC budget or import count alone would not protect
+the backend's contracts.
 
-## 9. Prioritized decision surface for later work
+## 8. Prioritized decision surface for later work
 
-### 1. Separate accepted lifetime outputs from MTO survival diagnostics
+These are investigation priorities with bounded acceptance evidence, not a chosen refactor
+sequence or accepted modelling changes. Baseline equivalence remains the constraint;
+do not use architectural cleanup to silently resolve unfinished parameter assumptions.
 
-- **Why it matters:** one direct command currently requires the full MTO history/mapping
-  analysis even when a consumer needs only accepted source curves and medians.
-- **Evidence:** `build_lifetime_artifacts` runs both chains and publishes to interim,
-  processed, and validation routes; final medians use transformed source/legacy curves.
-- **Risk if unchanged:** expensive diagnostic prerequisites remain coupled to future
-  reproducible lifetime generation, and stale review evidence can be mistaken for a
-  required parameter input.
-- **Likely payoff:** clearer runtime prerequisites, cheaper focused reruns, and independent
-  review refreshes.
-- **Safe constraints:** preserve age-zero/transition semantics, all current files and
-  schemas, configured decision gates, source labels, Wards weighting, lifetime tests, and
-  parity evidence. Compare two entrypoints in one module against a module boundary before
-  choosing.
-
-### 2. Reconcile declared consumers and DAG coverage with actual database compilation
-
-- **Why it matters:** the topology names `build_transport` as a consumer of lifetime and
-  stock artifacts although the builder loads only two templates, and the DAG does not
-  produce vehicle artifacts.
-- **Evidence:** `config/paths.yaml`, `workflow/Snakefile`, `build_transport.TEMPLATE_TABLES`,
-  and the shallow consumer-resolution check in `test_architecture_fitness.py`.
-- **Risk if unchanged:** impact analysis and readiness can imply end-to-end integration
-  that does not exist.
-- **Likely payoff:** truthful architecture fitness and safer sequencing of later compiler
-  integration.
-- **Safe constraints:** do not add vehicle stages merely for completeness. Decide whether
-  routes describe current or intended consumers, then test actual artifact reads/targets
-  at the chosen contract.
-
-### 3. Examine a road mapping runtime/development code boundary
-
-- **Why it matters:** behavior is separated, but candidate/review changes and runtime
-  mapping still share a 1,753-line module and bootstrap imports both kinds of helpers.
-- **Evidence:** disjoint entrypoints at lines 1562 and 1625 and bootstrap imports at lines
-  16-26.
-- **Risk if unchanged:** development iterations retain a large change and review surface
-  around runtime mapping application.
-- **Likely payoff:** clearer ownership and smaller regression surface without changing
-  artifact contracts.
-- **Safe constraints:** preserve the runtime mapping API, mapping bytes, output schemas,
-  coverage, candidate diagnostics, CLI compatibility, and focused tests. A compatibility
-  facade or internal namespace may be preferable to an immediate file split.
-
-### 4. Make artifact-backed mapping acceptance and generated-evidence freshness explicit
-
-- **Why it matters:** an ordinary pytest test requires ignored artifacts, while current
-  directories contain two stale lifetime-comparison files inconsistent with current routes.
-- **Evidence:** the artifact-backed test at lines 760-907, `.gitignore`, current artifact
-  inventory, and the current lifetime writer map.
-- **Risk if unchanged:** fresh-clone tests can fail or, worse, pass against mismatched
-  evidence generations.
-- **Likely payoff:** deterministic unit validation and a reviewable integration evidence
-  lifecycle.
-- **Safe constraints:** retain all material mapping/arbitration/coverage assertions;
-  require registered prerequisites, a manifest/run identity, or an explicit integration
-  marker rather than weakening checks.
-
-### 5. Reduce internal pipeline complexity before splitting cohesive large modules
-
-- **Why it matters:** the highest local complexity is concentrated in long orchestration
-  and transformation functions in bootstrap, Ontario Report A, NLR PHEV, and manual
-  selector resolution.
-- **Evidence:** 270-392 line functions, large argument surfaces, and deep orchestration
-  nesting, while their module-level responsibilities remain coherent.
-- **Risk if unchanged:** changes require reasoning about many intermediate frames and
-  failure paths at once.
-- **Likely payoff:** smaller independently testable stages without new package boundaries
-  or changed ownership.
-- **Safe constraints:** preserve source-native audit columns, deterministic writes,
-  logged counts/warnings, no-download behavior, current public functions, and focused
-  fixture tests. Extract only stages with stable input/output invariants.
-
-### 6. Extract only proven small-source/vPIC shared mechanics
-
-- **Why it matters:** assorted sources bundle unrelated parsers, NRCan combines two
-  physical contracts, and vPIC repeats JSON request/cache publication.
-- **Evidence:** existing separate request models/rule groups/fetch functions for NRCan;
-  source-specific normalizers plus one dispatcher in assorted sources; nearly parallel
-  vPIC cache/error/manifest loops.
-- **Risk if unchanged:** source-specific changes cross broad modules and repeated cache
-  mechanics can drift.
-- **Likely payoff:** narrower change impact and one tested implementation of exact shared
-  publication behavior.
-- **Safe constraints:** retain source-specific validation, URLs, cache identities, offline
-  failures, manifests, and normalized schemas. Prefer source adapters behind a retained
-  orchestrator and a narrow JSON/file primitive over a universal fetch framework.
-
-The strongest present case is for execution and evidence boundaries, not wholesale module
-splitting. `vehicle_population`, `stocks_and_demands`, `build_transport`, and the shared
-utilities are cohesive or central for coherent reasons. Road, lifetime, assorted-source, and
-NRCan boundaries deserve targeted experiments only when a future change can preserve the
-listed interfaces and artifacts with focused parity evidence.
+| Priority | Candidate and affected owners | Smallest useful next step | Evidence required before completion |
+|---|---|---|---|
+| 1 | Cost/efficiency/capacity/charger assembly concentration | Select one family; extract source/context, pathway, row-validation, and publication stages as needed while retaining its public result/interface. | Compare keys, units, values, provenance/DQ, audits, exclusions, and applicable legacy parity; avoid an additional transformation path. |
+| 2 | Preparation effects and prerequisite freshness across builders/workflow | Document and stabilize one family's prepare/publish contract; represent its material prerequisite inputs explicitly. | Supplied prerequisites suppress fallback work; invalidation/missing-input tests observe real dependencies; persisted handoffs retain registry/context evidence. |
+| 3 | Utilization, interpolation/CEUD selectors, and bus-lifetime ownership | Move only functions with demonstrated callers and clear shared/domain responsibility. | Existing numerical/selector tests follow the owner; row results and reviewed mappings remain equivalent; routes/callers reflect the final owner. |
+| 4 | Atomic JSON/text mechanics and vPIC response ownership | Compare current serialization/temp/cleanup behavior; extract one bounded primitive/common response contract if equivalent. | Deterministic cache replay, invalid payload/failure cleanup tests, unchanged source-native contracts and streaming behavior. |
+| 5 | Assorted-source and NRCan independent contracts | Introduce source-family helpers behind existing entrypoints when a concrete change needs isolation. | Offline fixtures, unchanged source/component IDs, cache/output routes, manifests, warnings, and selection counts. |
+| 6 | Mapping/bootstrap and lifetime diagnostic code organization | Isolate review responsibilities if change impact or navigation warrants it; retain shared numerical/matching primitives. | Default entrypoints never run diagnostic writers or overwrite reviewed inputs; opt-in review outputs remain reproducible. |
+| 7 | Adapter/object boundary and scenario artifact isolation | After upstream contracts are agreed, supply one explicit structural context to the same transport builders; define scenario artifact ownership before parallel runs. | Upstream-authoritative commodity IDs, transport-owned pathways, schema/region/provenance checks, shared insertion tests, and concurrent-artifact isolation where supported. |
