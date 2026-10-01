@@ -1,4 +1,4 @@
-"""Compile road and off-road existing capacity into validated CANOE v4 rows."""
+"""Build road and off-road existing capacity as validated CANOE v4 rows."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Any
 import pandas as pd
 from canoe_schema.v4_0 import ExistingCapacity
 
-from parameterization.efficiencies import prepare_bus_annual_efficiency_evidence
+from parameterization.road_efficiencies import prepare_bus_annual_efficiency_evidence
 from parameterization.offroad_lifetimes import prepare_statcan_bus_lifetimes
 from parameterization.offroad_stocks_and_demands import build_offroad_existing_capacity
 from parameterization.road_stocks_and_demands import (

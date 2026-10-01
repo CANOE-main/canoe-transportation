@@ -98,16 +98,17 @@ def test_doctor_runs_without_mutating_by_default() -> None:
     assert result.checks["paths"]["schema_package"]["package"] == "canoe-schema"
     assert result.checks["manual_parameters"] == {
         "files": [
-            "charger_shares_utilization.csv",
+            "capacity_to_activity.csv",
+            "charger_parameters.csv",
             "cost_invest_multipliers.csv",
             "cost_variable_multipliers.csv",
                 "efficiency_multipliers.csv",
                 "lifetime_process.csv",
                 "vehicle_class_market_shares.csv",
             ],
-        "file_count": 6,
-        "component_count": 12,
-        "selected_cited_rows": 89,
+        "file_count": 7,
+        "component_count": 18,
+        "selected_cited_rows": 124,
         }
 
 

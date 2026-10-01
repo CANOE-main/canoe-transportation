@@ -427,7 +427,7 @@ The cumulative MTO survival is a product of those empirical rates with an explic
 
 **Notes:**
 
-- **Execution boundary.** The default `parameterization.lifetimes_survival` command
+- **Execution boundary.** The default `parameterization.road_lifetimes_survival` command
   publishes accepted source-based curves and source-derived median lifetimes without
   loading MTO history or its reviewed mapping. `--mto-diagnostics` publishes the MTO
   review evidence; `--all` runs both paths.

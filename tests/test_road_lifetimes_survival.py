@@ -1,4 +1,5 @@
 from pathlib import Path
+from io import StringIO
 
 import pandas as pd
 import pytest
@@ -7,6 +8,7 @@ import parameterization.road_lifetimes_survival as lifetime_module
 from parameterization.road_lifetimes_survival import (
     build_accepted_lifetime_artifacts,
     build_mto_survival_diagnostic_artifacts,
+    derive_accepted_lifetime_frames,
     aggregate_mto_survival_stages as _aggregate_mto_survival_stages,
     aggregate_report_a_snapshots,
     annotate_latest_snapshot_presence,
@@ -27,6 +29,39 @@ from utils import load_config_bundle, load_harmonization_rules
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+
+
+def test_accepted_preparation_matches_published_products_without_mto(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
+    real_read_csv = pd.read_csv
+    paths = []
+
+    def read_accepted(path, *args, **kwargs):
+        path = Path(path)
+        assert "fetched_ontario_vehicle_population" not in path.parts
+        paths.append(path)
+        return real_read_csv(path, *args, **kwargs)
+
+    monkeypatch.setattr(lifetime_module.pd, "read_csv", read_accepted)
+    frames = derive_accepted_lifetime_frames(
+        bundle,
+        rules=rules,
+        road_rules=load_harmonization_rules(bundle, "road_aggregation"),
+        assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
+    )
+    assert len(paths) == 3
+    for key, filename in (
+        ("transformed_curves", rules["transformed_curves_file"]),
+        ("medians", rules["median_lifetimes_file"]),
+    ):
+        published = real_read_csv(
+            REPO_ROOT / "inputs/2_processed/road_lifetimes_survival" / filename
+        )
+        serialized = real_read_csv(StringIO(frames[key].to_csv(index=False)))
+        pd.testing.assert_frame_equal(serialized, published)
 
 
 def test_accepted_survival_input_validation_rejects_missing_age_and_changed_value() -> None:
@@ -669,7 +704,7 @@ def test_accepted_publisher_does_not_invoke_mto_diagnostics(
 
     monkeypatch.setattr(
         lifetime_module,
-        "_derive_accepted_lifetime_frames",
+        "derive_accepted_lifetime_frames",
         lambda *args, **kwargs: _accepted_frames_fixture(),
     )
     monkeypatch.setattr(
@@ -713,7 +748,7 @@ def test_mto_diagnostic_publisher_writes_only_diagnostic_routes(
 
     monkeypatch.setattr(
         lifetime_module,
-        "_derive_accepted_lifetime_frames",
+        "derive_accepted_lifetime_frames",
         lambda *args, **kwargs: _accepted_frames_fixture(),
     )
     monkeypatch.setattr(

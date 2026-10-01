@@ -9,7 +9,7 @@ import pytest
 from canoe_schema.v4_0 import Region, TechnologyLabel
 
 from parameterization.offroad_lifetimes import prepare_reviewed_manual_lifetimes, prepare_statcan_bus_lifetimes
-from parameterization.lifetime_parameters import prepare_lifetime_rows
+from parameterization.build_lifetime_parameters import prepare_lifetime_rows
 from parameterization.road_lifetimes_survival import prepare_fixed_road_lifetimes, prepare_road_survival_curve_rows
 from utils import load_config_bundle
 from validation.insertion import insert_models

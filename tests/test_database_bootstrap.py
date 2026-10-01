@@ -66,7 +66,8 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
     with sqlite3.connect(database) as lifetime_connection:
         assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 570
         assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_survival_curve").fetchone()[0] == 9420
-        assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_invest").fetchone()[0] == report["costs"]["cost_invest_rows"]
+        assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_invest").fetchone()[0] == report["costs"]["cost_invest_rows"] + report["ev_chargers"]["invest_rows"]
+        assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_fixed").fetchone()[0] == report["ev_chargers"]["fixed_rows"]
         assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_variable").fetchone()[0] == report["costs"]["cost_variable_rows"]
         assert lifetime_connection.execute("PRAGMA foreign_key_check").fetchall() == []
     assert report["schema"]["package_commit"].startswith("1e68c377")
@@ -105,6 +106,11 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "nhtsa_vpic_vehicle_models": "T23",
         "dunsky_ev_charging_infrastructure_2024": "T24",
         "transport_canada_ev_dashboard": "T25",
+        "pollution_probe_ev_charging_survey_2024": "T26",
+        "nlr_alternative_fueling_infrastructure_2024": "T27",
+        "icct_ev_charge_2024": "T28",
+        "icct_hdv_charge_2024": "T29",
+        "iea_future_of_hydrogen_2019": "T30",
     }
     assert report["template"]["kind"] == "backend_internal_reference"
     assert report["template"]["data_id"].startswith("canoe-transport-template:")
@@ -132,7 +138,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         assert connection.execute(
             "SELECT flag FROM time_period WHERE period = 2023"
         ).fetchone() == ("e",)
-        assert connection.execute("SELECT COUNT(*) FROM existing_capacity").fetchone()[0] == report["existing_capacity"]["parameter_rows"]
+        assert connection.execute("SELECT COUNT(*) FROM existing_capacity").fetchone()[0] == report["existing_capacity"]["parameter_rows"] + report["ev_chargers"]["capacity_rows"]
         assert connection.execute("SELECT MIN(capacity) FROM existing_capacity").fetchone()[0] >= bundle.scenario.existing_capacity.cleanup_epsilon
         assert connection.execute("SELECT COUNT(*) FROM demand").fetchone()[0] == report["demand"]["parameter_rows"]
         assert connection.execute("SELECT COUNT(DISTINCT region) FROM demand").fetchone()[0] == len(bundle.scenario.geography.regions)
@@ -240,7 +246,7 @@ def test_existing_capacity_uses_the_same_caller_owned_insertion(bundle) -> None:
     contribution = prepare_transport_contribution(
         connection, bundle=bundle, template_dir=TEMPLATES
     )
-    assert len(contribution.parameter_rows) == contribution.parameter_audit["parameter_rows"]
+    assert len(contribution.parameter_rows) == contribution.parameter_audit["parameter_rows"] + contribution.charger_audit["capacity_rows"]
     assert len(contribution.demand_rows) == contribution.demand_audit["parameter_rows"]
     assert contribution.parameter_audit["cleanup"]["removed_count"] > 0
     assert connection.execute("SELECT COUNT(*) FROM existing_capacity").fetchone()[0] == 0

@@ -14,8 +14,8 @@ Each parameter section is presented as a single table. Rows are grouped by vehic
 
 | Technology class | Source / challenge | Assumption |
 | --- | --- | --- |
-| Cars and Light Trucks | Ontario MTO is the available vehicle-population evidence | Mapped 2025 Report A age shares distribute 2023 CEUD stocks in every CEUD region. #to-review |
-| Cars and Light Trucks | StatCan LDV vehicle types differ from CEUD classes | Passenger-car fuel shares apply to cars; combined pickup, multipurpose-vehicle, and van shares apply to both light-truck classes. #to-review |
+| Cars and Light Trucks | Ontario MTO is the available vehicle-population evidence | Mapped 2025 Report A age shares distribute 2023 CEUD stocks in every CEUD region.  |
+| Cars and Light Trucks | StatCan LDV vehicle types differ from CEUD classes | Passenger-car fuel shares apply to cars; combined pickup, multipurpose-vehicle, and van shares apply to both light-truck classes.  |
 | Cars and Light Trucks | CEUD and StatCan pickup weight bins differ | CEUD light trucks end at 8,500 lb; StatCan pickups extend to 14,000 lb. Treat the mismatch as negligible for fuel shares. #to-review |
 | Cars and Trucks | StatCan fuel registrations start after some surviving vintages; some fuels lack existing technologies | Earlier vintages repeat the oldest available gasoline/diesel shares after renormalization. Other unsupported shares are excluded and audited. #to-review |
 | Road Vehicles | Regional fuel evidence is incomplete | BC shares proxy BCT; Canada-level LDV shares proxy Alberta and Newfoundland and Labrador. CEUD NL/PE map to native NLLAB/PEI. #to-review |
@@ -116,21 +116,34 @@ Each parameter section is presented as a single table. Rows are grouped by vehic
 
 | Technology class | Source / challenge | Assumption |
 | --- | --- | --- |
-| Road MHDV and buses | Current normalized NLR prices lack gasoline/CNG MHDV archetypes; the legacy workbook used separate Autonomie SI/CNG series | Use the configured diesel purchase price for gasoline/CNG MDV and school/transit buses in this layer. Apply the 1.5 retail-price reversal only to NLR road purchase prices. #to-review |
+| Road Vehicles | NLR ATB vehicle prices include a retail-price-equivalent markup | Treat the selected purchase prices as retail evidence and divide by the reviewed 1.5 factor to estimate manufacturing cost. Do not apply that factor to other capital-cost sources. #to-review |
+| Medium Trucks and Buses | Current normalized NLR prices lack gasoline/CNG MHDV archetypes; the legacy workbook used separate Autonomie SI/CNG series | Use the NLR diesel purchase price for gasoline/CNG medium trucks and school/transit buses. #to-review |
 | Intercity buses | REGEN Chart 3 has ICEV, CNGV, BEV, and HFCV purchase prices but no HEV | Use ICEV for gasoline/diesel and apply the NLR transit-bus HEV/diesel ratio to REGEN ICEV for intercity HEV. Preserve the REGEN purchase-price basis without the NLR 1.5 adjustment. #to-review |
-| Aircraft | FAA cargo capacity is labelled tons and its aggregate utilization differs by passenger/cargo service | Interpret tons as U.S. short tons; use All Aircraft speed, capacity, load, and 365 times average daily utilization to normalize CIMS capital cost per annual service output. SPK uses jet-fuel aircraft cost. #to-review |
-| Rail and marine | REGEN supplies relative 2035/2050 capital-cost factors against CIMS incumbent baselines | Keep each CIMS capital cost paired with its service output; linearly interpolate alternative factors from 2035 to 2050 and hold the 2035 factor earlier. #to-review |
-| Marine freight | The reviewed manual HFO factor has no external citation | Apply its recorded one-to-one MDO capital-cost parity and retain that manual treatment in the cost audit. #to-review |
-| Cost source metadata | REGEN, GCAM, BEAN, and FAA price-year labels are incomplete | Use the explicitly provisional native currency/dollar-year values in `sources.yaml` for CER conversion. Review and revise those entries when stronger source evidence is available. #to-review |
+| Aircraft | FAA reports aggregate passenger and cargo operating evidence; cargo capacity is labelled only tons | Use each applicable All Aircraft average for speed, capacity, load, and daily utilization. Interpret cargo tons as U.S. short tons and annualize service output over 365 days. SPK uses jet-fuel aircraft capital cost. #to-review |
+| Rail and Marine | REGEN supplies relative 2035/2050 capital-cost factors against reviewed CIMS incumbent baselines | Apply each factor to its corresponding CIMS baseline; interpolate between 2035 and 2050 and hold the 2035 factor earlier. #to-review |
+| Marine Freight | The reviewed manual HFO capital-cost factor has no external citation | Treat HFO and MDO marine freight capital costs as equal. #to-review |
+| Cost source metadata | REGEN bus prices, GCAM motorcycle costs, BEAN coefficients, and FAA maintenance do not fully specify currency or dollar year | Treat their recorded currency/year metadata as provisional until source evidence resolves the gaps; these choices affect the 2020 CAD results. #to-review |
 
 ## `cost_variable`
 
 | Technology class | Source / challenge | Assumption |
 | --- | --- | --- |
 | Cars and Light Trucks | Burnham et al. (2021) and Islam et al. (2022) — empirical model coefficients are based on US mileage profiles | The same empirical-model coefficients used in these studies are applied to estimate maintenance and repair (M&R) costs per mile by vehicle age. |
-| Cars and Light Trucks | ATB MSRP prices begin in 2023; Burnham coefficients are calibrated on a 2020-dollar MSRP basis and age coefficients end at 14 | Feed the selected retail MSRP directly to the calibrated repair equation, use its first ATB year for older existing vintages, and hold repair constant after age 14. Convert resulting source-year money to 2020 CAD with CER. #to-review |
-| Medium/Heavy Trucks and Buses | BEAN provides Class 4/6 box, Class 8 haul, and Class 8 transit coefficients | Reuse road weights; proxy GVWR 2–5 with BEAN Class 4 and 6–7 with Class 6, and use Class 8 transit for bus maintenance. Scale school/intercity bus OPEX by the transit-bus cost-to-purchase relationship. #to-review |
-| Road and off-road | Variable costs are service-activity costs indexed by period and vintage | Convert per-mile or per-vehicle-year evidence using CEUD occupancy/payload and annual distance; repeat age-dependent curves from each applicable vintage. Use the reviewed class-specific OEO ratio against the same CIMS baseline for existing and new rail/marine technologies. #to-review |
+| Cars and Light Trucks | ATB MSRP prices begin in 2023; Burnham's repair relationship uses a 2020-dollar MSRP basis and its age coefficients end at 14 | Use the selected retail MSRP with the original calibrated coefficients despite the dollar-basis difference. Proxy earlier vintages with the first ATB MSRP and hold repair cost constant after age 14. #to-review |
+| Medium and Heavy Trucks | BEAN lacks coefficients for several modeled GVWR classes | Proxy GVWR classes 2–5 with BEAN Class 4 and classes 6–7 with Class 6; retain the reviewed road class weights. #to-review |
+| School and Intercity Buses | Their own maintenance evidence is incomplete | Use BEAN Class 8 transit maintenance and the transit-bus maintenance-to-purchase-cost relationship, scaled to each bus purchase cost. #to-review |
+| Rail and Marine | OEO gives class-specific operating-to-capital-cost relationships rather than complete technology-specific variable costs | Apply each reviewed class ratio to its corresponding CIMS capital-cost baseline for existing and new vintages. #to-review |
+| Passenger and Freight Aircraft | FAA supplies aggregate maintenance cost per block-hour rather than Canadian service-distance costs | Use the applicable All Aircraft maintenance cost with its passenger or cargo speed, capacity, and load evidence; keep the two service types separate. SPK uses jet-fuel aircraft operating cost. #to-review |
+
+## EV charger parameters
+
+| Technology class | Source / challenge | Assumption |
+| --- | --- | --- |
+| LDV chargers | TC provincial public port counts are March 2026 while the prepared BEV stock is for 2023 | Apply the pinned March 2026 public counts to 2023 BEV stock when estimating private ports; record both dates in the charger audit. #to-review |
+| LDV chargers in BCT | TC separates British Columbia and the territories; CANOE's BCT region groups them | Sum British Columbia, Yukon, Northwest Territories, and Nunavut public ports before estimating BCT charger capacity. #to-review |
+| MHDV chargers | No MHD BEV stock row exists for NB or PEI in the prepared vehicle capacity | Record zero required MHD ports and omit zero-capacity existing charger rows and dependent historical costs and efficiencies in those regions. #to-review |
+| Existing and new chargers | Reviewed costs begin in 2025, while existing charger capacity uses a 2023 vintage | Use 2025 reviewed cost rates for existing 2023-vintage charger technologies; apply reviewed port-count shares directly to per-GW costs and the OEO 1% fixed-cost ratio. #to-review |
+| Charger utilization | The pinned `canoe_schema` annual capacity factor has a vintage key but no period key | Publish and validate the period-indexed utilization artifact with `≤`; defer SQLite insertion until the upstream row contract supports period indexing. #to-review |
 
 ## `capacity_factor_tech` for BEV charging profiles
 

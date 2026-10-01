@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import pandas as pd
 import pytest
 
-from parameterization import efficiencies as layer
+from parameterization import build_efficiencies as layer
 from parameterization.offroad_efficiencies import (
     derive_offroad_efficiency,
     manual_ratio,
@@ -23,6 +23,7 @@ from parameterization.road_efficiencies import (
     derive_load_factors,
     interpolate,
     medium_vocation_weights,
+    prepare_bus_annual_efficiency_evidence,
     select_atb_consumption,
 )
 from utils import (
@@ -30,6 +31,7 @@ from utils import (
     load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
+    resolve_input_path,
 )
 
 
@@ -535,8 +537,9 @@ def test_template_edges_periods_and_default_exclusions(bundle, rules):
     ) == [2021, 2022, 2023]
 
 
+@pytest.mark.parametrize("include_bus_capacity", [False, True])
 def test_offline_deterministic_preparation_and_caller_owned_insertion(
-    bundle, tmp_path, monkeypatch
+    bundle, tmp_path, monkeypatch, include_bus_capacity
 ):
     from build_transport import (
         insert_transport_contribution,
@@ -563,8 +566,18 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
 
     monkeypatch.setattr(socket, "create_connection", no_network)
     capacity = [
-        SimpleNamespace(region="ON", tech="T_MDV_T_BEV_EX", vintage=2023, capacity=1)
+        SimpleNamespace(region="ON", tech="T_MDV_T_BEV_EX", vintage=2023, capacity=1),
+        SimpleNamespace(region="ON", tech="T_HDV_BT_GSL_EX", vintage=2023, capacity=0),
     ]
+    if include_bus_capacity:
+        capacity.append(
+            SimpleNamespace(
+                region="ON", tech="T_HDV_BT_DSL_EX", vintage=2020, capacity=1
+            )
+        )
+    # Plan 046 added bus capacity, retiring plan 045's source-only historical bus rows.
+    rules = load_harmonization_rules(configured, "efficiencies")
+    assert rules["historical_classes_without_capacity"] == []
     first = layer.prepare_efficiency_rows(configured, existing_capacity_rows=capacity)
     hashes = {
         str(p.relative_to(tmp_path)): file_sha256(p) for p in tmp_path.rglob("*.csv")
@@ -577,13 +590,48 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     assert {r.vintage for r in first.efficiency_rows if r.tech == "T_MDV_T_BEV_EX"} == {
         2023
     }
-    assert first.audit["historical_source_backed_rows_without_capacity"] == 54
+    historical_keys = {
+        (row.region, row.tech, row.vintage)
+        for row in first.efficiency_rows
+        if row.tech.endswith(rules["existing_suffix"])
+    }
+    assert historical_keys == {
+        (row.region, row.tech, row.vintage) for row in capacity if row.capacity > 0
+    }
+    assert first.audit["historical_source_backed_rows_without_capacity"] == 0
     assert len(first.split_rows) == 40
     annual = pd.read_csv(
         tmp_path / "efficiencies_interim/annual_efficiency_evidence.csv"
     )
     assert set(annual.loc[annual.vintage.eq(2025), "source_year"]) == {2030}
     assert set(annual.loc[annual.tech.eq("T_MDV_T_BEV_EX"), "source_year"]) == {2023}
+    if include_bus_capacity:
+        ceud_rules = load_harmonization_rules(configured, "nrcan_ceud")
+        provincial = pd.read_csv(
+            resolve_input_path(
+                configured,
+                "interim",
+                ceud_rules["interim_subdir"],
+                ceud_rules["region_output_template"].format(region="on"),
+            )
+        )
+        shared_bus, _ = prepare_bus_annual_efficiency_evidence(configured, provincial)
+        bus_annual = annual.loc[annual.tech.eq("T_HDV_BT_DSL_EX")]
+        assert set(bus_annual.source_year) == {2016, 2017, 2018, 2019, 2020}
+        expected_bus = shared_bus.loc[
+            shared_bus.tech.eq("T_HDV_BT_DSL_EX")
+            & shared_bus.year.isin(bus_annual.source_year)
+        ].sort_values("year")
+        assert list(bus_annual.sort_values("source_year").efficiency) == pytest.approx(
+            list(expected_bus.efficiency),
+            abs=1e-12,
+        )
+        bus_row = next(
+            row for row in first.efficiency_rows if row.tech == "T_HDV_BT_DSL_EX"
+        )
+        assert bus_row.efficiency == pytest.approx(
+            expected_bus.efficiency.mean(), abs=1e-12
+        )
     assert first.audit["phev_energy_basis"] == "greet_hhv_fuel_plus_electricity"
     with sqlite3.connect(tmp_path / "transport.sqlite") as connection:
         create_v4_schema(connection)

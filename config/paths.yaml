@@ -58,10 +58,10 @@ artifacts:
     consumers:
       - parameterization.road_lifetimes_survival.build_accepted_lifetime_artifacts
       - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
-      - parameterization.lifetime_parameters.prepare_lifetime_rows
+      - parameterization.build_lifetime_parameters.prepare_lifetime_rows
       - parameterization.road_stocks_and_demands
       - parameterization.road_utilization
-      - parameterization.costs
+      - parameterization.build_costs
     validation_surfaces:
       - parameterization.road_aggregation.validate_vehicle_mapping
       - parameterization.road_aggregation.mapping_coverage
@@ -77,94 +77,108 @@ artifacts:
   lifetime_parameters:
     path: inputs/2_processed/lifetime_parameters
     layer: processed
-    owner: parameterization.lifetime_parameters
-    producers: [parameterization.lifetime_parameters.build_lifetime_parameter_artifacts]
+    owner: parameterization.build_lifetime_parameters
+    producers: [parameterization.build_lifetime_parameters.build_lifetime_parameter_artifacts]
     consumers: [build_transport, reviewers]
-    validation_surfaces: [parameterization.lifetime_parameters.prepare_lifetime_rows]
+    validation_surfaces: [parameterization.build_lifetime_parameters.prepare_lifetime_rows]
   road_stocks_and_demands:
     path: inputs/2_processed/road_stocks_and_demands
     layer: processed
     owner: parameterization.road_stocks_and_demands
     producers: [parameterization.road_stocks_and_demands.build_existing_stock_age_artifacts]
-    consumers: [parameterization.existing_capacity, reviewers]
+    consumers: [parameterization.build_existing_capacity, reviewers]
     validation_surfaces: [parameterization.road_stocks_and_demands.derive_ldv_age_distributions]
   tc_ev_dashboard_interim:
     path: inputs/1_interim/fetched_transport_canada_ev_dashboard
     layer: interim
     owner: fetching.assorted_sources
     producers: [fetching.assorted_sources.fetch_and_normalize_tc_dashboard]
-    consumers: [parameterization.road_stocks_and_demands]
-    validation_surfaces: [fetching.assorted_sources.normalize_tc_ev_dashboard_table]
+    consumers: [parameterization.road_stocks_and_demands, parameterization.ev_chargers]
+    validation_surfaces: [fetching.assorted_sources.normalize_tc_ev_dashboard_table, fetching.assorted_sources.normalize_tc_public_chargers]
   existing_capacity_interim:
     path: inputs/1_interim/existing_capacity
     layer: interim
-    owner: parameterization.existing_capacity
-    producers: [parameterization.existing_capacity.build_existing_capacity_artifacts]
-    consumers: [parameterization.existing_capacity, reviewers]
-    validation_surfaces: [parameterization.existing_capacity.validate_capacity_inputs]
+    owner: parameterization.build_existing_capacity
+    producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
+    consumers: [parameterization.build_existing_capacity, reviewers]
+    validation_surfaces: [parameterization.build_existing_capacity.validate_capacity_inputs]
   existing_capacity_processed:
     path: inputs/2_processed/existing_capacity
     layer: processed
-    owner: parameterization.existing_capacity
-    producers: [parameterization.existing_capacity.build_existing_capacity_artifacts]
+    owner: parameterization.build_existing_capacity
+    producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
     consumers: [build_transport, reviewers]
-    validation_surfaces: [parameterization.existing_capacity.prepare_existing_capacity_rows]
+    validation_surfaces: [parameterization.build_existing_capacity.prepare_existing_capacity_rows]
   existing_capacity_validation:
     path: inputs/validation/existing_capacity
     layer: input_validation
-    owner: parameterization.existing_capacity
-    producers: [parameterization.existing_capacity.build_existing_capacity_artifacts]
+    owner: parameterization.build_existing_capacity
+    producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
     consumers: [reviewers]
-    validation_surfaces: [parameterization.existing_capacity.validate_capacity_outputs]
+    validation_surfaces: [parameterization.build_existing_capacity.validate_capacity_outputs]
+  ev_chargers_processed:
+    path: inputs/2_processed/ev_chargers
+    layer: processed
+    owner: parameterization.ev_chargers
+    producers: [parameterization.ev_chargers.prepare_ev_charger_rows]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.ev_chargers.prepare_ev_charger_rows]
+  ev_chargers_validation:
+    path: inputs/validation/ev_chargers
+    layer: input_validation
+    owner: parameterization.ev_chargers
+    producers: [parameterization.ev_chargers.prepare_ev_charger_rows]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.ev_chargers.prepare_ev_charger_rows]
   demand_processed:
     path: inputs/2_processed/demand
     layer: processed
-    owner: parameterization.demand
-    producers: [parameterization.demand.prepare_demand_rows]
+    owner: parameterization.build_demand
+    producers: [parameterization.build_demand.prepare_demand_rows]
     consumers: [build_transport, reviewers]
-    validation_surfaces: [parameterization.demand.validate_demand_outputs]
+    validation_surfaces: [parameterization.build_demand.validate_demand_outputs]
   efficiencies_interim:
     path: inputs/1_interim/efficiencies
     layer: interim
-    owner: parameterization.efficiencies
-    producers: [parameterization.efficiencies.prepare_efficiency_rows]
-    consumers: [parameterization.efficiencies, reviewers]
-    validation_surfaces: [parameterization.efficiencies.validate_efficiency_outputs]
+    owner: parameterization.build_efficiencies
+    producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
+    consumers: [parameterization.build_efficiencies, reviewers]
+    validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
   efficiencies_processed:
     path: inputs/2_processed/efficiencies
     layer: processed
-    owner: parameterization.efficiencies
-    producers: [parameterization.efficiencies.prepare_efficiency_rows]
+    owner: parameterization.build_efficiencies
+    producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
     consumers: [build_transport, reviewers]
-    validation_surfaces: [parameterization.efficiencies.validate_efficiency_outputs]
+    validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
   efficiencies_validation:
     path: inputs/validation/efficiencies
     layer: input_validation
-    owner: parameterization.efficiencies
-    producers: [parameterization.efficiencies.prepare_efficiency_rows]
+    owner: parameterization.build_efficiencies
+    producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
     consumers: [reviewers]
-    validation_surfaces: [parameterization.efficiencies.validate_efficiency_outputs]
+    validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
   costs_interim:
     path: inputs/1_interim/transport_costs
     layer: interim
-    owner: parameterization.costs
-    producers: [parameterization.costs.prepare_cost_rows]
-    consumers: [parameterization.costs, reviewers]
-    validation_surfaces: [parameterization.costs.validate_cost_outputs]
+    owner: parameterization.build_costs
+    producers: [parameterization.build_costs.prepare_cost_rows]
+    consumers: [parameterization.build_costs, reviewers]
+    validation_surfaces: [parameterization.build_costs.validate_cost_outputs]
   costs_processed:
     path: inputs/2_processed/transport_costs
     layer: processed
-    owner: parameterization.costs
-    producers: [parameterization.costs.prepare_cost_rows]
+    owner: parameterization.build_costs
+    producers: [parameterization.build_costs.prepare_cost_rows]
     consumers: [build_transport, reviewers]
-    validation_surfaces: [parameterization.costs.validate_cost_outputs]
+    validation_surfaces: [parameterization.build_costs.validate_cost_outputs]
   costs_validation:
     path: inputs/validation/transport_costs
     layer: input_validation
-    owner: parameterization.costs
-    producers: [parameterization.costs.prepare_cost_rows]
+    owner: parameterization.build_costs
+    producers: [parameterization.build_costs.prepare_cost_rows]
     consumers: [reviewers]
-    validation_surfaces: [parameterization.costs.validate_cost_outputs]
+    validation_surfaces: [parameterization.build_costs.validate_cost_outputs]
   road_utilization_processed:
     path: inputs/2_processed/road_utilization
     layer: processed

@@ -1,4 +1,4 @@
-"""Prepare transport investment and period-by-vintage variable costs offline."""
+"""Build validated transport investment and period-by-vintage variable costs offline."""
 
 from __future__ import annotations
 
@@ -317,7 +317,7 @@ def prepare_cost_rows(
     if set(bean.source_id) != {BEAN} or set(faa_maintenance.source_id) != {FAA}:
         raise ValueError("BEAN or FAA normalized cost source identity changed")
     if existing_capacity_rows is None:
-        from parameterization.existing_capacity import prepare_existing_capacity_rows
+        from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
         existing_capacity_rows, _, _ = prepare_existing_capacity_rows(bundle)
     existing_keys = {
@@ -325,7 +325,7 @@ def prepare_cost_rows(
         for r in existing_capacity_rows if r.capacity > 0
     }
     if fixed_lifetime_rows is None or survival_curve_rows is None:
-        from parameterization.lifetime_parameters import prepare_lifetime_rows
+        from parameterization.build_lifetime_parameters import prepare_lifetime_rows
 
         lifetimes = prepare_lifetime_rows(bundle)
         fixed_lifetime_rows = lifetimes.fixed_rows

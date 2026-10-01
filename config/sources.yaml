@@ -1122,6 +1122,21 @@ sources:
           unique_key: [category, sub_category]
           source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akin-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
           expected_rows: 1
+      charger_fixed_cost_ratio:
+        label: "Annual charger fixed cost to investment ratio"
+        short_name: oeo_charger_fixed_cost_ratio
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [charger]
+        produces: [cost_fixed]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Select the one reviewed charger fixed-to-capital-cost ratio."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akin-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
+          expected_rows: 1
 
   argonne_rd_greet_2025_rev1:
     title: "R&D GREET 2025 Rev.1 Excel"
@@ -1405,31 +1420,31 @@ sources:
       access:
         method: version_controlled_manual_parameter
         url: "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-    units: "Dimensionless utilization rates and charger-type shares."
+    units: "Reviewed dimensionless utilization and shares, kW port ratings, and 2022 CAD million per GW charger capital costs."
     citation: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-    validation_rule: "Select the five reviewed charger rows, require unique class/subcategory/parameter/period keys, and resolve each subcategory through technology.category and technology.sub_category."
+    validation_rule: "Select 35 cited charger rows from the compact charger table with unique category/subcategory/parameter/period keys."
     refresh_notes: >
-      Review the source report tables and all charger utilization/share rows together
+      Review the source report tables and all charger utilization/share/cost rows together
       before changing the version-controlled values or derivation notes.
     components:
       charger_shares_and_utilization:
-        label: "EV charger utilization and existing charger-type shares"
+        label: "EV charger utilization, shares, and capital costs"
         short_name: dunsky_charger_shares_utilization
-        inputs: [technology_class, sub_category, parameter, period, value]
+        inputs: [category, sub_category, parameter, unit, currency_year, period, value]
         applies_to: [charger]
-        produces: [charger_utilization, charger_type_share]
+        produces: [charger_utilization, charger_type_share, charger_cost_invest]
         parameter_modules: [ev_chargers]
-        units: "Dimensionless utilization rate or share."
-        validation_rule: "Require all five cited rows and preserve the source-specific derivation notes."
+        units: "Dimensionless utilization rate or share; kW port rating; 2022 CAD million per GW."
+        validation_rule: "Require all 35 cited rows and preserve the reviewed derivation notes."
         adapter:
-          manual_parameter_path: "charger_shares_utilization.csv"
-          expected_columns: [technology_class, sub_category, parameter, period, value, notes, "source -> data_source"]
-          unique_key: [technology_class, sub_category, parameter, period]
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
           source_selector: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-          expected_rows: 5
+          expected_rows: 35
 
   transport_canada_ev_dashboard:
-    title: "Transport Canada Canada electric vehicle dashboard"
+    title: "Transport Canada electric vehicle dashboard"
     status: active
     source_type: upstream_download
     file_type: html
@@ -1442,9 +1457,9 @@ sources:
       cache_path: assorted_sources/transport_canada_ev_dashboard_2026_q1.html
       expected_sha256: 4ffdbdda087b6a361decfb21b49557d058ef571ced34a4f45d731546a3544091
       expected_bytes: 91590
-    units: "Percent of new medium- and heavy-duty vehicle registrations that are zero emission."
-    citation: "Transport Canada. (2026). Canada's electric vehicle dashboard, medium- and heavy-duty EV market share. https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
-    validation_rule: "Pinned HTML must contain the configured medium/heavy market-share heading and table, with unique provincial rows and bounded 2026 year-to-date percentages."
+    units: "Medium/heavy EV market-share percentages and public light-duty charging port counts."
+    citation: "Transport Canada. (2026). Canada's electric vehicle dashboard. https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
+    validation_rule: "Pinned HTML must contain the configured market-share and public-charger sections; validate regional coverage, charger types, counts, and national totals."
     refresh_notes: >
       Re-pin the HTML hash and byte count and review the table headers, reporting
       period, and regional coverage before changing the selected edition.
@@ -1458,3 +1473,162 @@ sources:
         parameter_modules: [road_stocks_and_demands]
         units: fraction
         validation_rule: "Require all CEUD regional share proxies to resolve to a numeric bounded provincial 2026 year-to-date value."
+      public_light_duty_chargers:
+        label: "March 2026 public light-duty charging ports by province and type"
+        short_name: public_light_duty_chargers
+        inputs: [province, level_2_ports, level_3_ports, national_total]
+        applies_to: [charger]
+        produces: [existing_capacity]
+        parameter_modules: [ev_chargers]
+        units: ports
+        validation_rule: "Require all 13 provincial/territorial counts and L2/DCFC types; both sums equal the dashboard national total."
+
+  pollution_probe_ev_charging_survey_2024:
+    title: "2024 Canadian EV Charging Experience Survey"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2024 survey; reviewed manual extraction"
+    required: true
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"}
+    units: "Dimensionless private L1/L2 charger shares."
+    citation: "Pollution Probe & Mobility Futures Lab. (2025). 2024 Canadian EV Charging Experience Survey. https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"
+    validation_rule: "Select both reviewed private L1/L2 share rows from charger_parameters.csv."
+    refresh_notes: "Review the survey and both private charger shares together before editing the manual table."
+    components:
+      private_charger_shares:
+        label: "Private light-duty L1/L2 charging shares"
+        short_name: pollution_probe_private_charger_shares
+        inputs: [category, sub_category, parameter, period, value]
+        applies_to: [charger]
+        produces: [existing_capacity]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Require both private shares and a unit sum."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "Pollution Probe & Mobility Futures Lab. (2025). 2024 Canadian EV Charging Experience Survey. https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"
+          expected_rows: 2
+
+  nlr_alternative_fueling_infrastructure_2024:
+    title: "Assessment of Alternative Fueling Infrastructure in the United States"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2024 report; reviewed residential L1 installation cost"
+    required: true
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://doi.org/10.2172/2447838"}
+    units: "2021 USD million per GW of residential L1 charging power."
+    citation: "Lommele, S., Desai, R., Johnson, C., Snelling, A., Brown, A., Singer, M., Bennett, J., Cappellucci, J., Levene, J., & Hoehne, C. (2024). Assessment of Alternative Fueling Infrastructure in the United States (NREL/TP-5400-88513). NREL. https://doi.org/10.2172/2447838"
+    validation_rule: "Select the reviewed residential L1 cost row from charger_parameters.csv."
+    refresh_notes: "Review the report and L1 installation-cost treatment before editing the manual row."
+    components:
+      residential_l1_cost:
+        label: "Residential L1 installation cost"
+        short_name: nlr_residential_l1_cost
+        inputs: [category, sub_category, parameter, unit, currency_year, period, value]
+        applies_to: [charger]
+        produces: [cost_invest]
+        parameter_modules: [ev_chargers]
+        units: "2021 USD million per GW"
+        validation_rule: "Require one reviewed cost and its native currency/year."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "Lommele, S., Desai, R., Johnson, C., Snelling, A., Brown, A., Singer, M., Bennett, J., Cappellucci, J., Levene, J., & Hoehne, C. (2024). Assessment of Alternative Fueling Infrastructure in the United States (NREL/TP-5400-88513). NREL. https://doi.org/10.2172/2447838"
+          expected_rows: 1
+
+  icct_ev_charge_2024:
+    title: "EV CHARGE v1.2 documentation"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "v1.2; reviewed charger efficiency"
+    required: true
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://theicct.github.io/EVCHARGE-doc/versions/v1.2/"}
+    units: "Dimensionless LD charger efficiency."
+    citation: "ICCT. (2024). EV CHARGE v1.2 Documentation. EV CHARGE Model Documentation. https://theicct.github.io/EVCHARGE-doc/versions/v1.2/"
+    validation_rule: "Select the reviewed LD charger efficiency row."
+    refresh_notes: "Review the ICCT model assumption and manual efficiency together before editing."
+    components:
+      ld_charger_efficiency:
+        label: "LD charger efficiency"
+        short_name: icct_ld_charger_efficiency
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [charger]
+        produces: [efficiency]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Require one bounded LD charger efficiency."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "ICCT. (2024). EV CHARGE v1.2 Documentation. EV CHARGE Model Documentation. https://theicct.github.io/EVCHARGE-doc/versions/v1.2/"
+          expected_rows: 1
+
+  icct_hdv_charge_2024:
+    title: "HDV CHARGE v1.2 documentation"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "v1.2; reviewed charger efficiency"
+    required: true
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/"}
+    units: "Dimensionless MHD charger efficiency."
+    citation: "ICCT. (2024). HDV CHARGE v1.2 Documentation. HDV CHARGE Model Documentation. https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/"
+    validation_rule: "Select the reviewed MHD charger efficiency row."
+    refresh_notes: "Review the ICCT model assumption and manual efficiency together before editing."
+    components:
+      mhd_charger_efficiency:
+        label: "MHD charger efficiency"
+        short_name: icct_mhd_charger_efficiency
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [charger]
+        produces: [efficiency]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Require one bounded MHD charger efficiency."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "ICCT. (2024). HDV CHARGE v1.2 Documentation. HDV CHARGE Model Documentation. https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/"
+          expected_rows: 1
+
+  iea_future_of_hydrogen_2019:
+    title: "The Future of Hydrogen"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2019 report; reviewed manual refueling efficiency"
+    required: true
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://www.iea.org/reports/the-future-of-hydrogen"}
+    units: "Dimensionless hydrogen refueling efficiency."
+    citation: "IEA. (2019). The Future of Hydrogen. https://www.iea.org/reports/the-future-of-hydrogen"
+    validation_rule: "Select the one existing hydrogen efficiency row in the compact manual table."
+    refresh_notes: "Preserve the reviewed hydrogen row; charger parameterization does not own it."
+    components:
+      hydrogen_refueling_efficiency:
+        label: "Hydrogen refueling efficiency"
+        short_name: iea_hydrogen_refueling_efficiency
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [h2_refuel]
+        produces: [efficiency]
+        parameter_modules: [offroad_efficiencies]
+        units: fraction
+        validation_rule: "Require the one cited hydrogen efficiency row."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "IEA. (2019). The Future of Hydrogen. https://www.iea.org/reports/the-future-of-hydrogen"
+          expected_rows: 1

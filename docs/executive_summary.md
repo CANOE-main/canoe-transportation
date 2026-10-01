@@ -25,6 +25,8 @@ config:
     rankSpacing: 50
     wrappingWidth: 250
     curve: linear
+  themeVariables:
+    fontSize: 17px
 ---
 flowchart LR
   subgraph CONTROL["`**Backend configuration**`"]

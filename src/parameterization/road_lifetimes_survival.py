@@ -1822,13 +1822,17 @@ def accepted_lifetime_frames(
     }
 
 
-def _derive_accepted_lifetime_frames(
+def derive_accepted_lifetime_frames(
     bundle: ConfigBundle,
     *,
     rules: dict[str, Any],
     road_rules: dict[str, Any],
     assorted_rules: dict[str, Any],
 ) -> dict[str, pd.DataFrame]:
+    """Load validated accepted evidence for road publication and transport assembly.
+
+    This shared preparation interface neither reads MTO history nor writes artifacts.
+    """
     assorted_dir = resolve_input_path(
         bundle,
         "interim",
@@ -2067,7 +2071,7 @@ def _lifetime_context(
 def build_accepted_lifetime_artifacts(scenario_path: str | Path) -> Path:
     """Publish accepted source-derived lifetime products without MTO diagnostics."""
     bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
-    frames = _derive_accepted_lifetime_frames(
+    frames = derive_accepted_lifetime_frames(
         bundle,
         rules=rules,
         road_rules=road_rules,
@@ -2081,7 +2085,7 @@ def build_accepted_lifetime_artifacts(scenario_path: str | Path) -> Path:
 def build_mto_survival_diagnostic_artifacts(scenario_path: str | Path) -> Path:
     """Publish historical MTO apparent-retention and decision evidence."""
     bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
-    accepted_frames = _derive_accepted_lifetime_frames(
+    accepted_frames = derive_accepted_lifetime_frames(
         bundle,
         rules=rules,
         road_rules=road_rules,
@@ -2102,9 +2106,9 @@ def build_mto_survival_diagnostic_artifacts(scenario_path: str | Path) -> Path:
 
 
 def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
-    """Compatibility publisher for accepted products and MTO diagnostics."""
+    """Publish accepted products and explicit MTO diagnostics together."""
     bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
-    accepted_frames = _derive_accepted_lifetime_frames(
+    accepted_frames = derive_accepted_lifetime_frames(
         bundle,
         rules=rules,
         road_rules=road_rules,

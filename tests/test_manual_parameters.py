@@ -93,23 +93,23 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
     )
 
     assert registry["manual_file"].nunique() == 7
-    assert len(registry) == 13
-    assert len(resolution) == 100
-    assert resolution["tech"].nunique() == 32
+    assert len(registry) == 19
+    assert len(resolution) == 34
+    assert resolution["tech"].nunique() == 34
     assert not resolution.duplicated(
-        ["manual_file", "parameter", "tech", "selector_year"]
+        ["manual_file", "manual_row", "tech", "selector_year"]
     ).any()
     charger_rows = reconciliation.loc[
-        reconciliation["manual_file"].eq("charger_shares_utilization.csv")
+        reconciliation["manual_file"].eq("charger_parameters.csv")
     ]
-    assert len(charger_rows) == 5
+    assert len(charger_rows) == 42
     assert set(charger_rows["resolution_status"]) == {"behavior_specific_owner"}
 
     lifetime = resolution.loc[
         resolution["manual_file"].eq("lifetime_process.csv")
     ]
     assert lifetime.groupby("technology_class")["tech"].nunique().to_dict() == {
-        "charger": 2,
+        "charger": 4,
         "freight_air": 3,
         "freight_marine": 5,
         "freight_rail": 4,
@@ -120,71 +120,11 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
         "passenger_rail": 3,
     }
 
-    jet_fuel = resolution.loc[
-        resolution["manual_file"].eq("cost_invest_multipliers.csv")
-        & resolution["technology_class"].eq("passenger_air")
-        & resolution["powertrain"].eq("jet_fuel")
+    assert findings.empty
+    behavior = reconciliation.loc[
+        reconciliation["manual_file"].isin(rules["behavior_specific_files"])
     ]
-    assert set(jet_fuel["technology_sub_category"]) == {"jet fuel", "jet_fuel"}
-    marine_mdo = resolution.loc[
-        resolution["manual_file"].eq("cost_invest_multipliers.csv")
-        & resolution["technology_class"].eq("freight_marine")
-        & resolution["powertrain"].eq("mdo")
-    ]
-    assert set(marine_mdo["technology_sub_category"]) == {
-        "marine diesel oil",
-        "mdo",
-    }
-
-    h2_2035 = resolution.loc[
-        resolution["manual_file"].eq("cost_invest_multipliers.csv")
-        & resolution["technology_class"].eq("freight_rail")
-        & resolution["powertrain"].eq("h2_2035")
-    ]
-    assert h2_2035["selector_year"].tolist() == [2035]
-    assert h2_2035["technology_sub_category"].tolist() == ["h2"]
-
-    passenger_remainder = resolution.loc[
-        resolution["manual_file"].eq("efficiency_multipliers.csv")
-        & resolution["technology_class"].eq("passenger_rail")
-        & resolution["powertrain"].eq("remainder")
-    ]
-    assert set(passenger_remainder["technology_sub_category"]) == {"diesel"}
-    freight_remainder = resolution.loc[
-        resolution["manual_file"].eq("efficiency_multipliers.csv")
-        & resolution["technology_class"].eq("freight_rail")
-        & resolution["powertrain"].eq("remainder")
-    ]
-    assert set(freight_remainder["technology_sub_category"]) == {
-        "diesel",
-        "lng",
-    }
-
-    variable_all = resolution.loc[
-        resolution["manual_file"].eq("cost_variable_multipliers.csv")
-    ]
-    assert variable_all.groupby("technology_class")["tech"].nunique().to_dict() == {
-        "freight_marine": 5,
-        "freight_rail": 4,
-        "passenger_rail": 3,
-    }
-
-    assert set(
-        zip(
-            findings["technology_class"],
-            findings["powertrain"],
-            strict=True,
-        )
-    ) == {
-        ("passenger_rail", "lng_2035"),
-        ("passenger_rail", "lng_2050"),
-        ("freight_marine", "h2_2035"),
-        ("freight_marine", "h2_2050"),
-        ("passenger_rail", "lng"),
-        ("passenger_rail", "electric"),
-        ("freight_rail", "electric"),
-        ("freight_marine", "h2"),
-    }
+    assert set(behavior["resolution_status"]) == {"behavior_specific_owner"}
     wards = reconciliation.loc[
         reconciliation["manual_file"].eq("vehicle_class_market_shares.csv")
     ]
