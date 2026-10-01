@@ -246,6 +246,11 @@ class ScenarioRoadUtilization(MappingModel):
     medium_truck_weight_source: Literal["national_wards", "ontario_report4"]
 
 
+class ScenarioEvChargers(MappingModel):
+    ldev_ev_per_port: float = Field(gt=0, allow_inf_nan=False)
+    mhdev_ev_per_port: float = Field(gt=0, allow_inf_nan=False)
+
+
 class ScenarioConfig(MappingModel):
     version: int
     scenario: ScenarioIdentity
@@ -259,6 +264,7 @@ class ScenarioConfig(MappingModel):
     existing_capacity: ScenarioExistingCapacity | None = None
     demand: ScenarioDemand
     road_utilization: ScenarioRoadUtilization
+    ev_chargers: ScenarioEvChargers
     row_note_overrides: ScenarioRowNoteOverrides = Field(
         default_factory=ScenarioRowNoteOverrides
     )

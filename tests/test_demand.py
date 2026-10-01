@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from parameterization.demand import prepare_demand_rows, real_gdp_indices
+from parameterization.build_demand import prepare_demand_rows, real_gdp_indices
 from parameterization.offroad_stocks_and_demands import derive_offroad_baseline_demand
 from parameterization.road_stocks_and_demands import (
     derive_road_baseline_demand,

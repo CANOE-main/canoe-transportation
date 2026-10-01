@@ -1,4 +1,4 @@
-"""Prepare the scenario-selected transport lifetime representation."""
+"""Build the scenario-selected transport lifetime representation."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from parameterization.offroad_lifetimes import (
     prepare_statcan_bus_lifetimes,
 )
 from parameterization.road_lifetimes_survival import (
-    _derive_accepted_lifetime_frames,
+    derive_accepted_lifetime_frames,
     prepare_fixed_road_lifetimes,
     prepare_road_survival_curve_rows,
 )
@@ -46,7 +46,7 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
     lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
     road_rules = load_harmonization_rules(bundle, "road_aggregation")
     assorted_rules = load_harmonization_rules(bundle, "assorted_sources")
-    frames = _derive_accepted_lifetime_frames(
+    frames = derive_accepted_lifetime_frames(
         bundle, rules=lifetime_rules, road_rules=road_rules,
         assorted_rules=assorted_rules,
     )

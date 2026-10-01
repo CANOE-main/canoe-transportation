@@ -14,12 +14,9 @@ registered external, external-model, and reviewed manual inputs into normalized 
 model parameters, provenance records, and a schema-validated database published atomically.
 
 The standalone transport SQLite remains a first-class output for legacy parity, focused
-validation, and independent transport research. The planned CANOE-main integration is a
-second assembly path: the broader compiler currently initializes one shared CANOE SQLite
-database and invokes sector modules against it. Transportation should therefore reuse the
-same parameterization contracts either to build its standalone database or to contribute
-rows to an already initialized master database; multi-sector integration should not require
-a second transport transformation implementation.
+validation, and independent transport research. The backend also exposes contribution
+preparation and insertion for a caller-owned compatible database. Both paths use the same
+transport parameterization; an upstream-specific adapter remains planned. #to-review
 
 The tree below shows implemented files and the selected homes for planned parameterization
 families. Planned entries are labeled explicitly; they are ownership targets, not empty module
@@ -27,164 +24,150 @@ requirements.
 
 ```text
 .
-├── AGENTS.md                               # Stable repository policy
-├── README.md                               # Human-facing project orientation
+├── AGENTS.md                                # Stable repository policy
+├── README.md                                # Human-facing project orientation
 ├── .agents/
-│   ├── PLANS.md                            # ExecPlan protocol
-│   ├── plans/                              # Task-local implementation records
-│   └── skills/                             # Optional task-retrieved procedures
+│   ├── PLANS.md                             # ExecPlan protocol
+│   ├── plans/                               # Task-local implementation records
+│   └── skills/                              # Optional task-retrieved procedures
 ├── config/
-│   ├── paths.yaml                          # Canonical paths and artifact-family impact routes
-│   ├── sources.yaml                        # External-source registry and provenance
-│   ├── scenarios/                          # Scenario authoring contract
+│   ├── paths.yaml                           # Canonical paths and artifact-family impact routes
+│   ├── sources.yaml                         # External-source registry and provenance
+│   ├── scenarios/                           # Scenario authoring contract
 │   └── parameters/
-│       ├── rules.yaml                      # Extraction and harmonization contracts
-│       └── conversion.yaml                 # Reusable conversion factors
+│       ├── rules.yaml                       # Extraction and harmonization contracts
+│       └── conversion.yaml                  # Reusable conversion factors
 ├── workflow/
-│   └── Snakefile                           # Dependency and artifact orchestration
+│   └── Snakefile                            # Dependency and artifact orchestration
 ├── src/
-│   ├── setup.py                            # Configuration/schema smoke entrypoint
-│   ├── build_transport.py                  # Standalone atomic database build owner
-│   ├── canoe_adapter.py                    # CANOE-main orchestrator adapter for running this backend - #to-do
-│   ├── fetching/                           # Upstream download, cache, and interim normalization
-│   │   ├── nrcan_ceud.py                   # NRCan CEUD transport tables
-│   │   ├── vehicle_population.py           # Ontario MTO report acquisition and normalization
-│   │   ├── statcan_tables.py               # Statistics Canada transport tables
-│   │   ├── cer_enerfuture.py               # CER energy future tables
-│   │   ├── nlr_atb_autonomie.py            # NLR ATB and ANL Autonomie inputs
-│   │   ├── fueleconomy_vehicles.py         # Opt-in FuelEconomy.gov class evidence
-│   │   ├── vpic_vehicle_types.py           # Opt-in vPIC vehicle-type evidence
-│   │   ├── vpic_model_years.py             # Opt-in vPIC make/model-year evidence
-│   │   └── assorted_sources.py             # Smaller registered source adapters
-│   ├── parameterization/                   # Transform normalized inputs into model parameters
-│   │   ├── manual_parameters.py            # Validate registry and resolve generic selectors
-│   │   ├── road_stocks_and_demands.py      # Road existing stock and demand products #to-review
-│   │   ├── road_utilization.py             # Road capacity-to-activity and annual utilization, including vintage-period artifacts #to-review
-│   │   ├── offroad_stocks_and_demands.py   # Off-road existing stock and demand products #to-review
-│   │   ├── existing_capacity.py            # Shared road/off-road capacity preparation and validation #to-review
-│   │   ├── demand.py                       # Shared CER projection, demand rows, and validation #to-review
-│   │   ├── ev_chargers.py                  # EV charging infrastructure parameters - #to-do
-│   │   ├── road_lifetimes_survival.py      # Accepted road lifetime, survival, and MTO diagnostics
-│   │   ├── offroad_lifetimes.py            # Lifetimes of remaining technologies - #to-do
-│   │   ├── road_aggregation.py             # Reviewed mapping application and aggregation weights
-│   │   ├── vehicle_mapping_bootstrap.py    # Explicit mapping-development entrypoint
-│   │   ├── road_efficiencies.py            # Road technology efficiencies - #to-do
-│   │   ├── offroad_efficiencies.py         # Off-road technology efficiencies - #to-do
-│   │   ├── road_capex_opex.py              # Road investment and operating costs - #to-do
-│   │   ├── offroad_capex_opex.py           # Off-road investment and operating costs - #to-do
-│   │   ├── ldv_charging_profiles.py        # Hourly LDEV charging demand profiles - #to-do
-│   │   ├── road_embodied_emissions.py      # Vehicle-cycle and operating emissions - #to-do
-│   │   ├── market_constraints.py           # Market shares, policy limits, and SCC rules - #to-do
-│   │   └── adoption_constraints.py         # Adoption and growth constraints - #to-do
+│   ├── setup.py                             # Configuration/schema smoke entrypoint
+│   ├── build_transport.py                   # Transport contribution and atomic database assembly #to-review
+│   ├── canoe_adapter.py                     # CANOE-main orchestrator adapter for running this backend - #to-do
+│   ├── fetching/                            # Upstream download, cache, and interim normalization
+│   │   ├── nrcan_ceud.py                    # NRCan CEUD transport tables
+│   │   ├── vehicle_population.py            # Ontario MTO report acquisition and normalization
+│   │   ├── statcan_tables.py                # Statistics Canada transport tables
+│   │   ├── cer_enerfuture.py                # CER energy future tables
+│   │   ├── nlr_atb_autonomie.py             # NLR ATB and ANL Autonomie inputs
+│   │   ├── fueleconomy_vehicles.py          # Opt-in FuelEconomy.gov class evidence
+│   │   ├── vpic_vehicle_types.py            # Opt-in vPIC vehicle-type evidence
+│   │   ├── vpic_model_years.py              # Opt-in vPIC make/model-year evidence
+│   │   └── assorted_sources.py              # Smaller registered source adapters
+│   ├── parameterization/                    # Transform normalized inputs into model parameters
+│   │   ├── manual_parameters.py             # Validate registry and resolve generic selectors
+│   │   ├── road_stocks_and_demands.py       # Road existing stock and demand products
+│   │   ├── road_utilization.py              # Road C2A and annual utilization, including vintage-period artifacts
+│   │   ├── offroad_stocks_and_demands.py    # Off-road existing stock and demand products
+│   │   ├── build_existing_capacity.py       # Combine and validate road/off-road capacity rows #to-review
+│   │   ├── build_demand.py                  # Project and validate combined transport demand #to-review
+│   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
+│   │   ├── road_lifetimes_survival.py       # Accepted road lifetime, survival, and MTO diagnostics
+│   │   ├── offroad_lifetimes.py             # Lifetimes of remaining technologies
+│   │   ├── build_lifetime_parameters.py     # Select and validate fixed/curve lifetime rows #to-review
+│   │   ├── road_aggregation.py              # Reviewed mapping application and aggregation weights
+│   │   ├── vehicle_mapping_bootstrap.py     # Explicit mapping-development entrypoint
+│   │   ├── road_efficiencies.py             # Road technology efficiencies
+│   │   ├── offroad_efficiencies.py          # Off-road technology efficiencies
+│   │   ├── build_efficiencies.py            # Combine efficiency rows and PHEV input splits #to-review
+│   │   ├── road_capex_opex.py               # Road investment and operating costs
+│   │   ├── offroad_capex_opex.py            # Off-road investment and operating costs
+│   │   ├── build_costs.py                   # Combine and validate investment/variable costs #to-review
+│   │   ├── currency.py                      # CER-backed currency and price-year conversion #to-review
+│   │   ├── ldv_charging_profiles.py         # Hourly LDEV charging demand profiles - #to-do
+│   │   ├── road_embodied_emissions.py       # Vehicle-cycle and operating emissions - #to-do
+│   │   ├── market_constraints.py            # Market shares, policy limits, and SCC rules - #to-do
+│   │   └── adoption_constraints.py          # Adoption and growth constraints - #to-do
 │   ├── utils/
-│   │   ├── __init__.py                     # Typed config loading and artifact path resolution
-│   │   ├── files.py                        # Shared hashing and atomic CSV publication
-│   │   └── vehicle_labels.py               # Shared vehicle-label mechanics
+│   │   ├── __init__.py                      # Typed config loading and artifact path resolution
+│   │   ├── files.py                         # Shared hashing and atomic CSV publication
+│   │   └── vehicle_labels.py                # Shared vehicle-label mechanics
 │   └── validation/
-│       ├── config_models.py                # Pydantic configuration contracts
-│       ├── config_smoke.py                 # Setup-time config/schema status and directory creation
-│       ├── provenance.py                   # Source and dataset provenance
-│       ├── schema_contract.py              # canoe-schema v4 compatibility
-│       ├── insertion.py                    # Scoped pre-insertion cleanup and validated insertion #to-review
-│       ├── database_bootstrap.py           # Post-insertion database integrity checks
-│       ├── sqlite_utils.py                 # Shared SQLite identifier mechanics
-│       └── legacy_compare.py               # Narrow configured legacy comparison
+│       ├── config_models.py                 # Pydantic configuration contracts
+│       ├── config_smoke.py                  # Setup-time config/schema status and directory creation
+│       ├── provenance.py                    # Source and dataset provenance
+│       ├── schema_contract.py               # canoe-schema v4 compatibility
+│       ├── insertion.py                     # Scoped pre-insertion cleanup and validated insertion
+│       ├── database_bootstrap.py            # Post-insertion database integrity checks
+│       ├── sqlite_utils.py                  # Shared SQLite identifier mechanics
+│       └── legacy_compare.py                # Narrow configured legacy comparison
 ├── inputs/
-│   ├── 0_canoe_template/                   # Backend-owned structural templates
-│   ├── 0_cache/                            # Authoritative cached downloads
-│   ├── 0_external_models/                  # Registered external-model artifacts
-│   ├── 0_manual_params/                    # Review-owned compact manual parameter tables
-│   ├── 1_interim/                          # Normalized source and auditable intermediate tables
-│   ├── 2_processed/                        # Parameter-ready ETL products
-│   └── validation/                         # Development, review, and transformation diagnostics
+│   ├── 0_canoe_template/                    # Backend-owned structural templates
+│   ├── 0_cache/                             # Authoritative cached downloads
+│   ├── 0_external_models/                   # Registered external-model artifacts
+│   ├── 0_manual_params/                     # Review-owned compact manual parameter tables
+│   ├── 1_interim/                           # Normalized source and auditable intermediate tables
+│   ├── 2_processed/                         # Parameter-ready ETL products
+│   └── validation/                          # Development, review, and transformation diagnostics
 ├── outputs/
-│   ├── sqlite/                             # Built CANOE/Temoa-ready databases
-│   ├── validation/                         # Validation and schema integrity reports
-│   └── logs/                               # Run logs and warnings
+│   ├── sqlite/                              # Built CANOE/Temoa-ready databases
+│   ├── validation/                          # Validation and schema integrity reports
+│   └── logs/                                # Run logs and warnings
 ├── docs/
-│   ├── backend_architecture.md             # Repository structure and ownership reference
-│   ├── canoe_main_orchestrator.md          # Verified upstream CANOE-main integration context
-│   └── etl_flowcharts.md                   # Parameter-specific lineage reference
-├── legacy_backend/                         # Read-mostly parity evidence
+│   ├── backend_architecture.md              # Repository structure and ownership reference
+│   ├── canoe_main_orchestrator.md           # Verified upstream CANOE-main integration context
+│   └── etl_flowcharts.md                    # Parameter-specific lineage reference
+├── legacy_backend/                          # Read-mostly parity evidence
 ├── scripts/
-│   ├── doctor.py                           # Non-mutating repository readiness check
-│   └── clean_runtime.py                    # Explicit runtime cleanup
-├── tests/                                  # Focused and integration tests
-└── pyproject.toml                          # uv dependencies and tool configuration
+│   ├── doctor.py                            # Non-mutating repository readiness check
+│   └── clean_runtime.py                     # Explicit runtime cleanup
+├── tests/                                   # Focused and integration tests
+└── pyproject.toml                           # uv dependencies and tool configuration
 ```
 
-## Parameterization and assembly boundary
+## Module boundaries
 
-Parameterization should be organized around coherent behavior and materially different
-data/transformation contracts rather than one backend-wide module per SQLite parameter.
-Road versus off-road is a useful middle-level seam where source evidence, capacity
-representation, units, and harmonization differ; it should not be applied mechanically
-when a shared behavior is genuinely common. Behavioral owners such as EV infrastructure,
-charging profiles, road aggregation, market constraints, and adoption constraints remain
-appropriate where they form the clearer seam.
+The implemented pipeline follows acquisition → normalized evidence → parameter preparation
+→ database assembly. `fetching/` owns source-specific I/O and normalization. Within
+`parameterization/`, road/off-road modules own the differing calculations; `road_aggregation`,
+`road_utilization`, and `ev_chargers` own their shared behavioral contracts. Builders compose
+these functions directly, with no forwarding modules or second transformation path. #to-review
 
-`existing_capacity.py` coordinates the road and off-road capacity builders, validates their
-combined technology/vintage rows, publishes their audit products, and resolves provenance.
-It remains an importable preparation entrypoint for standalone and caller-owned assembly;
-SQLite transactions and publication stay in `build_transport.py`. #to-review
+The shared transport builders have a `build_` prefix to distinguish preparation entrypoints
+from schema tables and sector-wide assembly. They resolve provenance, validate combined
+coverage and keys, and publish configured artifacts without opening SQLite connections: #to-review
 
-`src/parameterization/` produces deterministic parameter-ready artifacts or row-builder
-outputs and remains independent of SQLite transactions. `build_transport.py` exposes
-`prepare_transport_contribution` and `insert_transport_contribution` for compatible
-caller-owned connections while retaining standalone schema creation, transaction, validation, and atomic
-publication. The contribution covers the technology and commodity templates plus validated
-`existing_capacity` and `demand` rows with their provenance; later parameter families join
-this seam as their row contracts become executable. A future CANOE-main adapter is
-intentionally not present until the upstream sector contract is ready to consume it. #to-review
+| Builder | Prepared contract |
+| --- | --- |
+| `build_existing_capacity` | Road/off-road technology-vintage capacity and reconciliation evidence. #to-review |
+| `build_demand` | Road/off-road base activity, CER scenario projections, and regional-period demand. #to-review |
+| `build_lifetime_parameters` | Exactly one fixed or survival-curve representation per modeled region/technology. #to-review |
+| `build_efficiencies` | Fuel/service efficiency edges and PHEV input splits, gated by existing capacity. #to-review |
+| `build_costs` | Investment and variable costs, harmonized with `currency` and constrained by capacity/lifetime coverage. #to-review |
 
-The former `parameterization.lifetimes_survival` and
-`parameterization.stocks_and_demands` paths remain thin import and CLI forwarders. Canonical
-code, configuration, artifacts, and tests use the road-specific owners; the forwarders contain
-no transformation logic.
+`build_transport.py` calls the same preparation functions for standalone and caller-owned
+assembly. `prepare_transport_contribution` gathers structural templates, capacity, demand,
+road utilization, lifetimes, efficiencies, costs, and charger rows as selected;
+`insert_transport_contribution` registers provenance and inserts validated rows into a
+compatible caller-owned connection. The standalone path also owns schema initialization,
+transactions, integrity checks, and atomic publication. Schema contracts and insertion
+mechanics remain in `validation/`, backed by the pinned `canoe-schema` package. #to-review
 
-In `config/sources.yaml`, `parameter_modules` names the selected behavioral owner for each
-source component, including planned owners. It is lineage metadata, not evidence that every
-listed module is already implemented or part of the normal build. #to-review
+## Running and extending the backend
 
-## Artifact ownership and impact routing
+From the repository root, use `uv run python src/setup.py --scenario <scenario.yaml>` for
+configuration/schema setup and `uv run python scripts/doctor.py --scenario <scenario.yaml>`
+for readiness checks. Run a prepared scenario with
+`uv run python src/build_transport.py --scenario <scenario.yaml>`; use
+`uv run python -m parameterization.build_<family> --scenario <scenario.yaml>` for an
+individual builder. Preparation also publishes audit CSVs. Fetching entrypoints support
+explicit cache replay with `--no-download` where implemented. #to-review
 
-`config/paths.yaml` is the machine-readable topology anchor. Its `artifacts` entries are
-coarse stable families, not an import graph: each declares one canonical directory,
-layer, owner, producer entrypoint(s), principal downstream consumers, and focused validation
-surfaces. Runtime code resolves these families through `utils.resolve_artifact_path`.
-The typed path contract rejects routes outside their declared interim, processed,
-input-validation, database, or output-validation root.
+`workflow/Snakefile` currently declares readiness, StatCan/CER acquisition, and database
+targets. It calls Python entrypoints; it does not yet declare every parameter dependency
+or provide a complete source-to-database DAG. Keep transformations in their importable
+owners as stage dependencies are added. Mapping bootstrap and `--mapping-diagnostics`
+are opt-in development paths; road lifetime generation defaults to accepted evidence,
+with MTO review enabled by `--mto-diagnostics` or `--all`. #to-review
 
-Ontario MTO normalized reports remain owned by `fetching.vehicle_population` in
-`inputs/1_interim/fetched_ontario_vehicle_population`. Reviewed mapping application and
-road aggregation products are owned by `parameterization.road_aggregation` in
-`inputs/2_processed/road_aggregation`. Accepted NHTSA/NEMS/Wards lifetime products are
-published under `inputs/2_processed/road_lifetimes_survival`; MTO apparent-retention
-intermediates and review evidence are routed separately through `inputs/1_interim` and
-`inputs/validation`.
+For a change, follow the affected `config/paths.yaml` artifact family to its owner,
+producers, consumers, and validation surfaces, then verify the current code and focused
+tests. Module renames change those references; artifact keys and schema table names retain
+their product meaning. `config/sources.yaml` component `parameter_modules` records source
+lineage, including planned owners, rather than executable build readiness. #to-review
 
-## Runtime and development boundaries
-
-Ordinary road aggregation reads `config/parameters/vehicle_size_class_map.csv` and does
-not load rating catalogues, generate candidates, or consume manual/vPIC review evidence.
-Candidate diagnostics require the explicit `--mapping-diagnostics` flag on
-`parameterization.road_aggregation`; mapping bootstrap and replacement require the
-explicit
-`parameterization.vehicle_mapping_bootstrap` entrypoint. vPIC adapters retain their
-distinct API/cache/offline contracts and consume only bootstrap-produced request files.
-The default doctor excludes development-only mapping evidence, while explicit manual
-registry validation still checks it.
-
-`parameterization.road_lifetimes_survival` defaults to accepted source-derived lifetime
-generation and does not load Ontario Report A history or the reviewed vehicle mapping.
-Historical MTO apparent-retention, mapping-coverage, scope, and decision evidence requires
-the explicit `--mto-diagnostics` mode; `--all` and the retained
-`build_lifetime_artifacts` Python function provide the combined compatibility path.
-
-Configuration structure is validated by `validation.config_models` during
-`utils.load_config_bundle`; `scripts/doctor.py` adds non-mutating readiness checks.
-`validation.schema_contract`, `validation.insertion`, and
-`validation.database_bootstrap` own schema creation/compatibility, row validation and
-insertion, and post-insertion integrity respectively. `build_transport.py` owns atomic
-database publication and the configured report in `outputs/validation`; legacy
-comparison remains isolated in `validation.legacy_compare`.
+Use [AGENTS.md](../AGENTS.md) for repository policy and config responsibilities,
+[etl_flowcharts.md](etl_flowcharts.md) for parameter lineage, and
+[assumptions.md](assumptions.md) for enduring data challenges. Retrieve
+[codebase_diagnostic_snapshot.md](codebase_diagnostic_snapshot.md) for a structural review
+and [canoe_main_orchestrator.md](canoe_main_orchestrator.md) for an upstream integration
+change; verify their snapshots against current interfaces. #to-review

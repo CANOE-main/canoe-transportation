@@ -21,6 +21,7 @@ from fetching.assorted_sources import (
     normalize_nhtsa,
     normalize_regen,
     normalize_tc_ev_dashboard_table,
+    normalize_tc_public_chargers,
     parse_faa_table_text,
 )
 from utils import load_config_bundle, resolve_input_path
@@ -56,6 +57,51 @@ def test_tc_dashboard_parser_selects_identified_table_and_rejects_drift() -> Non
         normalize_tc_ev_dashboard_table(
             html.replace("2026 year-to-date", "2025 year-to-date"), **options
         )
+
+
+def test_tc_public_charger_parser_reconciles_pinned_html_and_rejects_drift(bundle) -> None:
+    rules = adapter.module_rules(bundle)["tc_ev_dashboard"]["public_chargers"]
+    source = bundle.sources.sources["transport_canada_ev_dashboard"]
+    html = (REPO_ROOT / "inputs" / "0_cache" / source.adapter["cache_path"]).read_text(
+        encoding="utf-8"
+    )
+    options = dict(
+        year=2026, heading_id=rules["heading_id"],
+        chart_table_id=rules["chart_table_id"],
+        province_table_id=rules["province_table_id"],
+        as_of=rules["as_of"], regions=rules["source_regions"],
+    )
+    provincial, types = normalize_tc_public_chargers(html, **options)
+    assert len(provincial) == 13
+    assert int(provincial.public_chargers.sum()) == 39220
+    assert types.set_index("charger_type").public_chargers.to_dict() == {
+        "L2": 30741, "DCFC": 8479
+    }
+    assert types.national_share.sum() == pytest.approx(1.0)
+    with pytest.raises(AssortedSourcesError, match="national charger total"):
+        normalize_tc_public_chargers(html.replace("Total chargers: <strong>39,220", "Total chargers: <strong>39,221"), **options)
+    with pytest.raises(AssortedSourcesError, match="provincial chargers"):
+        normalize_tc_public_chargers(html.replace("Total public chargers: 13,392", "Total public chargers: 13,393"), **options)
+
+
+def test_tc_dashboard_offline_replay_publishes_both_registered_components() -> None:
+    class NoNetwork:
+        def get(self, *_args, **_kwargs):
+            raise AssertionError("Pinned dashboard replay attempted network access")
+
+    output_dir = adapter.fetch_and_normalize_tc_dashboard(
+        SCENARIO, download=False, session=NoNetwork()
+    )
+    first = {path.name: path.read_bytes() for path in output_dir.iterdir() if path.is_file()}
+    adapter.fetch_and_normalize_tc_dashboard(SCENARIO, download=False, session=NoNetwork())
+    assert first == {
+        path.name: path.read_bytes() for path in output_dir.iterdir() if path.is_file()
+    }
+    manifest = pd.read_csv(output_dir / "manifest.csv")
+    assert set(manifest.component_id) == {
+        "medium_heavy_ev_market_share", "public_light_duty_chargers"
+    }
+    assert len(pd.read_csv(output_dir / "transport_canada_public_ld_chargers_by_province_2026.csv")) == 13
 
 
 @pytest.fixture

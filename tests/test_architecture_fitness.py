@@ -82,23 +82,3 @@ def test_lifetime_routes_separate_accepted_and_mto_diagnostic_publishers() -> No
     assert diagnostics not in processed.producers
     assert diagnostics in interim.producers
     assert diagnostics in validation.producers
-
-
-def test_legacy_parameterization_modules_are_thin_compatibility_surfaces() -> None:
-    pairs = (
-        (
-            "parameterization.lifetimes_survival",
-            "parameterization.road_lifetimes_survival",
-            "build_accepted_lifetime_artifacts",
-        ),
-        (
-            "parameterization.stocks_and_demands",
-            "parameterization.road_stocks_and_demands",
-            "build_existing_stock_age_artifacts",
-        ),
-    )
-
-    for legacy_name, canonical_name, entrypoint in pairs:
-        legacy = importlib.import_module(legacy_name)
-        canonical = importlib.import_module(canonical_name)
-        assert getattr(legacy, entrypoint) is getattr(canonical, entrypoint)

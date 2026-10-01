@@ -63,3 +63,7 @@ demand:
 
 road_utilization:
   medium_truck_weight_source: national_wards
+
+ev_chargers:
+  ldev_ev_per_port: 1.0
+  mhdev_ev_per_port: 1.5

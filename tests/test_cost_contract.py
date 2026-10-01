@@ -3,7 +3,7 @@
 import pytest
 from canoe_schema.v4_0 import CostInvest, CostVariable
 
-from parameterization.costs import validate_cost_outputs
+from parameterization.build_costs import validate_cost_outputs
 
 
 def test_schema_cost_dimensions_and_coverage() -> None:

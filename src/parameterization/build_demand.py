@@ -1,4 +1,4 @@
-"""Prepare CEUD transport service demand indexed by CER real GDP."""
+"""Build validated CEUD transport service demand indexed by CER real GDP."""
 
 from __future__ import annotations
 

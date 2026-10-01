@@ -152,6 +152,75 @@ def normalize_tc_ev_dashboard_table(
     )
 
 
+def normalize_tc_public_chargers(
+    html: str,
+    *,
+    year: int,
+    heading_id: str,
+    chart_table_id: str,
+    province_table_id: str,
+    as_of: str,
+    regions: list[str],
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Read public LD ports from the same pinned TC dashboard HTML."""
+    for required_heading in (heading_id, "ratio-of-light-duty-electric-vehicles-to-public-ev-chargers"):
+        if f'id="{required_heading}"' not in html:
+            raise AssortedSourcesError(f"Dashboard charger heading {required_heading!r} is missing")
+    chart = _HtmlTableParser(chart_table_id)
+    province = _HtmlTableParser(province_table_id)
+    chart.feed(html)
+    province.feed(html)
+    if not chart.found or chart.headers != ["Year", "Level 2", "Level 3"]:
+        raise AssortedSourcesError("Dashboard charger type chart is missing or changed")
+    if not province.found or province.headers != ["Province/territory", "Charger data"]:
+        raise AssortedSourcesError("Dashboard provincial charger table is missing or changed")
+    if not chart.rows or any(len(row) != 3 for row in chart.rows):
+        raise AssortedSourcesError("Dashboard charger type chart has incomplete rows")
+    selected = [row for row in chart.rows if row[0] == as_of]
+    if len(selected) != 1 or not as_of.endswith(str(year)):
+        raise AssortedSourcesError("Dashboard selected charger reporting date is missing or ambiguous")
+
+    def count(raw: str) -> int:
+        if re.fullmatch(r"(?:0|[1-9]\d{0,2}(?:,\d{3})*)", raw) is None:
+            raise AssortedSourcesError(f"Dashboard charger count is invalid: {raw!r}")
+        return int(raw.replace(",", ""))
+
+    l2, dcfc = (count(value) for value in selected[0][1:])
+    national = l2 + dcfc
+    if national <= 0:
+        raise AssortedSourcesError("Dashboard national public charger count is zero")
+    section = html.split(f'id="{heading_id}"', 1)[1].split(
+        'id="private-ev-chargers-selected-for-funding-or-financing"', 1
+    )[0]
+    total_match = re.findall(
+        r"Total chargers:\s*<strong>([\d,]+)</strong>", section
+    )
+    if len(total_match) != 1 or count(total_match[0]) != national:
+        raise AssortedSourcesError("Dashboard national charger total does not match L2 and L3")
+    type_counts = pd.DataFrame(
+        [
+            {"source_year": year, "as_of": as_of, "charger_type": kind,
+             "public_chargers": value, "national_share": value / national, "units": "ports"}
+            for kind, value in (("L2", l2), ("DCFC", dcfc))
+        ]
+    )
+    if len(province.rows) != len(regions) or any(len(row) != 2 for row in province.rows):
+        raise AssortedSourcesError("Dashboard provincial charger coverage is incomplete")
+    rows = []
+    for label, details in province.rows:
+        matches = re.findall(r"Total public chargers:\s*([\d,]+)", details)
+        if len(matches) != 1:
+            raise AssortedSourcesError(f"Missing public charger count for {label}")
+        rows.append({"source_region": label, "source_year": year, "as_of": as_of,
+                     "public_chargers": count(matches[0]), "units": "ports"})
+    provincial = pd.DataFrame(rows)
+    if set(provincial.source_region) != set(regions) or provincial.source_region.duplicated().any():
+        raise AssortedSourcesError("Dashboard provincial charger labels changed")
+    if int(provincial.public_chargers.sum()) != national:
+        raise AssortedSourcesError("Dashboard provincial chargers do not sum to national total")
+    return provincial, type_counts
+
+
 class ArtifactRequest(BaseModel):
     """Resolved immutable acquisition and cache contract for one physical artifact."""
 
@@ -1486,17 +1555,30 @@ def fetch_and_normalize_tc_dashboard(
     )
     cache_status = ensure_cached(request, download=download, session=session)
     checksum = validate_cached_identity(request)
+    html = request.cache_path.read_text(encoding="utf-8")
     shares = normalize_tc_ev_dashboard_table(
-        request.cache_path.read_text(encoding="utf-8"),
+        html,
         table_id=str(rules["table_id"]),
         heading_id=str(rules["heading_id"]),
         year=selection.year,
         quarter_header=str(rules["quarter_header"]),
         ytd_header=str(rules["ytd_header"]),
     )
+    charger_rules = rules["public_chargers"]
+    provincial, types = normalize_tc_public_chargers(
+        html,
+        year=selection.year,
+        heading_id=str(charger_rules["heading_id"]),
+        chart_table_id=str(charger_rules["chart_table_id"]),
+        province_table_id=str(charger_rules["province_table_id"]),
+        as_of=str(charger_rules["as_of"]),
+        regions=list(charger_rules["source_regions"]),
+    )
     output_dir = resolve_artifact_path(bundle, "tc_ev_dashboard_interim")
     write_outputs(
-        outputs={str(rules["output_file"]): shares},
+        outputs={str(rules["output_file"]): shares,
+                 str(charger_rules["province_output_file"]): provincial,
+                 str(charger_rules["type_output_file"]): types},
         manifest_rows=[
             _manifest_row(
                 request,
@@ -1510,7 +1592,20 @@ def fetch_and_normalize_tc_dashboard(
                 selection=f"{selection.year} year-to-date medium/heavy-duty EV market share",
                 output_files=[str(rules["output_file"])],
                 warning_count=0,
-            )
+            ),
+            _manifest_row(
+                _top_level_request(
+                    bundle, source_id=source_id,
+                    component_id=str(charger_rules["component_id"]), file_type="html",
+                ),
+                checksum=checksum, cache_status=cache_status,
+                stats=SelectionStats(input_records=len(provincial),
+                                     selected_records=len(provincial), excluded_records=0),
+                selection=f"{charger_rules['as_of']} public light-duty EV chargers",
+                output_files=[str(charger_rules["province_output_file"]),
+                              str(charger_rules["type_output_file"])],
+                warning_count=0,
+            ),
         ],
         warnings=[],
         output_dir=output_dir,

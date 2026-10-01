@@ -211,7 +211,7 @@ parameterization:
     remainder_selector: remainder
     projection_year_pattern: '^(?P<base>.+)_(?P<year>(?:19|20)\d{2})$'
     unmatched_policy: report
-    behavior_specific_files: [charger_shares_utilization.csv, capacity_to_activity.csv, efficiency_multipliers.csv, cost_invest_multipliers.csv, cost_variable_multipliers.csv]
+    behavior_specific_files: [charger_parameters.csv, capacity_to_activity.csv, efficiency_multipliers.csv, cost_invest_multipliers.csv, cost_variable_multipliers.csv]
     internal_assumption_files:
       capacity_to_activity.csv:
         expected_columns: [category, sub_category, units, c2a, notes]
@@ -226,6 +226,35 @@ parameterization:
     resolution_file: manual_parameter_technology_resolution.csv
     reconciliation_file: manual_parameter_reconciliation.csv
     findings_file: manual_parameter_findings.csv
+
+  ev_chargers:
+    transformation_version: "1"
+    manual_file: charger_parameters.csv
+    capacity_output_file: charger_existing_capacity.csv
+    port_audit_file: charger_port_reconciliation.csv
+    invest_output_file: charger_cost_invest.csv
+    fixed_output_file: charger_cost_fixed.csv
+    utilization_output_file: charger_limit_annual_capacity_factor.csv
+    efficiency_output_file: charger_efficiency.csv
+    validation_file: integrity.json
+    technology:
+      ldv: {existing: T_LDV_CHRG_EX, new: T_LDV_CHRG_N, output: T_elc_ldv_chrg}
+      mhdv: {existing: T_MHDV_CHRG_EX, new: T_MHDV_CHRG_N, output: T_elc_mhdv_chrg}
+    input_commodity: T_elc
+    stock_classes:
+      ldv: [cars, passenger_light_trucks, freight_light_trucks, motorcycles]
+      mhdv: [medium_trucks, heavy_trucks]
+    public_charger_region_map:
+      NLLAB: [Newfoundland and Labrador]
+      PEI: [Prince Edward Island]
+      NS: [Nova Scotia]
+      NB: [New Brunswick]
+      QC: [Quebec]
+      "ON": [Ontario]
+      MB: [Manitoba]
+      SK: [Saskatchewan]
+      AB: [Alberta]
+      BCT: [British Columbia, Yukon, Northwest Territories, Nunavut]
 
   nrcan_ceud:
     interim_subdir: fetched_nrcan_ceud_inputs
@@ -1242,6 +1271,15 @@ parameterization:
       table_id: tbl-mhzev
       quarter_header: "Market share (Q1 2026)"
       ytd_header: "2026 year-to-date"
+      public_chargers:
+        component_id: public_light_duty_chargers
+        heading_id: public-electric-vehicle-chargers
+        chart_table_id: figure-6
+        province_table_id: tbl-portratio2
+        as_of: March 2026
+        province_output_file: transport_canada_public_ld_chargers_by_province_2026.csv
+        type_output_file: transport_canada_public_ld_chargers_by_type_2026.csv
+        source_regions: [Newfoundland and Labrador, Prince Edward Island, Nova Scotia, New Brunswick, Quebec, Ontario, Manitoba, Saskatchewan, Alberta, British Columbia, Yukon, Northwest Territories, Nunavut]
     nhtsa_cafe:
       source_id: nhtsa_cafe_2024_ldv_survival
       component_id: ldv_survival_rates

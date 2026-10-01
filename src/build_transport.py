@@ -34,6 +34,7 @@ from canoe_schema.v4_0 import (
     Efficiency,
     LimitTechInputSplit,
     CostInvest,
+    CostFixed,
     CostVariable,
 )
 from pydantic import ValidationError
@@ -116,7 +117,9 @@ class TransportContribution:
     efficiency_rows: list[Efficiency] = dataclass_field(default_factory=list)
     input_split_rows: list[LimitTechInputSplit] = dataclass_field(default_factory=list)
     cost_invest_rows: list[CostInvest] = dataclass_field(default_factory=list)
+    cost_fixed_rows: list[CostFixed] = dataclass_field(default_factory=list)
     cost_variable_rows: list[CostVariable] = dataclass_field(default_factory=list)
+    charger_audit: dict[str, Any] = dataclass_field(default_factory=dict)
     efficiency_assumption_dataset: DataSet | None = None
     provenance_contexts: list[ResolvedProvenance] = dataclass_field(default_factory=list)
     parameter_audit: dict[str, Any] = dataclass_field(default_factory=dict)
@@ -401,6 +404,7 @@ def prepare_transport_contribution(
     include_lifetimes: bool | None = None,
     include_efficiencies: bool | None = None,
     include_costs: bool | None = None,
+    include_ev_chargers: bool | None = None,
 ) -> TransportContribution:
     """Prepare the currently supported transport rows without writing to SQLite."""
     if not template_dir.is_dir():
@@ -430,14 +434,14 @@ def prepare_transport_contribution(
     contexts: list[ResolvedProvenance] = []
     parameter_audit: dict[str, Any] = {}
     if selected_capacity:
-        from parameterization.existing_capacity import prepare_existing_capacity_rows
+        from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
         parameter_rows, contexts, parameter_audit = prepare_existing_capacity_rows(bundle)
     selected_demand = True if include_demand is None else include_demand
     demand_rows: list[Demand] = []
     demand_audit: dict[str, Any] = {}
     if selected_demand:
-        from parameterization.demand import prepare_demand_rows
+        from parameterization.build_demand import prepare_demand_rows
 
         demand_rows, demand_contexts, demand_audit = prepare_demand_rows(bundle)
         contexts.extend(demand_contexts)
@@ -461,7 +465,7 @@ def prepare_transport_contribution(
     lifetime_curve_rows: list[LifetimeSurvivalCurve] = []
     lifetime_audit: dict[str, Any] = {}
     if include_lifetimes is not False:
-        from parameterization.lifetime_parameters import prepare_lifetime_rows
+        from parameterization.build_lifetime_parameters import prepare_lifetime_rows
 
         lifetimes = prepare_lifetime_rows(bundle)
         lifetime_tech_rows = lifetimes.fixed_rows
@@ -473,7 +477,7 @@ def prepare_transport_contribution(
     efficiency_dataset: DataSet | None = None
     efficiency_audit: dict[str, Any] = {}
     if include_efficiencies is not False:
-        from parameterization.efficiencies import prepare_efficiency_rows
+        from parameterization.build_efficiencies import prepare_efficiency_rows
 
         efficiencies = prepare_efficiency_rows(
             bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
@@ -484,10 +488,11 @@ def prepare_transport_contribution(
         efficiency_audit = efficiencies.audit
         contexts.extend(efficiencies.provenance_contexts)
     cost_invest_rows: list[CostInvest] = []
+    cost_fixed_rows: list[CostFixed] = []
     cost_variable_rows: list[CostVariable] = []
     cost_audit: dict[str, Any] = {}
     if include_costs is not False:
-        from parameterization.costs import prepare_cost_rows
+        from parameterization.build_costs import prepare_cost_rows
 
         costs = prepare_cost_rows(
             bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
@@ -510,6 +515,22 @@ def prepare_transport_contribution(
                     f"Cost technology/vintage lacks prepared efficiency: {sorted(missing)[:8]}"
                 )
             cost_audit["efficiency_supported_tech_vintages"] = len(cost_keys)
+    charger_audit: dict[str, Any] = {}
+    if selected_capacity and include_ev_chargers is not False:
+        from parameterization.ev_chargers import prepare_ev_charger_rows
+
+        chargers = prepare_ev_charger_rows(
+            bundle, existing_capacity_rows=parameter_rows,
+            existing_capacity_contexts=contexts,
+        )
+        parameter_rows.extend(chargers.capacity_rows)
+        if include_efficiencies is not False:
+            efficiency_rows.extend(chargers.efficiency_rows)
+        if include_costs is not False:
+            cost_invest_rows.extend(chargers.invest_rows)
+            cost_fixed_rows.extend(chargers.fixed_rows)
+        contexts.extend(chargers.provenance_contexts)
+        charger_audit = chargers.audit
     return TransportContribution(
         dataset=template_dataset,
         labels_by_table=table_labels,
@@ -526,7 +547,9 @@ def prepare_transport_contribution(
         input_split_rows=split_rows,
         efficiency_assumption_dataset=efficiency_dataset,
         cost_invest_rows=cost_invest_rows,
+        cost_fixed_rows=cost_fixed_rows,
         cost_variable_rows=cost_variable_rows,
+        charger_audit=charger_audit,
         provenance_contexts=contexts,
         parameter_audit=parameter_audit,
         demand_audit=demand_audit,
@@ -576,6 +599,7 @@ def insert_transport_contribution(
             or contribution.flat_road_factor_rows or contribution.lifetime_tech_rows
             or contribution.lifetime_survival_curve_rows or contribution.efficiency_rows
             or contribution.input_split_rows or contribution.cost_invest_rows
+            or contribution.cost_fixed_rows
             or contribution.cost_variable_rows):
         labels, datasets, sources = registry_rows(contribution.provenance_contexts)
         for registry_batch in (labels, datasets, sources):
@@ -603,6 +627,9 @@ def insert_transport_contribution(
         if contribution.cost_invest_rows:
             insert_models(connection, contribution.cost_invest_rows, conflict=conflict)
             inserted["cost_invest"] = list(contribution.cost_invest_rows)
+        if contribution.cost_fixed_rows:
+            insert_models(connection, contribution.cost_fixed_rows, conflict=conflict)
+            inserted["cost_fixed"] = list(contribution.cost_fixed_rows)
         if contribution.cost_variable_rows:
             insert_models(connection, contribution.cost_variable_rows, conflict=conflict)
             inserted["cost_variable"] = list(contribution.cost_variable_rows)
@@ -704,6 +731,7 @@ def bootstrap_database(
         "lifetimes": contribution.lifetime_audit,
         "efficiencies": contribution.efficiency_audit,
         "costs": contribution.cost_audit,
+        "ev_chargers": contribution.charger_audit,
         "preflight": preflight,
         "templates": [
             {key: value for key, value in asdict(result).items() if key != "primary_keys"}

@@ -52,6 +52,11 @@ def test_yaml_order_pins_current_source_mapping(bundle) -> None:
         "nhtsa_vpic_vehicle_models": "T23",
         "dunsky_ev_charging_infrastructure_2024": "T24",
         "transport_canada_ev_dashboard": "T25",
+        "pollution_probe_ev_charging_survey_2024": "T26",
+        "nlr_alternative_fueling_infrastructure_2024": "T27",
+        "icct_ev_charge_2024": "T28",
+        "icct_hdv_charge_2024": "T29",
+        "iea_future_of_hydrogen_2019": "T30",
     }
 
 

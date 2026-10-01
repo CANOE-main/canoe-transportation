@@ -1,4 +1,4 @@
-"""Prepare transport efficiency and PHEV input splits independently of SQLite."""
+"""Build transport efficiency and PHEV input splits independently of SQLite."""
 
 from __future__ import annotations
 
@@ -187,133 +187,6 @@ def vintage_years(vintage: int, *, existing: list[int], step: int) -> list[int]:
     return list(range(start, vintage + 1))
 
 
-def prepare_bus_annual_efficiency_evidence(
-    bundle: ConfigBundle, provincial: pd.DataFrame
-) -> tuple[pd.DataFrame, tuple[Path, ...]]:
-    """Derive annual bus efficiencies from the same source-backed road calculation.
-
-    Capacity preparation needs annual values before the capacity-gated Efficiency
-    rows can be built. This entrypoint uses the existing numerical evidence class
-    without invoking the full efficiency builder or reading its generated CSV.
-    """
-    rules = load_harmonization_rules(bundle, "efficiencies")
-    conversions = load_conversion_factors(bundle)
-    demand = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
-    loads = derive_load_factors(
-        provincial,
-        rules=rules,
-        activity_rules=demand["activity_series"],
-        conversions=conversions,
-    )
-    atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
-    atb_dir = resolve_input_path(bundle, "interim", atb_rules["interim_subdir"])
-    vehicle_path = atb_dir / atb_rules["components"]["vehicles"]["output_file"]
-    phev_path = atb_dir / atb_rules["components"]["phev_efficiency"]["output_file"]
-    vehicles, phev = pd.read_csv(vehicle_path), pd.read_csv(phev_path)
-    if (
-        set(vehicles["source_id"]) != {ATB}
-        or set(phev["source_id"]) != {ATB}
-    ):
-        raise ValueError("Bus ATB evidence has an unexpected source identity")
-    aliases = atb_rules["components"]["phev_efficiency"]["reconciliation"][
-        "scenario_aliases"
-    ]
-    phev["trajectory"] = phev["trajectory"].replace(aliases)
-    atb = select_atb_consumption(
-        vehicles,
-        phev,
-        trajectory=configured_trajectory(bundle),
-        rules=rules,
-        conversions=conversions,
-    )
-    bus_specs = {
-        mode: spec
-        for mode, spec in rules["road_classes"].items()
-        if spec["pathway"] in {"bus", "intercity"}
-    }
-    if set(bus_specs) != {"school_buses", "urban_transit", "inter_city_buses"}:
-        raise ValueError("Bus efficiency classes differ from the supported CEUD classes")
-    parts = []
-    for region in bundle.scenario.geography.regions:
-        for mode, spec in bus_specs.items():
-            classes = spec["atb_classes"]
-            weights = {name: 1 / len(classes) for name in classes}
-            part = aggregate_atb(
-                atb.loc[atb["family"].eq("mhdv")],
-                weights,
-                tolerance=rules["tolerances"]["weight_sum"],
-            )
-            part["region"], part["mode"] = region, mode
-            parts.append(part)
-    assorted = load_harmonization_rules(bundle, "assorted_sources")
-    regen_path = resolve_input_path(
-        bundle,
-        "interim",
-        assorted["interim_subdir"],
-        assorted["epri_us_regen"]["output_file"],
-    )
-    regen = pd.read_csv(regen_path)
-    if (
-        set(regen["source_id"]) != {assorted["epri_us_regen"]["source_id"]}
-        or set(regen.loc[regen["metric"].eq("efficiency"), "native_unit"])
-        != {"mpg-e"}
-    ):
-        raise ValueError("Bus REGEN efficiency evidence has invalid source or units")
-    empty_ratings = pd.DataFrame(
-        columns=[
-            "year", "native_class_mean", "weight", "class_mean_mj_per_vkm",
-            "ceud_class", "powertrain",
-        ]
-    )
-    evidence = RoadEfficiencyEvidence(
-        ceud=provincial,
-        loads=loads,
-        rating_audit=empty_ratings,
-        atb_audit=pd.concat(parts, ignore_index=True),
-        gcam=pd.DataFrame(),
-        regen=regen,
-        base_year=bundle.scenario.periods.base_year,
-        rules=rules,
-    )
-    technology = pd.read_csv(resolve_input_path(bundle, "template", "technology.csv"))
-    owners = technology.loc[
-        technology["category"].isin(bus_specs)
-        & technology["tech"].str.endswith(rules["existing_suffix"])
-    ]
-    if owners.empty or owners["tech"].duplicated().any():
-        raise ValueError("Missing or duplicate existing bus technology owners")
-    years = range(
-        int(provincial["year"].min()), bundle.scenario.periods.base_year + 1
-    )
-    records = []
-    for region in bundle.scenario.geography.regions:
-        for owner in owners.itertuples(index=False):
-            for year in years:
-                value = evidence.derive(
-                    region, owner.category, owner.sub_category, year
-                )["efficiency"]
-                if not np.isfinite(value) or value <= 0:
-                    raise ValueError(
-                        f"Invalid annual bus efficiency: {(region, owner.tech, year)}"
-                    )
-                records.append(
-                    {
-                        "ceud_region": region,
-                        "region": rules["region_output_map"].get(region, region),
-                        "road_class": owner.category,
-                        "tech": owner.tech,
-                        "powertrain": owner.sub_category,
-                        "year": year,
-                        "efficiency": float(value),
-                        "units": rules["service_units"]["passenger"],
-                    }
-                )
-    result = pd.DataFrame(records)
-    if result.duplicated(["region", "tech", "year"]).any():
-        raise ValueError("Duplicate annual bus efficiency owner/year")
-    return result, (vehicle_path, phev_path, regen_path)
-
-
 def phev_split_evidence(
     atb: pd.DataFrame, *, endpoints: list[int], rules: dict
 ) -> pd.DataFrame:
@@ -472,7 +345,7 @@ def prepare_efficiency_rows(
     ):
         raise ValueError("Unsupported energy-basis or trajectory interpolation policy")
     if existing_capacity_rows is None:
-        from parameterization.existing_capacity import prepare_existing_capacity_rows
+        from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
         existing_capacity_rows, _, _ = prepare_existing_capacity_rows(bundle)
     existing_keys = {
