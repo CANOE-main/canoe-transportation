@@ -83,11 +83,19 @@ Retrieve `docs/canoe_main_orchestrator.md` only for a CANOE-main integration sea
 as a routing snapshot: verify the referenced upstream branch and affected interfaces before
 acting, and do not turn unfinished upstream details into durable transport policy.
 
-Edit docs only for a concrete task reason. Unless exact content is user-approved or the edit
-is mechanical, every Codex-authored substantive reviewable change—assumption, interpretation,
-evidence/table/bullet, research conclusion, or data-gap/challenge resolution—must carry
-`#to-review`. Do not tag unchanged history; especially protect `docs/assumptions.md` and
-`docs/etl_flowcharts.md`.
+Edit docs only for a concrete task reason. The `#to-review` requirement applies only to
+`docs/etl_flowcharts.md`, `docs/backend_architecture.md`, and `docs/assumptions.md`.
+In these three user-authored context documents, unless exact content is user-approved or
+the edit is mechanical, every Codex-authored substantive reviewable change—assumption,
+interpretation, evidence/table/bullet, research conclusion, or data-gap/challenge
+resolution—must carry `#to-review`. Do not tag unchanged history or remove existing
+review markers without explicit user authorization.
+
+The LLM-generated context snapshots `docs/canoe_main_orchestrator.md` and
+`docs/codebase_diagnostic_snapshot.md` are exempt: do not add `#to-review` tags to them.
+Do not use review tags in any other files, including other documentation, active or
+archived ExecPlans, and plan histories. These exemptions do not imply that assumptions
+or decisions are accepted; the existing evidence, ownership, and validation rules apply.
 
 For a repository or artifact-layer seam, use the affected `config/paths.yaml` routes to
 bound impact, context, and tests. New modules and artifacts need one owner and configured

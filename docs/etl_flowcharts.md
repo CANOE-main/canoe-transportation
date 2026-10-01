@@ -22,6 +22,7 @@ each operation. The legend below is local to these diagrams.
 - [`cost_variable`](#cost_variable)
 - [`emission_embodied`](#emission_embodied)
 - [EV charger parameters](#ev-charger-parameters)
+- [`capacity_factor_tech` for BEV charging profiles](#capacity_factor_tech-for-bev-charging-profiles-pending-refactor)
 
 ## Flowchart Legends
 
