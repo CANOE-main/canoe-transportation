@@ -25,7 +25,7 @@ def run_smoke_validation(
     now = timestamp or datetime.now(UTC)
 
     created_directories = create_configured_directories(bundle)
-    reference_value = bundle.scenario.validation.reference_sqlite
+    reference_value = bundle.scenario.comparison.reference_sqlite
     reference_sqlite = (
         resolve_repo_path(bundle.repo_root, reference_value)
         if reference_value is not None
@@ -39,6 +39,8 @@ def run_smoke_validation(
         "scenario": bundle.scenario.scenario.name,
         "periods": bundle.scenario.periods.model_dump(mode="json"),
         "economics": bundle.scenario.economics.model_dump(mode="json"),
+        "comparison": bundle.scenario.comparison.model_dump(mode="json"),
+        "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(mode="json"),
         "scenario_path": str(bundle.scenario_path),
         "paths_path": str(bundle.paths_path),
         "sources_path": str(bundle.sources_path),
@@ -51,6 +53,14 @@ def run_smoke_validation(
             str(reference_sqlite) if reference_sqlite is not None else None
         ),
         "active_sources": active_sources,
-        "placeholder_sources": [],
-        "switches": bundle.scenario.switches.model_dump(mode="json"),
+        "placeholder_sources": [
+            key for key, source in bundle.sources.sources.items()
+            if source.data_quality.missing_fields()
+        ],
+        "data_quality_fallback": bundle.sources.defaults.data_quality.row_fields(),
+        "parameter_options": {
+            key: getattr(bundle.scenario, key).model_dump(mode="json")
+            for key in ("existing_capacity", "demand", "lifetimes", "road_utilization",
+                        "efficiencies", "costs", "ev_chargers")
+        },
     }

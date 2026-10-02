@@ -509,6 +509,8 @@ def derive_ldv_age_distributions(
 
 def build_existing_stock_age_artifacts(
     scenario_path: str | Path | ConfigBundle,
+    *,
+    lifetime_frames: dict[str, pd.DataFrame] | None = None,
 ) -> Path:
     """Publish scenario-dependent Ontario LDV existing-stock age cohorts."""
     bundle = (
@@ -525,14 +527,18 @@ def build_existing_stock_age_artifacts(
         / road_rules["mapped_current_stock_file"],
         low_memory=False,
     )
-    medians = pd.read_csv(
-        resolve_artifact_path(bundle, "road_lifetimes_survival")
-        / lifetime_rules["median_lifetimes_file"]
-    )
+    if lifetime_frames is None:
+        from parameterization.road_lifetimes_survival import derive_accepted_lifetime_frames
+
+        lifetime_frames = derive_accepted_lifetime_frames(
+            bundle, rules=lifetime_rules, road_rules=road_rules,
+            assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
+        )
+    medians = lifetime_frames["medians"]
     age_distribution, findings = derive_ldv_age_distributions(
         mapped,
-        survival_curves=bundle.scenario.switches.survival_curves,
-        maximum_age=bundle.scenario.switches.survival_curve_max_age,
+        survival_curves=bundle.scenario.lifetimes.survival_curves,
+        maximum_age=bundle.scenario.lifetimes.survival_curve_max_age,
         median_lifetimes=median_lifetime_map(medians),
         historical_review_minimum_model_year=int(
             rules["historical_review_minimum_model_year"]
@@ -560,6 +566,8 @@ def distribute_existing_road_capacity(
     dashboard: pd.DataFrame,
     regions: list[str],
     base_year: int,
+    vintage_periods: list[int],
+    vehicle_population_year: int,
     first_model_period: int,
     survival_curves: bool,
     survival_curve_max_age: int,
@@ -568,7 +576,7 @@ def distribute_existing_road_capacity(
     rules: dict[str, Any],
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Apply reviewed age and registration shares to CEUD base-year road stocks."""
-    periods = [int(period) for period in rules["vintage_periods"]]
+    periods = [int(period) for period in vintage_periods]
     if periods != sorted(set(periods)) or periods[-1] != base_year:
         raise ValueError("Road vintage periods must be unique and end at the base year")
     if (
@@ -588,7 +596,7 @@ def distribute_existing_road_capacity(
         raise ValueError("Historical fuel rule must select gasoline and diesel")
     if ldv_age["report_year"].nunique() != 1 or int(
         ldv_age["report_year"].iloc[0]
-    ) != int(rules["age_evidence_year"]):
+    ) != vehicle_population_year:
         raise ValueError("Mapped LDV age evidence is not the configured MTO edition")
     ldv_age = ldv_age.copy()
     ldv_age["age"] = pd.to_numeric(ldv_age["age"], errors="raise").astype(int)
@@ -608,7 +616,7 @@ def distribute_existing_road_capacity(
     for name, source_class in rules["report5_age_classes"].items():
         selected = report5_age.loc[
             report5_age["VEHICLE_CLASS"].eq(source_class)
-            & report5_age["year"].eq(int(rules["age_evidence_year"]))
+            & report5_age["year"].eq(vehicle_population_year)
         ]
         if selected.empty or selected["AGE"].duplicated().any():
             raise ValueError(f"Missing or duplicate Report 5 age rows for {name}")
@@ -887,6 +895,8 @@ def distribute_existing_bus_capacity(
     lifetimes: Mapping[tuple[str, str], float],
     regions: list[str],
     base_year: int,
+    vintage_periods: list[int],
+    vehicle_population_year: int,
     first_model_period: int,
     road_rules: Mapping[str, Any],
     rules: Mapping[str, Any],
@@ -901,13 +911,13 @@ def distribute_existing_bus_capacity(
     }
     if any(rules[key] != value for key, value in supported.items()):
         raise ValueError("Unsupported bus capacity allocation policy")
-    periods = [int(period) for period in road_rules["vintage_periods"]]
+    periods = [int(period) for period in vintage_periods]
     if periods != sorted(set(periods)) or periods[-1] != base_year:
         raise ValueError("Bus vintage periods must end at the base year")
     age = report5_age.loc[report5_age["VEHICLE_CLASS"].eq(rules["age_class"])].copy()
     if (
         age.empty
-        or set(age["year"]) != {int(road_rules["age_evidence_year"])}
+        or set(age["year"]) != {vehicle_population_year}
         or age["AGE"].duplicated().any()
         or age["AGE_DIST"].isna().any()
         or (age["AGE_DIST"] < 0).any()

@@ -26,10 +26,9 @@ from parameterization.road_efficiencies import (
     classify_ratings,
     derive_load_factors,
     interpolate,
-    medium_vocation_weights,
     select_atb_consumption,
 )
-from parameterization.road_utilization import heavy_haul_atb_weights
+from parameterization.road_fleet_weights import aggregation_component, load_fleet_aggregation_evidence
 from utils import (
     ConfigBundle,
     active_source_keys,
@@ -188,7 +187,7 @@ def vintage_years(vintage: int, *, existing: list[int], step: int) -> list[int]:
 
 
 def phev_split_evidence(
-    atb: pd.DataFrame, *, endpoints: list[int], rules: dict
+    atb: pd.DataFrame, *, endpoints: list[int], rules: dict, fleet_rules: dict,
 ) -> pd.DataFrame:
     records = []
     for blend, spec in rules["phev_blends"].items():
@@ -203,7 +202,7 @@ def phev_split_evidence(
             if blend == "mdv":
                 selected = selected.loc[
                     ~selected.vehicle_class.str.contains(
-                        "|".join(map(re.escape, rules["md_excluded_vocations"]))
+                        "|".join(map(re.escape, fleet_rules["medium_trucks"]["excluded_vocations"]))
                     )
                 ]
         for vehicle_class, history in selected.groupby("vehicle_class", sort=True):
@@ -312,13 +311,6 @@ def prepare_efficiency_rows(
     conversions = load_conversion_factors(bundle)
     scenario = bundle.scenario
     if (
-        scenario.existing_capacity.other_region_vehicle_population_source
-        != rules["supported_population_source"]
-    ):
-        raise ValueError(
-            "Selected vehicle-population source has no reviewed efficiency weights"
-        )
-    if (
         rules["future_year_rule"] != "interval_end"
         or rules["missing_rating_classes"] != "renormalize_observed"
     ):
@@ -326,16 +318,19 @@ def prepare_efficiency_rows(
     if rules["phev_split_target"] != LimitTechInputSplit.table_name():
         raise ValueError("PHEV split target does not match canoe_schema")
     supported_policies = {
+        "unknown_powertrain": "error",
         "historical_aggregation": "mean_annual_service_efficiency",
         "historical_first_bin": "available_source_years_only",
         "future_load_factor": "base_year",
         "missing_annual_rating": "configured_analogue_index",
-        "within_gvwr_aggregation": "equal_vocation_consumption",
-        "md_weight_source": "latest_ontario_report4",
         "phev_split_method": "mean_energy_shares_across_classes_and_horizon_endpoints",
     }
     if any(rules[key] != value for key, value in supported_policies.items()):
         raise ValueError("Unsupported efficiency modeling policy; no silent fallback")
+    if (rules["intercity"]["multiplier_basis"]
+            != "regen_intercity_powertrain_over_diesel_fuel_economy"
+            or rules["intercity"]["hev_ratio"] != "atb_transit_hev_over_diesel"):
+        raise ValueError("Unsupported intercity efficiency multiplier policy")
     if (
         rules["atb"]["phev_energy_basis"] != "greet_hhv_fuel_plus_electricity"
         or rules["atb"]["interpolation"] != "linear_consumption"
@@ -461,8 +456,12 @@ def prepare_efficiency_rows(
     aggregation = load_harmonization_rules(bundle, "road_aggregation")
     weights_dir = resolve_artifact_path(bundle, "road_aggregation")
     rating_weights = read(weights_dir / aggregation["nrcan_weights_file"])
-    nlr_weights = read(weights_dir / aggregation["nlr_weights_file"])
-    rating_audit = aggregate_ratings(classified, rating_weights, rules=rules)
+    fleet = load_fleet_aggregation_evidence(bundle)
+    paths.extend(fleet.paths)
+    nlr_weights = fleet.ldv
+    rating_audit = aggregate_ratings(
+        classified, rating_weights, rules=rules, weight_basis=aggregation["ldv_weight_basis"],
+    )
     atb_dir = resolve_input_path(bundle, "interim", atb_rules["interim_subdir"])
     vehicle_source = read(
         atb_dir / atb_rules["components"]["vehicles"]["output_file"], ATB
@@ -482,61 +481,19 @@ def prepare_efficiency_rows(
         rules=rules,
         conversions=conversions,
     )
-    ontario = load_harmonization_rules(bundle, "ontario_vehicle_population")
-    report_dir = resolve_input_path(bundle, "interim", ontario["interim_subdir"])
-    report_template = ontario["reports"][4]["distribution_output_template"]
-    report_files = sorted(report_dir.glob(report_template.format(year="*")))
-    if not report_files:
-        raise ValueError("Missing normalized MTO Report 4")
-    report4 = read(report_files[-1], rules["supported_population_source"])
-    if report4.year.nunique() != 1:
-        raise ValueError("Multiple years in selected MTO Report 4")
-    if set(report4.year) != set(rating_weights.report_year) or set(report4.year) != set(
-        nlr_weights.report_year
-    ):
-        raise ValueError("MTO Report 4 and LDV aggregation evidence editions differ")
-    medium_weights = medium_vocation_weights(
-        report4,
-        sorted(atb.loc[atb.family.eq("mhdv"), "vehicle_class"].unique()),
-        rules=rules,
-    )
-    statcan = load_harmonization_rules(bundle, "statcan_tables")
-    freight = read(
-        resolve_input_path(
-            bundle,
-            "interim",
-            statcan["interim_subdir"],
-            statcan["freight"]["output_file"],
-        )
-    )
-    utilization = load_harmonization_rules(bundle, "road_stocks_and_demands")[
-        "capacity_factor"
-    ]
+    if set(rating_weights.report_year) != set(nlr_weights.report_year):
+        raise ValueError("LDV rating and ATB aggregation evidence editions differ")
+    md_classes = sorted(atb.loc[atb.family.eq("mhdv"), "vehicle_class"].unique())
     atb_parts = []
     for region in scenario.geography.regions:
-        haul = heavy_haul_atb_weights(
-            freight,
-            source_region=utilization["freight_source_region_map"].get(region, region),
-            rules=utilization,
-        )
-        haul_weights = {
-            key: float(
-                haul.loc[haul.nlr_atb_class.eq(label), "aggregation_weight"].iloc[0]
-            )
-            for key, label in utilization["heavy_haul_atb_classes"].items()
-        }
-        heavy = {
-            vocation: haul_weights[haul_class] / len(vocations)
-            for haul_class, vocations in rules["heavy_vocations"].items()
-            for vocation in vocations
-        }
+        medium_weights = fleet.medium_weights(region, md_classes)
+        heavy = fleet.heavy_weights(region)
         for mode, spec in rules["road_classes"].items():
             if spec["pathway"] == "motorcycle":
                 continue
             if spec["pathway"] == "ldv":
                 selected = nlr_weights.loc[
-                    nlr_weights.weight_basis.eq(rules["rating_weight_basis"])
-                    & nlr_weights.nrcan_ceud_class.eq(spec["weights"])
+                    nlr_weights.nrcan_ceud_class.eq(spec["weights"])
                 ]
                 if (
                     selected.nlr_atb_class.duplicated().any()
@@ -691,7 +648,7 @@ def prepare_efficiency_rows(
                     }
                 )
     endpoints = [p + scenario.periods.step for p in scenario.periods.model]
-    split_audit = phev_split_evidence(atb, endpoints=endpoints, rules=rules)
+    split_audit = phev_split_evidence(atb, endpoints=endpoints, rules=rules, fleet_rules=fleet.rules)
     digest = hashlib.sha256(
         json.dumps(
             {
@@ -699,10 +656,8 @@ def prepare_efficiency_rows(
                 "rules": rules,
                 "road_outputs": road_rules,
                 "offroad_outputs": offroad_rules,
-                "heavy_haul_rules": {
-                    key: utilization[key]
-                    for key in ("heavy_haul_atb_classes", "freight_source_region_map")
-                },
+                "fleet_rules": fleet.rules,
+                "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
                 "conversions": conversions,
                 "trajectory": trajectory,
                 "periods": scenario.periods.model_dump(),
@@ -713,8 +668,8 @@ def prepare_efficiency_rows(
     ).hexdigest()
     variant = {
         "input_digest": digest,
-        "population_source": rules["supported_population_source"],
-        "mto_report4_year": int(report4.year.iloc[0]),
+        "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
+        "population_year": scenario.existing_capacity.vehicle_population_year,
         "trajectory": trajectory,
     }
     assumption = DataSet(
@@ -724,7 +679,8 @@ def prepare_efficiency_rows(
         description="Backend-owned template edges and intentional unit efficiencies; not an external source.",
     )
     contexts, rows = [], []
-    for mode, group in pd.DataFrame(payloads).groupby("mode", sort=True):
+    input_regions = {rules["region_output_map"].get(r, r): r for r in scenario.geography.regions}
+    for (mode, region), group in pd.DataFrame(payloads).groupby(["mode", "region"], sort=True):
         kind = group.kind.iloc[0]
         records = group.drop(columns=["mode", "kind"]).to_dict("records")
         if kind == "unit":
@@ -734,9 +690,9 @@ def prepare_efficiency_rows(
             )
             continue
         components = efficiency_components(
-            bundle, mode, rules, road_rules, offroad_rules
+            bundle, mode, rules, road_rules, offroad_rules, region=input_regions[region],
         )
-        context = efficiency_context(bundle, components, mode, variant, rules)
+        context = efficiency_context(bundle, components, mode, {**variant, "region": region}, rules)
         contexts.append(context)
         rows.extend(validate_parameter_rows(Efficiency, records, context))
     split_context = efficiency_context(
@@ -862,7 +818,7 @@ def prepare_efficiency_rows(
 
 
 def efficiency_components(
-    bundle: ConfigBundle, mode: str, rules: dict, road: dict, offroad: dict
+    bundle: ConfigBundle, mode: str, rules: dict, road: dict, offroad: dict, *, region: str,
 ) -> list[tuple]:
     if mode not in rules["road_classes"]:
         result = [
@@ -895,7 +851,7 @@ def efficiency_components(
     )
     result.append(("argonne_rd_greet_2025_rev1", "fuel_heating_values"))
     if spec["pathway"] == "ldv":
-        result.append((rules["supported_population_source"], "A"))
+        result.append(aggregation_component(bundle, "ldv", region))
         for source in (
             "nrcan_fuel_consumption_ratings",
             "fueleconomy_gov_vehicle_data",
@@ -906,9 +862,9 @@ def efficiency_components(
                 for component in bundle.sources.sources[source].components
             )
     if mode == "medium_trucks":
-        result.append((rules["supported_population_source"], 4))
+        result.append(aggregation_component(bundle, "medium_trucks", region))
     if mode == "heavy_trucks":
-        result.append(("statcan_transport_tables", "23-10-0142-01"))
+        result.append(aggregation_component(bundle, "heavy_truck_haul", region))
     if spec["pathway"] == "intercity":
         result.append(("epri_us_regen_2025_transportation", "intercity_bus_charts"))
     return result

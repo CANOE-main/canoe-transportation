@@ -10,7 +10,9 @@ from pydantic import ValidationError
 from utils import (
     configured_directories,
     load_config_bundle,
+    load_harmonization_rules,
     load_parameter_yaml,
+    load_yaml,
     resolve_artifact_path,
     resolve_input_path,
 )
@@ -56,8 +58,11 @@ def test_config_bundle_loads_typed_contracts() -> None:
     assert bundle.scenario.demand.cer_scenario == "Current Measures"
     assert bundle.scenario.demand.future_car_demand == "GDP-indexed"
     assert bundle.scenario.sources.selections["transport_canada_ev_dashboard"].year == 2026
-    assert bundle.scenario.existing_capacity.other_region_vehicle_population_source == "ontario_ministry_transport_vehicle_population"
-    assert bundle.scenario.existing_capacity.cleanup_epsilon == 0.001
+    assert bundle.scenario.aggregation_sources.source_for("stock_age", "QC") == "ontario_ministry_transport_vehicle_population"
+    assert bundle.scenario.existing_capacity.cleanup_tolerance == 0.001
+    assert bundle.scenario.aggregation_sources.source_for("medium_trucks", "QC") == "wards_intelligence_2022_sales_shares"
+    assert bundle.scenario.ev_chargers.ld_evs_per_port == 1.0
+    assert bundle.scenario.ev_chargers.mhd_evs_per_port == 1.5
     assert bundle.scenario.economics.global_discount_rate == 0.03
     assert bundle.sources.sources["statcan_transport_tables"].component(
         "20-10-0021-01"
@@ -179,6 +184,7 @@ def test_inactive_registry_source_cannot_be_selected(tmp_path: Path) -> None:
     source_payload["sources"]["wards_intelligence_2022_sales_shares"]["status"] = "inactive"
     sources_path.write_text(yaml.safe_dump(source_payload, sort_keys=False), encoding="utf-8")
     payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["aggregation_sources"]["medium_trucks"]["other"] = "ontario_ministry_transport_vehicle_population"
     payload["sources"]["selections"]["wards_intelligence_2022_sales_shares"] = {
         "year": 2022
     }
@@ -254,11 +260,11 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert status["reference_sqlite_exists"] is True
     assert "cer_canadas_energy_future" in status["active_sources"]
     assert "wards_intelligence_2022_sales_shares" in status["active_sources"]
-    assert status["switches"] == {
+    assert status["parameter_options"]["lifetimes"] == {
         "survival_curves": True,
         "survival_curve_max_age": 25,
-        "vkt_schedules": False,
     }
+    assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_2022_sales_shares"
 
 
 def _write_config_copy(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -290,6 +296,52 @@ def test_extra_nested_config_field_is_rejected(tmp_path: Path) -> None:
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
     with pytest.raises(ValidationError, match="unexpected"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+@pytest.mark.parametrize("missing", ["aggregation_sources", "stock_age", "ldv", "medium_trucks", "heavy_truck_haul"])
+def test_every_scenario_requires_its_aggregation_roles(tmp_path: Path, missing: str) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    if missing == "aggregation_sources":
+        payload.pop(missing)
+    else:
+        payload["aggregation_sources"].pop(missing)
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match=missing):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+def test_source_registry_rejects_obsolete_aggregation_selections(tmp_path: Path) -> None:
+    _, sources, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
+    payload["aggregation_sources"] = yaml.safe_load(scenario.read_text(encoding="utf-8"))["aggregation_sources"]
+    sources.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match="aggregation_sources"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+@pytest.mark.parametrize("selection", ["unknown", "inactive", "unsupported"])
+def test_scenario_aggregation_sources_are_checked_against_registry_before_io(
+    tmp_path: Path, selection: str,
+) -> None:
+    _, sources, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    source_payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
+    if selection == "unknown":
+        selected = "unregistered_qc"
+        message = "unknown or inactive"
+    elif selection == "inactive":
+        selected = "wards_intelligence_2022_sales_shares"
+        source_payload["sources"][selected]["status"] = "inactive"
+        message = "unknown or inactive"
+    else:
+        selected = "nrcan_ceud_transport_provincial"
+        message = "no implemented adapter"
+    payload["aggregation_sources"]["medium_trucks"]["QC"] = selected
+    sources.write_text(yaml.safe_dump(source_payload, sort_keys=False), encoding="utf-8")
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
@@ -339,16 +391,16 @@ def test_future_car_demand_requires_a_supported_selector(
             "global_discount_rate",
         ),
         (
-            lambda payload: payload["switches"].update(
+            lambda payload: payload["lifetimes"].update(
                 {"survival_curve_max_age": 0}
             ),
             "survival_curve_max_age",
         ),
         (
             lambda payload: payload["existing_capacity"].update(
-                {"cleanup_epsilon": -1}
+                {"cleanup_tolerance": -1}
             ),
-            "cleanup_epsilon",
+            "cleanup_tolerance",
         ),
     ],
 )
@@ -367,11 +419,24 @@ def test_invalid_scenario_choices_are_rejected(
 @pytest.mark.parametrize(
     ("section", "field"),
     [
-        ("validation", "compare_legacy"),
-        ("switches", "survival_curves"),
-        ("switches", "survival_curve_max_age"),
-        ("existing_capacity", "cleanup_epsilon"),
+        ("comparison", "mode"),
+        ("comparison", "reference_sqlite"),
+        ("comparison", "absolute_tolerance"),
+        ("comparison", "relative_tolerance"),
+        ("comparison", "include_provenance"),
+        ("lifetimes", "survival_curves"),
+        ("lifetimes", "survival_curve_max_age"),
+        ("existing_capacity", "vehicle_population_year"),
+        ("existing_capacity", "cleanup_tolerance"),
         ("demand", "cer_scenario"),
+        ("economics", "cer_scenario"),
+        ("road_utilization", "vkt_schedules"),
+        ("road_utilization", "vkt_max_age"),
+        ("ev_chargers", "ld_evs_per_port"),
+        ("ev_chargers", "mhd_evs_per_port"),
+        ("efficiencies", "atb_trajectory"),
+        ("costs", "atb_trajectory"),
+        ("row_note_overrides", "technology"),
     ],
 )
 def test_user_selectable_scenario_values_have_no_python_fallback(
@@ -399,28 +464,28 @@ def test_data_quality_outside_v4_enum_is_rejected(tmp_path: Path) -> None:
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
-def test_source_data_quality_defaults_are_registry_owned() -> None:
+def test_source_data_quality_placeholders_are_registry_owned() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     quality = bundle.sources.sources[
         "nrcan_ceud_transport_provincial"
     ].data_quality
 
-    assert quality.row_fields() == {
-        "dq_cred": 5,
-        "dq_geog": 5,
-        "dq_struc": 5,
-        "dq_tech": 5,
-        "dq_time": 5,
-    }
+    assert set(quality.missing_fields()) == {"dq_cred", "dq_geog", "dq_struc", "dq_tech", "dq_time"}
+    with pytest.raises(ValueError, match="Unresolved data_quality"):
+        quality.row_fields()
 
 
-def test_source_registry_defaults_are_required(tmp_path: Path) -> None:
+@pytest.mark.parametrize("missing_field", ["defaults", "required", "component_required", "data_quality"])
+def test_source_registry_defaults_are_required(tmp_path: Path, missing_field: str) -> None:
     _, sources, scenario = _write_config_copy(tmp_path)
     payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
-    payload.pop("defaults")
+    if missing_field == "defaults":
+        payload.pop("defaults")
+    else:
+        payload["defaults"].pop(missing_field)
     sources.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
 
-    with pytest.raises(ValidationError, match="defaults"):
+    with pytest.raises(ValidationError, match=missing_field):
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
@@ -434,7 +499,81 @@ def test_collection_defaults_are_not_shared() -> None:
     assert second.adapter == {}
     assert second.inputs == []
 
-    first_notes = ScenarioRowNoteOverrides()
-    second_notes = ScenarioRowNoteOverrides()
+    first_notes = ScenarioRowNoteOverrides(technology={})
+    second_notes = ScenarioRowNoteOverrides(technology={})
     first_notes.technology["T01"] = "scenario-specific note"
     assert second_notes.technology == {}
+
+
+def test_yaml_rejects_duplicate_keys_but_allows_explicit_merge_overrides(tmp_path: Path) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text("module:\n  selector: first\n  selector: second\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="Duplicate YAML key 'selector'"):
+        load_yaml(path)
+    path.write_text(
+        "defaults: &defaults\n  selector: first\nmodule:\n  <<: *defaults\n  selector: second\n",
+        encoding="utf-8",
+    )
+    assert load_yaml(path)["module"]["selector"] == "second"
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "value", "message"),
+    [
+        ("efficiencies", "atb_trajectory", "unreviewed", "efficiencies.atb_trajectory"),
+        ("costs", "atb_trajectory", "unreviewed", "costs.atb_trajectory"),
+        ("economics", "cer_scenario", "Global Net-zero", "economics.cer_scenario"),
+        ("demand", "cer_scenario", "Global Net-zero", "demand.cer_scenario"),
+        ("lifetimes", "survival_curve_max_age", 1, "cannot contain a full period"),
+        ("road_utilization", "vkt_max_age", 1, "cannot contain a full period"),
+    ],
+)
+def test_parameter_selectors_are_checked_before_io(
+    tmp_path: Path, section: str, field: str, value: object, message: str,
+) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload[section][field] = value
+    if section == "road_utilization":
+        payload[section]["vkt_schedules"] = True
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises((ValueError, ValidationError), match=message):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+@pytest.mark.parametrize(
+    "selection", [{}, {"edition": 2023}, {"year": 2023, "edition": 2023}],
+)
+def test_source_selections_cannot_silently_use_adapter_defaults(tmp_path: Path, selection: dict) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["sources"]["selections"]["nrcan_ceud_transport_provincial"] = selection
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="sources.selections.nrcan_ceud_transport_provincial"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+def test_demand_and_currency_cer_choices_are_independent(tmp_path: Path) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["demand"]["cer_scenario"] = "Higher Scenario"
+    payload["economics"]["cer_scenario"] = "Lower Scenario"
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    selected = load_config_bundle(scenario, repo_root=tmp_path)
+    assert selected.scenario.demand.cer_scenario == "Higher Scenario"
+    assert selected.scenario.economics.cer_scenario == "Lower Scenario"
+
+
+def test_rules_modules_have_one_owner_and_source_placeholders_are_explicit() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    payload = load_parameter_yaml(bundle, "rules.yaml")
+    assert not (payload["fetching"].keys() & payload["parameterization"].keys())
+    for modules in (payload["fetching"], payload["parameterization"]):
+        for name, rules in modules.items():
+            assert load_harmonization_rules(bundle, name) == rules
+    raw_sources = load_yaml(bundle.sources_path)["sources"]
+    for source in raw_sources.values():
+        assert source["database_note"] == ""
+        assert source["data_quality"] == dict.fromkeys(
+            ("dq_cred", "dq_geog", "dq_struc", "dq_tech", "dq_time"), None,
+        )

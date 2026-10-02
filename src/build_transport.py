@@ -50,7 +50,7 @@ from utils import (
     resolve_repo_path,
 )
 from validation.database_bootstrap import validate_database
-from validation.insertion import ConflictPolicy, insert_models
+from validation.insertion import ConflictPolicy, insert_models, validate_transport_parameter_support
 from validation.legacy_compare import compare_legacy_costs, compare_legacy_demand, compare_legacy_efficiency, compare_legacy_existing_capacity, compare_legacy_lifetime_tech, compare_legacy_tables
 from validation.provenance import (
     ResolvedProvenance,
@@ -62,6 +62,7 @@ from validation.schema_contract import (
     create_v4_schema,
     schema_evidence,
 )
+from validation.sqlite_compare import compare_scenario_databases, validate_scenario_comparison_reference
 from validation.sqlite_utils import quote_identifier
 
 
@@ -128,6 +129,10 @@ class TransportContribution:
     lifetime_audit: dict[str, Any] = dataclass_field(default_factory=dict)
     efficiency_audit: dict[str, Any] = dataclass_field(default_factory=dict)
     cost_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    existing_vintages: tuple[int, ...] = ()
+    prepared_support_tables: tuple[str, ...] = ()
+    support_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    new_technologies: tuple[str, ...] = ()
 
 
 TEMPLATE_TABLES = (
@@ -531,7 +536,17 @@ def prepare_transport_contribution(
             cost_fixed_rows.extend(chargers.fixed_rows)
         contexts.extend(chargers.provenance_contexts)
         charger_audit = chargers.audit
-    return TransportContribution(
+    support_tables = []
+    if selected_capacity:
+        support_tables.append("existing_capacity")
+    if include_efficiencies is not False:
+        support_tables.append("efficiency")
+    if include_costs is not False:
+        support_tables.extend(("cost_invest", "cost_fixed", "cost_variable"))
+    if selected_road_utilization:
+        support_tables.append("limit_annual_capacity_factor")
+    existing_suffix = load_harmonization_rules(bundle, "efficiencies")["existing_suffix"]
+    contribution = TransportContribution(
         dataset=template_dataset,
         labels_by_table=table_labels,
         rows_by_table=table_rows,
@@ -557,7 +572,36 @@ def prepare_transport_contribution(
         lifetime_audit=lifetime_audit,
         efficiency_audit=efficiency_audit,
         cost_audit=cost_audit,
+        existing_vintages=tuple(bundle.scenario.periods.existing),
+        prepared_support_tables=tuple(support_tables),
+        new_technologies=tuple(
+            row.tech for row in table_rows["technology"]
+            if not row.tech.endswith(existing_suffix)
+        ),
     )
+    contribution.support_audit.update(_require_transport_parameter_support(contribution))
+    return contribution
+
+
+def _require_transport_parameter_support(contribution: TransportContribution) -> dict[str, Any]:
+    batches = {
+        "existing_capacity": contribution.parameter_rows,
+        "efficiency": contribution.efficiency_rows,
+        "cost_invest": contribution.cost_invest_rows,
+        "cost_fixed": contribution.cost_fixed_rows,
+        "cost_variable": contribution.cost_variable_rows,
+        "limit_annual_capacity_factor": contribution.flat_road_factor_rows,
+    }
+    audit = validate_transport_parameter_support(
+        {table: batches[table] for table in contribution.prepared_support_tables},
+        existing_vintages=contribution.existing_vintages,
+        new_technologies=contribution.new_technologies,
+    )
+    if not audit["ok"]:
+        LOGGER.error("Transport parameter support failed: %s", audit["errors"])
+        raise ValueError(f"Transport parameter support failed: {audit['errors']}")
+    LOGGER.info("Transport cross-table parameter support: %s", audit["checks"])
+    return audit
 
 
 def insert_transport_contribution(
@@ -567,6 +611,9 @@ def insert_transport_contribution(
     conflict: ConflictPolicy = "error",
 ) -> dict[str, list[CanoeBaseModel]]:
     """Insert a prepared contribution into a transaction owned by the caller."""
+    # Recheck mutable batches before any SQLite writes, including caller insertions.
+    contribution.support_audit.clear()
+    contribution.support_audit.update(_require_transport_parameter_support(contribution))
     insert_models(
         connection,
         [contribution.dataset],
@@ -648,6 +695,7 @@ def bootstrap_database(
     template_dir: Path,
     database_path: Path,
     overwrite: bool = False,
+    comparison_reference: Path | None = None,
 ) -> dict[str, Any]:
     """Build, audit, and atomically publish one package-DDL v4 database."""
     if database_path.exists() and not overwrite:
@@ -655,6 +703,13 @@ def bootstrap_database(
             f"Refusing to overwrite existing SQLite database: {database_path}. "
             "Pass --overwrite to replace it explicitly."
         )
+    if comparison_reference is not None:
+        if comparison_reference.resolve() == database_path.resolve():
+            raise ValueError("Comparison reference must differ from the output database")
+        if not comparison_reference.is_file():
+            raise FileNotFoundError(f"Comparison reference is missing: {comparison_reference}")
+        if bundle.scenario.comparison.mode == "scenario":
+            validate_scenario_comparison_reference(comparison_reference)
     database_path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{database_path.name}.",
@@ -706,6 +761,10 @@ def bootstrap_database(
         connection.commit()
         connection.close()
         connection = None
+        comparison_report = (
+            compare_transport_database(bundle, temporary_path, comparison_reference)
+            if comparison_reference is not None else {"enabled": False, "mode": "none"}
+        )
         os.replace(temporary_path, database_path)
     except Exception:
         if connection is not None:
@@ -732,6 +791,8 @@ def bootstrap_database(
         "efficiencies": contribution.efficiency_audit,
         "costs": contribution.cost_audit,
         "ev_chargers": contribution.charger_audit,
+        "parameter_support": contribution.support_audit,
+        "comparison": comparison_report,
         "preflight": preflight,
         "templates": [
             {key: value for key, value in asdict(result).items() if key != "primary_keys"}
@@ -743,6 +804,51 @@ def bootstrap_database(
         },
         "validation": validation,
     }
+
+
+def compare_transport_database(
+    bundle: ConfigBundle, candidate_path: Path, reference: Path,
+) -> dict[str, Any]:
+    """Run the selected optional comparison before atomic database publication."""
+    comparison = bundle.scenario.comparison
+    if comparison.mode == "scenario":
+        result = compare_scenario_databases(
+            candidate_path, reference,
+            absolute_tolerance=comparison.absolute_tolerance,
+            relative_tolerance=comparison.relative_tolerance,
+            include_provenance=comparison.include_provenance,
+        )
+    elif comparison.mode == "legacy":
+        tolerances = {
+            "absolute_tolerance": comparison.absolute_tolerance,
+            "relative_tolerance": comparison.relative_tolerance,
+        }
+        result = compare_legacy_tables(
+            candidate_path,
+            reference,
+            tables=("technology", "commodity"),
+        )
+        result.update(mode="legacy", **tolerances)
+        result["existing_capacity"] = compare_legacy_existing_capacity(
+            candidate_path, reference, **tolerances,
+        )
+        result["demand"] = compare_legacy_demand(
+            candidate_path, reference, **tolerances,
+        )
+        result["lifetime_tech"] = compare_legacy_lifetime_tech(
+            candidate_path, reference, **tolerances,
+        )
+        result["efficiency"] = compare_legacy_efficiency(
+            candidate_path, reference,
+            **tolerances,
+        )
+        result["costs"] = compare_legacy_costs(
+            candidate_path, reference,
+            **tolerances,
+        )
+    else:
+        result = {"enabled": False, "mode": "none"}
+    return result
 
 
 def write_validation_report(report: dict[str, Any], path: Path) -> None:
@@ -766,11 +872,22 @@ def build_from_scenario(
         "sqlite",
         bundle.scenario.outputs.sqlite_name,
     )
+    comparison = bundle.scenario.comparison
+    reference = None
+    if comparison.mode != "none":
+        reference = resolve_repo_path(bundle.repo_root, comparison.reference_sqlite)
+        if reference.resolve() == database_path.resolve():
+            raise ValueError("Comparison reference must differ from the output database")
+        if not reference.is_file():
+            raise FileNotFoundError(f"Comparison reference is missing: {reference}")
+        if comparison.mode == "scenario":
+            validate_scenario_comparison_reference(reference)
     report = bootstrap_database(
         bundle=bundle,
         template_dir=resolve_input_path(bundle, "template"),
         database_path=database_path,
         overwrite=overwrite,
+        comparison_reference=reference,
     )
     report.update(
         {
@@ -792,39 +909,6 @@ def build_from_scenario(
             },
         }
     )
-    if bundle.scenario.validation.compare_legacy:
-        reference = resolve_repo_path(
-            bundle.repo_root, bundle.scenario.validation.reference_sqlite
-        )
-        report["legacy_comparison"] = compare_legacy_tables(
-            database_path,
-            reference,
-            tables=("technology", "commodity"),
-        )
-        if report["existing_capacity"]:
-            report["legacy_comparison"]["existing_capacity"] = compare_legacy_existing_capacity(
-                database_path, reference
-            )
-        if report["demand"]:
-            report["legacy_comparison"]["demand"] = compare_legacy_demand(
-                database_path, reference
-            )
-        if report["lifetimes"]:
-            report["legacy_comparison"]["lifetime_tech"] = compare_legacy_lifetime_tech(
-                database_path, reference
-            )
-        if report["efficiencies"]:
-            report["legacy_comparison"]["efficiency"] = compare_legacy_efficiency(
-                database_path, reference,
-                **load_harmonization_rules(bundle, "efficiencies")["parity"],
-            )
-        if report["costs"]:
-            report["legacy_comparison"]["costs"] = compare_legacy_costs(
-                database_path, reference,
-                **load_harmonization_rules(bundle, "costs")["parity"],
-            )
-    else:
-        report["legacy_comparison"] = {"enabled": False}
 
     validation_path = resolve_repo_path(
         bundle.repo_root,
@@ -863,6 +947,7 @@ def main() -> None:
         TemplateLoadError,
         ValidationError,
         ValueError,
+        sqlite3.Error,
     ) as exc:
         raise SystemExit(f"Database build failed: {exc}") from exc
     LOGGER.info(

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from utils import load_config_bundle
-from validation.config_models import DataQuality
+from validation.config_models import DataQuality, SourcesConfig
 from validation.provenance import (
     ProvenanceError,
     make_data_id,
@@ -118,6 +118,57 @@ def test_single_source_inherits_component_or_family_dq(bundle) -> None:
     assert sources[0].source == bundle.sources.sources[
         "nrcan_ceud_transport_provincial"
     ].citation
+    assert sources[0].notes == ""
+
+
+def test_partial_annotations_resolve_per_indicator_and_notes_are_inherited(bundle) -> None:
+    payload = bundle.sources.model_dump()
+    source = payload["sources"]["nrcan_ceud_transport_provincial"]
+    source["data_quality"] = {"dq_cred": 2, "dq_struc": 3}
+    source["database_note"] = "Reviewed family note"
+    source["components"][20]["data_quality"] = {"dq_geog": 1, "dq_struc": 4}
+    registry = SourcesConfig.model_validate(payload)
+    context = resolve_provenance(
+        registry, source_key="nrcan_ceud_transport_provincial", component_key=20,
+        transformation="fixture", transformation_version="1",
+    )
+    assert context.data_quality.row_fields() == {
+        "dq_cred": 2, "dq_geog": 1, "dq_struc": 4, "dq_tech": 5, "dq_time": 5,
+    }
+    assert registry_rows([context])[2][0].notes == "Reviewed family note"
+    source["components"][20]["database_note"] = "Reviewed component note"
+    overridden = resolve_provenance(
+        SourcesConfig.model_validate(payload), source_key="nrcan_ceud_transport_provincial",
+        component_key=20, transformation="fixture", transformation_version="1",
+    )
+    assert registry_rows([overridden])[2][0].notes == "Reviewed component note"
+    assert overridden.data_id == context.data_id
+    source["components"][20]["database_note"] = ""
+    cleared = resolve_provenance(
+        SourcesConfig.model_validate(payload), source_key="nrcan_ceud_transport_provincial",
+        component_key=20, transformation="fixture", transformation_version="1",
+    )
+    assert registry_rows([cleared])[2][0].notes == ""
+
+
+def test_composite_preserves_distinct_component_database_notes(bundle) -> None:
+    payload = bundle.sources.model_dump()
+    source = payload["sources"]["nrcan_ceud_transport_provincial"]
+    source["components"][20]["database_note"] = "Car evidence"
+    source["components"][21]["database_note"] = "Light truck evidence"
+    registry = SourcesConfig.model_validate(payload)
+    contexts = [
+        resolve_provenance(
+            registry, source_key="nrcan_ceud_transport_provincial", component_key=key,
+            transformation="fixture", transformation_version="1",
+        )
+        for key in (20, 21)
+    ]
+    combined = resolve_composite_provenance(
+        inputs=contexts, dataset_key="fixture", transformation="fixture",
+        transformation_version="1", governing_source_id="T01",
+    )
+    assert registry_rows([combined])[2][0].notes == "Car evidence\nLight truck evidence"
 
 
 def test_composite_requires_explicit_dq_when_contributors_disagree(bundle) -> None:

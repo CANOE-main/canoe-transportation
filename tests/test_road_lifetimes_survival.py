@@ -1,5 +1,4 @@
 from pathlib import Path
-from io import StringIO
 
 import pandas as pd
 import pytest
@@ -31,7 +30,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = "config/scenarios/legacy_reproduction.yaml"
 
 
-def test_accepted_preparation_matches_published_products_without_mto(
+def test_accepted_preparation_uses_report_a_weights_without_mto_history_or_wards(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
@@ -53,15 +52,21 @@ def test_accepted_preparation_matches_published_products_without_mto(
         assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
     )
     assert len(paths) == 3
-    for key, filename in (
-        ("transformed_curves", rules["transformed_curves_file"]),
-        ("medians", rules["median_lifetimes_file"]),
-    ):
-        published = real_read_csv(
-            REPO_ROOT / "inputs/2_processed/road_lifetimes_survival" / filename
-        )
-        serialized = real_read_csv(StringIO(frames[key].to_csv(index=False)))
-        pd.testing.assert_frame_equal(serialized, published)
+    assert paths[-1].name.endswith("nlr_atb_class_weights.csv")
+    assert all("wards" not in path.name for path in paths)
+    curves = frames["ceud_curves"]
+    assert set(curves.source_id) == {"ontario_report_a_weighted_nhtsa_cafe"}
+    assert set(curves.source_class) == {"Car", "Light Truck"}
+    assert curves.included_weight.tolist() == pytest.approx([1] * len(curves))
+    assert "wards_weighted_nhtsa_legacy" not in set(frames["transformed_curves"].source_id)
+    weights = real_read_csv(paths[-1])
+    weights = weights.loc[weights.weight_basis.eq("all_vintages") & weights.nrcan_ceud_class.eq("Light Truck")]
+    pickup_share = weights.loc[weights.nlr_atb_class.eq("Pickup"), "aggregation_weight"].sum()
+    native = frames["source_curves"]
+    suv = native.loc[native.source_class.eq("Vans/SUVs") & native.age.eq(10), "source_value"].iloc[0]
+    pickup = native.loc[native.source_class.eq("Pickups") & native.age.eq(10), "source_value"].iloc[0]
+    actual = curves.loc[curves.source_class.eq("Light Truck") & curves.age.eq(10), "survival_probability"].iloc[0]
+    assert actual == pytest.approx(pickup_share * pickup + (1 - pickup_share) * suv)
 
 
 def test_accepted_survival_input_validation_rejects_missing_age_and_changed_value() -> None:
@@ -619,7 +624,8 @@ def test_retention_comparison_keeps_mto_nhtsa_and_eia_meanings() -> None:
     }
 
 
-def test_legacy_light_truck_curve_uses_latest_wards_weights() -> None:
+@pytest.mark.parametrize(("weight_year", "suv_share"), [("latest", 0.7), (2020, 0.5)])
+def test_legacy_light_truck_curve_uses_latest_wards_weights(weight_year, suv_share) -> None:
     transformed = pd.DataFrame(
         {
             "source_id": ["nhtsa_cafe_2024_ldv_survival"] * 6,
@@ -638,8 +644,13 @@ def test_legacy_light_truck_curve_uses_latest_wards_weights() -> None:
             "market_share": [0.5, 0.2, 0.3],
         }
     )
+    wards = pd.concat([
+        wards,
+        wards.assign(year=2020, market_share=[0.2, 0.3, 0.5]),
+    ], ignore_index=True)
     rules = {
         "legacy_survival": {
+            "wards_weight_year": weight_year,
             "car_source_class": "Cars",
             "light_truck_source_classes": {
                 "Vans/SUVs": ["Small SUV", "Midsize SUV"],
@@ -654,7 +665,10 @@ def test_legacy_light_truck_curve_uses_latest_wards_weights() -> None:
         curves["source_class"].eq("Light Truck") & curves["age"].eq(1),
         "survival_probability",
     ].item()
-    assert light_age_one == pytest.approx(0.8 * 0.7 + 0.6 * 0.3)
+    assert light_age_one == pytest.approx(0.8 * suv_share + 0.6 * (1 - suv_share))
+    assert set(curves.loc[curves.source_class.eq("Light Truck"), "weight_year"]) == {
+        2021 if weight_year == "latest" else weight_year,
+    }
     with pytest.raises(ValueError, match="complete unit weight"):
         legacy_wards_survival_curves(
             transformed, wards.loc[~wards["nlr_atb_class"].eq("Pickup")], rules=rules
@@ -679,7 +693,7 @@ def test_median_equivalent_age_is_first_age_at_or_below_half() -> None:
 
 def _accepted_frames_fixture() -> dict[str, pd.DataFrame]:
     return {
-        "legacy_curves": pd.DataFrame({"value": [1]}),
+        "ceud_curves": pd.DataFrame({"value": [1]}),
         "nlr_curves": pd.DataFrame({"value": [2]}),
         "source_curves": pd.DataFrame({"value": [3]}),
         "transformed_curves": pd.DataFrame({"value": [4]}),
@@ -720,7 +734,6 @@ def test_accepted_publisher_does_not_invoke_mto_diagnostics(
 
     assert output_dir == tmp_path
     assert {path.name for path in tmp_path.iterdir()} == {
-        "road_vehicle_legacy_wards_survival_curves.csv",
         "road_vehicle_nlr_source_survival_curves.csv",
         "road_vehicle_source_survival_curves.csv",
         "road_vehicle_survival_class_mappings.csv",

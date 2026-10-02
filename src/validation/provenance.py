@@ -26,7 +26,7 @@ class Contributor(BaseModel):
     source_id: str
     title: str
     citation: str
-    refresh_notes: str
+    database_note: str
     data_id: str
 
 
@@ -54,6 +54,7 @@ class ResolvedProvenance(BaseModel):
         }
 
     def registry_rows(self) -> tuple[CanoeBaseModel, ...]:
+        self.data_quality.row_fields()
         labels = tuple(
             DataSourceLabel(
                 source_id=item.source_id,
@@ -71,7 +72,7 @@ class ResolvedProvenance(BaseModel):
             DataSource(
                 source_id=item.source_id,
                 source=item.citation,
-                notes=item.refresh_notes,
+                notes=item.database_note,
                 data_id=self.data_id,
             )
             for item in self.contributors
@@ -158,6 +159,7 @@ def resolve_provenance(
             f"Unknown component {component_key!r} for source {source_key!r}"
         ) from exc
     mapping = source_id_mapping(sources)
+    quality = sources.resolved_data_quality(source_key, component_key)
     source_id = mapping[source_key]
     version = component.version or source.version
     dataset_key = component.dataset_key or f"{source_key}.{component_key}"
@@ -173,7 +175,10 @@ def resolve_provenance(
         source_id=source_id,
         title=source.title,
         citation=component.citation or source.citation,
-        refresh_notes=source.refresh_notes,
+        database_note=(
+            source.database_note
+            if component.database_note is None else component.database_note
+        ),
         data_id=data_id,
     )
     description = (
@@ -188,7 +193,7 @@ def resolve_provenance(
         dataset_label=_component_label(component),
         dataset_version=version,
         dataset_description=description,
-        data_quality=component.data_quality or source.data_quality,
+        data_quality=quality,
         governing_source_id=source_id,
         contributors=(contributor,),
     )
@@ -209,22 +214,24 @@ def resolve_composite_provenance(
         raise ProvenanceError("Composite provenance requires at least one contributor")
     metadata_by_source: dict[str, tuple[str, str, str, str]] = {}
     for item in inputs:
+        item.data_quality.row_fields()
         for contributor in item.contributors:
             metadata = (
                 contributor.source_key,
                 contributor.title,
                 contributor.citation,
-                contributor.refresh_notes,
+                contributor.database_note,
             )
             existing = metadata_by_source.get(contributor.source_id)
             if existing is not None:
-                if existing[:2] != metadata[:2] or existing[3] != metadata[3]:
+                if existing[:2] != metadata[:2]:
                     raise ProvenanceError(
                         f"Conflicting contributor definition for {contributor.source_id}"
                     )
                 citations = sorted(set(existing[2].split("\n") + metadata[2].split("\n")))
+                notes = sorted(set(filter(None, [existing[3], metadata[3]])))
                 metadata_by_source[contributor.source_id] = (
-                    existing[0], existing[1], "\n".join(citations), existing[3]
+                    existing[0], existing[1], "\n".join(citations), "\n".join(notes)
                 )
             else:
                 metadata_by_source[contributor.source_id] = metadata
@@ -241,6 +248,7 @@ def resolve_composite_provenance(
             )
         resolved_quality = next(iter(qualities))
     input_ids = sorted(item.data_id for item in inputs)
+    resolved_quality.row_fields()
     data_id = make_data_id(
         dataset_key=dataset_key,
         source_version="composite",
@@ -255,10 +263,10 @@ def resolve_composite_provenance(
             source_id=source_id,
             title=title,
             citation=citation,
-            refresh_notes=refresh_notes,
+            database_note=database_note,
             data_id=data_id,
         )
-        for source_id, (source_key, title, citation, refresh_notes)
+        for source_id, (source_key, title, citation, database_note)
         in sorted(metadata_by_source.items())
     )
     return ResolvedProvenance(

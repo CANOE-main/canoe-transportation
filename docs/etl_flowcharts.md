@@ -116,7 +116,7 @@ flowchart LR
     direction TB
     p1["`**Fleet age distribution**
       • *Road:* distribute baseline stock by age.
-      *MTO Report A is mapped into NRCan CEUD cars and light trucks via MTO code-to-model inference; and Report 5 distributes bus and motorcycle age cohorts*<br>
+      *MTO Report A is mapped into NRCan CEUD cars and light trucks via MTO code-to-model inference; and Report 5 distributes MHD truck, bus, and motorcycle age cohorts*<br>
       • *Off-road:* treat provincial energy use ÷ intensity as stock, then distribute by age`"]
 
     p1_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**

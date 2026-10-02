@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from math import isclose
 from statistics import median
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
+
+from validation.sqlite_utils import open_sqlite_readonly
 
 
 PROVENANCE_ONLY_COLUMNS = {
@@ -44,8 +47,8 @@ def compare_legacy_tables(
     if not reference_path.is_file():
         raise FileNotFoundError(f"Legacy comparison database is missing: {reference_path}")
     results: dict[str, Any] = {}
-    with sqlite3.connect(candidate_path) as candidate, sqlite3.connect(
-        reference_path
+    with closing(open_sqlite_readonly(candidate_path)) as candidate, closing(
+        open_sqlite_readonly(reference_path)
     ) as reference:
         for table in tables:
             candidate_columns = _columns(candidate, table)
@@ -82,11 +85,12 @@ def compare_legacy_tables(
 def compare_legacy_existing_capacity(
     candidate_path: Path,
     reference_path: Path,
+    *, absolute_tolerance: float, relative_tolerance: float,
 ) -> dict[str, Any]:
     """Report Ontario transport capacity overlap without claiming false parity."""
     if not reference_path.is_file():
         raise FileNotFoundError(reference_path)
-    with sqlite3.connect(candidate_path) as candidate, sqlite3.connect(reference_path) as reference:
+    with closing(open_sqlite_readonly(candidate_path)) as candidate, closing(open_sqlite_readonly(reference_path)) as reference:
         current = {
             (str(tech), int(vintage)): (float(capacity), str(units))
             for tech, vintage, capacity, units in candidate.execute(
@@ -109,7 +113,7 @@ def compare_legacy_existing_capacity(
         legacy_value, legacy_units = previous[tech, vintage]
         if units != unit_map.get(legacy_units, legacy_units):
             unit_mismatches.append({"tech": tech, "vintage": vintage, "current": units, "legacy": legacy_units})
-        if not isclose(value, legacy_value, rel_tol=0, abs_tol=1e-6):
+        if not isclose(value, legacy_value, rel_tol=relative_tolerance, abs_tol=absolute_tolerance):
             differences.append({
                 "tech": tech,
                 "vintage": vintage,
@@ -128,17 +132,21 @@ def compare_legacy_existing_capacity(
         "candidate_vintages": sorted({vintage for _, vintage in current}),
         "reference_vintages": sorted({vintage for _, vintage in previous}),
         "unit_mismatches": unit_mismatches,
-        "value_differences_over_1e_6": len(differences),
+        "value_differences": len(differences),
+        "absolute_tolerance": absolute_tolerance, "relative_tolerance": relative_tolerance,
         "largest_absolute_differences": sorted(differences, key=lambda row: row["absolute_difference"], reverse=True)[:10],
         "status": "diagnostic; vintage coverage and derivation differ; no parity tolerance accepted",
     }
 
 
-def compare_legacy_demand(candidate_path: Path, reference_path: Path) -> dict[str, Any]:
+def compare_legacy_demand(
+    candidate_path: Path, reference_path: Path, *, absolute_tolerance: float,
+    relative_tolerance: float,
+) -> dict[str, Any]:
     """Compare Ontario service demand on shared keys without accepting parity gaps."""
     if not reference_path.is_file():
         raise FileNotFoundError(reference_path)
-    with sqlite3.connect(candidate_path) as candidate, sqlite3.connect(reference_path) as reference:
+    with closing(open_sqlite_readonly(candidate_path)) as candidate, closing(open_sqlite_readonly(reference_path)) as reference:
         current = {
             (str(commodity), int(period)): (float(value), str(units))
             for commodity, period, value, units in candidate.execute(
@@ -163,7 +171,7 @@ def compare_legacy_demand(candidate_path: Path, reference_path: Path) -> dict[st
         if units != unit_map.get(legacy_units, legacy_units):
             mismatched_units.append({"commodity": commodity, "period": period,
                                      "current": units, "legacy": legacy_units})
-        if not isclose(value, legacy_value, rel_tol=0, abs_tol=1e-6):
+        if not isclose(value, legacy_value, rel_tol=relative_tolerance, abs_tol=absolute_tolerance):
             differences.append({"commodity": commodity, "period": period,
                                 "current_demand": value, "legacy_demand": legacy_value,
                                 "absolute_difference": abs(value - legacy_value)})
@@ -176,7 +184,8 @@ def compare_legacy_demand(candidate_path: Path, reference_path: Path) -> dict[st
         "candidate_periods": sorted({period for _, period in current}),
         "reference_periods": sorted({period for _, period in previous}),
         "unit_mismatches": mismatched_units,
-        "value_differences_over_1e_6": len(differences),
+        "value_differences": len(differences),
+        "absolute_tolerance": absolute_tolerance, "relative_tolerance": relative_tolerance,
         "largest_absolute_differences": sorted(
             differences, key=lambda row: row["absolute_difference"], reverse=True
         )[:10],
@@ -184,11 +193,14 @@ def compare_legacy_demand(candidate_path: Path, reference_path: Path) -> dict[st
     }
 
 
-def compare_legacy_lifetime_tech(candidate_path: Path, reference_path: Path) -> dict[str, Any]:
+def compare_legacy_lifetime_tech(
+    candidate_path: Path, reference_path: Path, *, absolute_tolerance: float,
+    relative_tolerance: float,
+) -> dict[str, Any]:
     """Compare numeric Ontario fixed lifetimes on exact template technology keys."""
     if not reference_path.is_file():
         raise FileNotFoundError(reference_path)
-    with sqlite3.connect(candidate_path) as candidate, sqlite3.connect(reference_path) as reference:
+    with closing(open_sqlite_readonly(candidate_path)) as candidate, closing(open_sqlite_readonly(reference_path)) as reference:
         current = {
             str(tech): float(lifetime)
             for tech, lifetime in candidate.execute(
@@ -202,7 +214,8 @@ def compare_legacy_lifetime_tech(candidate_path: Path, reference_path: Path) -> 
     shared = sorted(set(current) & set(previous))
     differences = [
         {"tech": tech, "candidate_years": current[tech], "legacy_years": previous[tech]}
-        for tech in shared if not isclose(current[tech], previous[tech], rel_tol=0, abs_tol=1e-9)
+        for tech in shared if not isclose(current[tech], previous[tech],
+                                         rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
     ]
     return {
         "scope": "Ontario numeric fixed lifetimes on exact technology keys; curve technologies excluded",
@@ -210,6 +223,7 @@ def compare_legacy_lifetime_tech(candidate_path: Path, reference_path: Path) -> 
         "reference_blank_rows": len(raw) - len(previous), "shared_keys": len(shared),
         "equal_values": len(shared) - len(differences),
         "value_differences": len(differences),
+        "absolute_tolerance": absolute_tolerance, "relative_tolerance": relative_tolerance,
         "candidate_only_keys": len(set(current) - set(previous)),
         "reference_only_keys": len(set(previous) - set(current)),
         "difference_examples": differences[:15],
@@ -224,7 +238,7 @@ def compare_legacy_efficiency(
     """Report exact-edge Ontario overlap; do not infer commodity/technology aliases."""
     if not reference_path.is_file():
         raise FileNotFoundError(reference_path)
-    with sqlite3.connect(candidate_path) as candidate, sqlite3.connect(reference_path) as reference:
+    with closing(open_sqlite_readonly(candidate_path)) as candidate, closing(open_sqlite_readonly(reference_path)) as reference:
         current = {
             (str(tech), int(vintage), str(input_comm), str(output_comm)): float(value)
             for tech, vintage, input_comm, output_comm, value in candidate.execute(
@@ -267,7 +281,7 @@ def compare_legacy_costs(
     if not reference_path.is_file():
         raise FileNotFoundError(reference_path)
     results: dict[str, Any] = {}
-    with sqlite3.connect(candidate_path) as candidate, sqlite3.connect(reference_path) as reference:
+    with closing(open_sqlite_readonly(candidate_path)) as candidate, closing(open_sqlite_readonly(reference_path)) as reference:
         for family, keys in (
             ("invest", ("tech", "vintage")),
             ("variable", ("tech", "period", "vintage")),

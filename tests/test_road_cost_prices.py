@@ -19,9 +19,7 @@ def test_selected_atb_prices_keep_msrp_and_recover_manufacturing_cost() -> None:
     )
     selected = select_nlr_purchase_prices(
         vehicles,
-        trajectory=bundle.scenario.sources.selections[
-            "nlr_atb_transportation_2024"
-        ].trajectory,
+        trajectory=bundle.scenario.costs.atb_trajectory,
         efficiency_rules=efficiency_rules,
         rpe_markup=cost_rules["nlr_road_retail_price_equivalent_markup"],
         source_currency=price_source.adapter["native_cost_currency"],

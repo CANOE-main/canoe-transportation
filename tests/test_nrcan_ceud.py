@@ -92,6 +92,25 @@ def test_iter_table_requests_uses_raw_cache_names() -> None:
     assert requests[0].cache_path.name.startswith("2023_tran_on_e_")
 
 
+def test_ceud_default_requests_follow_scenario_geography_and_source_years() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    requests = iter_table_requests(bundle)
+    provincial = [item for item in requests if item.source_id == nrcan_ceud.SOURCE_PROVINCIAL]
+    national = [item for item in requests if item.source_id == nrcan_ceud.SOURCE_NATIONAL]
+    assert {item.output_region for item in provincial} == set(bundle.scenario.geography.regions)
+    assert {item.year for item in provincial} == {
+        bundle.scenario.sources.selections[nrcan_ceud.SOURCE_PROVINCIAL].year,
+    }
+    assert {item.year for item in national} == {
+        bundle.scenario.sources.selections[nrcan_ceud.SOURCE_NATIONAL].year,
+    }
+    overridden = iter_table_requests(bundle, regions=["AB"], year=2021, include_national=False)
+    assert {item.output_region for item in overridden} == {"AB"}
+    assert {item.year for item in overridden} == {2021}
+    with pytest.raises(ValueError, match="at least one CEUD provincial region"):
+        iter_table_requests(bundle, regions=[])
+
+
 def test_iter_rating_requests_pins_exact_english_resources() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
 

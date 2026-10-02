@@ -42,7 +42,6 @@ def cleanup_transport_parameter_batches(
     historical = set(int(period) for period in existing_periods)
     if not historical or first_model_period <= max(historical):
         raise ValueError("The first model period must follow existing periods")
-    existing_techs = {str(row.tech) for row in capacity_rows}
     retained_capacity = [
         row for row in capacity_rows if row.capacity > 0 and row.capacity >= epsilon
     ]
@@ -57,7 +56,7 @@ def cleanup_transport_parameter_batches(
             "vintage": row.vintage,
             "value": row.capacity,
             "units": row.units,
-            "reason": "below_cleanup_epsilon",
+            "reason": "below_cleanup_tolerance",
         }
         for row in capacity_rows
         if row.capacity <= 0 or row.capacity < epsilon
@@ -90,8 +89,7 @@ def cleanup_transport_parameter_batches(
         for row in batches[table]:
             key = (str(row.region), str(row.tech), int(row.vintage))
             is_historical_existing = (
-                row.tech in existing_techs
-                and int(row.vintage) in historical
+                int(row.vintage) in historical
                 and int(row.vintage) < first_model_period
             )
             reason: str | None = None
@@ -122,6 +120,65 @@ def cleanup_transport_parameter_batches(
                 )
         result[table] = kept
     return result, removed
+
+
+def validate_transport_parameter_support(
+    batches: Mapping[str, Sequence[CanoeBaseModel]], *, existing_vintages: Sequence[int],
+    new_technologies: Sequence[str] = (),
+) -> dict[str, Any]:
+    """Check active transport keys that SQLite foreign keys cannot express.
+
+    An explicitly prepared empty dependency is checked; an omitted development
+    layer is outside this audit. Lifetime/scaling defaults do not activate a
+    technology and may remain without stock or efficiency. No rows are mutated.
+    """
+    historical = set(existing_vintages)
+    keys = {
+        table: {(row.region, row.tech, row.vintage) for row in rows}
+        for table, rows in batches.items() if table != "limit_annual_capacity_factor"
+    }
+    checks: dict[str, Any] = {}
+    errors: list[str] = []
+
+    def record(name: str, checked: set[tuple], supported: set[tuple]) -> None:
+        missing = checked - supported
+        checks[name] = {
+            "checked_keys": len(checked), "unsupported_keys": len(missing),
+            "examples": sorted(missing)[:15],
+        }
+        if missing:
+            errors.append(f"{name}: {len(missing)} unsupported keys {sorted(missing)[:8]}")
+
+    if "existing_capacity" in keys:
+        invalid = [
+            (row.region, row.tech, row.vintage, row.capacity)
+            for row in batches["existing_capacity"]
+            if not isfinite(float(row.capacity)) or row.capacity <= 0
+        ]
+        checks["existing_capacity_positive"] = {
+            "checked_rows": len(batches["existing_capacity"]),
+            "invalid_rows": len(invalid), "examples": invalid[:15],
+        }
+        if invalid:
+            errors.append(f"existing_capacity_positive: {len(invalid)} invalid rows {invalid[:8]}")
+        for table in ("efficiency", "cost_invest", "cost_fixed", "cost_variable"):
+            if table in keys:
+                record(f"{table}_historical_capacity",
+                       {key for key in keys[table] if key[2] in historical},
+                       keys["existing_capacity"])
+    if "efficiency" in keys:
+        for table in ("existing_capacity", "cost_invest", "cost_fixed", "cost_variable"):
+            if table in keys:
+                record(f"{table}_efficiency", keys[table], keys["efficiency"])
+        if "limit_annual_capacity_factor" in batches:
+            new_techs = set(new_technologies)
+            record("new_capacity_factor_efficiency", {
+                (row.region, row.tech_or_group, row.vintage)
+                for row in batches["limit_annual_capacity_factor"]
+                if row.tech_or_group in new_techs
+            }, keys["efficiency"])
+    return {"ok": not errors, "errors": errors, "checks": checks,
+            "prepared_tables": sorted(batches)}
 
 
 def validate_parameter_rows(

@@ -12,6 +12,10 @@ import pandas as pd
 from canoe_schema.v4_0 import ExistingCapacity
 
 from parameterization.road_efficiencies import prepare_bus_annual_efficiency_evidence
+from parameterization.road_lifetimes_survival import (
+    derive_accepted_lifetime_frames,
+    survival_source_component,
+)
 from parameterization.offroad_lifetimes import prepare_statcan_bus_lifetimes
 from parameterization.offroad_stocks_and_demands import build_offroad_existing_capacity
 from parameterization.road_stocks_and_demands import (
@@ -117,13 +121,14 @@ def validate_capacity_outputs(
     offroad_annual: pd.DataFrame,
     offroad_capacity: pd.DataFrame,
     rows: list[ExistingCapacity],
-    cleanup_epsilon: float,
+    cleanup_tolerance: float,
 ) -> dict[str, Any]:
     """Check conservation, ownership, units, and key coverage before publication."""
     regions = set(bundle.scenario.geography.regions)
-    output_regions = {
-        "NLLAB" if x == "NL" else "PEI" if x == "PE" else x for x in regions
-    }
+    region_map = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]["region_output_map"]
+    output_regions = {region_map.get(region, region) for region in regions}
     template = pd.read_csv(resolve_input_path(bundle, "template", "technology.csv"))
     technologies = set(template["tech"])
     if not rows or {row.region for row in rows} != output_regions:
@@ -184,7 +189,7 @@ def validate_capacity_outputs(
         for record in pd.concat([road_capacity, bus_capacity, offroad_capacity]).itertuples(
             index=False
         )
-        if float(record.capacity) > 0 and float(record.capacity) >= cleanup_epsilon
+        if float(record.capacity) > 0 and float(record.capacity) >= cleanup_tolerance
     }
     actual_keys = {(row.region, row.tech, row.vintage) for row in rows}
     if actual_keys != expected_keys:
@@ -212,16 +217,17 @@ def build_existing_capacity_artifacts(
 ) -> tuple[list[ExistingCapacity], list[ResolvedProvenance], dict[str, Any]]:
     """Rebuild normalized audit products and parameter-ready v4 rows from cached inputs."""
     scenario = bundle.scenario
-    if scenario.existing_capacity is None:
-        raise ValueError("Scenario existing_capacity source selection is required")
-    selected_source = scenario.existing_capacity.other_region_vehicle_population_source
+    selected_sources = {
+        region: bundle.scenario.aggregation_sources.source_for("stock_age", region)
+        for region in scenario.geography.regions
+    }
     available_sources = active_source_keys(bundle)
     if (
-        selected_source not in available_sources
-        or selected_source != "ontario_ministry_transport_vehicle_population"
+        set(selected_sources.values()) - available_sources
+        or set(selected_sources.values()) != {"ontario_ministry_transport_vehicle_population"}
     ):
         raise ValueError(
-            "Selected non-Ontario vehicle population source is unavailable"
+            "Selected regional stock-age source has no implemented adapter"
         )
     lifetime_sources = {
         "nhtsa_cafe_2024_ldv_survival",
@@ -245,9 +251,8 @@ def build_existing_capacity_artifacts(
     ]
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
     statcan_rules = load_harmonization_rules(bundle, "statcan_tables")
-    dashboard_rules = load_harmonization_rules(bundle, "assorted_sources")[
-        "tc_ev_dashboard"
-    ]
+    assorted_rules = load_harmonization_rules(bundle, "assorted_sources")
+    dashboard_rules = assorted_rules["tc_ev_dashboard"]
     mto_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
     ceud_dir = resolve_input_path(bundle, "interim", ceud_rules["interim_subdir"])
     ceud_files = [
@@ -264,7 +269,13 @@ def build_existing_capacity_artifacts(
     national = pd.read_csv(national_file)
     validate_capacity_inputs(bundle, provincial, national)
     statcan_dir = resolve_input_path(bundle, "interim", statcan_rules["interim_subdir"])
-    build_existing_stock_age_artifacts(bundle)
+    lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
+    lifetime_frames = derive_accepted_lifetime_frames(
+        bundle, rules=lifetime_rules,
+        road_rules=load_harmonization_rules(bundle, "road_aggregation"),
+        assorted_rules=assorted_rules,
+    )
+    build_existing_stock_age_artifacts(bundle, lifetime_frames=lifetime_frames)
     road_age_file = (
         resolve_artifact_path(bundle, "road_stocks_and_demands")
         / load_harmonization_rules(bundle, "road_stocks_and_demands")[
@@ -274,7 +285,7 @@ def build_existing_capacity_artifacts(
     report5_file = resolve_artifact_path(
         bundle, "ontario_vehicle_population"
     ) / mto_rules["reports"][5]["distribution_output_template"].format(
-        year=road_rules["age_evidence_year"]
+        year=scenario.existing_capacity.vehicle_population_year
     )
     ldv_file = statcan_dir / statcan_rules["ldv_history"]["output_file"]
     truck_file = statcan_dir / statcan_rules["tables"]["23-10-0308-01"]["output_file"]
@@ -283,10 +294,6 @@ def build_existing_capacity_artifacts(
         / dashboard_rules["output_file"]
     )
     lifetime_file = resolve_input_path(bundle, "manual", "lifetime_process.csv")
-    lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
-    lifetime_dir = resolve_artifact_path(bundle, "road_lifetimes_survival")
-    median_file = lifetime_dir / lifetime_rules["median_lifetimes_file"]
-    curve_file = lifetime_dir / lifetime_rules["transformed_curves_file"]
     mapping_file = resolve_parameter_path(
         bundle,
         load_harmonization_rules(bundle, "road_aggregation")[
@@ -317,8 +324,6 @@ def build_existing_capacity_artifacts(
             truck_file,
             dashboard_file,
             lifetime_file,
-            median_file,
-            curve_file,
             mapping_file,
             bus_lifetime_file,
             *bus_evidence_files,
@@ -328,6 +333,8 @@ def build_existing_capacity_artifacts(
         input_digest.update(path.name.encode("utf-8"))
         input_digest.update(file_sha256(path).encode("ascii"))
     manual_lifetimes = pd.read_csv(lifetime_file)
+    for frame in (lifetime_frames["medians"], lifetime_frames["transformed_curves"]):
+        input_digest.update(frame.to_csv(index=False).encode("utf-8"))
     for category, source_key, component_key in (
         (
             "heavy_trucks",
@@ -347,7 +354,7 @@ def build_existing_capacity_artifacts(
             or selected.iloc[0]["source -> data_source"] != expected_source
         ):
             raise ValueError(f"Manual road lifetime source mismatch for {category}")
-    medians = pd.read_csv(median_file)
+    medians = lifetime_frames["medians"]
     road_cohorts, road_shares, road_exclusions, road_capacity = (
         distribute_existing_road_capacity(
             provincial=provincial,
@@ -358,14 +365,16 @@ def build_existing_capacity_artifacts(
             dashboard=pd.read_csv(dashboard_file),
             regions=regions,
             base_year=base_year,
+            vintage_periods=scenario.periods.existing,
+            vehicle_population_year=scenario.existing_capacity.vehicle_population_year,
             first_model_period=min(scenario.periods.model),
-            survival_curves=scenario.switches.survival_curves,
-            survival_curve_max_age=scenario.switches.survival_curve_max_age,
+            survival_curves=scenario.lifetimes.survival_curves,
+            survival_curve_max_age=scenario.lifetimes.survival_curve_max_age,
             fixed_lifetimes_by_class=fixed_existing_lifetimes(
                 medians, manual_lifetimes, road_rules
             ),
-            curve_ages_by_class=accepted_curve_ages(pd.read_csv(curve_file), road_rules)
-            if scenario.switches.survival_curves
+            curve_ages_by_class=accepted_curve_ages(lifetime_frames["transformed_curves"], road_rules)
+            if scenario.lifetimes.survival_curves
             else {},
             rules=road_rules,
         )
@@ -378,6 +387,8 @@ def build_existing_capacity_artifacts(
             lifetimes=bus_lifetimes,
             regions=regions,
             base_year=base_year,
+            vintage_periods=scenario.periods.existing,
+            vehicle_population_year=scenario.existing_capacity.vehicle_population_year,
             first_model_period=min(scenario.periods.model),
             road_rules=road_rules,
             rules=bus_rules,
@@ -394,6 +405,7 @@ def build_existing_capacity_artifacts(
             source_selector=cims_component.adapter["source_selector"],
             regions=regions,
             base_year=base_year,
+            vintage_periods=scenario.periods.existing,
             first_model_period=min(scenario.periods.model),
             rules=offroad_rules,
         )
@@ -405,18 +417,20 @@ def build_existing_capacity_artifacts(
         "base_year": base_year,
         "periods": scenario.periods.existing,
         "first_model_period": min(scenario.periods.model),
-        "survival_curves": scenario.switches.survival_curves,
-        "cleanup_epsilon": scenario.existing_capacity.cleanup_epsilon,
+        "survival_curves": scenario.lifetimes.survival_curves,
+        "cleanup_tolerance": scenario.existing_capacity.cleanup_tolerance,
         "road_rules_sha256": _rules_digest(road_rules),
         "bus_rules_sha256": _rules_digest(bus_rules),
         "offroad_rules_sha256": _rules_digest(offroad_rules),
-        "vehicle_population_source": selected_source,
+        "stock_age_sources": selected_sources,
+        "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
         "input_content_digest": input_digest.hexdigest(),
     }
     rows: list[ExistingCapacity] = []
     contexts: list[ResolvedProvenance] = []
-    for (road_class, vintage), group in road_capacity.groupby(
-        ["road_class", "vintage"], sort=True
+    input_regions = {road_rules["region_output_map"].get(r, r): r for r in regions}
+    for (road_class, vintage, region), group in road_capacity.groupby(
+        ["road_class", "vintage", "region"], sort=True
     ):
         ceud_component = {"cars": 21, "motorcycles": 32}.get(road_class, 37)
         mto_component = (
@@ -424,7 +438,7 @@ def build_existing_capacity_artifacts(
         )
         components: list[tuple[str, str | int]] = [
             ("nrcan_ceud_transport_provincial", ceud_component),
-            (selected_source, mto_component),
+            (selected_sources[input_regions[region]], mto_component),
         ]
         if road_class in road_rules["statcan_ldv_source_types"]:
             mapping_sources = (
@@ -442,11 +456,21 @@ def build_existing_capacity_artifacts(
                 for source_key in mapping_sources
                 for component_key in bundle.sources.sources[source_key].components
             )
-            components.append(("nhtsa_cafe_2024_ldv_survival", "ldv_survival_rates"))
+            components.append(survival_source_component(
+                assorted_rules, str(assorted_rules["nhtsa_cafe"]["source_id"]),
+            ))
         elif road_class == "medium_trucks":
-            components.append(("eia_nems_hd_truck_scrappage", "truck_scrappage_rates"))
+            components.append(survival_source_component(
+                assorted_rules,
+                str(road_rules["fixed_lifetime_sources"][road_class]["source_id"]),
+            ))
         elif road_class == "heavy_trucks":
             components.append(
+                survival_source_component(
+                    assorted_rules,
+                    str(road_rules["fixed_lifetime_sources"][road_class]["source_id"]),
+                )
+                if scenario.lifetimes.survival_curves else
                 ("epa_moves4_population_activity_2023", "heavy_duty_truck_lifetimes")
             )
         elif road_class == "motorcycles":
@@ -474,7 +498,7 @@ def build_existing_capacity_artifacts(
             )
         context = _context(
             bundle,
-            name=f"road.{road_class}.{vintage}",
+            name=f"road.{road_class}.{vintage}.{region}",
             components=components,
             variant=variants,
         )
@@ -489,19 +513,19 @@ def build_existing_capacity_artifacts(
                         "vintage": int(record.vintage),
                         "capacity": float(record.capacity),
                         "units": record.units,
-                        "notes": f"CEUD {base_year} stock; MTO {road_rules['age_evidence_year']} age; {road_class}",
+                        "notes": f"CEUD {base_year} stock; MTO {scenario.existing_capacity.vehicle_population_year} age; {road_class}",
                     }
                     for record in group.itertuples(index=False)
                 ],
                 context,
             )
         )
-    for road_class, group in bus_capacity.groupby("road_class", sort=True):
+    for (road_class, region), group in bus_capacity.groupby(["road_class", "region"], sort=True):
         bus_spec = bus_rules["classes"][road_class]
         components: list[tuple[str, str | int]] = [
             ("nrcan_ceud_transport_provincial", bus_spec["stock"]["table_id"]),
             ("nrcan_ceud_transport_provincial", bus_spec["energy_table"]),
-            (selected_source, 5),
+            (selected_sources[input_regions[region]], 5),
             ("statcan_transport_tables", str(bus_lifetime_rules["statcan_table_id"])),
             ("nlr_atb_transportation_2024", "vehicles"),
             ("nlr_atb_transportation_2024", "phev_vehicle_inputs"),
@@ -511,7 +535,7 @@ def build_existing_capacity_artifacts(
                 ("epri_us_regen_2025_transportation", "intercity_bus_charts")
             )
         context = _context(
-            bundle, name=f"bus.{road_class}", components=components, variant=variants
+            bundle, name=f"bus.{road_class}.{region}", components=components, variant=variants
         )
         contexts.append(context)
         rows.extend(
@@ -526,7 +550,7 @@ def build_existing_capacity_artifacts(
                         "units": record.units,
                         "notes": (
                             f"CEUD {base_year} bus stock; annual fuel activity shares; "
-                            f"MTO {road_rules['age_evidence_year']} BUS ages; {road_class}"
+                            f"MTO {scenario.existing_capacity.vehicle_population_year} BUS ages; {road_class}"
                         ),
                     }
                     for record in group.itertuples(index=False)
@@ -574,7 +598,7 @@ def build_existing_capacity_artifacts(
         {"existing_capacity": rows},
         existing_periods=scenario.periods.existing,
         first_model_period=min(scenario.periods.model),
-        epsilon=scenario.existing_capacity.cleanup_epsilon,
+        epsilon=scenario.existing_capacity.cleanup_tolerance,
     )
     rows = cleaned["existing_capacity"]
     removed_capacity = pd.DataFrame(
@@ -590,10 +614,10 @@ def build_existing_capacity_artifacts(
         offroad_annual=offroad_annual,
         offroad_capacity=offroad_capacity,
         rows=rows,
-        cleanup_epsilon=scenario.existing_capacity.cleanup_epsilon,
+        cleanup_tolerance=scenario.existing_capacity.cleanup_tolerance,
     )
     audit["cleanup"] = {
-        "epsilon": scenario.existing_capacity.cleanup_epsilon,
+        "epsilon": scenario.existing_capacity.cleanup_tolerance,
         "removed_rows": removed,
         "removed_count": len(removed),
         "removed_capacity_by_unit": {
@@ -737,7 +761,7 @@ def build_existing_capacity_artifacts(
         len(rows),
         len(audit["regions"]),
         len(removed),
-        scenario.existing_capacity.cleanup_epsilon,
+        scenario.existing_capacity.cleanup_tolerance,
         len(road_exclusions),
     )
     return rows, contexts, audit

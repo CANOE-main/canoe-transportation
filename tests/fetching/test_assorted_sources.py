@@ -671,7 +671,7 @@ def test_regen_nonroad_cost_invest_manual_table_matches_tables_4_and_6(
     assert indexed["freight_rail", "h2", "through_2050"] == pytest.approx(1.43)
     assert indexed["freight_marine", "h2", "through_2035"] == pytest.approx(2.58)
     assert indexed["freight_marine", "h2", "through_2050"] == pytest.approx(1.9)
-    assert set(component.adapter["table_labels"]) == {"Table 4", "Table 6"}
+    assert {label.split(":", 1)[0] for label in component.label} == {"Table 4", "Table 6"}
 
 
 def test_regen_structured_chart_extraction_and_currency_warning(

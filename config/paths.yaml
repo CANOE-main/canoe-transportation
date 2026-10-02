@@ -39,6 +39,7 @@ artifacts:
     producers: [fetching.vehicle_population.fetch_and_normalize]
     consumers:
       - parameterization.road_aggregation
+      - parameterization.road_fleet_weights
       - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
     validation_surfaces: [fetching.vehicle_population.validate_source]
   vehicle_survival_interim:
@@ -61,10 +62,13 @@ artifacts:
       - parameterization.build_lifetime_parameters.prepare_lifetime_rows
       - parameterization.road_stocks_and_demands
       - parameterization.road_utilization
+      - parameterization.road_fleet_weights
+      - parameterization.build_efficiencies
       - parameterization.build_costs
     validation_surfaces:
       - parameterization.road_aggregation.validate_vehicle_mapping
       - parameterization.road_aggregation.mapping_coverage
+      - parameterization.road_fleet_weights.load_ldv_aggregation_weights
   road_lifetimes_survival:
     path: inputs/2_processed/road_lifetimes_survival
     layer: processed
@@ -72,7 +76,7 @@ artifacts:
     producers:
       - parameterization.road_lifetimes_survival.build_accepted_lifetime_artifacts
       - parameterization.road_lifetimes_survival.build_lifetime_artifacts
-    consumers: [parameterization.road_stocks_and_demands, reviewers]
+    consumers: [reviewers]
     validation_surfaces: [parameterization.road_lifetimes_survival.median_equivalent_lifetimes]
   lifetime_parameters:
     path: inputs/2_processed/lifetime_parameters
@@ -221,11 +225,12 @@ artifacts:
     layer: database
     owner: build_transport
     producers: [build_transport.build_from_scenario]
-    consumers: [temoa, validation.legacy_compare]
+    consumers: [temoa, validation.legacy_compare, validation.sqlite_compare]
     validation_surfaces:
       - validation.schema_contract.create_v4_schema
       - validation.insertion.insert_models
       - validation.database_bootstrap.validate_database
+      - validation.insertion.validate_transport_parameter_support
   database_validation:
     path: outputs/validation
     layer: output_validation
@@ -235,3 +240,4 @@ artifacts:
     validation_surfaces:
       - validation.database_bootstrap.validate_database
       - validation.legacy_compare.compare_legacy_tables
+      - validation.sqlite_compare.compare_scenario_databases

@@ -43,6 +43,8 @@ def normalize_vehicle_text(value: object) -> str:
 
 def nrcan_to_nlr_map(class_rules: dict[str, Any]) -> dict[str, str]:
     """Invert the existing NRCan-to-NLR harmonization after uniqueness checks."""
+    if class_rules["unmapped_policy"] != "error":
+        raise ValueError("Unsupported NRCan class unmapped_policy; expected error")
     inverse: dict[str, str] = {}
     for nlr_class, nrcan_classes in class_rules["target_to_nrcan"].items():
         for nrcan_class in nrcan_classes:
@@ -55,13 +57,12 @@ def nrcan_to_nlr_map(class_rules: dict[str, Any]) -> dict[str, str]:
     return inverse
 
 
-def ceud_class_for_nlr(nlr_class: str) -> str:
+def ceud_class_for_nlr(nlr_class: str, class_rules: dict[str, Any]) -> str:
     """Map the established five NLR LDV classes to NRCan CEUD classes."""
-    if nlr_class in {"Compact", "Midsize"}:
-        return "Car"
-    if nlr_class in {"Small SUV", "Midsize SUV", "Pickup"}:
-        return "Light Truck"
-    raise ValueError(f"Unsupported NLR LDV class: {nlr_class}")
+    try:
+        return str(class_rules["target_to_ceud"][nlr_class])
+    except KeyError as exc:
+        raise ValueError(f"Unsupported NLR LDV class: {nlr_class}") from exc
 
 
 def load_rating_evidence(
@@ -150,10 +151,7 @@ def load_rating_evidence(
     )
     configured_unresolved = {
         str(value)
-        for value in rating_rules["vehicle_class_harmonization"].get(
-            "unresolved_nrcan_classes",
-            [],
-        )
+        for value in rating_rules["vehicle_class_harmonization"]["unresolved_nrcan_classes"]
     }
     unexpected = sorted(set(unresolved) - configured_unresolved)
     if unexpected:
@@ -163,7 +161,7 @@ def load_rating_evidence(
         )
     evidence = evidence.dropna(subset=["nlr_atb_class"]).copy()
     evidence["nrcan_ceud_class"] = evidence["nlr_atb_class"].map(
-        ceud_class_for_nlr
+        lambda value: ceud_class_for_nlr(value, rating_rules["vehicle_class_harmonization"])
     )
     evidence = evidence.drop_duplicates(
         ["Model year", "Make", "Model", "Vehicle class", "evidence_source"]
@@ -533,7 +531,7 @@ def validate_vehicle_mapping(
                 f"{row.nrcan_vehicle_class!r} -> {expected_nlr!r}, not "
                 f"{row.nlr_atb_class!r}"
             )
-        expected_ceud = ceud_class_for_nlr(expected_nlr)
+        expected_ceud = ceud_class_for_nlr(expected_nlr, rating_class_rules)
         if str(row.nrcan_ceud_class) != expected_ceud:
             raise ValueError(
                 f"Reviewed mapping CEUD mismatch for "

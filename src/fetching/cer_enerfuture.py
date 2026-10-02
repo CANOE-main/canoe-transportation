@@ -88,18 +88,18 @@ def _mapping_value(mapping: dict[Any, Any], key: int | str) -> Any:
 
 
 def configured_edition(bundle: ConfigBundle, requested: int | None = None) -> int:
-    """Resolve an allowed edition from a CLI override or the source default."""
+    """Resolve an allowed edition from a CLI override or the required scenario choice."""
     editions = _source(bundle).adapter.get("editions")
     if not isinstance(editions, dict) or not isinstance(editions.get("allowed"), dict):
         raise CerEnergyFutureError("CER edition metadata is missing from sources.yaml")
     selection = bundle.scenario.sources.selections.get(SOURCE_ID)
     scenario_edition = selection.edition if selection is not None else None
+    if requested is None and scenario_edition is None:
+        raise CerEnergyFutureError(f"sources.selections.{SOURCE_ID}.edition is required")
     edition = int(
         requested
         if requested is not None
         else scenario_edition
-        if scenario_edition is not None
-        else editions.get("default", 0)
     )
     try:
         _mapping_value(editions["allowed"], edition)

@@ -11,10 +11,10 @@ import pandas as pd
 from canoe_schema.v4_0 import LifetimeSurvivalCurve, LifetimeTech
 
 from parameterization.road_aggregation import (
-    WARDS_SOURCE_ID,
     apply_vehicle_mapping,
     validate_vehicle_mapping,
 )
+from parameterization.road_fleet_weights import aggregation_component, load_ldv_aggregation_weights
 from parameterization.road_stocks_and_demands import fixed_existing_lifetimes
 from utils import (
     ConfigBundle,
@@ -1290,7 +1290,11 @@ def legacy_wards_survival_curves(
     car["weight_year"] = pd.NA
     car["transformation"] = "NHTSA Cars used directly for legacy Car"
 
-    weight_year = int(pd.to_numeric(wards["year"], errors="raise").max())
+    year_selection = legacy_rules["wards_weight_year"]
+    weight_year = (
+        int(pd.to_numeric(wards["year"], errors="raise").max())
+        if year_selection == "latest" else int(year_selection)
+    )
     latest = wards.loc[pd.to_numeric(wards["year"]).eq(weight_year)].copy()
     expected_nlr = {
         str(nlr_class)
@@ -1435,9 +1439,9 @@ def aggregate_ceud_survival_curves(
     mappings: pd.DataFrame,
 ) -> pd.DataFrame:
     """Weight NHTSA LDV curves using latest Ontario NLR class weights."""
-    weights = nlr_weights.loc[
-        nlr_weights["weight_basis"].eq("all_vintages")
-    ].copy()
+    weights = nlr_weights.copy()
+    if weights.weight_basis.nunique() != 1 or weights.report_year.nunique() != 1:
+        raise ValueError("Accepted LDV survival requires one Report A weight basis and year")
     source_map = mappings.loc[
         mappings["target_system"].eq("NLR ATB"),
         ["source_class", "target_class", "nrcan_ceud_class"],
@@ -1445,9 +1449,11 @@ def aggregate_ceud_survival_curves(
     weights = weights.merge(
         source_map,
         on=["nlr_atb_class", "nrcan_ceud_class"],
-        how="inner",
+        how="left",
         validate="many_to_one",
     )
+    if weights.source_class.isna().any():
+        raise ValueError("Report A LDV weights lack NHTSA survival-class coverage")
     nhtsa = transformed.loc[
         transformed["source_id"].eq("nhtsa_cafe_2024_ldv_survival")
     ].copy()
@@ -1532,7 +1538,7 @@ def median_equivalent_lifetimes(
                         / (lower_survival - upper_survival)
                     )
                     median_age = lower_age + fraction * (upper_age - lower_age)
-        if source_id == "wards_weighted_nhtsa_legacy":
+        if source_id in {"wards_weighted_nhtsa_legacy", "ontario_report_a_weighted_nhtsa_cafe"}:
             target_system = "nrcan_ceud"
         elif source_id == "nlr_atb_source_anchor":
             target_system = "nlr_atb"
@@ -1555,6 +1561,20 @@ def median_equivalent_lifetimes(
     )
 
 
+def survival_source_component(
+    assorted_rules: dict[str, Any], source_key: str,
+) -> tuple[str, str]:
+    """Resolve a selected native survival source to its configured component."""
+    requests = [
+        assorted_rules[adapter]
+        for adapter in ("nhtsa_cafe", "eia_nems")
+        if assorted_rules[adapter]["source_id"] == source_key
+    ]
+    if len(requests) != 1:
+        raise ValueError(f"No unique survival adapter for source {source_key}")
+    return source_key, str(requests[0]["component_id"])
+
+
 def prepare_fixed_road_lifetimes(
     bundle: ConfigBundle,
     *,
@@ -1562,11 +1582,14 @@ def prepare_fixed_road_lifetimes(
     manual: pd.DataFrame,
     technology: pd.DataFrame,
 ) -> tuple[list[LifetimeTech], list[ResolvedProvenance]]:
-    """Expand established CEUD/NEMS median lifetimes to template technologies."""
+    """Expand selected source median lifetimes to template technologies."""
     stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
         "existing_capacity"
     ]
     selectors = stock_rules["fixed_lifetime_sources"]
+    ldv_medians = medians.loc[medians.target_system.eq("nrcan_ceud")]
+    if set(ldv_medians.source_id) != {"ontario_report_a_weighted_nhtsa_cafe"}:
+        raise ValueError("Accepted LDV medians must use the selected Report A weights")
     selected_classes = {
         road_class for road_class, selector in selectors.items()
         if selector["kind"] in {"ceud_median", "source_median_equal"}
@@ -1589,10 +1612,9 @@ def prepare_fixed_road_lifetimes(
             raise ValueError(f"No technology owner for fixed road lifetime {road_class}")
         if selector["kind"] == "ceud_median":
             source_key = nhtsa_source
-            component_key = assorted["nhtsa_cafe"]["component_id"]
         else:
             source_key = str(selector["source_id"])
-            component_key = assorted["eia_nems"]["component_id"]
+        _, component_key = survival_source_component(assorted, source_key)
         source_context = resolve_provenance(
             bundle.sources,
             source_key=source_key,
@@ -1601,11 +1623,14 @@ def prepare_fixed_road_lifetimes(
             transformation_version="1",
         )
         inputs = [source_context]
-        if road_class in {"passenger_light_trucks", "freight_light_trucks"}:
+        if selector["kind"] == "ceud_median":
+            weight_source, weight_component = aggregation_component(
+                bundle, "ldv", bundle.scenario.geography.regions[0],
+            )
             inputs.append(resolve_provenance(
                 bundle.sources,
-                source_key=WARDS_SOURCE_ID,
-                component_key="vehicle_class_market_shares",
+                source_key=weight_source,
+                component_key=weight_component,
                 transformation="accepted_road_median_weight_input",
                 transformation_version="1",
             ))
@@ -1619,6 +1644,8 @@ def prepare_fixed_road_lifetimes(
                 "road_class": road_class,
                 "selector": selector,
                 "median_years": values[road_class],
+                "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
+                "population_year": bundle.scenario.existing_capacity.vehicle_population_year,
             },
         )
         records = [
@@ -1662,7 +1689,7 @@ def prepare_road_survival_curve_rows(
         raise ValueError("Technology template has duplicate owner IDs")
     scenario = bundle.scenario
     step = scenario.periods.step
-    max_age = scenario.switches.survival_curve_max_age
+    max_age = scenario.lifetimes.survival_curve_max_age
     if step <= 0 or max_age < step - 1:
         raise ValueError("Survival horizon cannot contain one full model period")
     assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
@@ -1677,7 +1704,7 @@ def prepare_road_survival_curve_rows(
             else str(selector["source_id"])
         )
         accepted_source_id = (
-            "wards_weighted_nhtsa_legacy" if selector["kind"] == "ceud_median"
+            "ontario_report_a_weighted_nhtsa_cafe" if selector["kind"] == "ceud_median"
             else source_key
         )
         selected = transformed.loc[
@@ -1701,19 +1728,19 @@ def prepare_road_survival_curve_rows(
                 or annual.map(lambda value: not isfinite(value) or value < 0 or value > 1).any()
                 or annual.diff().dropna().gt(1e-10).any()):
             raise ValueError(f"Accepted survival schedule violates age-zero, bounds or monotonicity: {road_class}")
-        component_key = (
-            assorted["nhtsa_cafe"]["component_id"] if selector["kind"] == "ceud_median"
-            else assorted["eia_nems"]["component_id"]
-        )
+        _, component_key = survival_source_component(assorted, source_key)
         inputs = [resolve_provenance(
             bundle.sources, source_key=source_key, component_key=component_key,
             transformation="accepted_annual_survival_input", transformation_version="1",
         )]
-        if source_class == "Light Truck":
+        if selector["kind"] == "ceud_median":
+            weight_source, weight_component = aggregation_component(
+                bundle, "ldv", scenario.geography.regions[0],
+            )
             inputs.append(resolve_provenance(
-                bundle.sources, source_key=WARDS_SOURCE_ID,
-                component_key="vehicle_class_market_shares",
-                transformation="reviewed_light_truck_weight_input", transformation_version="1",
+                bundle.sources, source_key=weight_source,
+                component_key=weight_component,
+                transformation="reviewed_ldv_weight_input", transformation_version="1",
             ))
         digest = hashlib.sha256(annual.to_csv(header=False).encode("utf-8")).hexdigest()
         context = resolve_composite_provenance(
@@ -1722,7 +1749,9 @@ def prepare_road_survival_curve_rows(
             transformation_version="1", governing_source_id=source_ids[source_key],
             value_variant={"road_class": road_class, "source_class": source_class,
                            "annual_sha256": digest, "max_age": max_age,
-                           "periods": scenario.periods.model, "step": step},
+                           "periods": scenario.periods.model, "step": step,
+                           "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
+                           "population_year": scenario.existing_capacity.vehicle_population_year},
         )
         owners = technology.loc[technology["category"].eq(road_class), "tech"]
         if owners.empty:
@@ -1790,21 +1819,17 @@ def _load_normalized_frames(
 def accepted_lifetime_frames(
     nhtsa: pd.DataFrame,
     eia: pd.DataFrame,
-    wards: pd.DataFrame,
+    report_a_weights: pd.DataFrame,
     *,
     rules: dict[str, Any],
 ) -> dict[str, pd.DataFrame]:
-    """Derive accepted source-based curves and medians without MTO evidence."""
+    """Derive accepted Report A-weighted LDV and single-class NEMS truck products."""
     source_curves, transformed = transform_source_survival_curves(nhtsa, eia)
     class_mappings = survival_class_mappings(rules)
-    legacy_curves = legacy_wards_survival_curves(
-        transformed,
-        wards,
-        rules=rules,
-    )
+    ceud_curves = aggregate_ceud_survival_curves(transformed, report_a_weights, class_mappings)
     nlr_curves = nlr_source_survival_curves(transformed, class_mappings)
     transformed_with_aggregates = pd.concat(
-        [transformed, legacy_curves, nlr_curves],
+        [transformed, ceud_curves, nlr_curves],
         ignore_index=True,
         sort=False,
     )
@@ -1813,7 +1838,7 @@ def accepted_lifetime_frames(
         interpolation=str(rules["interpolation"]),
     )
     return {
-        "legacy_curves": legacy_curves,
+        "ceud_curves": ceud_curves,
         "nlr_curves": nlr_curves,
         "source_curves": source_curves,
         "transformed_curves": transformed_with_aggregates,
@@ -1831,7 +1856,8 @@ def derive_accepted_lifetime_frames(
 ) -> dict[str, pd.DataFrame]:
     """Load validated accepted evidence for road publication and transport assembly.
 
-    This shared preparation interface neither reads MTO history nor writes artifacts.
+    Report A class weights are accepted evidence; MTO retention history is diagnostic.
+    This shared preparation interface does not write artifacts.
     """
     assorted_dir = resolve_input_path(
         bundle,
@@ -1845,11 +1871,8 @@ def derive_accepted_lifetime_frames(
         assorted_dir / assorted_rules["eia_nems"]["output_file"]
     )
     validate_accepted_survival_inputs(nhtsa, eia, assorted_rules=assorted_rules)
-    wards = pd.read_csv(
-        resolve_artifact_path(bundle, "road_aggregation")
-        / road_rules["wards_comparison_file"]
-    )
-    return accepted_lifetime_frames(nhtsa, eia, wards, rules=rules)
+    weights, _ = load_ldv_aggregation_weights(bundle, rules=road_rules)
+    return accepted_lifetime_frames(nhtsa, eia, weights, rules=rules)
 
 
 def _accepted_output_files(
@@ -1857,7 +1880,6 @@ def _accepted_output_files(
     rules: dict[str, Any],
 ) -> dict[str, pd.DataFrame]:
     return {
-        str(rules["legacy_survival_curves_file"]): frames["legacy_curves"],
         str(rules["nlr_survival_curves_file"]): frames["nlr_curves"],
         str(rules["source_curves_file"]): frames["source_curves"],
         str(rules["transformed_curves_file"]): frames["transformed_curves"],
@@ -1875,6 +1897,11 @@ def _derive_mto_diagnostic_outputs(
     ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
     road_rules = load_harmonization_rules(bundle, ROAD_RULE_KEY)
     rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
+    legacy_curves = legacy_wards_survival_curves(
+        accepted_frames["transformed_curves"],
+        pd.read_csv(resolve_artifact_path(bundle, "road_aggregation") / road_rules["wards_comparison_file"]),
+        rules=rules,
+    )
     source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
     manifest = pd.read_csv(source_dir / ontario_rules["manifest_file"])
     report_rules = ontario_rules["reports"]["A"]
@@ -2012,7 +2039,7 @@ def _derive_mto_diagnostic_outputs(
     mto_survival_decision = evaluate_mto_survival_decision(
         ceud_class_retention,
         transition_coverage,
-        accepted_frames["legacy_curves"],
+        legacy_curves,
         criteria={
             str(key): value
             for key, value in rules["mto_survival_decision_criteria"].items()
@@ -2035,6 +2062,7 @@ def _derive_mto_diagnostic_outputs(
         str(rules["pooled_estimates_file"]): pooled,
     }
     validation_outputs = {
+        str(rules["legacy_survival_curves_file"]): legacy_curves,
         str(rules["nlr_class_vintage_retention_file"]): nlr_vintage_retention,
         str(rules["nlr_class_retention_file"]): nlr_class_retention,
         str(rules["ceud_class_vintage_retention_file"]): ceud_vintage_retention,

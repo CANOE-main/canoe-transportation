@@ -46,6 +46,9 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
     lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
     road_rules = load_harmonization_rules(bundle, "road_aggregation")
     assorted_rules = load_harmonization_rules(bundle, "assorted_sources")
+    stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]
     frames = derive_accepted_lifetime_frames(
         bundle, rules=lifetime_rules, road_rules=road_rules,
         assorted_rules=assorted_rules,
@@ -57,7 +60,7 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
     contexts = [*manual_contexts, *bus_contexts]
     fixed_rows = [*manual_rows, *bus_rows]
     curve_rows: list[LifetimeSurvivalCurve] = []
-    if bundle.scenario.switches.survival_curves:
+    if bundle.scenario.lifetimes.survival_curves:
         curve_rows, curve_contexts = prepare_road_survival_curve_rows(
             bundle, transformed=frames["transformed_curves"], technology=technology,
         )
@@ -71,7 +74,7 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
         fixed_rows.extend(road_rows)
         contexts.extend(road_contexts)
     expected_regions = {
-        load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]["region_output_map"].get(region, region)
+        stock_rules["region_output_map"].get(region, region)
         for region in bundle.scenario.geography.regions
     }
     modeled = set(technology.loc[
@@ -83,7 +86,7 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
     if (len(fixed_rows) != len(fixed_keys) or fixed_keys & curve_keys
             or fixed_keys | curve_keys != expected_keys):
         raise ValueError("Every modeled region/technology needs exactly one lifetime representation")
-    if not curve_rows and bundle.scenario.switches.survival_curves:
+    if not curve_rows and bundle.scenario.lifetimes.survival_curves:
         raise ValueError("Survival mode produced no accepted road curves")
     used_data_ids = {row.data_id for row in [*fixed_rows, *curve_rows]}
     contexts = [context for context in contexts if context.data_id in used_data_ids]
@@ -95,6 +98,8 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
         "fixed_technologies": len({row.tech for row in fixed_rows}),
         "curve_technologies": len({row.tech for row in curve_rows}),
         "regions": sorted(expected_regions),
+        "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
+        "road_lifetime_sources": stock_rules["fixed_lifetime_sources"],
         "statcan_canada_fallback_rows": int(bus_audit["canada_fallback"].sum()),
     }
     return LifetimePreparation(fixed_rows, curve_rows, contexts, audit)

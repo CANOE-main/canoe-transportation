@@ -139,7 +139,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
             "SELECT flag FROM time_period WHERE period = 2023"
         ).fetchone() == ("e",)
         assert connection.execute("SELECT COUNT(*) FROM existing_capacity").fetchone()[0] == report["existing_capacity"]["parameter_rows"] + report["ev_chargers"]["capacity_rows"]
-        assert connection.execute("SELECT MIN(capacity) FROM existing_capacity").fetchone()[0] >= bundle.scenario.existing_capacity.cleanup_epsilon
+        assert connection.execute("SELECT MIN(capacity) FROM existing_capacity").fetchone()[0] >= bundle.scenario.existing_capacity.cleanup_tolerance
         assert connection.execute("SELECT COUNT(*) FROM demand").fetchone()[0] == report["demand"]["parameter_rows"]
         assert connection.execute("SELECT COUNT(DISTINCT region) FROM demand").fetchone()[0] == len(bundle.scenario.geography.regions)
         assert connection.execute("SELECT COUNT(DISTINCT period) FROM demand").fetchone()[0] == len(bundle.scenario.periods.model)
@@ -155,7 +155,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
 
 def test_fixed_lifetime_mode_inserts_one_row_per_modeled_technology(bundle, tmp_path: Path) -> None:
     scenario = bundle.scenario.model_copy(update={
-        "switches": bundle.scenario.switches.model_copy(update={"survival_curves": False}),
+        "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": False}),
     })
     database = tmp_path / "fixed-lifetimes.sqlite"
     report = bootstrap_database(
@@ -173,7 +173,7 @@ def test_fixed_lifetime_mode_inserts_one_row_per_modeled_technology(bundle, tmp_
 
 def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Path) -> None:
     scenario = bundle.scenario.model_copy(update={
-        "switches": bundle.scenario.switches.model_copy(update={"vkt_schedules": True}),
+        "road_utilization": bundle.scenario.road_utilization.model_copy(update={"vkt_schedules": True}),
     })
     database = tmp_path / "age-mode.sqlite"
     report = bootstrap_database(
@@ -302,6 +302,7 @@ def test_bootstrap_applies_scenario_economics_and_technology_note(
 ) -> None:
     scenario_payload = bundle.scenario.model_dump(mode="python")
     scenario_payload["economics"] = {
+        "cer_scenario": scenario_payload["economics"]["cer_scenario"],
         "global_discount_rate": 0.04,
         "default_loan_rate": 0.05,
         "cost_reference_currency": "CAD",
