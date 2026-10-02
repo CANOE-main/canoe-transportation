@@ -544,6 +544,14 @@ def build_ldv_history(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Annualize current quarters and apply the explicit archived/current policy."""
     policy = rules["ldv_history"]
+    supported = {
+        "policy": "current_preferred_archived_precoverage_only",
+        "current_period_aggregation": "sum_quarters",
+        "incomplete_year_policy": "exclude_and_warn",
+    }
+    for key, expected in supported.items():
+        if policy[key] != expected:
+            raise StatCanSourceError(f"Unsupported ldv_history.{key}: {policy[key]!r}")
     group_columns = [
         "scenario_region",
         "geography",

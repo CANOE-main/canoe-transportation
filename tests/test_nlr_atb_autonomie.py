@@ -354,7 +354,7 @@ def test_source_contract_and_scenario_selected_mid_trajectory(bundle) -> None:
         "phev_utility_factor_mdhd",
     }.issubset(source.components)
     assert source.component("vmt_ldv").parameter_modules == [
-        "road_stocks_and_demands"
+        "road_utilization"
     ]
     assert set(build_atb_request(bundle).expected_trajectories) == {
         "Advanced",
@@ -365,6 +365,16 @@ def test_source_contract_and_scenario_selected_mid_trajectory(bundle) -> None:
     assert set(anl_source.adapter) == {"access", "external_subdir", "expected_workbook"}
     assert rules["components"]["anl_bean"]["workbook_range"] == "A33:H54"
     assert rules["components"]["anl_bean"]["table_layout"]["header_row"] == 33
+
+
+def test_efficiency_and_cost_trajectory_choices_are_independent(bundle) -> None:
+    scenario = bundle.scenario.model_copy(update={
+        "efficiencies": bundle.scenario.efficiencies.model_copy(update={"atb_trajectory": "Advanced"}),
+        "costs": bundle.scenario.costs.model_copy(update={"atb_trajectory": "Conservative"}),
+    })
+    selected = replace(bundle, scenario=scenario)
+    assert configured_trajectory(selected) == "Advanced"
+    assert configured_trajectory(selected, parameter="costs") == "Conservative"
 
 
 def test_zip_member_discovery_accepts_release_prefix_and_rejects_ambiguity(

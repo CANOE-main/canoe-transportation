@@ -286,36 +286,23 @@ def iter_rating_requests(bundle: ConfigBundle) -> list[FuelConsumptionRatingRequ
     return requests_to_fetch
 
 
-def configured_year(source: SourceSpec) -> int:
-    """Return the default CEUD release year from either accepted config spelling."""
-    year_config = source.adapter.get("years", source.adapter.get("year", {}))
-    if isinstance(year_config, dict):
-        return int(year_config["default"])
-    return int(year_config)
-
-
-def scenario_source_year(
-    bundle: ConfigBundle, source_id: str, source: SourceSpec
-) -> int:
-    """Resolve a source year from scenario selection or registry default."""
+def scenario_source_year(bundle: ConfigBundle, source_id: str) -> int:
+    """Resolve the required scenario-owned source year."""
     selection = bundle.scenario.sources.selections.get(source_id)
     if selection is not None and selection.year is not None:
         return selection.year
-    return configured_year(source)
+    raise ValueError(f"sources.selections.{source_id}.year is required")
 
 
-def provincial_regions(source: SourceSpec, requested_regions: list[str] | None) -> list[str]:
+def provincial_regions(source: SourceSpec, requested_regions: list[str]) -> list[str]:
     """Resolve requested provincial regions against the source registry."""
     allowed = [str(region).upper() for region in source.adapter["regions"]["allowed"]]
-    if requested_regions:
-        unknown = sorted(set(region.upper() for region in requested_regions) - set(allowed))
-        if unknown:
-            raise ValueError(f"Unknown CEUD provincial regions: {', '.join(unknown)}")
-        return [region.upper() for region in requested_regions]
-    default = source.adapter["regions"].get("default")
-    if default == "all_provinces":
-        return allowed
-    return [str(default).upper()]
+    if not requested_regions:
+        raise ValueError("Select at least one CEUD provincial region")
+    unknown = sorted(set(region.upper() for region in requested_regions) - set(allowed))
+    if unknown:
+        raise ValueError(f"Unknown CEUD provincial regions: {', '.join(unknown)}")
+    return [region.upper() for region in requested_regions]
 
 
 def iter_table_requests(
@@ -330,10 +317,9 @@ def iter_table_requests(
     requests_to_fetch: list[CeudTableRequest] = []
 
     provincial = sources[SOURCE_PROVINCIAL]
-    provincial_year = year or scenario_source_year(
-        bundle, SOURCE_PROVINCIAL, provincial
-    )
-    for region in provincial_regions(provincial, regions):
+    provincial_year = year if year is not None else scenario_source_year(bundle, SOURCE_PROVINCIAL)
+    selected_regions = bundle.scenario.geography.regions if regions is None else regions
+    for region in provincial_regions(provincial, selected_regions):
         for table_id, table_meta in sorted(provincial.components.items()):
             table_id_int = int(table_id)
             requests_to_fetch.append(
@@ -357,9 +343,7 @@ def iter_table_requests(
 
     if include_national:
         national = sources[SOURCE_NATIONAL]
-        national_year = year or scenario_source_year(
-            bundle, SOURCE_NATIONAL, national
-        )
+        national_year = year if year is not None else scenario_source_year(bundle, SOURCE_NATIONAL)
         for table_id, table_meta in sorted(national.components.items()):
             table_id_int = int(table_id)
             requests_to_fetch.append(

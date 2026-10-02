@@ -239,8 +239,8 @@ def prepare_ev_charger_rows(
     for region in sorted(model_regions):
         for category in ("ldv", "mhdv"):
             evs = stock_by_region[region, category]
-            ratio = (bundle.scenario.ev_chargers.ldev_ev_per_port if category == "ldv"
-                     else bundle.scenario.ev_chargers.mhdev_ev_per_port)
+            ratio = (bundle.scenario.ev_chargers.ld_evs_per_port if category == "ldv"
+                     else bundle.scenario.ev_chargers.mhd_evs_per_port)
             required_ports = evs / ratio
             port_counts: dict[str, float]
             public = None
@@ -301,7 +301,7 @@ def prepare_ev_charger_rows(
         cer["components"]["macro-indicators"]["output_file"],
     )
     converter = CerCurrencyConverter(
-        pd.read_csv(macro_path), scenario=bundle.scenario.demand.cer_scenario,
+        pd.read_csv(macro_path), scenario=bundle.scenario.economics.cer_scenario,
         target_year=bundle.scenario.economics.cost_reference_year,
     )
     cost_digest = hashlib.sha256((digest + file_sha256(macro_path)).encode()).hexdigest()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -10,6 +11,8 @@ from parameterization.road_stocks_and_demands import (
     distribute_existing_road_capacity,
     fixed_existing_lifetimes,
 )
+from parameterization.build_existing_capacity import prepare_existing_capacity_rows
+from parameterization.road_lifetimes_survival import derive_accepted_lifetime_frames
 from utils import load_config_bundle, load_harmonization_rules
 from validation.insertion import cleanup_transport_parameter_batches
 
@@ -25,10 +28,11 @@ def test_fixed_lifetime_sources_resolve_reviewed_medium_truck_proxy() -> None:
         "existing_capacity"
     ]
     lifetimes = fixed_existing_lifetimes(
-        pd.read_csv(
-            ROOT
-            / "inputs/2_processed/road_lifetimes_survival/source_derived_median_lifetimes.csv"
-        ),
+        derive_accepted_lifetime_frames(
+            bundle, rules=load_harmonization_rules(bundle, "road_lifetimes_survival"),
+            road_rules=load_harmonization_rules(bundle, "road_aggregation"),
+            assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
+        )["medians"],
         pd.read_csv(ROOT / "inputs/0_manual_params/lifetime_process.csv"),
         rules,
     )
@@ -37,10 +41,46 @@ def test_fixed_lifetime_sources_resolve_reviewed_medium_truck_proxy() -> None:
         "cars": 14.0,
         "passenger_light_trucks": 16.0,
         "freight_light_trucks": 16.0,
-        "medium_trucks": 25.0,
+        "medium_trucks": 18.0,
         "heavy_trucks": 19.0,
         "motorcycles": 17.0,
     }
+
+
+@pytest.mark.parametrize("survival_curves", [False, True])
+def test_truck_stock_eligibility_traces_selected_lifetime_source(
+    tmp_path: Path, survival_curves: bool,
+) -> None:
+    bundle = load_config_bundle(
+        "config/scenarios/legacy_reproduction.yaml", repo_root=ROOT,
+    )
+    routes = dict(bundle.paths.artifacts)
+    for family in (
+        "existing_capacity_interim", "existing_capacity_processed",
+        "existing_capacity_validation", "road_stocks_and_demands",
+    ):
+        routes[family] = routes[family].model_copy(update={"path": str(tmp_path / family)})
+    scenario = bundle.scenario.model_copy(update={
+        "geography": bundle.scenario.geography.model_copy(update={"regions": ["ON"]}),
+        "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": survival_curves}),
+    })
+    isolated = replace(bundle, paths=bundle.paths.model_copy(update={"artifacts": routes}), scenario=scenario)
+    rows, contexts, _ = prepare_existing_capacity_rows(isolated)
+    by_id = {context.data_id: context for context in contexts}
+    for prefix, required, absent in (
+        ("T_MDV_T_", "nhtsa_cafe_2024_ldv_survival", "eia_nems_hd_truck_scrappage"),
+        (
+            "T_HDV_T_",
+            "eia_nems_hd_truck_scrappage" if survival_curves else "epa_moves4_population_activity_2023",
+            "epa_moves4_population_activity_2023" if survival_curves else "eia_nems_hd_truck_scrappage",
+        ),
+    ):
+        selected = [row for row in rows if row.tech.startswith(prefix)]
+        assert selected
+        for row in selected:
+            sources = {item.source_key for item in by_id[row.data_id].contributors}
+            assert required in sources
+            assert absent not in sources
 
 
 def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
@@ -163,6 +203,8 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
         dashboard=dashboard,
         regions=["ON"],
         base_year=2023,
+        vintage_periods=[2000, 2005, 2010, 2015, 2020, 2023],
+        vehicle_population_year=2025,
         first_model_period=2025,
         survival_curves=True,
         survival_curve_max_age=25,

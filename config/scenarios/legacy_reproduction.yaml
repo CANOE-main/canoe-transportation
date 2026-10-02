@@ -1,8 +1,8 @@
-# Run selections and modeling switches for the legacy-reproduction build.
-# Source availability and provenance live in `sources.yaml`; only source-specific
-# run selections appear here. See `config/scenarios/README.md` for field behavior.
+# Authoring template: copy every section into each future scenario and change selections.
+# Source availability and provenance live in `sources.yaml`; run selections and
+# aggregation choices appear here. See `config/scenarios/README.md` for field behavior.
 
-version: 2
+version: 3
 
 scenario:
   name: legacy_reproduction
@@ -26,13 +26,30 @@ sources:
     nrcan_ceud_transport_provincial: {year: 2023}
     nrcan_ceud_transport_national: {year: 2023}
     transport_canada_ev_dashboard: {year: 2026}
-    cer_canadas_energy_future:
-      edition: 2026
-    nlr_atb_transportation_2024:
-      edition: 2024
-      trajectory: Mid
+    cer_canadas_energy_future: {edition: 2026}
+
+aggregation_sources:
+  # Report A: LDV vintage shares. Report 5: truck, bus, motorcycle vintage shares.
+  stock_age:
+    "ON": ontario_ministry_transport_vehicle_population
+    other: ontario_ministry_transport_vehicle_population
+  # Report A class shares for all LDV products, including NHTSA survival aggregation.
+  ldv:
+    "ON": ontario_ministry_transport_vehicle_population
+    other: ontario_ministry_transport_vehicle_population
+  # Report 4 includes Class 2/2b in ON. Wards excludes Class 2/2b elsewhere.
+  # The single NHTSA CAFE 2b/3 survival curve applies to every medium-truck class.
+  medium_trucks:
+    "ON": ontario_ministry_transport_vehicle_population
+    other: wards_intelligence_2022_sales_shares
+  # Existing regional/long-haul tonne-km evidence, shared by truck adapters.
+  heavy_truck_haul:
+    "ON": statcan_transport_tables
+    other: statcan_transport_tables
 
 economics:
+  # Currency conversion uses CER independently of the demand trajectory below.
+  cer_scenario: Current Measures
   global_discount_rate: 0.03
   default_loan_rate: 0.03
   cost_reference_currency: CAD
@@ -43,27 +60,46 @@ outputs:
   validation_report: outputs/validation/legacy_reproduction_database_bootstrap.json
   setup_log: outputs/logs/setup_smoke_legacy_reproduction.json
 
-validation:
+comparison:
+  # Integrity validation always runs; this selects an optional diagnostic comparison.
+  mode: legacy  # none | legacy | scenario (another database from this backend)
   reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
-  compare_legacy: true
+  absolute_tolerance: 1.0e-9
+  relative_tolerance: 1.0e-6
+  include_provenance: false  # Scenario comparisons can also include source IDs/DQ/notes.
 
-switches:
+lifetimes:
   # Use accepted road survival curves; remaining technologies use fixed lifetimes.
   survival_curves: true
-  survival_curve_max_age: 25  # must not exceed the time horizon
-  vkt_schedules: false
+  survival_curve_max_age: 25
 
 existing_capacity:
-  other_region_vehicle_population_source: ontario_ministry_transport_vehicle_population
-  cleanup_epsilon: 0.001
+  # Regional fleet-source precedence is shared under this scenario's aggregation_sources.
+  vehicle_population_year: 2025
+  cleanup_tolerance: 0.001
 
 demand:
   cer_scenario: Current Measures
   future_car_demand: GDP-indexed
 
 road_utilization:
-  medium_truck_weight_source: national_wards
+  # Age-dependent rows are retained as audit artifacts while v4 lacks vintage/period.
+  vkt_schedules: false
+  vkt_max_age: 25
+
+efficiencies:
+  # All normalized ATB trajectories are retained: Advanced, Conservative, Constant, Mid.
+  atb_trajectory: Mid
+
+costs:
+  atb_trajectory: Mid
 
 ev_chargers:
-  ldev_ev_per_port: 1.0
-  mhdev_ev_per_port: 1.5
+  # EV-to-port ratios used to estimate existing charger capacity, in addition to public ports.
+  ld_evs_per_port: 1.0
+  mhd_evs_per_port: 1.5
+
+row_note_overrides:
+  # Replace technology.notes by exact technology key for this scenario.
+  # Source notes remain in sources.yaml; {} keeps the structural template notes.
+  technology: {}

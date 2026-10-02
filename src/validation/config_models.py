@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
 from collections.abc import Iterator, Mapping
+from copy import deepcopy
 from typing import Annotated, Any, Literal, Self
 
 from canoe_schema.v4_0 import (
@@ -39,17 +39,22 @@ class MappingModel(BaseModel, Mapping[str, Any]):
 
 
 class DataQuality(MappingModel):
-    """The five source-owned v4 data-quality scores."""
+    """Source-owned v4 scores; nulls are review placeholders in the registry."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    dq_cred: DataQualityCredibilityLevel
-    dq_geog: DataQualityGeographyLevel
-    dq_struc: DataQualityStructureLevel
-    dq_tech: DataQualityTechnologyLevel
-    dq_time: DataQualityTimeLevel
+    dq_cred: DataQualityCredibilityLevel | None = None
+    dq_geog: DataQualityGeographyLevel | None = None
+    dq_struc: DataQualityStructureLevel | None = None
+    dq_tech: DataQualityTechnologyLevel | None = None
+    dq_time: DataQualityTimeLevel | None = None
+
+    def missing_fields(self) -> list[str]:
+        return [name for name in type(self).model_fields if getattr(self, name) is None]
 
     def row_fields(self) -> dict[str, int]:
+        if missing := self.missing_fields():
+            raise ValueError(f"Unresolved data_quality scores: {', '.join(missing)}")
         return {name: int(getattr(self, name)) for name in type(self).model_fields}
 
 
@@ -148,6 +153,37 @@ class PathsConfig(MappingModel):
         return self
 
 
+AggregationRole = Literal["stock_age", "ldv", "medium_trucks", "heavy_truck_haul"]
+RegionalSourceMap = dict[
+    Annotated[str, StringConstraints(pattern=r"^(other|[A-Z]{2,5})$")],
+    Annotated[str, StringConstraints(min_length=1)],
+]
+
+
+class AggregationSources(MappingModel):
+    """Scenario source precedence by fleet role: explicit region, then other."""
+
+    stock_age: RegionalSourceMap
+    ldv: RegionalSourceMap
+    medium_trucks: RegionalSourceMap
+    heavy_truck_haul: RegionalSourceMap
+
+    @model_validator(mode="after")
+    def validate_regional_defaults(self) -> Self:
+        for role in self:
+            if not {"ON", "other"} <= self[role].keys():
+                raise ValueError(f"aggregation_sources.{role} requires ON and other selections")
+        return self
+
+    def source_for(self, role: AggregationRole, region: str) -> str:
+        selections = self[role]
+        if region in selections:
+            return selections[region]
+        if region == "BCT" and "BC" in selections:
+            return selections["BC"]
+        return selections["other"]
+
+
 class ScenarioIdentity(MappingModel):
     name: str
     description: str
@@ -190,13 +226,14 @@ class ScenarioPeriods(MappingModel):
 class ScenarioSourceSelection(MappingModel):
     year: int | None = Field(default=None, gt=0)
     edition: int | None = Field(default=None, gt=0)
-    trajectory: str | None = None
 
 
 class ScenarioSources(MappingModel):
     selections: dict[str, ScenarioSourceSelection] = Field(default_factory=dict)
 
+
 class ScenarioEconomics(MappingModel):
+    cer_scenario: str = Field(min_length=1)
     global_discount_rate: float = Field(ge=0.0, le=1.0)
     default_loan_rate: float = Field(ge=0.0, le=1.0)
     cost_reference_currency: Literal["CAD"]
@@ -209,32 +246,36 @@ class ScenarioOutputs(MappingModel):
     setup_log: str
 
 
-class ScenarioValidation(MappingModel):
-    reference_sqlite: str | None = None
-    compare_legacy: bool
+class ScenarioComparison(MappingModel):
+    mode: Literal["none", "legacy", "scenario"]
+    reference_sqlite: str | None
+    absolute_tolerance: float = Field(ge=0, allow_inf_nan=False)
+    relative_tolerance: float = Field(ge=0, allow_inf_nan=False)
+    include_provenance: bool
 
     @model_validator(mode="after")
     def validate_reference(self) -> Self:
-        if self.compare_legacy and not self.reference_sqlite:
+        if self.mode != "none" and not self.reference_sqlite:
             raise ValueError(
-                "validation.reference_sqlite is required when compare_legacy is true"
+                "comparison.reference_sqlite is required when comparison.mode is enabled"
             )
+        if self.mode == "legacy" and self.include_provenance:
+            raise ValueError("Legacy comparison cannot compare v4 provenance")
         return self
 
 
-class ScenarioSwitches(MappingModel):
+class ScenarioLifetimes(MappingModel):
     survival_curves: bool
     survival_curve_max_age: int = Field(gt=0)
-    vkt_schedules: bool
 
 
 class ScenarioRowNoteOverrides(MappingModel):
-    technology: dict[str, str] = Field(default_factory=dict)
+    technology: dict[str, str]
 
 
 class ScenarioExistingCapacity(MappingModel):
-    other_region_vehicle_population_source: str
-    cleanup_epsilon: float = Field(ge=0, allow_inf_nan=False)
+    vehicle_population_year: int = Field(gt=0)
+    cleanup_tolerance: float = Field(ge=0, allow_inf_nan=False)
 
 
 class ScenarioDemand(MappingModel):
@@ -243,31 +284,55 @@ class ScenarioDemand(MappingModel):
 
 
 class ScenarioRoadUtilization(MappingModel):
-    medium_truck_weight_source: Literal["national_wards", "ontario_report4"]
+    vkt_schedules: bool
+    vkt_max_age: int = Field(gt=0)
+
+
+class ScenarioEfficiencies(MappingModel):
+    atb_trajectory: str = Field(min_length=1)
+
+
+class ScenarioCosts(MappingModel):
+    atb_trajectory: str = Field(min_length=1)
 
 
 class ScenarioEvChargers(MappingModel):
-    ldev_ev_per_port: float = Field(gt=0, allow_inf_nan=False)
-    mhdev_ev_per_port: float = Field(gt=0, allow_inf_nan=False)
+    ld_evs_per_port: float = Field(gt=0, allow_inf_nan=False)
+    mhd_evs_per_port: float = Field(gt=0, allow_inf_nan=False)
 
 
 class ScenarioConfig(MappingModel):
-    version: int
+    version: Literal[3]
     scenario: ScenarioIdentity
     geography: ScenarioGeography
     periods: ScenarioPeriods
     sources: ScenarioSources
+    aggregation_sources: AggregationSources
     economics: ScenarioEconomics
     outputs: ScenarioOutputs
-    validation: ScenarioValidation
-    switches: ScenarioSwitches
-    existing_capacity: ScenarioExistingCapacity | None = None
+    comparison: ScenarioComparison
+    lifetimes: ScenarioLifetimes
+    existing_capacity: ScenarioExistingCapacity
     demand: ScenarioDemand
     road_utilization: ScenarioRoadUtilization
+    efficiencies: ScenarioEfficiencies
+    costs: ScenarioCosts
     ev_chargers: ScenarioEvChargers
-    row_note_overrides: ScenarioRowNoteOverrides = Field(
-        default_factory=ScenarioRowNoteOverrides
-    )
+    row_note_overrides: ScenarioRowNoteOverrides
+
+    @model_validator(mode="after")
+    def validate_parameter_horizons(self) -> Self:
+        if not self.periods.existing or self.periods.existing[-1] != self.periods.base_year:
+            raise ValueError("periods.existing must end at base_year for existing capacity")
+        if self.lifetimes.survival_curves and (
+            self.lifetimes.survival_curve_max_age < self.periods.step - 1
+        ):
+            raise ValueError("lifetimes.survival_curve_max_age cannot contain a full period")
+        if self.road_utilization.vkt_schedules and (
+            self.road_utilization.vkt_max_age < self.periods.step
+        ):
+            raise ValueError("road_utilization.vkt_max_age cannot contain a full period")
+        return self
 
 
 class SourceComponent(MappingModel):
@@ -286,6 +351,7 @@ class SourceComponent(MappingModel):
     validation_rule: str | None = None
     units: str | None = None
     notes: str | None = None
+    database_note: str | None = None
     data_quality: DataQuality | None = None
     adapter: dict[str, Any] = Field(default_factory=dict)
 
@@ -301,6 +367,7 @@ class SourceSpec(MappingModel):
     citation: str
     validation_rule: str
     refresh_notes: str
+    database_note: str
     units: str | None = None
     required: bool
     data_quality: DataQuality
@@ -323,11 +390,31 @@ class SourceDefaults(MappingModel):
     component_required: bool
     data_quality: DataQuality
 
+    @model_validator(mode="after")
+    def validate_complete_fallback(self) -> Self:
+        self.data_quality.row_fields()
+        return self
+
 
 class SourcesConfig(MappingModel):
-    version: int
+    version: Literal[3]
     defaults: SourceDefaults
     sources: dict[str, SourceSpec]
+
+    def resolved_data_quality(
+        self, source_key: str, component_key: str | int,
+    ) -> DataQuality:
+        """Resolve each indicator: component override, source annotation, then fallback."""
+        source = self.sources[source_key]
+        component = source.component(component_key)
+        values = self.defaults.data_quality.model_dump()
+        for quality in (source.data_quality, component.data_quality):
+            if quality is not None:
+                values.update({
+                    key: value for key, value in quality.model_dump().items()
+                    if value is not None
+                })
+        return DataQuality.model_validate(values)
 
     @model_validator(mode="before")
     @classmethod
@@ -338,13 +425,14 @@ class SourcesConfig(MappingModel):
         sources = value.get("sources")
         if not isinstance(defaults, dict) or not isinstance(sources, dict):
             return value
+        if not {"required", "component_required"} <= defaults.keys():
+            return value
         resolved = deepcopy(value)
         resolved_defaults = resolved["defaults"]
         for source in resolved["sources"].values():
             if not isinstance(source, dict):
                 continue
             source.setdefault("required", resolved_defaults["required"])
-            source.setdefault("data_quality", resolved_defaults["data_quality"])
             components = source.get("components", {})
             if not isinstance(components, dict):
                 continue

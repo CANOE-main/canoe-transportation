@@ -103,4 +103,4 @@ def test_charger_share_contract_rejects_mismatch() -> None:
 
 def test_ev_to_port_ratios_are_positive_scenario_values() -> None:
     with pytest.raises(ValidationError):
-        ScenarioEvChargers(ldev_ev_per_port=0, mhdev_ev_per_port=1.5)
+        ScenarioEvChargers(ld_evs_per_port=0, mhd_evs_per_port=1.5)

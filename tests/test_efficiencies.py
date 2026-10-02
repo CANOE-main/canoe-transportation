@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 
 from parameterization import build_efficiencies as layer
+from parameterization.road_fleet_weights import medium_vocation_weights, report4_gvwr_shares
 from parameterization.offroad_efficiencies import (
     derive_offroad_efficiency,
     manual_ratio,
@@ -22,7 +23,6 @@ from parameterization.road_efficiencies import (
     classify_ratings,
     derive_load_factors,
     interpolate,
-    medium_vocation_weights,
     prepare_bus_annual_efficiency_evidence,
     select_atb_consumption,
 )
@@ -353,15 +353,15 @@ def test_unsplit_suv_sums_weights_and_renormalizes_observed(rules):
             ]
         ]
     )
-    result = aggregate_ratings(classified, weights, rules=rules)
+    result = aggregate_ratings(classified, weights, rules=rules, weight_basis="all_vintages")
     assert result.original_weight.iloc[0] == pytest.approx(0.7)
     assert result.weight.iloc[0] == 1
     assert result.native_class_mean.iloc[0] == 12
 
 
-def test_vocational_consumption_average_is_harmonic_fuel_economy(rules):
-    r = deepcopy(rules)
-    r["md_gvwr"] = {"MDV3": 3, "MDV6": 6}
+def test_vocational_consumption_average_is_harmonic_fuel_economy(bundle):
+    r = deepcopy(load_harmonization_rules(bundle, "road_aggregation")["medium_trucks"])
+    r["report4_gvwr"] = {"MDV3": 3, "MDV6": 6}
     report = pd.DataFrame({"EPA_GVWR": ["MDV3", "MDV6"], "NATIVE_COUNT": [1, 3]})
     classes = [
         "Class 3 Medium Van",
@@ -369,7 +369,7 @@ def test_vocational_consumption_average_is_harmonic_fuel_economy(rules):
         "Class 3 Medium School",
         "Class 6 Box",
     ]
-    weights = medium_vocation_weights(report, classes, rules=r)
+    weights = medium_vocation_weights(report4_gvwr_shares(report, rules=r), classes, rules=r)
     assert weights == {
         "Class 3 Medium Van": 0.125,
         "Class 3 Medium Pickup": 0.125,

@@ -32,9 +32,8 @@ from parameterization.road_capex_opex import (
 from parameterization.road_efficiencies import (
     derive_load_factors,
     interpolate,
-    medium_vocation_weights,
 )
-from parameterization.road_utilization import heavy_haul_atb_weights
+from parameterization.road_fleet_weights import aggregation_component, load_fleet_aggregation_evidence
 from utils import (
     ConfigBundle,
     file_sha256,
@@ -64,8 +63,6 @@ CIMS = "emrg_sfu_cims_model"
 OEO = "open_energy_outlook_2022"
 CER = "cer_canadas_energy_future"
 CEUD = "nrcan_ceud_transport_provincial"
-MTO = "ontario_ministry_transport_vehicle_population"
-STATCAN = "statcan_transport_tables"
 
 
 @dataclass(frozen=True)
@@ -97,51 +94,18 @@ def _region_weights(
     bundle: ConfigBundle, prices: pd.DataFrame, paths: list[Path],
     efficiency: dict,
 ) -> dict[tuple[str, str], dict[str, float]]:
-    aggregation = load_harmonization_rules(bundle, "road_aggregation")
-    weight_frame = _read(
-        resolve_artifact_path(bundle, "road_aggregation", aggregation["nlr_weights_file"]),
-        paths,
-    )
-    if weight_frame.report_year.nunique() != 1:
-        raise ValueError("Ambiguous reviewed LDV road aggregation edition")
-    ontario = load_harmonization_rules(bundle, "ontario_vehicle_population")
-    template = ontario["reports"][4]["distribution_output_template"]
-    report_dir = resolve_input_path(bundle, "interim", ontario["interim_subdir"])
-    reports = sorted(report_dir.glob(template.format(year="*")))
-    if not reports:
-        raise ValueError("Missing reviewed MTO Report 4 evidence")
-    report4 = _read(reports[-1], paths)
-    if set(report4.year) != set(weight_frame.report_year):
-        raise ValueError("LDV and MDV weights use different MTO editions")
+    fleet = load_fleet_aggregation_evidence(bundle)
+    paths.extend(fleet.paths)
+    weight_frame = fleet.ldv
     md_classes = sorted(prices.loc[prices.family.eq("mhdv"), "vehicle_class"].unique())
-    medium = medium_vocation_weights(report4, md_classes, rules=efficiency)
-    statcan = load_harmonization_rules(bundle, "statcan_tables")
-    freight = _read(
-        resolve_input_path(
-            bundle, "interim", statcan["interim_subdir"],
-            statcan["freight"]["output_file"],
-        ), paths,
-    )
-    utilization = load_harmonization_rules(bundle, "road_stocks_and_demands")["capacity_factor"]
     result: dict[tuple[str, str], dict[str, float]] = {}
     for region in bundle.scenario.geography.regions:
-        haul = heavy_haul_atb_weights(
-            freight,
-            source_region=utilization["freight_source_region_map"].get(region, region),
-            rules=utilization,
-        )
-        haul_share = haul.set_index("nlr_atb_class").aggregation_weight.to_dict()
-        heavy = {
-            vocation: float(haul_share[utilization["heavy_haul_atb_classes"][haul_class]])
-            / len(vocations)
-            for haul_class, vocations in efficiency["heavy_vocations"].items()
-            for vocation in vocations
-        }
+        medium = fleet.medium_weights(region, md_classes)
+        heavy = fleet.heavy_weights(region)
         for mode, spec in efficiency["road_classes"].items():
             if spec["pathway"] == "ldv":
                 selected = weight_frame.loc[
-                    weight_frame.weight_basis.eq(efficiency["rating_weight_basis"])
-                    & weight_frame.nrcan_ceud_class.eq(spec["weights"])
+                    weight_frame.nrcan_ceud_class.eq(spec["weights"])
                 ]
                 weights = selected.set_index("nlr_atb_class").aggregation_weight.to_dict()
             elif mode == "medium_trucks":
@@ -233,15 +197,10 @@ def prepare_cost_rows(
     efficiency = load_harmonization_rules(bundle, "efficiencies")
     conversions = load_conversion_factors(bundle)
     scenario = bundle.scenario
-    if (
-        scenario.existing_capacity.other_region_vehicle_population_source
-        != efficiency["supported_population_source"]
-    ):
-        raise ValueError("Selected road population source lacks reviewed cost weights")
     if scenario.economics.cost_reference_currency != "CAD":
         raise ValueError("Transport costs require a configured CAD reference currency")
     reference_year = scenario.economics.cost_reference_year
-    trajectory = configured_trajectory(bundle)
+    trajectory = configured_trajectory(bundle, parameter="costs")
     cer_rules = load_harmonization_rules(bundle, "cer_enerfuture")
     edition = scenario.sources.selections[CER].edition
     paths: list[Path] = []
@@ -252,7 +211,7 @@ def prepare_cost_rows(
         ), paths,
     )
     converter = CerCurrencyConverter(
-        macro, scenario=scenario.demand.cer_scenario, target_year=reference_year,
+        macro, scenario=scenario.economics.cer_scenario, target_year=reference_year,
     )
     atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
     atb_dir = resolve_input_path(bundle, "interim", atb_rules["interim_subdir"])
@@ -372,7 +331,7 @@ def prepare_cost_rows(
             "family": family, "region": region, "tech": tech, "vintage": vintage,
             "period": period, "mode": mode, "cost": final,
             "units": units_vehicle if family == "invest" and mode in efficiency["road_classes"] else service_unit(mode),
-            "notes": f"{treatment}; {trajectory}; CER {scenario.demand.cer_scenario}",
+            "notes": f"{treatment}; {trajectory}; CER {scenario.economics.cer_scenario}",
             "source_value": source_value, "source_unit": source_unit,
             **conversion.__dict__, "normalization_divisor": divisor,
             "components": components + [(CER, "macro-indicators")],
@@ -424,16 +383,16 @@ def prepare_cost_rows(
         treatment = "NLR manufacturing price (RPE / 1.5)"
         if selected_powertrain != powertrain:
             treatment += f"; reviewed {powertrain}->{selected_powertrain} purchase proxy"
-        return manufacturing, atb_currency, atb_year, treatment, [(ATB, "vehicles"), *weight_components(mode)]
+        return manufacturing, atb_currency, atb_year, treatment, [(ATB, "vehicles"), *weight_components(mode, region)]
 
-    def weight_components(mode: str) -> list[tuple[str, str | int]]:
+    def weight_components(mode: str, region: str) -> list[tuple[str, str | int]]:
         pathway = efficiency["road_classes"][mode]["pathway"]
         if pathway == "ldv":
-            return [(MTO, "A")]
+            return [aggregation_component(bundle, "ldv", region)]
         if mode == "medium_trucks":
-            return [(MTO, 4)]
+            return [aggregation_component(bundle, "medium_trucks", region)]
         if mode == "heavy_trucks":
-            return [(STATCAN, "23-10-0142-01")]
+            return [aggregation_component(bundle, "heavy_truck_haul", region)]
         return []
 
     def load_at(region: str, mode: str) -> float:
@@ -517,7 +476,7 @@ def prepare_cost_rows(
                                 class_costs.append(weight * result["total"])
                                 weighted_msrp += weight * msrp
                             cost_per_mile = sum(class_costs)
-                            components = [(ATB, "vehicles"), (ATB, "maintenance_ldv"), (CEUD, road_demand["activity_series"][mode]["table_id"]), *weight_components(mode)]
+                            components = [(ATB, "vehicles"), (ATB, "maintenance_ldv"), (CEUD, road_demand["activity_series"][mode]["table_id"]), *weight_components(mode, source_region)]
                             treatment = "Burnham MSRP repair plus maintenance"
                             currency, dollar_year = burnham_currency, burnham_year
                         elif mode == "motorcycles":
@@ -566,7 +525,7 @@ def prepare_cost_rows(
                                 )["source_cost_per_mile"]
                             cost_per_mile = total
                             currency, dollar_year = bean_currency, bean_year
-                            components = [(BEAN, "mhdv_maintenance_coefficients"), (CEUD, road_demand["activity_series"][mode]["table_id"]), *weight_components(mode)]
+                            components = [(BEAN, "mhdv_maintenance_coefficients"), (CEUD, road_demand["activity_series"][mode]["table_id"]), *weight_components(mode, source_region)]
                             treatment = "BEAN class-weighted age-dependent maintenance"
                         if mode in {"school_buses", "inter_city_buses"}:
                             transit_bean_native_cost_per_mile = cost_per_mile
@@ -772,6 +731,8 @@ def prepare_cost_rows(
         {
             "files": [(str(path.relative_to(bundle.repo_root)), file_sha256(path)) for path in digest_inputs],
             "lifetime_signature": lifetime_signature,
+            "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
+            "fleet_rules": load_harmonization_rules(bundle, "road_aggregation"),
         },
         sort_keys=True,
     ).encode()).hexdigest()
@@ -851,7 +812,8 @@ def prepare_cost_rows(
         LOGGER.info("CER transport cost conversion: %s", summary)
     audit.update({
         "input_digest": digest, "atb_scenario": trajectory,
-        "cer_scenario": scenario.demand.cer_scenario,
+        "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
+        "cer_scenario": scenario.economics.cer_scenario,
         "reference_currency": "CAD", "reference_year": reference_year,
         "currency_year_transformations": sorted({
             (item["source_currency"], item["source_dollar_year"])

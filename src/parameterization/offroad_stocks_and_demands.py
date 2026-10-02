@@ -280,11 +280,12 @@ def build_offroad_existing_capacity(
     source_selector: str,
     regions: list[str],
     base_year: int,
+    vintage_periods: list[int],
     first_model_period: int,
     rules: dict[str, Any],
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Select CEUD mode series, apply same-year intensities and cohort retirement."""
-    periods = [int(period) for period in rules["vintage_periods"]]
+    periods = [int(period) for period in vintage_periods]
     if periods != sorted(set(periods)) or periods[-1] != base_year:
         raise ValueError("Off-road vintage periods must be unique and end at base year")
     if rules["retirement_rule"] != "linear_cohort_annual_reconciliation":

@@ -7,7 +7,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 from dataclasses import dataclass
 from math import isfinite
 from pathlib import Path
@@ -16,6 +15,9 @@ from typing import Any
 import pandas as pd
 from canoe_schema.v4_0 import CapacityToActivity, DataSet, LimitAnnualCapacityFactor
 
+from parameterization.road_fleet_weights import (
+    FleetAggregationEvidence, aggregation_component, load_fleet_aggregation_evidence,
+)
 from parameterization.road_stocks_and_demands import (
     aggregate_normalized_mileage_profiles,
     derive_road_annual_utilization,
@@ -56,92 +58,14 @@ class RoadUtilizationPreparation:
     audit: dict[str, Any]
 
 
-def national_medium_atb_weights(
-    wards: pd.DataFrame,
-    mileage: pd.DataFrame,
-    *,
-    rules: dict[str, Any],
-    max_age: int,
-) -> pd.DataFrame:
-    """Resolve Wards GVWR shares to equal distinct non-bus ATB freight profiles."""
-    selected = wards.loc[
-        wards.vehicle_scope.eq("mhdv")
-        & wards.nrcan_ceud_class.eq("Medium Trucks")
-        & wards.year.eq(int(rules["national_medium_share_year"]))
-    ].copy()
-    pattern = re.compile(str(rules["medium_atb_class_pattern"]))
-    selected["atb_gvwr_class"] = selected.wards_size_class.map(
-        lambda value: pattern.match(str(value)).group(0).strip()
-        if pattern.match(str(value)) else None
-    )
-    if (
-        selected.empty or selected.atb_gvwr_class.isna().any()
-        or selected.atb_gvwr_class.duplicated().any()
-        or set(selected.atb_gvwr_class) != set(rules["medium_atb_classes"])
-        or abs(float(selected.market_share.sum()) - 1.0) > 1e-8
-    ):
-        raise ValueError("National medium-truck GVWR shares are incomplete or invalid")
-    if rules["medium_within_class_method"] != "equal_distinct_freight_profiles":
-        raise ValueError("Unsupported medium-truck within-class treatment")
-    records: list[dict[str, Any]] = []
-    for item in selected.itertuples(index=False):
-        class_mileage = mileage.loc[
-            mileage.vehicle_class.str.startswith(item.atb_gvwr_class + " ")
-            & mileage.year_index.le(max_age)
-        ].copy()
-        for excluded in rules["excluded_medium_atb_labels"]:
-            class_mileage = class_mileage.loc[
-                ~class_mileage.vehicle_class.str.contains(r"\b" + re.escape(excluded) + r"\b")
-            ]
-        profiles: dict[tuple[float, ...], str] = {}
-        for vehicle_class, group in class_mileage.groupby("vehicle_class", sort=True):
-            values = group.sort_values("year_index")["vmt_mi"].astype(float).tolist()
-            ages = group.sort_values("year_index")["year_index"].astype(int).tolist()
-            if ages != list(range(max_age + 1)):
-                raise ValueError(f"Incomplete medium-truck ATB ages: {vehicle_class}")
-            profiles.setdefault(tuple(values), vehicle_class)
-        if not profiles:
-            raise ValueError(f"No non-bus ATB freight profile for {item.atb_gvwr_class}")
-        for representative in sorted(profiles.values()):
-            records.append({
-                "nrcan_ceud_class": "Medium Trucks",
-                "nlr_atb_class": representative,
-                "aggregation_weight": float(item.market_share) / len(profiles),
-                "weight_source": "national_wards",
-            })
-    return pd.DataFrame(records).sort_values("nlr_atb_class").reset_index(drop=True)
-
-
-def heavy_haul_atb_weights(
-    freight: pd.DataFrame,
-    *,
-    source_region: str,
-    rules: dict[str, Any],
-) -> pd.DataFrame:
-    """Use registered tonne-km haul shares for the two ATB heavy truck profiles."""
-    selected = freight.loc[freight.scenario_region.eq(source_region)]
-    if selected.empty or (pd.to_numeric(selected.tonne_kilometres, errors="raise") < 0).any():
-        raise ValueError(f"Invalid freight haul evidence for {source_region}")
-    totals = selected.groupby("haul_class").tonne_kilometres.sum()
-    mapping = rules["heavy_haul_atb_classes"]
-    if set(totals.index) != set(mapping) or not isfinite(float(totals.sum())) or totals.sum() <= 0:
-        raise ValueError(f"Incomplete freight haul classes for {source_region}")
-    return pd.DataFrame([
-        {"nrcan_ceud_class": "Heavy Trucks", "nlr_atb_class": mapping[haul],
-         "aggregation_weight": float(totals[haul] / totals.sum()),
-         "weight_source": "statcan_tonne_km"}
-        for haul in sorted(mapping)
-    ])
-
-
 def prepare_age_profiles(
     bundle: ConfigBundle,
     *,
-    rules: dict[str, Any],
     output_regions: dict[str, str],
+    fleet: FleetAggregationEvidence | None = None,
 ) -> pd.DataFrame:
     """Build dimensionless age profiles with reviewed class and haul ownership."""
-    ceiling = bundle.scenario.switches.survival_curve_max_age
+    ceiling = bundle.scenario.road_utilization.vkt_max_age
     if ceiling < bundle.scenario.periods.step:
         raise ValueError("Age ceiling must cover one complete model period")
     atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
@@ -154,42 +78,28 @@ def prepare_age_profiles(
         raise ValueError("ATB mileage artifact source identity differs from registry")
     mileage = mileage.loc[mileage.year_index.le(ceiling)].copy()
     conversion = float(load_conversion_factors(bundle)["length"]["mile_to_km"])
-    aggregation_rules = load_harmonization_rules(bundle, "road_aggregation")
-    ldv_file = resolve_artifact_path(bundle, "road_aggregation") / aggregation_rules["nlr_weights_file"]
-    ldv_weights = pd.read_csv(ldv_file)
-    ldv_weights = ldv_weights.loc[
-        ldv_weights.weight_basis.eq(rules["ldv_weight_basis"])
-        & ldv_weights.nrcan_ceud_class.isin(["Car", "Light Truck"])
-    ].copy()
-    if ldv_weights.empty or ldv_weights.report_year.nunique() != 1:
-        raise ValueError("Reviewed LDV road aggregation weights are incomplete")
-    ldv_weights = ldv_weights[["nrcan_ceud_class", "nlr_atb_class", "aggregation_weight"]]
-    medium_source = bundle.scenario.road_utilization.medium_truck_weight_source
-    if medium_source == "national_wards":
-        wards = pd.read_csv(resolve_input_path(bundle, "manual", "vehicle_class_market_shares.csv"))
-        medium_weights = national_medium_atb_weights(wards, mileage, rules=rules, max_age=ceiling)
-    elif medium_source == "ontario_report4":
-        raise ValueError("Ontario Report 4 medium-truck weights require an Ontario-only reviewed mapping")
-    else:
-        raise ValueError(f"Unsupported medium-truck aggregation source: {medium_source}")
-    freight_rules = load_harmonization_rules(bundle, "statcan_tables")["freight"]
-    freight_file = resolve_input_path(
-        bundle, "interim", load_harmonization_rules(bundle, "statcan_tables")["interim_subdir"],
-        freight_rules["output_file"],
-    )
-    freight = pd.read_csv(freight_file)
-    if set(freight.table_id) != {"23-10-0142-01"}:
-        raise ValueError("Freight haul artifact identity differs from registered table")
+    fleet = fleet if fleet is not None else load_fleet_aggregation_evidence(bundle)
+    ldv_weights = fleet.ldv[["nrcan_ceud_class", "nlr_atb_class", "aggregation_weight"]]
+    classes = sorted(mileage.vehicle_class.unique())
     all_profiles: list[pd.DataFrame] = []
     for ceud_region, region in output_regions.items():
-        source_region = rules["freight_source_region_map"].get(ceud_region, ceud_region)
-        heavy_weights = heavy_haul_atb_weights(freight, source_region=source_region, rules=rules)
-        weights = pd.concat([ldv_weights, medium_weights, heavy_weights], ignore_index=True)
+        medium = fleet.medium_weights(ceud_region, classes)
+        heavy = fleet.heavy_weights(ceud_region)
+        weights = pd.concat([
+            ldv_weights,
+            pd.DataFrame([
+                {"nrcan_ceud_class": family, "nlr_atb_class": label, "aggregation_weight": weight}
+                for family, values in (("Medium Trucks", medium), ("Heavy Trucks", heavy))
+                for label, weight in values.items()
+            ]),
+        ], ignore_index=True)
         profile = aggregate_normalized_mileage_profiles(mileage, weights, mile_to_km=conversion)
         profile.insert(0, "region", region)
         profile["weight_source"] = profile.nrcan_ceud_class.map({
-            "Car": "ontario_mto", "Light Truck": "ontario_mto",
-            "Medium Trucks": medium_source, "Heavy Trucks": "statcan_tonne_km",
+            "Car": aggregation_component(bundle, "ldv", ceud_region)[0],
+            "Light Truck": aggregation_component(bundle, "ldv", ceud_region)[0],
+            "Medium Trucks": aggregation_component(bundle, "medium_trucks", ceud_region)[0],
+            "Heavy Trucks": aggregation_component(bundle, "heavy_truck_haul", ceud_region)[0],
         })
         all_profiles.append(profile)
     result = pd.concat(all_profiles, ignore_index=True)
@@ -260,26 +170,24 @@ def build_age_factor_artifact(
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[ResolvedProvenance], dict[str, Any]]:
     """Retain technology vintage and model period separately for age utilization."""
     scenario = bundle.scenario
-    max_age = scenario.switches.survival_curve_max_age
-    profiles = prepare_age_profiles(bundle, rules=rules, output_regions=output_regions)
+    max_age = scenario.road_utilization.vkt_max_age
+    fleet = load_fleet_aggregation_evidence(bundle)
+    profiles = prepare_age_profiles(bundle, output_regions=output_regions, fleet=fleet)
     age_classes = rules["age_profile_classes"]
     if set(age_classes) | set(rules["flat_only_classes"]) != set(activity):
         raise ValueError("Age and flat-only road classes do not partition road activity")
     age_inputs = [
         resolve_input_path(bundle, "interim", load_harmonization_rules(bundle, "nlr_atb_autonomie")["interim_subdir"],
                            load_harmonization_rules(bundle, "nlr_atb_autonomie")["components"]["vmt"]["output_file"]),
-        resolve_artifact_path(bundle, "road_aggregation") /
-        load_harmonization_rules(bundle, "road_aggregation")["nlr_weights_file"],
-        resolve_input_path(bundle, "manual", "vehicle_class_market_shares.csv"),
-        resolve_input_path(bundle, "interim", load_harmonization_rules(bundle, "statcan_tables")["interim_subdir"],
-                           load_harmonization_rules(bundle, "statcan_tables")["freight"]["output_file"]),
+        *fleet.paths,
     ]
     age_digest = hashlib.sha256(json.dumps({
         "baseline": input_digest,
         "age_inputs": [(path.name, file_sha256(path)) for path in age_inputs],
         "mile_to_km": float(load_conversion_factors(bundle)["length"]["mile_to_km"]),
         "max_age": max_age,
-        "medium_source": scenario.road_utilization.medium_truck_weight_source,
+        "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
+        "fleet_rules": fleet.rules,
     }, sort_keys=True).encode()).hexdigest()
     source_ids = source_id_mapping(bundle.sources)
     contexts: list[ResolvedProvenance] = []
@@ -295,11 +203,11 @@ def build_age_factor_artifact(
                 ("nlr_atb_transportation_2024", atb_component),
             ]
             if profile_class in {"Car", "Light Truck"}:
-                components.append(("ontario_ministry_transport_vehicle_population", "A"))
+                components.append(aggregation_component(bundle, "ldv", ceud_region))
             elif profile_class == "Medium Trucks":
-                components.append(("wards_intelligence_2022_sales_shares", "vehicle_class_market_shares"))
+                components.append(aggregation_component(bundle, "medium_trucks", ceud_region))
             elif profile_class == "Heavy Trucks":
-                components.append(("statcan_transport_tables", "23-10-0142-01"))
+                components.append(aggregation_component(bundle, "heavy_truck_haul", ceud_region))
             context = resolve_composite_provenance(
                 inputs=[resolve_provenance(
                     bundle.sources, source_key=source, component_key=component,
@@ -362,6 +270,7 @@ def build_age_factor_artifact(
         age_classes=age_classes,
     )
     audit["age_input_digest"] = age_digest
+    audit["aggregation_sources"] = bundle.scenario.aggregation_sources.model_dump()
     return age_rows, profiles, contexts, audit
 
 
@@ -468,7 +377,7 @@ def prepare_road_utilization(
     """Prepare deterministic road rows and audit artifacts from registered local inputs."""
     scenario = bundle.scenario
     rules = load_harmonization_rules(bundle, "road_stocks_and_demands")
-    factor_rules = rules["capacity_factor"]
+    factor_rules = load_harmonization_rules(bundle, "road_utilization")
     demand_rules = rules["demand"]
     capacity_rules = rules["existing_capacity"]
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
@@ -528,7 +437,7 @@ def prepare_road_utilization(
     baseline["unit"] = "dimensionless"
     flat_classes = (
         set(factor_rules["flat_only_classes"])
-        if scenario.switches.vkt_schedules else road_classes
+        if scenario.road_utilization.vkt_schedules else road_classes
     )
     flat_payloads = flat_road_capacity_factor_records(
         baseline.loc[baseline.road_class.isin(flat_classes)],
@@ -564,7 +473,7 @@ def prepare_road_utilization(
             transformation_version="1", governing_source_id=source_id,
             value_variant={"input_digest": input_digest,
                            "manual_assumption_data_id": assumption_dataset.data_id,
-                           "vkt_schedules": scenario.switches.vkt_schedules},
+                           "vkt_schedules": scenario.road_utilization.vkt_schedules},
         )
         contexts.append(context)
         selected = [
@@ -577,7 +486,7 @@ def prepare_road_utilization(
     age_rows: pd.DataFrame | None = None
     age_profiles: pd.DataFrame | None = None
     age_audit: dict[str, Any] = {}
-    if scenario.switches.vkt_schedules:
+    if scenario.road_utilization.vkt_schedules:
         age_rows, age_profiles, _age_contexts, age_audit = build_age_factor_artifact(
             bundle, baseline=baseline, technology=expanded,
             activity=activity, stock=stock, rules=factor_rules,
@@ -593,7 +502,7 @@ def prepare_road_utilization(
         technology=expanded,
     )
     audit.update({
-        "vkt_schedules": scenario.switches.vkt_schedules,
+        "vkt_schedules": scenario.road_utilization.vkt_schedules,
         "manual_assumption_data_id": assumption_dataset.data_id,
         "input_content_digest": input_digest,
         **age_audit,

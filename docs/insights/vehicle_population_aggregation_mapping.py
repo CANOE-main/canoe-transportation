@@ -303,7 +303,8 @@ def load_evidence(
                     "switch": switch,
                     "value": value,
                 }
-                for switch, value in bundle.scenario.switches.model_dump().items()
+                for switch, value in {**bundle.scenario.lifetimes.model_dump(),
+                                      "vkt_schedules": bundle.scenario.road_utilization.vkt_schedules}.items()
             ]
         )
         return frames

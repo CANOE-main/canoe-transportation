@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from functools import cache
 from math import isfinite
 from pathlib import Path
@@ -133,6 +132,15 @@ def classify_ratings(
     """Retain native rows; exact EPA hybrid evidence supplements the legacy name rule."""
     spec = rules["ratings"]
     fields = spec["fields"]
+    supported = {
+        "evidence_join": "exact_normalized_year_make_model",
+        "ambiguous_evidence": "retain_name_rule_and_report",
+        "phev_historical_index": "combined_cs_consumption",
+        "phev_baseline": "nlr_atb",
+    }
+    for key, expected in supported.items():
+        if spec[key] != expected:
+            raise ValueError(f"Unsupported ratings.{key}: {spec[key]!r}")
 
     def norm(values):
         return (
@@ -259,10 +267,10 @@ def classify_ratings(
 
 
 def aggregate_ratings(
-    classified: pd.DataFrame, weights: pd.DataFrame, *, rules: dict
+    classified: pd.DataFrame, weights: pd.DataFrame, *, rules: dict, weight_basis: str,
 ) -> pd.DataFrame:
     """Average model ratings within classes, then reweight only observed classes."""
-    weights = weights.loc[weights.weight_basis.eq(rules["rating_weight_basis"])].copy()
+    weights = weights.loc[weights.weight_basis.eq(weight_basis)].copy()
     if weights.empty or weights.report_year.nunique() != 1:
         raise ValueError("Expected one reviewed NRCan class-weight edition")
     if weights.duplicated(["nrcan_ceud_class", "nrcan_vehicle_class"]).any():
@@ -463,39 +471,6 @@ def select_atb_consumption(
     return pd.DataFrame(records).sort_values(
         ["family", "powertrain", "vehicle_class", "year"]
     )
-
-
-def medium_vocation_weights(
-    report4: pd.DataFrame, classes: list[str], *, rules: dict
-) -> dict[str, float]:
-    """MTO GVWR stock weights, equal non-bus/non-refuse vocations within each class."""
-    selected = report4.loc[report4.EPA_GVWR.isin(rules["md_gvwr"])]
-    if selected.EPA_GVWR.duplicated().any() or set(selected.EPA_GVWR) != set(
-        rules["md_gvwr"]
-    ):
-        raise ValueError("Incomplete MTO medium GVWR counts")
-    counts = {
-        row.EPA_GVWR: positive(row.NATIVE_COUNT, "MTO GVWR count")
-        for row in selected.itertuples()
-    }
-    result = {}
-    for label, gvwr in rules["md_gvwr"].items():
-        vocations = [
-            c
-            for c in classes
-            if (m := re.match(rules["atb"]["class_pattern"], c))
-            and int(m[1]) == gvwr
-            and not any(excluded in c for excluded in rules["md_excluded_vocations"])
-        ]
-        if not vocations:
-            raise ValueError(f"No ATB vocational coverage for {label}")
-        result.update(
-            {
-                c: counts[label] / sum(counts.values()) / len(vocations)
-                for c in vocations
-            }
-        )
-    return result
 
 
 def aggregate_atb(
@@ -780,7 +755,9 @@ class RoadEfficiencyEvidence:
                 if set(source.source_unit) != {"MJ/vkm"}:
                     raise ValueError("Unexpected GCAM motorcycle units")
                 incumbent = source.loc[
-                    source.source_technology.eq(self.rules["motorcycle"]["gasoline"])
+                    source.source_technology.eq(
+                        self.rules["motorcycle"][self.rules["motorcycle"]["gasoline_fuel"]]
+                    )
                 ]
                 target = source.loc[
                     source.source_technology.eq(self.rules["motorcycle"][powertrain])

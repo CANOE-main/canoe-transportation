@@ -146,16 +146,13 @@ def _source(bundle: ConfigBundle, source_id: str) -> SourceSpec:
     return source
 
 
-def configured_trajectory(bundle: ConfigBundle) -> str:
-    """Resolve the scenario-selected ATB trajectory used only as an output marker."""
+def configured_trajectory(
+    bundle: ConfigBundle, *, parameter: Literal["efficiencies", "costs"] = "efficiencies",
+) -> str:
+    """Validate a parameter's ATB choice; normalization retains every trajectory."""
     source = _source(bundle, ATB_SOURCE_ID)
     expected = tuple(str(value) for value in source.adapter["expected_trajectories"])
-    selection = bundle.scenario.sources.selections.get(ATB_SOURCE_ID)
-    trajectory = selection.trajectory if selection is not None else None
-    if trajectory is None:
-        raise NlrAtbAutonomieError(
-            f"Scenario must select a trajectory for {ATB_SOURCE_ID}"
-        )
+    trajectory = getattr(bundle.scenario, parameter).atb_trajectory
     if trajectory not in expected:
         raise NlrAtbAutonomieError(
             f"Unsupported ATB trajectory {trajectory!r}; expected one of {list(expected)}"
@@ -515,6 +512,8 @@ def match_phev_utility_factors(
     notes_column = str(matching["notes_column"])
     ldv_rules = matching["ldv"]
     mdhd_rules = matching["mdhd"]
+    if ldv_rules["allow_extrapolation"] is not False:
+        raise NlrAtbAutonomieError("PHEV utility-factor extrapolation is unsupported")
     ldv_keys = [str(value) for value in ldv_rules["exact_key_fields"]]
     mdhd_keys = [str(value) for value in mdhd_rules["exact_key_fields"]]
     range_column = str(ldv_rules["interpolation_dimension"])

@@ -79,7 +79,9 @@ def test_bus_capacity_uses_annual_activity_and_redistributes_old_cohorts() -> No
         report5_age=age,
         annual_efficiency=efficiency,
         lifetimes=lifetimes,
-        regions=["ON"], base_year=2023, first_model_period=2025,
+        regions=["ON"], base_year=2023,
+        vintage_periods=[2000, 2005, 2010, 2015, 2020, 2023],
+        vehicle_population_year=2025, first_model_period=2025,
         road_rules=road_rules, rules=rules,
     )
     assert set(capacity.road_class) == set(rules["classes"])
@@ -112,6 +114,8 @@ def test_bus_orphaned_technology_stock_moves_within_its_class() -> None:
     cohorts, _, _, transfers, capacity = distribute_existing_bus_capacity(
         provincial=provincial, report5_age=age, annual_efficiency=efficiency,
         lifetimes=lifetimes, regions=["ON"], base_year=2023,
+        vintage_periods=[2000, 2005, 2010, 2015, 2020, 2023],
+        vehicle_population_year=2025,
         first_model_period=2025, road_rules=road_rules, rules=rules,
     )
     assert set(transfers.from_tech) == {school["fuel_technology"]["cng"]}

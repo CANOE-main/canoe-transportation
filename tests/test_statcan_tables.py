@@ -23,7 +23,8 @@ from fetching.statcan_tables import (
     validate_metadata_contract,
     write_outputs,
 )
-from utils import load_config_bundle, load_conversion_factors
+from parameterization.road_fleet_weights import FleetAggregationEvidence
+from utils import load_config_bundle, load_conversion_factors, load_harmonization_rules
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -326,6 +327,64 @@ def _freight_long_rows(
         }
         for characteristic, value in values.items()
     ]
+
+
+def test_provincial_haul_weights_include_both_directions_and_intraprovinces_once(
+    bundle, rules,
+) -> None:
+    request = request_for(bundle, "23-10-0142-01")
+    flows = [
+        ("Toronto, Ontario", "Quebec", 100.0, 100.0),
+        ("Quebec", "Toronto, Ontario", 600.0, 300.0),
+        ("Hamilton, Ontario", "Toronto, Ontario", 100.0, 100.0),
+        ("Quebec", "Quebec", 600.0, 700.0),
+        ("Alberta", "Manitoba", 100.0, 10000.0),
+    ]
+    rows = []
+    for origin, destination, distance, tonne_km in flows:
+        for characteristic, (value, unit) in {
+            "Shipments": (10.0, "Number"),
+            "Weight": (20000.0, "Kilograms"),
+            "Distance": (distance * 10, "Kilometres"),
+            "Tonne-kilometres": (tonne_km, "Tonne-kilometres"),
+        }.items():
+            rows.append({
+                "REF_DATE": "2017", "GEO": origin,
+                "Geography, destination of shipments": destination,
+                "Mode of transportation": "Truck (for-hire)",
+                "Commodity group": "Food", "Characteristics": characteristic,
+                "SCALAR_FACTOR": "units", "UOM": unit, "VALUE": value,
+            })
+    trucks = pd.DataFrame(rows)
+    source = pd.concat([
+        trucks, trucks.assign(**{"Mode of transportation": "Rail"}),
+    ], ignore_index=True)
+    selected = pd.concat(_select_chunk(
+        source, request=request, regions=["ON", "QC"], geography_rules=rules["geography"],
+    ), ignore_index=True)
+    normalized = normalize_table(
+        selected, request=request, source_member="23100142.csv",
+        scalar_multipliers={"units": 1.0},
+    )
+    candidates = build_freight_candidates(
+        normalized, rules=rules,
+        mile_to_km=float(load_conversion_factors(bundle)["length"]["mile_to_km"]),
+        warnings=[],
+    )
+    evidence = FleetAggregationEvidence(
+        bundle, load_harmonization_rules(bundle, "road_aggregation"),
+        pd.DataFrame(), {}, candidates, (),
+    )
+    assert candidates.groupby("scenario_region").size().to_dict() == {"ON": 3, "QC": 3}
+    assert candidates.groupby(["scenario_region", "region_match"]).size().to_dict() == {
+        (region, direction): 1 for region in ("ON", "QC")
+        for direction in ("both", "origin", "destination")
+    }
+    for region, daycab_share in (("ON", 0.4), ("QC", 1 / 11)):
+        weights = evidence.heavy_weights(region)
+        assert weights["Class 8 Longhaul Sleeper"] == pytest.approx(1 - daycab_share)
+        assert sum(value for label, value in weights.items() if "DayCab" in label) == pytest.approx(daycab_share)
+        assert sum(weights.values()) == pytest.approx(1)
 
 
 def test_freight_curb_weight_threshold_and_exact_350_mile_boundary(rules, bundle) -> None:

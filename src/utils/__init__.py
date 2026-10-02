@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -30,10 +31,27 @@ class ConfigBundle:
 def load_yaml(path: Path) -> dict[str, Any]:
     """Load a YAML mapping from disk."""
     with path.open("r", encoding="utf-8") as handle:
-        data = yaml.safe_load(handle) or {}
+        data = yaml.load(handle, Loader=UniqueKeyLoader) or {}
     if not isinstance(data, dict):
         raise ValueError(f"Expected YAML mapping in {path}")
     return data
+
+
+class UniqueKeyLoader(yaml.SafeLoader):
+    """Reject overwritten YAML keys while retaining safe loading and anchors."""
+
+    def construct_mapping(self, node, deep=False):
+        keys = set()
+        for key_node, _ in node.value:
+            if key_node.tag == "tag:yaml.org,2002:merge":
+                continue
+            key = self.construct_object(key_node, deep=deep)
+            if key in keys:
+                raise ValueError(
+                    f"Duplicate YAML key {key!r} at {key_node.start_mark}"
+                )
+            keys.add(key)
+        return super().construct_mapping(node, deep=deep)
 
 
 def find_repo_root(start: Path | None = None) -> Path:
@@ -95,14 +113,21 @@ def load_parameter_yaml(bundle: ConfigBundle, filename: str | Path) -> dict[str,
 
 
 def load_harmonization_rules(bundle: ConfigBundle, module_name: str) -> dict[str, Any]:
-    """Load harmonization rules for one parameterization module."""
+    """Load extraction/harmonization rules for one executable owner."""
     rules = load_parameter_yaml(bundle, "rules.yaml")
-    try:
-        module_rules = rules["parameterization"][module_name]
-    except KeyError as exc:
+    if rules.get("version") != 2 or set(rules) != {"version", "fetching", "parameterization"}:
+        raise ValueError("rules.yaml requires version 2 with fetching and parameterization sections")
+    owners = [
+        section for section in ("fetching", "parameterization")
+        if module_name in rules[section]
+    ]
+    if not owners:
         raise KeyError(
-            f"Missing parameterization rules for module: {module_name}"
-        ) from exc
+            f"Missing extraction/harmonization rules for module: {module_name}"
+        )
+    if len(owners) != 1:
+        raise ValueError(f"Rules module {module_name!r} must have exactly one owner")
+    module_rules = rules[owners[0]][module_name]
     if not isinstance(module_rules, dict):
         raise ValueError(f"Expected mapping for harmonization rules: {module_name}")
     return module_rules
@@ -137,6 +162,10 @@ def load_config_bundle(
     errors = validate_config_bundle(bundle)
     if errors:
         raise ValueError(f"Invalid configuration: {errors}")
+    logging.getLogger(__name__).info(
+        "Unannotated source/component DQ indicators use registry defaults: %s",
+        bundle.sources.defaults.data_quality.row_fields(),
+    )
     return bundle
 
 
@@ -149,6 +178,55 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
             errors.append(f"source selection not defined in sources.yaml: {source_name}")
         elif registered[source_name].status != "active":
             errors.append(f"source selection is inactive in sources.yaml: {source_name}")
+    selectors = {
+        "nrcan_ceud_transport_provincial": "year",
+        "nrcan_ceud_transport_national": "year",
+        "transport_canada_ev_dashboard": "year",
+        "cer_canadas_energy_future": "edition",
+    }
+    selections = bundle.scenario.sources.selections
+    for source_name, field in selectors.items():
+        if source_name not in selections or getattr(selections[source_name], field) is None:
+            errors.append(f"sources.selections.{source_name}.{field} is required")
+    for source_name, selection in selections.items():
+        if source_name not in selectors:
+            errors.append(f"No implemented scenario source selector for {source_name}")
+        else:
+            supplied = {key for key, value in selection.model_dump().items() if value is not None}
+            if supplied != {selectors[source_name]}:
+                errors.append(f"sources.selections.{source_name} supports only {selectors[source_name]}")
+    atb = registered.get("nlr_atb_transportation_2024")
+    if atb is not None:
+        for section in ("efficiencies", "costs"):
+            trajectory = getattr(bundle.scenario, section).atb_trajectory
+            if trajectory not in atb.adapter["expected_trajectories"]:
+                errors.append(f"{section}.atb_trajectory is not registered: {trajectory}")
+    cer = registered.get("cer_canadas_energy_future")
+    if cer is not None and "cer_canadas_energy_future" in selections:
+        edition = selections["cer_canadas_energy_future"].edition
+        editions = cer.adapter["editions"]["allowed"]
+        edition_metadata = editions.get(edition, editions.get(str(edition)))
+        if edition_metadata is None:
+            errors.append(f"sources.selections.cer_canadas_energy_future.edition is not registered: {edition}")
+        else:
+            for section in ("demand", "economics"):
+                trajectory = getattr(bundle.scenario, section).cer_scenario
+                if trajectory not in edition_metadata["scenarios"]:
+                    errors.append(f"{section}.cer_scenario is not registered for CER {edition}: {trajectory}")
+    supported_aggregation = {
+        "stock_age": {"ontario_ministry_transport_vehicle_population"},
+        "ldv": {"ontario_ministry_transport_vehicle_population"},
+        "medium_trucks": {
+            "ontario_ministry_transport_vehicle_population", "wards_intelligence_2022_sales_shares",
+        },
+        "heavy_truck_haul": {"statcan_transport_tables"},
+    }
+    for role, adapters in supported_aggregation.items():
+        for region, source in bundle.scenario.aggregation_sources[role].items():
+            if source not in registered or registered[source].status != "active":
+                errors.append(f"aggregation_sources.{role}.{region} source is unknown or inactive: {source}")
+            elif source not in adapters:
+                errors.append(f"aggregation_sources.{role}.{region} has no implemented adapter for {source}")
     return errors
 
 

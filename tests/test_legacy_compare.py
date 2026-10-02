@@ -57,7 +57,7 @@ def test_legacy_comparison_is_scenario_controlled() -> None:
         "config/scenarios/legacy_reproduction.yaml", repo_root=REPO_ROOT
     )
 
-    assert bundle.scenario.validation.compare_legacy is True
+    assert bundle.scenario.comparison.mode == "legacy"
 
 
 def test_capacity_comparison_maps_legacy_units_and_reports_value_gaps(tmp_path: Path) -> None:
@@ -71,11 +71,11 @@ def test_capacity_comparison_maps_legacy_units_and_reports_value_gaps(tmp_path: 
         connection.execute("INSERT INTO ExistingCapacity VALUES ('ON', 'T_CAR', 2020, 3.0, 'k units')")
         connection.execute("INSERT INTO ExistingCapacity VALUES ('ON', 'T_CHRG', 2020, 1.0, 'GW')")
 
-    result = compare_legacy_existing_capacity(candidate, reference)
+    result = compare_legacy_existing_capacity(candidate, reference, absolute_tolerance=1e-9, relative_tolerance=1e-6)
 
     assert result["shared_tech_vintage_keys"] == 1
     assert result["unit_mismatches"] == []
-    assert result["value_differences_over_1e_6"] == 1
+    assert result["value_differences"] == 1
     assert result["reference_rows"] == 1
 
 
@@ -89,11 +89,11 @@ def test_demand_comparison_reports_numeric_gap_without_unit_false_positive(tmp_p
         connection.execute("CREATE TABLE demand (region TEXT, commodity TEXT, period INTEGER, demand REAL, units TEXT)")
         connection.execute("INSERT INTO demand VALUES ('ON', 'T_D_pkm_ldv_c', 2025, 3.0, 'bpkm')")
         connection.execute("INSERT INTO demand VALUES ('ON', 'T_D_pj_off', 2025, 1.0, 'PJ')")
-    result = compare_legacy_demand(candidate, reference)
+    result = compare_legacy_demand(candidate, reference, absolute_tolerance=1e-9, relative_tolerance=1e-6)
     assert result["shared_keys"] == 1
     assert result["reference_rows"] == 1
     assert result["unit_mismatches"] == []
-    assert result["value_differences_over_1e_6"] == 1
+    assert result["value_differences"] == 1
 
 
 def test_fixed_lifetime_comparison_reports_only_numeric_shared_keys(tmp_path: Path) -> None:
@@ -109,7 +109,7 @@ def test_fixed_lifetime_comparison_reports_only_numeric_shared_keys(tmp_path: Pa
         connection.executemany("INSERT INTO LifetimeTech VALUES (?, ?, ?)", [
             ("ON", "T_ONE", "12"), ("ON", "T_TWO", "14"), ("ON", "T_BLANK", "")
         ])
-    report = compare_legacy_lifetime_tech(candidate, reference)
+    report = compare_legacy_lifetime_tech(candidate, reference, absolute_tolerance=1e-9, relative_tolerance=1e-6)
     assert report["shared_keys"] == 2
     assert report["equal_values"] == 1
     assert report["value_differences"] == 1
