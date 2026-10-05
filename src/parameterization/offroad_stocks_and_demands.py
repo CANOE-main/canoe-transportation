@@ -8,6 +8,8 @@ from typing import Any
 
 import pandas as pd
 
+from validation.config_models import ScenarioPeriods
+
 
 ENERGY_KEY = ["region", "mode", "tech", "year"]
 INTENSITY_KEY = ["mode", "year"]
@@ -279,15 +281,13 @@ def build_offroad_existing_capacity(
     manual_lifetimes: pd.DataFrame,
     source_selector: str,
     regions: list[str],
-    base_year: int,
-    vintage_periods: list[int],
-    first_model_period: int,
+    period_config: ScenarioPeriods,
     rules: dict[str, Any],
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Select CEUD mode series, apply same-year intensities and cohort retirement."""
-    periods = [int(period) for period in vintage_periods]
-    if periods != sorted(set(periods)) or periods[-1] != base_year:
-        raise ValueError("Off-road vintage periods must be unique and end at base year")
+    base_year = period_config.base_year
+    periods = period_config.existing
+    first_model_period = period_config.model[0]
     if rules["retirement_rule"] != "linear_cohort_annual_reconciliation":
         raise ValueError("Unsupported off-road retirement rule")
     if (
@@ -480,9 +480,7 @@ def build_offroad_existing_capacity(
         ],
         first_model_period=first_model_period,
     )
-    cohorts["vintage"] = cohorts["vintage_year"].map(
-        lambda year: next(period for period in periods if period >= year)
-    )
+    cohorts["vintage"] = cohorts["vintage_year"].map(period_config.existing_vintage)
     capacity = (
         cohorts.groupby(["region", "mode", "tech", "vintage", "units"], as_index=False)[
             "capacity_at_base_year"

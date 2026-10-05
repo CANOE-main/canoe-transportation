@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from parameterization.road_stocks_and_demands import distribute_existing_bus_capacity
+from validation.config_models import ScenarioPeriods
 from build_transport import bootstrap_database
 from utils import load_config_bundle, load_harmonization_rules, resolve_input_path
 
@@ -79,9 +80,12 @@ def test_bus_capacity_uses_annual_activity_and_redistributes_old_cohorts() -> No
         report5_age=age,
         annual_efficiency=efficiency,
         lifetimes=lifetimes,
-        regions=["ON"], base_year=2023,
-        vintage_periods=[2000, 2005, 2010, 2015, 2020, 2023],
-        vehicle_population_year=2025, first_model_period=2025,
+        regions=["ON"],
+        period_config=ScenarioPeriods(
+            period_mode="legacy", base_year=2023,
+            existing=[2000, 2005, 2010, 2015, 2020, 2023], model=[2025], step=5,
+        ),
+        vehicle_population_year=2025,
         road_rules=road_rules, rules=rules,
     )
     assert set(capacity.road_class) == set(rules["classes"])
@@ -113,10 +117,13 @@ def test_bus_orphaned_technology_stock_moves_within_its_class() -> None:
     provincial.loc[mask, "value"] = 0.0
     cohorts, _, _, transfers, capacity = distribute_existing_bus_capacity(
         provincial=provincial, report5_age=age, annual_efficiency=efficiency,
-        lifetimes=lifetimes, regions=["ON"], base_year=2023,
-        vintage_periods=[2000, 2005, 2010, 2015, 2020, 2023],
+        lifetimes=lifetimes, regions=["ON"],
+        period_config=ScenarioPeriods(
+            period_mode="legacy", base_year=2023,
+            existing=[2000, 2005, 2010, 2015, 2020, 2023], model=[2025], step=5,
+        ),
         vehicle_population_year=2025,
-        first_model_period=2025, road_rules=road_rules, rules=rules,
+        road_rules=road_rules, rules=rules,
     )
     assert set(transfers.from_tech) == {school["fuel_technology"]["cng"]}
     assert set(transfers.to_tech) == {

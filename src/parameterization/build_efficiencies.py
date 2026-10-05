@@ -179,13 +179,6 @@ def technology_relationships(
     return result.sort_values(["tech", "input_comm", "output_comm"])
 
 
-def vintage_years(vintage: int, *, existing: list[int], step: int) -> list[int]:
-    """Historical cohorts use the existing-capacity ceiling bins, not future endpoints."""
-    index = existing.index(vintage)
-    start = existing[index - 1] + 1 if index else vintage - step + 1
-    return list(range(start, vintage + 1))
-
-
 def phev_split_evidence(
     atb: pd.DataFrame, *, endpoints: list[int], rules: dict, fleet_rules: dict,
 ) -> pd.DataFrame:
@@ -565,13 +558,9 @@ def prepare_efficiency_rows(
             )
             for vintage in vintages:
                 years = (
-                    vintage_years(
-                        vintage,
-                        existing=scenario.periods.existing,
-                        step=scenario.periods.step,
-                    )
+                    scenario.periods.historical_years(vintage)
                     if edge.tech.endswith(rules["existing_suffix"])
-                    else [vintage + scenario.periods.step]
+                    else [scenario.periods.projection_year(vintage, legacy_at_end=True)]
                 )
                 if (
                     edge.tech.endswith(rules["existing_suffix"])
@@ -591,7 +580,7 @@ def prepare_efficiency_rows(
                     source_year = rules["historical_single_year_technologies"][
                         edge.tech
                     ]
-                    if vintage != source_year:
+                    if vintage != scenario.periods.existing_vintage(source_year):
                         raise ValueError(
                             f"Unexpected historical vintage for {edge.tech}: {vintage}"
                         )
@@ -647,7 +636,7 @@ def prepare_efficiency_rows(
                         "kind": edge.kind,
                     }
                 )
-    endpoints = [p + scenario.periods.step for p in scenario.periods.model]
+    endpoints = [scenario.periods.projection_year(p, legacy_at_end=True) for p in scenario.periods.model]
     split_audit = phev_split_evidence(atb, endpoints=endpoints, rules=rules, fleet_rules=fleet.rules)
     digest = hashlib.sha256(
         json.dumps(

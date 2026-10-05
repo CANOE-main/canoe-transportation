@@ -34,7 +34,7 @@ def test_age_mode_retains_vintage_period_grain_and_flat_only_classes() -> None:
     )
     car = profile.loc[profile.region.eq("ON") & profile.nrcan_ceud_class.eq("Car")]
     assert car.age.max() == 10
-    assert scenario.lifetimes.survival_curve_max_age == 25
+    assert scenario.lifetimes.survival_curve_max_age == 29
     assert car.normalized_utilization.max() == pytest.approx(1.0)
     assert car.normalized_utilization.nunique() > 1
     selected = rows.loc[

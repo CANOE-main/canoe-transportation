@@ -10,7 +10,7 @@ from canoe_schema.v4_0 import LimitAnnualCapacityFactor
 
 from parameterization.ev_chargers import _validate_shares, prepare_ev_charger_rows
 from parameterization.build_existing_capacity import prepare_existing_capacity_rows
-from utils import load_config_bundle, load_harmonization_rules, resolve_artifact_path
+from utils import load_harmonization_rules, resolve_artifact_path
 from validation.config_models import ScenarioEvChargers
 
 
@@ -19,8 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="module")
-def prepared():
-    bundle = load_config_bundle(SCENARIO, repo_root=ROOT)
+def prepared(legacy_bundle):
+    bundle = legacy_bundle
     stock, contexts, _ = prepare_existing_capacity_rows(bundle)
     return bundle, prepare_ev_charger_rows(
         bundle, existing_capacity_rows=stock, existing_capacity_contexts=contexts,
@@ -54,7 +54,9 @@ def test_charger_port_capacity_and_provenance(prepared) -> None:
 
 def test_charger_costs_utilization_and_efficiency(prepared) -> None:
     bundle, result = prepared
-    assert len(result.invest_rows) == 118
+    assert len(result.invest_rows) == 100
+    assert all(row.tech.endswith("_N") for row in result.invest_rows)
+    assert result.audit["existing_investment_rows_excluded"] == 18
     assert len(result.fixed_rows) == 390
     assert len(result.efficiency_rows) == 118
     assert len(result.utilization) == 190
@@ -76,8 +78,13 @@ def test_charger_costs_utilization_and_efficiency(prepared) -> None:
         assert investments["ON", tech, 2025] == pytest.approx(expected)
     assert set(conversion.loc[conversion.charger_type.eq("L1"), "source_unit"]) == {"M USD"}
     assert set(conversion.loc[conversion.charger_type.ne("L1"), "source_unit"]) == {"M CAD"}
-    assert all(row.cost == pytest.approx(investments[row.region, row.tech, row.vintage] * 0.01)
-               for row in result.fixed_rows)
+    for row in result.fixed_rows:
+        category = "ldv" if "LDV" in row.tech else "mhdv"
+        basis = conversion.loc[
+            conversion.charger_class.eq(category) & conversion.vintage.eq(row.vintage),
+            "weighted_cad_2020_cost_per_gw",
+        ].sum()
+        assert row.cost == pytest.approx(basis * 0.01)
     assert all(row.units == "$M 2020CAD / GW" for row in [*result.invest_rows, *result.fixed_rows])
     assert set(result.utilization.period) == set(bundle.scenario.periods.model)
     assert set(row.efficiency for row in result.efficiency_rows if "LDV" in row.tech) == {0.95}

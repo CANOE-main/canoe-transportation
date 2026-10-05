@@ -90,6 +90,12 @@ def workflow_repo(tmp_path: Path) -> Path:
     )
     for filename in ("pyproject.toml", "uv.lock"):
         shutil.copyfile(REPO_ROOT / filename, tmp_path / filename)
+    import yaml
+
+    scenario_path = tmp_path / SCENARIO
+    payload = yaml.safe_load(scenario_path.read_text(encoding="utf-8"))
+    payload["embodied_emissions"] = False
+    scenario_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     bundle = load_config_bundle(SCENARIO, repo_root=tmp_path)
     cache_paths = [request.cache_path for request in cer_requests(bundle)] + [
         path
@@ -190,6 +196,8 @@ def test_workflow_sequences_sources_reuses_outputs_and_rebuilds_missing_table(
             {"statcan_tables", "database"},
         ),
         ("src/parameterization/build_costs.py", {"database"}),
+        ("src/fetching/nlr_atb_autonomie.py", {"database"}),
+        ("src/fetching/fueleconomy_vehicles.py", {"database"}),
         (CER_CACHE, {"cer_enerfuture", "database"}),
         ("inputs/0_manual_params/lifetime_process.csv", {"doctor", "database"}),
         ("inputs/0_canoe_template/region.csv", {"doctor", "database"}),
@@ -228,3 +236,31 @@ def test_offline_workflow_rejects_missing_cache_before_running_jobs(workflow_rep
     assert "MissingInputException" in result.stdout + result.stderr
     assert not (root / "events.jsonl").exists()
     assert not (root / DATABASE).exists()
+
+
+def test_embodied_workbooks_are_conditional_and_invalidate_only_assembly(workflow_repo):
+    import yaml
+
+    from fetching.greet_vehicle_cycle import required_inputs
+    from utils import load_config_bundle
+
+    root = workflow_repo
+    assert required_inputs(load_config_bundle(SCENARIO, repo_root=root)) == []
+    run_workflow(root, "--dry-run")
+    scenario_path = root / SCENARIO
+    payload = yaml.safe_load(scenario_path.read_text(encoding="utf-8"))
+    payload["embodied_emissions"] = True
+    scenario_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    result = run_workflow(root, "--dry-run", succeeds=False)
+    assert "MissingInputException" in result.stdout + result.stderr
+    assert "GREET" in result.stdout + result.stderr
+    workbooks = required_inputs(load_config_bundle(SCENARIO, repo_root=root))
+    assert len(workbooks) == 8  # Two models, complete five-file bank, and ATB archetypes.
+    for path in workbooks:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("fixture saved workbook\n", encoding="utf-8")
+    run_workflow(root)
+    previous = len(events(root))
+    workbooks[1].write_text("changed fixture saved workbook\n", encoding="utf-8")
+    run_workflow(root)
+    assert events(root)[previous:] == ["database"]

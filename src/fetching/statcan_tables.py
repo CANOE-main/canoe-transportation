@@ -23,6 +23,7 @@ from utils import (
     load_conversion_factors,
     load_harmonization_rules,
     resolve_input_path,
+    write_text_atomic,
 )
 from validation.config_models import SourceSpec
 
@@ -175,16 +176,6 @@ def resolve_download_url(
     return str(payload["object"])
 
 
-def _write_json_atomic(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    os.replace(temporary, path)
-
-
 def fetch_metadata_to_cache(
     request: StatCanTableRequest,
     *,
@@ -203,7 +194,10 @@ def fetch_metadata_to_cache(
     response.raise_for_status()
     payload = response.json()
     metadata_object(payload, request)
-    _write_json_atomic(request.metadata_cache_path, payload)
+    write_text_atomic(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        request.metadata_cache_path,
+    )
     return "downloaded"
 
 

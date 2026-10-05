@@ -28,7 +28,6 @@ from parameterization.road_efficiencies import (
 )
 from utils import (
     file_sha256,
-    load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
     resolve_input_path,
@@ -36,8 +35,8 @@ from utils import (
 
 
 @pytest.fixture
-def bundle():
-    return load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+def bundle(legacy_bundle):
+    return legacy_bundle
 
 
 @pytest.fixture
@@ -532,9 +531,7 @@ def test_template_edges_periods_and_default_exclusions(bundle, rules):
     }
     assert not edges.index.str.contains("CHRG|REFUEL|dummy").any()
     assert rules["ldv_archetypes"]["fcev"]["analogue"] == "gasoline"
-    assert layer.vintage_years(
-        2023, existing=[2000, 2005, 2010, 2015, 2020, 2023], step=5
-    ) == [2021, 2022, 2023]
+    assert bundle.scenario.periods.historical_years(2023) == [2021, 2022, 2023]
 
 
 @pytest.mark.parametrize("include_bus_capacity", [False, True])

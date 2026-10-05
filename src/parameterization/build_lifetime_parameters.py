@@ -93,6 +93,7 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
     fixed_rows.sort(key=lambda row: (row.region, row.tech))
     curve_rows.sort(key=lambda row: (row.region, row.tech, row.vintage, row.period))
     audit = {
+        "period_mapping": bundle.scenario.periods.audit(),
         "representation": "accepted_road_curves" if curve_rows else "fixed_lifetimes",
         "fixed_rows": len(fixed_rows), "curve_rows": len(curve_rows),
         "fixed_technologies": len({row.tech for row in fixed_rows}),

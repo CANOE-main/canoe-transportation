@@ -121,11 +121,15 @@ def run_doctor(
             "scenario": str(bundle.scenario_path),
             "validation_errors": [],
         }
-        reference_sqlite = resolve_repo_path(bundle.repo_root, bundle.scenario["validation"]["reference_sqlite"])
+        reference_value = bundle.scenario.comparison.reference_sqlite
+        reference_sqlite = (
+            resolve_repo_path(bundle.repo_root, reference_value)
+            if reference_value is not None else None
+        )
         checks["paths"] = {
             "schema_package": schema_evidence(),
-            "reference_sqlite": str(reference_sqlite),
-            "reference_sqlite_exists": reference_sqlite.exists(),
+            "reference_sqlite": str(reference_sqlite) if reference_sqlite is not None else None,
+            "reference_sqlite_exists": reference_sqlite.exists() if reference_sqlite is not None else None,
         }
         checks["generated_directories"] = check_directory_state(
             configured_generated_directories(bundle),

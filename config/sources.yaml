@@ -1151,20 +1151,22 @@ sources:
   argonne_rd_greet_2025_rev1:
     title: "R&D GREET 2025 Rev.1 Excel"
     status: active
-    source_type: manual_parameter
-    file_type: csv
+    source_type: external_model
+    file_type: xlsm
     version: "2025 Rev.1, published 2026"
-    units: "Dimensionless energy-intensity ratio."
+    units: "Component-specific: marine intensity ratio, fuel HHV, and vehicle-cycle lifetime gas totals."
     citation: "Wang, M., Cai, H., Ou, L., et al. (2026). R&D Greenhouse gases, Regulated Emissions, and Energy use in Technologies Model (2025 Rev.1 Excel) [Computer software]. Argonne National Laboratory. https://doi.org/10.11578/GREET-EXCEL-2025REV1/DC.20260610.1"
     database_note: ""
     data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
-    validation_rule: "Select exactly the reviewed HFO-to-MDO marine energy-intensity row from the mixed-source efficiency table."
+    validation_rule: "Validate each component's registered workbook or reviewed manual evidence independently."
     refresh_notes: >
-      Recalculate the ratio only from a reviewed GREET marine-trip workbook and
-      update the citation and notes together.
+      Keep marine and HHV evidence independent of vehicle-cycle refreshes. For a
+      GREET release change, review filenames, native controls/functions, extraction
+      labels/anchors, years and source-formula audit, then explicitly regenerate
+      the vehicle-cycle result bank. Offline preparation rejects stale evidence.
     adapter:
       access:
-        method: version_controlled_manual_parameter
+        method: registered_external_model
         url: "https://greet.anl.gov/greet/versions.html"
     components:
       marine_hfo_energy_intensity:
@@ -1196,6 +1198,75 @@ sources:
           external_model_path: R&D GREET2025_Rev1/R&D GREET1_2025_Rev1.xlsm
           worksheet: Fuel_Specs
           cells: {gasoline: D16, diesel: D23}
+
+      road_vehicle_cycle_emissions:
+        label: GREET road vehicle-cycle lifetime gas totals
+        short_name: greet_road_vehicle_cycle_emissions
+        notes: >
+          The single registered pair replaces the former class-specific folders.
+          The 2025-target Excel probe reproduces a source-formula mismatch in
+          GREET2 Car/SUV/PUT!J4: lightweight BEV AER 150/200/300/400 selects glider
+          columns labeled EV400/EV150/EV200/EV300 respectively. The corresponding
+          W4/Y4/AA4/AC4 inputs are identical within each worksheet in this release,
+          so the mismatch has no numerical effect. Preserve the native formula and
+          results. Recheck saved inputs on every refresh; correct the downstream
+          selector before using a future release with unequal range assumptions.
+        required: false  # Required by preparation only when embodied_emissions is enabled.
+        inputs: [registered_vehicle_cycle_workbooks, validated_vehicle_cycle_result_bank]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
+        produces: [emission_embodied]
+        parameter_modules: [road_embodied_emissions]
+        units: g/vehicle-lifetime
+        validation_rule: >
+          Explicit Excel generation operates disposable copies and validates native
+          macros/functions, controls, labels, units, finite results, repeated full
+          calculations, class/range response and MHDV independence. Offline consumers
+          validate result-bank hashes against registered inputs and extraction/control
+          contracts. Retain the full report and case/exclusion audits and verify finite
+          saved glider inputs. The configured lightweight policy may accept a native
+          selector mismatch only when its affected range inputs are identical.
+          Exclude combined CO2 (VOC, CO, CO2).
+        adapter:
+          directory: R&D GREET2025_Rev1
+          greet1_file: R&D GREET1_2025_Rev1.xlsm
+          greet2_file: R&D GREET2_2025_Rev1.xlsm
+          # One explicit simulation target; changing it requires regeneration and
+          # review of the corresponding imported LDV cohort, not an automatic sweep.
+          solved_simulation_year: 2025
+          ldv_vehicle_cohort_year: 2020
+          manifest_file: manifest.json
+          automation:
+            timeout_seconds: 1800
+            max_calculation_passes: 4
+            relative_tolerance: 1.0e-10
+            absolute_tolerance: 1.0e-8
+            macro: Calculation.Calc
+            macro_arguments: [true]
+            names:
+              simulation_year: {name: Year, cell: E9}
+              ldv_selector: {name: Veh_Type_Option, cell: E16}
+              phev_range_miles: {name: Grid_AER, cell: F993}
+              bev_range_miles: {name: BEV_AER, cell: F994}
+            range_dropdown_names: {phev: Grid_VMT_AER, bev: BEV_VMT_AER}
+            range_labels: {E993: PHEVs, E994: BEVs}
+            range_unit: {cell: C992, label: '12.3.a) Rated All Electric Range (RAER) [miles]'}
+            imported_controls: {ldv_selector: B4, phev_range_miles: D12, bev_range_miles: G12}
+            preserved_ldv_selectors: [B8, B11, B14]
+            function_checks:
+              - {workbook: greet1, name: GREET_Version, arguments: [], expected: R&D GREET1 2025_Rev1}
+              - {workbook: greet2, name: Battery, arguments: [1], expected: 'Batteries: Pb_Acid'}
+            lightweight_glider:
+              worksheets: [Car, SUV, PUT]
+              formula_cell: J4
+              header_row: 3
+              columns: [W, Y, AA, AC]
+              range_reference: GREET1_Import_Export!$G$12
+              header_pattern: 'EV([0-9]+): Lightweight Material'
+            files:
+              results: vehicle_cycle_gases.csv
+              exclusions: excluded_combined_co2.csv
+              cases: cases.csv
+              report: run_report.json
 
   epa_moves4_population_activity_2023:
     title: "Population and Activity of Onroad Vehicles in MOVES4"

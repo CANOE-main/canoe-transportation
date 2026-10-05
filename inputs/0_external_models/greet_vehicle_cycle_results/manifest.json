@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "source_id": "argonne_rd_greet_2025_rev1",
+  "component": "road_vehicle_cycle_emissions",
+  "profile_sha256": "b3e8ffd8eae904495ad1bb52cf49fac7b25bac6b3586bc2d33a32abb1afa202b",
+  "source_hashes": {
+    "inputs/0_external_models/R&D GREET2025_Rev1/R&D GREET1_2025_Rev1.xlsm": "3abed15be3442b25b66c7d991ce4ea89fd1fe534af930ae772e419241f0d976f",
+    "inputs/0_external_models/R&D GREET2025_Rev1/R&D GREET2_2025_Rev1.xlsm": "2be89abd169eba7180c0ca41102461682fc258a38ea143c5544bfd051ed03384"
+  },
+  "files": {
+    "vehicle_cycle_gases.csv": "6c450944473b51e0fac88e371a67036525ce4a43ceaf679b856fc9cf94a400e8",
+    "excluded_combined_co2.csv": "cd9eb8f83f49f15d8310ea03a001bbf8fff20d26353d6ca7cccc8c6582bc00c7",
+    "cases.csv": "78a0668337161b40db29b45252689d1ec2309508546affa89ba0cdef1f531c04",
+    "run_report.json": "716fbd5b29a35f5ef28c67e0365add44cc4168d7e197c184dc4ffda3cbf3622d"
+  }
+}

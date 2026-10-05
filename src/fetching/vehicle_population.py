@@ -24,6 +24,7 @@ from utils import (
     load_harmonization_rules,
     resolve_input_path,
     write_dataframe_atomic,
+    write_text_atomic,
 )
 from validation.config_models import SourceComponent, SourceSpec
 
@@ -1382,20 +1383,6 @@ def current_stock_input(
         )
         .reset_index(drop=True)
     )
-
-
-def write_text_atomic(text: str, path: Path) -> None:
-    """Write one UTF-8 text artifact and atomically publish it."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    if temporary.exists():
-        temporary.unlink()
-    try:
-        temporary.write_text(text, encoding="utf-8")
-        os.replace(temporary, path)
-    finally:
-        if temporary.exists():
-            temporary.unlink()
 
 
 def _manifest_requests(

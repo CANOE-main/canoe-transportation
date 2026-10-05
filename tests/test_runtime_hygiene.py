@@ -1,7 +1,11 @@
 from pathlib import Path
+from dataclasses import replace
 import importlib.util
 import sys
 import tomllib
+
+from utils import load_config_bundle
+from validation.config_models import ScenarioConfig
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -110,6 +114,20 @@ def test_doctor_runs_without_mutating_by_default() -> None:
         "component_count": 18,
         "selected_cited_rows": 124,
         }
+
+
+def test_doctor_accepts_disabled_comparison_without_a_reference(monkeypatch) -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    payload = bundle.scenario.model_dump()
+    payload["comparison"].update(mode="none", reference_sqlite=None)
+    bundle = replace(bundle, scenario=ScenarioConfig.model_validate(payload))
+    monkeypatch.setattr("utils.load_config_bundle", lambda *args, **kwargs: bundle)
+
+    result = doctor.run_doctor(SCENARIO, repo_root=REPO_ROOT)
+
+    assert result.ok is True
+    assert result.checks["paths"]["reference_sqlite"] is None
+    assert result.checks["paths"]["reference_sqlite_exists"] is None
 
 
 def test_pytest_defaults_do_not_pin_runtime_directories() -> None:

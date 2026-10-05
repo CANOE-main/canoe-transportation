@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left
 from collections.abc import Iterator, Mapping
 from copy import deepcopy
 from typing import Annotated, Any, Literal, Self
@@ -94,6 +95,7 @@ class ArtifactRoute(MappingModel):
 
     path: str = Field(min_length=1)
     layer: Literal[
+        "external",
         "interim",
         "processed",
         "input_validation",
@@ -125,6 +127,7 @@ class PathsConfig(MappingModel):
     @model_validator(mode="after")
     def validate_artifact_layers(self) -> Self:
         layer_roots = {
+            "external": self.inputs.external,
             "interim": self.inputs.interim,
             "processed": self.inputs.processed,
             "input_validation": self.inputs.validation,
@@ -195,8 +198,11 @@ class ScenarioGeography(MappingModel):
 
 
 class ScenarioPeriods(MappingModel):
+    """Observed-data anchor and explicit historical/model period coordinates."""
+
+    period_mode: Literal["prospective", "legacy"]
     base_year: int = Field(gt=0)
-    existing: list[int] = Field(default_factory=list)
+    existing: list[int] = Field(min_length=1)
     model: list[int] = Field(min_length=1)
     step: int = Field(gt=0)
 
@@ -217,10 +223,67 @@ class ScenarioPeriods(MappingModel):
             for earlier, later in zip(self.model, self.model[1:], strict=False)
         ):
             raise ValueError("periods.model must follow the configured step")
+        if self.period_mode == "legacy" and self.existing[-1] != self.base_year:
+            raise ValueError("Legacy periods.existing must end at base_year")
+        if self.period_mode == "prospective" and self.existing[0] >= self.base_year:
+            raise ValueError("Prospective periods.existing needs a label before base_year")
         return self
 
     def all_years(self) -> list[int]:
-        return list(dict.fromkeys([*self.existing, self.base_year, *self.model]))
+        """Parameter coordinates; the observation year is not an implicit vintage."""
+        return [*self.existing, *self.model]
+
+    @property
+    def end_of_horizon(self) -> int:
+        return self.model[-1] + self.step
+
+    def existing_vintage(self, observation_year: int) -> int:
+        """Bin observed annual cohorts, retaining the first-label oldest-cohort proxy."""
+        if observation_year > self.base_year:
+            raise ValueError("Historical cohorts cannot exceed periods.base_year")
+        index = bisect_left(self.existing, observation_year)
+        if self.period_mode == "prospective":
+            index -= 1
+        return self.existing[max(0, index)]
+
+    @property
+    def latest_observed_vintage(self) -> int:
+        return self.existing_vintage(self.base_year)
+
+    def historical_years(self, vintage: int) -> list[int]:
+        """Observed years in a historical interval, clipped at the observation anchor."""
+        index = self.existing.index(vintage)
+        if self.period_mode == "prospective":
+            # The first label also owns the initial-stock/oldest-cohort proxy.
+            start = vintage if index == 0 else vintage + 1
+            end = self.existing[index + 1] if index + 1 < len(self.existing) else self.model[0]
+        else:
+            start = self.existing[index - 1] + 1 if index else vintage - self.step + 1
+            end = vintage
+        return list(range(start, min(end, self.base_year) + 1))
+
+    def projection_year(self, period: int, *, legacy_at_end: bool) -> int:
+        """Prospective inputs use period ends; legacy adapters retain their old timing."""
+        if period not in self.model:
+            raise ValueError(f"Unknown model period: {period}")
+        return period + self.step if self.period_mode == "prospective" or legacy_at_end else period
+
+    def audit(self) -> dict[str, Any]:
+        intervals = {str(vintage): self.historical_years(vintage) for vintage in self.existing}
+        return {
+            **self.model_dump(mode="json"),
+            "base_year_role": "latest observed year for stock, demand and historical calibration",
+            "historical_years_by_vintage": intervals,
+            "empty_observation_vintages": [int(vintage) for vintage, years in intervals.items() if not years],
+            "latest_observed_vintage": self.latest_observed_vintage,
+            "efficiency_and_demand_years": {
+                str(period): self.projection_year(period, legacy_at_end=True) for period in self.model
+            },
+            "cost_and_charger_years": {
+                str(period): self.projection_year(period, legacy_at_end=False) for period in self.model
+            },
+            "end_of_horizon": self.end_of_horizon,
+        }
 
 
 class ScenarioSourceSelection(MappingModel):
@@ -318,12 +381,12 @@ class ScenarioConfig(MappingModel):
     efficiencies: ScenarioEfficiencies
     costs: ScenarioCosts
     ev_chargers: ScenarioEvChargers
+    embodied_emissions: bool
+    embodied_materials: Literal["conventional", "lightweight"]
     row_note_overrides: ScenarioRowNoteOverrides
 
     @model_validator(mode="after")
     def validate_parameter_horizons(self) -> Self:
-        if not self.periods.existing or self.periods.existing[-1] != self.periods.base_year:
-            raise ValueError("periods.existing must end at base_year for existing capacity")
         if self.lifetimes.survival_curves and (
             self.lifetimes.survival_curve_max_age < self.periods.step - 1
         ):

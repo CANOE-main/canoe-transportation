@@ -9,11 +9,14 @@ import pytest
 
 from parameterization.road_stocks_and_demands import (
     distribute_existing_road_capacity,
-    fixed_existing_lifetimes,
 )
 from parameterization.build_existing_capacity import prepare_existing_capacity_rows
-from parameterization.road_lifetimes_survival import derive_accepted_lifetime_frames
+from parameterization.road_lifetimes_survival import (
+    derive_accepted_lifetime_frames,
+    fixed_existing_lifetimes,
+)
 from utils import load_config_bundle, load_harmonization_rules
+from validation.config_models import ScenarioPeriods
 from validation.insertion import cleanup_transport_parameter_batches
 
 
@@ -202,10 +205,11 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
         truck_registrations=truck,
         dashboard=dashboard,
         regions=["ON"],
-        base_year=2023,
-        vintage_periods=[2000, 2005, 2010, 2015, 2020, 2023],
+        period_config=ScenarioPeriods(
+            period_mode="legacy", base_year=2023,
+            existing=[2000, 2005, 2010, 2015, 2020, 2023], model=[2025], step=5,
+        ),
         vehicle_population_year=2025,
-        first_model_period=2025,
         survival_curves=True,
         survival_curve_max_age=25,
         fixed_lifetimes_by_class={
@@ -247,7 +251,7 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
         shares["road_class"].eq("medium_trucks") & shares["vintage"].eq(2023)
     ]
     assert set(shares.loc[shares.tech.eq("T_MDV_T_BEV_EX"), "vintage"]) == {2023}
-    assert "configured_base_year_only_fuel" in set(excluded.exclusion_reason)
+    assert "configured_latest_vintage_only_fuel" in set(excluded.exclusion_reason)
     assert medium_latest.loc[
         medium_latest["fuel_type"].eq("Battery electric"), "fuel_share"
     ].iloc[0] == pytest.approx(0.03)

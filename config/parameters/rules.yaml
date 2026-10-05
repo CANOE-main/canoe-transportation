@@ -12,6 +12,66 @@ version: 2
 
 # SOURCE NORMALIZATION: source-native selectors, labels, and audit outputs.
 fetching:
+  greet_vehicle_cycle:
+    files:
+      normalized: greet_vehicle_cycle_gases.csv
+      excluded: greet_vehicle_cycle_exclusions.csv
+      models: greet_solved_model_evidence.csv
+    inputs_sheet: Inputs
+    imports_sheet: GREET1_Import_Export
+    simulation_year: {label_cell: B8, label: '1.1) Target Year for Simulation'}
+    cohort_year: {label_cell: A20, label: Vehicle Model Year, cells: [B20, C20, D20]}
+    ldv_selectors: {Car: 1, SUV: 2, Pickup: 3}
+    mhdv_selectors: {Class 6 PnD Trucks: 1, Class 8 Day-Cab Trucks: 2, Class 8 Sleeper-Cab Trucks: 3}
+    block_interval: 31
+    source_unit_label: mmBtu or grams per vehicle lifetime
+    source_units: g/vehicle-lifetime
+    gas_rows: [CO2, 'CO2 (VOC, CO, CO2)', CH4, N2O]
+    excluded_gas: CO2 (VOC, CO, CO2)
+    summary_layout:
+      scope_cell: A1
+      label_column: A
+      unit_column: B
+      block_label_offset: -9
+      unit_offset: -8
+      total_offset: -7
+      total_label: Total (No Credits)
+    ldv:
+      worksheet: Vehi_Sum
+      identity_sheet: Vehi_Inputs
+      identity_header_cell: A2
+      selector_cell: B3
+      identity_label_cells: {Car: C3, SUV: C4, Pickup: C5}
+      identity_header: 1. Selection of Vehicle Types for Simulation
+      identity_labels: {Car: '1 -- Passenger Cars', SUV: '2 -- Sport Utility Vehicles', Pickup: '3 -- Pick-Up Trucks'}
+      scope_label: Energy Use and Emissions of Vehicle Cycle
+      column: F
+      blocks:
+        - {first_row: 13, label: '1.1) ICEV: Conventional Material', powertrain: icev, materials: conventional}
+        - {first_row: 44, label: '1.2) ICEV: Lightweight Material', powertrain: icev, materials: lightweight}
+        - {first_row: 75, label: '1.3) HEV: Conventional Material', powertrain: hev, materials: conventional}
+        - {first_row: 106, label: '1.4) HEV: Lightweight Material', powertrain: hev, materials: lightweight}
+        - {first_row: 137, label: '1.5) PHEV: Conventional Material', powertrain: phev, materials: conventional}
+        - {first_row: 168, label: '1.6) PHEV: Lightweight Material', powertrain: phev, materials: lightweight}
+        - {first_row: 199, label: '1.7) EV: Conventional Material', powertrain: bev, materials: conventional}
+        - {first_row: 230, label: '1.8) EV: Lightweight Material', powertrain: bev, materials: lightweight}
+        - {first_row: 261, label: '1.9) FCV: Conventional Material', powertrain: fcev, materials: conventional}
+        - {first_row: 292, label: '1.10) FCV: Lightweight Material', powertrain: fcev, materials: lightweight}
+    mhdv:
+      worksheet: MHDV_Sum
+      identity_sheet: MHDV_Inputs
+      identity_header_cell: A2
+      selector_cell: B3
+      identity_label_cells: {Class 6 PnD Trucks: C3, Class 8 Day-Cab Trucks: C4, Class 8 Sleeper-Cab Trucks: C5}
+      identity_header: 1. Selection of Truck Types for Simulation
+      identity_labels: {Class 6 PnD Trucks: '1 -- Class 6 PnD Trucks', Class 8 Day-Cab Trucks: '2 -- Class 8 Day-Cab Trucks', Class 8 Sleeper-Cab Trucks: '3 -- Class 8 Sleeper-Cab Trucks'}
+      scope_label: 'Energy Use and Emissions of Vehicle Cycle: Trucks'
+      column: G
+      blocks:
+        - {first_row: 13, label: '1.1) ICEV', powertrain: icev}
+        - {first_row: 44, label: '1.2) HEV', powertrain: hev}
+        - {first_row: 75, label: '1.3) EV', powertrain: bev}
+        - {first_row: 106, label: '1.4) FCV', powertrain: fcev}
   nrcan_ceud:
     interim_subdir: fetched_nrcan_ceud_inputs
     manifest_file: manifest.csv
@@ -762,6 +822,58 @@ fetching:
 
 # MODEL PARAMETERS: harmonization, allocation, mappings, and parameter artifacts.
 parameterization:
+  road_embodied_emissions:
+    transformation_version: '3'
+    vintage_treatment: constant_solved_year
+    constant_through_year: 2050
+    # Reviewed native selector defect is harmless only while range inputs match.
+    lightweight_bev_range_mismatch: allow_equal_glider_inputs
+    # Range keys belong to the current technology/ATB archetype contract, not Python.
+    ldv_range_miles: {phev_35_miles: 35, phev_50_miles: 50, bev_150_miles: 150, bev_200_miles: 200, bev_300_miles: 300, bev_400_miles: 400}
+    source_units: g/vehicle-lifetime
+    capacity_units: k vehicles
+    gas_commodities: {CO2: co2, CH4: ch4, N2O: n2o}
+    # CH4/N2O use tonnes to increase numerical coefficients without changing mass.
+    gas_scaling:
+      CO2: {commodity_units: kt, output_units: kt/k vehicles, conversion_key: grams_per_vehicle_to_kt_per_thousand_vehicles}
+      CH4: {commodity_units: t, output_units: t/k vehicles, conversion_key: grams_per_vehicle_to_tonnes_per_thousand_vehicles}
+      N2O: {commodity_units: t, output_units: t/k vehicles, conversion_key: grams_per_vehicle_to_tonnes_per_thousand_vehicles}
+    files:
+      aggregation: emission_embodied_aggregation.csv
+      parameters: emission_embodied.csv
+      coverage: coverage.csv
+      integrity: integrity.json
+    road_classes:
+      cars: {family: ldv, aggregation: direct, source_class: Car}
+      passenger_light_trucks: {family: ldv, aggregation: pickup_suv}
+      freight_light_trucks: {family: ldv, aggregation: pickup_suv}
+      medium_trucks: {family: mhdv, aggregation: medium_gvwr}
+      heavy_trucks: {family: mhdv, aggregation: heavy_haul}
+    # Keep only the existing pickup/SUV groups and renormalize their observed weights.
+    light_truck_classes: {Pickup: Pickup, Small SUV: SUV, Midsize SUV: SUV}
+    heavy_class_map:
+      Class 8 Beverage DayCab: Class 8 Day-Cab Trucks
+      Class 8 Drayage DayCab: Class 8 Day-Cab Trucks
+      Class 8 Regional DayCab: Class 8 Day-Cab Trucks
+      Class 8 Longhaul Sleeper: Class 8 Sleeper-Cab Trucks
+    powertrain_map:
+      ldv:
+        gasoline: icev
+        diesel: icev
+        cng: icev
+        hev: hev
+        phev_35_miles: phev
+        phev_50_miles: phev
+        bev_150_miles: bev
+        bev_200_miles: bev
+        bev_300_miles: bev
+        bev_400_miles: bev
+        fcev: fcev
+      mhdv: {gasoline: icev, diesel: icev, cng: icev, hev: hev, phev: hev, bev: bev, fcev: fcev, fchev: fcev}
+    weight_tolerance: 1.0e-9
+    new_technology_suffix: _N
+    # User-approved Class 6 representation retains each region's GVWR shares.
+    medium_class_map: {2: Class 6 PnD Trucks, 3: Class 6 PnD Trucks, 4: Class 6 PnD Trucks, 5: Class 6 PnD Trucks, 6: Class 6 PnD Trucks, 7: Class 6 PnD Trucks}
   manual_parameters:
     # Manual CSVs remain review-owned. This section controls only validation,
     # selector expansion, and auditable interim publication.
@@ -1105,7 +1217,7 @@ parameterization:
     existing_capacity:
       output_units: k vehicles
       historical_fuel_types: [Gasoline, Diesel]
-      base_year_only_fuels: {medium_trucks: [Battery electric]}
+      latest_vintage_only_fuels: {medium_trucks: [Battery electric]}
       first_model_period_rule: positive_surviving_capacity
       ineligible_cohort_redistribution: proportional_to_eligible_capacity
       survival_curve_classes: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]

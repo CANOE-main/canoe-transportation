@@ -15,7 +15,6 @@ from build_transport import (
     insert_transport_contribution,
     prepare_transport_contribution,
 )
-from utils import load_config_bundle
 from validation.database_bootstrap import validate_database
 from validation.insertion import insert_models
 from validation.schema_contract import create_v4_schema, packaged_ddl
@@ -36,8 +35,8 @@ def csv_row_count(path: Path) -> int:
 
 
 @pytest.fixture
-def bundle():
-    return load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+def bundle(legacy_bundle):
+    return legacy_bundle
 
 
 def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(

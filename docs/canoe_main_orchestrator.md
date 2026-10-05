@@ -5,26 +5,51 @@ retrieve_when: A task affects the CANOE-main sector lifecycle, shared database, 
 read_scope: Re-check the branch head, then retrieve only the files for the affected seam in the retrieval map.
 verify: CANOE-main and this backend are evolving; current code and validated contracts outrank this snapshot.
 upstream_repo: https://github.com/CANOE-main/CANOE
-upstream_branch: yep/fuel-refactor
-upstream_commit_reviewed: 5992b2d1b9884f7f89ed8883854f4dab66fc2cae
-reviewed_on: 2026-10-01
+upstream_branch: yep/industry-refactor
+upstream_commit_reviewed: 93241c33b1a1ca6fbc1bd855008a580da1ae8e2b
+reviewed_on: 2026-10-02
+local_commit_reviewed: 1bd946bc19a6d8df2cc00331a7f284626d125167
 ---
 
 # CANOE-main framework and transportation integration context
 
 ## Reviewed snapshot
 
-The reviewed [branch commit][snapshot] implements commercial compilation and fuel supply
-through callable model entities. The pipeline now consumes sector fuel declarations and
-processes emissions centrally. This replaces the previous upstream snapshot. There is
-still no registered transportation sector in
-`sector_config.py`.
+The user-selected reference is `yep/industry-refactor`, reviewed at
+[`93241c33`][snapshot] (2026-10-02, “Full industry sector”). It registers commercial,
+agriculture, and industry, followed by fuel supply and central emissions processing.
+Transportation is still absent from the sector configuration union. The local reference
+is `1bd946bc` plus the bounded ownership fixes described in
+[the diagnostic](codebase_diagnostic_snapshot.md).
+
+Industry provides the clearest new integration example: calculation modules produce tidy
+parameter tables; `build_industry_entities` assembles an inspectable object bundle without
+database I/O; the builder registers datasets and writes the bundle in dependency order.
+This strengthens the case for retaining the local `TransportContribution` as the transport
+assembly object. It does not resolve the remaining shared-database contracts.
 
 This snapshot comes from static inspection of the pinned upstream files and focused local
-schema/contribution tests. A complete CANOE-main run with transportation has not been
-validated. The backend remains under development: legacy SQLite comparisons may still
+schema/contribution tests. Upstream review was read-only source/test inspection; no upstream code or data-lake
+workflow was executed. A complete CANOE-main run with transportation has not been validated. The backend remains under development: legacy SQLite comparisons may still
 change assumptions, parameter coverage, and alignment. Upstream structure informs the
 integration interface; it does not accept new transportation modelling choices.
+
+## Tracking a changing development branch
+
+The branch name is a user-supplied retrieval location; the reviewed commit is the evidence
+identity. The previous reference was `yep/fuel-refactor` at
+`5992b2d1b9884f7f89ed8883854f4dab66fc2cae`. That branch was no longer advertised by
+`git ls-remote` during this review. The current checkout includes fuel refactoring at
+`7ac064b` and subsequent industry changes; this does not establish a release or merge
+schedule.
+
+For another refresh, resolve the explicitly supplied branch with `git ls-remote --heads`,
+inspect a temporary checkout at that commit, record the branch/commit/date and relevant
+local revision, and replace source links with immutable commit links. Compare the affected
+interfaces and trees; do not assume a renamed branch has the same head or commit ancestry.
+If the branch disappears and no replacement is supplied, retain the last reviewed pin
+as historical evidence and flag the missing reference. Do not silently choose another
+development branch or treat `main` as the integration target.
 
 ## Operational lifecycle and transaction ownership
 
@@ -38,7 +63,7 @@ The execution order in [`pipeline.py`][pipeline] is:
 2. `emissions.processing.init` registers shared gas and CO2-equivalent commodities
    and configured emission costs before sectors write their activities.
 3. Each configured sector's typed configuration object runs `run()`. The current
-   discriminated union registers commercial and agriculture. Sector outputs are
+   discriminated union registers commercial, agriculture, and industry. Sector outputs are
    accumulated as `CANOEModuleOutput` objects.
 4. The compiler collects all `fuel_imports` and calls
    `compiler.fuel.run(fuel_imports)` when fuel supply is configured. Imports without
@@ -57,7 +82,7 @@ The output now contains both `fuel_imports: list[CANOEFuelImport]` and
 carries `sector` and `emission`. Fuel supply has its own `run(fuel_imports)`
 signature and is configured separately from the sector union.
 
-Commercial and fuel builders each open [`common.db_tools.atomic_transaction`][transactions]
+Commercial, agriculture, industry, and fuel builders each open [`common.db_tools.atomic_transaction`][transactions]
 on the configured database path. It enables foreign keys, commits on success, rolls back
 on exceptions, and closes the connection. Entities use `build(db_conn)` inside that
 transaction and never commit. Thus the current compiler has separate module transactions,
@@ -78,6 +103,7 @@ an explicit connection. The main contracts are:
 | `FuelServingTechnologyEntity` | Composes either a technology per fuel or one shared technology, according to `FuelGrouping`. `to_technology_entities()` exposes the assembled technologies before writing; `build` registers their fuel commodities first. |
 | `DemandEntity` | Bundles a demand commodity, its regional-period demand series, and optional time distribution. |
 | `FuelSupplyEntities` | Bundles source/fuel commodities, import technologies, distribution technologies, and emission declarations; builds commodities before technologies. |
+| `IndustryEntities` | Bundles demands, fuel-serving technologies, and optional free `Other` supply. Assembly is independent of database I/O; `build(db_conn)` writes in dependency order, and `fuel_imports()` derives external requirements. |
 | Sector builders | Load evidence, calculate parameters, select entities from validated sector configuration, register datasets, and build the entities in dependency order. |
 
 [`commercial/build.py`][commercial-build] demonstrates the complete chain:
@@ -94,6 +120,34 @@ parameter row, with source references optional; commercial source registration i
 listed as TODO. `TechnologyEntity` writes rounded fixed lifetimes and currently has no
 `LifetimeSurvivalCurve` composition method. Those differences require explicit validation
 before using upstream entity writers for transportation.
+
+## New industry evidence and useful local boundaries
+
+The industry module has distinct executable owners rather than one script per parameter
+with its own orchestration:
+
+| Upstream owner | Implemented contract | Local use of the example |
+| --- | --- | --- |
+| [`industry/config.py`][industry-config] | Typed inherited scope plus validated subsector skips/fuel overrides, CEUD year, `Other` treatment, split operator, and error/warning behavior; rejects unsupported or empty fuel lists and an entirely skipped sector. | Translate agreed base fields at the adapter boundary; keep transport source selections and representations in their existing YAML owners. |
+| [`common/ceud.py`][ceud] and sector loaders | Shared CEUD block decoder used by agriculture and industry; loaders retain sector dataset names and native fuel-label maps. The decoder returns a `CEUDEnergyUse` dataclass and rejects missing years/rows and unrecognized numeric markers. | Share demonstrated source mechanics while preserving adapter-specific contracts. Transport's normalized CEUD products remain its accepted inputs; no new lake dependency is needed. |
+| `energy_use.py`, `demand.py`, `input_splits.py` | Named calculations return documented frames. `align_demand_and_splits` retains region/subsector combinations with demand and usable fuel splits, reporting excluded combinations through configured validation behavior. | Extract coherent calculation stages from long local builders when needed, with explicit keys, units, coverage and audit results. Preserve current transport missing-data rejection and numerical behavior. |
+| [`industry/entities.py`][industry-entities] | Pure assembly of demand/technology objects from frames. Only positive split cells receive efficiencies/splits; unused fuels and subsectors do not create pathways. `IndustryEntities` exposes both ordered construction and fuel requirements. | Use actual prepared pathway rows to determine shared endpoints and declarations. Keep a single assembled contribution and local validated insertion. |
+| [`industry/build.py`][industry-build] and `validation.py` | Builder validates base scope, loads evidence, computes frames, registers dataset identities and calls `entities.build(db_conn)`; validation delegates period/region checks to `common.validation`. | Keep run coordination and SQLite ownership above parameterization. An adapter validates the initialized database and inserts the existing contribution within its caller/module transaction. |
+| Industry tests | Separate configuration, entity and structure tests cover selection, sparse fuel use and build order. | Verify assembly independently from insertion, then test the complete shared-database seam. |
+
+`FuelGrouping.Shared` now has a concrete industry example: one subsector technology
+uses several fuel inputs with annual input splits. This demonstrates object composition,
+not a transportation renewable mandate or a PHEV replacement. Industry splits are
+region/period rows; local PHEV blend splits are already prepared for their own
+region/technology/vintage contract.
+
+Several upstream implementation details should remain local to their evidence: industry
+can deduct `Other` fuels or supply them freely without price/emissions; its Atlantic
+StatCan shares are temporarily hard-coded in `loaders.py`; share repair and rounding
+are industry-specific. Upstream builders also load and calculate inside the transaction.
+These are useful inspection points, not rules to import into transport. No runtime
+benchmark was conducted, so module organization here is evidence of ownership and
+testability, not measured performance.
 
 ## Transportation's existing callable building block
 
@@ -117,7 +171,11 @@ For a compatible initialized connection, the executable local seam is
 `prepare_transport_contribution(db_conn, bundle=bundle, template_dir=template_dir)`,
 then `insert_transport_contribution(db_conn, contribution, conflict="error")`.
 Preparation writes no SQLite rows, although family builders can publish their configured
-interim, processed, and validation artifacts. Insertion returns the touched row batches.
+interim, processed, and validation artifacts. It reuses prepared capacity across dependent
+families and records `support_audit` for cohort/efficiency/cost/factor alignment; insertion
+rechecks that support before its first write, because the contained row lists are mutable.
+A frozen contribution dataclass is not itself an immutable or fully validated model.
+Insertion returns the touched row batches.
 Use their primary keys with `validation.database_bootstrap.validate_database` before
 the caller commits. Artifact ownership and validation routes remain in
 [`config/paths.yaml`](../config/paths.yaml).
@@ -127,8 +185,12 @@ contribution: validate its request, resolve explicit configuration inheritance, 
 shared schema/base rows, prepare the contribution, insert and validate it in the module's
 transaction, then return upstream fuel/emission declarations derived from the assembled
 rows. An inspectable preparation method should return the same contribution object.
-Keep the current family builders and local row/provenance validation as the implementation;
-add technology-level views only when an integration consumer needs them.
+Keep the current family builders and local row/provenance validation as the implementation.
+Unlike `IndustryEntities.build`, the local insertion owner explicitly rejects conflicting
+rows and preserves full source/DQ chains. The adapter can expose an object around these
+existing functions once the request and ownership contracts are resolved; it need not
+convert every parameter block into upstream labeled arrays. Add technology-level views
+only when an integration consumer needs them.
 
 ## Commodity ownership and integration direction
 
@@ -181,7 +243,7 @@ The following is an integration mapping to review, not implemented inheritance:
 | --- | --- |
 | `db_output_dir` / sector `database_file` | Shared connection target; do not invoke standalone database creation/publication. |
 | `future_periods`, `existing_periods`, `period_step` | Validate against `scenario.periods.model`, `existing`, and `step`; exclude the horizon marker from parameter rows and retain the separately configured base year. |
-| `provinces` | Reconcile source-region and output-region codes explicitly; the current `BCT`/ `BC` seam needs a modelling decision. |
+| `provinces` | Reconcile source-region and output-region codes explicitly. Current scenario aggregation selectors normalize BC/BCT aliases for source-role lookup; this does not establish equivalence of the model regions. The BCT/BC geography seam still needs agreement. |
 | `model_currency_year`, `global_discount_rate` | Reconcile transport economics, CAD units, and loan rate with base-owned metadata; transport insertion must not overwrite model-wide economics. |
 | GDP/price projection settings | Confirm scenario and period-end semantics per parameter family; do not assume the upstream GDP scenario selects all transport evidence. |
 | `data_version`, `get_dataset_code()` | Define module identity while retaining transport's source/transformation-derived row dataset IDs and registries. |
@@ -236,9 +298,12 @@ transport commodities rather than direct fuel-supply requests.
 
 ## Adapter readiness and unresolved contracts
 
-A full `canoe_adapter.py` is deferred in this refresh. The callable contribution seam
-is implemented and tested, but a registered upstream `run()` cannot yet be specified
-without resolving the following contracts. These are integration tasks, not accepted
+A full `canoe_adapter.py` remains deferred in this refresh. Industry establishes a useful
+object/module lifecycle, but no upstream transportation config, row-ownership agreement or
+compatible initialized-database fixture is provided. A wrapper around standalone compilation
+would bypass shared assembly; a new entity writer would duplicate validated insertion.
+The callable contribution seam is implemented and tested, but a registered upstream
+`run()` cannot yet be specified without resolving the following contracts. These are integration tasks, not accepted
 changes to baseline transport behavior.
 
 - **Region meaning:** transport `BCT` includes British Columbia and territories;
@@ -248,10 +313,11 @@ changes to baseline transport behavior.
   mappings; the BCT seam requires explicit agreement rather than a string relabel.
 - **Schema compatibility:** upstream pins `canoe-schema` to
   `0025a069cbfa31895567b59ef5722a8ab3848eed`; this backend verifies
-  `1e68c377d5a7499c78b009d7c472ffd5a6b44901`. Both reviewed `Technology` models lack
-  `notes`. Local template preparation requires the documented
-  `TransportationTechnology.notes` extension, which upstream initialization does not
-  apply. Reconcile the schema contract before insertion; preserve notes explicitly.
+  `1e68c377d5a7499c78b009d7c472ffd5a6b44901`. The [pinned upstream `Technology` model][upstream-schema]
+  also lacks `notes`. Local template preparation requires the documented
+  `TransportationTechnology.notes` extension. Upstream initialization calls its pinned
+  package DDL and does not apply this local extension. Reconcile the schema contract before
+  insertion; preserve notes explicitly.
 - **Shared structural rows:** upstream initializes `co2`, `ch4`, `n2o`, and `co2e`
   before sectors. The transport commodity template includes them under its internal dataset;
   `co2e` also differs in units (`kt` locally, `ktCO2e` upstream). Because commodity
@@ -259,15 +325,20 @@ changes to baseline transport behavior.
   name. Agree ownership/reuse and provenance before passing all local template rows through.
 - **Fuel and emissions alignment:** resolve hydrogen endpoints, electricity supply, blend
   specifications, and combustion/upstream emission ownership while adopting the upstream
-  fuel commodity contract. Reconcile with legacy parity
+  fuel commodity contract. Industry returns fuel imports without local emission declarations;
+  commercial can write its own input-emission factors and declarations, while fuel supply
+  also has combustion-factor routes. Explicitly establish which owner writes each transport
+  emission edge and prevent counting combustion twice. Reconcile with legacy parity
   evidence before adding transport emission declarations or accepting upstream fuel defaults.
 - **Provenance and registration:** audit dataset/source namespaces, complete DQ preservation,
   conflict handling, backend import/packaging, and the typed transportation sector config.
   Add registration to upstream's sector union only with a working module and integration
   tests; keep source acquisition and cache refresh under their existing transport contracts.
 
-Local checks confirm template contribution preparation/insertion, caller rollback,
-incompatible-schema rejection, and the pinned schema contract (6 focused tests).
+The six local schema and caller-contribution tests were rerun for this refresh. They confirm
+template contribution preparation/insertion, caller rollback, incompatible-schema rejection,
+and the local pinned schema contract. Additional parameter-support and scenario-comparison
+fixtures pass; [the diagnostic](codebase_diagnostic_snapshot.md) records the full check scope.
 They do not establish complete multi-sector integration or legacy parity. The next adapter
 slice should include an upstream-initialized database fixture, scope/economics checks,
 connected fuel endpoints, shared-row/provenance validation, and rollback tests before
@@ -283,32 +354,40 @@ the affected seam when continuing work.
 | Lifecycle and base rows | [`pipeline.py`][pipeline], [`initializer.py`][initializer], [`sector_config.py`][registration]. |
 | Module/config/transaction contracts | [`common/module_interface.py`][interface], [`module_inheritance.py`][inheritance], [`db_tools.py`][transactions], [`validation.py`][common-validation]. |
 | Reusable entity framework | [`canoe_objects/`][objects]: `technology.py`, `fuel_serving_tech.py`, `demand.py`, `commodity.py`, `parameter.py`, `labeled_array.py`, `array_types.py`. |
+| Industry assembly and selections | [`industry/`][industry]: `config.py`, `build.py`, `entities.py`, `energy_use.py`, `demand.py`, `input_splits.py`, `loaders.py`, `subsectors.py`, `validation.py`; [industry structure tests][industry-tests]. |
 | Commercial operational example | [`commercial/`][commercial]: `config.py`, `build.py`, `validation.py`, `existing_technologies.py`, `new_technologies.py`, `other_end_use.py`. |
 | Fuel supply and declarations | [`fuel/`][fuel]: `config.py`, `build.py`, `entities.py`, `prices.py`, `validation.py`; [`canoe_objects/fuel_imports.py`][fuel-declarations]. |
-| Shared names, scope, evidence access | [`common/`][common]: `naming.py`, `fuels.py`, `sectors.py`, `provinces.py`, `periods.py`, `currency.py`, `cache_connector/`. |
+| Shared names, scope, evidence access | [`common/`][common]: `naming.py`, `fuels.py`, `sectors.py`, `provinces.py`, `periods.py`, `currency.py`, [`ceud.py`][ceud], `cache_connector/`. |
 | Emissions and dependency pins | [`emissions/processing.py`][emissions], [`pyproject.toml`][dependencies], `uv.lock`; [upstream pinned v4 row models][upstream-schema]. |
 
-[snapshot]: https://github.com/CANOE-main/CANOE/commit/5992b2d1b9884f7f89ed8883854f4dab66fc2cae
-[pipeline]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/pipeline.py
-[initializer]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/initializer.py
-[registration]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/sector_config.py
-[interface]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/common/module_interface.py
-[inheritance]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/common/module_inheritance.py
-[transactions]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/common/db_tools.py
-[common-validation]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/common/validation.py
-[objects]: https://github.com/CANOE-main/CANOE/tree/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/canoe_objects
-[commercial]: https://github.com/CANOE-main/CANOE/tree/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/commercial
-[commercial-build]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/commercial/build.py
-[fuel]: https://github.com/CANOE-main/CANOE/tree/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/fuel
-[fuel-build]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/fuel/build.py
-[fuel-entities]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/fuel/entities.py
-[fuel-declarations]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/canoe_objects/fuel_imports.py
-[fuel-commodity]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/canoe_objects/commodity.py
-[naming]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/common/naming.py
-[fuel-loaders]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/fuel/loaders.py
-[upstream-factors]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/fuel/data/upstream_emission_factors.csv
-[common]: https://github.com/CANOE-main/CANOE/tree/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/common
-[provinces]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/common/provinces.py
-[emissions]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/src/canoe/emissions/processing.py
-[dependencies]: https://github.com/CANOE-main/CANOE/blob/5992b2d1b9884f7f89ed8883854f4dab66fc2cae/pyproject.toml
+[snapshot]: https://github.com/CANOE-main/CANOE/commit/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b
+[pipeline]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/pipeline.py
+[initializer]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/initializer.py
+[registration]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/sector_config.py
+[interface]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/common/module_interface.py
+[inheritance]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/common/module_inheritance.py
+[transactions]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/common/db_tools.py
+[common-validation]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/common/validation.py
+[objects]: https://github.com/CANOE-main/CANOE/tree/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/canoe_objects
+[commercial]: https://github.com/CANOE-main/CANOE/tree/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/commercial
+[commercial-build]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/commercial/build.py
+[fuel]: https://github.com/CANOE-main/CANOE/tree/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/fuel
+[fuel-build]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/fuel/build.py
+[fuel-entities]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/fuel/entities.py
+[fuel-declarations]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/canoe_objects/fuel_imports.py
+[fuel-commodity]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/canoe_objects/commodity.py
+[naming]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/common/naming.py
+[fuel-loaders]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/fuel/loaders.py
+[upstream-factors]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/fuel/data/upstream_emission_factors.csv
+[common]: https://github.com/CANOE-main/CANOE/tree/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/common
+[provinces]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/common/provinces.py
+[emissions]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/emissions/processing.py
+[dependencies]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/pyproject.toml
 [upstream-schema]: https://github.com/CANOE-main/canoe-schema/blob/0025a069cbfa31895567b59ef5722a8ab3848eed/canoe_schema/v4_0/models.py
+
+[industry]: https://github.com/CANOE-main/CANOE/tree/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/industry
+[industry-config]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/industry/config.py
+[industry-build]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/industry/build.py
+[industry-entities]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/industry/entities.py
+[industry-tests]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/tests/test_industry_structure.py
+[ceud]: https://github.com/CANOE-main/CANOE/blob/93241c33b1a1ca6fbc1bd855008a580da1ae8e2b/src/canoe/common/ceud.py

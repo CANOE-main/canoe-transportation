@@ -96,7 +96,7 @@ def _context(
         inputs=inputs, dataset_key=f"ev_chargers.{name}",
         transformation="reviewed EV charger parameterization",
         transformation_version="1", governing_source_id=governing_id,
-        data_quality=quality, value_variant={"input_digest": digest},
+        data_quality=quality, value_variant={"input_digest": digest, "periods": bundle.scenario.periods.model_dump()},
     )
 
 
@@ -289,7 +289,7 @@ def prepare_ev_charger_rows(
             if gw > 0:
                 capacity_records.append({
                     "region": region, "tech": rules["technology"][category]["existing"],
-                    "vintage": bundle.scenario.periods.base_year, "capacity": gw,
+                    "vintage": bundle.scenario.periods.latest_observed_vintage, "capacity": gw,
                     "units": "GW", "notes": f"{category} BEV stock and {charger_source['as_of']} public ports; EV/port {ratio:g}",
                 })
     capacity_rows = validate_parameter_rows(ExistingCapacity, capacity_records, capacity_context)
@@ -326,8 +326,12 @@ def prepare_ev_charger_rows(
     if not 0 <= fixed_ratio <= 1:
         raise ValueError("Invalid reviewed charger fixed cost ratio")
     for category, kinds in cost_types.items():
-        for vintage in [bundle.scenario.periods.base_year, *bundle.scenario.periods.model]:
-            source_year = max(vintage, bundle.scenario.periods.model[0])
+        existing_vintage = bundle.scenario.periods.latest_observed_vintage
+        for vintage in [existing_vintage, *bundle.scenario.periods.model]:
+            source_year = (
+                bundle.scenario.periods.model[0] if vintage == existing_vintage
+                else bundle.scenario.periods.projection_year(vintage, legacy_at_end=False)
+            )
             weighted = 0.0
             for kind in kinds:
                 share = _manual_value(manual, category, f"{kind}_cost_aggregation", "through_2050")
@@ -350,17 +354,18 @@ def prepare_ev_charger_rows(
             if not math.isfinite(weighted) or weighted <= 0:
                 raise ValueError(f"Invalid aggregated charger cost: {category}/{vintage}")
             for region in sorted(model_regions):
-                if vintage == bundle.scenario.periods.base_year and stock_by_region[region, category] == 0:
+                if vintage == existing_vintage and stock_by_region[region, category] == 0:
                     continue
-                tech = rules["technology"][category]["existing" if vintage == bundle.scenario.periods.base_year else "new"]
+                tech = rules["technology"][category]["existing" if vintage == existing_vintage else "new"]
                 base_record = {
                     "region": region, "tech": tech, "vintage": vintage,
                     "units": "$M 2020CAD / GW",
                     "notes": f"Reviewed charger type count shares; {source_year} cost assumptions",
                 }
-                invest_rows.extend(validate_parameter_rows(CostInvest, [
-                    {**base_record, "cost": weighted}
-                ], invest_contexts[category]))
+                if vintage != existing_vintage:
+                    invest_rows.extend(validate_parameter_rows(CostInvest, [
+                        {**base_record, "cost": weighted}
+                    ], invest_contexts[category]))
                 periods = [period for period in bundle.scenario.periods.model if period >= vintage]
                 fixed_rows.extend(validate_parameter_rows(CostFixed, [
                     {**base_record, "period": period, "cost": weighted * fixed_ratio,
@@ -383,7 +388,7 @@ def prepare_ev_charger_rows(
             raise ValueError(f"Invalid charger efficiency: {category}")
         mapping = rules["technology"][category]
         for region in sorted(model_regions):
-            for kind, vintages in (("existing", [bundle.scenario.periods.base_year]),
+            for kind, vintages in (("existing", [bundle.scenario.periods.latest_observed_vintage]),
                                    ("new", bundle.scenario.periods.model)):
                 if kind == "existing" and stock_by_region[region, category] == 0:
                     continue
@@ -398,12 +403,13 @@ def prepare_ev_charger_rows(
                 for period in bundle.scenario.periods.model:
                     if kind == "new" and period not in vintages:
                         continue
-                    row = _period_value(manual, category, "max_annual_utilization", period)
+                    source_year = bundle.scenario.periods.projection_year(period, legacy_at_end=False)
+                    row = _period_value(manual, category, "max_annual_utilization", source_year)
                     factor = float(row.value)
                     if not 0 < factor < 1:
                         raise ValueError(f"Invalid charger utilization: {category}/{period}")
                     utilization_records.append({
-                        "region": region, "period": period, "tech": tech,
+                        "region": region, "period": period, "source_year": source_year, "tech": tech,
                         "output_comm": mapping["output"], "operator": "≤",
                         "factor": factor, "units": "fraction",
                         "notes": f"Reviewed {category} annual charging utilization",
@@ -432,8 +438,10 @@ def prepare_ev_charger_rows(
     for filename, frame in frames_to_write.items():
         write_dataframe_atomic(frame, output_dir / filename)
     audit = {
+        "period_mapping": bundle.scenario.periods.audit(),
         "capacity_rows": len(capacity_rows), "invest_rows": len(invest_rows),
         "fixed_rows": len(fixed_rows), "efficiency_rows": len(efficiency_rows),
+        "existing_investment_rows_excluded": len(capacity_rows),
         "utilization_rows": len(utilization), "utilization_schema_inserted": False,
         "utilization_provenance": {
             "data_id": utilization_context.data_id,
@@ -455,6 +463,7 @@ def prepare_ev_charger_rows(
         len(capacity_rows), len(invest_rows), len(fixed_rows), len(efficiency_rows),
         len(utilization), national,
     )
+    LOGGER.info("Excluded %d existing charger investment rows; retained their annual fixed-cost basis", len(capacity_rows))
     return ChargerPreparation(capacity_rows, invest_rows, fixed_rows, efficiency_rows,
                               utilization, contexts, audit)
 

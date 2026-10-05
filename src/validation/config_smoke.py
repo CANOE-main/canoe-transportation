@@ -38,6 +38,7 @@ def run_smoke_validation(
         "timestamp_utc": now.isoformat(),
         "scenario": bundle.scenario.scenario.name,
         "periods": bundle.scenario.periods.model_dump(mode="json"),
+        "period_mapping": bundle.scenario.periods.audit(),
         "economics": bundle.scenario.economics.model_dump(mode="json"),
         "comparison": bundle.scenario.comparison.model_dump(mode="json"),
         "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(mode="json"),
@@ -59,8 +60,14 @@ def run_smoke_validation(
         ],
         "data_quality_fallback": bundle.sources.defaults.data_quality.row_fields(),
         "parameter_options": {
-            key: getattr(bundle.scenario, key).model_dump(mode="json")
-            for key in ("existing_capacity", "demand", "lifetimes", "road_utilization",
-                        "efficiencies", "costs", "ev_chargers")
+            "emission_embodied": {
+                "embodied_emissions": bundle.scenario.embodied_emissions,
+                "embodied_materials": bundle.scenario.embodied_materials,
+            },
+            **{
+                key: getattr(bundle.scenario, key).model_dump(mode="json")
+                for key in ("existing_capacity", "demand", "lifetimes", "road_utilization",
+                            "efficiencies", "costs", "ev_chargers")
+            },
         },
     }

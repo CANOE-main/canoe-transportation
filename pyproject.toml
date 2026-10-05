@@ -19,6 +19,7 @@ dependencies = [
     "snakemake>=9.19.0",
     "sqlalchemy>=2.0.49",
     "xlrd>=2.0.2",
+    "xlwings>=0.37.5 ; sys_platform == 'win32'",
 ]
 
 [build-system]

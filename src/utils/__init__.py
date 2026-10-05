@@ -13,6 +13,7 @@ from validation.config_models import PathsConfig, ScenarioConfig, SourcesConfig
 
 from .files import file_sha256 as file_sha256
 from .files import write_dataframe_atomic as write_dataframe_atomic
+from .files import write_text_atomic as write_text_atomic
 
 
 @dataclass(frozen=True)
@@ -166,6 +167,13 @@ def load_config_bundle(
         "Unannotated source/component DQ indicators use registry defaults: %s",
         bundle.sources.defaults.data_quality.row_fields(),
     )
+    period_mapping = bundle.scenario.periods.audit()
+    logging.getLogger(__name__).info("Scenario period mapping: %s", period_mapping)
+    if period_mapping["empty_observation_vintages"]:
+        logging.getLogger(__name__).warning(
+            "Existing labels have no observed years through %s: %s",
+            bundle.scenario.periods.base_year, period_mapping["empty_observation_vintages"],
+        )
     return bundle
 
 
