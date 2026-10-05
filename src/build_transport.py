@@ -12,10 +12,10 @@ import sqlite3
 import tempfile
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass, field as dataclass_field
+from dataclasses import asdict, dataclass, field as dataclass_field, replace
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from canoe_schema import CanoeBaseModel
 from canoe_schema.v4_0 import (
@@ -36,6 +36,7 @@ from canoe_schema.v4_0 import (
     CostInvest,
     CostFixed,
     CostVariable,
+    EmissionEmbodied,
 )
 from pydantic import ValidationError
 from pydantic_core import PydanticUndefined
@@ -51,7 +52,7 @@ from utils import (
 )
 from validation.database_bootstrap import validate_database
 from validation.insertion import ConflictPolicy, insert_models, validate_transport_parameter_support
-from validation.legacy_compare import compare_legacy_costs, compare_legacy_demand, compare_legacy_efficiency, compare_legacy_existing_capacity, compare_legacy_lifetime_tech, compare_legacy_tables
+from validation.legacy_compare import compare_legacy_costs, compare_legacy_demand, compare_legacy_efficiency, compare_legacy_existing_capacity, compare_legacy_lifetime_tech, compare_legacy_tables, compare_legacy_emission_embodied
 from validation.provenance import (
     ResolvedProvenance,
     registry_rows,
@@ -67,6 +68,9 @@ from validation.sqlite_utils import quote_identifier
 
 
 LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from parameterization.road_embodied_emissions import EmbodiedEmissionPreparation
 
 
 @dataclass(frozen=True)
@@ -133,6 +137,15 @@ class TransportContribution:
     prepared_support_tables: tuple[str, ...] = ()
     support_audit: dict[str, Any] = dataclass_field(default_factory=dict)
     new_technologies: tuple[str, ...] = ()
+    emission_embodied: EmbodiedEmissionPreparation | None = None
+
+    @property
+    def emission_embodied_rows(self) -> list[EmissionEmbodied]:
+        return self.emission_embodied.rows if self.emission_embodied is not None else []
+
+    @property
+    def emission_embodied_audit(self) -> dict[str, Any]:
+        return self.emission_embodied.audit if self.emission_embodied is not None else {}
 
 
 TEMPLATE_TABLES = (
@@ -410,6 +423,7 @@ def prepare_transport_contribution(
     include_efficiencies: bool | None = None,
     include_costs: bool | None = None,
     include_ev_chargers: bool | None = None,
+    include_emission_embodied: bool | None = None,
 ) -> TransportContribution:
     """Prepare the currently supported transport rows without writing to SQLite."""
     if not template_dir.is_dir():
@@ -536,6 +550,12 @@ def prepare_transport_contribution(
             cost_fixed_rows.extend(chargers.fixed_rows)
         contexts.extend(chargers.provenance_contexts)
         charger_audit = chargers.audit
+    embodied = None
+    if include_emission_embodied is not False:
+        from parameterization.road_embodied_emissions import prepare_emission_embodied_rows
+
+        embodied = prepare_emission_embodied_rows(bundle)
+        contexts.extend(embodied.provenance_contexts)
     support_tables = []
     if selected_capacity:
         support_tables.append("existing_capacity")
@@ -545,6 +565,8 @@ def prepare_transport_contribution(
         support_tables.extend(("cost_invest", "cost_fixed", "cost_variable"))
     if selected_road_utilization:
         support_tables.append("limit_annual_capacity_factor")
+    if embodied is not None and embodied.audit["enabled"]:
+        support_tables.append("emission_embodied")
     existing_suffix = load_harmonization_rules(bundle, "efficiencies")["existing_suffix"]
     contribution = TransportContribution(
         dataset=template_dataset,
@@ -572,6 +594,7 @@ def prepare_transport_contribution(
         lifetime_audit=lifetime_audit,
         efficiency_audit=efficiency_audit,
         cost_audit=cost_audit,
+        emission_embodied=embodied,
         existing_vintages=tuple(bundle.scenario.periods.existing),
         prepared_support_tables=tuple(support_tables),
         new_technologies=tuple(
@@ -591,7 +614,19 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
         "cost_fixed": contribution.cost_fixed_rows,
         "cost_variable": contribution.cost_variable_rows,
         "limit_annual_capacity_factor": contribution.flat_road_factor_rows,
+        "emission_embodied": contribution.emission_embodied_rows,
     }
+    if contribution.emission_embodied is not None and contribution.emission_embodied.audit["enabled"]:
+        from parameterization.road_embodied_emissions import validate_embodied_outputs
+
+        validate_embodied_outputs(
+            contribution.emission_embodied_rows,
+            expected_keys=set(contribution.emission_embodied.expected_keys),
+            technologies={row.tech for row in contribution.rows_by_table["technology"]},
+            emission_commodities={row.name: row.units for row in contribution.rows_by_table["commodity"] if row.flag == "e"},
+            units=contribution.emission_embodied.audit["output_units"],
+            capacity_units=contribution.emission_embodied.audit["capacity_units"],
+        )
     audit = validate_transport_parameter_support(
         {table: batches[table] for table in contribution.prepared_support_tables},
         existing_vintages=contribution.existing_vintages,
@@ -614,6 +649,7 @@ def insert_transport_contribution(
     # Recheck mutable batches before any SQLite writes, including caller insertions.
     contribution.support_audit.clear()
     contribution.support_audit.update(_require_transport_parameter_support(contribution))
+    embodied_rows = [EmissionEmbodied.model_validate(row.model_dump()) for row in contribution.emission_embodied_rows]
     insert_models(
         connection,
         [contribution.dataset],
@@ -647,7 +683,7 @@ def insert_transport_contribution(
             or contribution.lifetime_survival_curve_rows or contribution.efficiency_rows
             or contribution.input_split_rows or contribution.cost_invest_rows
             or contribution.cost_fixed_rows
-            or contribution.cost_variable_rows):
+            or contribution.cost_variable_rows or embodied_rows):
         labels, datasets, sources = registry_rows(contribution.provenance_contexts)
         for registry_batch in (labels, datasets, sources):
             if registry_batch:
@@ -683,6 +719,9 @@ def insert_transport_contribution(
         if contribution.input_split_rows:
             insert_models(connection, contribution.input_split_rows, conflict=conflict)
             inserted["limit_tech_input_split"] = list(contribution.input_split_rows)
+        if embodied_rows:
+            insert_models(connection, embodied_rows, conflict=conflict)
+            inserted["emission_embodied"] = embodied_rows
     if contribution.capacity_to_activity_rows:
         insert_models(connection, contribution.capacity_to_activity_rows, conflict=conflict)
         inserted["capacity_to_activity"] = list(contribution.capacity_to_activity_rows)
@@ -740,6 +779,14 @@ def bootstrap_database(
                 template_path=template_dir / specification.filename,
                 data_id=contribution.dataset.data_id,
             )
+            if specification.table == "time_period" and bundle.scenario.periods.period_mode == "prospective":
+                periods = bundle.scenario.periods
+                base_rows = [TimePeriod(period=year, flag="e", sequence=None) for year in periods.existing]
+                base_rows.extend(
+                    TimePeriod(period=year, flag="f", sequence=index)
+                    for index, year in enumerate([*periods.model, periods.end_of_horizon])
+                )
+                result = replace(result, inserted_rows=len(base_rows), primary_keys=_expected_keys(base_rows))
             insert_models(connection, base_rows)
             inserted[specification.table] = base_rows
             base_load_results.append(result)
@@ -785,12 +832,14 @@ def bootstrap_database(
             "content_version": contribution.dataset.version,
         },
         "existing_capacity": contribution.parameter_audit,
+        "periods": bundle.scenario.periods.audit(),
         "demand": contribution.demand_audit,
         "road_utilization": contribution.road_utilization_audit,
         "lifetimes": contribution.lifetime_audit,
         "efficiencies": contribution.efficiency_audit,
         "costs": contribution.cost_audit,
         "ev_chargers": contribution.charger_audit,
+        "emission_embodied": contribution.emission_embodied_audit,
         "parameter_support": contribution.support_audit,
         "comparison": comparison_report,
         "preflight": preflight,
@@ -845,6 +894,9 @@ def compare_transport_database(
         result["costs"] = compare_legacy_costs(
             candidate_path, reference,
             **tolerances,
+        )
+        result["emission_embodied"] = compare_legacy_emission_embodied(
+            candidate_path, reference, **tolerances,
         )
     else:
         result = {"enabled": False, "mode": "none"}

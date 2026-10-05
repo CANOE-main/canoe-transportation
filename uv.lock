@@ -132,6 +132,7 @@ dependencies = [
     { name = "snakemake" },
     { name = "sqlalchemy" },
     { name = "xlrd" },
+    { name = "xlwings", marker = "sys_platform == 'win32'" },
 ]
 
 [package.dev-dependencies]
@@ -158,6 +159,7 @@ requires-dist = [
     { name = "snakemake", specifier = ">=9.19.0" },
     { name = "sqlalchemy", specifier = ">=2.0.49" },
     { name = "xlrd", specifier = ">=2.0.2" },
+    { name = "xlwings", marker = "sys_platform == 'win32'", specifier = ">=0.37.5" },
 ]
 
 [package.metadata.requires-dev]
@@ -1308,6 +1310,22 @@ wheels = [
 ]
 
 [[package]]
+name = "pywin32"
+version = "312"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2d/41/12fbfd7f36ed2146d8bc9de96c2741296bf0d490b98508496cff322e274c/pywin32-312-cp313-cp313-win32.whl", hash = "sha256:7a27df850933d16a8eabfbaeb73d52b273e2da667f80d70b01a89d1f6828d02c", size = 6370184, upload-time = "2026-06-04T07:49:36.253Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/db/36a78e3403099d31d9746d13fdcde5accc43c1155f375a34d15983a479a7/pywin32-312-cp313-cp313-win_amd64.whl", hash = "sha256:c53e878d15a1c44788082bfe712a905433473aa38f86375b7cf8b45e3acbaaf9", size = 6914298, upload-time = "2026-06-04T07:49:38.876Z" },
+    { url = "https://files.pythonhosted.org/packages/84/37/c1697194092b76de9ed47ca124323f02c57ffc8a45c06f88a3d5acaf01eb/pywin32-312-cp313-cp313-win_arm64.whl", hash = "sha256:59aba5d5940842075343a5ddc6b11f1cdf0d1567fe745290359dfbcc7c2eb831", size = 6727640, upload-time = "2026-06-04T07:49:41.083Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/2b/1f3cded5822fd49c02f40544cbb5f58c7cfd6b1694869fd476cb6170ee97/pywin32-312-cp314-cp314-win32.whl", hash = "sha256:a77a90fbb6881238d2ca9c6fd797b25817f3768fe78d214a90137ff055a75f5b", size = 6468928, upload-time = "2026-06-04T07:49:43.188Z" },
+    { url = "https://files.pythonhosted.org/packages/21/82/3bf86d2e2808902013132e1ce905a7da0da53790f3836c64bf44d55e24f3/pywin32-312-cp314-cp314-win_amd64.whl", hash = "sha256:a4dd3a848290ef724347b19f301045831d8e802fa4464f491b98b1e0a081432e", size = 7024157, upload-time = "2026-06-04T07:49:45.34Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/0e/73f6d6800b4f27655abd9e9f6aaeaefcddb2b946e4674efa2bab184a7f7b/pywin32-312-cp314-cp314-win_arm64.whl", hash = "sha256:9fce94568364e0155e6dfb781ac5d95903be8baf28670632beab1b523f300daa", size = 6839598, upload-time = "2026-06-04T07:49:47.613Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/61/caa39686032d2ebdd04ff0ab5cbe163126c0066d98e00c9018646e42393b/pywin32-312-cp315-cp315-win32.whl", hash = "sha256:5c1fbe4a937a73ae9297384a3da38518cbc694c68ad8a809b2e19acd350f03ed", size = 6471159, upload-time = "2026-06-04T07:49:50.035Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/cd/7e1de64a4a6f69c04214169657ccab0d93a670ea50e35eb8f489d7378249/pywin32-312-cp315-cp315-win_amd64.whl", hash = "sha256:c2f03a0f73f804a13c2735b99392b0cd426bb4f2c4d0178e5ac966a0f21618d5", size = 7025293, upload-time = "2026-06-04T07:49:54.857Z" },
+    { url = "https://files.pythonhosted.org/packages/23/ed/4532e9388e65fa16b46776ef47ad631a64eda1631884488af707666350ed/pywin32-312-cp315-cp315-win_arm64.whl", hash = "sha256:a8597d28f267b39074aef51fa593530082b39cbe5a074226096857b1fed2dfb9", size = 6840337, upload-time = "2026-06-04T07:49:57.531Z" },
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1996,6 +2014,21 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/07/5a/377161c2d3538d1990d7af382c79f3b2372e880b65de21b01b1a2b78691e/xlrd-2.0.2.tar.gz", hash = "sha256:08b5e25de58f21ce71dc7db3b3b8106c1fa776f3024c54e45b45b374e89234c9", size = 100167, upload-time = "2025-06-14T08:46:39.039Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1a/62/c8d562e7766786ba6587d09c5a8ba9f718ed3fa8af7f4553e8f91c36f302/xlrd-2.0.2-py2.py3-none-any.whl", hash = "sha256:ea762c3d29f4cca48d82df517b6d89fbce4db3107f9d78713e48cd321d5c9aa9", size = 96555, upload-time = "2025-06-14T08:46:37.766Z" },
+]
+
+[[package]]
+name = "xlwings"
+version = "0.37.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a8/e0/f6cfb185f0af938d01ed33bce459844462d54beee456ed80e3f3d4ce58e2/xlwings-0.37.5.tar.gz", hash = "sha256:5dade3b7bd96c69b870567eddadf5ebeb313ecc6823245feed982f778abba787", size = 2737842, upload-time = "2026-09-27T20:01:09.729Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/7a/522fb6af7f17d57f526d8939f21fdb842cac9b66508157a20f8a9b28874e/xlwings-0.37.5-cp313-cp313-win_amd64.whl", hash = "sha256:6ee02f83d0ef4fc6f3112b377fb4040f2f7df15bb026b3f92409d1faa20c66b0", size = 1680449, upload-time = "2026-09-27T20:01:42.722Z" },
+    { url = "https://files.pythonhosted.org/packages/58/62/41b892b7a1349010ce680d5fd6efd9002cc64e95cecffedae7b486333c06/xlwings-0.37.5-cp314-cp314-pyemscripten_2026_0_wasm32.whl", hash = "sha256:f63a14ae66c6001802a31d6d3629f928fd55c754550ffe77d4d83d71c8968989", size = 1229222, upload-time = "2026-09-27T20:01:53.133Z" },
+    { url = "https://files.pythonhosted.org/packages/29/4e/ac6811f20cb68767eb70f5fda66d7e4db182c3e1c34d6853a1a9b12b9699/xlwings-0.37.5-cp314-cp314-win_amd64.whl", hash = "sha256:a381413532bbffdda407bb3a58789f4baff8edbf7b3cb4422b35e60f7cfc8cf7", size = 1704036, upload-time = "2026-09-27T20:01:54.474Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/cc/6b03371c18c61dec88ec96f6dfd08a61f8835ddd47fa1a72d0a2c11ea018/xlwings-0.37.5-py3-none-any.whl", hash = "sha256:e586f97a785ce0b453022bb57ce21ef4d9136b3d4292425126a2d3f51f187a6d", size = 817386, upload-time = "2026-09-27T20:01:56.282Z" },
 ]
 
 [[package]]

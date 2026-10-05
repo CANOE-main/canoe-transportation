@@ -34,8 +34,8 @@ T_D_tkm_hdv_wt,d,Demand for total tonne-kilometers by marine vessels,billion ton
 T_D_pj_off,d,Demand for PJ by off-road vehicles,PJ
 co2e,e,"Carbon dioxide equivalent (GWP 100, IPCC AR6)",kt
 co2,e,Carbon dioxide,kt
-n2o,e,Nitrous oxide,kt
-ch4,e,Methane,kt
+n2o,e,Nitrous oxide,t
+ch4,e,Methane,t
 T_annual_pkm_ldv_c,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,
 T_annual_pkm_ldv_t,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,
 T_annual_tkm_ldv_t,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,

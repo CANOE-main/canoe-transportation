@@ -6,7 +6,7 @@ version: 3
 
 scenario:
   name: legacy_reproduction
-  description: "Reproduce the legacy transportation backend before changing modeling assumptions."
+  description: "Transportation baseline with selectable CANOE prospective and legacy period handling."
   purpose: baseline_reproduction
 
 geography:
@@ -14,10 +14,15 @@ geography:
   regions: ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
 
 periods:
-  # Periods begin at the end of a given year (e.g., the 2025 period starts on December 31, 2025, and ends on December 31, 2030)
-  # All inputs for a given period reflect the projections for the END of that period (e.g., 2025 inputs reflect 2030 condition)
+  # prospective: 2025 spans Dec 31, 2025 to Dec 31, 2030; future inputs use 2030.
+  # Existing 2020 represents 2021-2025 cohorts, using observed data through base_year.
+  # legacy: retain ceiling vintage bins and the previous mixed future-input timing;
+  # append base_year to existing when selecting legacy (e.g., [..., 2020, 2023]).
+  period_mode: prospective  # prospective | legacy
+  # Observation/calibration year, independently of economics.cost_reference_year.
   base_year: 2023
-  existing: [2000, 2005, 2010, 2015, 2020, 2023]
+  # No 2023 label is needed: its observations belong to the 2020 interval.
+  existing: [2000, 2005, 2010, 2015, 2020]
   model: [2025, 2030, 2035, 2040, 2045]
   step: 5
 
@@ -71,7 +76,9 @@ comparison:
 lifetimes:
   # Use accepted road survival curves; remaining technologies use fixed lifetimes.
   survival_curves: true
-  survival_curve_max_age: 25
+  # Ages 25-29 cover vintage 2000 in prospective period 2025; source coverage is checked.
+  # Set 25 with period_mode: legacy to reproduce the previous survival horizon.
+  survival_curve_max_age: 29
 
 existing_capacity:
   # Regional fleet-source precedence is shared under this scenario's aggregation_sources.
@@ -103,3 +110,7 @@ row_note_overrides:
   # Replace technology.notes by exact technology key for this scenario.
   # Source notes remain in sources.yaml; {} keeps the structural template notes.
   technology: {}
+
+# Road vehicle-cycle layer; materials apply only to LDVs.
+embodied_emissions: true
+embodied_materials: conventional

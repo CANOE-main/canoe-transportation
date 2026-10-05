@@ -32,6 +32,41 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  greet_vehicle_cycle_results:
+    path: inputs/0_external_models/greet_vehicle_cycle_results
+    layer: external
+    owner: fetching.greet_automation
+    producers: [fetching.greet_automation.generate_vehicle_cycle_results]
+    consumers: [fetching.greet_vehicle_cycle, reviewers]
+    validation_surfaces: [fetching.greet_vehicle_cycle.normalize_generated_results]
+  greet_automation_validation:
+    path: inputs/validation/greet_automation
+    layer: input_validation
+    owner: fetching.greet_automation
+    producers: [fetching.greet_automation.generate_vehicle_cycle_results]
+    consumers: [reviewers]
+    validation_surfaces: [fetching.greet_automation.validate_probe_results]
+  greet_vehicle_cycle_interim:
+    path: inputs/1_interim/greet_vehicle_cycle
+    layer: interim
+    owner: fetching.greet_vehicle_cycle
+    producers: [fetching.greet_vehicle_cycle.normalize_generated_results]
+    consumers: [parameterization.road_embodied_emissions, reviewers]
+    validation_surfaces: [fetching.greet_vehicle_cycle.normalize_generated_results]
+  emission_embodied_processed:
+    path: inputs/2_processed/emission_embodied
+    layer: processed
+    owner: parameterization.road_embodied_emissions
+    producers: [parameterization.road_embodied_emissions.prepare_emission_embodied_rows]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.road_embodied_emissions.validate_embodied_outputs]
+  emission_embodied_validation:
+    path: inputs/validation/emission_embodied
+    layer: input_validation
+    owner: parameterization.road_embodied_emissions
+    producers: [parameterization.road_embodied_emissions.prepare_emission_embodied_rows]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.road_embodied_emissions.validate_embodied_outputs]
   ontario_vehicle_population:
     path: inputs/1_interim/fetched_ontario_vehicle_population
     layer: interim
@@ -65,6 +100,7 @@ artifacts:
       - parameterization.road_fleet_weights
       - parameterization.build_efficiencies
       - parameterization.build_costs
+      - parameterization.road_embodied_emissions
     validation_surfaces:
       - parameterization.road_aggregation.validate_vehicle_mapping
       - parameterization.road_aggregation.mapping_coverage
@@ -97,7 +133,7 @@ artifacts:
     layer: interim
     owner: fetching.assorted_sources
     producers: [fetching.assorted_sources.fetch_and_normalize_tc_dashboard]
-    consumers: [parameterization.road_stocks_and_demands, parameterization.ev_chargers]
+    consumers: [parameterization.build_existing_capacity, parameterization.road_stocks_and_demands, parameterization.ev_chargers]
     validation_surfaces: [fetching.assorted_sources.normalize_tc_ev_dashboard_table, fetching.assorted_sources.normalize_tc_public_chargers]
   existing_capacity_interim:
     path: inputs/1_interim/existing_capacity
@@ -111,7 +147,7 @@ artifacts:
     layer: processed
     owner: parameterization.build_existing_capacity
     producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
-    consumers: [build_transport, reviewers]
+    consumers: [build_transport, parameterization.ev_chargers, reviewers]
     validation_surfaces: [parameterization.build_existing_capacity.prepare_existing_capacity_rows]
   existing_capacity_validation:
     path: inputs/validation/existing_capacity

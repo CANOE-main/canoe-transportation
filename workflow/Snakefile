@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fetching.cer_enerfuture import build_requests as cer_requests, configured_edition
 from fetching.statcan_tables import build_requests as statcan_requests
+from fetching.greet_vehicle_cycle import required_inputs as embodied_inputs
 from parameterization.manual_parameters import registered_manual_components
 from utils import load_config_bundle, load_harmonization_rules
 
@@ -54,6 +55,7 @@ TEMPLATE_INPUTS = [
     f"{SCENARIO.paths.inputs.template}/{filename}"
     for filename in ("technology.csv", "commodity.csv", "region.csv", "time_period.csv")
 ]
+EMBODIED_INPUTS = [str(path.relative_to(SCENARIO.repo_root)) for path in embodied_inputs(SCENARIO)]
 COMMON_CODE = ["pyproject.toml", "uv.lock"] + sorted(
     path.as_posix()
     for directory in ("src/utils", "src/validation")
@@ -156,7 +158,15 @@ rule transport_database:
         scenario=SCENARIO_PATH,
         conversion=CONVERSION_INPUT,
         templates=TEMPLATE_INPUTS,
-        code=["src/build_transport.py"] + sorted(
+        embodied=EMBODIED_INPUTS,
+        code=[
+            "src/build_transport.py",
+            # Selection/normalization helpers used by parameter preparation.
+            "src/fetching/nlr_atb_autonomie.py",
+            "src/fetching/fueleconomy_vehicles.py",
+            "src/fetching/greet_vehicle_cycle.py",
+            "src/fetching/greet_automation.py",
+        ] + sorted(
             path.as_posix() for path in Path("src/parameterization").glob("*.py")
             if path.stem != "vehicle_mapping_bootstrap"
         ),

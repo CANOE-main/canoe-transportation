@@ -161,13 +161,13 @@ def validate_transport_parameter_support(
         }
         if invalid:
             errors.append(f"existing_capacity_positive: {len(invalid)} invalid rows {invalid[:8]}")
-        for table in ("efficiency", "cost_invest", "cost_fixed", "cost_variable"):
+        for table in ("efficiency", "cost_invest", "cost_fixed", "cost_variable", "emission_embodied"):
             if table in keys:
                 record(f"{table}_historical_capacity",
                        {key for key in keys[table] if key[2] in historical},
                        keys["existing_capacity"])
     if "efficiency" in keys:
-        for table in ("existing_capacity", "cost_invest", "cost_fixed", "cost_variable"):
+        for table in ("existing_capacity", "cost_invest", "cost_fixed", "cost_variable", "emission_embodied"):
             if table in keys:
                 record(f"{table}_efficiency", keys[table], keys["efficiency"])
         if "limit_annual_capacity_factor" in batches:

@@ -49,6 +49,8 @@ requirements.
 │   │   ├── statcan_tables.py                # Statistics Canada transport tables
 │   │   ├── cer_enerfuture.py                # CER energy future tables
 │   │   ├── nlr_atb_autonomie.py             # NLR ATB and ANL Autonomie inputs
+│   │   ├── greet_automation.py              # Explicit disposable-copy Excel generation of vehicle-cycle evidence #to-review
+│   │   ├── greet_vehicle_cycle.py           # Registered source contracts, extraction and offline bank validation #to-review
 │   │   ├── fueleconomy_vehicles.py          # Opt-in FuelEconomy.gov class evidence
 │   │   ├── vpic_vehicle_types.py            # Opt-in vPIC vehicle-type evidence
 │   │   ├── vpic_model_years.py              # Opt-in vPIC make/model-year evidence
@@ -74,7 +76,7 @@ requirements.
 │   │   ├── currency.py                      # CER-backed currency and price-year conversion
 │   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
 │   │   ├── ldv_charging_profiles.py         # Hourly LDEV charging demand profiles - #to-do
-│   │   ├── road_embodied_emissions.py       # Vehicle-cycle and operating emissions - #to-do
+│   │   ├── road_embodied_emissions.py       # Road vehicle-cycle lifetime gases and regional aggregation #to-review
 │   │   ├── market_constraints.py            # Market shares, policy limits, and SCC rules - #to-do
 │   │   └── adoption_constraints.py          # Adoption and growth constraints - #to-do
 │   ├── utils/
@@ -136,7 +138,8 @@ coverage and keys, and publish configured artifacts without opening SQLite conne
 
 `build_transport.py` calls the same preparation functions for standalone and caller-owned
 assembly. `prepare_transport_contribution` gathers structural templates, capacity, demand,
-road utilization, lifetimes, efficiencies, costs, and charger rows as selected;
+road utilization, lifetimes, efficiencies, costs, charger rows and the full embodied
+preparation (gas rows, provenance, source and aggregation audits) as selected; #to-review
 `insert_transport_contribution` registers provenance and inserts validated rows into a
 compatible caller-owned connection. The standalone path also owns schema initialization,
 transactions, integrity checks, and atomic publication. Schema contracts and insertion

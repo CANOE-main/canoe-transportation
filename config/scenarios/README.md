@@ -16,7 +16,7 @@ Reusable conversions belong in `config/parameters/conversion.yaml`.
 | --- | --- |
 | `scenario` | Run name, description, and purpose. |
 | `geography.regions` | Regions covered by the registered inputs and template. Quote `"ON"` to avoid YAML 1.1 boolean parsing. |
-| `periods` | Base year, existing vintages, model periods, and step. Existing vintages must end at the base year. Model periods use projections at the period's end: period 2025 with step 5 uses 2030 conditions. |
+| `periods` | Period mode, observed-data base year, existing vintage labels, model periods, and step. Prospective periods use end conditions; legacy retains the previous historical bins and future timing. |
 | `sources.selections` | CEUD provincial/national years, Transport Canada dashboard year, and CER edition. Other sources have pinned registry releases or their own discovery contract; an unused edition/year selector is rejected. |
 | `aggregation_sources` | Regional fleet evidence shared across parameters: stock ages, LDV classes, medium-truck classes and heavy-truck haul activity. Every scenario declares the same four roles, with its own selections. |
 | `economics.cer_scenario` | CER trajectory used for currency harmonization, independently of demand. It must exist in the selected CER edition. |
@@ -34,7 +34,7 @@ it does not create missing caches, mappings, or template periods.
 | Section and field | Selections and behavior |
 | --- | --- |
 | `lifetimes.survival_curves` | `true` uses accepted road survival curves; `false` uses configured fixed lifetimes, including source-derived medians for LDVs/medium trucks and the manual heavy-truck lifetime. Other technologies retain their configured fixed lifetime pathway. |
-| `lifetimes.survival_curve_max_age` | Maximum supported age for road survival curves and existing-stock cohorts when curves are enabled. Fixed-lifetime cohorts use their class lifetime. |
+| `lifetimes.survival_curve_max_age` | Maximum supported age for road survival curves and existing-stock cohorts when curves are enabled. The prospective template uses 29 to cover ages 25–29 for vintage 2000 in the first model period; every required source age must exist. Fixed-lifetime cohorts use their class lifetime. |
 | `existing_capacity.vehicle_population_year` | MTO age-evidence year for LDVs, trucks, motorcycles, and buses. It must match the reviewed LDV aggregation artifact and the available Report 5 edition. |
 | `existing_capacity.cleanup_tolerance` | Retain positive road/bus/off-road capacity at or above this threshold in each row's native capacity unit. This is a capacity cutoff, independent of comparison tolerances; it does not trim costs or round parameters. Charger capacities have their own preparation. |
 | `demand.cer_scenario` | CER demand trajectory, also used for the normalized default-source marker. Must exist in the selected CER edition. |
@@ -45,6 +45,8 @@ it does not create missing caches, mappings, or template periods.
 | `costs.atb_trajectory` | The same ATB choices, independently selectable from efficiencies. |
 | `ev_chargers.ld_evs_per_port` | Positive LDV electric vehicles per charger port. |
 | `ev_chargers.mhd_evs_per_port` | Positive medium/heavy-duty electric vehicles per charger port. |
+| `embodied_emissions` | Enables the road vehicle-cycle layer. When false, preparation requires no embodied GREET workbooks or result bank and inserts no embodied rows. |
+| `embodied_materials` | `conventional` or `lightweight`, for LDVs only. MHDV values and provenance are independent of this selection. The registered release's glider selector mismatch is accepted because the affected saved range inputs are identical; unequal inputs require a reviewed correction before lightweight use. |
 
 The current v4 capacity-factor table lacks the joint vintage/period grain needed for
 age-dependent road utilization. Enabling VKT schedules retains those rows as audit
@@ -52,10 +54,78 @@ artifacts; only supported flat classes enter that table. Charger utilization lik
 remains an artifact while its period dimension is unsupported. These are schema limits,
 not additional scenario switches.
 
+Declare both embodied fields even when the layer is disabled. Generate the complete
+registered source bank explicitly on Windows with desktop Excel:
+`uv run python -m fetching.greet_automation --scenario config/scenarios/legacy_reproduction.yaml`.
+The runner uses disposable copies of the configured pair and publishes gas,
+exclusion, case and report evidence with a manifest. Ordinary preparation and the
+scenario DAG validate and read this bank offline, without starting Excel. After
+changing source inputs, controls, anchors or ATB archetypes, regenerate it.
+
+The source adapter selects one simulation target and the expected imported LDV
+cohort year; changing these requires fresh validated evidence. The harmonization
+rules currently hold the 2025 factors constant through 2050. Factors are lifetime
+totals per manufactured vehicle, with no lifetime, mileage, service-output or
+annual-rate division. Current vintage coordinates follow `ScenarioPeriods`.
+
 Unannotated source/component DQ indicators resolve to **5** from the source registry's
 defaults. Explicit component scores override source scores one indicator at a time.
 Blank placeholders do not prevent scenario builds. Source `database_note` fields remain
 empty until annotated; component notes may override them.
+
+## Period modes and observed years
+
+`periods.base_year` is the latest observed year used to calibrate CEUD stocks, demand,
+ratings, load factors and annual turnover. It is independent of
+`economics.cost_reference_year`, which expresses costs in a common dollar basis.
+With the template, observations end in 2023 and costs are expressed in 2020 CAD.
+Changing the dollar year does not change the observation year or period labels.
+
+`periods.period_mode: prospective` is the template default. A period begins on
+December 31 of its label year and ends at the next model label: 2025 covers
+2026–2030, and all year-varying future inputs use 2030 conditions. The final label,
+2045, uses 2050 inputs; 2050 is added to SQLite only as the horizon marker.
+Source values that do not vary by year retain their source evidence and dates.
+
+Historical labels follow the same interval boundaries. Vintage 2015 represents
+2016–2020 cohorts; vintage 2020 represents 2021–2025 cohorts, using only observed
+2021–2023 data in this run. Historical efficiencies average those available years;
+year-varying historical cost evidence uses the last observed year in its bin, with
+the existing source-availability proxies and manual baselines. The oldest label
+also receives the initial-stock/oldest-cohort proxy. Annual audit rows retain their
+source/cohort years separately from their model vintage labels.
+
+The observation year need not appear in `periods.existing`. The default grid ends
+at 2020 because 2023 observations already belong there. An explicit 2023 label in
+prospective mode has no observed years when `base_year` is 2023; setup and build
+reports identify this empty label. Historical efficiency and cost rows follow
+retained capacity keys. Lifetime and scaling defaults may still describe an
+explicitly declared empty label. Existing charger capacity and the medium-truck
+BEV override use the latest bin containing observations: vintage 2020 in the
+template. Irregular existing labels are supported; each next label closes the
+preceding interval.
+
+For prior-backend timing, use `period_mode: legacy` and include the observation
+year as the last existing label. To reproduce the pre-change temporal selections:
+
+```yaml
+periods:
+  period_mode: legacy
+  base_year: 2023
+  existing: [2000, 2005, 2010, 2015, 2020, 2023]
+  model: [2025, 2030, 2035, 2040, 2045]
+  step: 5
+lifetimes:
+  survival_curves: true
+  survival_curve_max_age: 25
+```
+
+Legacy cohorts go to the next existing label: 2016–2020 → 2020 and 2021–2023 →
+2023. Future efficiency and GDP already used period ends, while costs and charger
+schedules used period labels; legacy preserves this mixed timing. The name
+`legacy` makes that distinction explicit. Both modes retain the same stock
+calibration, source selections, native evidence dates and dollar-year conversions.
+The `period_mapping` reports list historical years, empty bins and future read years.
 
 ## Shared regional aggregation
 
@@ -135,7 +205,7 @@ the existing Python entrypoints and Snakemake workflow.
 Snakemake uses cached inputs without downloading by default. Pass
 `--config download_sources=true` to refresh sources; this is an execution option.
 
-Version 3 replaces `switches` with `lifetimes` and `road_utilization`, adds separate
+Version 3 requires the explicit period mode, replaces `switches` with `lifetimes` and `road_utilization`, adds separate
 efficiency/cost ATB selections and an economic CER selection, and moves the MTO
 age-evidence year and existing-vintage grid out of rules. Existing scenarios should be
 migrated by copying the full template and transferring their selections; obsolete fields

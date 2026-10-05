@@ -273,6 +273,42 @@ def compare_legacy_efficiency(
     }
 
 
+def compare_legacy_emission_embodied(
+    candidate_path: Path, reference_path: Path, *,
+    absolute_tolerance: float, relative_tolerance: float,
+) -> dict[str, Any]:
+    """Diagnose exact Ontario embodied keys, including an empty old baseline."""
+    with closing(open_sqlite_readonly(candidate_path)) as candidate, closing(open_sqlite_readonly(reference_path)) as reference:
+        current = {
+            (str(tech), str(gas), int(vintage)): (float(value), str(units))
+            for tech, gas, vintage, value, units in candidate.execute(
+                "SELECT tech, emis_comm, vintage, value, units FROM emission_embodied WHERE region = 'ON'"
+            )
+        }
+        previous = {
+            (str(tech), str(gas), int(vintage)): (float(value), str(units))
+            for tech, gas, vintage, value, units in reference.execute(
+                "SELECT tech, emis_comm, vintage, value, units FROM EmissionEmbodied WHERE region = 'ON'"
+            )
+        }
+    shared = sorted(current.keys() & previous.keys())
+    differences = [
+        {"key": key, "candidate_value": current[key][0], "legacy_value": previous[key][0]}
+        for key in shared
+        if not isclose(current[key][0], previous[key][0], abs_tol=absolute_tolerance, rel_tol=relative_tolerance)
+    ]
+    return {
+        "scope": "Ontario road vehicle-cycle embodied lifetime totals; exact technology/gas/vintage keys",
+        "status": "diagnostic only; the registered legacy baseline has no embodied rows" if not previous else "diagnostic only; parity requires reviewed reconciliation",
+        "candidate_rows": len(current), "reference_rows": len(previous), "shared_keys": len(shared),
+        "candidate_only_keys": len(current.keys() - previous.keys()),
+        "reference_only_keys": len(previous.keys() - current.keys()),
+        "value_differences": len(differences), "examples": differences[:15],
+        "unit_mismatches": sum(current[key][1] != previous[key][1] for key in shared),
+        "absolute_tolerance": absolute_tolerance, "relative_tolerance": relative_tolerance,
+    }
+
+
 def compare_legacy_costs(
     candidate_path: Path, reference_path: Path, *, absolute_tolerance: float,
     relative_tolerance: float,

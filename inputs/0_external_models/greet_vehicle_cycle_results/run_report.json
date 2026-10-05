@@ -1,0 +1,393 @@
+{
+  "atb_evidence": {
+    "path": "inputs/1_interim/fetched_nlr_atb_autonomie/atb_vehicles.csv",
+    "sha256": "74c65688790e3796c601e98e3de6d7a29784af49c50baca738f622896ad859c4"
+  },
+  "calculation_states": [
+    2
+  ],
+  "component": "road_vehicle_cycle_emissions",
+  "excel_version": "16.0",
+  "external_links": {
+    "after": [
+      "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\validation\\greet_automation\\20261005T054708Z_1f29440a\\working\\R&D GREET1_2025_Rev1.xlsm"
+    ],
+    "before": [
+      "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\validation\\greet_automation\\20261005T054708Z_1f29440a\\working\\R&D GREET1_2025_Rev1.xlsm"
+    ]
+  },
+  "function_checks": [
+    {
+      "arguments": [],
+      "expected": "R&D GREET1 2025_Rev1",
+      "name": "GREET_Version",
+      "result": "R&D GREET1 2025_Rev1",
+      "workbook": "greet1"
+    },
+    {
+      "arguments": [
+        1
+      ],
+      "expected": "Batteries: Pb_Acid",
+      "name": "Battery",
+      "result": "Batteries: Pb_Acid",
+      "workbook": "greet2"
+    }
+  ],
+  "generation_settings": {
+    "absolute_tolerance": 1e-08,
+    "files": {
+      "cases": "cases.csv",
+      "exclusions": "excluded_combined_co2.csv",
+      "report": "run_report.json",
+      "results": "vehicle_cycle_gases.csv"
+    },
+    "function_checks": [
+      {
+        "arguments": [],
+        "expected": "R&D GREET1 2025_Rev1",
+        "name": "GREET_Version",
+        "workbook": "greet1"
+      },
+      {
+        "arguments": [
+          1
+        ],
+        "expected": "Batteries: Pb_Acid",
+        "name": "Battery",
+        "workbook": "greet2"
+      }
+    ],
+    "imported_controls": {
+      "bev_range_miles": "G12",
+      "ldv_selector": "B4",
+      "phev_range_miles": "D12"
+    },
+    "lightweight_glider": {
+      "columns": [
+        "W",
+        "Y",
+        "AA",
+        "AC"
+      ],
+      "formula_cell": "J4",
+      "header_pattern": "EV([0-9]+): Lightweight Material",
+      "header_row": 3,
+      "range_reference": "GREET1_Import_Export!$G$12",
+      "worksheets": [
+        "Car",
+        "SUV",
+        "PUT"
+      ]
+    },
+    "macro": "Calculation.Calc",
+    "macro_arguments": [
+      true
+    ],
+    "max_calculation_passes": 4,
+    "names": {
+      "bev_range_miles": {
+        "cell": "F994",
+        "name": "BEV_AER"
+      },
+      "ldv_selector": {
+        "cell": "E16",
+        "name": "Veh_Type_Option"
+      },
+      "phev_range_miles": {
+        "cell": "F993",
+        "name": "Grid_AER"
+      },
+      "simulation_year": {
+        "cell": "E9",
+        "name": "Year"
+      }
+    },
+    "preserved_ldv_selectors": [
+      "B8",
+      "B11",
+      "B14"
+    ],
+    "range_dropdown_names": {
+      "bev": "BEV_VMT_AER",
+      "phev": "Grid_VMT_AER"
+    },
+    "range_labels": {
+      "E993": "PHEVs",
+      "E994": "BEVs"
+    },
+    "range_unit": {
+      "cell": "C992",
+      "label": "12.3.a) Rated All Electric Range (RAER) [miles]"
+    },
+    "relative_tolerance": 1e-10,
+    "timeout_seconds": 1800
+  },
+  "lightweight_bev_range_mapping_ok": false,
+  "native_calculation": {
+    "iteration": true,
+    "max_change": 1e-05,
+    "max_iterations": 100.0,
+    "mode": "manual"
+  },
+  "ok": true,
+  "preserved_ldv_selectors": {
+    "B11": 1.0,
+    "B14": 1.0,
+    "B8": 1.0
+  },
+  "profile_sha256": "b3e8ffd8eae904495ad1bb52cf49fac7b25bac6b3586bc2d33a32abb1afa202b",
+  "range_archetypes": {
+    "bev": {
+      "bev_150_miles": 150,
+      "bev_200_miles": 200,
+      "bev_300_miles": 300,
+      "bev_400_miles": 400
+    },
+    "phev": {
+      "phev_35_miles": 35,
+      "phev_50_miles": 50
+    }
+  },
+  "saved_simulation_year": 2025.0,
+  "simulation_year_changed": false,
+  "source_dq": {
+    "dq_cred": 5,
+    "dq_geog": 5,
+    "dq_struc": 5,
+    "dq_tech": 5,
+    "dq_time": 5
+  },
+  "source_formula_audit": [
+    {
+      "correction_applied": false,
+      "formula_cell": "J4",
+      "ok": false,
+      "original_formula": "=IF(GREET1_Import_Export!$G$12=200,W4,IF(GREET1_Import_Export!$G$12=300,Y4,IF(GREET1_Import_Export!$G$12=400,AA4,AC4)))+(J17+IF(Vehi_Inputs!$C$76=1,J18,J19))",
+      "proposed_formula": "=IF(GREET1_Import_Export!$G$12=150,W4,IF(GREET1_Import_Export!$G$12=200,Y4,IF(GREET1_Import_Export!$G$12=300,AA4,AC4)))+(J17+IF(Vehi_Inputs!$C$76=1,J18,J19))",
+      "range_checks": [
+        {
+          "referenced_glider_aer_miles": 400,
+          "referenced_glider_cell": "AC4",
+          "selected_aer_miles": 150
+        },
+        {
+          "referenced_glider_aer_miles": 150,
+          "referenced_glider_cell": "W4",
+          "selected_aer_miles": 200
+        },
+        {
+          "referenced_glider_aer_miles": 200,
+          "referenced_glider_cell": "Y4",
+          "selected_aer_miles": 300
+        },
+        {
+          "referenced_glider_aer_miles": 300,
+          "referenced_glider_cell": "AA4",
+          "selected_aer_miles": 400
+        }
+      ],
+      "worksheet": "Car"
+    },
+    {
+      "correction_applied": false,
+      "formula_cell": "J4",
+      "ok": false,
+      "original_formula": "=IF(GREET1_Import_Export!$G$12=200,W4,IF(GREET1_Import_Export!$G$12=300,Y4,IF(GREET1_Import_Export!$G$12=400,AA4,AC4)))+(J17+IF(Vehi_Inputs!$C$76=1,J18,J19))",
+      "proposed_formula": "=IF(GREET1_Import_Export!$G$12=150,W4,IF(GREET1_Import_Export!$G$12=200,Y4,IF(GREET1_Import_Export!$G$12=300,AA4,AC4)))+(J17+IF(Vehi_Inputs!$C$76=1,J18,J19))",
+      "range_checks": [
+        {
+          "referenced_glider_aer_miles": 400,
+          "referenced_glider_cell": "AC4",
+          "selected_aer_miles": 150
+        },
+        {
+          "referenced_glider_aer_miles": 150,
+          "referenced_glider_cell": "W4",
+          "selected_aer_miles": 200
+        },
+        {
+          "referenced_glider_aer_miles": 200,
+          "referenced_glider_cell": "Y4",
+          "selected_aer_miles": 300
+        },
+        {
+          "referenced_glider_aer_miles": 300,
+          "referenced_glider_cell": "AA4",
+          "selected_aer_miles": 400
+        }
+      ],
+      "worksheet": "SUV"
+    },
+    {
+      "correction_applied": false,
+      "formula_cell": "J4",
+      "ok": false,
+      "original_formula": "=IF(GREET1_Import_Export!$G$12=200,W4,IF(GREET1_Import_Export!$G$12=300,Y4,IF(GREET1_Import_Export!$G$12=400,AA4,AC4)))+(J17+IF(Vehi_Inputs!$C$76=1,J18,J19))",
+      "proposed_formula": "=IF(GREET1_Import_Export!$G$12=150,W4,IF(GREET1_Import_Export!$G$12=200,Y4,IF(GREET1_Import_Export!$G$12=300,AA4,AC4)))+(J17+IF(Vehi_Inputs!$C$76=1,J18,J19))",
+      "range_checks": [
+        {
+          "referenced_glider_aer_miles": 400,
+          "referenced_glider_cell": "AC4",
+          "selected_aer_miles": 150
+        },
+        {
+          "referenced_glider_aer_miles": 150,
+          "referenced_glider_cell": "W4",
+          "selected_aer_miles": 200
+        },
+        {
+          "referenced_glider_aer_miles": 200,
+          "referenced_glider_cell": "Y4",
+          "selected_aer_miles": 300
+        },
+        {
+          "referenced_glider_aer_miles": 300,
+          "referenced_glider_cell": "AA4",
+          "selected_aer_miles": 400
+        }
+      ],
+      "worksheet": "PUT"
+    }
+  ],
+  "source_hashes": {
+    "inputs/0_external_models/R&D GREET2025_Rev1/R&D GREET1_2025_Rev1.xlsm": "3abed15be3442b25b66c7d991ce4ea89fd1fe534af930ae772e419241f0d976f",
+    "inputs/0_external_models/R&D GREET2025_Rev1/R&D GREET2_2025_Rev1.xlsm": "2be89abd169eba7180c0ca41102461682fc258a38ea143c5544bfd051ed03384"
+  },
+  "source_hashes_unchanged": true,
+  "source_id": "argonne_rd_greet_2025_rev1",
+  "stability_scope": "Individual vehicle-cycle gases and imported controls; global pending state retained as evidence",
+  "validation": {
+    "independence_comparisons": 768,
+    "individual_gas_rows": 966,
+    "mhdv_classes": [
+      "Class 6 PnD Trucks",
+      "Class 8 Day-Cab Trucks",
+      "Class 8 Sleeper-Cab Trucks"
+    ],
+    "ok": true,
+    "range_response": [
+      {
+        "materials": "conventional",
+        "powertrain": "bev",
+        "range_values_g": {
+          "150": 6997113.797400506,
+          "200": 7806761.662586769,
+          "300": 9514802.695978422,
+          "400": 11864332.358665323
+        },
+        "vehicle_class": "Car"
+      },
+      {
+        "materials": "lightweight",
+        "powertrain": "bev",
+        "range_values_g": {
+          "150": 10146193.900298487,
+          "200": 9986317.64709991,
+          "300": 9834119.430411989,
+          "400": 9780012.859126005
+        },
+        "vehicle_class": "Car"
+      },
+      {
+        "materials": "conventional",
+        "powertrain": "phev",
+        "range_values_g": {
+          "35": 6391980.52802363,
+          "50": 6714423.563145255
+        },
+        "vehicle_class": "Car"
+      },
+      {
+        "materials": "lightweight",
+        "powertrain": "phev",
+        "range_values_g": {
+          "35": 7010626.443937072,
+          "50": 7430201.797445612
+        },
+        "vehicle_class": "Car"
+      },
+      {
+        "materials": "conventional",
+        "powertrain": "bev",
+        "range_values_g": {
+          "150": 10312340.082659308,
+          "200": 11613483.474638399,
+          "300": 14061231.96807843,
+          "400": 18294237.353040945
+        },
+        "vehicle_class": "Pickup"
+      },
+      {
+        "materials": "lightweight",
+        "powertrain": "bev",
+        "range_values_g": {
+          "150": 14450337.531030286,
+          "200": 14250417.387164757,
+          "300": 14069639.701642852,
+          "400": 14120736.98821477
+        },
+        "vehicle_class": "Pickup"
+      },
+      {
+        "materials": "conventional",
+        "powertrain": "phev",
+        "range_values_g": {
+          "35": 9107751.642564874,
+          "50": 9634578.44325072
+        },
+        "vehicle_class": "Pickup"
+      },
+      {
+        "materials": "lightweight",
+        "powertrain": "phev",
+        "range_values_g": {
+          "35": 9869787.186732503,
+          "50": 10421607.843976943
+        },
+        "vehicle_class": "Pickup"
+      },
+      {
+        "materials": "conventional",
+        "powertrain": "bev",
+        "range_values_g": {
+          "150": 7966406.062618433,
+          "200": 8941316.921255318,
+          "300": 10766070.727804363,
+          "400": 13436653.795839608
+        },
+        "vehicle_class": "SUV"
+      },
+      {
+        "materials": "lightweight",
+        "powertrain": "bev",
+        "range_values_g": {
+          "150": 12767837.180985441,
+          "200": 12586782.438001012,
+          "300": 12404928.995944567,
+          "400": 12360351.640615117
+        },
+        "vehicle_class": "SUV"
+      },
+      {
+        "materials": "conventional",
+        "powertrain": "phev",
+        "range_values_g": {
+          "35": 7402943.711874342,
+          "50": 7802778.683912489
+        },
+        "vehicle_class": "SUV"
+      },
+      {
+        "materials": "lightweight",
+        "powertrain": "phev",
+        "range_values_g": {
+          "35": 8855353.914229259,
+          "50": 8764040.741445888
+        },
+        "vehicle_class": "SUV"
+      }
+    ]
+  },
+  "xlwings_version": "0.37.5"
+}

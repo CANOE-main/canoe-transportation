@@ -31,7 +31,8 @@ def test_config_bundle_loads_typed_contracts() -> None:
     assert bundle.paths.inputs.validation == "inputs/validation"
     assert bundle.scenario.scenario.name == "legacy_reproduction"
     assert bundle.scenario.geography.regions == ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
-    assert bundle.scenario.periods.existing == [2000, 2005, 2010, 2015, 2020, 2023]
+    assert bundle.scenario.periods.period_mode == "prospective"
+    assert bundle.scenario.periods.existing == [2000, 2005, 2010, 2015, 2020]
     assert bundle.scenario.periods.model == [
         2025,
         2030,
@@ -45,7 +46,6 @@ def test_config_bundle_loads_typed_contracts() -> None:
         2010,
         2015,
         2020,
-        2023,
         2025,
         2030,
         2035,
@@ -96,6 +96,7 @@ def test_source_component_vocabularies_are_canonical() -> None:
         "road_utilization",
         "road_capex_opex",
         "road_efficiencies",
+        "road_embodied_emissions",
         "road_lifetimes_survival",
         "road_stocks_and_demands",
     }
@@ -251,8 +252,9 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert status["ok"] is True
     assert status["scenario"] == "legacy_reproduction"
     assert status["periods"] == {
+        "period_mode": "prospective",
         "base_year": 2023,
-        "existing": [2000, 2005, 2010, 2015, 2020, 2023],
+        "existing": [2000, 2005, 2010, 2015, 2020],
         "model": [2025, 2030, 2035, 2040, 2045],
         "step": 5,
     }
@@ -262,7 +264,7 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert "wards_intelligence_2022_sales_shares" in status["active_sources"]
     assert status["parameter_options"]["lifetimes"] == {
         "survival_curves": True,
-        "survival_curve_max_age": 25,
+        "survival_curve_max_age": 29,
     }
     assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_2022_sales_shares"
 

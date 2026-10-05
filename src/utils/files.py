@@ -34,3 +34,24 @@ def write_dataframe_atomic(frame: pd.DataFrame, path: Path) -> None:
         os.replace(temporary, path)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def write_text_atomic(text: str, path: Path, *, newline: str | None = None) -> None:
+    """Publish UTF-8 text by same-directory replacement, cleaning up on failure.
+
+    Callers own serialization. ``newline=None`` retains platform text translation;
+    callers with an existing LF-only contract pass ``newline="\\n"``.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        delete=False,
+    ) as handle:
+        temporary = Path(handle.name)
+    try:
+        temporary.write_text(text, encoding="utf-8", newline=newline)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)

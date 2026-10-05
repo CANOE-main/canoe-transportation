@@ -14,6 +14,7 @@ from canoe_schema.v4_0 import ExistingCapacity
 from parameterization.road_efficiencies import prepare_bus_annual_efficiency_evidence
 from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames,
+    fixed_existing_lifetimes,
     survival_source_component,
 )
 from parameterization.offroad_lifetimes import prepare_statcan_bus_lifetimes
@@ -23,7 +24,6 @@ from parameterization.road_stocks_and_demands import (
     build_existing_stock_age_artifacts,
     distribute_existing_bus_capacity,
     distribute_existing_road_capacity,
-    fixed_existing_lifetimes,
 )
 from utils import (
     ConfigBundle,
@@ -364,10 +364,8 @@ def build_existing_capacity_artifacts(
             truck_registrations=pd.read_csv(truck_file),
             dashboard=pd.read_csv(dashboard_file),
             regions=regions,
-            base_year=base_year,
-            vintage_periods=scenario.periods.existing,
+            period_config=scenario.periods,
             vehicle_population_year=scenario.existing_capacity.vehicle_population_year,
-            first_model_period=min(scenario.periods.model),
             survival_curves=scenario.lifetimes.survival_curves,
             survival_curve_max_age=scenario.lifetimes.survival_curve_max_age,
             fixed_lifetimes_by_class=fixed_existing_lifetimes(
@@ -386,10 +384,8 @@ def build_existing_capacity_artifacts(
             annual_efficiency=bus_efficiency,
             lifetimes=bus_lifetimes,
             regions=regions,
-            base_year=base_year,
-            vintage_periods=scenario.periods.existing,
+            period_config=scenario.periods,
             vehicle_population_year=scenario.existing_capacity.vehicle_population_year,
-            first_model_period=min(scenario.periods.model),
             road_rules=road_rules,
             rules=bus_rules,
         )
@@ -404,9 +400,7 @@ def build_existing_capacity_artifacts(
             manual_lifetimes=manual_lifetimes,
             source_selector=cims_component.adapter["source_selector"],
             regions=regions,
-            base_year=base_year,
-            vintage_periods=scenario.periods.existing,
-            first_model_period=min(scenario.periods.model),
+            period_config=scenario.periods,
             rules=offroad_rules,
         )
     )
@@ -415,6 +409,7 @@ def build_existing_capacity_artifacts(
     validation_output = resolve_artifact_path(bundle, "existing_capacity_validation")
     variants = {
         "base_year": base_year,
+        "period_mode": scenario.periods.period_mode,
         "periods": scenario.periods.existing,
         "first_model_period": min(scenario.periods.model),
         "survival_curves": scenario.lifetimes.survival_curves,
@@ -492,7 +487,7 @@ def build_existing_capacity_artifacts(
         components.extend(
             ("statcan_transport_tables", table_id) for table_id in table_ids
         )
-        if road_class == "medium_trucks" and vintage == base_year:
+        if road_class == "medium_trucks" and vintage == scenario.periods.latest_observed_vintage:
             components.append(
                 ("transport_canada_ev_dashboard", "medium_heavy_ev_market_share")
             )
@@ -625,6 +620,7 @@ def build_existing_capacity_artifacts(
             for units, value in removed_capacity.groupby("units")["value"].sum().items()
         },
     }
+    audit["period_mapping"] = scenario.periods.audit()
     audit["excluded_road_fuel_rows"] = len(road_exclusions)
     audit["excluded_bus_fuel_rows"] = len(bus_exclusions)
     audit["bus_technology_transfers"] = len(bus_transfers)

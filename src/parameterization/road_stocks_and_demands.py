@@ -1,4 +1,4 @@
-"""Derive Ontario LDV existing-stock age cohorts from mapped Report A stock."""
+"""Road stock cohorts and allocation, with shared utilization calculations."""
 
 import argparse
 import logging
@@ -8,6 +8,8 @@ from typing import Any
 from collections.abc import Mapping
 
 import pandas as pd
+
+from validation.config_models import ScenarioPeriods
 
 from utils import (
     ConfigBundle,
@@ -306,52 +308,6 @@ def median_lifetime_map(medians: pd.DataFrame) -> dict[str, float]:
     }
 
 
-def fixed_existing_lifetimes(
-    medians: pd.DataFrame,
-    manual: pd.DataFrame,
-    rules: Mapping[str, Any],
-) -> dict[str, float]:
-    """Resolve reviewed median and manual lifetimes for CEUD road classes."""
-    sources = rules["fixed_lifetime_sources"]
-    if set(sources) != set(rules["ceud_stock_series"]):
-        raise ValueError("Fixed lifetime sources do not cover every road class")
-    lifetimes: dict[str, float] = {}
-    for road_class, selector in sources.items():
-        kind = selector["kind"]
-        if kind == "ceud_median":
-            selected = medians.loc[
-                medians["target_system"].eq("nrcan_ceud")
-                & medians["target_class"].eq(selector["target_class"])
-            ]
-        elif kind == "source_median_equal":
-            selected = medians.loc[
-                medians["source_id"].eq(selector["source_id"])
-                & medians["target_system"].eq("source_class")
-                & medians["target_class"].isin(selector["source_classes"])
-            ]
-            if set(selected["target_class"]) != set(selector["source_classes"]):
-                raise ValueError(f"Incomplete source median classes for {road_class}")
-        elif kind == "manual":
-            selected = manual.loc[
-                manual["category"].eq(selector["category"])
-                & manual["sub_category"].eq("all")
-            ].rename(columns={"lifetime": "median_equivalent_age"})
-        else:
-            raise ValueError(f"Unknown fixed lifetime source for {road_class}: {kind}")
-        values = pd.to_numeric(selected["median_equivalent_age"], errors="raise")
-        if (
-            selected.empty
-            or (kind != "source_median_equal" and len(selected) != 1)
-            or values.nunique() != 1
-        ):
-            raise ValueError(f"Ambiguous fixed lifetime for {road_class}")
-        lifetime = float(values.iloc[0])
-        if not isfinite(lifetime) or lifetime <= 0:
-            raise ValueError(f"Invalid fixed lifetime for {road_class}")
-        lifetimes[road_class] = lifetime
-    return lifetimes
-
-
 def accepted_curve_ages(
     curves: pd.DataFrame, rules: Mapping[str, Any]
 ) -> dict[str, set[int]]:
@@ -565,10 +521,8 @@ def distribute_existing_road_capacity(
     truck_registrations: pd.DataFrame,
     dashboard: pd.DataFrame,
     regions: list[str],
-    base_year: int,
-    vintage_periods: list[int],
+    period_config: ScenarioPeriods,
     vehicle_population_year: int,
-    first_model_period: int,
     survival_curves: bool,
     survival_curve_max_age: int,
     fixed_lifetimes_by_class: Mapping[str, float],
@@ -576,9 +530,9 @@ def distribute_existing_road_capacity(
     rules: dict[str, Any],
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Apply reviewed age and registration shares to CEUD base-year road stocks."""
-    periods = [int(period) for period in vintage_periods]
-    if periods != sorted(set(periods)) or periods[-1] != base_year:
-        raise ValueError("Road vintage periods must be unique and end at the base year")
+    base_year = period_config.base_year
+    periods = period_config.existing
+    first_model_period = period_config.model[0]
     if (
         rules["first_model_period_rule"] != "positive_surviving_capacity"
         or rules["ineligible_cohort_redistribution"]
@@ -678,7 +632,7 @@ def distribute_existing_road_capacity(
                 raise ValueError(f"No eligible MTO age cohorts for {(region, name)}")
             factor = 1.0 / eligible_share if eligible_share > 0 else 0.0
             for age, year, age_share, eligible in eligible_age_rows:
-                vintage = next(period for period in periods if period >= year)
+                vintage = period_config.existing_vintage(year)
                 stock_rows.append(
                     {
                         "ceud_region": region,
@@ -782,8 +736,8 @@ def distribute_existing_road_capacity(
         supported = fuel_technologies[name]
         eligible_fuels = set(supported)
         vintage_excluded_fuels = (
-            set(rules.get("base_year_only_fuels", {}).get(name, []))
-            if vintage != base_year else set()
+            set(rules.get("latest_vintage_only_fuels", {}).get(name, []))
+            if vintage != period_config.latest_observed_vintage else set()
         )
         eligible_fuels -= vintage_excluded_fuels
         if historical_backfill:
@@ -807,7 +761,7 @@ def distribute_existing_road_capacity(
                         "fuel_type": fuel,
                         "excluded_source_share": value / total,
                         "exclusion_reason": (
-                            "configured_base_year_only_fuel"
+                            "configured_latest_vintage_only_fuel"
                             if fuel in vintage_excluded_fuels else
                             "pre_evidence_non_combustion"
                             if historical_backfill and fuel in supported else
@@ -820,7 +774,7 @@ def distribute_existing_road_capacity(
             for fuel, value in counts.items()
             if fuel in eligible_fuels
         }
-        if name == "medium_trucks" and vintage == base_year:
+        if name == "medium_trucks" and vintage == period_config.latest_observed_vintage:
             dashboard_label = (
                 "British Columbia"
                 if region == "BCT"
@@ -873,7 +827,7 @@ def distribute_existing_road_capacity(
                     "source_table_ids": source_table_ids,
                     "proxy_geography": source_region != region,
                     "dashboard_override": name == "medium_trucks"
-                    and vintage == base_year,
+                    and vintage == period_config.latest_observed_vintage,
                     "historical_combustion_backfill": historical_backfill,
                     "cohort_k_vehicles": group["cohort_k_vehicles"].sum(),
                     "capacity": group["cohort_k_vehicles"].sum() * share,
@@ -894,10 +848,8 @@ def distribute_existing_bus_capacity(
     annual_efficiency: pd.DataFrame,
     lifetimes: Mapping[tuple[str, str], float],
     regions: list[str],
-    base_year: int,
-    vintage_periods: list[int],
+    period_config: ScenarioPeriods,
     vehicle_population_year: int,
-    first_model_period: int,
     road_rules: Mapping[str, Any],
     rules: Mapping[str, Any],
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -911,9 +863,9 @@ def distribute_existing_bus_capacity(
     }
     if any(rules[key] != value for key, value in supported.items()):
         raise ValueError("Unsupported bus capacity allocation policy")
-    periods = [int(period) for period in vintage_periods]
-    if periods != sorted(set(periods)) or periods[-1] != base_year:
-        raise ValueError("Bus vintage periods must end at the base year")
+    base_year = period_config.base_year
+    periods = period_config.existing
+    first_model_period = period_config.model[0]
     age = report5_age.loc[report5_age["VEHICLE_CLASS"].eq(rules["age_class"])].copy()
     if (
         age.empty
@@ -1079,9 +1031,7 @@ def distribute_existing_bus_capacity(
     cohorts = stocks.merge(age, how="cross")
     cohorts["vintage_year"] = base_year - cohorts["age"].astype(int)
     cohorts["source_year"] = cohorts["vintage_year"].clip(lower=first_year)
-    cohorts["vintage"] = cohorts["source_year"].map(
-        lambda year: next(period for period in periods if period >= year)
-    )
+    cohorts["vintage"] = cohorts["source_year"].map(period_config.existing_vintage)
     cohorts = cohorts.merge(
         shares.rename(columns={"year": "source_year"}).drop(columns="region"),
         on=["ceud_region", "road_class", "source_year"],

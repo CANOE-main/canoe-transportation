@@ -6,9 +6,7 @@ import argparse
 import hashlib
 import json
 import logging
-import os
 import re
-import tempfile
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,6 +26,7 @@ from utils import (
     resolve_artifact_path,
     resolve_input_path,
     write_dataframe_atomic,
+    write_text_atomic,
 )
 from utils.vehicle_labels import vehicle_families_equivalent
 
@@ -244,26 +243,6 @@ def validate_cache(
     return _validate_payload(request, payload)
 
 
-def _write_json_atomic(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        dir=path.parent,
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        mode="w",
-        encoding="utf-8",
-        newline="\n",
-        delete=False,
-    ) as handle:
-        temporary = Path(handle.name)
-        json.dump(payload, handle, ensure_ascii=False, sort_keys=True, indent=2)
-        handle.write("\n")
-    try:
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
-
-
 def fetch_to_cache(
     request: VPicTemporalRequest,
     *,
@@ -275,7 +254,11 @@ def fetch_to_cache(
     response = session.get(request.url, timeout=timeout)
     response.raise_for_status()
     payload = response.json()
-    _write_json_atomic(request.cache_path, payload)
+    write_text_atomic(
+        json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        request.cache_path,
+        newline="\n",
+    )
     return _validate_payload(request, payload), "downloaded"
 
 

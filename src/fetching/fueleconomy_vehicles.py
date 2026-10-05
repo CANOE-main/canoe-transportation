@@ -23,6 +23,7 @@ from utils import (
     load_harmonization_rules,
     resolve_input_path,
     write_dataframe_atomic,
+    write_text_atomic,
 )
 from validation.config_models import SourceComponent
 
@@ -273,28 +274,6 @@ def normalize_vehicle_classes(
     return normalized, warnings
 
 
-def write_text_atomic(lines: list[str], path: Path) -> None:
-    """Publish deterministic warning text by atomic replacement."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        dir=path.parent,
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        mode="w",
-        encoding="utf-8",
-        newline="\n",
-        delete=False,
-    ) as handle:
-        temporary = Path(handle.name)
-        handle.write("\n".join(lines))
-        if lines:
-            handle.write("\n")
-    try:
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
-
-
 def fetch_and_normalize(
     scenario_path: str | Path,
     *,
@@ -342,7 +321,11 @@ def fetch_and_normalize(
         ]
     )
     write_dataframe_atomic(manifest, output_dir / str(rules["manifest_file"]))
-    write_text_atomic(warnings, output_dir / str(rules["warnings_file"]))
+    write_text_atomic(
+        "\n".join(warnings) + ("\n" if warnings else ""),
+        output_dir / str(rules["warnings_file"]),
+        newline="\n",
+    )
     return output_dir
 
 

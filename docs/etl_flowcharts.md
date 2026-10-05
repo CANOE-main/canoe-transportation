@@ -172,16 +172,14 @@ flowchart LR
 | Distribute stock<sub>age</sub> by powertrain           | Cars and light trucks | Each stock by vintage gets distributed over vehicle market shares by fuel type                                                       |
 | Distribute stock<sub>age</sub> by powertrain           | MD trucks             | Each stock by vintage gets distributed over vehicle registration shares by fuel type – mainly diesel and gasoline                    |
 
-Vintages mapped into 5-year periods are aggregated the following way:
-- 2015 → 2015
-- 2016 → 2020
-- 2017 → 2020
-- 2018 → 2020
-- 2019 → 2020
-- 2020 → 2020
-- 2021 → 2023; truncated to the last available vintage from NRCan CEUD 
-- 2022 → 2023
-- 2023 → 2023
+### Existing period handling
+Existing stock by vintage is mapped into 5-year periods and aggregated the following way:
+
+| Legacy backend | v2.0 backend | 
+| --------------------- | --------------------- | 
+| - 2014 → 2015<br>- 2015 → 2015<br>- 2016 → 2020<br>- 2019 → 2020<br>- 2020 → 2020<br>- 2021 → 2023<br>- 2023* → 2023<br> | - 2014 → 2010<br>- 2015 → 2010<br>- 2016 → 2015<br>- 2019 → 2015<br>- 2020 → 2015<br>- 2021 → 2020<br>- 2023* → 2020<br> |
+
+*As per the latest update, existing vintages from NRCan CEUD only reach 2023.
 
 ## `demand`
 
@@ -568,6 +566,8 @@ flowchart LR
 | Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) efficiencies |
 | Convert to service-output efficiency units | All | Convert source efficiencies (e.g., L/100 km or mpg) into demand units (e.g., bn tonne-km/PJ) with NRCan CEUD load factors; using HHVs. |
 
+**Note on light-duty PHEVs**: The CANOE-transportation legacy backend used to compile Islam et al. 2023 Autonomie results directly, opting for the parallel PHEV powertrain configuration, whereas the v2.0 backend compiles the same Autonomie results via the NLR ATB database, where only the EREV voltec PHEV powertrain configuration is listed. This will result in inconsistent PHEV parameters between both versions.
+
 ### Vehicle make-model to vehicle classes mapping
 
 `config/parameters/vehicle_size_class_map.csv` inherits all reviewed make-model mappings; see a few examples:
@@ -819,14 +819,13 @@ flowchart LR
   %% ########### Sources ###########
   subgraph greet["`**Argonne National Lab GREET model**`"]
     s1@{shape: win-pane, label: "**GREET_1 (fuel-cycle) and GREET_2 (vehicle-cycle) Excel models**
-      Solved with default inputs for model year 2025, can vary through 2050; each copy is solved for the following pair of classes:<br>
-      • Cars and Class 6 trucks
-      • SUVs and Class 8 Day cab trucks
-      • Pickup and Class 8 Sleeper cab trucks"}
-    s3@{shape: docs, label: "**Solved GREET model copies**
+      Solved with default inputs for model year 2025, can vary through 2050 if *xlwings* is configured to do so. Default classes are:<br>
+      • LDVs: Cars, SUVs, and pickup trucks
+      • MHDVs: Class 6 and Class 8 Day/Sleeper"}
+    s3@{shape: docs, label: "**Solved GREET model runs**
       Vehicle-cycle lifetime emissions by scenario
       *Def. scenario*: conventional materials"}
-    s1 -- "`*manually-executed, saved*`" --> s3
+    s1 -- "`solved via *xlwings* library`" --> s3
   end
 
   s2@{shape: processes, label: "**Road aggregation maps**

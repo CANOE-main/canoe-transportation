@@ -138,7 +138,7 @@ def _context(
         inputs=inputs, dataset_key="transport_cost." + key,
         transformation="Transport cost normalization and currency harmonization",
         transformation_version=version, governing_source_id=governing_id,
-        value_variant={"input_digest": digest},
+        value_variant={"input_digest": digest, "periods": bundle.scenario.periods.model_dump()},
     )
 
 
@@ -415,11 +415,17 @@ def prepare_cost_rows(
                 if is_existing else periods
             )
             for vintage in vintages:
-                source_year = max(vintage, int(prices.source_year.min())) if is_existing else vintage
+                calendar_year = (
+                    scenario.periods.historical_years(vintage)[-1]
+                    if is_existing and scenario.periods.period_mode == "prospective"
+                    else vintage if is_existing
+                    else scenario.periods.projection_year(vintage, legacy_at_end=False)
+                )
+                source_year = max(calendar_year, int(prices.source_year.min())) if is_existing else calendar_year
                 if mode in efficiency["road_classes"]:
                     if not is_existing:
                         price, curr, year, treatment, components = road_price(
-                            mode, powertrain, vintage, source_region
+                            mode, powertrain, source_year, source_region
                         )
                         add(
                             family="invest", region=region, tech=item.tech,
@@ -428,7 +434,7 @@ def prepare_cost_rows(
                             source_unit=f"{year} {curr}/vehicle", divisor=1000,
                             components=components, governing=components[0][0],
                             treatment=treatment,
-                            details={"purchase_evidence_year": vintage,
+                            details={"purchase_evidence_year": source_year,
                                      "rpe_applied": treatment.startswith("NLR"),
                                      "source_retail_price_per_vehicle": (
                                          price * rules["nlr_road_retail_price_equivalent_markup"]
@@ -450,7 +456,10 @@ def prepare_cost_rows(
                     for period in periods:
                         if period < vintage or not active_period(region, period, item.tech, vintage):
                             continue
-                        age = period - vintage
+                        age = (
+                            scenario.periods.projection_year(period, legacy_at_end=False) - calendar_year
+                            if scenario.periods.period_mode == "prospective" else period - vintage
+                        )
                         load = load_at(source_region, mode)
                         if mode in {"cars", "passenger_light_trucks", "freight_light_trucks"}:
                             selected = prices.loc[prices.powertrain.eq(powertrain)]
@@ -487,7 +496,7 @@ def prepare_cost_rows(
                             if set(selected.source_unit) != {"2005$/veh/yr"}:
                                 raise ValueError("GCAM motorcycle maintenance-cost unit changed")
                             amount = interpolate(
-                                selected, vintage,
+                                selected, calendar_year,
                                 "source_value", year_col="source_year",
                             )
                             distance = interpolate(
@@ -503,7 +512,7 @@ def prepare_cost_rows(
                                 divisor=denominator,
                                 components=[(GCAM, "canada_motorcycle_inputs"), (CEUD, road_demand["activity_series"][mode]["table_id"])],
                                 governing=GCAM, treatment="GCAM annual motorcycle maintenance per service-km",
-                                details={"source_cost_year": vintage, "load_factor": load, "annual_distance_km": distance},
+                                details={"source_cost_year": calendar_year, "load_factor": load, "annual_distance_km": distance},
                             )
                             continue
                         else:
@@ -561,7 +570,7 @@ def prepare_cost_rows(
                                      "aggregation_weights": json.dumps(
                                          weights[source_region, mode], sort_keys=True
                                      ),
-                                     "historical_msrp_proxy": is_existing and vintage < int(prices.source_year.min()),
+                                     "historical_msrp_proxy": is_existing and calendar_year < int(prices.source_year.min()),
                                      "weighted_atb_retail_msrp": weighted_msrp if mode in {
                                          "cars", "passenger_light_trucks", "freight_light_trucks"
                                      } else None,
@@ -662,7 +671,7 @@ def prepare_cost_rows(
                     else:
                         native = manual_offroad_capex(
                             manual_invest, mode=mode, powertrain=powertrain,
-                            year=max(vintage, scenario.periods.base_year),
+                            year=max(calendar_year, scenario.periods.base_year),
                             period_years=rules["offroad_multiplier_period_year"],
                         )
                         components = [(CIMS, "transport_service_output_and_capex")]
@@ -811,6 +820,7 @@ def prepare_cost_rows(
         conversion_groups.append(summary)
         LOGGER.info("CER transport cost conversion: %s", summary)
     audit.update({
+        "period_mapping": scenario.periods.audit(),
         "input_digest": digest, "atb_scenario": trajectory,
         "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
         "cer_scenario": scenario.economics.cer_scenario,

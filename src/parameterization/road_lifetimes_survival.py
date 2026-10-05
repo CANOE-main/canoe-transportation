@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import logging
+from collections.abc import Mapping
 from math import isfinite
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,6 @@ from parameterization.road_aggregation import (
     validate_vehicle_mapping,
 )
 from parameterization.road_fleet_weights import aggregation_component, load_ldv_aggregation_weights
-from parameterization.road_stocks_and_demands import fixed_existing_lifetimes
 from utils import (
     ConfigBundle,
     load_config_bundle,
@@ -1575,6 +1575,52 @@ def survival_source_component(
     return source_key, str(requests[0]["component_id"])
 
 
+def fixed_existing_lifetimes(
+    medians: pd.DataFrame,
+    manual: pd.DataFrame,
+    rules: Mapping[str, Any],
+) -> dict[str, float]:
+    """Resolve reviewed median and manual lifetimes for CEUD road classes."""
+    sources = rules["fixed_lifetime_sources"]
+    if set(sources) != set(rules["ceud_stock_series"]):
+        raise ValueError("Fixed lifetime sources do not cover every road class")
+    lifetimes: dict[str, float] = {}
+    for road_class, selector in sources.items():
+        kind = selector["kind"]
+        if kind == "ceud_median":
+            selected = medians.loc[
+                medians["target_system"].eq("nrcan_ceud")
+                & medians["target_class"].eq(selector["target_class"])
+            ]
+        elif kind == "source_median_equal":
+            selected = medians.loc[
+                medians["source_id"].eq(selector["source_id"])
+                & medians["target_system"].eq("source_class")
+                & medians["target_class"].isin(selector["source_classes"])
+            ]
+            if set(selected["target_class"]) != set(selector["source_classes"]):
+                raise ValueError(f"Incomplete source median classes for {road_class}")
+        elif kind == "manual":
+            selected = manual.loc[
+                manual["category"].eq(selector["category"])
+                & manual["sub_category"].eq("all")
+            ].rename(columns={"lifetime": "median_equivalent_age"})
+        else:
+            raise ValueError(f"Unknown fixed lifetime source for {road_class}: {kind}")
+        values = pd.to_numeric(selected["median_equivalent_age"], errors="raise")
+        if (
+            selected.empty
+            or (kind != "source_median_equal" and len(selected) != 1)
+            or values.nunique() != 1
+        ):
+            raise ValueError(f"Ambiguous fixed lifetime for {road_class}")
+        lifetime = float(values.iloc[0])
+        if not isfinite(lifetime) or lifetime <= 0:
+            raise ValueError(f"Invalid fixed lifetime for {road_class}")
+        lifetimes[road_class] = lifetime
+    return lifetimes
+
+
 def prepare_fixed_road_lifetimes(
     bundle: ConfigBundle,
     *,
@@ -1749,7 +1795,7 @@ def prepare_road_survival_curve_rows(
             transformation_version="1", governing_source_id=source_ids[source_key],
             value_variant={"road_class": road_class, "source_class": source_class,
                            "annual_sha256": digest, "max_age": max_age,
-                           "periods": scenario.periods.model, "step": step,
+                           "periods": scenario.periods.model_dump(), "step": step,
                            "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
                            "population_year": scenario.existing_capacity.vehicle_population_year},
         )
