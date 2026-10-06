@@ -32,6 +32,62 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  charging_profiles_interim:
+    path: inputs/1_interim/legacy_charging_profiles
+    layer: interim
+    owner: fetching.legacy_charging_profiles
+    producers: [fetching.legacy_charging_profiles.normalize_profile]
+    consumers: [parameterization.ldv_charging_profiles, reviewers]
+    validation_surfaces: [fetching.legacy_charging_profiles.transform_hourly]
+  charging_profiles_processed:
+    path: inputs/2_processed/ldv_charging_profiles
+    layer: processed
+    owner: parameterization.ldv_charging_profiles
+    producers: [parameterization.ldv_charging_profiles.prepare_charging_profile_rows]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.ldv_charging_profiles.validate_charging_rows]
+  charging_profiles_validation:
+    path: inputs/validation/ldv_charging_profiles
+    layer: input_validation
+    owner: parameterization.ldv_charging_profiles
+    producers: [parameterization.ldv_charging_profiles.prepare_charging_profile_rows]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.ldv_charging_profiles.validate_charging_rows]
+  ldv_range_interim:
+    path: inputs/1_interim/ldv_range_evidence
+    layer: interim
+    owner: fetching.epa_omega_baseline
+    producers: [fetching.epa_omega_baseline.fetch_baseline]
+    consumers: [parameterization.ldv_ev_ranges, reviewers]
+    validation_surfaces: [fetching.epa_omega_baseline.normalize_baseline]
+  omega_ldv_range_source:
+    path: inputs/0_external_models/epa_omega_ldv_range_extract
+    layer: external
+    owner: fetching.epa_omega_baseline
+    producers: [fetching.epa_omega_baseline.prepare_baseline_extract]
+    consumers: [fetching.epa_omega_baseline, parameterization.ldv_ev_ranges, reviewers]
+    validation_surfaces: [fetching.epa_omega_baseline.validate_extract]
+  omega_baseline_validation:
+    path: inputs/validation/epa_omega_baseline
+    layer: input_validation
+    owner: fetching.epa_omega_baseline
+    producers: [fetching.epa_omega_baseline.prepare_baseline_extract]
+    consumers: [reviewers]
+    validation_surfaces: [fetching.epa_omega_baseline.prepare_baseline_extract]
+  ldv_range_processed:
+    path: inputs/2_processed/ldv_range_representation
+    layer: processed
+    owner: parameterization.ldv_ev_ranges
+    producers: [parameterization.ldv_ev_ranges.prepare_range_rows, parameterization.ldv_ev_ranges.prepare_representative_parameters]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.ldv_ev_ranges.validate_share_evidence, parameterization.ldv_ev_ranges.validate_representative_preparation]
+  ldv_range_validation:
+    path: inputs/validation/ldv_range_representation
+    layer: input_validation
+    owner: parameterization.ldv_ev_ranges
+    producers: [parameterization.ldv_ev_ranges.build_range_evidence, parameterization.ldv_ev_ranges.prepare_representative_parameters]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.ldv_ev_ranges.validate_share_evidence]
   greet_vehicle_cycle_results:
     path: inputs/0_external_models/greet_vehicle_cycle_results
     layer: external

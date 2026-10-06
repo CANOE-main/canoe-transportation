@@ -95,6 +95,7 @@ def workflow_repo(tmp_path: Path) -> Path:
     scenario_path = tmp_path / SCENARIO
     payload = yaml.safe_load(scenario_path.read_text(encoding="utf-8"))
     payload["embodied_emissions"] = False
+    payload["charging_profiles"]["travel_behavior_source"] = "none"
     scenario_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     bundle = load_config_bundle(SCENARIO, repo_root=tmp_path)
     cache_paths = [request.cache_path for request in cer_requests(bundle)] + [
@@ -198,6 +199,8 @@ def test_workflow_sequences_sources_reuses_outputs_and_rebuilds_missing_table(
         ("src/parameterization/build_costs.py", {"database"}),
         ("src/fetching/nlr_atb_autonomie.py", {"database"}),
         ("src/fetching/fueleconomy_vehicles.py", {"database"}),
+        ("src/fetching/legacy_charging_profiles.py", {"database"}),
+        ("src/fetching/epa_omega_baseline.py", {"database"}),
         (CER_CACHE, {"cer_enerfuture", "database"}),
         ("inputs/0_manual_params/lifetime_process.csv", {"doctor", "database"}),
         ("inputs/0_canoe_template/region.csv", {"doctor", "database"}),
@@ -264,3 +267,31 @@ def test_embodied_workbooks_are_conditional_and_invalidate_only_assembly(workflo
     workbooks[1].write_text("changed fixture saved workbook\n", encoding="utf-8")
     run_workflow(root)
     assert events(root)[previous:] == ["database"]
+
+
+def test_ldv_profile_and_range_evidence_dependencies_follow_independent_selections(workflow_repo):
+    import yaml
+    from fetching.legacy_charging_profiles import required_inputs as charging_inputs
+    from fetching.epa_omega_baseline import required_inputs as range_inputs
+    from utils import load_config_bundle
+
+    root = workflow_repo
+    bundle = load_config_bundle(SCENARIO, repo_root=root)
+    assert charging_inputs(bundle) == range_inputs(bundle) == []
+    scenario_path = root / SCENARIO
+    payload = yaml.safe_load(scenario_path.read_text(encoding="utf-8"))
+    payload["charging_profiles"]["travel_behavior_source"] = "nhts"
+    scenario_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    result = run_workflow(root, "--dry-run", succeeds=False)
+    assert "ON-2022NHTS" in result.stdout + result.stderr
+    bundle = load_config_bundle(SCENARIO, repo_root=root)
+    assert range_inputs(bundle) == []
+    for path in charging_inputs(bundle):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("fixture profile\n", encoding="utf-8")
+    run_workflow(root, "--dry-run")
+    payload["BEV_PHEV_range_representation"]["mode"] = "new_capacity_shares"
+    scenario_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    result = run_workflow(root, "--dry-run", succeeds=False)
+    assert "ldv_central_2022_plug_in" in result.stdout + result.stderr
+    assert "model-year-2024-fuel-economy" not in result.stdout + result.stderr

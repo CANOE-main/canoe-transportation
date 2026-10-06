@@ -110,6 +110,9 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "icct_ev_charge_2024": "T28",
         "icct_hdv_charge_2024": "T29",
         "iea_future_of_hydrogen_2019": "T30",
+        "legacy_charging_profiles": "T31",
+        "epa_automotive_trends": "T32",
+        "epa_omega_baseline": "T33",
     }
     assert report["template"]["kind"] == "backend_internal_reference"
     assert report["template"]["data_id"].startswith("canoe-transport-template:")
@@ -207,6 +210,8 @@ def test_transport_contribution_uses_a_caller_owned_transaction(
         include_lifetimes=False,
         include_efficiencies=False,
         include_costs=False,
+        include_emission_embodied=False,
+        include_charging_profiles=False,
     )
 
     assert connection.execute("SELECT COUNT(*) FROM data_set").fetchone()[0] == 0

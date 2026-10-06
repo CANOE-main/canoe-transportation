@@ -106,6 +106,22 @@ ev_chargers:
   ld_evs_per_port: 1.0
   mhd_evs_per_port: 1.5
 
+charging_profiles:
+  # Ontario shape applies to shared LDV chargers in every selected region.
+  travel_behavior_source: nhts  # none | nhts | tts; legacy simulation, pending update
+  # Null selects elapsed-hour D001-D365/H01-H24 labels after Toronto-year hourly means.
+  # An hour_index,season,tod CSV projects hours onto inherited CANOE slices.
+  # This mapping does not select or change the profile's Toronto calendar/time zone.
+  time_mapping: null
+
+BEV_PHEV_range_representation:
+  mode: none  # none | new_capacity_shares | representative_archetype
+  # OMEGA MY2022 baseline sales/CD ranges match the legacy notebook source.
+  # US class/powertrain shares apply to Canadian categories across model vintages.
+  # none requires no range evidence; new_capacity_shares retains minimum semantics.
+  # representative_archetype keeps EX stock; one new BEV/PHEV per LDV category.
+  # PHEV category blends use the accepted horizon mean; vintage fuel differences are audited.
+
 row_note_overrides:
   # Replace technology.notes by exact technology key for this scenario.
   # Source notes remain in sources.yaml; {} keeps the structural template notes.

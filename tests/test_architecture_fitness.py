@@ -54,6 +54,7 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
         "database_validation",
     } <= set(bundle.paths.artifacts)
     assert {route.layer for route in bundle.paths.artifacts.values()} == {
+        "external",
         "interim",
         "processed",
         "input_validation",

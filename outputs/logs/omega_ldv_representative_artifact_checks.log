@@ -1,0 +1,4 @@
+VALIDATED True 0
+GENERATED {'technology': 9, 'capacity_to_activity': 60, 'limit_annual_capacity_factor': 300, 'lifetime_survival_curve': 900, 'efficiency': 600, 'cost_invest': 300, 'cost_variable': 900, 'emission_embodied': 900, 'commodity': 3, 'limit_tech_input_split': 300}
+CONSERVATION 2.220446049250313e-16 0.0006630270458660714
+NON_TARGET_AND_STOCK {'existing_capacity': True, 'demand': True, 'capacity_to_activity': True, 'limit_annual_capacity_factor': True, 'lifetime_tech': True, 'lifetime_survival_curve': True, 'efficiency': True, 'limit_tech_input_split': True, 'cost_invest': True, 'cost_fixed': True, 'cost_variable': True, 'emission_embodied': True, 'capacity_factor_tech': True}

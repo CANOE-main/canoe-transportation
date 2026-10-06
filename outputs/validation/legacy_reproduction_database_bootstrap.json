@@ -42,7 +42,10 @@
     "nlr_alternative_fueling_infrastructure_2024": "T27",
     "icct_ev_charge_2024": "T28",
     "icct_hdv_charge_2024": "T29",
-    "iea_future_of_hydrogen_2019": "T30"
+    "iea_future_of_hydrogen_2019": "T30",
+    "legacy_charging_profiles": "T31",
+    "epa_automotive_trends": "T32",
+    "epa_omega_baseline": "T33"
   },
   "template": {
     "kind": "backend_internal_reference",
@@ -3570,7 +3573,7 @@
       },
       "end_of_horizon": 2050
     },
-    "input_digest": "36077044a85136bcff57be8855ddbe742bf1dfc2c68257d9ea2b47c920362a5a",
+    "input_digest": "401f91202a151a758fa2c4656949f93e218d1f4c7640f4a6127b0c29f87b9582",
     "atb_scenario": "Mid",
     "aggregation_sources": {
       "stock_age": {
@@ -3812,7 +3815,7 @@
     "utilization_rows": 190,
     "utilization_schema_inserted": false,
     "utilization_provenance": {
-      "data_id": "ev-chargers-utilization:composite:1:8906de6701d8ac0d",
+      "data_id": "ev-chargers-utilization:composite:1:ebe7fb65dd343eaa",
       "contributors": [
         "dunsky_ev_charging_infrastructure_2024"
       ]
@@ -4564,7 +4567,7 @@
       "charger_parameters.csv": "587fc5e9d20ab39d10f97f4e2c1c3829a212b74187203643b0864238a69bf617",
       "transport_canada_public_ld_chargers_by_province_2026.csv": "bedab0a1130bc1340a73302ce55dc6c382caefca0bb3450c13b6d1769fe2b832",
       "transport_canada_public_ld_chargers_by_type_2026.csv": "ba3b8056806b59d4df540e3b85cda8c8c2302145d18eacc80091710a47409e6c",
-      "existing_capacity.csv": "b09afe423121b6985c8e0f175dd2cc1b46f600e86aee02606ed26a3f284e5651",
+      "existing_capacity.csv": "b489227a9d7552f277e9840a1dbe1be2929c8e1c16b6ef07bdedf7f2757a4745",
       "cer_macro_indicators.csv": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
     }
   },
@@ -5595,6 +5598,134 @@
       "inputs/0_canoe_template/technology.csv": "899b64b8397e92558a7f0f2a5232227bc84e0109e15cb7215bb7e2df267250a1",
       "inputs/0_canoe_template/commodity.csv": "5215404c95ccecce9d12b2557a26929114cc610243d9efb584ef1659b166538d"
     }
+  },
+  "charging_profiles": {
+    "native_interval_seconds": 60,
+    "native_rows": 527040,
+    "excluded_outside_local_year": 1440,
+    "excluded_nulls_outside_local_year": 300,
+    "calendar_year": 2018,
+    "calendar_timezone": "America/Toronto",
+    "hourly_rows": 8760,
+    "hourly_operation": "mean",
+    "rolling_filter": false,
+    "native_integral_in_hour_units": 4911640.616091287,
+    "hourly_integral": 4911640.616091287,
+    "annual_hourly_peak": 1161.9009046687445,
+    "normalized_integral": 4227.2457111976,
+    "precision": 10,
+    "label_basis": "elapsed_hours_from_local_year_start",
+    "repeated_wall_time_keys": 1,
+    "embedded_range_shares": true,
+    "market_share_reweighting": false,
+    "clustered_legacy_parity": "not_comparable_without_the_existing_cluster_mapping",
+    "limitations": [
+      "Frozen inherited range/fleet/charger composition; no new-market reweighting",
+      "TTS contains weekday-only travel behavior"
+    ],
+    "profile": "nhts",
+    "sha256": "a5e4f924d72c409f38e29c0b84d20390b5b1a180ae63956bf4f902a59a78aac1",
+    "source_units": "Aggregate charging power (kW), minute samples; hourly mean kW / annual hourly peak kW gives a dimensionless factor.",
+    "ok": true,
+    "rows": 175200,
+    "keys": 175200,
+    "enabled": true,
+    "regions": [
+      "AB",
+      "BCT",
+      "MB",
+      "NB",
+      "NLLAB",
+      "NS",
+      "ON",
+      "PEI",
+      "QC",
+      "SK"
+    ],
+    "target_technologies": [
+      "T_LDV_CHRG_EX",
+      "T_LDV_CHRG_N"
+    ],
+    "travel_behavior_source": "nhts",
+    "applicability": "Ontario BEV charging shape used unchanged on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted.",
+    "projection_sha256": "b385386e23b995192d23aad78f749b6092f9059018eb0d2ad1be81a077dd73a3",
+    "conservation_tolerance": 1e-08,
+    "new_time_structures": true,
+    "inherited_time_structures_preserved": false
+  },
+  "BEV_PHEV_range_representation": {
+    "mode": "none",
+    "share_rows": 0,
+    "scope_super_groups": [
+      "canoe_transport_range:cars:bev",
+      "canoe_transport_range:cars:phev",
+      "canoe_transport_range:passenger_light_trucks:bev",
+      "canoe_transport_range:passenger_light_trucks:phev",
+      "canoe_transport_range:freight_light_trucks:bev",
+      "canoe_transport_range:freight_light_trucks:phev"
+    ],
+    "scope_group_names": [
+      "canoe_transport_range:cars:bev",
+      "canoe_transport_range:cars:phev",
+      "canoe_transport_range:passenger_light_trucks:bev",
+      "canoe_transport_range:passenger_light_trucks:phev",
+      "canoe_transport_range:freight_light_trucks:bev",
+      "canoe_transport_range:freight_light_trucks:phev",
+      "canoe_transport_range:cars:bev:bev_150_miles",
+      "canoe_transport_range:cars:bev:bev_200_miles",
+      "canoe_transport_range:cars:bev:bev_300_miles",
+      "canoe_transport_range:cars:bev:bev_400_miles",
+      "canoe_transport_range:cars:phev:phev_35_miles",
+      "canoe_transport_range:cars:phev:phev_50_miles",
+      "canoe_transport_range:passenger_light_trucks:bev:bev_150_miles",
+      "canoe_transport_range:passenger_light_trucks:bev:bev_200_miles",
+      "canoe_transport_range:passenger_light_trucks:bev:bev_300_miles",
+      "canoe_transport_range:passenger_light_trucks:bev:bev_400_miles",
+      "canoe_transport_range:passenger_light_trucks:phev:phev_35_miles",
+      "canoe_transport_range:passenger_light_trucks:phev:phev_50_miles",
+      "canoe_transport_range:freight_light_trucks:bev:bev_150_miles",
+      "canoe_transport_range:freight_light_trucks:bev:bev_200_miles",
+      "canoe_transport_range:freight_light_trucks:bev:bev_300_miles",
+      "canoe_transport_range:freight_light_trucks:bev:bev_400_miles",
+      "canoe_transport_range:freight_light_trucks:phev:phev_35_miles",
+      "canoe_transport_range:freight_light_trucks:phev:phev_50_miles"
+    ],
+    "scope_variant_technologies": [
+      "T_LDV_C_BEV150_N",
+      "T_LDV_C_BEV200_N",
+      "T_LDV_C_BEV300_N",
+      "T_LDV_C_BEV400_N",
+      "T_LDV_C_GSL_PHEV35_N",
+      "T_LDV_C_GSL_PHEV50_N",
+      "T_LDV_LTF_BEV150_N",
+      "T_LDV_LTF_BEV200_N",
+      "T_LDV_LTF_BEV300_N",
+      "T_LDV_LTF_BEV400_N",
+      "T_LDV_LTF_GSL_PHEV35_N",
+      "T_LDV_LTF_GSL_PHEV50_N",
+      "T_LDV_LTP_BEV150_N",
+      "T_LDV_LTP_BEV200_N",
+      "T_LDV_LTP_BEV300_N",
+      "T_LDV_LTP_BEV400_N",
+      "T_LDV_LTP_GSL_PHEV35_N",
+      "T_LDV_LTP_GSL_PHEV50_N"
+    ],
+    "scope_representative_technologies": [
+      "T_BLND_GSL_ELC_PHEV_C_REP",
+      "T_BLND_GSL_ELC_PHEV_LTF_REP",
+      "T_BLND_GSL_ELC_PHEV_LTP_REP",
+      "T_LDV_C_BEV_REP_N",
+      "T_LDV_C_GSL_PHEV_REP_N",
+      "T_LDV_LTF_BEV_REP_N",
+      "T_LDV_LTF_GSL_PHEV_REP_N",
+      "T_LDV_LTP_BEV_REP_N",
+      "T_LDV_LTP_GSL_PHEV_REP_N"
+    ],
+    "scope_representative_commodities": [
+      "T_gsl_elc_phev_c_rep",
+      "T_gsl_elc_phev_ltf_rep",
+      "T_gsl_elc_phev_ltp_rep"
+    ]
   },
   "parameter_support": {
     "ok": true,
@@ -6768,13 +6899,15 @@
   "touched_table_row_counts": {
     "region": 10,
     "time_period": 11,
-    "data_set": 596,
+    "data_set": 597,
     "technology_label": 134,
     "commodity_label": 41,
+    "time_season": 365,
+    "time_of_day": 24,
     "technology": 134,
     "commodity": 41,
-    "data_source_label": 27,
-    "data_source": 2530,
+    "data_source_label": 28,
+    "data_source": 2531,
     "existing_capacity": 1177,
     "demand": 700,
     "limit_annual_capacity_factor": 4850,
@@ -6786,6 +6919,7 @@
     "cost_variable": 14765,
     "limit_tech_input_split": 400,
     "emission_embodied": 6900,
+    "capacity_factor_tech": 175200,
     "capacity_to_activity": 970
   },
   "validation": {
@@ -6808,7 +6942,7 @@
         "primary_keys_match": true
       },
       "data_set": {
-        "row_count": 596,
+        "row_count": 597,
         "primary_key_columns": [
           "data_id"
         ],
@@ -6825,6 +6959,20 @@
         "row_count": 41,
         "primary_key_columns": [
           "commodity"
+        ],
+        "primary_keys_match": true
+      },
+      "time_season": {
+        "row_count": 365,
+        "primary_key_columns": [
+          "season"
+        ],
+        "primary_keys_match": true
+      },
+      "time_of_day": {
+        "row_count": 24,
+        "primary_key_columns": [
+          "tod"
         ],
         "primary_keys_match": true
       },
@@ -6845,14 +6993,14 @@
         "primary_keys_match": true
       },
       "data_source_label": {
-        "row_count": 27,
+        "row_count": 28,
         "primary_key_columns": [
           "source_id"
         ],
         "primary_keys_match": true
       },
       "data_source": {
-        "row_count": 2530,
+        "row_count": 2531,
         "primary_key_columns": [
           "source_id",
           "data_id"
@@ -6978,6 +7126,17 @@
         ],
         "primary_keys_match": true
       },
+      "capacity_factor_tech": {
+        "row_count": 175200,
+        "primary_key_columns": [
+          "region",
+          "season",
+          "tod",
+          "tech",
+          "data_id"
+        ],
+        "primary_keys_match": true
+      },
       "capacity_to_activity": {
         "row_count": 970,
         "primary_key_columns": [
@@ -7002,7 +7161,7 @@
         "unregistered_source_pair": 0
       },
       "data_set": {
-        "row_count": 596,
+        "row_count": 597,
         "null_data_id": 0,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
@@ -7015,6 +7174,18 @@
       },
       "commodity_label": {
         "row_count": 41,
+        "null_data_id": 0,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "time_season": {
+        "row_count": 365,
+        "null_data_id": 0,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "time_of_day": {
+        "row_count": 24,
         "null_data_id": 0,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
@@ -7032,13 +7203,13 @@
         "unregistered_source_pair": 0
       },
       "data_source_label": {
-        "row_count": 27,
+        "row_count": 28,
         "null_data_id": 0,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
       },
       "data_source": {
-        "row_count": 2530,
+        "row_count": 2531,
         "null_data_id": 0,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
@@ -7109,6 +7280,12 @@
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
       },
+      "capacity_factor_tech": {
+        "row_count": 175200,
+        "null_data_id": 0,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
       "capacity_to_activity": {
         "row_count": 970,
         "null_data_id": 0,
@@ -7122,20 +7299,20 @@
     "foreign_key_violations": 0,
     "foreign_keys_enabled": true
   },
-  "timestamp_utc": "2026-10-05T18:23:47.524877+00:00",
+  "timestamp_utc": "2026-10-06T03:39:11.823768+00:00",
   "scenario": "legacy_reproduction",
   "config": {
     "scenario": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\legacy_reproduction.yaml",
-      "sha256": "ff7b656daead87478c01beca854d27d2ce96c2aa90ff51e9f0a74ef02f03f718"
+      "sha256": "dba27009cbf91d679b63c6511cc621323a29017adb3acd77b72ced433c881739"
     },
     "paths": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
-      "sha256": "a40fd7665c16d2d12aedc005cc5373875b9453ac0cb3c89ca762d04bc3bf5e96"
+      "sha256": "18be3d4d65b24e64aafa802d5a93df9ff635e9d1c6195e3396273bbbc7c98539"
     },
     "sources": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\sources.yaml",
-      "sha256": "a10d9cfe0712b3f187ea99782f806cca00b4b9e971ec9bf5d3b69c1a68e1dceb"
+      "sha256": "e3578eecae48a991e40fb542a9c5ce3b32c8b716ed40ccdcf59069df6ec3fa2c"
     }
   }
 }

@@ -88,6 +88,8 @@ def test_source_component_vocabularies_are_canonical() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     architecture_modules = {
         "ev_chargers",
+        "ldv_charging_profiles",
+        "ldv_ev_ranges",
         "offroad_capex_opex",
         "offroad_efficiencies",
         "offroad_lifetimes",
@@ -267,6 +269,8 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
         "survival_curve_max_age": 29,
     }
     assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_2022_sales_shares"
+    assert status["parameter_options"]["charging_profiles"]["travel_behavior_source"] == "nhts"
+    assert status["parameter_options"]["BEV_PHEV_range_representation"]["mode"] == "none"
 
 
 def _write_config_copy(tmp_path: Path) -> tuple[Path, Path, Path]:

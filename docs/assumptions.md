@@ -34,7 +34,7 @@ Each parameter section is presented as a single table. Rows are grouped by vehic
 | Air, Rail, and Marine | NRCan CEUD does not report provincial fleet stocks | Divide provincial energy use by same-year national energy intensity to estimate capacity in billion passenger-km or tonne-km.  |
 | Air, Rail, and Marine | Annual turnover and CIMS model fixed lifetimes | Each cohort loses `1/lifetime` of its effective starting capacity annually. Retire excess survivors proportionally or add capacity so each year's total matches its CEUD proxy. #to-clarify: the phrasing leaves doubt, I'd expect that after demand capacity (energy use/intensity) is estimated first for every vintage, then linear retirement (1/lifetime) is used to estimate added capacity (effectively existing_capacity by vintage) based on the difference between residual capacity (est. capacity - linear retirement) and est. capacity of a subsequent vintage; this can yield negative values too, which were truncated to zero in the legacy backend; if the approach you described is more robust and standardized, then I'd be happy to keep, but it should be clearer here |
 | Marine Freight | CEUD reports separate HFO/MDO energy but one marine intensity | Use the shared marine intensity and combined fleet turnover, then split each active vintage by provincial 2023 HFO/MDO energy shares.  |
-| Road and Off-road | Annual cohorts and configured existing periods | Prospective labels represent the following interval: 2021–2025 cohorts belong to vintage 2020, using observations only through 2023. Fold the initial-stock/oldest-cohort proxy into the first label. Legacy retains ceiling labels ending at the observation year. The observation anchor is independent of the 2020 CAD cost basis. #to-review #to-clarify: this should align with how the Temoa model operates, as indicated in the scenario yaml (e.g., 2025 inputs reflect 2030 condition) |
+| Road and Off-road | Annual cohorts and configured existing periods | `period_mode`: `prospective` represents the following interval: 2021–2025 cohorts belong to vintage 2020, using observations through the latest CEUD vintage. `legacy` retains ceiling labels ending at the observation year. |
 | Road and Off-road | Capacity must survive to the first model period | Redistribute fully retired cohorts' base-year capacity proportionally among eligible vintages of the same region and technology. Accepted road survival curves cover cars, light trucks, medium trucks, and heavy trucks. |
 | LD and MHD EV Chargers (planned) | NRCan/Dunsky — unaccounted existing private charger capacity | Dunsky's 1 LD EV/port and 1.5 MHD EV/port ratios estimate private ports; NRCan type shares distribute LD ports, and Dunsky 100/350-kW shares distribute MHD ports. |
 | LDEV Chargers (planned) | Transport Canada — undisclosed capacity vintage | Assign all reported capacity to the latest existing period. |
@@ -70,12 +70,11 @@ Each parameter section is presented as a single table. Rows are grouped by vehic
 | Cars and Light Trucks | US NHTSA CAFE survival rates proxy Ontario vehicle survival | Use reported cumulative car rates directly on all regions. Combine Vans/SUVs and Pickups for both Canadian light-truck classes using the latest MTO Report A class weights across all regions, consistent with efficiencies, costs, and utilization. |
 | Medium Trucks | NHTSA CAFE 2b/3 Trucks survival rates  | Apply this cumulative survival schedule to every medium-truck GVWR class, powertrain, and region. Report 4/Wards fleet weights remain shared across parameters. |
 | Heavy Trucks | Reviewed fixed lifetimes and NEMS scrappage rates provide different lifetime representations | With survival curves off, heavy-truck fixed lifetime fetched from `inputs/0_manual_params/lifetime_process.csv`. With curves on, NEMS Class 7–8 annual scrappage rates used to derive survival rates. |
-| Road Vehicles | Prospective historical labels shift surviving annual cohorts into earlier model vintages | Use supported NHTSA/NEMS ages through 29 for the default prospective grid, supplying the complete ages 25–29 block for vintage 2000 in the first model period. Preserve its stock instead of redistributing it solely because the former age-25 horizon was too short. Curve and fixed-lifetime calculations continue to use model vintage coordinates. #to-review |
+| Road Vehicles | `period_mode`: `prospective` shifts surviving annual cohorts into earlier model vintages | Use supported NHTSA/NEMS ages through 29 for the default prospective grid, supplying the complete ages 25–29 block for vintage 2000 in the first model period. |
 | Cars, Light Trucks, and Medium Trucks | Their fixed lifetimes are derived from accepted survival schedules | Use the first annual age at which cumulative survival reaches 50% or less as the fixed lifetime.  |
-| Cars and Light Trucks | Ontario MTO cohort changes also reflect migration, registration status, and administrative changes | Keep apparent MTO survival as comparison evidence; use accepted external survival schedules for model parameters. #to-clarify: |
-| Buses | StatCan Table 34-10-0254-01 measures publicly owned public-transit assets and has suppressed provincial cells | Apply its bus useful lives to urban transit, school, and intercity buses. Use each province's latest reported 2016–2020 value by powertrain, then Canada 2020 where none is reported, including BCT. #to-review |
-| Buses | StatCan has no gasoline, plug-in hybrid, or fuel-cell bus useful-life series | Use diesel bus useful life for gasoline buses and electric bus useful life for plug-in hybrid and fuel-cell buses. #to-review |
-| Other Road, Off-road, and Infrastructure Technologies | Reviewed manual lifetime evidence is at vehicle or equipment category level | Apply each reviewed category lifetime across its technologies and regions where no accepted road curve or StatCan bus lifetime supplies that technology. #to-review |
+| Buses | StatCan reports avg. lifetime of public-transit assets and has suppressed provincial cells | Bus useful lives apply to urban transit, school, and intercity buses. Use each province's latest reported 2016–2020 value by powertrain, then Canada 2020 where none is reported, including BCT. #to-clarify: BCT should use BC lifetimes if available, not Canada-wide. |
+| Buses | StatCan has no gasoline, plug-in hybrid, or fuel-cell bus useful-life series | Use diesel bus lifetimes for gasoline buses and electric bus lifetimes for plug-in hybrid and fuel-cell buses. |
+| Other Road, Off-road, and Infrastructure Technologies | Reviewed manual lifetime evidence is at vehicle or equipment category level | Apply each reviewed category lifetime across its technologies and regions where no survival curve or StatCan lifetime supplies that technology. |
 
 ## `efficiency`
 
@@ -108,7 +107,7 @@ Each parameter section is presented as a single table. Rows are grouped by vehic
 | Marine Freight | CEUD reports one marine intensity; GREET's HFO/MDO ratio describes a predefined trip | Treat CEUD intensity as the MDO baseline and apply the GREET HFO/MDO consumption ratio across historical and future vessels, regions, and vintages. #to-review |
 | Aviation | No separate SPK aircraft-efficiency relationship is used | Assign SPK aircraft the same service-per-energy efficiency and improvement rate as jet-fuel aircraft. #to-review |
 
-### LDV Class Mapping by Source
+### Example LDV Class Mapping by Source
 
 | **Vehicle Model** | **NRCan Fuel Ratings** | **Autonomie TEA** | **NRCan CEUD** |
 | ----------------- | ---------------------- | ----------------- | -------------- |
@@ -166,9 +165,27 @@ Each parameter section is presented as a single table. Rows are grouped by vehic
 | LDV lightweight BEVs | The registered GREET2 glider switch selects ranges inconsistent with its adjacent labels | For AER 150/200/300/400, the native switch selects EV400/EV150/EV200/EV300 gliders. W4/Y4/AA4/AC4 contain identical inputs within each of Car, SUV and PUT in the registered release, so this mismatch has no numerical effect and lightweight factors are accepted. Preserve the native formula and automated range selectors. Recheck saved inputs on source refresh and require correction of the downstream selector if range assumptions diverge. #to-review |
 | GREET vehicle-cycle results | Excel retains a global pending-calculation state after full calculations | Accept the scoped gas totals only after consecutive full calculations converge, control echoes match, range changes affect results, and reordered runs reproduce values independently of other selectors. Two independent Excel sessions reproduced identical gas evidence; this does not establish convergence of every workbook output. #to-review |
 
-## `capacity_factor_tech` for BEV charging profiles
+## `limit_new_capacity_share` and representative LDV ranges
+
+Configuration: [`epa_omega_baseline` source](../config/sources.yaml), [`ldv_ev_ranges` rules](../config/parameters/rules.yaml), and [`BEV_PHEV_range_representation` selection](../config/scenarios/legacy_reproduction.yaml). #to-review
+
+| Technology class | Source / challenge | Assumption |
+| --- | --- | --- |
+| Cars and Light Trucks | OMEGA U.S. MY2022 baseline is model evidence, not current Canadian sales | Use sales-weighted charge-depleting range distributions within each class and powertrain. These are range shares, not BEV/PHEV adoption shares. #to-review |
+| Cars and Light Trucks | The U.S. snapshot lacks Canadian and future-specific market weights | Apply the car mix to Canadian cars and the light-truck mix to both passenger and freight light trucks. Hold shares constant across regions and future vintages. #to-review |
+| New LDV BEVs and PHEVs | `new_capacity_shares` retains legacy minimum-share semantics | Each range bucket has a minimum share (`≥`) of new capacity within its own vehicle-category/powertrain family, excluding existing stock. #to-review |
+| New LDV BEVs and PHEVs | `representative_archetype` combines range variants | Weight energy consumption, costs and lifetime embodied emissions by the same sales mix; derive efficiency from weighted consumption. Historical stock retains its original variants. #to-review |
+| Representative LDV PHEVs | The supporting gasoline/electricity split cannot vary by vintage | Average each category's consumption-weighted energy shares equally across model vintages and apply the result to all vintages and periods. Total energy is conserved; component fuel use is approximate. #to-review |
+
+## `capacity_factor_tech` for LDV charging profiles
+
+Configuration: [`legacy_charging_profiles` source](../config/sources.yaml), [`legacy_charging_profiles` / `ldv_charging_profiles` rules](../config/parameters/rules.yaml), and [`charging_profiles` selection](../config/scenarios/legacy_reproduction.yaml). #to-review
 
 | Technology class | Source / challenge | Assumption |
 | --- | --- | --- |
 | Cars and Light Trucks | StatCan Table 23-10-0308-01 — registered vehicle size class shares | Shares are irrespective of powertrain type given that charging profiles are also meant to represent future vehicle compositions, not just present-day fleets. |
 | Cars and Light Trucks | StatCan 2021 Census — occupation demographics by province | Occupation shares between workers, students, and inactive individuals aged 15+ in private households do not differentiate between drivers and non-drivers |
+| Shared LDV chargers | Legacy RAMP-mobility outputs describe an Ontario BEV fleet | Use the selected Ontario shape unchanged in every configured region on existing and new shared LDV chargers, including PHEV and motorcycle charging. #to-review |
+| LDV charging composition | Fleet, range shares and charger mix are already embedded in the profiles | Keep the inherited composition across model periods. It may differ from the OMEGA market mix; applying new range shares to the profile again would double-count them. #to-review |
+| TTS charging selection | The inherited TTS simulation uses weekday travel only | Accept the frozen weekday-based behaviour without reconstructing weekend travel. #to-review |
+| LDV charging timing | The reference year uses Toronto time and includes DST transitions | Reuse the peak-normalized 2018 hourly shape across model years. Elapsed-hour labels preserve physical hours through DST without province-specific timezone shifts; `time_mapping` projects onto CANOE slices rather than changing the reference timezone. #to-review |

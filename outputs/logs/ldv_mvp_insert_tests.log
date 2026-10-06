@@ -1,0 +1,101 @@
+........F...........................                                     [100%]
+================================== FAILURES ===================================
+________ test_existing_capacity_preparation_keeps_charging_provenance _________
+
+sources = SourcesConfig(version=3, defaults=SourceDefaults(required=True, component_required=True, data_quality=DataQuality(dq_c...ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98', 'expected_bytes': 13977, 'expected_rows': 78})}, adapter={})})
+
+    def resolve_provenance(
+        sources: SourcesConfig,
+        *,
+        source_key: str,
+        component_key: str | int,
+        transformation: str,
+        transformation_version: str,
+        value_variant: Mapping[str, Any] | None = None,
+    ) -> ResolvedProvenance:
+        """Resolve a configured single-source component into immutable row context."""
+        try:
+            source = sources.sources[source_key]
+        except KeyError as exc:
+            raise ProvenanceError(f"Unknown source: {source_key}") from exc
+        try:
+>           component = source.component(component_key)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src\validation\provenance.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = SourceSpec(title='NRCan Comprehensive Energy Use Database Transportation Sector provincial tables', status='active', s...ran_{region}_e_{table_id}.xls', 'regions': {'allowed': ['AB', 'BCT', 'MB', 'NB', 'NL', 'NS', 'ON', 'PE', 'QC', 'SK']}})
+key = 'road_vehicle_count'
+
+    def component(self, key: str | int) -> SourceComponent:
+        for candidate in (key, str(key)):
+            if candidate in self.components:
+                return self.components[candidate]
+        if isinstance(key, str) and key.isdigit() and int(key) in self.components:
+            return self.components[int(key)]
+>       raise KeyError(key)
+E       KeyError: 'road_vehicle_count'
+
+src\validation\config_models.py:463: KeyError
+
+The above exception was the direct cause of the following exception:
+
+bundle = ConfigBundle(repo_root=WindowsPath('C:/Users/rashi/ESM_databases/canoe-transportation'), paths_path=WindowsPath('C:/Us...bodied_emissions=False, embodied_materials='conventional', row_note_overrides=ScenarioRowNoteOverrides(technology={})))
+evidence = ProfileEvidence(hourly=      hour_index season  tod    factor
+0              0   D001  H01  0.041667
+1              1 ... columns], audit={'profile': 'nhts'}, source_digest='a5e4f924d72c409f38e29c0b84d20390b5b1a180ae63956bf4f902a59a78aac1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000017908347230>
+
+    def test_existing_capacity_preparation_keeps_charging_provenance(
+        bundle, evidence, monkeypatch
+    ):
+        from canoe_schema.v4_0 import ExistingCapacity
+        from validation.insertion import validate_parameter_rows
+        from validation.provenance import resolve_provenance
+    
+>       context = resolve_provenance(
+            bundle.sources,
+            source_key="nrcan_ceud_transport_provincial",
+            component_key="road_vehicle_count",
+            transformation="Test stock prerequisite",
+            transformation_version="1",
+        )
+
+tests\test_ldv_charging_profiles.py:310: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+sources = SourcesConfig(version=3, defaults=SourceDefaults(required=True, component_required=True, data_quality=DataQuality(dq_c...ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98', 'expected_bytes': 13977, 'expected_rows': 78})}, adapter={})})
+
+    def resolve_provenance(
+        sources: SourcesConfig,
+        *,
+        source_key: str,
+        component_key: str | int,
+        transformation: str,
+        transformation_version: str,
+        value_variant: Mapping[str, Any] | None = None,
+    ) -> ResolvedProvenance:
+        """Resolve a configured single-source component into immutable row context."""
+        try:
+            source = sources.sources[source_key]
+        except KeyError as exc:
+            raise ProvenanceError(f"Unknown source: {source_key}") from exc
+        try:
+            component = source.component(component_key)
+        except KeyError as exc:
+>           raise ProvenanceError(
+                f"Unknown component {component_key!r} for source {source_key!r}"
+            ) from exc
+E           validation.provenance.ProvenanceError: Unknown component 'road_vehicle_count' for source 'nrcan_ceud_transport_provincial'
+
+src\validation\provenance.py:158: ProvenanceError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\canoe_schema\sql.py:14
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\canoe_schema\sql.py:14: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_ldv_charging_profiles.py::test_existing_capacity_preparation_keeps_charging_provenance
+1 failed, 35 passed, 1 warning in 24.40s

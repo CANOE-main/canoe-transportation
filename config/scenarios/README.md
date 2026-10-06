@@ -45,6 +45,9 @@ it does not create missing caches, mappings, or template periods.
 | `costs.atb_trajectory` | The same ATB choices, independently selectable from efficiencies. |
 | `ev_chargers.ld_evs_per_port` | Positive LDV electric vehicles per charger port. |
 | `ev_chargers.mhd_evs_per_port` | Positive medium/heavy-duty electric vehicles per charger port. |
+| `charging_profiles.travel_behavior_source` | `none`, `nhts`, or `tts` household travel-survey source for the frozen Ontario simulation. The selected shape applies unchanged to shared LDV chargers in every configured region. |
+| `charging_profiles.time_mapping` | Null uses elapsed-hour D001-D365/H01-H24 labels after Toronto-calendar hourly means. A complete `hour_index,season,tod` CSV projects the 8760 physical hours onto inherited CANOE slices; slice durations must agree with season fractions and TOD hours. This selects temporal aggregation/labels, not a time zone. Python callers can supply the same mapping as a DataFrame with their season/TOD rows. |
+| `BEV_PHEV_range_representation.mode` | `none` preserves variants and requires no range acquisition. `new_capacity_shares` prepares minimum (`ge`) shares of new class/powertrain capacity from the registered OMEGA baseline sales/CD-range evidence. `representative_archetype` replaces new LDV range variants with one BEV/PHEV per category, retains EX stock and emits no range constraints. |
 | `embodied_emissions` | Enables the road vehicle-cycle layer. When false, preparation requires no embodied GREET workbooks or result bank and inserts no embodied rows. |
 | `embodied_materials` | `conventional` or `lightweight`, for LDVs only. MHDV values and provenance are independent of this selection. The registered release's glider selector mismatch is accepted because the affected saved range inputs are identical; unequal inputs require a reviewed correction before lightweight use. |
 
@@ -53,6 +56,41 @@ age-dependent road utilization. Enabling VKT schedules retains those rows as aud
 artifacts; only supported flat classes enter that table. Charger utilization likewise
 remains an artifact while its period dimension is unsupported. These are schema limits,
 not additional scenario switches.
+
+The frozen charging shapes already contain inherited fleet/range/charger composition.
+They are peak-normalized hourly power shapes; no new market shares are multiplied into
+them. Elapsed-hour labels preserve all 8760 physical hours, including Toronto DST, and
+do not identify summer wall-clock hours. The selected Ontario/shared-charger proxies
+apply the BEV shape to LDV BEV/PHEV/motorcycle charging in all regions. TTS remains a
+weekday-only simulation. Hourly factors are not directly comparable with the legacy
+clustered/rescaled profiles. Select `charging_profiles.travel_behavior_source: none` to retain the
+previous baseline without this slice's factors.
+
+Range shares describe US regulatory car/light-truck OMEGA baseline sales within each BEV/PHEV
+group; they are not adoption shares. Passenger and freight light trucks use the same
+light-truck distribution. The accepted MY2022 legacy snapshot proxies the Canadian market
+and applies unchanged across model vintages. The evidence command is independent of mode:
+`uv run --offline python -m parameterization.ldv_ev_ranges --evidence-only`.
+It publishes source-row records, full-denominator buckets and unresolved sales, including
+zero-sales buckets. It never substitutes catalogue counts or renormalizes unknown sales.
+
+The active `epa_omega_baseline` registration uses the 78-row, 14 KB extract of the exact
+OMEGA file read by `LDV_AER_market_shares.ipynb`. Verify its identity or recreate a missing
+extract with `uv run --offline python -m fetching.epa_omega_baseline --verify-legacy-identity`.
+Routine ETL requires only the compact file, not the notebook, parent or large model archive.
+EPA Trends and FuelEconomy join artifacts remain historical diagnostics; they are not
+dependencies or fallback weights for these modes.
+
+Representative preparation accepts the already-prepared parameter batches through
+`parameterization.ldv_ev_ranges.prepare_representative_parameters`; it does not acquire
+sources or rebuild prerequisites. It conserves sales-weighted consumption (harmonic
+efficiency), costs per equal capacity/service unit, surviving cohorts and embodied gases.
+C2A, utilization, fixed lifetimes and range survival curves must agree within a family;
+unsupported coverage, units or relationships fail explicitly. Each category has one PHEV
+blend with the accepted arithmetic mean of consumption-weighted vintage electricity
+fractions, applied across periods and vehicle vintages. Total energy remains specific to
+the vehicle vintage; gasoline/electricity deviations appear in `representative_conservation.json`.
+Historical stock, MHDVs, motorcycles and shared charging shapes retain their existing rows.
 
 Declare both embodied fields even when the layer is disabled. Generate the complete
 registered source bank explicitly on Windows with desktop Excel:

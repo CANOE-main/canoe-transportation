@@ -1,0 +1,5 @@
+BASELINE {'enabled': True, 'mode': 'scenario', 'reference': '.pytest-tmp\\omega_mvp_before\\outputs\\sqlite\\canoe_transport_legacy_reproduction.sqlite', 'absolute_tolerance': 0, 'relative_tolerance': 0, 'include_provenance': False, 'equivalent': True, 'changed_tables': [], 'status': 'diagnostic; scenario differences do not imply failed integrity or feasibility'}
+DIFFERENCES {}
+REP {'technology': 9, 'capacity_to_activity': 60, 'limit_annual_capacity_factor': 300, 'lifetime_survival_curve': 900, 'efficiency': 600, 'cost_invest': 300, 'cost_variable': 900, 'emission_embodied': 900, 'commodity': 3, 'limit_tech_input_split': 300} 2.220446049250313e-16 0.0006630270458660714
+CALLERREP [] (6,)
+CALLERNONE [] (0,)

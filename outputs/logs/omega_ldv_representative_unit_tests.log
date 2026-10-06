@@ -1,0 +1,13 @@
+.......                                                                  [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\canoe_schema\sql.py:14
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\canoe_schema\sql.py:14: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+tests/test_ldv_ev_ranges.py::test_representative_rejects_unsupported_aggregation_before_return[efficiency-dq_cred-1-source/DQ fields disagree]
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\pydantic\main.py:475: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `enum` - serialized value may not be as expected [field_name='dq_cred', input_value=1, input_type=int])
+    return self.__pydantic_serializer__.to_python(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+7 passed, 22 deselected, 2 warnings in 6.26s

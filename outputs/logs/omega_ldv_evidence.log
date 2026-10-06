@@ -1,0 +1,50 @@
+INFO:utils:Unannotated source/component DQ indicators use registry defaults: {'dq_cred': 5, 'dq_geog': 5, 'dq_struc': 5, 'dq_tech': 5, 'dq_time': 5}
+INFO:utils:Scenario period mapping: {'period_mode': 'prospective', 'base_year': 2023, 'existing': [2000, 2005, 2010, 2015, 2020], 'model': [2025, 2030, 2035, 2040, 2045], 'step': 5, 'base_year_role': 'latest observed year for stock, demand and historical calibration', 'historical_years_by_vintage': {'2000': [2000, 2001, 2002, 2003, 2004, 2005], '2005': [2006, 2007, 2008, 2009, 2010], '2010': [2011, 2012, 2013, 2014, 2015], '2015': [2016, 2017, 2018, 2019, 2020], '2020': [2021, 2022, 2023]}, 'empty_observation_vintages': [], 'latest_observed_vintage': 2020, 'efficiency_and_demand_years': {'2025': 2030, '2030': 2035, '2035': 2040, '2040': 2045, '2045': 2050}, 'cost_and_charger_years': {'2025': 2030, '2030': 2035, '2035': 2040, '2040': 2045, '2045': 2050}, 'end_of_horizon': 2050}
+INFO:fetching.epa_omega_baseline:OMEGA baseline: 78 source records, 855557 MY2022 sales, 0 invalid CD ranges
+INFO:__main__:OMEGA range evidence: 855557 sales, unresolved=0, accepted=True
+{
+  "accepted_for_parameters": true,
+  "groups": [
+    {
+      "market_class": "car",
+      "powertrain": "BEV",
+      "sales": 458662,
+      "sum_bucket_shares": 1.0,
+      "unresolved_sales": 0
+    },
+    {
+      "market_class": "car",
+      "powertrain": "PHEV",
+      "sales": 49292,
+      "sum_bucket_shares": 1.0,
+      "unresolved_sales": 0
+    },
+    {
+      "market_class": "light_truck",
+      "powertrain": "BEV",
+      "sales": 211289,
+      "sum_bucket_shares": 1.0,
+      "unresolved_sales": 0
+    },
+    {
+      "market_class": "light_truck",
+      "powertrain": "PHEV",
+      "sales": 136314,
+      "sum_bucket_shares": 1.0,
+      "unresolved_sales": 0
+    }
+  ],
+  "market_proxy": "US car/light-truck baseline sales mapped to Canadian LDV categories",
+  "model_years": [
+    2022
+  ],
+  "period_applicability": "constant across configured model vintages",
+  "range_metric": "onroad_charge_depleting_range_mi; the exact legacy notebook field",
+  "records": 78,
+  "renormalized_unresolved_sales": false,
+  "sales": 855557,
+  "source": "epa_omega_baseline",
+  "unresolved_records": 0,
+  "unresolved_sales": 0,
+  "weight_basis": "OMEGA baseline sales; not final MY2024 actual production or catalogue counts"
+}

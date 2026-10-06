@@ -38,7 +38,7 @@ class FuelEconomyVehicleRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     source_id: Literal["fueleconomy_gov_vehicle_data"]
-    component_key: Literal["vehicles"]
+    component_key: Literal["vehicles", "range_evidence"]
     component_meta: SourceComponent
     url: str
     cache_path: Path
@@ -97,13 +97,22 @@ def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
     return load_harmonization_rules(bundle, RULE_KEY)
 
 
-def build_request(bundle: ConfigBundle) -> FuelEconomyVehicleRequest:
+def build_request(bundle: ConfigBundle, component_key: str = "vehicles") -> FuelEconomyVehicleRequest:
     """Build the one exact configured vehicle-data request."""
     source = bundle.sources["sources"][SOURCE_KEY]
-    if set(source.components) != {"vehicles"}:
-        raise ValueError("FuelEconomy.gov source must define only the vehicles component")
-    component = source.components["vehicles"]
-    adapter = component.adapter
+    if source.status != "active":
+        raise ValueError("FuelEconomy.gov source is inactive")
+    if "vehicles" not in source.components or set(source.components) - {"vehicles", "range_evidence"}:
+        raise ValueError("FuelEconomy.gov source requires vehicles and only supported explicit components")
+    if component_key not in source.components:
+        raise ValueError(f"FuelEconomy.gov {component_key} component is not registered")
+    component = source.component(component_key)
+    adapter = dict(source.components["vehicles"].adapter)
+    if component_key == "range_evidence":
+        extension = dict(component.adapter)
+        if extension.pop("cache_component", None) != "vehicles":
+            raise ValueError("Range evidence must reuse the pinned classification cache")
+        adapter.update(extension)
     configured_path = str(adapter["cache_path"]).replace("\\", "/")
     for prefix in ("inputs/cache/", "inputs/0_cache/"):
         if configured_path.startswith(prefix):
@@ -112,7 +121,7 @@ def build_request(bundle: ConfigBundle) -> FuelEconomyVehicleRequest:
     rules = module_rules(bundle)
     return FuelEconomyVehicleRequest(
         source_id=SOURCE_KEY,
-        component_key="vehicles",
+        component_key=component_key,
         component_meta=component,
         url=str(adapter["url"]),
         cache_path=resolve_input_path(bundle, "cache", configured_path),
@@ -125,7 +134,7 @@ def build_request(bundle: ConfigBundle) -> FuelEconomyVehicleRequest:
         required_non_null_columns=tuple(
             str(value) for value in adapter["required_non_null_columns"]
         ),
-        output_file=str(rules["output_file"]),
+        output_file=str(rules["range_output_file"] if component_key == "range_evidence" else rules["output_file"]),
     )
 
 
@@ -190,10 +199,10 @@ def fetch_to_cache(
 def read_selected_vehicle_columns(
     request: FuelEconomyVehicleRequest,
 ) -> pd.DataFrame:
-    """Read only the four configured source columns from vehicles.csv."""
+    """Read only the component's explicitly authorized columns from vehicles.csv."""
     with zipfile.ZipFile(request.cache_path) as archive:
         with archive.open(request.archive_member) as source:
-            frame = pd.read_csv(source, usecols=list(request.required_columns))
+            frame = pd.read_csv(source, usecols=list(request.required_columns), low_memory=False)
     missing = sorted(set(request.required_columns) - set(frame.columns))
     if missing:
         raise ValueError(
@@ -222,6 +231,44 @@ def read_selected_vehicle_columns(
         )
     frame["year"] = years
     return frame.loc[:, request.required_columns].copy()
+
+
+def normalize_range_evidence(frame: pd.DataFrame, *, rules: dict[str, Any]) -> pd.DataFrame:
+    """Preserve source fields; PHEV range is secondary electricity/CD, never total range."""
+    selected = frame.loc[frame.year.eq(rules["range_model_year"]) & frame.atvType.isin(rules["range_powertrain_map"])].copy()
+    if selected.id.isna().any() or selected.id.duplicated().any():
+        raise ValueError("FuelEconomy range evidence requires unique source vehicle IDs")
+    selected["powertrain"] = selected.atvType.map(rules["range_powertrain_map"])
+    bev = selected.powertrain.eq("BEV")
+    selected["cd_range_miles"] = pd.to_numeric(selected[rules["bev_range_column"]].where(
+        bev, selected[rules["phev_range_column"]]), errors="coerce")
+    electric = selected.fuelType1.eq(rules["electricity_label"]).where(
+        bev, selected.fuelType2.eq(rules["electricity_label"]))
+    valid = electric & selected.cd_range_miles.gt(0) & selected.cd_range_miles.lt(float("inf"))
+    selected["range_status"] = valid.map({True: "valid", False: "unresolved"})
+    selected.loc[~valid, "cd_range_miles"] = float("nan")
+    selected["range_field"] = selected.powertrain.map({"BEV": rules["bev_range_column"], "PHEV": rules["phev_range_column"]})
+    selected["range_definition"] = selected.powertrain.map({"BEV": "EPA combined electric range", "PHEV": "EPA electricity/CD range, including blended CD operation; not total driving range"})
+    return selected.sort_values("id", kind="stable").reset_index(drop=True)
+
+
+def fetch_range_evidence(bundle: ConfigBundle, *, download: bool = False) -> pd.DataFrame:
+    """Independent range extension; classification artifacts and cache pin are preserved."""
+    request = build_request(bundle, "range_evidence")
+    if download:
+        fetch_to_cache(request)
+    else:
+        validate_cache(request)
+    result = normalize_range_evidence(read_selected_vehicle_columns(request), rules=module_rules(bundle))
+    output_dir = resolve_input_path(bundle, "interim", module_rules(bundle)["interim_subdir"])
+    write_dataframe_atomic(result, output_dir / request.output_file)
+    write_dataframe_atomic(pd.DataFrame([{
+        "component": request.component_key, "sha256": request.expected_sha256,
+        "bytes": request.expected_bytes, "selected_columns": "|".join(request.required_columns),
+        "rows": len(result), "unresolved_ranges": int(result.range_status.eq("unresolved").sum()),
+    }]), output_dir / module_rules(bundle)["range_manifest_file"])
+    logging.getLogger(__name__).info("FuelEconomy range extension: %s rows, %s unresolved ranges", len(result), result.range_status.eq("unresolved").sum())
+    return result
 
 
 def normalize_vehicle_classes(
@@ -336,12 +383,17 @@ def parse_args() -> argparse.Namespace:
         default="config/scenarios/legacy_reproduction.yaml",
     )
     parser.add_argument("--no-download", action="store_true")
+    parser.add_argument("--range-evidence", action="store_true")
     return parser.parse_args()
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
+    if args.range_evidence:
+        result = fetch_range_evidence(load_config_bundle(args.scenario), download=not args.no_download)
+        logging.info("Wrote %s FuelEconomy.gov range records", len(result))
+        return
     output_dir = fetch_and_normalize(
         args.scenario,
         download=not args.no_download,

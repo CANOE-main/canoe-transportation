@@ -825,7 +825,7 @@ flowchart LR
     s3@{shape: docs, label: "**Solved GREET model runs**
       Vehicle-cycle lifetime emissions by scenario
       *Def. scenario*: conventional materials"}
-    s1 -- "`solved via *xlwings* library`" --> s3
+    s1 -- "`solved via *xlwings* library*`" --> s3
   end
 
   s2@{shape: processes, label: "**Road aggregation maps**

@@ -1,0 +1,69 @@
+....................F.                                                   [100%]
+================================== FAILURES ===================================
+______ test_range_modes_reject_supplied_evidence_from_a_different_source ______
+
+sources = SourcesConfig(version=3, defaults=SourceDefaults(required=True, component_required=True, data_quality=DataQuality(dq_c...ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98', 'expected_bytes': 13977, 'expected_rows': 78})}, adapter={})})
+
+    def resolve_provenance(
+        sources: SourcesConfig,
+        *,
+        source_key: str,
+        component_key: str | int,
+        transformation: str,
+        transformation_version: str,
+        value_variant: Mapping[str, Any] | None = None,
+    ) -> ResolvedProvenance:
+        """Resolve a configured single-source component into immutable row context."""
+        try:
+>           source = sources.sources[source_key]
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'fueleconomy_vehicle_data'
+
+src\validation\provenance.py:152: KeyError
+
+The above exception was the direct cause of the following exception:
+
+bundle = ConfigBundle(repo_root=WindowsPath('C:/Users/rashi/ESM_databases/canoe-transportation'), paths_path=WindowsPath('C:/Us...bodied_emissions=False, embodied_materials='conventional', row_note_overrides=ScenarioRowNoteOverrides(technology={})))
+evidence = RangeEvidence(records=   source_row_id  model_year  ...         bucket           status
+0              0        2022  ..._metric': 'onroad_charge_depleting_range_mi; the exact legacy notebook field', 'renormalized_unresolved_sales': False})
+
+    def test_range_modes_reject_supplied_evidence_from_a_different_source(bundle, evidence):
+>       wrong = resolve_provenance(
+            bundle.sources,
+            source_key="fueleconomy_vehicle_data",
+            component_key="range_evidence",
+            transformation="Unaccepted evidence",
+            transformation_version="1",
+        )
+
+tests\test_ldv_ev_ranges.py:382: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+sources = SourcesConfig(version=3, defaults=SourceDefaults(required=True, component_required=True, data_quality=DataQuality(dq_c...ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98', 'expected_bytes': 13977, 'expected_rows': 78})}, adapter={})})
+
+    def resolve_provenance(
+        sources: SourcesConfig,
+        *,
+        source_key: str,
+        component_key: str | int,
+        transformation: str,
+        transformation_version: str,
+        value_variant: Mapping[str, Any] | None = None,
+    ) -> ResolvedProvenance:
+        """Resolve a configured single-source component into immutable row context."""
+        try:
+            source = sources.sources[source_key]
+        except KeyError as exc:
+>           raise ProvenanceError(f"Unknown source: {source_key}") from exc
+E           validation.provenance.ProvenanceError: Unknown source: fueleconomy_vehicle_data
+
+src\validation\provenance.py:154: ProvenanceError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\canoe_schema\sql.py:14
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\canoe_schema\sql.py:14: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_ldv_ev_ranges.py::test_range_modes_reject_supplied_evidence_from_a_different_source
+1 failed, 21 passed, 1 deselected, 1 warning in 10.08s

@@ -67,7 +67,8 @@ def run_smoke_validation(
             **{
                 key: getattr(bundle.scenario, key).model_dump(mode="json")
                 for key in ("existing_capacity", "demand", "lifetimes", "road_utilization",
-                            "efficiencies", "costs", "ev_chargers")
+                            "efficiencies", "costs", "ev_chargers", "charging_profiles",
+                            "BEV_PHEV_range_representation")
             },
         },
     }

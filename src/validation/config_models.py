@@ -364,6 +364,16 @@ class ScenarioEvChargers(MappingModel):
     mhd_evs_per_port: float = Field(gt=0, allow_inf_nan=False)
 
 
+class ScenarioChargingProfiles(MappingModel):
+    travel_behavior_source: Literal["none", "nhts", "tts"]
+    # An explicit mapping can project physical hours onto inherited time slices.
+    time_mapping: str | None = Field(min_length=1)
+
+
+class ScenarioRangeRepresentation(MappingModel):
+    mode: Literal["none", "new_capacity_shares", "representative_archetype"]
+
+
 class ScenarioConfig(MappingModel):
     version: Literal[3]
     scenario: ScenarioIdentity
@@ -381,6 +391,8 @@ class ScenarioConfig(MappingModel):
     efficiencies: ScenarioEfficiencies
     costs: ScenarioCosts
     ev_chargers: ScenarioEvChargers
+    charging_profiles: ScenarioChargingProfiles
+    BEV_PHEV_range_representation: ScenarioRangeRepresentation
     embodied_emissions: bool
     embodied_materials: Literal["conventional", "lightweight"]
     row_note_overrides: ScenarioRowNoteOverrides

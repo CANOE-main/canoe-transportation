@@ -1,0 +1,79 @@
+source_row_id,manufacturer_id,vehicle_name,model_year,context_size_class,reg_class_id,powertrain_type,onroad_charge_depleting_range_mi,battery_kwh,sales
+0,VW,Compact:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2009.0:5.0:BEV_AWD:steel:SLA:electricity:VW,2022,Compact,car,BEV,223.14804016844832,91.33002915451895,3087.0
+1,VW,Compact:sedan:BEV:1.0:electricity:car:RWD:0.0:2022:2009.0:5.0:BEV_RWD:steel:SLA:electricity:VW,2022,Compact,car,BEV,212.0073891625616,86.02019704433499,3654.0
+58,Volvo,Compact:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2008.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:Volvo,2022,Compact,car,PHEV,29.95687331536388,14.782749326145552,1855.0
+59,BMW,Compact:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2011.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:BMW,2022,Compact,car,PHEV,20.0,12.0,1314.0
+60,BMW,Compact:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2018.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:BMW,2022,Compact,car,PHEV,19.0,12.0,787.0
+61,BMW,Compact:sedan:PHEV:1.0:gasoline:car:RWD:0.0:2022:2011.0:5.0:P2_PHEV_SLA_RWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:BMW,2022,Compact,car,PHEV,23.0,12.0,2871.0
+62,BMW,Compact:sedan:PHEV:1.0:gasoline:car:RWD:0.0:2022:2018.0:5.0:P2_PHEV_SLA_RWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:BMW,2022,Compact,car,PHEV,21.0,12.0,1674.0
+63,Lucid,Large:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2009.0:5.0:BEV_AWD:steel:SLA:electricity:Lucid,2022,Large,car,BEV,480.97649336283183,112.98561946902656,3616.0
+64,Hyundai,Large:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2015.0:5.0:BEV_AWD:steel:SLA:electricity:Hyundai,2022,Large,car,BEV,256.0,80.2,10812.0
+65,Mercedes Benz,Large:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2016.0:5.0:BEV_AWD:steel:SLA:electricity:Mercedes Benz,2022,Large,car,BEV,333.113858165257,120.0,3074.0
+66,Tesla,Large:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2017.0:5.0:BEV_AWD:steel:SLA:electricity:Tesla,2022,Large,car,BEV,394.6325116741943,100.0,26126.0
+67,Hyundai,Large:sedan:BEV:1.0:electricity:car:RWD:0.0:2022:2015.0:5.0:BEV_RWD:steel:SLA:electricity:Hyundai,2022,Large,car,BEV,301.4226804123711,79.85412992174885,8051.0
+68,Mercedes Benz,Large:sedan:BEV:1.0:electricity:car:RWD:0.0:2022:2016.0:5.0:BEV_RWD:steel:SLA:electricity:Mercedes Benz,2022,Large,car,BEV,350.0,120.0,4518.0
+118,VW,Large:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2013.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:VW,2022,Large,car,PHEV,18.84837545126354,17.9,554.0
+119,BMW,Large:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2020.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:BMW,2022,Large,car,PHEV,17.0,12.0,208.0
+120,Mercedes Benz,Large Crossover:cuv_suv:BEV:1.0:electricity:car:AWD:0.0:2022:2009.0:5.0:BEV_AWD:steel:SLA:electricity:Mercedes Benz,2022,Large Crossover,car,BEV,234.87121699935608,69.7,1553.0
+121,Tesla,Large Crossover:cuv_suv:BEV:1.0:electricity:car:AWD:0.0:2022:2012.0:5.0:BEV_AWD:steel:SLA:electricity:Tesla,2022,Large Crossover,car,BEV,302.70678256437844,80.5,70637.0
+122,Tesla,Large Crossover:cuv_suv:BEV:1.0:electricity:car:AWD:0.0:2022:2017.0:5.0:BEV_AWD:steel:HLA:electricity:Tesla,2022,Large Crossover,car,BEV,333.0,100.0,4689.0
+123,Ford,Large Crossover:cuv_suv:BEV:1.0:electricity:car:AWD:0.0:2022:2017.0:5.0:BEV_AWD:steel:SLA:electricity:Ford,2022,Large Crossover,car,BEV,264.235134121178,93.627307259426,21324.0
+124,VW,Large Crossover:cuv_suv:BEV:1.0:electricity:truck:AWD:0.0:2022:2009.0:5.0:BEV_AWD:steel:HLA:electricity:VW,2022,Large Crossover,truck,BEV,218.53919239904988,95.0,11367.0
+125,Tesla,Large Crossover:cuv_suv:BEV:1.0:electricity:truck:AWD:0.0:2022:2012.0:5.0:BEV_AWD:steel:SLA:electricity:Tesla,2022,Large Crossover,truck,BEV,330.0,80.5,130272.0
+126,BMW,Large Crossover:cuv_suv:BEV:1.0:electricity:truck:AWD:0.0:2022:2017.0:5.0:BEV_AWD:steel:HLA:electricity:BMW,2022,Large Crossover,truck,BEV,311.0067024128686,111.5,2984.0
+127,Tesla,Large Crossover:cuv_suv:BEV:1.0:electricity:truck:AWD:0.0:2022:2017.0:5.0:BEV_AWD:steel:HLA:electricity:Tesla,2022,Large Crossover,truck,BEV,339.1026152482269,100.0,22560.0
+128,JLR,Large Crossover:cuv_suv:BEV:1.0:electricity:truck:AWD:0.0:2022:2017.0:5.0:BEV_AWD:steel:SLA:electricity:JLR,2022,Large Crossover,truck,BEV,232.84758364312268,90.0,538.0
+129,Rivian,Large Crossover:cuv_suv:BEV:1.0:electricity:truck:AWD:0.0:2022:2018.0:5.0:BEV_AWD:steel:HLA:electricity:Rivian,2022,Large Crossover,truck,BEV,316.0,135.0,2813.0
+258,Hyundai,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2008.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX12R_SS1_AER0:steel:SLA:gasoline:Hyundai,2022,Large Crossover,truck,PHEV,31.0,13.8,4663.0
+259,BMW,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2011.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:BMW,2022,Large Crossover,truck,PHEV,31.0,24.0,13041.0
+260,Volvo,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2011.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:Volvo,2022,Large Crossover,truck,PHEV,27.028170968637248,15.000166527893422,7206.0
+261,JLR,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2013.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:JLR,2022,Large Crossover,truck,PHEV,19.0,38.2,3.0
+262,Volvo,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2014.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:Volvo,2022,Large Crossover,truck,PHEV,26.369123072556995,14.947649229022796,10571.0
+263,VW,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2014.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER1:steel:SLA:gasoline:VW,2022,Large Crossover,truck,PHEV,23.0,17.9,3182.0
+264,Ford,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2015.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:Ford,2022,Large Crossover,truck,PHEV,21.0,13.6,2062.0
+265,Stellantis,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2016.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER1:steel:SLA:gasoline:Stellantis,2022,Large Crossover,truck,PHEV,26.0,17.3,17003.0
+266,Hyundai,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2017.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX12R_SS1_AER0:steel:SLA:gasoline:Hyundai,2022,Large Crossover,truck,PHEV,33.0,13.8,3415.0
+267,Stellantis,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2018.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER1:steel:SLA:gasoline:Stellantis,2022,Large Crossover,truck,PHEV,22.0,17.3,30465.0
+268,Kia,Large Crossover:cuv_suv:PHEV:1.0:gasoline:truck:AWD:0.0:2022:2021.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX12R_SS1_AER0:steel:SLA:gasoline:Kia,2022,Large Crossover,truck,PHEV,32.0,13.800000000000002,6164.0
+269,Rivian,Large Pickup:pickup:BEV:0.0:electricity:truck:AWD:0.0:2022:2015.0:7.0:BEV_AWD:steel:HLA:electricity:Rivian,2022,Large Pickup,truck,BEV,314.0,135.0,16015.0
+270,Ford,Large Pickup:pickup:BEV:0.0:electricity:truck:AWD:0.0:2022:2017.0:7.0:BEV_AWD:steel:HLA:electricity:Ford,2022,Large Pickup,truck,BEV,276.30154995848324,127.0730002767783,14452.0
+335,Ford,Large Utility:cuv_suv:BEV:1.0:electricity:car:RWD:0.0:2022:2017.0:5.0:BEV_RWD:steel:SLA:electricity:Ford,2022,Large Utility,car,BEV,271.31252229753835,85.2432750624331,11212.0
+417,Stellantis,Large Van:cuv_suv:PHEV:1.0:gasoline:truck:FWD:0.0:2022:2009.0:5.0:PS_PHEV_SLA_FWD_DHE_TRXECVTF_SS1_AER1:steel:SLA:gasoline:Stellantis,2022,Large Van,truck,PHEV,32.0,16.0,18110.0
+418,VW,Midsize:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2009.0:5.0:BEV_AWD:steel:SLA:electricity:VW,2022,Midsize,car,BEV,213.5823008849557,80.80849557522124,1130.0
+419,Tesla,Midsize:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2010.0:5.0:BEV_AWD:steel:SLA:electricity:Tesla,2022,Midsize,car,BEV,350.7592237081969,80.5,123974.0
+420,VW,Midsize:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2011.0:5.0:BEV_AWD:steel:SLA:electricity:VW,2022,Midsize,car,BEV,236.5785536159601,93.4,3609.0
+421,Volvo,Midsize:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2016.0:5.0:BEV_AWD:steel:SLA:electricity:Volvo,2022,Midsize,car,BEV,249.0,78.0,6993.0
+422,Mazda,Midsize:sedan:BEV:1.0:electricity:car:FWD:0.0:2022:2005.0:5.0:BEV_FWD:steel:SLA:electricity:Mazda,2022,Midsize,car,BEV,100.0,35.5,505.0
+423,Nissan,Midsize:sedan:BEV:1.0:electricity:car:FWD:0.0:2022:2009.0:5.0:BEV_FWD:steel:SLA:electricity:Nissan,2022,Midsize,car,BEV,186.54324928183848,51.85844238748803,12532.0
+424,Volvo,Midsize:sedan:BEV:1.0:electricity:car:FWD:0.0:2022:2016.0:5.0:BEV_FWD:steel:SLA:electricity:Volvo,2022,Midsize,car,BEV,270.0,78.0,518.0
+425,Tesla,Midsize:sedan:BEV:1.0:electricity:car:RWD:0.0:2022:2010.0:5.0:BEV_RWD:steel:SLA:electricity:Tesla,2022,Midsize,car,BEV,273.0,60.0,54713.0
+515,Volvo,Midsize:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2010.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:Volvo,2022,Midsize,car,PHEV,29.93220338983051,15.38305084745763,59.0
+516,VW,Midsize:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2011.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:VW,2022,Midsize,car,PHEV,21.0,17.9,190.0
+517,BMW,Midsize:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2012.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX12R_SS1_AER0:steel:SLA:gasoline:BMW,2022,Midsize,car,PHEV,18.0,10.0,476.0
+518,VW,Midsize:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2014.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER1:steel:SLA:gasoline:VW,2022,Midsize,car,PHEV,26.0,17.9,10.0
+519,Hyundai,Midsize:sedan:PHEV:1.0:gasoline:car:FWD:0.0:2022:2015.0:5.0:P2_PHEV_SLA_FWD_DHE_TRX12F_SS1_AER0:steel:SLA:gasoline:Hyundai,2022,Midsize,car,PHEV,29.0,8.9,1767.0
+520,Toyota,Midsize:sedan:PHEV:1.0:gasoline:car:FWD:0.0:2022:2015.0:5.0:PS_PHEV_SLA_FWD_DHE_TRXECVTF_SS1_AER1:steel:SLA:gasoline:Toyota,2022,Midsize,car,PHEV,25.0,8.8,17518.0
+537,Volvo,Small Crossover:cuv_suv:BEV:1.0:electricity:car:AWD:0.0:2022:2015.0:5.0:BEV_AWD:steel:SLA:electricity:Volvo,2022,Small Crossover,car,BEV,224.11195383347072,78.0,6065.0
+538,Hyundai,Small Crossover:cuv_suv:BEV:1.0:electricity:car:FWD:0.0:2022:2008.0:5.0:BEV_FWD:steel:SLA:electricity:Hyundai,2022,Small Crossover,car,BEV,258.0,67.5,3502.0
+539,VW,Small Crossover:cuv_suv:BEV:1.0:electricity:car:RWD:0.0:2022:2015.0:5.0:BEV_RWD:steel:SLA:electricity:VW,2022,Small Crossover,car,BEV,264.42699051451564,82.0,6958.0
+540,VW,Small Crossover:cuv_suv:BEV:1.0:electricity:truck:AWD:0.0:2022:2015.0:5.0:BEV_AWD:steel:SLA:electricity:VW,2022,Small Crossover,truck,BEV,246.2944511948157,82.0,7407.0
+541,VW,Small Crossover:cuv_suv:BEV:1.0:electricity:truck:AWD:0.0:2022:2017.0:5.0:BEV_AWD:steel:HLA:electricity:VW,2022,Small Crossover,truck,BEV,241.0,82.0,2881.0
+634,Mitsubishi,Small Crossover:cuv_suv:PHEV:1.0:gasoline:car:AWD:0.0:2022:2009.0:5.0:P2_PHEV_SLA_AWD_DHE_TRX12R_SS1_AER1:steel:SLA:gasoline:Mitsubishi,2022,Small Crossover,car,PHEV,24.0,13.8,2645.0
+635,Ford,Small Crossover:cuv_suv:PHEV:1.0:gasoline:car:FWD:0.0:2022:2010.0:5.0:PS_PHEV_SLA_FWD_DHE_TRXECVTF_SS1_AER1:steel:SLA:gasoline:Ford,2022,Small Crossover,car,PHEV,28.0,14.4,2681.0
+636,Ford,Small Crossover:cuv_suv:PHEV:1.0:gasoline:car:FWD:0.0:2022:2012.0:5.0:PS_PHEV_SLA_FWD_DHE_TRXECVTF_SS1_AER1:steel:SLA:gasoline:Ford,2022,Small Crossover,car,PHEV,37.0,14.4,9809.0
+637,Toyota,Small Crossover:cuv_suv:PHEV:1.0:gasoline:truck:FWD:0.0:2022:2014.0:5.0:PS_PHEV_SLA_FWD_DHE_TRXECVTF_SS1_AER1:steel:SLA:gasoline:Toyota,2022,Small Crossover,truck,PHEV,42.0,18.1,16276.0
+638,Toyota,Small Crossover:cuv_suv:PHEV:1.0:gasoline:truck:FWD:0.0:2022:2017.0:5.0:PS_PHEV_SLA_FWD_DHE_TRXECVTF_SS1_AER1:steel:SLA:gasoline:Toyota,2022,Small Crossover,truck,PHEV,37.0,18.1,3240.0
+639,Subaru,Small Crossover:cuv_suv:PHEV:1.0:gasoline:truck:FWD:0.0:2022:2019.0:5.0:PS_PHEV_SLA_FWD_DHE_TRXECVTF_SS1_AER1:steel:SLA:gasoline:Subaru,2022,Small Crossover,truck,PHEV,17.0,8.8,913.0
+658,Kia,Small Utility:cuv_suv:BEV:1.0:electricity:car:AWD:0.0:2022:2017.0:5.0:BEV_AWD:steel:SLA:electricity:Kia,2022,Small Utility,car,BEV,274.0,82.5,13388.0
+659,General Motors,Small Utility:cuv_suv:BEV:1.0:electricity:car:FWD:0.0:2022:2011.0:5.0:BEV_FWD:steel:SLA:electricity:General Motors,2022,Small Utility,car,BEV,259.0,65.0,8412.0
+660,General Motors,Small Utility:cuv_suv:BEV:1.0:electricity:car:FWD:0.0:2022:2014.0:5.0:BEV_FWD:steel:SLA:electricity:General Motors,2022,Small Utility,car,BEV,247.0,65.0,19665.0
+661,Kia,Small Utility:cuv_suv:BEV:1.0:electricity:car:FWD:0.0:2022:2014.0:5.0:BEV_FWD:steel:SLA:electricity:Kia,2022,Small Utility,car,BEV,239.0,67.5,11023.0
+662,General Motors,Small Utility:cuv_suv:BEV:1.0:electricity:car:FWD:0.0:2022:2017.0:5.0:BEV_FWD:steel:SLA:electricity:General Motors,2022,Small Utility,car,BEV,259.0,65.0,128.0
+663,Kia,Small Utility:cuv_suv:BEV:1.0:electricity:car:RWD:0.0:2022:2017.0:5.0:BEV_RWD:steel:SLA:electricity:Kia,2022,Small Utility,car,BEV,302.7041640770665,80.5825046612803,6436.0
+678,Volvo,Small Utility:cuv_suv:PHEV:1.0:gasoline:car:AWD:0.0:2022:2011.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER0:steel:SLA:gasoline:Volvo,2022,Small Utility,car,PHEV,30.4,14.96,105.0
+679,Kia,Small Utility:cuv_suv:PHEV:1.0:gasoline:car:FWD:0.0:2022:2014.0:5.0:P2_PHEV_SLA_FWD_DHE_TRX12F_SS1_AER0:steel:SLA:gasoline:Kia,2022,Small Utility,car,PHEV,26.0,8.9,4016.0
+692,BMW,Subcompact:sedan:BEV:1.0:electricity:car:AWD:0.0:2022:2018.0:5.0:BEV_AWD:steel:SLA:electricity:BMW,2022,Subcompact,car,BEV,264.1339829476249,83.9,821.0
+693,BMW,Subcompact:sedan:BEV:1.0:electricity:car:FWD:0.0:2022:2012.0:5.0:BEV_FWD:steel:SLA:electricity:BMW,2022,Subcompact,car,BEV,114.0,32.6,2980.0
+694,BMW,Subcompact:sedan:BEV:1.0:electricity:car:RWD:0.0:2022:2018.0:5.0:BEV_RWD:steel:SLA:electricity:BMW,2022,Subcompact,car,BEV,289.26716266486306,83.90000000000002,2957.0
+781,Ferrari,Two Seater:sedan:PHEV:1.0:gasoline:car:AWD:0.0:2022:2017.0:5.0:P2_PHEV_SLA_AWD_MILLER_TRX22R_SS1_AER1:steel:SLA:gasoline:Ferrari,2022,Two Seater,car,PHEV,8.612040133779264,7.900000000000001,598.0
+782,Ferrari,Two Seater:sedan:PHEV:1.0:gasoline:car:RWD:0.0:2022:2018.0:5.0:P2_PHEV_SLA_RWD_MILLER_TRX22R_SS1_AER1:steel:SLA:gasoline:Ferrari,2022,Two Seater,car,PHEV,8.0,7.4,155.0

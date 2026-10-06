@@ -37,6 +37,13 @@ from canoe_schema.v4_0 import (
     CostFixed,
     CostVariable,
     EmissionEmbodied,
+    CapacityFactorTech,
+    TimeSeason,
+    TimeOfDay,
+    LimitNewCapacityShare,
+    TechGroup,
+    TechGroupMember,
+    TechGroupLabel,
 )
 from pydantic import ValidationError
 from pydantic_core import PydanticUndefined
@@ -71,6 +78,8 @@ LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from parameterization.road_embodied_emissions import EmbodiedEmissionPreparation
+    from parameterization.ldv_charging_profiles import ChargingPreparation
+    from parameterization.ldv_ev_ranges import RangePreparation, RangeEvidence
 
 
 @dataclass(frozen=True)
@@ -138,6 +147,8 @@ class TransportContribution:
     support_audit: dict[str, Any] = dataclass_field(default_factory=dict)
     new_technologies: tuple[str, ...] = ()
     emission_embodied: EmbodiedEmissionPreparation | None = None
+    charging_profiles: ChargingPreparation | None = None
+    range_representation: RangePreparation | None = None
 
     @property
     def emission_embodied_rows(self) -> list[EmissionEmbodied]:
@@ -424,6 +435,9 @@ def prepare_transport_contribution(
     include_costs: bool | None = None,
     include_ev_chargers: bool | None = None,
     include_emission_embodied: bool | None = None,
+    include_charging_profiles: bool | None = None,
+    charging_profiles: ChargingPreparation | None = None,
+    range_evidence: RangeEvidence | None = None,
 ) -> TransportContribution:
     """Prepare the currently supported transport rows without writing to SQLite."""
     if not template_dir.is_dir():
@@ -448,14 +462,34 @@ def prepare_transport_contribution(
             table_labels[specification.label_model.table_name()] = labels
         load_results.append(result)
 
+    # Gate representation before preparing other parameter families or touching SQLite.
+    import pandas as pd
+    from parameterization.ldv_ev_ranges import prepare_range_rows
+
+    technologies = pd.DataFrame([row.model_dump() for row in table_rows["technology"]])
+    range_preparation = prepare_range_rows(bundle, evidence=range_evidence, technologies=technologies)
+    if include_charging_profiles is not False and charging_profiles is None:
+        from parameterization.ldv_charging_profiles import prepare_charging_profile_rows
+
+        seasons = [TimeSeason(**dict(zip(["sequence", "season", "segment_fraction", "notes"], row)))
+                   for row in connection.execute("SELECT sequence, season, segment_fraction, notes FROM time_season")]
+        times = [TimeOfDay(**dict(zip(["sequence", "tod", "hours", "notes"], row)))
+                 for row in connection.execute("SELECT sequence, tod, hours, notes FROM time_of_day")]
+        charging_profiles = prepare_charging_profile_rows(
+            bundle, technologies=technologies, seasons=seasons, times_of_day=times,
+        )
+
     selected_capacity = True if include_existing_capacity is None else include_existing_capacity
     parameter_rows: list[ExistingCapacity] = []
-    contexts: list[ResolvedProvenance] = []
+    contexts: list[ResolvedProvenance] = [*range_preparation.provenance_contexts]
+    if charging_profiles is not None:
+        contexts.extend(charging_profiles.provenance_contexts)
     parameter_audit: dict[str, Any] = {}
     if selected_capacity:
         from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
-        parameter_rows, contexts, parameter_audit = prepare_existing_capacity_rows(bundle)
+        parameter_rows, capacity_contexts, parameter_audit = prepare_existing_capacity_rows(bundle)
+        contexts.extend(capacity_contexts)
     selected_demand = True if include_demand is None else include_demand
     demand_rows: list[Demand] = []
     demand_audit: dict[str, Any] = {}
@@ -595,6 +629,8 @@ def prepare_transport_contribution(
         efficiency_audit=efficiency_audit,
         cost_audit=cost_audit,
         emission_embodied=embodied,
+        charging_profiles=charging_profiles if include_charging_profiles is not False else None,
+        range_representation=range_preparation,
         existing_vintages=tuple(bundle.scenario.periods.existing),
         prepared_support_tables=tuple(support_tables),
         new_technologies=tuple(
@@ -602,8 +638,66 @@ def prepare_transport_contribution(
             if not row.tech.endswith(existing_suffix)
         ),
     )
+    contribution = _apply_ldv_range_representation(bundle, contribution)
     contribution.support_audit.update(_require_transport_parameter_support(contribution))
     return contribution
+
+
+def _representative_batches(contribution: TransportContribution) -> dict[str, list[CanoeBaseModel]]:
+    return {
+        **contribution.rows_by_table,
+        "existing_capacity": contribution.parameter_rows,
+        "capacity_to_activity": contribution.capacity_to_activity_rows,
+        "limit_annual_capacity_factor": contribution.flat_road_factor_rows,
+        "lifetime_tech": contribution.lifetime_tech_rows,
+        "lifetime_survival_curve": contribution.lifetime_survival_curve_rows,
+        "efficiency": contribution.efficiency_rows,
+        "limit_tech_input_split": contribution.input_split_rows,
+        "cost_invest": contribution.cost_invest_rows,
+        "cost_fixed": contribution.cost_fixed_rows,
+        "cost_variable": contribution.cost_variable_rows,
+        "emission_embodied": contribution.emission_embodied_rows,
+    }
+
+
+def _apply_ldv_range_representation(bundle: ConfigBundle, contribution: TransportContribution) -> TransportContribution:
+    """Adapt the shared pure range transformation to already-prepared contribution blocks."""
+    ranges = contribution.range_representation
+    if ranges is None or ranges.audit["mode"] != "representative_archetype":
+        return contribution
+    from parameterization.ldv_ev_ranges import prepare_representative_parameters
+
+    result = prepare_representative_parameters(
+        bundle, range_preparation=ranges, batches=_representative_batches(contribution),
+        provenance_contexts=contribution.provenance_contexts,
+        internal_datasets=tuple(d for d in (contribution.dataset, contribution.road_assumption_dataset,
+                                           contribution.efficiency_assumption_dataset) if d is not None),
+    )
+    rows = result.batches
+    ranges = replace(ranges, structural_dataset=result.structural_dataset, representative=result,
+                     provenance_contexts=[*ranges.provenance_contexts, *result.provenance_contexts],
+                     audit={**ranges.audit, "representative": result.audit})
+    embodied = contribution.emission_embodied
+    if embodied is not None:
+        embodied = replace(embodied, rows=rows["emission_embodied"],
+            provenance_contexts=[*embodied.provenance_contexts, *result.provenance_contexts],
+            expected_keys=frozenset((r.region, r.tech, r.emis_comm, r.vintage) for r in rows["emission_embodied"]),
+            audit={**embodied.audit, "rows": len(rows["emission_embodied"]),
+                   "technologies": len({r.tech for r in rows["emission_embodied"]}),
+                   "range_representation": result.audit["generated_rows"].get("emission_embodied", 0)})
+    return replace(contribution,
+        rows_by_table={"technology": rows["technology"], "commodity": rows["commodity"]},
+        load_results=[replace(r, inserted_rows=len(rows[r.table])) for r in contribution.load_results],
+        labels_by_table=result.labels, range_representation=ranges,
+        parameter_rows=rows["existing_capacity"], capacity_to_activity_rows=rows["capacity_to_activity"],
+        flat_road_factor_rows=rows["limit_annual_capacity_factor"], lifetime_tech_rows=rows["lifetime_tech"],
+        lifetime_survival_curve_rows=rows["lifetime_survival_curve"], efficiency_rows=rows["efficiency"],
+        input_split_rows=rows["limit_tech_input_split"], cost_invest_rows=rows["cost_invest"],
+        cost_fixed_rows=rows["cost_fixed"], cost_variable_rows=rows["cost_variable"], emission_embodied=embodied,
+        provenance_contexts=[*contribution.provenance_contexts, *ranges.provenance_contexts],
+        new_technologies=tuple(r.tech for r in rows["technology"] if r.tech in contribution.new_technologies
+                               or r.data_id == result.structural_dataset.data_id), support_audit={},
+    )
 
 
 def _require_transport_parameter_support(contribution: TransportContribution) -> dict[str, Any]:
@@ -650,6 +744,47 @@ def insert_transport_contribution(
     contribution.support_audit.clear()
     contribution.support_audit.update(_require_transport_parameter_support(contribution))
     embodied_rows = [EmissionEmbodied.model_validate(row.model_dump()) for row in contribution.emission_embodied_rows]
+    from validation.insertion import replace_owned_ldv_rows, replace_owned_ldv_representation
+
+    charging = contribution.charging_profiles
+    ranges = contribution.range_representation
+    profile_rows = [CapacityFactorTech.model_validate(row.model_dump()) for row in charging.rows] if charging else []
+    share_rows = [LimitNewCapacityShare.model_validate(row.model_dump()) for row in ranges.share_rows] if ranges else []
+    profile_axes = []
+    if charging is not None:
+        from parameterization.ldv_charging_profiles import validate_charging_preparation
+
+        inherited_seasons = [TimeSeason(sequence=r[0],season=r[1],segment_fraction=r[2],notes=r[3])
+                             for r in connection.execute("SELECT sequence,season,segment_fraction,notes FROM time_season")]
+        inherited_times = [TimeOfDay(sequence=r[0],tod=r[1],hours=r[2],notes=r[3])
+                           for r in connection.execute("SELECT sequence,tod,hours,notes FROM time_of_day")]
+        validate_charging_preparation(charging, seasons=inherited_seasons or charging.seasons,
+                                      times_of_day=inherited_times or charging.times_of_day)
+        profile_axes = ([] if inherited_seasons else charging.seasons, [] if inherited_times else charging.times_of_day)
+    if ranges is not None:
+        from parameterization.ldv_ev_ranges import validate_range_preparation, validate_representative_preparation, _batch_fingerprint
+
+        validate_range_preparation(ranges)
+        if ranges.audit["mode"] == "representative_archetype":
+            if ranges.representative is None:
+                raise ValueError("Representative parameters have not been prepared and validated")
+            validate_representative_preparation(ranges.representative)
+            if _batch_fingerprint(_representative_batches(contribution)) != ranges.representative.fingerprint:
+                raise ValueError("Contribution differs from its validated representative parameters")
+            if contribution.labels_by_table != ranges.representative.labels or ranges.structural_dataset != ranges.representative.structural_dataset:
+                raise ValueError("Contribution differs from its validated representative structure")
+            contexts = {c.data_id: c for c in contribution.provenance_contexts}
+            if any(contexts.get(c.data_id) != c for c in ranges.representative.provenance_contexts):
+                raise ValueError("Contribution lost representative provenance/DQ lineage")
+    # Narrow replacement of this slice's owned rows permits profile/mode switches;
+    # shared axes, unrelated rows and transaction control remain caller-owned.
+    replacement = dict(ranges=ranges, batches=_representative_batches(contribution),
+        contexts=contribution.provenance_contexts,
+        internal_datasets=[d for d in (contribution.dataset, contribution.road_assumption_dataset,
+                                      contribution.efficiency_assumption_dataset) if d is not None])
+    replace_owned_ldv_representation(connection, **replacement, check_only=True)
+    replace_owned_ldv_rows(connection, charging=charging, ranges=ranges)
+    replace_owned_ldv_representation(connection, **replacement)
     insert_models(
         connection,
         [contribution.dataset],
@@ -665,6 +800,23 @@ def insert_transport_contribution(
             conflict=conflict,
         )
         inserted[rows[0].table_name()] = list(rows)
+    if charging is not None:
+        for axis_rows in profile_axes:
+            if axis_rows:
+                insert_models(connection, axis_rows, conflict="ignore_identical")
+                inserted[axis_rows[0].table_name()] = list(axis_rows)
+    if ranges is not None and ranges.structural_dataset is not None:
+        insert_models(connection, [ranges.structural_dataset], conflict="ignore_identical")
+        inserted.setdefault("data_set", []).append(ranges.structural_dataset)
+        group_labels = [TechGroupLabel(group_name=row.group_name) for row in ranges.group_rows]
+        if group_labels:
+            insert_models(connection,group_labels,conflict="ignore_identical")
+            inserted["tech_group_label"] = group_labels
+        for model, group_rows in ((TechGroup,ranges.group_rows),(TechGroupMember,ranges.member_rows)):
+            if group_rows:
+                validated = [model.model_validate(row.model_dump()) for row in group_rows]
+                insert_models(connection, validated, conflict="ignore_identical")
+                inserted[model.table_name()] = validated
     for rows in contribution.rows_by_table.values():
         insert_models(
             connection,
@@ -683,7 +835,7 @@ def insert_transport_contribution(
             or contribution.lifetime_survival_curve_rows or contribution.efficiency_rows
             or contribution.input_split_rows or contribution.cost_invest_rows
             or contribution.cost_fixed_rows
-            or contribution.cost_variable_rows or embodied_rows):
+            or contribution.cost_variable_rows or embodied_rows or profile_rows or share_rows):
         labels, datasets, sources = registry_rows(contribution.provenance_contexts)
         for registry_batch in (labels, datasets, sources):
             if registry_batch:
@@ -722,6 +874,10 @@ def insert_transport_contribution(
         if embodied_rows:
             insert_models(connection, embodied_rows, conflict=conflict)
             inserted["emission_embodied"] = embodied_rows
+        for batch in (profile_rows,share_rows):
+            if batch:
+                insert_models(connection,batch,conflict=conflict)
+                inserted[batch[0].table_name()] = batch
     if contribution.capacity_to_activity_rows:
         insert_models(connection, contribution.capacity_to_activity_rows, conflict=conflict)
         inserted["capacity_to_activity"] = list(contribution.capacity_to_activity_rows)
@@ -840,6 +996,8 @@ def bootstrap_database(
         "costs": contribution.cost_audit,
         "ev_chargers": contribution.charger_audit,
         "emission_embodied": contribution.emission_embodied_audit,
+        "charging_profiles": contribution.charging_profiles.audit if contribution.charging_profiles else {"enabled":False},
+        "BEV_PHEV_range_representation": contribution.range_representation.audit if contribution.range_representation else {"mode":"none"},
         "parameter_support": contribution.support_audit,
         "comparison": comparison_report,
         "preflight": preflight,

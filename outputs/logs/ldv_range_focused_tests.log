@@ -1,0 +1,61 @@
+........................F............................................... [ 81%]
+................                                                         [100%]
+================================== FAILURES ===================================
+______________ test_source_component_vocabularies_are_canonical _______________
+
+    def test_source_component_vocabularies_are_canonical() -> None:
+        bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+        architecture_modules = {
+            "ev_chargers",
+            "offroad_capex_opex",
+            "offroad_efficiencies",
+            "offroad_lifetimes",
+            "offroad_stocks_and_demands",
+            "road_aggregation",
+            "road_utilization",
+            "road_capex_opex",
+            "road_efficiencies",
+            "road_embodied_emissions",
+            "road_lifetimes_survival",
+            "road_stocks_and_demands",
+        }
+        forbidden_aliases = {
+            "benchmarking",
+            "fit-active_stock",
+            "on_road_effs_and_costs",
+            "on_road_variable_costs",
+            "road_vehicle_class_mapping",
+            "urban_transit",
+            "weightclass",
+        }
+        displaced_module_owners = {
+            "capex_opex",
+            "efficiencies",
+            "lifetimes_survival",
+            "stocks_and_demands",
+        }
+    
+        for source in bundle.sources.sources.values():
+            for component in source.components.values():
+                for field_name in (
+                    "inputs",
+                    "applies_to",
+                    "produces",
+                    "parameter_modules",
+                ):
+                    values = getattr(component, field_name)
+                    assert not forbidden_aliases.intersection(values)
+>                   assert all(re.fullmatch(r"[a-z][a-z0-9_]*", value) for value in values)
+E                   assert False
+E                    +  where False = all(<generator object test_source_component_vocabularies_are_canonical.<locals>.<genexpr> at 0x000001A6AC81CE40>)
+
+tests\test_config.py:129: AssertionError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\canoe_schema\sql.py:14
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\canoe_schema\sql.py:14: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_config.py::test_source_component_vocabularies_are_canonical
+1 failed, 87 passed, 1 warning in 24.96s

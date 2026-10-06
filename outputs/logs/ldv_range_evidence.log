@@ -1,0 +1,54 @@
+INFO:utils:Unannotated source/component DQ indicators use registry defaults: {'dq_cred': 5, 'dq_geog': 5, 'dq_struc': 5, 'dq_tech': 5, 'dq_time': 5}
+INFO:utils:Scenario period mapping: {'period_mode': 'prospective', 'base_year': 2023, 'existing': [2000, 2005, 2010, 2015, 2020], 'model': [2025, 2030, 2035, 2040, 2045], 'step': 5, 'base_year_role': 'latest observed year for stock, demand and historical calibration', 'historical_years_by_vintage': {'2000': [2000, 2001, 2002, 2003, 2004, 2005], '2005': [2006, 2007, 2008, 2009, 2010], '2010': [2011, 2012, 2013, 2014, 2015], '2015': [2016, 2017, 2018, 2019, 2020], '2020': [2021, 2022, 2023]}, 'empty_observation_vintages': [], 'latest_observed_vintage': 2020, 'efficiency_and_demand_years': {'2025': 2030, '2030': 2035, '2035': 2040, '2040': 2045, '2045': 2050}, 'cost_and_charger_years': {'2025': 2030, '2030': 2035, '2035': 2040, '2040': 2045, '2045': 2050}, 'end_of_horizon': 2050}
+INFO:fetching.epa_automotive_trends:EPA plug-in production: 678 detail rows -> 328 unique production records; removed 350 repeated totals; units=1442857
+INFO:fetching.fueleconomy_vehicles:FuelEconomy range extension: 289 rows, 0 unresolved ranges
+INFO:__main__:Range evidence accounts for 1442857 units; unresolved=70567; accepted=False
+WARNING:__main__:Range modes blocked by unresolved production; inspect C:\Users\rashi\ESM_databases\canoe-transportation\inputs\validation\ldv_range_representation\unresolved_production.csv
+{
+  "accepted_for_parameters": false,
+  "candidate_rows": 288,
+  "groups": [
+    {
+      "market_class": "car",
+      "powertrain": "BEV",
+      "production": 726617,
+      "unresolved_production": 2958,
+      "unresolved_share": 0.004070920443645001
+    },
+    {
+      "market_class": "car",
+      "powertrain": "PHEV",
+      "production": 74572,
+      "unresolved_production": 21894,
+      "unresolved_share": 0.2935954513758515
+    },
+    {
+      "market_class": "light_truck",
+      "powertrain": "BEV",
+      "production": 339824,
+      "unresolved_production": 3518,
+      "unresolved_share": 0.010352417722114976
+    },
+    {
+      "market_class": "light_truck",
+      "powertrain": "PHEV",
+      "production": 301844,
+      "unresolved_production": 42197,
+      "unresolved_share": 0.13979737877844184
+    }
+  ],
+  "join": "exact model year / EPA manufacturer code / model-type index / powertrain",
+  "market_proxy": "US regulatory car/light-truck production mapped to Canadian categories",
+  "production": 1442857,
+  "production_key": [
+    "MODEL_YEAR",
+    "Carline Mfr Code",
+    "MODEL_TYPE_INDEX",
+    "Compliance Category"
+  ],
+  "production_records": 328,
+  "range_metric": "EPA label electric/CD miles; differs from OMEGA on-road CD range",
+  "renormalized_unresolved_production": false,
+  "unresolved_production": 70567,
+  "unresolved_records": 40
+}
