@@ -1,0 +1,19 @@
+INFO:utils:Unannotated source/component DQ indicators use registry defaults: {'dq_cred': 5, 'dq_geog': 5, 'dq_struc': 5, 'dq_tech': 5, 'dq_time': 5}
+INFO:utils:Scenario period mapping: {'period_mode': 'prospective', 'base_year': 2023, 'existing': [2000, 2005, 2010, 2015, 2020], 'model': [2025, 2030, 2035, 2040, 2045], 'step': 5, 'base_year_role': 'latest observed year for stock, demand and historical calibration', 'historical_years_by_vintage': {'2000': [2000, 2001, 2002, 2003, 2004, 2005], '2005': [2006, 2007, 2008, 2009, 2010], '2010': [2011, 2012, 2013, 2014, 2015], '2015': [2016, 2017, 2018, 2019, 2020], '2020': [2021, 2022, 2023]}, 'empty_observation_vintages': [], 'latest_observed_vintage': 2020, 'efficiency_and_demand_years': {'2025': 2030, '2030': 2035, '2035': 2040, '2040': 2045, '2045': 2050}, 'cost_and_charger_years': {'2025': 2030, '2030': 2035, '2035': 2040, '2040': 2045, '2045': 2050}, 'end_of_horizon': 2050}
+INFO:__main__:OMEGA baseline: 78 source records, 855557 MY2022 sales, 0 invalid CD ranges
+INFO:__main__:Verified OMEGA extract matches the exact legacy notebook parent and market totals
+{
+  "extract_rows": 78,
+  "extract_sha256": "fb9b3ef747ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98",
+  "matches_compact_extract_bytes": true,
+  "matches_legacy_notebook_source": true,
+  "model_year": 2022,
+  "notebook_parent": "EPA_OMEGA_v2.5/2024_02_27_16_06_31_LDV_central_to2055_20240227/_Final/out/aggregated_vehicles.csv",
+  "notebook_sha256": "43417923a0e20c1a0a1dd4036f6f5bc91b386953f873567601f7a7270881a2db",
+  "parent_rows": 783,
+  "parent_sha256": "f8a384161e199f5921bfc57dae60831264ab5c0ec55e6110369ef0df5324272f",
+  "sales_by_powertrain": {
+    "BEV": 669951,
+    "PHEV": 185606
+  }
+}

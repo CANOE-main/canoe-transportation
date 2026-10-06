@@ -1,0 +1,36 @@
+.............F........                                                   [100%]
+================================== FAILURES ===================================
+_____ test_representative_mode_requires_supplied_parameter_prerequisites ______
+
+bundle = ConfigBundle(repo_root=WindowsPath('C:/Users/rashi/ESM_databases/canoe-transportation'), paths_path=WindowsPath('C:/Us...bodied_emissions=False, embodied_materials='conventional', row_note_overrides=ScenarioRowNoteOverrides(technology={})))
+evidence = RangeEvidence(records=   source_row_id  model_year  ...         bucket           status
+0              0        2022  ..._metric': 'onroad_charge_depleting_range_mi; the exact legacy notebook field', 'renormalized_unresolved_sales': False})
+
+    def test_representative_mode_requires_supplied_parameter_prerequisites(
+        bundle, evidence
+    ):
+        ranges = prepare_range_rows(with_mode(bundle, "representative_archetype"), evidence=evidence, publish=False)
+        assert not ranges.share_rows and not ranges.group_rows and not ranges.member_rows
+        from validation.schema_contract import TransportationTechnology
+        technologies = pd.read_csv(resolve_input_path(bundle, "template", "technology.csv"))
+        # Structure alone is insufficient; the pure API never rebuilds missing parameter layers.
+>       rows = [TransportationTechnology(tech=r.tech, category=r.category, sub_category=r.sub_category,
+            flag="p", data_id="internal") for r in technologies.itertuples()]
+E       pydantic_core._pydantic_core.ValidationError: 2 validation errors for TransportationTechnology
+E       category
+E         Input should be a valid string [type=string_type, input_value=nan, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+E       sub_category
+E         Input should be a valid string [type=string_type, input_value=nan, input_type=float]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_type
+
+tests\test_ldv_ev_ranges.py:233: ValidationError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\canoe_schema\sql.py:14
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\canoe_schema\sql.py:14: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_ldv_ev_ranges.py::test_representative_mode_requires_supplied_parameter_prerequisites
+1 failed, 21 passed, 1 deselected, 1 warning in 10.94s

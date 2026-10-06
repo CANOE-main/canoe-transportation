@@ -16,7 +16,7 @@ model parameters, provenance records, and a schema-validated database published 
 The standalone transport SQLite remains a first-class output for legacy parity, focused
 validation, and independent transport research. The backend also exposes contribution
 preparation and insertion for a caller-owned compatible database. Both paths use the same
-transport parameterization; an upstream-specific adapter remains planned. #to-review
+transport parameterization; an upstream-specific adapter remains planned.
 
 The tree below shows implemented files and the selected homes for planned parameterization
 families. Planned entries are labeled explicitly; they are ownership targets, not empty module
@@ -49,9 +49,11 @@ requirements.
 │   │   ├── statcan_tables.py                # Statistics Canada transport tables
 │   │   ├── cer_enerfuture.py                # CER energy future tables
 │   │   ├── nlr_atb_autonomie.py             # NLR ATB and ANL Autonomie inputs
-│   │   ├── greet_automation.py              # Explicit disposable-copy Excel generation of vehicle-cycle evidence #to-review
-│   │   ├── greet_vehicle_cycle.py           # Registered source contracts, extraction and offline bank validation #to-review
+│   │   ├── greet_automation.py              # Explicit disposable-copy Excel generation of vehicle-cycle evidence
+│   │   ├── greet_vehicle_cycle.py           # Registered source contracts, extraction and offline bank validation
 │   │   ├── fueleconomy_vehicles.py          # Opt-in FuelEconomy.gov class evidence
+│   │   ├── legacy_charging_profiles.py     # Immutable NHTS/TTS charging evidence and legacy hourly transformation #to-review
+│   │   ├── epa_omega_baseline.py           # Compact legacy OMEGA baseline sales/CD ranges and source identity validation #to-review
 │   │   ├── vpic_vehicle_types.py            # Opt-in vPIC vehicle-type evidence
 │   │   ├── vpic_model_years.py              # Opt-in vPIC make/model-year evidence
 │   │   └── assorted_sources.py              # Smaller registered source adapters
@@ -74,11 +76,11 @@ requirements.
 │   │   ├── road_capex_opex.py               # Road investment and operating costs
 │   │   ├── offroad_capex_opex.py            # Off-road investment and operating costs
 │   │   ├── currency.py                      # CER-backed currency and price-year conversion
+│   │   ├── road_embodied_emissions.py       # Road vehicle-cycle lifetime gases and regional aggregation
 │   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
-│   │   ├── ldv_charging_profiles.py         # Hourly LDEV charging demand profiles - #to-do
-│   │   ├── road_embodied_emissions.py       # Road vehicle-cycle lifetime gases and regional aggregation #to-review
-│   │   ├── market_constraints.py            # Market shares, policy limits, and SCC rules - #to-do
-│   │   └── adoption_constraints.py          # Adoption and growth constraints - #to-do
+│   │   ├── ldv_charging_profiles.py         # Shared LDV charger factors and inherited temporal projection #to-review
+│   │   ├── ldv_ev_ranges.py                 # OMEGA range shares, minimum constraints and parameter-specific representative LDV aggregation #to-review
+│   │   └── adoption_constraints.py          # Vehicle technology adoption constraints - #to-do
 │   ├── utils/
 │   │   ├── __init__.py                      # Typed config loading and artifact path resolution
 │   │   ├── files.py                         # Shared hashing and atomic CSV publication
@@ -138,8 +140,8 @@ coverage and keys, and publish configured artifacts without opening SQLite conne
 
 `build_transport.py` calls the same preparation functions for standalone and caller-owned
 assembly. `prepare_transport_contribution` gathers structural templates, capacity, demand,
-road utilization, lifetimes, efficiencies, costs, charger rows and the full embodied
-preparation (gas rows, provenance, source and aggregation audits) as selected; #to-review
+road utilization, lifetimes, efficiencies, costs, charger rows, charging profiles,
+range-share groups/constraints and embodied emissions as selected. #to-review
 `insert_transport_contribution` registers provenance and inserts validated rows into a
 compatible caller-owned connection. The standalone path also owns schema initialization,
 transactions, integrity checks, and atomic publication. Schema contracts and insertion

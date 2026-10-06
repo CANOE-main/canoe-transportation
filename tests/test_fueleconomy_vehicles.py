@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import hashlib
 import zipfile
 from pathlib import Path
@@ -45,6 +46,18 @@ def test_config_pins_official_four_column_vehicle_snapshot() -> None:
     assert request.required_columns == ("year", "make", "model", "VClass")
     assert request.expected_model_year_from == 1984
     assert request.expected_model_year_to == 2027
+
+
+def test_classification_consumers_do_not_require_the_range_extension() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    key = "fueleconomy_gov_vehicle_data"
+    source = bundle.sources.sources[key]
+    classification = source.model_copy(update={"components": {"vehicles": source.component("vehicles")}})
+    sources = bundle.sources.model_copy(update={"sources": {**bundle.sources.sources, key: classification}})
+    legacy = replace(bundle, sources=sources)
+    assert build_request(legacy).required_columns == ("year", "make", "model", "VClass")
+    with pytest.raises(ValueError, match="range_evidence component is not registered"):
+        build_request(legacy, "range_evidence")
 
 
 def test_request_rejects_nonofficial_download_url() -> None:

@@ -1,0 +1,76 @@
+{
+  "enabled": true,
+  "mode": "scenario",
+  "reference": ".pytest-tmp\\ldv_mvp_before\\outputs\\sqlite\\canoe_transport_legacy_reproduction.sqlite",
+  "absolute_tolerance": 0,
+  "relative_tolerance": 0,
+  "include_provenance": false,
+  "equivalent": false,
+  "changed_tables": [
+    "capacity_factor_tech",
+    "time_of_day",
+    "time_season"
+  ],
+  "status": "diagnostic; scenario differences do not imply failed integrity or feasibility"
+}
+{
+  "capacity_factor_tech": {
+    "comparable": true,
+    "key_columns": [
+      "region",
+      "season",
+      "tod",
+      "tech"
+    ],
+    "compared_columns": [
+      "region",
+      "season",
+      "tod",
+      "tech",
+      "factor"
+    ],
+    "candidate_rows": 175200,
+    "reference_rows": 0,
+    "shared_keys": 0,
+    "candidate_only_keys": 175200,
+    "reference_only_keys": 0,
+    "value_differences": 0,
+    "difference_examples": []
+  },
+  "time_of_day": {
+    "comparable": true,
+    "key_columns": [
+      "tod"
+    ],
+    "compared_columns": [
+      "sequence",
+      "tod",
+      "hours"
+    ],
+    "candidate_rows": 24,
+    "reference_rows": 0,
+    "shared_keys": 0,
+    "candidate_only_keys": 24,
+    "reference_only_keys": 0,
+    "value_differences": 0,
+    "difference_examples": []
+  },
+  "time_season": {
+    "comparable": true,
+    "key_columns": [
+      "season"
+    ],
+    "compared_columns": [
+      "sequence",
+      "season",
+      "segment_fraction"
+    ],
+    "candidate_rows": 365,
+    "reference_rows": 0,
+    "shared_keys": 0,
+    "candidate_only_keys": 365,
+    "reference_only_keys": 0,
+    "value_differences": 0,
+    "difference_examples": []
+  }
+}

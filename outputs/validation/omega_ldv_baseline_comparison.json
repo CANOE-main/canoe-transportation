@@ -1,0 +1,1979 @@
+{
+  "absolute_tolerance": 0,
+  "changed_tables": [],
+  "enabled": true,
+  "equivalent": true,
+  "include_provenance": false,
+  "mode": "scenario",
+  "reference": ".pytest-tmp\\omega_mvp_before\\outputs\\sqlite\\canoe_transport_legacy_reproduction.sqlite",
+  "relative_tolerance": 0,
+  "status": "diagnostic; scenario differences do not imply failed integrity or feasibility",
+  "tables": {
+    "capacity_credit": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "credit"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "capacity_factor_process": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "vintage",
+        "factor"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "capacity_factor_tech": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 175200,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "factor"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "season",
+        "tod",
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 175200,
+      "shared_keys": 175200,
+      "value_differences": 0
+    },
+    "capacity_to_activity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 970,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "c2a",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 970,
+      "shared_keys": 970,
+      "value_differences": 0
+    },
+    "commodity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 41,
+      "comparable": true,
+      "compared_columns": [
+        "name",
+        "flag",
+        "description",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "name"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 41,
+      "shared_keys": 41,
+      "value_differences": 0
+    },
+    "commodity_label": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 41,
+      "comparable": true,
+      "compared_columns": [
+        "commodity"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "commodity"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 41,
+      "shared_keys": 41,
+      "value_differences": 0
+    },
+    "commodity_type": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 8,
+      "comparable": true,
+      "compared_columns": [
+        "label",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "label"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 8,
+      "shared_keys": 8,
+      "value_differences": 0
+    },
+    "construction_input": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "value",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "cost_emission": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "emis_comm",
+        "cost",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "emis_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "cost_fixed": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 390,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "cost",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 390,
+      "shared_keys": 390,
+      "value_differences": 0
+    },
+    "cost_invest": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 4150,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "vintage",
+        "cost",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 4150,
+      "shared_keys": 4150,
+      "value_differences": 0
+    },
+    "cost_variable": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 14765,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "cost",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 14765,
+      "shared_keys": 14765,
+      "value_differences": 0
+    },
+    "data_quality_credibility": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 5,
+      "comparable": true,
+      "compared_columns": [
+        "dq_cred",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "dq_cred"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 5,
+      "shared_keys": 5,
+      "value_differences": 0
+    },
+    "data_quality_geography": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 5,
+      "comparable": true,
+      "compared_columns": [
+        "dq_geog",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "dq_geog"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 5,
+      "shared_keys": 5,
+      "value_differences": 0
+    },
+    "data_quality_structure": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 5,
+      "comparable": true,
+      "compared_columns": [
+        "dq_struc",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "dq_struc"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 5,
+      "shared_keys": 5,
+      "value_differences": 0
+    },
+    "data_quality_technology": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 5,
+      "comparable": true,
+      "compared_columns": [
+        "dq_tech",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "dq_tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 5,
+      "shared_keys": 5,
+      "value_differences": 0
+    },
+    "data_quality_time": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 5,
+      "comparable": true,
+      "compared_columns": [
+        "dq_time",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "dq_time"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 5,
+      "shared_keys": 5,
+      "value_differences": 0
+    },
+    "demand": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 700,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "commodity",
+        "demand",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "commodity"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 700,
+      "shared_keys": 700,
+      "value_differences": 0
+    },
+    "demand_specific_distribution": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "season",
+        "tod",
+        "demand_name",
+        "dsd"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "season",
+        "tod",
+        "demand_name"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "efficiency": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 5777,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "efficiency",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 5777,
+      "shared_keys": 5777,
+      "value_differences": 0
+    },
+    "efficiency_variable": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "season",
+        "tod",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "efficiency"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "season",
+        "tod",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "emission_activity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "emis_comm",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "activity",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "emis_comm",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "emission_embodied": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 6900,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "emis_comm",
+        "tech",
+        "vintage",
+        "value",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "emis_comm",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 6900,
+      "shared_keys": 6900,
+      "value_differences": 0
+    },
+    "emission_end_of_life": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "emis_comm",
+        "tech",
+        "vintage",
+        "value",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "emis_comm",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "end_of_life_output": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "vintage",
+        "output_comm",
+        "value",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "existing_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 1177,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "vintage",
+        "capacity",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 1177,
+      "shared_keys": 1177,
+      "value_differences": 0
+    },
+    "lifetime_process": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "vintage",
+        "lifetime",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "lifetime_survival_curve": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 9600,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "fraction"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 9600,
+      "shared_keys": 9600,
+      "value_differences": 0
+    },
+    "lifetime_tech": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 570,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "lifetime",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 570,
+      "shared_keys": 570,
+      "value_differences": 0
+    },
+    "limit_activity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech_or_group",
+        "operator",
+        "activity",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_activity_share": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "sub_group",
+        "super_group",
+        "operator",
+        "share"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "sub_group",
+        "super_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_annual_capacity_factor": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 4850,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "vintage",
+        "output_comm",
+        "operator",
+        "factor"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "vintage",
+        "output_comm",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 4850,
+      "shared_keys": 4850,
+      "value_differences": 0
+    },
+    "limit_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech_or_group",
+        "operator",
+        "capacity",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_capacity_share": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "sub_group",
+        "super_group",
+        "operator",
+        "share"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "sub_group",
+        "super_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_degrowth_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "operator",
+        "rate",
+        "seed",
+        "seed_units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_degrowth_new_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "operator",
+        "rate",
+        "seed",
+        "seed_units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_degrowth_new_capacity_delta": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "operator",
+        "rate",
+        "seed",
+        "seed_units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_emission": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "emis_comm",
+        "operator",
+        "value",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "emis_comm",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_growth_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "operator",
+        "rate",
+        "seed",
+        "seed_units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_growth_new_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "operator",
+        "rate",
+        "seed",
+        "seed_units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_growth_new_capacity_delta": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "operator",
+        "rate",
+        "seed",
+        "seed_units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_new_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "vintage",
+        "operator",
+        "new_cap",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "vintage",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_new_capacity_share": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "sub_group",
+        "super_group",
+        "vintage",
+        "operator",
+        "share"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "sub_group",
+        "super_group",
+        "vintage",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_resource": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech_or_group",
+        "operator",
+        "cum_act",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_seasonal_capacity_factor": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "season",
+        "tech_or_group",
+        "operator",
+        "factor"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "season",
+        "tech_or_group",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_storage_level_fraction": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "operator",
+        "fraction"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_tech_input_split": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 400,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "operator",
+        "proportion"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 400,
+      "shared_keys": 400,
+      "value_differences": 0
+    },
+    "limit_tech_input_split_annual": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "operator",
+        "proportion"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_tech_output_split": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech",
+        "output_comm",
+        "operator",
+        "proportion"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech",
+        "output_comm",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "limit_tech_output_split_annual": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech",
+        "output_comm",
+        "operator",
+        "proportion"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech",
+        "output_comm",
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "linked_tech": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "primary_region",
+        "primary_tech",
+        "emis_comm",
+        "driven_tech"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "primary_region",
+        "primary_tech",
+        "emis_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "loan_lifetime_process": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "vintage",
+        "lifetime",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "loan_rate": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "vintage",
+        "rate"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "metadata": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 2,
+      "comparable": true,
+      "compared_columns": [
+        "element",
+        "value"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "element"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 2,
+      "shared_keys": 2,
+      "value_differences": 0
+    },
+    "metadata_real": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 2,
+      "comparable": true,
+      "compared_columns": [
+        "element",
+        "value"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "element"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 2,
+      "shared_keys": 2,
+      "value_differences": 0
+    },
+    "myopic_efficiency": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "base_year",
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "efficiency",
+        "lifetime"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "operator": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 3,
+      "comparable": true,
+      "compared_columns": [
+        "operator"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "operator"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 3,
+      "shared_keys": 3,
+      "value_differences": 0
+    },
+    "output_built_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "tech",
+        "vintage",
+        "capacity",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "scenario",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_cost": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "tech",
+        "vintage",
+        "d_invest",
+        "d_fixed",
+        "d_var",
+        "d_emiss",
+        "invest",
+        "fixed",
+        "var",
+        "emiss",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "scenario",
+        "region",
+        "period",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_curtailment": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "season",
+        "tod",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "curtailment",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "scenario",
+        "period",
+        "season",
+        "tod",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_dual_variable": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "constraint_name",
+        "dual"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "constraint_name",
+        "scenario"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_emission": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "emis_comm",
+        "tech",
+        "vintage",
+        "emission",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "scenario",
+        "period",
+        "emis_comm",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_flow_in": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "season",
+        "tod",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "flow",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "scenario",
+        "period",
+        "season",
+        "tod",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_flow_out": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "season",
+        "tod",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "flow",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "scenario",
+        "period",
+        "season",
+        "tod",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_flow_out_summary": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "flow"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "scenario",
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_net_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "tech",
+        "vintage",
+        "capacity",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "scenario",
+        "period",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_objective": {
+      "candidate_only_rows": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "comparison_grain": "unkeyed exact row multiset",
+      "reference_only_rows": 0,
+      "reference_rows": 0
+    },
+    "output_retired_capacity": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "tech",
+        "vintage",
+        "cap_eol",
+        "cap_early",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "scenario",
+        "period",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "output_storage_level": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "scenario",
+        "region",
+        "sector",
+        "period",
+        "season",
+        "tod",
+        "tech",
+        "vintage",
+        "level",
+        "units"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "scenario",
+        "region",
+        "period",
+        "season",
+        "tod",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "planning_reserve_margin": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "margin"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "ramp_down_hourly": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "rate"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "ramp_up_hourly": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "rate"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "region": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 10,
+      "comparable": true,
+      "compared_columns": [
+        "region"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 10,
+      "shared_keys": 10,
+      "value_differences": 0
+    },
+    "reserve_capacity_derate": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "season",
+        "tech",
+        "vintage",
+        "factor"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "season",
+        "tech",
+        "vintage"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "rps_requirement": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "period",
+        "tech_group",
+        "requirement"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "period",
+        "tech_group"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "sector_label": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "sector"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "sector"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "storage_duration": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "region",
+        "tech",
+        "duration"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "region",
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "tech_group": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "group_name"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "group_name"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "tech_group_label": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "group_name"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "group_name"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "tech_group_member": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "group_name",
+        "tech"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "group_name",
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    },
+    "technology": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 134,
+      "comparable": true,
+      "compared_columns": [
+        "tech",
+        "flag",
+        "sector",
+        "category",
+        "sub_category",
+        "unlim_cap",
+        "annual",
+        "reserve",
+        "curtail",
+        "retire",
+        "flex",
+        "exchange",
+        "seas_stor",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 134,
+      "shared_keys": 134,
+      "value_differences": 0
+    },
+    "technology_label": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 134,
+      "comparable": true,
+      "compared_columns": [
+        "tech"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "tech"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 134,
+      "shared_keys": 134,
+      "value_differences": 0
+    },
+    "technology_type": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 3,
+      "comparable": true,
+      "compared_columns": [
+        "label",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "label"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 3,
+      "shared_keys": 3,
+      "value_differences": 0
+    },
+    "time_of_day": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 24,
+      "comparable": true,
+      "compared_columns": [
+        "sequence",
+        "tod",
+        "hours"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "tod"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 24,
+      "shared_keys": 24,
+      "value_differences": 0
+    },
+    "time_period": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 11,
+      "comparable": true,
+      "compared_columns": [
+        "sequence",
+        "period",
+        "flag"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "period"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 11,
+      "shared_keys": 11,
+      "value_differences": 0
+    },
+    "time_period_type": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 2,
+      "comparable": true,
+      "compared_columns": [
+        "label",
+        "description"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "label"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 2,
+      "shared_keys": 2,
+      "value_differences": 0
+    },
+    "time_season": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 365,
+      "comparable": true,
+      "compared_columns": [
+        "sequence",
+        "season",
+        "segment_fraction"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "season"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 365,
+      "shared_keys": 365,
+      "value_differences": 0
+    },
+    "time_season_sequential": {
+      "candidate_only_keys": 0,
+      "candidate_rows": 0,
+      "comparable": true,
+      "compared_columns": [
+        "sequence",
+        "seas_seq",
+        "season",
+        "segment_fraction"
+      ],
+      "difference_examples": [],
+      "key_columns": [
+        "seas_seq"
+      ],
+      "reference_only_keys": 0,
+      "reference_rows": 0,
+      "shared_keys": 0,
+      "value_differences": 0
+    }
+  }
+}

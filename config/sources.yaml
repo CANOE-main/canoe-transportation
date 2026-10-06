@@ -1391,7 +1391,9 @@ sources:
       The public download is a moving file. Review its Last-Modified header, byte count,
       SHA-256, archive member, selected columns, model-year bounds, and complete VClass
       vocabulary together before replacing the pinned cache. Only year, make, model,
-      and VClass may be consumed.
+      and VClass are the classification contract. The separately registered range
+      component authorizes additional fields from the same frozen cache; never refresh
+      or widen classification implicitly.
     adapter:
       access:
         method: direct_download
@@ -1416,6 +1418,21 @@ sources:
           expected_model_year_to: 2027
           required_columns: [year, make, model, VClass]
           required_non_null_columns: [year, make, model, VClass]
+
+      range_evidence:
+        label: "FuelEconomy.gov MY2024 BEV/PHEV range and EPA model-type keys (2026-06-16)"
+        short_name: fueleconomy_cd_range_evidence
+        inputs: [vehicle_id, model_year, manufacturer_code, model_type_index, powertrain, range, secondary_fuel_range]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [charge_depleting_range_evidence]
+        parameter_modules: []
+        units: "Miles; range for BEV, rangeA for PHEV with fuelType2=Electricity (CD mode, including blended operation)."
+        validation_rule: "Validate the existing pinned vehicles ZIP; retain native ranges, fuel labels and phevBlended; reject nonpositive/unparseable range evidence rather than use PHEV total range."
+        notes: "EPA model-type key join requires independent production accounting. Range rows alone never supply production weights."
+        adapter:
+          cache_component: vehicles
+          required_columns: [year, make, model, VClass, id, mfrCode, engId, atvType, fuelType1, fuelType2, range, rangeA, phevBlended]
+          required_non_null_columns: [year, make, model, VClass, id, engId]
 
   reviewed_mto_make_model_evidence:
     title: "Reviewed Ontario MTO make/model evidence"
@@ -1728,3 +1745,127 @@ sources:
           unique_key: [category, sub_category, parameter, period]
           source_selector: "IEA. (2019). The Future of Hydrogen. https://www.iea.org/reports/the-future-of-hydrogen"
           expected_rows: 1
+
+  legacy_charging_profiles:
+    title: "Legacy Ontario RAMP-mobility LDV charging profiles — legacy, pending update"
+    status: active
+    source_type: external_model
+    file_type: csv
+    version: "Frozen Ontario 2018 v5 chargers AER-shares"
+    citation: "Legacy CANOE Ontario RAMP-mobility simulations with NHTS 2022 or TTS 2016 travel inputs, Ontario 2018 weather and inherited fleet/range composition; https://github.com/RAMP-project/RAMP-mobility"
+    units: "Aggregate charging power (kW), minute samples; hourly mean kW / annual hourly peak kW gives a dimensionless factor."
+    database_note: ""
+    data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
+    validation_rule: "Verify immutable hashes/bytes, UTC minute index, nonnegative finite complete Toronto-year samples and hourly energy/peak conservation."
+    refresh_notes: "Legacy, pending update. Do not rerun simulations or rewrite registered files. Range composition is already embedded; never multiply by new range shares. Upstream post_process.py (blob 6669c3d6633f5938b50a463d8b0f7f385491cf8a) plots charging output in kW and resamples by hourly mean; the local plotting notebook's kWh label is inconsistent with power samples. Native integrals use kW*hours; no absolute fleet rescaling."
+    components:
+      nhts:
+        label: "Ontario NHTS 2022 travel / 2018 weather charging shape"
+        short_name: legacy_ldv_charging_nhts
+        inputs: [timestamp_utc, aggregate_charging_demand]
+        applies_to: [ldv_charging]
+        produces: [capacity_factor_tech]
+        parameter_modules: [ldv_charging_profiles]
+        notes: "BEV fleet shape; AER shares and charger mix embedded. Ontario shape proxies every selected region and both shared LDV chargers, including PHEV/motorcycle charging."
+        adapter:
+          registered_path: "legacy_backend/charging_profiles[deprecated]/ramp_mobility/results/ON-2022NHTS_2018_v5_chargers_AER-shares.csv"
+          expected_sha256: a5e4f924d72c409f38e29c0b84d20390b5b1a180ae63956bf4f902a59a78aac1
+          expected_bytes: 23771774
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+      tts:
+        label: "Ontario TTS 2016 weekday travel / 2018 weather charging shape"
+        short_name: legacy_ldv_charging_tts
+        inputs: [timestamp_utc, aggregate_charging_demand]
+        applies_to: [ldv_charging]
+        produces: [capacity_factor_tech]
+        parameter_modules: [ldv_charging_profiles]
+        notes: "Weekday-only TTS simulation; inherited AER shares and charger mix. No weekend reconstruction or new-market reweighting."
+        adapter:
+          registered_path: "legacy_backend/charging_profiles[deprecated]/ramp_mobility/results/ON-2016TTS_no-we_2018_v5_chargers_AER-shares.csv"
+          expected_sha256: 649175f04bc52af0c9920a08adc03934edc42aa6d876867d884dbd0575e3b32a
+          expected_bytes: 23829116
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+
+  epa_automotive_trends:
+    title: "EPA Automotive Trends final MY2024 vehicle production data"
+    status: inactive
+    required: false
+    source_type: upstream_download
+    file_type: csv
+    version: "2025 report / final MY2024 / March 10 2026 files"
+    citation: "US Environmental Protection Agency. 2025 EPA Automotive Trends Report. Final model year 2024 vehicle-specific data; https://www.epa.gov/automotive-trends/explore-automotive-trends-data"
+    units: "Actual model-year production units delivered for sale in the US; repeated totals are not additive."
+    database_note: ""
+    data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
+    validation_rule: "Validate pinned hashes/bytes and required columns; deduplicate consistent production at year/manufacturer/model-type/regulatory-class grain, rejecting conflicting repeated totals."
+    refresh_notes: "Retained T32 identity and pinned files as historical join diagnostics. The unresolved MY2024 FuelEconomy join is not parameter evidence; the accepted range source is the legacy OMEGA baseline."
+    components:
+      production:
+        label: "Final MY2024 fuel economy and technology data"
+        short_name: epa_my2024_model_type_production
+        inputs: [model_year, manufacturer_code, model_type_index, regulatory_class, actual_production]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [model_type_production_evidence]
+        parameter_modules: []
+        adapter:
+          url: "https://www.epa.gov/system/files/other-files/2026-05/model-year-2024-fuel-economy-and-technology-data.csv"
+          cache_path: "epa_automotive_trends/model-year-2024-fuel-economy-and-technology-data.csv"
+          expected_sha256: 7064184ae464d2ff6b1bfdaa27a1c95b40ce9eaf7bfcb07e92a866e74a68cf10
+          expected_bytes: 1870791
+          model_year: 2024
+          required_columns: [MODEL_YEAR, Carline Mfr Code, MODEL_TYPE_INDEX, Compliance Category, CARLINE_NAME, FUEL_USAGE, OFF_BOARD_CHARGE_CAPABLE_YN, Model_Type_Actual_Prod_Vol, MODEL_TYPE_DRIVING_RANGE]
+      footprint_review:
+        label: "Final MY2024 footprint data (grain review only)"
+        short_name: epa_my2024_footprint_review
+        required: false
+        inputs: [footprint_index, final_production]
+        produces: [production_grain_review]
+        parameter_modules: []
+        notes: "Footprint production cannot be allocated to electric model types using catalogue row counts. Not a parameter weight source."
+        adapter:
+          url: "https://www.epa.gov/system/files/other-files/2026-05/model-year-2024-footprint-data.csv"
+          cache_path: "epa_automotive_trends/model-year-2024-footprint-data.csv"
+          expected_sha256: cd4f6a2a28451fae8d2db314a4c688e6d811ade924178d000ac281602ca62375
+          expected_bytes: 453596
+          model_year: 2024
+          required_columns: [MODEL_YEAR, FOOTPRINT_MFR_CD, FTPT_CARLINE_CD, FOOTPRINT_INDEX, FINAL_MY_CAFE_PROD_UNIT]
+
+  epa_omega_baseline:
+    title: "EPA OMEGA v2.5 LDV central baseline plug-in range/sales extract — legacy notebook market"
+    status: active
+    source_type: external_model
+    file_type: csv
+    version: "OMEGA v2.5.0 / LDV central / _Final aggregated_vehicles / 2024-02-27 snapshot"
+    citation: "US EPA OMEGA model v2.5.0, LDV central MY2022 baseline used by LDV_AER_market_shares.ipynb; https://github.com/USEPA/EPA_OMEGA_Model; https://omega2.readthedocs.io/en/latest/"
+    units: "Model-year 2022 sales counts; on-road charge-depleting miles; battery kWh. Model evidence is not final MY2024 actual production."
+    database_note: ""
+    data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
+    validation_rule: "Verify pinned compact bytes/rows, unique original source-row IDs, complete class/powertrain coverage, nonnegative integer sales and on-road CD range; prove exact parent/notebook identity independently; conserve all sales in within-group buckets. Registry DQ defaults apply where unreviewed."
+    refresh_notes: "Accepted legacy market snapshot; no refresh or OMEGA rerun. Routine ETL reads only the compact extract. Optional identity validation reads the exact notebook and 510 KB parent, not the full archive. No Trends/FuelEconomy fallback."
+    components:
+      baseline_sales_ranges:
+        label: "Compact 2022 BEV/PHEV baseline sales and on-road CD ranges"
+        short_name: omega_ldv_baseline_sales_ranges
+        inputs: [source_row_id, model_year, powertrain_type, onroad_charge_depleting_range_mi, sales]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [range_sales_evidence]
+        notes: "Legacy OMEGA MY2022 baseline sales and on-road charge-depleting ranges. US car/light-truck shares proxy Canadian LDV categories, held constant across model vintages. Charging profiles retain their inherited fleet/range composition."
+        parameter_modules: [ldv_ev_ranges]
+        adapter:
+          extract_path: "inputs/0_external_models/epa_omega_ldv_range_extract/ldv_central_2022_plug_in.csv"
+          model_year: 2022
+          expected_sales_by_powertrain: {BEV: 669951, PHEV: 185606}
+          parent_path: "legacy_backend/model_constraints[deprecated]/bev_phev_aer_market_shares/EPA_OMEGA_v2.5/2024_02_27_16_06_31_LDV_central_to2055_20240227/_Final/out/aggregated_vehicles.csv"
+          parent_sha256: f8a384161e199f5921bfc57dae60831264ab5c0ec55e6110369ef0df5324272f
+          parent_bytes: 510055
+          notebook_path: "legacy_backend/model_constraints[deprecated]/bev_phev_aer_market_shares/LDV_AER_market_shares.ipynb"
+          notebook_sha256: 43417923a0e20c1a0a1dd4036f6f5bc91b386953f873567601f7a7270881a2db
+          expected_sha256: fb9b3ef747ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98
+          expected_bytes: 13977
+          expected_rows: 78

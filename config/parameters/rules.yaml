@@ -12,6 +12,24 @@ version: 2
 
 # SOURCE NORMALIZATION: source-native selectors, labels, and audit outputs.
 fetching:
+  legacy_charging_profiles:
+    value_column: Charging Profile
+    hourly_operation: mean
+    normalization: annual_hourly_peak
+    label_basis: elapsed_hours_from_local_year_start
+    precision: 10
+    hourly_file: "{profile}_hourly.csv"
+    manifest_file: "{profile}_manifest.json"
+  epa_omega_baseline:
+    # Exact baseline source read by LDV_AER_market_shares.ipynb; no model rerun.
+    model_year: 2022
+    powertrains: [BEV, PHEV]
+    columns: ["Unnamed: 0", manufacturer_id, vehicle_name, model_year, context_size_class, reg_class_id, powertrain_type, onroad_charge_depleting_range_mi, battery_kwh, sales]
+    rename: {"Unnamed: 0": source_row_id}
+    regulatory_class_map: {car: car, truck: light_truck}
+    normalized_file: omega_baseline_plug_in.csv
+    manifest_file: omega_baseline_manifest.json
+    identity_file: legacy_notebook_identity.json
   greet_vehicle_cycle:
     files:
       normalized: greet_vehicle_cycle_gases.csv
@@ -130,6 +148,13 @@ fetching:
     output_file: fueleconomy_vehicle_class_evidence.csv
     manifest_file: manifest.csv
     warnings_file: warnings.log
+    range_output_file: fueleconomy_my2024_range_evidence.csv
+    range_manifest_file: range_manifest.csv
+    range_model_year: 2024
+    range_powertrain_map: {EV: BEV, Plug-in Hybrid: PHEV}
+    bev_range_column: range
+    phev_range_column: rangeA
+    electricity_label: Electricity
     selected_columns: [year, make, model, VClass]
     output_columns:
       year: Model year
@@ -1830,6 +1855,66 @@ parameterization:
       currency_audit: currency_harmonization.csv
       integrity: cost_integrity.json
 
+  ldv_charging_profiles:
+    factor_units: fraction
+    applicability: "Ontario BEV charging shape used unchanged on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted."
+    technology_category: charger
+    technology_sub_category: ldv
+    target_technologies: [T_LDV_CHRG_EX, T_LDV_CHRG_N]
+    factor_file: capacity_factor_tech.csv
+    time_season_file: time_season.csv
+    time_of_day_file: time_of_day.csv
+    mapping_file: hourly_mapping.csv
+    validation_file: integrity.json
+    conservation_tolerance: 1.0e-8
+  ldv_ev_ranges:
+    range_units: miles
+    share_units: fraction
+    # Recovered from LDV_AER_market_shares.ipynb, not efficiency-rating bins.
+    buckets:
+      BEV:
+        - {sub_category: bev_150_miles, upper: 150, upper_inclusive: true}
+        - {sub_category: bev_200_miles, upper: 250, upper_inclusive: true}
+        - {sub_category: bev_300_miles, upper: 350, upper_inclusive: true}
+        - {sub_category: bev_400_miles, upper: null, upper_inclusive: true}
+      PHEV:
+        - {sub_category: phev_35_miles, upper: 35, upper_inclusive: false}
+        - {sub_category: phev_50_miles, upper: null, upper_inclusive: false}
+    category_to_market: {cars: car, passenger_light_trucks: light_truck, freight_light_trucks: light_truck}
+    new_suffix: _N
+    constraint_operator: ge  # MinNewCapacityShare!C23:F40; never silently use equality.
+    group_prefix: canoe_transport_range
+    share_sum_tolerance: 1.0e-12
+    representative:
+      families:
+        cars: {BEV: T_LDV_C_BEV_REP_N, PHEV: T_LDV_C_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_C_REP, phev_commodity: T_gsl_elc_phev_c_rep}
+        passenger_light_trucks: {BEV: T_LDV_LTP_BEV_REP_N, PHEV: T_LDV_LTP_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_LTP_REP, phev_commodity: T_gsl_elc_phev_ltp_rep}
+        freight_light_trucks: {BEV: T_LDV_LTF_BEV_REP_N, PHEV: T_LDV_LTF_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_LTF_REP, phev_commodity: T_gsl_elc_phev_ltf_rep}
+      efficiency: sales_weighted_consumption  # Harmonic efficiency; conserves PJ per service.
+      costs: sales_weighted_same_capacity_and_service_units
+      capacity_to_activity: require_identical
+      utilization: require_identical
+      fixed_lifetime: require_identical
+      survival: sales_weighted_surviving_fraction
+      survival_composition: require_identical_range_curves
+      embodied: sales_weighted_lifetime_mass
+      # User accepted a horizon mean, matching the existing NLR endpoint averaging.
+      # Component fuel use by vintage is approximate; total PJ/service is conserved.
+      phev_split: mean_vintage_consumption_weighted_energy_share
+      equality_tolerance: 1.0e-12
+      fuel_commodity: T_gsl
+      electricity_commodity: T_elc_ldv_chrg
+      parameter_file: representative_parameters.json
+      audit_file: representative_conservation.json
+    files:
+      records: sales_range_records.csv
+      unresolved: unresolved_sales.csv
+      buckets: sales_bucket_totals.csv
+      integrity: integrity.json
+      constraints: limit_new_capacity_share.csv
+      groups: tech_group.csv
+      members: tech_group_member.csv
+      decisions: representative_decisions.json
   ev_chargers:
     transformation_version: "1"
     manual_file: charger_parameters.csv

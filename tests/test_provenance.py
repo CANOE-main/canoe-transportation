@@ -57,6 +57,9 @@ def test_yaml_order_pins_current_source_mapping(bundle) -> None:
         "icct_ev_charge_2024": "T28",
         "icct_hdv_charge_2024": "T29",
         "iea_future_of_hydrogen_2019": "T30",
+        "legacy_charging_profiles": "T31",
+        "epa_automotive_trends": "T32",
+        "epa_omega_baseline": "T33",
     }
 
 

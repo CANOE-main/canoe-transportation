@@ -1,0 +1,8 @@
+..............                                                           [100%]
+============================== warnings summary ===============================
+tests/test_workflow.py::test_workflow_sequences_sources_reuses_outputs_and_rebuilds_missing_table
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\canoe_schema\sql.py:14: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+14 passed, 1 warning in 213.60s (0:03:33)

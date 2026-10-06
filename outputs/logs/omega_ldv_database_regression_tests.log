@@ -1,0 +1,55 @@
+...F........................                                             [100%]
+================================== FAILURES ===================================
+_________ test_transport_contribution_uses_a_caller_owned_transaction _________
+
+bundle = ConfigBundle(repo_root=WindowsPath('C:/Users/rashi/ESM_databases/canoe-transportation'), paths_path=WindowsPath('C:/Us...mbodied_emissions=True, embodied_materials='conventional', row_note_overrides=ScenarioRowNoteOverrides(technology={})))
+tmp_path = WindowsPath('C:/Users/rashi/ESM_databases/canoe-transportation/.pytest-tmp/52136/pytest-of-rashi/pytest-0/test_transport_contribution_us0')
+
+    def test_transport_contribution_uses_a_caller_owned_transaction(
+        bundle, tmp_path: Path
+    ) -> None:
+        database = tmp_path / "caller-owned.sqlite"
+        connection = sqlite3.connect(database, isolation_level=None)
+        create_v4_schema(connection)
+    
+        contribution = prepare_transport_contribution(
+            connection,
+            bundle=bundle,
+            template_dir=TEMPLATES,
+            include_existing_capacity=False,
+            include_demand=False,
+            include_road_utilization=False,
+            include_lifetimes=False,
+            include_efficiencies=False,
+            include_costs=False,
+        )
+    
+        assert connection.execute("SELECT COUNT(*) FROM data_set").fetchone()[0] == 0
+        assert connection.execute("SELECT COUNT(*) FROM technology").fetchone()[0] == 0
+    
+        connection.execute("BEGIN IMMEDIATE")
+>       inserted = insert_transport_contribution(connection, contribution)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_database_bootstrap.py:219: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\build_transport.py:875: in insert_transport_contribution
+    insert_models(connection, embodied_rows, conflict=conflict)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+connection = <sqlite3.Connection object at 0x000002C3EE7B48B0>
+rows = [EmissionEmbodied(region='AB', emis_comm='ch4', tech='T_HDV_T_BEV_N', vintage=2025, value=370.0712730681752, units='t/...ualityTimeLevel.UNACCEPTABLE: 5>, data_id='road-embodied-emissions-heavy-trucks-ab:composite:3:6db5fe315947ee5d'), ...]
+
+>   ???
+E   sqlite3.IntegrityError: FOREIGN KEY constraint failed
+
+src\validation\insertion.py:633: IntegrityError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\canoe_schema\sql.py:14
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\canoe_schema\sql.py:14: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_database_bootstrap.py::test_transport_contribution_uses_a_caller_owned_transaction
+1 failed, 27 passed, 1 warning in 1200.34s (0:20:00)

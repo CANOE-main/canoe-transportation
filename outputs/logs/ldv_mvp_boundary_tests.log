@@ -1,0 +1,58 @@
+F.........................                                               [100%]
+================================== FAILURES ===================================
+_________________ test_yaml_order_pins_current_source_mapping _________________
+
+bundle = ConfigBundle(repo_root=WindowsPath('C:/Users/rashi/ESM_databases/canoe-transportation'), paths_path=WindowsPath('C:/Us...mbodied_emissions=True, embodied_materials='conventional', row_note_overrides=ScenarioRowNoteOverrides(technology={})))
+
+    def test_yaml_order_pins_current_source_mapping(bundle) -> None:
+>       assert source_id_mapping(bundle.sources) == {
+            "nrcan_ceud_transport_provincial": "T01",
+            "nrcan_ceud_transport_national": "T02",
+            "ontario_ministry_transport_vehicle_population": "T03",
+            "statcan_transport_tables": "T04",
+            "cer_canadas_energy_future": "T05",
+            "nlr_atb_transportation_2024": "T06",
+            "anl_autonomie_bean_2022": "T07",
+            "nrcan_fuel_consumption_ratings": "T08",
+            "nhtsa_cafe_2024_ldv_survival": "T09",
+            "eia_nems_hd_truck_scrappage": "T10",
+            "jgcri_gcam_motorcycle_inputs": "T11",
+            "epri_us_regen_2025_transportation": "T12",
+            "faa_economic_values_2024": "T13",
+            "wards_intelligence_2022_sales_shares": "T14",
+            "emrg_sfu_cims_model": "T15",
+            "open_energy_outlook_2022": "T16",
+            "argonne_rd_greet_2025_rev1": "T17",
+            "epa_moves4_population_activity_2023": "T18",
+            "canada_energy_policy_simulator_3_4_7": "T19",
+            "argonne_hdsam_4_5": "T20",
+            "fueleconomy_gov_vehicle_data": "T21",
+            "reviewed_mto_make_model_evidence": "T22",
+            "nhtsa_vpic_vehicle_models": "T23",
+            "dunsky_ev_charging_infrastructure_2024": "T24",
+            "transport_canada_ev_dashboard": "T25",
+            "pollution_probe_ev_charging_survey_2024": "T26",
+            "nlr_alternative_fueling_infrastructure_2024": "T27",
+            "icct_ev_charge_2024": "T28",
+            "icct_hdv_charge_2024": "T29",
+            "iea_future_of_hydrogen_2019": "T30",
+        }
+E       AssertionError: assert {'anl_autonom...': 'T19', ...} == {'anl_autonom...': 'T19', ...}
+E         
+E         Omitting 30 identical items, use -vv to show
+E         Left contains 3 more items:
+E         {'epa_automotive_trends': 'T32',
+E          'epa_omega_ldv_range_extract': 'T33',
+E          'legacy_charging_profiles': 'T31'}
+E         Use -v to get more diff
+
+tests\test_provenance.py:29: AssertionError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\canoe_schema\sql.py:14
+  C:\Users\rashi\ESM_databases\canoe-transportation\.venv\Lib\site-packages\canoe_schema\sql.py:14: DeprecationWarning: 'importlib.abc.Traversable' is deprecated and slated for removal in Python 3.14
+    from importlib.abc import Traversable
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_provenance.py::test_yaml_order_pins_current_source_mapping
+1 failed, 25 passed, 1 warning in 27.56s

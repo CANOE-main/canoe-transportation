@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import sqlite3
+import logging
 from collections.abc import Mapping, Sequence
 from math import isfinite
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, TypeVar, TYPE_CHECKING
 
 from canoe_schema import CanoeBaseModel
 from pydantic import TypeAdapter
@@ -15,6 +16,335 @@ from validation.provenance import ResolvedProvenance
 
 ModelT = TypeVar("ModelT", bound=CanoeBaseModel)
 ConflictPolicy = Literal["error", "ignore_identical"]
+
+if TYPE_CHECKING:
+    from parameterization.ldv_charging_profiles import ChargingPreparation
+    from parameterization.ldv_ev_ranges import RangePreparation
+
+
+def replace_owned_ldv_rows(
+    connection: sqlite3.Connection,
+    *,
+    charging: ChargingPreparation | None,
+    ranges: RangePreparation | None,
+) -> None:
+    """Replace only this slice's registered rows in caller-selected regions.
+
+    Called inside the caller's transaction. No schema creation, commits, shared-axis
+    rewrites or deletion of other sectors' datasets. Conflicts are checked before
+    deleting this slice's prior rows. Dataset identity plus transformation establish
+    ownership, rather than technology/region names alone.
+    """
+    specifications = []
+    if charging is not None:
+        specifications.append(
+            (
+                "capacity_factor_tech",
+                charging.regions,
+                charging.rows,
+                "tech",
+                charging.audit["target_technologies"],
+                "legacy-charging-profiles-%",
+                "Legacy hourly charging mean/peak and explicit temporal projection v1;%",
+            )
+        )
+    if ranges is not None:
+        specifications.append(
+            (
+                "limit_new_capacity_share",
+                ranges.regions,
+                ranges.share_rows,
+                "super_group",
+                ranges.audit["scope_super_groups"],
+                "ldv-range-minimum-new-capacity-shares:%",
+                "Within-class/powertrain minimum new capacity shares v1",
+            )
+        )
+    pending = []
+    for (
+        table,
+        regions,
+        rows,
+        scope_column,
+        scope_values,
+        identifier,
+        description,
+    ) in specifications:
+        owned = {
+            r[0]
+            for r in connection.execute(
+                "SELECT data_id FROM data_set WHERE data_id LIKE ? AND description LIKE ?",
+                (identifier, description),
+            )
+        }
+        for row in rows:
+            payload = row.model_dump()
+            business_key = [
+                column
+                for column in row.__primary_key__
+                if column not in {"data_id", "operator"}
+            ]
+            clause = " AND ".join(f'"{column}"=?' for column in business_key)
+            existing = connection.execute(
+                f'SELECT data_id FROM "{table}" WHERE {clause}',
+                tuple(payload[c] for c in business_key),
+            ).fetchall()
+            if any(value[0] not in owned for value in existing):
+                raise ValueError(
+                    f"Refusing to replace unrelated/shared {table} row for {tuple(payload[c] for c in business_key)}"
+                )
+        pending.append((table, regions, owned, scope_column, scope_values))
+    for table, regions, owned, scope_column, scope_values in pending:
+        removed = 0
+        for region in regions:
+            for data_id in owned:
+                for scope_value in scope_values:
+                    removed += connection.execute(
+                        f'DELETE FROM "{table}" WHERE region=? AND data_id=? AND "{scope_column}"=?',
+                        (region, data_id, scope_value),
+                    ).rowcount
+        logging.getLogger(__name__).info(
+            "Scoped %s replacement removed %s owned rows in %s", table, removed, regions
+        )
+    if ranges is None:
+        return
+    # Keep groups referenced by any caller table, or containing caller-owned members.
+    candidates = connection.execute(
+        "SELECT group_name, data_id FROM tech_group WHERE data_id IN "
+        "(SELECT data_id FROM data_set WHERE data_id LIKE 'canoe-transport-range-groups:%' "
+        "AND label='Internal transport range group structure')"
+    ).fetchall()
+    tables = [
+        r[0]
+        for r in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    ]
+    references = [
+        (table, r[3])
+        for table in tables
+        if table not in {"tech_group", "tech_group_member"}
+        for r in connection.execute(f'PRAGMA foreign_key_list("{table}")')
+        if r[2] == "tech_group_label"
+    ]
+    # v4 share table does not declare FK links for these logical group references.
+    references.extend(
+        [
+            ("limit_new_capacity_share", "sub_group"),
+            ("limit_new_capacity_share", "super_group"),
+        ]
+    )
+    for group, data_id in candidates:
+        if group not in ranges.audit["scope_group_names"]:
+            continue
+        used = any(
+            connection.execute(
+                f'SELECT 1 FROM "{table}" WHERE "{column}"=? LIMIT 1', (group,)
+            ).fetchone()
+            for table, column in references
+        )
+        shared_member = connection.execute(
+            "SELECT 1 FROM tech_group_member WHERE group_name=? AND data_id<>? LIMIT 1",
+            (group, data_id),
+        ).fetchone()
+        if not used and not shared_member:
+            connection.execute(
+                "DELETE FROM tech_group_member WHERE group_name=? AND data_id=?",
+                (group, data_id),
+            )
+            connection.execute(
+                "DELETE FROM tech_group WHERE group_name=? AND data_id=?",
+                (group, data_id),
+            )
+            if not connection.execute(
+                "SELECT 1 FROM tech_group WHERE group_name=?", (group,)
+            ).fetchone():
+                connection.execute(
+                    "DELETE FROM tech_group_label WHERE group_name=?", (group,)
+                )
+
+
+def replace_owned_ldv_representation(
+    connection: sqlite3.Connection,
+    *,
+    ranges: RangePreparation | None,
+    batches: Mapping[str, Sequence[CanoeBaseModel]],
+    contexts: Sequence[ResolvedProvenance],
+    internal_datasets: Sequence[CanoeBaseModel],
+    check_only: bool = False,
+) -> None:
+    """Switch investable LDV representations within selected regions and ownership.
+
+    Incoming prerequisite IDs and the established representative namespace identify
+    owned rows. Unrelated variant parameters block replacement; unrelated rows,
+    shared structures used elsewhere and every EX stock row are protected.
+    """
+    if ranges is None:
+        return
+    representatives = set(ranges.audit["scope_representative_technologies"])
+    variants = set(ranges.audit["scope_variant_technologies"])
+    replacing_variants = ranges.audit["mode"] == "representative_archetype"
+    scope = representatives | (variants if replacing_variants else set())
+    owned = {r.data_id for r in [*contexts, *internal_datasets]}
+    owned.update(
+        r[0]
+        for r in connection.execute(
+            "SELECT data_id FROM data_set WHERE "
+            "(data_id LIKE 'ldv-ev-representative-%' AND description LIKE 'LDV representative % aggregation v1') OR "
+            "(data_id LIKE 'canoe-transport-ev-representatives:%' AND label='Internal transport LDV representative structure')"
+        )
+    )
+    tables = (
+        "capacity_to_activity",
+        "limit_annual_capacity_factor",
+        "lifetime_tech",
+        "lifetime_survival_curve",
+        "efficiency",
+        "limit_tech_input_split",
+        "cost_invest",
+        "cost_fixed",
+        "cost_variable",
+        "emission_embodied",
+    )
+    for table in tables:
+        column = "tech_or_group" if table == "limit_annual_capacity_factor" else "tech"
+        for region in ranges.regions:
+            if replacing_variants:
+                for tech in variants:
+                    existing = connection.execute(
+                        f'SELECT data_id FROM "{table}" WHERE region=? AND "{column}"=?',
+                        (region, tech),
+                    )
+                    if any(r[0] not in owned for r in existing):
+                        raise ValueError(
+                            f"Refusing to replace caller-owned {table} variant rows for {region}/{tech}"
+                        )
+            for row in batches.get(table, ()):
+                if getattr(row, column) not in scope or row.region != region:
+                    continue
+                key = [
+                    k for k in row.__primary_key__ if k not in {"data_id", "operator"}
+                ]
+                clause = " AND ".join(f'"{k}"=?' for k in key)
+                existing = connection.execute(
+                    f'SELECT data_id FROM "{table}" WHERE {clause}',
+                    tuple(getattr(row, k) for k in key),
+                )
+                if any(r[0] not in owned for r in existing):
+                    raise ValueError(
+                        f"Refusing to replace unrelated/shared representative {table} row"
+                    )
+    if replacing_variants:
+        for region in ranges.regions:
+            for tech in variants:
+                if connection.execute(
+                    "SELECT 1 FROM existing_capacity WHERE region=? AND tech=? LIMIT 1",
+                    (region, tech),
+                ).fetchone():
+                    raise ValueError(
+                        "Representative replacement cannot redistribute caller stock on investable variants"
+                    )
+        groups = connection.execute(
+            "SELECT group_name,data_id FROM tech_group_member WHERE tech IN ("
+            + ",".join("?" for _ in variants)
+            + ")",
+            tuple(sorted(variants)),
+        ).fetchall()
+        own_groups = set(ranges.audit["scope_group_names"])
+        owned_group_ids = {
+            r[0]
+            for r in connection.execute(
+                "SELECT data_id FROM data_set WHERE data_id LIKE 'canoe-transport-range-groups:%' "
+                "AND label='Internal transport range group structure'"
+            )
+        }
+        if any(
+            group not in own_groups or data_id not in owned_group_ids
+            for group, data_id in groups
+        ):
+            raise ValueError("Caller-owned group refers to replaced LDV range variants")
+        owned_share_ids = {
+            r[0]
+            for r in connection.execute(
+                "SELECT data_id FROM data_set WHERE data_id LIKE 'ldv-range-minimum-new-capacity-shares:%' "
+                "AND description='Within-class/powertrain minimum new capacity shares v1'"
+            )
+        }
+        for group, _ in groups:
+            for region in ranges.regions:
+                references = connection.execute(
+                    "SELECT data_id FROM limit_new_capacity_share WHERE region=? AND (sub_group=? OR super_group=?)",
+                    (region, group, group),
+                )
+                if any(r[0] not in owned_share_ids for r in references):
+                    raise ValueError(
+                        "Caller-owned constraint refers to replaced LDV range variants"
+                    )
+    if check_only:
+        return
+    for table in tables:
+        column = "tech_or_group" if table == "limit_annual_capacity_factor" else "tech"
+        removed = 0
+        for region in ranges.regions:
+            for tech in sorted(scope):
+                for (data_id,) in connection.execute(
+                    f'SELECT DISTINCT data_id FROM "{table}" WHERE region=? AND "{column}"=?',
+                    (region, tech),
+                ).fetchall():
+                    if data_id in owned:
+                        removed += connection.execute(
+                            f'DELETE FROM "{table}" WHERE region=? AND "{column}"=? AND data_id=?',
+                            (region, tech, data_id),
+                        ).rowcount
+        logging.getLogger(__name__).info(
+            "LDV representation replacement removed %s owned %s rows", removed, table
+        )
+    # Structural rows may be shared across regions. Remove them only when no other
+    # FK/logical reference remains, then let the incoming contribution insert its rows.
+    database_tables = [
+        r[0]
+        for r in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    ]
+    for table, label_table, field, labels in (
+        ("technology", "technology_label", "tech", scope),
+        (
+            "commodity",
+            "commodity_label",
+            "name",
+            set(ranges.audit["scope_representative_commodities"]),
+        ),
+    ):
+        references = [
+            (t, r[3])
+            for t in database_tables
+            if t not in {table, label_table}
+            for r in connection.execute(f'PRAGMA foreign_key_list("{t}")')
+            if r[2] == label_table
+        ]
+        if table == "technology":
+            references.append(("limit_annual_capacity_factor", "tech_or_group"))
+        label_field = "commodity" if table == "commodity" else field
+        for label in sorted(labels):
+            used = any(
+                connection.execute(
+                    f'SELECT 1 FROM "{t}" WHERE "{col}"=? LIMIT 1', (label,)
+                ).fetchone()
+                for t, col in references
+            )
+            if used:
+                continue
+            for (data_id,) in connection.execute(
+                f'SELECT data_id FROM "{table}" WHERE "{field}"=?', (label,)
+            ).fetchall():
+                if data_id in owned:
+                    connection.execute(
+                        f'DELETE FROM "{table}" WHERE "{field}"=? AND data_id=?',
+                        (label, data_id),
+                    )
+            if not connection.execute(
+                f'SELECT 1 FROM "{table}" WHERE "{field}"=? LIMIT 1', (label,)
+            ).fetchone():
+                connection.execute(
+                    f'DELETE FROM "{label_table}" WHERE "{label_field}"=?', (label,)
+                )
 
 
 def cleanup_transport_parameter_batches(
