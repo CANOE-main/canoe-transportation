@@ -1,0 +1,2114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="168.52415mm"
+   height="99.600182mm"
+   viewBox="0 0 1198.394 708.26795"
+   role="img"
+   aria-labelledby="legacy-main-title legacy-main-description"
+   version="1.1"
+   id="svg20"
+   sodipodi:docname="canoe-legacy-transport.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   inkscape:export-filename="canoe-legacy-transport_2.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <sodipodi:namedview
+     id="namedview20"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     inkscape:zoom="2"
+     inkscape:cx="336.5"
+     inkscape:cy="221.75"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="1072"
+     inkscape:window-y="479"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg20" />
+  <title
+     id="legacy-main-title">Legacy CANOE transportation model</title>
+  <desc
+     id="legacy-main-description">Wide overview of imported fuels, endogenous hydrogen and separate demands by vehicle and mode class. Original technology counts are retained. Hourly charger load is annotated only for light-duty BEVs. Node-type parameters form a compact legend at bottom left.</desc>
+  <defs
+     id="defs5">
+    <marker
+       style="overflow:visible"
+       id="Triangle"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135" />
+    </marker>
+    <marker
+       id="arrow-technology"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse"
+       markerUnits="userSpaceOnUse">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="#416184"
+         id="path1" />
+    </marker>
+    <marker
+       id="arrow-fuel"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse"
+       markerUnits="userSpaceOnUse"
+       preserveAspectRatio="xMidYMid">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="#936c22"
+         id="path2" />
+    </marker>
+    <marker
+       id="arrow-clean"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse"
+       markerUnits="userSpaceOnUse"
+       preserveAspectRatio="xMidYMid">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="#537445"
+         id="path3" />
+    </marker>
+    <marker
+       id="arrow-service"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse"
+       markerUnits="userSpaceOnUse"
+       preserveAspectRatio="xMidYMid">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="#b35c58"
+         id="path4" />
+    </marker>
+    <marker
+       id="arrow-clean-0"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse"
+       markerUnits="userSpaceOnUse"
+       preserveAspectRatio="xMidYMid">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="#537445"
+         id="path3-23" />
+    </marker>
+  </defs>
+  <rect
+     id="fuel-emissions-envelope"
+     x="4.1877017"
+     y="43.143261"
+     width="402"
+     height="282"
+     rx="7"
+     fill="#fffaf5"
+     stroke="#a35c32"
+     stroke-width="1.3"
+     data-emission-scope="upstream direct-fuel" />
+  <rect
+     id="endogenous-hydrogen-envelope"
+     x="2.4078405"
+     y="337.38254"
+     width="403.41766"
+     height="188.94527"
+     rx="13.195905"
+     fill="#f8fafd"
+     stroke="#416184"
+     stroke-width="2.02441"
+     data-production-boundary="model-produced-hydrogen"
+     style="stroke-width:1.30133;stroke-dasharray:none" />
+  <rect
+     id="endogenous-hydrogen-envelope-3"
+     x="2.6786077"
+     y="565.44916"
+     width="445.28064"
+     height="139.08594"
+     rx="13.195905"
+     fill="#f8fafd"
+     stroke="#416184"
+     stroke-width="2.02441"
+     data-production-boundary="model-produced-hydrogen"
+     style="fill:none;stroke:#000000;stroke-width:1.30133;stroke-dasharray:1.30133, 1.30133;stroke-dashoffset:0;stroke-opacity:1" />
+  <rect
+     id="two-wheel-family"
+     x="494.18771"
+     y="68.535843"
+     width="468"
+     height="66"
+     rx="7"
+     fill="#f8fafd"
+     stroke="#416184"
+     stroke-width="1.3"
+     data-displayed-tech-count="3" />
+  <rect
+     id="light-duty-family"
+     x="494.18771"
+     y="140.53586"
+     width="468"
+     height="156"
+     rx="7"
+     fill="#f8fafd"
+     stroke="#416184"
+     stroke-width="1.3"
+     data-displayed-tech-count="54" />
+  <rect
+     id="medium-duty-family"
+     x="494.18771"
+     y="302.53586"
+     width="468"
+     height="66"
+     rx="7"
+     fill="#f8fafd"
+     stroke="#416184"
+     stroke-width="1.3"
+     data-displayed-tech-count="10" />
+  <rect
+     id="heavy-duty-family"
+     x="494.18771"
+     y="374.53586"
+     width="468"
+     height="330"
+     rx="7"
+     fill="#f8fafd"
+     stroke="#416184"
+     stroke-width="1.3"
+     data-displayed-tech-count="57" />
+  <path
+     d="m 394.1877,116.1433 h 65"
+     fill="none"
+     stroke="#936c22"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="fuel-diesel"
+     data-route-points="[[410,163],[475,163]]"
+     data-technologies="T_EA_DSL T_EA_RDSL T_BLND_RDSL_DSL" />
+  <path
+     d="m 394.1877,152.1433 h 65"
+     fill="none"
+     stroke="#936c22"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="fuel-gasoline"
+     data-route-points="[[410,199],[475,199]]"
+     data-technologies="T_EA_GSL T_EA_ETH T_BLND_ETH_GSL" />
+  <path
+     d="m 394.1877,188.1433 h 65"
+     fill="none"
+     stroke="#936c22"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="fuel-jet"
+     data-route-points="[[410,235],[475,235]]"
+     data-technologies="T_EA_JTF T_EA_SPK T_BLND_JTF T_BLND_SPK" />
+  <path
+     d="m 394.1877,224.1433 h 65"
+     fill="none"
+     stroke="#936c22"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="fuel-gas"
+     data-route-points="[[410,271],[475,271]]"
+     data-technologies="T_EA_CNG T_EA_LNG" />
+  <path
+     d="m 394.1877,260.1433 h 65"
+     fill="none"
+     stroke="#936c22"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="fuel-marine"
+     data-route-points="[[410,307],[475,307]]"
+     data-technologies="T_EA_HFO T_EA_MDO" />
+  <path
+     d="m 394.1877,116.14327 h 36.17222 c 3.33333,0 5,-1.66667 5,-5 V 49.535849 c 0,-3.333333 1.66667,-5 5,-5 H 993.1877 c 3.3333,0 5,1.666667 5,5 v 12 c 0,3.333333 1.6667,5 5,5 h 20.6704"
+     fill="none"
+     stroke="#936c22"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-fuel)"
+     id="direct-diesel-offroad"
+     data-route-points="[[410,163],[442,163],[442,50],[1014,50],[1014,72],[1090,72]]"
+     data-technologies="T_OFF"
+     data-input="T_dsl"
+     data-demands="T_D_pj_off"
+     sodipodi:nodetypes="cssssssssc" />
+  <path
+     d="M 459.1877,116.15647 V 546.36075"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="eligible-energy-trunk"
+     data-route-points="[[475,117],[475,687]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 459.1877,116.1433 h 35"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-technology)"
+     id="energy-to-two-wheel"
+     data-route-points="[[475,117],[510,117]]" />
+  <path
+     d="m 459.1877,216.53586 h 35"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-technology)"
+     id="energy-to-light-duty"
+     data-route-points="[[475,222],[510,222]]" />
+  <path
+     d="m 459.1877,345.53586 h 35"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-technology)"
+     id="energy-to-medium-duty"
+     data-route-points="[[475,351],[510,351]]" />
+  <path
+     d="M 305.1877,377.39901 V 394.4385"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-technology-2)"
+     id="energy-to-medium-duty-7"
+     data-route-points="[[475,351],[510,351]]"
+     style="fill:#537445;fill-opacity:1;stroke:#537445;stroke-opacity:1;marker-end:url(#arrow-clean)"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="M 480.82764,280.35186 H 509.1756"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-technology-2)"
+     id="energy-to-medium-duty-7-14"
+     data-route-points="[[475,351],[510,351]]"
+     style="fill:#537445;fill-opacity:1;stroke:#537445;stroke-dasharray:6.4, 3.2;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#Triangle)"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 106.49982,307.14393 v 87.19356"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-technology-2)"
+     id="energy-to-medium-duty-7-1"
+     data-route-points="[[475,351],[510,351]]"
+     style="fill:#537445;fill-opacity:1;stroke:#936c22;stroke-opacity:1;marker-end:url(#arrow-fuel)"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 459.1877,546.53586 h 35"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-technology)"
+     id="energy-to-heavy-duty"
+     data-route-points="[[475,552],[510,552]]" />
+  <path
+     d="m 950.1877,111.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-motorcycles"
+     data-route-points="[[966,117],[1090,117]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,183.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-cars"
+     data-route-points="[[966,189],[1090,189]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,216.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-passenger-trucks"
+     data-route-points="[[966,222],[1090,222]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,249.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-freight-trucks"
+     data-route-points="[[966,255],[1090,255]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,345.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-medium-trucks"
+     data-route-points="[[966,351],[1090,351]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,417.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-heavy-trucks"
+     data-route-points="[[966,423],[1090,423]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,450.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-transit-buses"
+     data-route-points="[[966,456],[1090,456]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,483.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-school-buses"
+     data-route-points="[[966,489],[1090,489]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,516.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-coach-buses"
+     data-route-points="[[966,522],[1090,522]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,549.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-air-passenger"
+     data-route-points="[[966,555],[1090,555]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,582.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-air-freight"
+     data-route-points="[[966,588],[1090,588]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,615.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-rail-passenger"
+     data-route-points="[[966,621],[1090,621]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,648.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-rail-freight"
+     data-route-points="[[966,654],[1090,654]]"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 950.1877,681.53586 h 73.6704"
+     fill="none"
+     stroke="#b35c58"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-service)"
+     id="service-demand-marine"
+     data-route-points="[[966,687],[1090,687]]"
+     sodipodi:nodetypes="cc" />
+  <rect
+     id="import-gasoline"
+     x="16.187702"
+     y="137.14319"
+     width="378"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#fff3d4"
+     stroke="#936c22"
+     data-technologies="T_IMP_GSL T_IMP_ETH" />
+  <rect
+     id="import-jet"
+     x="16.187702"
+     y="173.14319"
+     width="378"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#fff3d4"
+     stroke="#936c22"
+     data-technologies="T_IMP_JTF T_IMP_SPK" />
+  <rect
+     id="import-gas"
+     x="16.187702"
+     y="209.14319"
+     width="378"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#fff3d4"
+     stroke="#936c22"
+     data-technologies="T_IMP_CNG T_IMP_LNG" />
+  <rect
+     id="import-marine"
+     x="16.187702"
+     y="245.14319"
+     width="378"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#fff3d4"
+     stroke="#936c22"
+     data-technologies="T_IMP_HFO T_IMP_MDO" />
+  <rect
+     id="import-ng"
+     x="16.187702"
+     y="281.14319"
+     width="378"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#fff3d4"
+     stroke="#936c22"
+     data-technologies="T_IMP_NG" />
+  <rect
+     id="offroad-demand"
+     x="1023.7731"
+     y="51.535847"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pj_off" />
+  <rect
+     id="demand-motorcycles"
+     x="1023.7731"
+     y="96.535851"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pkm_ldv_m" />
+  <rect
+     id="cars"
+     x="506.18771"
+     y="169.86627"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_LDV_C_BEV150_EX T_LDV_C_BEV150_N T_LDV_C_BEV200_N T_LDV_C_BEV300_N T_LDV_C_BEV400_N T_LDV_C_CNG_N T_LDV_C_DSL_EX T_LDV_C_DSL_N T_LDV_C_FCEV400_N T_LDV_C_GSL_EX T_LDV_C_GSL_HEV_EX T_LDV_C_GSL_HEV_N T_LDV_C_GSL_N T_LDV_C_GSL_PHEV35_EX T_LDV_C_GSL_PHEV35_N T_LDV_C_GSL_PHEV50_N"
+     data-modes="cars"
+     data-output-demand="T_D_pkm_ldv_c"
+     data-carriers="cng diesel electricity gasoline hydrogen" />
+  <rect
+     id="demand-cars"
+     x="1023.7731"
+     y="168.53586"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pkm_ldv_c" />
+  <rect
+     id="passenger-trucks"
+     x="506.18771"
+     y="202.86627"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_LDV_LTP_BEV150_N T_LDV_LTP_BEV200_N T_LDV_LTP_BEV300_EX T_LDV_LTP_BEV300_N T_LDV_LTP_BEV400_N T_LDV_LTP_CNG_N T_LDV_LTP_DSL_EX T_LDV_LTP_DSL_N T_LDV_LTP_FCEV400_N T_LDV_LTP_GSL_EX T_LDV_LTP_GSL_HEV_EX T_LDV_LTP_GSL_HEV_N T_LDV_LTP_GSL_N T_LDV_LTP_GSL_PHEV35_EX T_LDV_LTP_GSL_PHEV35_N T_LDV_LTP_GSL_PHEV50_N"
+     data-modes="light_passenger"
+     data-output-demand="T_D_pkm_ldv_t"
+     data-carriers="cng diesel electricity gasoline hydrogen" />
+  <rect
+     id="demand-passenger-trucks"
+     x="1023.7731"
+     y="201.53586"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pkm_ldv_t" />
+  <rect
+     id="freight-trucks"
+     x="506.18771"
+     y="235.86627"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_LDV_LTF_BEV150_N T_LDV_LTF_BEV200_N T_LDV_LTF_BEV300_N T_LDV_LTF_BEV400_N T_LDV_LTF_CNG_N T_LDV_LTF_DSL_EX T_LDV_LTF_DSL_N T_LDV_LTF_FCEV400_N T_LDV_LTF_GSL_EX T_LDV_LTF_GSL_HEV_EX T_LDV_LTF_GSL_HEV_N T_LDV_LTF_GSL_N T_LDV_LTF_GSL_PHEV35_EX T_LDV_LTF_GSL_PHEV35_N T_LDV_LTF_GSL_PHEV50_N"
+     data-modes="light_freight"
+     data-output-demand="T_D_tkm_ldv_t"
+     data-carriers="cng diesel electricity gasoline hydrogen" />
+  <rect
+     id="demand-freight-trucks"
+     x="1023.7731"
+     y="234.53586"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_tkm_ldv_t" />
+  <rect
+     id="ldv-bev-target"
+     x="516.18768"
+     y="270.53586"
+     width="58"
+     height="22"
+     fill="none"
+     stroke="none"
+     data-hourly-target-technologies="T_LDV_C_BEV150_EX T_LDV_C_BEV150_N T_LDV_C_BEV200_N T_LDV_C_BEV300_N T_LDV_C_BEV400_N T_LDV_LTF_BEV150_N T_LDV_LTF_BEV200_N T_LDV_LTF_BEV300_N T_LDV_LTF_BEV400_N T_LDV_LTP_BEV150_N T_LDV_LTP_BEV200_N T_LDV_LTP_BEV300_EX T_LDV_LTP_BEV300_N T_LDV_LTP_BEV400_N"
+     data-hourly-target-groups="light_duty" />
+  <rect
+     id="medium-trucks"
+     x="506.18771"
+     y="333.19662"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_MDV_T_BEV_N T_MDV_T_DSL_EX T_MDV_T_DSL_HEV_N T_MDV_T_DSL_N T_MDV_T_DSL_PHEV_N T_MDV_T_FCEV_N T_MDV_T_FCHEV_N T_MDV_T_GSL_EX T_MDV_T_GSL_N"
+     data-modes="medium_trucks"
+     data-output-demand="T_D_tkm_mdv_t"
+     data-carriers="diesel electricity gasoline hydrogen" />
+  <rect
+     id="demand-medium-trucks"
+     x="1023.7731"
+     y="330.53586"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_tkm_mdv_t" />
+  <rect
+     id="heavy-trucks"
+     x="506.18771"
+     y="403.86624"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_T_BEV_N T_HDV_T_DSL_EX T_HDV_T_DSL_HEV_N T_HDV_T_DSL_N T_HDV_T_DSL_PHEV_N T_HDV_T_FCEV_N T_HDV_T_FCHEV_N"
+     data-modes="heavy_trucks"
+     data-output-demand="T_D_tkm_hdv_t"
+     data-carriers="diesel electricity hydrogen" />
+  <rect
+     id="demand-heavy-trucks"
+     x="1023.7731"
+     y="402.53586"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_tkm_hdv_t" />
+  <rect
+     id="transit-buses"
+     x="506.18771"
+     y="436.86624"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_BT_BEV_EX T_HDV_BT_BEV_N T_HDV_BT_CNG_EX T_HDV_BT_CNG_N T_HDV_BT_DSL_EX T_HDV_BT_DSL_HEV_N T_HDV_BT_DSL_N T_HDV_BT_DSL_PHEV_N T_HDV_BT_FCEV_N T_HDV_BT_FCHEV_N T_HDV_BT_GSL_EX T_HDV_BT_GSL_N"
+     data-modes="transit_buses"
+     data-output-demand="T_D_pkm_hdv_bt"
+     data-carriers="cng diesel electricity gasoline hydrogen" />
+  <rect
+     id="demand-transit-buses"
+     x="1023.7731"
+     y="435.53586"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pkm_hdv_bt" />
+  <rect
+     id="school-buses"
+     x="506.18771"
+     y="469.86624"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_BS_BEV_N T_HDV_BS_CNG_EX T_HDV_BS_CNG_N T_HDV_BS_DSL_EX T_HDV_BS_DSL_HEV_N T_HDV_BS_DSL_N T_HDV_BS_DSL_PHEV_N T_HDV_BS_FCEV_N T_HDV_BS_FCHEV_N T_HDV_BS_GSL_EX T_HDV_BS_GSL_N"
+     data-modes="school_buses"
+     data-output-demand="T_D_pkm_hdv_bs"
+     data-carriers="cng diesel electricity gasoline hydrogen" />
+  <rect
+     id="demand-school-buses"
+     x="1023.7731"
+     y="468.53586"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pkm_hdv_bs" />
+  <rect
+     id="coach-buses"
+     x="506.18771"
+     y="502.86624"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_BIC_BEV_N T_HDV_BIC_DSL_EX T_HDV_BIC_DSL_HEV_N T_HDV_BIC_DSL_N T_HDV_BIC_FCEV_N T_HDV_BIC_GSL_EX T_HDV_BIC_GSL_N"
+     data-modes="intercity_buses"
+     data-output-demand="T_D_pkm_hdv_bic"
+     data-carriers="diesel electricity gasoline hydrogen" />
+  <rect
+     id="demand-coach-buses"
+     x="1023.7731"
+     y="501.53586"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pkm_hdv_bic" />
+  <rect
+     id="air-passenger"
+     x="506.18771"
+     y="535.86633"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_AJP_JFL_EX T_HDV_AJP_JFL_N T_HDV_AJP_SPK_N"
+     data-modes="aircraft"
+     data-output-demand="T_D_pkm_hdv_aj"
+     data-carriers="jet" />
+  <rect
+     id="demand-air-passenger"
+     x="1023.7731"
+     y="534.53589"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pkm_hdv_aj" />
+  <rect
+     id="air-freight"
+     x="506.18771"
+     y="568.86633"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_AJF_JFL_EX T_HDV_AJF_JFL_N T_HDV_AJF_SPK_N"
+     data-modes="aircraft"
+     data-output-demand="T_D_tkm_hdv_aj"
+     data-carriers="jet" />
+  <rect
+     id="demand-air-freight"
+     x="1023.7731"
+     y="567.53589"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_tkm_hdv_aj" />
+  <rect
+     id="rail-passenger"
+     x="506.18771"
+     y="601.86633"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_RICP_DSL_EX T_HDV_RICP_DSL_N T_HDV_RICP_H2_N"
+     data-modes="rail"
+     data-output-demand="T_D_pkm_hdv_r"
+     data-carriers="diesel hydrogen" />
+  <rect
+     id="demand-rail-passenger"
+     x="1023.7731"
+     y="600.53589"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_pkm_hdv_r" />
+  <rect
+     id="rail-freight"
+     x="506.18771"
+     y="634.86633"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_RF_DSL_EX T_HDV_RF_DSL_N T_HDV_RF_H2_N T_HDV_RF_LNG_N"
+     data-modes="rail"
+     data-output-demand="T_D_tkm_hdv_r"
+     data-carriers="diesel hydrogen lng" />
+  <rect
+     id="demand-rail-freight"
+     x="1023.7731"
+     y="633.53589"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_tkm_hdv_r" />
+  <rect
+     id="marine"
+     x="506.18771"
+     y="667.86633"
+     width="444"
+     height="30"
+     rx="6"
+     stroke-width="0"
+     fill="#e7eff8"
+     stroke="#416184"
+     data-technologies="T_HDV_WTF_HFO_EX T_HDV_WTF_HFO_N T_HDV_WTF_LNG_N T_HDV_WTF_MDO_EX T_HDV_WTF_MDO_N"
+     data-modes="marine"
+     data-output-demand="T_D_tkm_hdv_wt"
+     data-carriers="lng marine_oils" />
+  <rect
+     id="demand-marine"
+     x="1023.7731"
+     y="666.53589"
+     width="170"
+     height="30"
+     rx="14"
+     stroke-width="1.3"
+     fill="#f6e3e2"
+     stroke="#b35c58"
+     data-demands="T_D_tkm_hdv_wt" />
+  <text
+     id="label-001"
+     x="4.1877017"
+     y="23.59511"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449"
+     style="font-size:27.5951px;fill:#000000">Energy supply</text>
+  <text
+     id="label-002"
+     x="494.18771"
+     y="23.59511"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449"
+     style="font-size:27.5951px;fill:#000000">Transportation technologies</text>
+  <text
+     id="label-003"
+     x="982.60919"
+     y="23.59511"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449"
+     style="font-size:27.5951px;fill:#000000">Useful demands</text>
+  <text
+     id="label-004"
+     x="16.187702"
+     y="65.143288"
+     font-family="Arial"
+     font-size="22px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Imported fuels</text>
+  <text
+     id="label-005"
+     x="18.294945"
+     y="88.527016"
+     font-family="Arial"
+     font-size="17.3028px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#a35c32"
+     style="stroke-width:0.961266">Fuel-cycle emissions accounting</text>
+  <text
+     id="label-005-6"
+     x="570.0896"
+     y="287.36716"
+     font-family="Arial"
+     font-size="17.3028px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#a35c32"
+     style="fill:#537445;fill-opacity:1;stroke-width:0.961266">· Hourly charger load</text>
+  <g
+     id="g20"
+     transform="translate(-15.812298,-46.856744)">
+    <rect
+       id="import-diesel"
+       x="32"
+       y="148"
+       width="378"
+       height="30"
+       rx="14"
+       stroke-width="1.3"
+       fill="#fff3d4"
+       stroke="#936c22"
+       data-technologies="T_IMP_DSL T_IMP_RDSL" />
+    <text
+       id="label-006"
+       x="221"
+       y="169.39999"
+       font-family="Arial"
+       font-size="20px"
+       font-weight="600"
+       text-anchor="middle"
+       fill="#253449">Diesel / Ren. diesel</text>
+  </g>
+  <text
+     id="label-007"
+     x="205.1877"
+     y="158.54318"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Gasoline / ethanol</text>
+  <text
+     id="label-008"
+     x="205.1877"
+     y="194.54318"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Jet fuel / synthetic jet fuel</text>
+  <text
+     id="label-009"
+     x="205.1877"
+     y="230.54318"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Heavy fuel oil / marine diesel</text>
+  <text
+     id="label-010"
+     x="205.1877"
+     y="266.54318"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">CNG / LNG</text>
+  <text
+     id="label-011"
+     x="205.1877"
+     y="302.54318"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Natural gas</text>
+  <text
+     id="label-012"
+     x="1108.7732"
+     y="72.295845"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Other off-road</text>
+  <g
+     id="g15"
+     transform="translate(-63.706999,-27.553657)">
+    <rect
+       x="1022"
+       y="61"
+       width="29"
+       height="22"
+       rx="3"
+       fill="#ffffff"
+       id="rect6" />
+    <text
+       id="label-013"
+       x="1037"
+       y="78"
+       font-family="Arial"
+       font-size="18px"
+       font-weight="400"
+       text-anchor="middle"
+       fill="#b35c58">PJ</text>
+  </g>
+  <g
+     id="g6-6"
+     transform="matrix(0,-1,-1,0,841.0963,288.64072)">
+    <path
+       d="m 8.2589497,363.35836 0.1190726,37.71283 c 0.00148,3.3523 -1.979385,5.3638 -6.8325233,5.37046 l -70.197349,0.0188 c -4.123092,0.001 -6.103929,1.99776 -6.102454,5.35003 l 0.0015,35.83776"
+       fill="none"
+       stroke="#537445"
+       stroke-width="1.6"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="hydrogen-to-transport-4-0-9-3-8"
+       data-route-points="[[448,522],[475,522]]"
+       data-technologies="H2_distribution H2_COMP_10_100 H2_COMP_100_700 H2_storage T_H2_LDV_REFUEL T_H2_MDV_REFUEL T_H2_HDV_REFUEL"
+       sodipodi:nodetypes="cccscc"
+       style="stroke-dasharray:6.4, 3.2;stroke-dashoffset:0" />
+  </g>
+  <g
+     id="g21"
+     transform="translate(184.1877,-53.653925)">
+    <rect
+       id="electricity-interface"
+       x="32"
+       y="400"
+       width="178"
+       height="32"
+       rx="14"
+       stroke-width="1.3"
+       fill="#e5efdf"
+       stroke="#537445"
+       data-technologies="T_IMP_ELC"
+       data-external-interfaces="E_elc_dx I_elc" />
+    <text
+       id="label-014"
+       x="121"
+       y="422.39999"
+       font-family="Arial"
+       font-size="20px"
+       font-weight="600"
+       text-anchor="middle"
+       fill="#253449">Electricity</text>
+  </g>
+  <path
+     d="M 294.63377,472.284 H 458.59891"
+     fill="none"
+     stroke="#537445"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="hydrogen-to-transport"
+     data-route-points="[[448,522],[475,522]]"
+     data-technologies="H2_distribution H2_COMP_10_100 H2_COMP_100_700 H2_storage T_H2_LDV_REFUEL T_H2_MDV_REFUEL T_H2_HDV_REFUEL"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 203.55033,439.37234 v 13.48175"
+     fill="none"
+     stroke="#416184"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     marker-end="url(#arrow-technology-2)"
+     id="energy-to-medium-duty-7-9"
+     data-route-points="[[475,351],[510,351]]"
+     style="fill:#537445;fill-opacity:1;stroke:#537445;stroke-opacity:1;marker-end:url(#arrow-clean-0)"
+     sodipodi:nodetypes="cc" />
+  <g
+     id="g1"
+     transform="translate(-15.812298,-20.516003)">
+    <path
+       d="m 122.31212,446.33782 v 7.91976"
+       fill="none"
+       stroke="#537445"
+       stroke-width="1.6"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="hydrogen-to-transport-4-0"
+       data-route-points="[[448,522],[475,522]]"
+       data-technologies="H2_distribution H2_COMP_10_100 H2_COMP_100_700 H2_storage T_H2_LDV_REFUEL T_H2_MDV_REFUEL T_H2_HDV_REFUEL"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 127.59748,459.67106 c -3.30745,0.0129 -5.28831,-1.9986 -5.28831,-5.28831"
+       fill="none"
+       stroke="#537445"
+       stroke-width="1.6"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="hydrogen-to-transport-4-0-4"
+       data-route-points="[[448,522],[475,522]]"
+       data-technologies="H2_distribution H2_COMP_10_100 H2_COMP_100_700 H2_storage T_H2_LDV_REFUEL T_H2_MDV_REFUEL T_H2_HDV_REFUEL"
+       sodipodi:nodetypes="cc" />
+  </g>
+  <path
+     d="M 112.03383,439.15508 H 299.66448"
+     fill="none"
+     stroke="#537445"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="hydrogen-to-transport-4"
+     data-route-points="[[448,522],[475,522]]"
+     data-technologies="H2_distribution H2_COMP_10_100 H2_COMP_100_700 H2_storage T_H2_LDV_REFUEL T_H2_MDV_REFUEL T_H2_HDV_REFUEL"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 305.20874,425.82178 v 7.91976"
+     fill="none"
+     stroke="#537445"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="hydrogen-to-transport-4-0-9"
+     data-route-points="[[448,522],[475,522]]"
+     data-technologies="H2_distribution H2_COMP_10_100 H2_COMP_100_700 H2_storage T_H2_LDV_REFUEL T_H2_MDV_REFUEL T_H2_HDV_REFUEL"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 299.92338,439.15502 c 3.30745,0.0129 5.28831,-1.9986 5.28831,-5.28831"
+     fill="none"
+     stroke="#537445"
+     stroke-width="1.6"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="hydrogen-to-transport-4-0-4-8"
+     data-route-points="[[448,522],[475,522]]"
+     data-technologies="H2_distribution H2_COMP_10_100 H2_COMP_100_700 H2_storage T_H2_LDV_REFUEL T_H2_MDV_REFUEL T_H2_HDV_REFUEL"
+     sodipodi:nodetypes="cc" />
+  <g
+     id="g21-7"
+     transform="translate(84.187702,52.521012)">
+    <rect
+       id="electricity-interface-2"
+       x="32"
+       y="400"
+       width="178"
+       height="32"
+       rx="14"
+       stroke-width="1.3"
+       fill="#e5efdf"
+       stroke="#537445"
+       data-technologies="T_IMP_ELC"
+       data-external-interfaces="E_elc_dx I_elc" />
+    <text
+       id="label-014-3"
+       x="121"
+       y="422.39999"
+       font-family="Arial"
+       font-size="20px"
+       font-weight="600"
+       text-anchor="middle"
+       fill="#253449">Gaseous H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan23">2</tspan></text>
+  </g>
+  <text
+     id="label-015"
+     x="16.092791"
+     y="517.53033"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449"
+     style="font-size:21.9757px">Endogenous Production</text>
+  <g
+     id="g22"
+     transform="matrix(1.0335524,0,0,1.0335524,-254.20997,-50.141719)">
+    <rect
+       id="smr"
+       x="258"
+       y="430"
+       width="182"
+       height="30"
+       rx="5"
+       stroke-width="1.3"
+       fill="#e7eff8"
+       stroke="#416184"
+       data-technologies="I_H2_SMR I_H2_SMR_CCS" />
+    <text
+       id="label-016"
+       x="349"
+       y="450.76001"
+       font-family="Arial"
+       font-size="18px"
+       font-weight="600"
+       text-anchor="middle"
+       fill="#253449">Steam reforming</text>
+  </g>
+  <g
+     id="g23"
+     transform="matrix(1.0335524,0,0,1.0335524,-59.572139,-91.483815)">
+    <rect
+       id="electrolysis"
+       x="258"
+       y="470"
+       width="182"
+       height="30"
+       rx="5"
+       stroke-width="1.3"
+       fill="#e7eff8"
+       stroke="#416184"
+       data-technologies="ELC_AC_DC I_H2_ELC_ALK I_H2_ELC_PEM" />
+    <text
+       id="label-017"
+       x="349"
+       y="490.76001"
+       font-family="Arial"
+       font-size="18px"
+       font-weight="600"
+       text-anchor="middle"
+       fill="#253449">Electrolysis</text>
+  </g>
+  <text
+     id="label-019"
+     x="506.18771"
+     y="90.535843"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Two-wheel vehicles</text>
+  <text
+     id="label-020"
+     x="947.18768"
+     y="90.535843"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="end"
+     fill="#416184">(3 techs)</text>
+  <g
+     id="g18"
+     transform="translate(-15.812298,-4.1337418)">
+    <rect
+       id="motorcycles"
+       x="522"
+       y="102"
+       width="444"
+       height="30"
+       rx="6"
+       stroke-width="0"
+       fill="#e7eff8"
+       stroke="#416184"
+       data-technologies="T_LDV_M_BEV_N T_LDV_M_GSL_EX T_LDV_M_GSL_N"
+       data-modes="motorcycles"
+       data-output-demand="T_D_pkm_ldv_m"
+       data-carriers="electricity gasoline" />
+    <text
+       id="label-021"
+       x="534"
+       y="123"
+       font-family="Arial"
+       font-size="18px"
+       font-weight="600"
+       text-anchor="start"
+       fill="#253449">Motorcycles</text>
+    <text
+       id="label-022"
+       x="722"
+       y="123"
+       font-family="Arial"
+       font-size="18px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#536174">GSL · ELC</text>
+  </g>
+  <text
+     id="label-023"
+     x="1108.7732"
+     y="117.29583"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Passenger-km</text>
+  <text
+     id="label-025"
+     x="506.18771"
+     y="162.53586"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Light duty · classes 1–2</text>
+  <text
+     id="label-026"
+     x="947.18768"
+     y="162.53586"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="end"
+     fill="#416184">(54 techs)</text>
+  <text
+     id="label-027"
+     x="518.18768"
+     y="190.86627"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Cars</text>
+  <text
+     id="label-028"
+     x="706.18768"
+     y="190.86627"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">GSL · DSL · CNG · ELC · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan6">2</tspan></text>
+  <text
+     id="label-029"
+     x="1108.7732"
+     y="189.29585"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Passenger-km</text>
+  <text
+     id="label-031"
+     x="518.18768"
+     y="223.86627"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Passenger trucks</text>
+  <text
+     id="label-032"
+     x="706.18768"
+     y="223.86627"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">GSL · DSL · CNG · ELC · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan7">2</tspan></text>
+  <text
+     id="label-033"
+     x="1108.7732"
+     y="222.29585"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Passenger-km</text>
+  <text
+     id="label-035"
+     x="518.18768"
+     y="256.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Freight trucks</text>
+  <text
+     id="label-036"
+     x="706.18768"
+     y="256.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">GSL · DSL · CNG · ELC · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan8">2</tspan></text>
+  <text
+     id="label-037"
+     x="1108.7732"
+     y="255.29587"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Tonne-km</text>
+  <text
+     id="label-039"
+     x="518.18768"
+     y="287.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#416184">BEVs</text>
+  <text
+     id="label-041"
+     x="506.18771"
+     y="324.53586"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Medium duty · Classes 2b–7</text>
+  <text
+     id="label-042"
+     x="947.18768"
+     y="324.53586"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="end"
+     fill="#416184">(10 techs)</text>
+  <text
+     id="label-043"
+     x="518.18768"
+     y="354.19662"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Trucks</text>
+  <text
+     id="label-044"
+     x="706.18768"
+     y="354.19662"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">GSL · DSL · ELC · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan15">2</tspan></text>
+  <text
+     id="label-045"
+     x="1108.7732"
+     y="351.29587"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Tonne-km</text>
+  <text
+     id="label-047"
+     x="506.18771"
+     y="396.53586"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Heavy duty · road / air / rail / marine</text>
+  <text
+     id="label-048"
+     x="947.18768"
+     y="396.53586"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="end"
+     fill="#416184">(57 techs)</text>
+  <text
+     id="label-049"
+     x="518.18768"
+     y="424.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Trucks (Class 8)</text>
+  <text
+     id="label-050"
+     x="706.18768"
+     y="424.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">DSL · ELC · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan9">2</tspan></text>
+  <text
+     id="label-051"
+     x="1108.7732"
+     y="423.29587"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Tonne-km</text>
+  <text
+     id="label-053"
+     x="518.18768"
+     y="457.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Transit buses</text>
+  <text
+     id="label-054"
+     x="706.18768"
+     y="457.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">GSL · DSL · CNG · ELC · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan10">2</tspan></text>
+  <text
+     id="label-055"
+     x="1108.7732"
+     y="456.29587"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Passenger-km</text>
+  <text
+     id="label-057"
+     x="518.18768"
+     y="490.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">School buses</text>
+  <text
+     id="label-058"
+     x="706.18768"
+     y="490.86624"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">GSL · DSL · CNG · ELC · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan11">2</tspan></text>
+  <text
+     id="label-059"
+     x="1108.7732"
+     y="489.29587"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Passenger-km</text>
+  <text
+     id="label-061"
+     x="518.18768"
+     y="523.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Coach buses</text>
+  <text
+     id="label-062"
+     x="706.18768"
+     y="523.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">GSL · DSL · ELC · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan12">2</tspan></text>
+  <text
+     id="label-063"
+     x="1108.7732"
+     y="522.2959"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Passenger-km</text>
+  <text
+     id="label-065"
+     x="518.18768"
+     y="556.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Passenger aircraft</text>
+  <text
+     id="label-066"
+     x="706.18768"
+     y="556.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">JTF · SPK</text>
+  <text
+     id="label-067"
+     x="1108.7732"
+     y="555.2959"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Passenger-km</text>
+  <text
+     id="label-069"
+     x="518.18768"
+     y="589.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Cargo aircraft</text>
+  <text
+     id="label-070"
+     x="706.18768"
+     y="589.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">JTF · SPK</text>
+  <text
+     id="label-071"
+     x="1108.7732"
+     y="588.2959"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Tonne-km</text>
+  <text
+     id="label-073"
+     x="518.18768"
+     y="622.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Passenger Rail</text>
+  <text
+     id="label-074"
+     x="706.18768"
+     y="622.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">DSL · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan13">2</tspan></text>
+  <text
+     id="label-075"
+     x="1108.7732"
+     y="621.2959"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Passenger-km</text>
+  <text
+     id="label-077"
+     x="518.18768"
+     y="655.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Freight Rail</text>
+  <text
+     id="label-078"
+     x="706.18768"
+     y="655.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">DSL · LNG · H<tspan
+   style="font-size:65%;baseline-shift:sub"
+   id="tspan14">2</tspan></text>
+  <text
+     id="label-079"
+     x="1108.7732"
+     y="654.2959"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Tonne-km</text>
+  <text
+     id="label-081"
+     x="518.18768"
+     y="688.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449">Marine vessels</text>
+  <text
+     id="label-082"
+     x="706.18768"
+     y="688.86633"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="400"
+     text-anchor="start"
+     fill="#536174">LNG · HFO · MDO</text>
+  <text
+     id="label-083"
+     x="1108.7732"
+     y="687.2959"
+     font-family="Arial"
+     font-size="18px"
+     font-weight="600"
+     text-anchor="middle"
+     fill="#253449">Tonne-km</text>
+  <g
+     id="g31"
+     transform="translate(-11.409573,24.735375)">
+    <text
+       id="label-050-4-2"
+       x="284.01675"
+       y="633.6889"
+       font-family="Arial"
+       font-size="13.3946px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#536174"
+       style="stroke-width:0.744146">by</text>
+    <text
+       id="label-050-4-3-9"
+       x="301.44415"
+       y="634.5816"
+       font-family="Arial"
+       font-size="8.96511px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#536174"
+       style="line-height:1.1;stroke-width:0.498063"><tspan
+         sodipodi:role="line"
+         id="tspan25-5"
+         x="301.44415"
+         y="634.5816"
+         style="line-height:1.1;stroke-width:0.498063">scenario</tspan><tspan
+         sodipodi:role="line"
+         x="301.44415"
+         y="644.44324"
+         id="tspan28-3"
+         style="line-height:1.1;stroke-width:0.498063">period</tspan></text>
+  </g>
+  <text
+     id="label-015-1"
+     x="115.88848"
+     y="594.05072"
+     font-family="Arial"
+     font-size="20px"
+     font-weight="600"
+     text-anchor="start"
+     fill="#253449"
+     style="font-size:21.9757px;fill:#000000">Parameter indexing</text>
+  <g
+     id="g28"
+     transform="translate(-64.139943,39.124081)">
+    <rect
+       id="import-ng-8"
+       x="338.27353"
+       y="574.53717"
+       width="56.046501"
+       height="30"
+       rx="14"
+       stroke-width="1.3"
+       fill="#fff3d4"
+       stroke="#936c22"
+       data-technologies="T_IMP_NG" />
+    <text
+       id="label-086"
+       x="347.75186"
+       y="595.87408"
+       font-family="Arial"
+       font-size="18px"
+       font-weight="600"
+       text-anchor="start"
+       fill="#253449">Fuel</text>
+  </g>
+  <g
+     id="g29"
+     transform="translate(-16.349582,37.991428)"
+     style="fill:#000000">
+    <text
+       id="label-087-0"
+       x="365.96832"
+       y="584.57318"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">Fuel price</text>
+    <text
+       id="label-087-6-7"
+       x="356.83627"
+       y="584.28424"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">•</text>
+    <text
+       id="label-087-6-8-2-0-3"
+       x="356.83627"
+       y="617.8736"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">•</text>
+    <text
+       id="label-087-6-8-2-0-6-1"
+       x="356.83627"
+       y="601.07892"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">•</text>
+    <text
+       id="label-088-7"
+       x="365.96832"
+       y="601.27917"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">Blend ratio</text>
+    <text
+       id="label-089-5"
+       x="365.96832"
+       y="617.81335"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">Fuel-cycle EF</text>
+  </g>
+  <g
+     id="g32"
+     transform="translate(-14.784713,30.809044)">
+    <text
+       id="label-050-4"
+       x="29.514847"
+       y="627.61523"
+       font-family="Arial"
+       font-size="13.3946px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#536174"
+       style="stroke-width:0.744146">by</text>
+    <text
+       id="label-050-4-3"
+       x="46.942272"
+       y="628.50793"
+       font-family="Arial"
+       font-size="8.96511px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#536174"
+       style="line-height:1.1;stroke-width:0.498063"><tspan
+         sodipodi:role="line"
+         id="tspan25"
+         x="46.942272"
+         y="628.50793"
+         style="line-height:1.1;stroke-width:0.498063">scenario</tspan><tspan
+         sodipodi:role="line"
+         id="tspan26"
+         x="46.942272"
+         y="638.36957"
+         style="line-height:1.1;stroke-width:0.498063">period</tspan><tspan
+         sodipodi:role="line"
+         x="46.942272"
+         y="648.2312"
+         id="tspan27"
+         style="line-height:1.1;stroke-width:0.498063">vintage</tspan><tspan
+         sodipodi:role="line"
+         x="46.942272"
+         y="658.09277"
+         id="tspan28"
+         style="line-height:1.1;stroke-width:0.498063">powertrain</tspan></text>
+  </g>
+  <g
+     id="g24"
+     transform="translate(-8.7978762,74.712521)">
+    <rect
+       id="smr-5"
+       x="25.741426"
+       y="538.44543"
+       width="50.117027"
+       height="31.006592"
+       rx="5.1677618"
+       stroke-width="1.34362"
+       fill="#e7eff8"
+       stroke="#416184"
+       data-technologies="I_H2_SMR I_H2_SMR_CCS" />
+    <text
+       id="label-085"
+       x="30.522358"
+       y="560.28564"
+       font-family="Arial"
+       font-size="18px"
+       font-weight="600"
+       text-anchor="start"
+       fill="#253449">Tech</text>
+  </g>
+  <g
+     id="g30"
+     transform="translate(-10.387107,38.38242)"
+     style="fill:#000000">
+    <text
+       id="label-087"
+       x="99.7472"
+       y="584.18219"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">Existing capacity</text>
+    <text
+       id="label-087-6"
+       x="90.615158"
+       y="583.89325"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">•</text>
+    <text
+       id="label-087-6-8"
+       x="90.615158"
+       y="651.07196"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">•</text>
+    <text
+       id="label-087-6-8-2"
+       x="90.615158"
+       y="634.27728"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">•</text>
+    <text
+       id="label-087-6-8-2-0"
+       x="90.615158"
+       y="617.4826"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">•</text>
+    <text
+       id="label-087-6-8-2-0-6"
+       x="90.615158"
+       y="600.68793"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">•</text>
+    <text
+       id="label-088"
+       x="99.7472"
+       y="600.88818"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">Lifetime and survival rates</text>
+    <text
+       id="label-089"
+       x="99.7472"
+       y="617.42236"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">Efficiency</text>
+    <text
+       id="label-090"
+       x="99.7472"
+       y="633.95648"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">Capital and variable cost</text>
+    <text
+       id="label-090-2"
+       x="99.7472"
+       y="650.31873"
+       font-family="Arial"
+       font-size="14.0796px"
+       font-weight="400"
+       text-anchor="start"
+       fill="#253449"
+       style="fill:#000000;stroke-width:0.782202">Vehicle-cycle EF</text>
+  </g>
+  <metadata
+     id="metadata34">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Legacy CANOE transportation model</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>

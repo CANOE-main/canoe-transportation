@@ -83,7 +83,7 @@ def _context(
         inputs=inputs,
         dataset_key=f"existing_capacity.{name}",
         transformation="CEUD stock or energy with reviewed age, fuel, and lifetime evidence",
-        transformation_version="1",
+        transformation_version="2",
         governing_source_id=governing_id,
         data_quality=governing_quality,
         value_variant=variant,

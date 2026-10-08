@@ -167,14 +167,15 @@ def prepare_statcan_bus_lifetimes(
         source_key="statcan_transport_tables",
         component_key=table_id,
         transformation="latest_provincial_bus_useful_life_then_canada_2020",
-        transformation_version="1",
+        transformation_version="2",
         value_variant={"normalized_sha256": file_sha256(path), "powertrains": powertrains,
+                       "region_source_proxy": rules["region_source_proxy"],
                        "canada_fallback_year": canada_year},
     )
     records: list[dict[str, object]] = []
     audit: list[dict[str, object]] = []
     for region in sorted(bundle.scenario.geography.regions):
-        source_region = region
+        source_region = rules["region_source_proxy"].get(region, region)
         model_region = output_map.get(region, region)
         for owner in owners.itertuples(index=False):
             member = str(powertrains[owner.sub_category])

@@ -135,6 +135,30 @@ def test_bus_orphaned_technology_stock_moves_within_its_class() -> None:
     assert cohorts.loc[cohorts.tech.eq(school["fuel_technology"]["cng"]), "capacity"].sum() == 0
 
 
+def test_prospective_bus_cohorts_also_survive_on_the_model_vintage() -> None:
+    provincial, age, efficiency, lifetimes, road_rules, rules = _bus_inputs()
+    age = pd.DataFrame([
+        {"year": 2025, "VEHICLE_CLASS": "BUS", "AGE": value, "AGE_DIST": share}
+        for value, share in ((0, 0.25), (10, 0.25), (30, 0.5))
+    ])
+    lifetimes = {key: 13.0 for key in lifetimes}
+    cohorts, _, _, _, capacity = distribute_existing_bus_capacity(
+        provincial=provincial, report5_age=age, annual_efficiency=efficiency,
+        lifetimes=lifetimes, regions=["ON"],
+        period_config=ScenarioPeriods(period_mode="prospective", base_year=2023,
+            existing=[2000, 2005, 2010, 2015, 2020], model=[2025], step=5),
+        vehicle_population_year=2025, road_rules=road_rules, rules=rules,
+    )
+    ten_year_old = cohorts.loc[cohorts.age.eq(10)]
+    assert ten_year_old.annual_cohort_eligible.all()
+    assert not ten_year_old.model_vintage_eligible.any()
+    assert ten_year_old.capacity.eq(0).all()
+    assert set(capacity.loc[capacity.capacity.gt(0), "vintage"]) == {2020}
+    assert capacity.groupby("road_class").capacity.sum().to_dict() == pytest.approx(
+        {name: 100.0 for name in rules["classes"]}
+    )
+
+
 def test_bus_capacity_has_efficiency_and_lifetime_in_standalone_sqlite(tmp_path: Path) -> None:
     bundle = load_config_bundle(
         "config/scenarios/legacy_reproduction.yaml", repo_root=ROOT

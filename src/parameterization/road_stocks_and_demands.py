@@ -621,6 +621,8 @@ def distribute_existing_road_capacity(
                     eligible = (
                         actual_year + float(fixed_lifetimes_by_class[name])
                         > first_model_period
+                        and period_config.existing_vintage(year)
+                        + float(fixed_lifetimes_by_class[name]) > first_model_period
                     )
                 eligible_age_rows.append(
                     (int(age_row.age), year, float(age_row.age_share), eligible)
@@ -1059,8 +1061,14 @@ def distribute_existing_bus_capacity(
     cohorts["raw_cohort_k_vehicles"] = (
         cohorts["stock_k_vehicles"] * cohorts["age_share"] * cohorts["activity_share"]
     )
-    cohorts["eligible_first_model_period"] = (
+    cohorts["annual_cohort_eligible"] = (
         cohorts["vintage_year"] + cohorts["lifetime_years"] > first_model_period
+    )
+    cohorts["model_vintage_eligible"] = (
+        cohorts["vintage"] + cohorts["lifetime_years"] > first_model_period
+    )
+    cohorts["eligible_first_model_period"] = (
+        cohorts["annual_cohort_eligible"] & cohorts["model_vintage_eligible"]
     )
     key = ["region", "road_class", "tech"]
     original = cohorts.groupby(key)["raw_cohort_k_vehicles"].transform("sum")

@@ -90,6 +90,14 @@ class RepresentativeRules(BaseModel):
     audit_file: str = Field(min_length=1)
 
 
+class ExistingRepresentativeRules(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    weight_applicability: Literal["constant_historical_vintages_and_regions"]
+    ratings_range_mapping: Literal["omega_bucket_boundaries"]
+    phev_baseline: Literal["accepted_atb_level_with_range_specific_nrcan_history"]
+    families: dict[str, RepresentativeFamily]
+
+
 class RangeRules(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     range_units: Literal["miles"]
@@ -102,6 +110,7 @@ class RangeRules(BaseModel):
     share_sum_tolerance: float = Field(ge=0, allow_inf_nan=False)
     files: dict[str, str]
     representative: RepresentativeRules
+    existing: ExistingRepresentativeRules
 
     @model_validator(mode="after")
     def validate_buckets(self):
@@ -121,9 +130,11 @@ class RangeRules(BaseModel):
             raise ValueError(
                 "Representative labels must cover exactly the LDV categories"
             )
+        if set(self.existing.families) != set(self.category_to_market):
+            raise ValueError("Existing representatives must cover exactly the LDV categories")
         labels = [
             value
-            for f in self.representative.families.values()
+            for f in [*self.representative.families.values(), *self.existing.families.values()]
             for value in f.model_dump().values()
         ]
         if len(labels) != len(set(labels)):
@@ -384,6 +395,31 @@ def validate_share_evidence(evidence: RangeEvidence, *, rules: RangeRules) -> No
             )
 
 
+def existing_range_weights(
+    bundle: ConfigBundle, *, evidence: RangeEvidence | None = None,
+) -> tuple[dict[tuple[str, str], dict[str, float]], RangeEvidence]:
+    """Reuse the accepted OMEGA weights for historical parameter aggregation.
+
+    Existing stock totals and cohort ages remain caller-owned; the weights apply
+    only to range-specific parameter values, independent of the new-vehicle mode.
+    """
+    rules = module_rules(bundle)
+    evidence = build_range_evidence(bundle) if evidence is None else evidence
+    validate_share_evidence(evidence, rules=rules)
+    weights = {}
+    for category, market in rules.category_to_market.items():
+        for powertrain, buckets in rules.buckets.items():
+            selected = evidence.bucket_totals.loc[
+                evidence.bucket_totals.market_class.eq(market)
+                & evidence.bucket_totals.powertrain.eq(powertrain)
+            ]
+            values = selected.set_index("bucket").share_of_all_sales.to_dict()
+            if set(values) != {bucket.sub_category for bucket in buckets}:
+                raise RangeRepresentationBlocked(f"Incomplete historical range weights: {category}/{powertrain}")
+            weights[category, powertrain.lower()] = values
+    return weights, evidence
+
+
 def sales_bucket_totals(records: pd.DataFrame, rules: RangeRules) -> pd.DataFrame:
     if (
         records.source_row_id.duplicated().any()
@@ -445,15 +481,15 @@ def write_representative_decisions(
         "run_validated": False,
         "share_evidence": evidence.audit if evidence is not None else None,
         "cost_invest": "Sales-weighted cost per identical capacity unit/currency/year",
-        "cost_variable": "Sales-weighted service cost after proving equal C2A/utilization",
+        "cost_variable": "Sales-weighted service cost with the unchanged common class C2A and annual utilization",
         "efficiency": "Reciprocal of sales-weighted consumption per service, separately for each vehicle vintage",
         "phev_pathways": "One category-specific supporting blend; mean across model vintages of consumption-weighted electricity fractions, fixed across periods, as explicitly accepted by the user. Total energy is conserved; per-vintage component fuel differences are audited.",
         "capacity_to_activity_and_utilization": "Require identical values and units within each range family",
         "lifetimes_survival": "Fixed lifetimes and range survival curves must be identical; sales-weighted surviving fractions conserve cohort survivors without shifting the service/energy mix with age",
         "emission_embodied": "Sales-weighted lifetime gases per identical new-vehicle capacity unit",
-        "historical_stock": "Keep EX technologies/stock and historical source lineage exactly; no new-sales redistribution",
+        "historical_stock": "Existing BEV/PHEV archetypes are always representatives: retain fleet totals/cohorts, classify NRCan range evidence before parameter aggregation, and use OMEGA MY2022 weights across historical vintages/regions independently of the new-vehicle mode",
         "charging_profiles": "Frozen fleet shape already embeds ranges; retain independently selected proxy; no range multiplication",
-        "structure": "New category-specific representative labels/blends must replace investable variants without dropping shared historical or other-class paths",
+        "structure": "Select range mode during preparation and finish all representative labels/blends and parameters before any SQLite insertion; retain existing representatives and other-class paths",
         "blocking_decisions": [],
     }
     rules = module_rules(bundle)

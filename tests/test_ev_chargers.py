@@ -59,14 +59,23 @@ def test_charger_costs_utilization_and_efficiency(prepared) -> None:
     assert result.audit["existing_investment_rows_excluded"] == 18
     assert len(result.fixed_rows) == 390
     assert len(result.efficiency_rows) == 118
-    assert len(result.utilization) == 190
+    assert len(result.utilization) == len(result.utilization_rows) == 118
     assert "period" not in LimitAnnualCapacityFactor.model_fields
-    assert result.audit["utilization_schema_inserted"] is False
-    assert set(result.utilization.operator) == {"≤"}
+    assert result.audit["utilization_schema_supported"] is True
+    assert set(result.utilization.operator) == {"le"}
     assert set(result.utilization.units) == {"fraction"}
-    assert set(result.utilization.loc[result.utilization.period.eq(2025) & result.utilization.tech.str.contains("LDV"), "factor"]) == {0.15}
-    assert set(result.utilization.loc[result.utilization.period.eq(2030) & result.utilization.tech.str.contains("LDV"), "factor"]) == {0.2}
-    assert set(result.utilization.loc[result.utilization.tech.str.contains("MHDV"), "factor"]) == {0.3}
+    assert set(result.utilization.loc[result.utilization.vintage.eq(2025) & result.utilization.tech_or_group.str.contains("LDV"), "factor"]) == {0.15}
+    assert set(result.utilization.loc[result.utilization.vintage.eq(2030) & result.utilization.tech_or_group.str.contains("LDV"), "factor"]) == {0.2}
+    assert set(result.utilization.loc[result.utilization.tech_or_group.str.contains("MHDV"), "factor"]) == {0.3}
+    historical = result.utilization.loc[
+        result.utilization.tech_or_group.eq("T_LDV_CHRG_EX")
+    ]
+    assert set(historical.vintage) == {bundle.scenario.periods.latest_observed_vintage}
+    assert set(historical.source_year) == {2025}
+    assert set(historical.factor) == {0.15}
+    context_ids = {context.data_id for context in result.provenance_contexts}
+    assert all(row.data_id in context_ids and row.data_source and row.dq_cred is not None
+               for row in result.utilization_rows)
     investments = {(r.region, r.tech, r.vintage): r.cost for r in result.invest_rows}
     conversion = pd.DataFrame(result.audit["cost_conversion"])
     assert conversion.groupby(["charger_class", "vintage"]).count_share.sum().eq(1).all()
@@ -86,11 +95,11 @@ def test_charger_costs_utilization_and_efficiency(prepared) -> None:
         ].sum()
         assert row.cost == pytest.approx(basis * 0.01)
     assert all(row.units == "$M 2020CAD / GW" for row in [*result.invest_rows, *result.fixed_rows])
-    assert set(result.utilization.period) == set(bundle.scenario.periods.model)
+    assert set(result.utilization.vintage) == {bundle.scenario.periods.latest_observed_vintage, *bundle.scenario.periods.model}
     assert set(row.efficiency for row in result.efficiency_rows if "LDV" in row.tech) == {0.95}
     assert set(row.efficiency for row in result.efficiency_rows if "MHDV" in row.tech) == {0.8}
     assert all(row.units == "PJ/PJ" for row in result.efficiency_rows)
-    assert not result.utilization.duplicated(["region", "period", "tech", "operator"]).any()
+    assert not result.utilization.duplicated(["region", "vintage", "tech_or_group", "operator"]).any()
     assert all(math.isfinite(row.cost) and row.cost > 0 for row in result.invest_rows)
     output = resolve_artifact_path(bundle, "ev_chargers_processed")
     rules = load_harmonization_rules(bundle, "ev_chargers")

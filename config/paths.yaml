@@ -32,6 +32,16 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  # User-owned legacy publication figure; no production ETL or workflow consumer.
+  legacy_transport_diagram:
+    path: legacy_backend/diagrams
+    layer: legacy
+    owner: scripts.experiments.legacy_transport_diagram.build
+    producers: [scripts.experiments.legacy_transport_diagram.build.main]
+    consumers: [publication_reviewers]
+    validation_surfaces:
+      - scripts.experiments.legacy_transport_diagram.build.validate_topology
+      - scripts.experiments.legacy_transport_diagram.build.validate_svg
   charging_profiles_interim:
     path: inputs/1_interim/legacy_charging_profiles
     layer: interim

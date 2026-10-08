@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 
 from parameterization import build_efficiencies as layer
+from parameterization.ldv_ev_ranges import module_rules as range_module_rules
 from parameterization.road_fleet_weights import medium_vocation_weights, report4_gvwr_shares
 from parameterization.offroad_efficiencies import (
     derive_offroad_efficiency,
@@ -282,7 +283,7 @@ def test_hybrid_evidence_requires_unambiguous_exact_key(rules, bundle):
         }
     )
     result = classify_ratings(
-        [source], epa, rules=rules, conversions=load_conversion_factors(bundle)
+        [source], epa, rules=rules, conversions=load_conversion_factors(bundle), range_rules=range_module_rules(bundle)
     ).set_index("Model")
     assert result.loc["Hidden", "powertrain"] == "hev"
     assert result.loc["Ambiguous", "powertrain"] == "gasoline"
@@ -311,6 +312,7 @@ def test_phev_rating_keeps_raw_cd_and_only_parses_leading_number(rules, bundle):
         epa,
         rules=rules,
         conversions=load_conversion_factors(bundle),
+        range_rules=range_module_rules(bundle),
         phev_contract=load_harmonization_rules(bundle, "nlr_atb_autonomie")[
             "components"
         ]["phev_efficiency"]["future_nrcan_phev_contract"],
@@ -319,6 +321,24 @@ def test_phev_rating_keeps_raw_cd_and_only_parses_leading_number(rules, bundle):
     assert result.combined_cs_consumption_L_100_km == 5.5
     assert "15.8 kWh" in result.combined_cd_consumption_Le_100_km_raw
     assert pd.isna(result.consumption_mj_per_vkm)
+
+
+def test_nrcan_bev_range_mapping_keeps_all_four_omega_buckets(rules, bundle):
+    conversions = load_conversion_factors(bundle)
+    source = pd.DataFrame([
+        {"source_row": index, "component": "bev", "Model year": 2023,
+         "Vehicle class": "Compact", "Range (km)": miles * conversions["length"]["mile_to_km"],
+         "Combined (kWh/100 km)": 15}
+        for index, miles in enumerate((140, 200, 300, 400), 2)
+    ])
+    result = classify_ratings(
+        [source], pd.DataFrame(columns=rules["ratings"]["evidence_columns"]),
+        rules=rules, conversions=conversions, range_rules=range_module_rules(bundle),
+    )
+    assert list(result.powertrain) == ["bev_150_miles", "bev_200_miles", "bev_300_miles", "bev_400_miles"]
+    assert len(set(result.legacy_range_label)) == 3
+    assert list(result.range_km) == list(source["Range (km)"])
+    assert result.consumption_mj_per_vkm.eq(0.54).all()
 
 
 def test_unsplit_suv_sums_weights_and_renormalizes_observed(rules):
@@ -528,6 +548,7 @@ def test_template_edges_periods_and_default_exclusions(bundle, rules):
     assert set(edges.loc[edges.kind.eq("unit")].index) == {
         "T_OFF",
         *(v["tech"] for v in rules["phev_blends"].values()),
+        *(v["tech"] for v in rules["existing_phev_blends"].values()),
     }
     assert not edges.index.str.contains("CHRG|REFUEL|dummy").any()
     assert rules["ldv_archetypes"]["fcev"]["analogue"] == "gasoline"
@@ -564,6 +585,8 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     monkeypatch.setattr(socket, "create_connection", no_network)
     capacity = [
         SimpleNamespace(region="ON", tech="T_MDV_T_BEV_EX", vintage=2023, capacity=1),
+        SimpleNamespace(region="ON", tech="T_LDV_C_BEV_EX", vintage=2020, capacity=1),
+        SimpleNamespace(region="ON", tech="T_LDV_C_GSL_PHEV_EX", vintage=2020, capacity=1),
         SimpleNamespace(region="ON", tech="T_HDV_BT_GSL_EX", vintage=2023, capacity=0),
     ]
     if include_bus_capacity:
@@ -590,18 +613,30 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     historical_keys = {
         (row.region, row.tech, row.vintage)
         for row in first.efficiency_rows
-        if row.tech.endswith(rules["existing_suffix"])
+        if row.tech.endswith(rules["existing_suffix"]) and row.units != "PJ/PJ"
     }
     assert historical_keys == {
         (row.region, row.tech, row.vintage) for row in capacity if row.capacity > 0
     }
     assert first.audit["historical_source_backed_rows_without_capacity"] == 0
-    assert len(first.split_rows) == 40
+    assert len(first.split_rows) == 70
     annual = pd.read_csv(
         tmp_path / "efficiencies_interim/annual_efficiency_evidence.csv"
     )
     assert set(annual.loc[annual.vintage.eq(2025), "source_year"]) == {2030}
     assert set(annual.loc[annual.tech.eq("T_MDV_T_BEV_EX"), "source_year"]) == {2023}
+    weights = first.audit["existing_ev_representatives"]["weights"]
+    for powertrain, tech in (("BEV", "T_LDV_C_BEV_EX"), ("PHEV", "T_LDV_C_GSL_PHEV_EX")):
+        components = annual.loc[
+            annual.tech.eq(tech) & annual.range_representative_component.eq(True)
+        ].groupby("powertrain").efficiency.mean().to_dict()
+        shares = {entry["bucket"]: entry["share_of_all_sales"] for entry in weights
+                  if entry["market_class"] == "car" and entry["powertrain"] == powertrain}
+        row = next(row for row in first.efficiency_rows if row.tech == tech)
+        assert set(components) == set(shares)
+        assert row.efficiency == pytest.approx(1 / sum(shares[key] / value for key, value in components.items()))
+        context = next(context for context in first.provenance_contexts if context.data_id == row.data_id)
+        assert "epa_omega_baseline" in {contributor.source_key for contributor in context.contributors}
     if include_bus_capacity:
         ceud_rules = load_harmonization_rules(configured, "nrcan_ceud")
         provincial = pd.read_csv(
@@ -653,6 +688,7 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
             include_lifetimes=False,
             include_efficiencies=False,
             include_costs=False,
+            include_emission_embodied=False,
         )
         contribution = replace(
             structural,

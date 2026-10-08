@@ -40,3 +40,6 @@ T_annual_pkm_ldv_c,a,Dummy annual commodity used to release non-profiled vehicle
 T_annual_pkm_ldv_t,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,
 T_annual_tkm_ldv_t,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,
 T_annual_pkm_ldv_m,a,Dummy annual commodity used to release non-profiled vehicles from charging demand distribution,
+T_gsl_elc_phev_c_ex,p,Existing representative cars PHEV energy mixture,PJ
+T_gsl_elc_phev_ltp_ex,p,Existing representative passenger_light_trucks PHEV energy mixture,PJ
+T_gsl_elc_phev_ltf_ex,p,Existing representative freight_light_trucks PHEV energy mixture,PJ

@@ -101,6 +101,7 @@ class ArtifactRoute(MappingModel):
         "input_validation",
         "database",
         "output_validation",
+        "legacy",
     ]
     owner: str = Field(min_length=1)
     producers: list[str] = Field(min_length=1)
@@ -133,6 +134,7 @@ class PathsConfig(MappingModel):
             "input_validation": self.inputs.validation,
             "database": self.outputs.sqlite,
             "output_validation": self.outputs.validation,
+            "legacy": self.legacy.root,
         }
         duplicate_paths: dict[str, list[str]] = {}
         for name, route in self.artifacts.items():

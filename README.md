@@ -1,32 +1,53 @@
 # CANOE Transportation Backend
 
-The CANOE transportation backend converts heterogeneous transportation evidence into
-validated parameter rows and scenario-ready SQLite databases for Canadian Open Energy Model 
-running on the Temoa energy system optimization framework.
+The v2.0 CANOE transportation backend compiles Canadian transportation evidence into
+validated CANOE/Temoa v4 SQLite databases. YAML selects source editions, regions,
+periods, trajectories, and model representations; Python transforms the evidence,
+records provenance and data quality, and publishes the database atomically.
 
-Version 2.0 replaces the legacy Excel-centred compiler with a
-configuration-owned Python backend in which sources, assumptions, transformations,
-validation results, and accepted differences can be inspected independently.
+Standalone transportation compilation is the main supported workflow. The same
+preparation and validated insertion functions can contribute to a caller-owned
+compatible database; a CANOE-main adapter remains planned. Optimization runs belong
+to the consuming CANOE/Temoa workflow.
+
+The current build includes existing vehicle stock, transport demand, utilization,
+fixed or survival-curve lifetimes, efficiencies, investment and operating costs,
+EV charging infrastructure, inherited hourly charging profiles, LDV range
+representations, and road vehicle-cycle embodied emissions. Technology growth and
+adoption constraints remain planned. Baseline reproduction guides development;
+legacy comparison reports expose differences that still require interpretation.
+
+Start with [Installation](#installation) and [Common commands](#common-commands).
+The checked-in [scenario template](config/scenarios/legacy_reproduction.yaml) currently
+selects ten regional groups and prospective periods, alongside charging, range, and
+embodied-emissions layers. Its name identifies the baseline development scenario;
+its actual selections are defined by YAML.
 
 ## Table of Contents
 
 - [Backend at a glance](#backend-at-a-glance)
 - [Backend architecture](#backend-architecture)
+  - [Application and operating model](#application-and-operating-model)
+  - [Module boundaries](#module-boundaries)
+  - [Running and extending the backend](#running-and-extending-the-backend)
 - [Input-parameter ETL flowcharts](#input-parameter-etl-flowcharts)
   - [Mermaid version](#mermaid-version)
   - [Flowchart legends](#flowchart-legends)
   - [`existing_capacity`](#existing_capacity)
   - [`demand`](#demand)
   - [`limit_annual_capacity_factor`](#limit_annual_capacity_factor)
-  - [`lifetime_process` and `lifetime_survival_curve`](#lifetime_process-and-lifetime_survival_curve)
+  - [`lifetime_tech` and `lifetime_survival_curve`](#lifetime_tech-and-lifetime_survival_curve)
   - [`efficiency`](#efficiency)
   - [`cost_invest`](#cost_invest)
   - [`cost_variable`](#cost_variable)
   - [`emission_embodied`](#emission_embodied)
   - [EV charger parameters](#ev-charger-parameters)
+  - [Market share and technology adoption constraints](#market-share-and-technology-adoption-constraints-to-do)
   - [`capacity_factor_tech` for BEV charging profiles](#capacity_factor_tech-for-bev-charging-profiles-pending-refactor)
+  - [Compact manual parameter selectors](#compact-manual-parameter-selectors)
 - [Installation](#installation)
 - [Common commands](#common-commands)
+- [Outputs and validation](#outputs-and-validation)
 - [Development approach](#development-approach)
 
 ## Backend at a glance
@@ -77,35 +98,46 @@ flowchart TB
   INSIGHTS -. document ..-> VALID
 ```
 
-The [source registry](../config/sources.yaml) owns external identity and provenance;
-[harmonization rules](../config/parameters/rules.yaml) own source-layout and
-transformation contracts; reusable factors belong in
-[conversion configuration](../config/parameters/conversion.yaml); and
-[scenario YAML](../config/scenarios/legacy_reproduction.yaml) selects editions,
-trajectories, regions, periods, outputs, and active switches. Canonical locations are
-owned by [path configuration](../config/paths.yaml). Modular Python performs acquisition
-and transformation, while Snakemake coordinates only stable dependencies and artifacts.
-Pydantic and the pinned `canoe-schema` package form trust boundaries before atomic
-SQLite publication.
+The overview is conceptual: the current scenario template is
+[`legacy_reproduction.yaml`](config/scenarios/legacy_reproduction.yaml), and
+`inputs/0_canoe_template/` contains backend-owned structural rows.
 
-The [backend architecture](backend_architecture.md) is the ownership reference. The
-[ETL flowcharts](etl_flowcharts.md) document parameter-specific provenance,
-harmonization, equations, and intended outputs; the
-[source inventory](source_inventory.md) discusses source families without replacing the
-registry. Legacy workbooks and databases remain read-mostly comparison evidence.
-Marimo notebooks are the interactive diagnostics layer and may eventually expose
-configuration choices to users who should not need to edit Python, but that layer is
-currently focused rather than comprehensive.
+| Configuration | Responsibility |
+| --- | --- |
+| [`config/scenarios/*.yaml`](config/scenarios/README.md) | Run selections, geography, periods, outputs, and modeling switches. |
+| [`config/sources.yaml`](config/sources.yaml) | External-source identity, access, provenance, availability, and data-quality scores. |
+| [`config/parameters/rules.yaml`](config/parameters/rules.yaml) | Extraction, mappings, aggregation, filters, and parameter contracts. |
+| [`config/parameters/conversion.yaml`](config/parameters/conversion.yaml) | Reusable units and currency conversion factors. |
+| [`config/paths.yaml`](config/paths.yaml) | Canonical artifact locations, owners, producers, and consumers. |
 
-Reproducibility is therefore collective: Git records reviewed changes; YAML owns
-selectable configuration; documented paths separate cached, interim, processed, and
-published artifacts; modular Python keeps transformations testable; manifests and logs
-record execution; and validation and parity reports make each deterministic build
-auditable.
+Python owns preparation and database publication. Snakemake currently coordinates
+readiness, StatCan and CER normalization, and the shared database entrypoint. Its
+partial dependency coverage is described in [Common commands](#common-commands).
+
+The architecture and ETL sections below reproduce
+[`docs/backend_architecture.md`](docs/backend_architecture.md) and
+[`docs/etl_flowcharts.md`](docs/etl_flowcharts.md), with headings and relative links
+adapted for this combined document. [`docs/assumptions.md`](docs/assumptions.md) records enduring source and data
+challenges; [scenario guidance](config/scenarios/README.md) explains the complete
+configuration contract.
 
 ## Backend architecture
 
-The current and proposed repository layout provides the following navigation.
+### Application and operating model
+
+This repository is an **agent-native ETL backend** for compiling configured Canadian
+transport-sector scenarios into auditable, CANOE/Temoa-ready SQLite databases. It turns
+registered external, external-model, and reviewed manual inputs into normalized evidence,
+model parameters, provenance records, and a schema-validated database published atomically.
+
+The standalone transport SQLite remains a first-class output for legacy parity, focused
+validation, and independent transport research. The backend also exposes contribution
+preparation and insertion for a caller-owned compatible database. Both paths use the same
+transport parameterization; an upstream-specific adapter remains planned.
+
+The tree below shows implemented files and the selected homes for planned parameterization
+families. Planned entries are labeled explicitly; they are ownership targets, not empty module
+requirements.
 
 ```text
 .
@@ -134,7 +166,11 @@ The current and proposed repository layout provides the following navigation.
 │   │   ├── statcan_tables.py                # Statistics Canada transport tables
 │   │   ├── cer_enerfuture.py                # CER energy future tables
 │   │   ├── nlr_atb_autonomie.py             # NLR ATB and ANL Autonomie inputs
+│   │   ├── greet_automation.py              # Explicit disposable-copy Excel generation of vehicle-cycle evidence
+│   │   ├── greet_vehicle_cycle.py           # Registered source contracts, extraction and offline bank validation
 │   │   ├── fueleconomy_vehicles.py          # Opt-in FuelEconomy.gov class evidence
+│   │   ├── legacy_charging_profiles.py     # Immutable NHTS/TTS charging evidence and legacy hourly transformation
+│   │   ├── epa_omega_baseline.py           # Compact legacy OMEGA baseline sales/CD ranges and source identity validation
 │   │   ├── vpic_vehicle_types.py            # Opt-in vPIC vehicle-type evidence
 │   │   ├── vpic_model_years.py              # Opt-in vPIC make/model-year evidence
 │   │   └── assorted_sources.py              # Smaller registered source adapters
@@ -157,11 +193,11 @@ The current and proposed repository layout provides the following navigation.
 │   │   ├── road_capex_opex.py               # Road investment and operating costs
 │   │   ├── offroad_capex_opex.py            # Off-road investment and operating costs
 │   │   ├── currency.py                      # CER-backed currency and price-year conversion
+│   │   ├── road_embodied_emissions.py       # Road vehicle-cycle lifetime gases and regional aggregation
 │   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
-│   │   ├── ldv_charging_profiles.py         # Hourly LDEV charging demand profiles - #to-do
-│   │   ├── road_embodied_emissions.py       # Vehicle-cycle and operating emissions - #to-do
-│   │   ├── market_constraints.py            # Market shares, policy limits, and SCC rules - #to-do
-│   │   └── adoption_constraints.py          # Adoption and growth constraints - #to-do
+│   │   ├── ldv_charging_profiles.py         # Shared LDV charger factors and inherited temporal projection
+│   │   ├── ldv_ev_ranges.py                 # OMEGA range shares, minimum constraints and parameter-specific representative LDV aggregation
+│   │   └── adoption_constraints.py          # Vehicle technology adoption constraints - #to-do
 │   ├── utils/
 │   │   ├── __init__.py                      # Typed config loading and artifact path resolution
 │   │   ├── files.py                         # Shared hashing and atomic CSV publication
@@ -199,31 +235,90 @@ The current and proposed repository layout provides the following navigation.
 └── pyproject.toml                           # uv dependencies and tool configuration
 ```
 
-The main repository areas are:
+### Module boundaries
 
-- `config/`: paths, the external-source registry, scenario selections, and parameter
-  rules or conversions;
-- `src/fetching/`: source acquisition, physical validation, and normalization;
-- `src/parameterization/`: parameter transformations as they are implemented;
-- `src/validation/`: typed config, provenance, schema, insertion, integrity, and parity;
-- `workflow/Snakefile`: coarse dependency and artifact orchestration;
-- `inputs/` and `outputs/`: registered inputs, intermediate data, SQLite builds, logs,
-  and validation reports.
+The implemented pipeline follows acquisition → normalized evidence → parameter preparation
+→ database assembly. `fetching/` owns source-specific I/O and normalization. Within
+`parameterization/`, road/off-road modules own the differing calculations; `road_aggregation`,
+`road_utilization`, and `ev_chargers` own their shared behavioral contracts. Builders compose
+these functions directly, with no forwarding modules or second transformation path.
 
-For scenario fields and implemented switches, see
-[`config/scenarios/README.md`](config/scenarios/README.md).
+The shared transport builders have a `build_` prefix to distinguish preparation entrypoints
+from schema tables and sector-wide assembly. They resolve provenance, validate combined
+coverage and keys, and publish configured artifacts without opening SQLite connections:
 
-Stable repository policy is in [`AGENTS.md`](AGENTS.md). Multi-step implementation
-plans follow [`.agents/PLANS.md`](.agents/PLANS.md); these are contributor references
-rather than project orientation.
+| Builder | Prepared contract |
+| --- | --- |
+| `build_existing_capacity` | Road/off-road technology-vintage capacity and reconciliation evidence. |
+| `build_demand` | Road/off-road base activity, CER scenario projections, and regional-period demand. |
+| `build_lifetime_parameters` | Exactly one fixed or survival-curve representation per modeled region/technology. |
+| `build_efficiencies` | Fuel/service efficiency edges and PHEV input splits, gated by existing capacity. |
+| `build_costs` | Investment and variable costs, harmonized with `currency` and constrained by capacity/lifetime coverage. |
+
+`build_transport.py` calls the same preparation functions for standalone and caller-owned
+assembly. `prepare_transport_contribution` gathers structural templates, capacity, demand,
+road utilization, lifetimes, efficiencies, costs, charger rows, charging profiles,
+range-share groups/constraints and embodied emissions as selected.
+`insert_transport_contribution` registers provenance and inserts validated rows into a
+compatible caller-owned connection. The standalone path also owns schema initialization,
+transactions, integrity checks, and atomic publication. Schema contracts and insertion
+mechanics remain in `validation/`, backed by the pinned `canoe-schema` package.
+
+### Running and extending the backend
+
+From the repository root, use `uv run python src/setup.py --scenario <scenario.yaml>` for
+configuration/schema setup and `uv run python scripts/doctor.py --scenario <scenario.yaml>`
+for readiness checks. Run a prepared scenario with
+`uv run python src/build_transport.py --scenario <scenario.yaml>`; use
+`uv run python -m parameterization.build_<family> --scenario <scenario.yaml>` for an
+individual builder. Preparation also publishes audit CSVs. Fetching entrypoints support
+explicit cache replay with `--no-download` where implemented.
+
+Use `uv run snakemake --snakefile workflow/Snakefile --cores 1 --config
+scenario=<scenario.yaml>` for coarse orchestration; add `--dry-run` to inspect pending
+jobs. The workflow calls existing Python entrypoints, requires readiness and the declared
+StatCan/CER tables before assembly, and tracks control files, production manual tables,
+templates, implementation files, and offline caches at those boundaries. Downloads require
+`download_sources=true`; this permits fetching missing caches rather than refreshing them.
+The default profile keeps runtime metadata under ignored `.snakemake/`. Failed database
+jobs restore the previous SQLite and validation report.
+
+This is still a partial DAG: other normalized evidence, road aggregation, and accepted
+road lifetime products must already be prepared. Changes to those undeclared prerequisites
+require `--forcerun transport_database`. Parameter CSVs are audit exports rather than
+complete serialized preparation results: assembly also needs provenance contexts, internal
+datasets, and audits returned by the builders. Assembly therefore prepares parameters once
+through the shared Python path. Run one scenario at a time while interim/processed products
+share configured directories.
+
+Mapping bootstrap and `--mapping-diagnostics` are opt-in development paths; road lifetime
+generation defaults to accepted evidence, with MTO review enabled by `--mto-diagnostics`
+or `--all`.
+
+For a change, follow the affected `config/paths.yaml` artifact family to its owner,
+producers, consumers, and validation surfaces, then verify the current code and focused
+tests. Module renames change those references; artifact keys and schema table names retain
+their product meaning. `config/sources.yaml` component `parameter_modules` records source
+lineage, including planned owners, rather than executable build readiness.
+
+Use [AGENTS.md](AGENTS.md) for repository policy and config responsibilities,
+[etl_flowcharts.md](docs/etl_flowcharts.md) for parameter lineage, and
+[assumptions.md](docs/assumptions.md) for enduring data challenges. Retrieve
+[codebase_diagnostic_snapshot.md](docs/codebase_diagnostic_snapshot.md) for a structural review
+and [canoe_main_orchestrator.md](docs/canoe_main_orchestrator.md) for an upstream integration
+change; verify their snapshots against current interfaces.
 
 ## Input-parameter ETL flowcharts
 
-These diagrams showcase the source relationships, harmonization intent, equations, and
-target outputs for the transportation parameter families. The focused lineage reference
-is [`docs/etl_flowcharts.md`](docs/etl_flowcharts.md).
+Solid paths describe the default lineage and dashed paths describe conditional or
+scenario-dependent alternatives. File and config labels identify the intended owner of
+each operation. The legend below is local to these diagrams.
 
-**Important note:** if text inside nodes/figures does not render completely, you must reset your zoom to 100% and reload the website. Weird, I know.
+The focused lineage reference is [`docs/etl_flowcharts.md`](docs/etl_flowcharts.md).
+Some figures include planned work or externally generated evidence; the scenario
+configuration and executable entrypoints determine current build behavior.
+
+**Rendering note:** if node text is clipped, reset browser zoom to 100% and reload.
 
 ### Mermaid version
 
@@ -289,7 +384,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   s0[("`**NRCan CEUD**
     Provincial vehicle sales, stocks, off-road energy use, and energy intensities`")]
 
@@ -318,12 +413,12 @@ flowchart LR
   s6[("`**Transport Canada (TC) EV Dashboard**
     Latest quarterly medium- and heavy-duty EV market shares by province; annual shares not disclosed by province`")]
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   subgraph age["`**Age cohort derivation and diagnosis**`"]
     direction TB
     p1["`**Fleet age distribution**
       • *Road:* distribute baseline stock by age.
-      *MTO Report A is mapped into NRCan CEUD cars and light trucks via MTO code-to-model inference; and Report 5 distributes bus and motorcycle age cohorts*<br>
+      *MTO Report A is mapped into NRCan CEUD cars and light trucks via MTO code-to-model inference; and Report 5 distributes MHD truck, bus, and motorcycle age cohorts*<br>
       • *Off-road:* treat provincial energy use ÷ intensity as stock, then distribute by age`"]
 
     p1_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
@@ -379,16 +474,14 @@ flowchart LR
 | Distribute stock<sub>age</sub> by powertrain           | Cars and light trucks | Each stock by vintage gets distributed over vehicle market shares by fuel type                                                       |
 | Distribute stock<sub>age</sub> by powertrain           | MD trucks             | Each stock by vintage gets distributed over vehicle registration shares by fuel type – mainly diesel and gasoline                    |
 
-Vintages mapped into 5-year periods are aggregated the following way:
-- 2015 → 2015
-- 2016 → 2020
-- 2017 → 2020
-- 2018 → 2020
-- 2019 → 2020
-- 2020 → 2020
-- 2021 → 2023; truncated to the last available vintage from NRCan CEUD 
-- 2022 → 2023
-- 2023 → 2023
+#### Existing period handling
+Existing stock by vintage is mapped into 5-year periods and aggregated the following way:
+
+| Legacy backend | v2.0 backend |
+| --------------------- | --------------------- |
+| - 2014 → 2015<br>- 2015 → 2015<br>- 2016 → 2020<br>- 2019 → 2020<br>- 2020 → 2020<br>- 2021 → 2023<br>- 2023* → 2023<br> | - 2014 → 2010<br>- 2015 → 2010<br>- 2016 → 2015<br>- 2019 → 2015<br>- 2020 → 2015<br>- 2021 → 2020<br>- 2023* → 2020<br> |
+
+*As per the latest update, existing vintages from NRCan CEUD only reach 2023.
 
 ### `demand`
 
@@ -403,14 +496,14 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   s0[("`**NRCan CEUD**
     Provincial vehicle activity and off-road energy use; national off-road energy intensity`")]
   s1[("`**CER Canada's Energy Future**
     Real GDP projections by scenario
     ***Def. scenario:*** current measures`")]
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   p0@{shape: hex, label: "**config/scenarios/**
     *future_car_demand:* GDP-indexed or extrapolated<br>
     When extrapolated, light trucks carry the residual GDP-indexed demand from both passenger LDV classes"}
@@ -450,7 +543,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   s0[("`**NRCan CEUD**
     Provincial vehicle activity [bn tonne-km] and stock [k vehicles]`")]
   s0_2@{shape: doc, label: "***capacity_to_activity***
@@ -460,7 +553,7 @@ flowchart LR
   s2@{shape: processes, label: "**Road aggregation maps**
     Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   p0["`**Annual vehicle utilization (UF)**
     **eq. (i)** 5-year avg of activity ÷ stock excluding 2020-2021, then scaled by **capacity_to_activity**`"]
   s0 -- nrcan_ceud.py --> p0
@@ -526,7 +619,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   subgraph survival["`**Road vehicle fleet survival rates (US sources)**`"]
     direction LR
     s2[("`**NHTSA CAFE model**
@@ -546,7 +639,7 @@ flowchart LR
   s6@{shape: processes, label: "**Road aggregation maps**
     Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   subgraph age["`**Vehicle cohort mapping and survival rate estimation**`"]
     direction TB
     p0["`**Survival rate estimation**
@@ -658,7 +751,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   subgraph road_agg["`**Road aggregation maps**`"]
     subgraph agg["`**Road vehicle population evidence**`"]
       s3@{shape: doc, label: "**Wards Intelligence**
@@ -719,7 +812,7 @@ flowchart LR
   s9[("`**NRCan CEUD**
     Vehicle/mode occupancy and payload factors`")]
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   s0 -- nrcan_ceud.py --> p3 & p2
 
   p2_2@{shape: hex, label: "**config/scenarios/**
@@ -775,6 +868,8 @@ flowchart LR
 | Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) efficiencies |
 | Convert to service-output efficiency units | All | Convert source efficiencies (e.g., L/100 km or mpg) into demand units (e.g., bn tonne-km/PJ) with NRCan CEUD load factors; using HHVs. |
 
+**Note on light-duty PHEVs**: The CANOE-transportation legacy backend used to compile Islam et al. 2023 Autonomie results directly, opting for the parallel PHEV powertrain configuration, whereas the v2.0 backend compiles the same Autonomie results via the NLR ATB database, where only the EREV voltec PHEV powertrain configuration is listed. This will result in inconsistent PHEV parameters between both versions.
+
 #### Vehicle make-model to vehicle classes mapping
 
 `config/parameters/vehicle_size_class_map.csv` inherits all reviewed make-model mappings; see a few examples:
@@ -801,7 +896,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   s3[("`**CER Canada's Energy Future**
     Currency exchange rates and GDP deflator by scenario
     ***Def. scenario:*** current measures`")]
@@ -815,14 +910,14 @@ flowchart LR
       • *Table 3-7 & 3-10:* Avg. daily utilization"}
   end
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   p3["`**Cost of new off-road demand**
     • Capital cost of building new transport capacity to satisfy off-road demand *[dollars/demand unit]*<br>
     • *Aircraft:* CAPEX normalized with utilization and load factors from FAA`"]
   s7 & s8 -- inputs/0_manual_params/ --> p3
   s9 -- assorted_sources.py --> p3
 
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   subgraph road["`**Road vehicle costs**`"]
     s1@{shape: processes, label: "**Road aggregation maps**
       Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
@@ -833,7 +928,7 @@ flowchart LR
       Vehicle price projections of intercity buses"}
   end
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   p0_2@{shape: hex, label: "**config/scenarios/**
     *atb_scenario:* mid, conservative, advanced"}
   p2["`**Vehicle manufacturing costs**
@@ -896,7 +991,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   subgraph offroad["`**Off-road OPEX**`"]
     s7@{shape: docs, label: "**CMU OEO model assumptions**
       Variable costs of rail techs set to 6% (freight) and 10% (passenger) of CAPEX; marine freight set to 5%"}
@@ -905,14 +1000,14 @@ flowchart LR
       • *Table 3-6 & 3-9:* Average block speeds, aircraft capacities, and load factors"}
   end
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   p3["`**Variable costs from off-road**
     • *Aircraft:* **eq. (i-ii)** normalized maintenance costs per demand unit<br>
     • *Other off-road:* estimate variable costs with OEO ratios`"]
   s7 -- inputs/0_manual_params/ --> p3
   s8 -- assorted_sources.py --> p3
 
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   subgraph road["`**Road M&R costs**`"]
     s1@{shape: processes, label: "**Road aggregation maps**
       Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
@@ -925,7 +1020,7 @@ flowchart LR
       Maintenance and repair linear model coefficients for MHDVs"}
   end
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   p0_2@{shape: hex, label: "**config/scenarios/**
     *atb_scenario:* mid, conservative, or advanced"}
   p2["`**Maintenance & repair costs**
@@ -1023,23 +1118,22 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   subgraph greet["`**Argonne National Lab GREET model**`"]
     s1@{shape: win-pane, label: "**GREET_1 (fuel-cycle) and GREET_2 (vehicle-cycle) Excel models**
-      Solved with default inputs for model year 2025, can vary through 2050; each copy is solved for the following pair of classes:<br>
-      • Cars and Class 6 trucks
-      • SUVs and Class 8 Day cab trucks
-      • Pickup and Class 8 Sleeper cab trucks"}
-    s3@{shape: docs, label: "**Solved GREET model copies**
+      Solved with default inputs for model year 2025, can vary through 2050 if *xlwings* is configured to do so. Default classes are:<br>
+      • LDVs: Cars, SUVs, and pickup trucks
+      • MHDVs: Class 6 and Class 8 Day/Sleeper"}
+    s3@{shape: docs, label: "**Solved GREET model runs**
       Vehicle-cycle lifetime emissions by scenario
       *Def. scenario*: conventional materials"}
-    s1 -- "`*manually-executed, saved*`" --> s3
+    s1 -- "`solved via *xlwings* library*`" --> s3
   end
 
   s2@{shape: processes, label: "**Road aggregation maps**
     Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   p1@{shape: hex, label: "**config/scenarios/**
     *embodied_emissions:* true or false
     *embodied_materials*: conventional or lightweight"}
@@ -1076,7 +1170,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   s1@{shape: doc, label: "**NRCan/Dunsky 2024 EV Charging Infrastructure Assessment**
     • *Annual LD UFs:* Table 31; average LDV charging port utilization rate<br>
     • *EV-to-port ratios*: Tables 7 and 37; 1 LDEV: 1 LD charger, including residential ports, and 1.5 MHDEV: 1 MHD charger<br>
@@ -1096,7 +1190,7 @@ flowchart LR
     [k vehicles]
     *Retrieve LD and MHD EV stock`"/]  
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   p0["`**Aggregated capital and fixed costs**
     Cost of GW installed of charging ports, aggregated from projected type shares:<br>
     • *LDVs*: Derived type shares from Table 6 used to aggregate Table 12 per-port installation and equipment costs<br>
@@ -1174,9 +1268,9 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
 
   %% --- Hyperlinks ---
 ```
@@ -1196,7 +1290,7 @@ config:
     curve: linear
 ---
 flowchart LR
-  %% ############ Sources ###########
+  %% ########### Sources ###########
   subgraph vehicle["`**Vehicle fleet characteristics; these inputs are actively fetched for other parameters**`"]
     direction TB
     s3[("`**StatCan table**
@@ -1248,7 +1342,7 @@ flowchart LR
     end
   end
 
-  %% ############ Processes ###########
+  %% ########### Processes ###########
   subgraph ramp["`**legacy_backend/; simulation runs done externally**`"]
     direction TB
     p2@{shape: win-pane, label: "**RAMP-mobility simulation model**
@@ -1282,54 +1376,132 @@ flowchart LR
   click p2 "https://github.com/RAMP-project/RAMP-mobility"
 ```
 
+### Compact manual parameter selectors
+
+Manual lifetime, efficiency, and cost tables use `technology_class` as an exact
+selector for `technology.csv` `category`. When present, `powertrain` selects
+`sub_category`; configured aliases reconcile reviewed label variants, `all`
+selects the complete category, `remainder` excludes explicit peer selectors for
+the same parameter, and a terminal year such as `_2035` is retained as
+`selector_year`. `parameterization.manual_parameters` never edits the manual
+tables: it publishes the row-to-technology expansion, reconciliation, registry,
+and unmatched-selector findings under `inputs/1_interim/`.
+
 ## Installation
 
-Create the reproducible project environment from the lockfile:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and use Python
+3.13 or later. From the repository root, create the environment from the lockfile:
 
 ```powershell
 uv sync --frozen
 ```
 
+A runnable scenario also needs its registered source artifacts and prepared evidence.
+Check [`config/sources.yaml`](config/sources.yaml) for access and availability and
+[`config/paths.yaml`](config/paths.yaml) for their locations. Downloads, normalized
+inputs, reviewed mappings, accepted lifetime products, and external-model evidence
+have different owners; installing packages does not prepare these inputs.
+
+The current template uses the registered GREET result bank and inherited charging
+profiles. Generating new GREET evidence requires Windows and desktop Excel; ordinary
+compilation validates and reads the existing bank without starting Excel. See
+[scenario guidance](config/scenarios/README.md#parameter-settings) for those prerequisites.
+
+To create another scenario, copy the complete
+[`legacy_reproduction.yaml` template](config/scenarios/legacy_reproduction.yaml),
+retain every field and switch, and change its selections. Give the scenario a distinct
+`scenario.name`, `outputs.sqlite_name`, and `outputs.validation_report`; keep the
+other output paths distinct as needed. Use `comparison.mode: scenario` to compare it
+with an existing backend database, or `none` to disable comparison. Keep the full
+comparison block in either case. Run scenarios serially while interim and processed
+artifacts share configured directories.
+
 ## Common commands
 
-Run the repository doctor and focused validation:
+Select the scenario and check configuration, schema compatibility, reviewed manual
+inputs, and directory state. The doctor is a readiness check; it does not prove that
+all normalized evidence is present or current.
 
 ```powershell
-uv run python scripts/doctor.py --scenario config/scenarios/legacy_reproduction.yaml
-uv run ruff check .
-uv run pytest
+$scenario = "config/scenarios/legacy_reproduction.yaml"
+uv run python scripts/doctor.py --scenario $scenario
 ```
 
-Run the implemented source adapters directly. Add or retain `--no-download` for
-deterministic cache-only execution:
+Inspect pending scenario jobs, then run the current orchestration:
 
 ```powershell
-uv run python -m fetching.nrcan_ceud --scenario config/scenarios/legacy_reproduction.yaml --no-download
-uv run python -m fetching.vehicle_population --scenario config/scenarios/legacy_reproduction.yaml --no-download
-uv run python -m fetching.statcan_tables --scenario config/scenarios/legacy_reproduction.yaml --no-download
-uv run python -m fetching.cer_enerfuture --scenario config/scenarios/legacy_reproduction.yaml --no-download
-uv run python -m fetching.nlr_atb_autonomie --scenario config/scenarios/legacy_reproduction.yaml --no-download
+uv run snakemake --snakefile workflow/Snakefile --cores 1 --config "scenario=$scenario" --dry-run
+uv run snakemake --snakefile workflow/Snakefile --cores 1 --config "scenario=$scenario"
 ```
 
-Build the current validated SQLite bootstrap:
+The workflow uses cached source inputs by default. Add `download_sources=true` to
+the `--config` values to permit missing StatCan/CER caches to be downloaded; existing
+caches are reused. Other source preparation remains explicit through its owning
+adapter. Keep the [workspace-local profile](workflow/profiles/default/profile.yaml)
+for Snakemake runtime metadata.
+
+The current DAG has four executable stages plus its aggregate target:
+
+| Stage | Current role |
+| --- | --- |
+| `doctor_smoke` | Validate readiness and produce a scenario-named completion marker. |
+| `statcan_transport_tables` | Normalize declared StatCan tables and publish manifests/warnings. |
+| `cer_enerfuture` | Normalize the selected CER edition and publish manifests/warnings. |
+| `transport_database` | Call the shared Python build and publish the SQLite database and validation report. |
+
+Snakemake can reuse these declared outputs and invalidate them when tracked inputs
+change. Its [update output handling](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#updating-existing-output-files)
+restores the previous database and report if its database job fails.
+However, CEUD and ratings evidence, other ATB/Autonomie and assorted-source artifacts,
+road aggregation, and accepted lifetime products are not comprehensively orchestrated
+or tracked. Prepare them before the build, and add `--forcerun transport_database`
+after changing an undeclared prerequisite. A successful dry-run checks the declared
+DAG, not complete source readiness.
+
+When inputs are already prepared, the same build is available directly:
 
 ```powershell
-uv run python src/build_transport.py --scenario config/scenarios/legacy_reproduction.yaml --overwrite
+uv run python src/build_transport.py --scenario $scenario --overwrite
 ```
 
-Inspect the current workflow DAG without executing it:
+`--overwrite` explicitly replaces an existing configured database. Snakemake's
+`transport_database` rule supplies that flag itself. Both paths prepare parameters
+through the same Python functions; processed CSVs are audit exports and do not carry
+the complete provenance and preparation context needed for independent stage reuse.
 
-```powershell
-uv run snakemake -n --snakefile workflow/Snakefile --config scenario=config/scenarios/legacy_reproduction.yaml --cores 1
-```
+## Outputs and validation
 
-Source adapters write normalized audit tables under `inputs/1_interim/`. Database,
-validation, and log locations are configured in `config/paths.yaml` and the selected
-scenario.
+| Location | What to inspect |
+| --- | --- |
+| `inputs/1_interim/` | Normalized source values and intermediate audit tables. |
+| `inputs/2_processed/` | Parameter-ready tables produced by preparation. |
+| `inputs/validation/` | Source, transformation, mapping, and reconciliation evidence. |
+| `outputs/sqlite/` | The database named by `outputs.sqlite_name`. |
+| `outputs/validation/` | The configured database validation and comparison report. |
+| `outputs/logs/` | Run logs, warnings, and workflow readiness markers. |
+
+Review the report's `validation` results for schema support, provenance/data quality,
+foreign keys, and database integrity. Review `comparison` separately for the selected
+legacy or scenario comparison. A successful build establishes those insertion and
+integrity checks; comparison differences still need explanation, and solver feasibility
+is established by the consuming optimization run.
 
 ## Development approach
 
-Development is validation-first: stabilize direct Python interfaces and deterministic
-artifacts, test the changed seam, then connect stable stages through Snakemake. Baseline
-work preserves legacy-equivalent assumptions until differences are explained and
-documented.
+Keep one shared Python preparation and insertion path for standalone and caller-owned
+compilation. Stabilize source/configuration boundaries and complete persisted artifacts
+before adding workflow stages. Source downloads and reviewed mappings, opt-in diagnostics,
+and research experiments retain their explicit entrypoints.
+
+Snakemake currently serves a small, useful dependency boundary. Production Python
+modules do not import it, so orchestration can evolve independently of parameter
+preparation and insertion. A broader scenario workflow first needs complete
+prerequisite tracking and artifact locations for each scenario. Splitting builders into rules would also require complete persisted row,
+provenance, internal-dataset, and audit handoffs; adding rules around CSV exports alone
+would repeat preparation. Orchestration changes should preserve the shared Python
+path and validate the affected dependencies.
+
+Contributors should follow [`AGENTS.md`](AGENTS.md) and the bounded planning protocol
+in [`.agents/PLANS.md`](.agents/PLANS.md). Use the focused tests and validation surfaces
+of the affected artifact family. Preserve legacy evidence and unrelated working-tree
+changes, and document parity differences before promoting new modeling assumptions.

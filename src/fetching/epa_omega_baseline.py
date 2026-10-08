@@ -276,8 +276,8 @@ def prepare_baseline_extract(bundle: ConfigBundle) -> dict:
 
 
 def required_inputs(bundle: ConfigBundle) -> list[Path]:
-    if bundle.scenario.BEV_PHEV_range_representation.mode == "none":
-        return []
+    # Historical EV representatives always consume the registered OMEGA weights,
+    # even when investable range variants are left unchanged.
     return [build_request(bundle).extract_path]
 
 

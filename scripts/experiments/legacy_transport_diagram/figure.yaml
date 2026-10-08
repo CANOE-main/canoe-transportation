@@ -1,0 +1,74 @@
+version: 1
+owner: scripts.experiments.legacy_transport_diagram.build
+source:
+  diagram: legacy_backend/canoe-trn-diagram.svg
+  database: legacy_backend/transportation[deprecated]/compiled_database/canoe_trn_on_vanilla4.sqlite
+paths:
+  registry: config/paths.yaml
+  artifact: legacy_transport_diagram
+  main: canoe-legacy-transport
+publication:
+  width_mm: 180
+  font_family: Arial
+  minimum_font_px: 18
+  canvas_width: 1280
+  main_height: 720
+  png_dpi: 600
+style:
+  paper: '#FFFFFF'
+  ink: '#253449'
+  muted: '#536174'
+  rule: '#D5DCE4'
+  technology_fill: '#E7EFF8'
+  technology_stroke: '#416184'
+  fuel_fill: '#FFF3D4'
+  fuel_stroke: '#936C22'
+  clean_fill: '#E5EFDF'
+  clean_stroke: '#537445'
+  service_fill: '#F6E3E2'
+  service_stroke: '#B35C58'
+  emission_fill: '#FBEADD'
+  emission_stroke: '#A35C32'
+  emission_zone_fill: '#FFFAF5'
+  technology_zone_fill: '#F8FAFD'
+  zone_fill: '#FAFBFC'
+original_counts:
+  motorcycles: 3
+  light_duty: 54
+  medium_duty: 10
+  heavy_duty_and_nonroad: 57
+parameters:
+  technology:
+    title: Technology
+    fields: [Existing capacity, Efficiency, Lifetime, Investment costs, Maintenance costs, Vehicle-cycle EFs]
+    indexing: [Scenario, Period, Vintage, Powertrain]
+  fuel:
+    title: Fuel
+    fields: [Fuel prices, Blend ratios, Fuel-cycle EFs]
+    indexing: [Scenario, Period]
+modes:
+  - {id: motorcycles, label: Motorcycles, group: motorcycles, prefixes: [T_LDV_M_]}
+  - {id: cars, label: Cars, group: light_duty, prefixes: [T_LDV_C_]}
+  - {id: light_passenger, label: Passenger light trucks, group: light_duty, prefixes: [T_LDV_LTP_]}
+  - {id: light_freight, label: Freight light trucks, group: light_duty, prefixes: [T_LDV_LTF_]}
+  - {id: medium_trucks, label: Medium trucks, group: medium_duty, prefixes: [T_MDV_T_]}
+  - {id: heavy_trucks, label: Heavy trucks, group: heavy_duty_and_nonroad, prefixes: [T_HDV_T_]}
+  - {id: school_buses, label: School buses, group: heavy_duty_and_nonroad, prefixes: [T_HDV_BS_]}
+  - {id: transit_buses, label: Transit buses, group: heavy_duty_and_nonroad, prefixes: [T_HDV_BT_]}
+  - {id: intercity_buses, label: Intercity buses, group: heavy_duty_and_nonroad, prefixes: [T_HDV_BIC_]}
+  - {id: aircraft, label: Jet aircraft, group: heavy_duty_and_nonroad, prefixes: [T_HDV_AJP_, T_HDV_AJF_]}
+  - {id: rail, label: Rail, group: heavy_duty_and_nonroad, prefixes: [T_HDV_RICP_, T_HDV_RF_]}
+  - {id: marine, label: Marine vessels, group: heavy_duty_and_nonroad, prefixes: [T_HDV_WTF_]}
+  - {id: offroad, label: Off-road, group: offroad, technology_ids: [T_OFF]}
+fuels:
+  - {id: gasoline, symbol: GSL, commodities: [T_gsl]}
+  - {id: diesel, symbol: DSL, commodities: [T_dsl]}
+  - {id: cng, symbol: CNG, commodities: [T_cng]}
+  - {id: lng, symbol: LNG, commodities: [T_lng]}
+  - {id: jet, symbol: 'JTF · SPK', commodities: [T_jtf, T_spk]}
+  - {id: marine_oils, symbol: 'HFO · MDO', commodities: [T_mdo, T_hfo]}
+  - {id: electricity, symbol: ELC, commodities: [T_elc, T_elc_ldv_bev_chrg, T_elc_ldv_phev_chrg, T_elc_mdv_chrg, T_elc_hdv_chrg]}
+  - {id: hydrogen, symbol: H₂, commodities: [T_h2_ldv, T_h2_mdv, T_h2_hdv]}
+# This is a diagram aggregation contract, not a new modelling selection.
+vehicle_categories: [Motorcycles, Cars, Light trucks, Medium trucks, Heavy trucks, Bus, Air travel, Air freight, Rail travel, Rail freight, Marine freight, Offroad]
+external_electricity_interfaces: [E_elc_dx, I_elc]

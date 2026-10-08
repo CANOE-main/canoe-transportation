@@ -8,6 +8,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
+from functools import cache
 from math import isfinite
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,8 @@ import pandas as pd
 from canoe_schema.v4_0 import CostInvest, CostVariable
 
 from fetching.nlr_atb_autonomie import configured_trajectory
+from fetching.epa_omega_baseline import SOURCE as OMEGA, COMPONENT as OMEGA_COMPONENT, build_request as omega_request
+from parameterization.ldv_ev_ranges import existing_range_weights, module_rules as range_module_rules
 from parameterization.currency import CerCurrencyConverter
 from parameterization.offroad_capex_opex import (
     aircraft_cost_per_billion_service,
@@ -197,6 +200,7 @@ def prepare_cost_rows(
     efficiency = load_harmonization_rules(bundle, "efficiencies")
     conversions = load_conversion_factors(bundle)
     scenario = bundle.scenario
+    historical_weights, range_evidence = existing_range_weights(bundle)
     if scenario.economics.cost_reference_currency != "CAD":
         raise ValueError("Transport costs require a configured CAD reference currency")
     reference_year = scenario.economics.cost_reference_year
@@ -399,6 +403,17 @@ def prepare_cost_rows(
         selected = loads.loc[loads.region.eq(region) & loads["mode"].eq(mode)]
         return interpolate(selected, scenario.periods.base_year, "load_factor")
 
+    @cache
+    def ldv_retail_msrp(bucket: str, vehicle_class: str, source_year: int) -> float:
+        """Reuse immutable source lookups across periods and regional mixtures."""
+        selected = prices.loc[
+            prices.powertrain.eq(bucket) & prices.vehicle_class.eq(vehicle_class)
+        ]
+        return interpolate(
+            selected, source_year, "vehicle_price_usd_2022_per_vehicle",
+            year_col="source_year",
+        )
+
     regions = {r: region_map.get(r, r) for r in scenario.geography.regions}
     periods = list(scenario.periods.model)
     for source_region, region in regions.items():
@@ -410,6 +425,7 @@ def prepare_cost_rows(
                 continue
             powertrain = efficiency["subcategory_aliases"].get(item.sub_category, item.sub_category)
             is_existing = item.tech.endswith("_EX")
+            range_mix = historical_weights.get((mode, powertrain), {}) if is_existing else {}
             vintages = (
                 [v for v in scenario.periods.existing if (region, item.tech, v) in existing_keys]
                 if is_existing else periods
@@ -462,31 +478,31 @@ def prepare_cost_rows(
                         )
                         load = load_at(source_region, mode)
                         if mode in {"cars", "passenger_light_trucks", "freight_light_trucks"}:
-                            selected = prices.loc[prices.powertrain.eq(powertrain)]
                             class_costs = []
                             weighted_msrp = 0.0
-                            for vehicle_class, weight in weights[source_region, mode].items():
-                                class_prices = selected.loc[selected.vehicle_class.eq(vehicle_class)]
-                                msrp = interpolate(
-                                    class_prices, source_year,
-                                    "vehicle_price_usd_2022_per_vehicle", year_col="source_year",
-                                )
-                                result = ldv_repair_per_mile(
-                                    age=age, msrp=msrp, vehicle_class=vehicle_class,
-                                    powertrain=powertrain,
-                                    baseline=burnham["baseline_repair_cost"],
-                                    class_multipliers=burnham["class_multipliers"],
-                                    powertrain_multipliers=burnham["powertrain_multipliers"],
-                                    maintenance=burnham["maintenance_cost"],
-                                    powertrain_labels=rules["ldv_powertrain_evidence"],
-                                    price_exponent=rules["ldv_repair_price_exponent_per_usd"],
-                                    max_age=rules["ldv_repair_max_age"],
-                                )
-                                class_costs.append(weight * result["total"])
-                                weighted_msrp += weight * msrp
+                            for bucket, range_weight in (range_mix or {powertrain: 1.0}).items():
+                                for vehicle_class, class_weight in weights[source_region, mode].items():
+                                    weight = range_weight * class_weight
+                                    msrp = ldv_retail_msrp(bucket, vehicle_class, source_year)
+                                    result = ldv_repair_per_mile(
+                                        age=age, msrp=msrp, vehicle_class=vehicle_class,
+                                        powertrain=bucket,
+                                        baseline=burnham["baseline_repair_cost"],
+                                        class_multipliers=burnham["class_multipliers"],
+                                        powertrain_multipliers=burnham["powertrain_multipliers"],
+                                        maintenance=burnham["maintenance_cost"],
+                                        powertrain_labels=rules["ldv_powertrain_evidence"],
+                                        price_exponent=rules["ldv_repair_price_exponent_per_usd"],
+                                        max_age=rules["ldv_repair_max_age"],
+                                    )
+                                    class_costs.append(weight * result["total"])
+                                    weighted_msrp += weight * msrp
                             cost_per_mile = sum(class_costs)
                             components = [(ATB, "vehicles"), (ATB, "maintenance_ldv"), (CEUD, road_demand["activity_series"][mode]["table_id"]), *weight_components(mode, source_region)]
                             treatment = "Burnham MSRP repair plus maintenance"
+                            if range_mix:
+                                components.append((OMEGA, OMEGA_COMPONENT))
+                                treatment += "; OMEGA range-weighted representative"
                             currency, dollar_year = burnham_currency, burnham_year
                         elif mode == "motorcycles":
                             selected = gcam.loc[
@@ -566,6 +582,7 @@ def prepare_cost_rows(
                             components=components, governing=components[0][0],
                             treatment=treatment,
                             details={"age": age, "load_factor": load,
+                                     "range_weights": json.dumps(range_mix, sort_keys=True) if range_mix else None,
                                      "purchase_evidence_year": source_year,
                                      "aggregation_weights": json.dumps(
                                          weights[source_region, mode], sort_keys=True
@@ -742,6 +759,9 @@ def prepare_cost_rows(
             "lifetime_signature": lifetime_signature,
             "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
             "fleet_rules": load_harmonization_rules(bundle, "road_aggregation"),
+            "historical_range_rules": range_module_rules(bundle).existing.model_dump(),
+            "historical_range_weights": range_evidence.bucket_totals.to_dict("records"),
+            "omega_extract_sha256": file_sha256(omega_request(bundle).extract_path),
         },
         sort_keys=True,
     ).encode()).hexdigest()
@@ -856,6 +876,18 @@ def prepare_cost_rows(
                 (FAA, "section_4_operating_costs"),
             )
         },
+        "source_cost_metadata": [
+            {
+                "source": source, "component": component,
+                "currency": registration.adapter["native_cost_currency"],
+                "dollar_year": registration.adapter["native_cost_dollar_year"],
+                "status": registration.adapter.get("cost_metadata_status", "source_documented"),
+                "notes": registration.adapter.get("cost_metadata_note", ""),
+            }
+            for source, source_registration in sorted(bundle.sources.sources.items())
+            for component, registration in sorted(source_registration.components.items(), key=lambda item: str(item[0]))
+            if "native_cost_currency" in registration.adapter
+        ],
         "source_components": sorted({
             f"{source}/{component}"
             for item in values for source, component in item["components"]
@@ -865,6 +897,12 @@ def prepare_cost_rows(
     processed = resolve_artifact_path(bundle, "costs_processed")
     validation = resolve_artifact_path(bundle, "costs_validation")
     evidence = pd.DataFrame(values)
+    evidence["cost_metadata_status"] = evidence.components.map(
+        lambda pairs: "provisional_review" if any(
+            bundle.sources.sources[source].components[component].adapter.get("cost_metadata_status") == "provisional_review"
+            for source, component in pairs
+        ) else "declared_metadata"
+    )
     evidence["source_components"] = evidence["components"].map(
         lambda pairs: json.dumps(sorted({f"{source}/{component}" for source, component in pairs}))
     )
@@ -889,6 +927,7 @@ def prepare_cost_rows(
             "cad_per_usd", "source_year_deflator", "target_year_deflator",
             "cad_value", "target_cad_value", "normalization_divisor", "cost",
             "units", "treatment", "governing_source_key", "source_components",
+            "cost_metadata_status",
         ]], interim / rules["files"]["currency_audit"],
     )
     invest_frame = pd.DataFrame([row.model_dump(mode="json") for row in invest_rows])

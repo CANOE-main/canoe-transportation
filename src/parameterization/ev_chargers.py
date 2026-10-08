@@ -35,6 +35,7 @@ class ChargerPreparation:
     invest_rows: list[CostInvest]
     fixed_rows: list[CostFixed]
     efficiency_rows: list[Efficiency]
+    utilization_rows: list[LimitAnnualCapacityFactor]
     utilization: pd.DataFrame
     provenance_contexts: list[ResolvedProvenance]
     audit: dict[str, Any]
@@ -95,8 +96,9 @@ def _context(
     return resolve_composite_provenance(
         inputs=inputs, dataset_key=f"ev_chargers.{name}",
         transformation="reviewed EV charger parameterization",
-        transformation_version="1", governing_source_id=governing_id,
-        data_quality=quality, value_variant={"input_digest": digest, "periods": bundle.scenario.periods.model_dump()},
+        transformation_version=load_harmonization_rules(bundle, "ev_chargers")["transformation_version"], governing_source_id=governing_id,
+        data_quality=quality, value_variant={"input_digest": digest, "periods": bundle.scenario.periods.model_dump(),
+                                           "charger_rules": load_harmonization_rules(bundle, "ev_chargers")},
     )
 
 
@@ -126,6 +128,9 @@ def prepare_ev_charger_rows(
 ) -> ChargerPreparation:
     """Reuse prepared vehicle stock and return validated charger products."""
     rules = load_harmonization_rules(bundle, "ev_chargers")
+    if (rules["utilization_time_basis"] != "vintage_input_year"
+            or rules["historical_utilization"] != "earliest_reviewed_value"):
+        raise ValueError("Unsupported charger utilization time interpretation")
     manual_rules = load_harmonization_rules(bundle, "manual_parameters")
     _, frames = validate_manual_registry(
         bundle, source_column=manual_rules["source_column"],
@@ -400,31 +405,44 @@ def prepare_ev_charger_rows(
                      "notes": f"Reviewed {category} charging efficiency"}
                     for vintage in vintages
                 ], efficiency_contexts[category]))
-                for period in bundle.scenario.periods.model:
-                    if kind == "new" and period not in vintages:
-                        continue
-                    source_year = bundle.scenario.periods.projection_year(period, legacy_at_end=False)
+                for vintage in vintages:
+                    reviewed = manual.loc[
+                        manual.category.eq("charger") & manual.sub_category.eq(category)
+                        & manual.parameter.eq("max_annual_utilization")
+                    ]
+                    explicit_years = [int(value) for value in reviewed.period if str(value).isdigit()]
+                    source_year = (
+                        min(explicit_years) if kind == "existing" and explicit_years
+                        else bundle.scenario.periods.model[0] if kind == "existing"
+                        else bundle.scenario.periods.projection_year(vintage, legacy_at_end=False)
+                    )
                     row = _period_value(manual, category, "max_annual_utilization", source_year)
                     factor = float(row.value)
                     if not 0 < factor < 1:
-                        raise ValueError(f"Invalid charger utilization: {category}/{period}")
+                        raise ValueError(f"Invalid charger utilization: {category}/{vintage}")
                     utilization_records.append({
-                        "region": region, "period": period, "source_year": source_year, "tech": tech,
-                        "output_comm": mapping["output"], "operator": "≤",
+                        "region": region, "vintage": vintage, "source_year": source_year, "tech_or_group": tech,
+                        "output_comm": mapping["output"], "operator": rules["utilization_operator"],
                         "factor": factor, "units": "fraction",
-                        "notes": f"Reviewed {category} annual charging utilization",
-                        **utilization_context.parameter_fields(),
+                        "notes": f"Reviewed {category} annual charging utilization; {source_year} input year; constant over cohort lifetime",
                     })
+    utilization_rows = validate_parameter_rows(
+        LimitAnnualCapacityFactor,
+        [{key: value for key, value in record.items() if key not in {"source_year", "units"}}
+         for record in utilization_records], utilization_context,
+    )
+    utilization_records = [
+        {**row.model_dump(), "source_year": record["source_year"], "units": record["units"]}
+        for row, record in zip(utilization_rows, utilization_records, strict=True)
+    ]
     utilization = pd.DataFrame(utilization_records).sort_values(
-        ["region", "period", "tech"], kind="stable"
+        ["region", "vintage", "tech_or_group"], kind="stable"
     ).reset_index(drop=True)
-    if utilization.duplicated(["region", "period", "tech", "output_comm", "operator"]).any():
+    if utilization.duplicated(["region", "vintage", "tech_or_group", "output_comm", "operator"]).any():
         raise ValueError("Duplicate charger utilization keys")
-    if "period" in LimitAnnualCapacityFactor.model_fields:
-        raise ValueError("Charger utilization schema changed; review period-row insertion")
 
     contexts = [capacity_context, *invest_contexts.values(), *fixed_contexts.values(),
-                *efficiency_contexts.values()]
+                *efficiency_contexts.values(), utilization_context]
     output_dir = resolve_artifact_path(bundle, "ev_chargers_processed")
     output_dir.mkdir(parents=True, exist_ok=True)
     frames_to_write = {
@@ -442,7 +460,9 @@ def prepare_ev_charger_rows(
         "capacity_rows": len(capacity_rows), "invest_rows": len(invest_rows),
         "fixed_rows": len(fixed_rows), "efficiency_rows": len(efficiency_rows),
         "existing_investment_rows_excluded": len(capacity_rows),
-        "utilization_rows": len(utilization), "utilization_schema_inserted": False,
+        "utilization_rows": len(utilization_rows), "utilization_schema_supported": True,
+        "utilization_time_basis": rules["utilization_time_basis"],
+        "historical_utilization": rules["historical_utilization"],
         "utilization_provenance": {
             "data_id": utilization_context.data_id,
             "contributors": [item.source_key for item in utilization_context.contributors],
@@ -459,13 +479,13 @@ def prepare_ev_charger_rows(
         json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     LOGGER.info(
-        "EV charger rows: capacity=%d invest=%d fixed=%d efficiency=%d utilization_artifact=%d; public_ports=%d",
+        "EV charger rows: capacity=%d invest=%d fixed=%d efficiency=%d annual_utilization=%d; public_ports=%d",
         len(capacity_rows), len(invest_rows), len(fixed_rows), len(efficiency_rows),
         len(utilization), national,
     )
     LOGGER.info("Excluded %d existing charger investment rows; retained their annual fixed-cost basis", len(capacity_rows))
     return ChargerPreparation(capacity_rows, invest_rows, fixed_rows, efficiency_rows,
-                              utilization, contexts, audit)
+                              utilization_rows, utilization, contexts, audit)
 
 
 def main() -> None:

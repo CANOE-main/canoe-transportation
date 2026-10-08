@@ -115,10 +115,10 @@ charging_profiles:
   time_mapping: null
 
 BEV_PHEV_range_representation:
-  mode: none  # none | new_capacity_shares | representative_archetype
-  # OMEGA MY2022 baseline sales/CD ranges match the legacy notebook source.
+  mode: new_capacity_shares  # none | new_capacity_shares | representative_archetype
   # US class/powertrain shares apply to Canadian categories across model vintages.
-  # none requires no range evidence; new_capacity_shares retains minimum semantics.
+  # none adds no new-vehicle range rules; EX representatives still use OMEGA weights.
+  # new_capacity_shares retains minimum semantics.
   # representative_archetype keeps EX stock; one new BEV/PHEV per LDV category.
   # PHEV category blends use the accepted horizon mean; vintage fuel differences are audited.
 

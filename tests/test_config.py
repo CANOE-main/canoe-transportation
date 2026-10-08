@@ -241,6 +241,21 @@ def test_artifact_validation_surface_must_be_a_dotted_interface(
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
+def test_legacy_diagram_route_stays_inside_legacy_root(tmp_path: Path) -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    assert bundle.paths.artifacts["legacy_transport_diagram"].layer == "legacy"
+    assert resolve_artifact_path(bundle, "legacy_transport_diagram") == (
+        REPO_ROOT / "legacy_backend" / "diagrams"
+    )
+
+    paths, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(paths.read_text(encoding="utf-8"))
+    payload["artifacts"]["legacy_transport_diagram"]["path"] = "outputs/validation/figures"
+    paths.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match="must be within the legacy root"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
 def test_shared_energy_conversion_is_not_scenario_local() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     conversions = load_parameter_yaml(bundle, "conversion.yaml")

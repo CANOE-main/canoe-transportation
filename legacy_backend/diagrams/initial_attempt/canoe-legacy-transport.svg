@@ -1,0 +1,223 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="180mm" height="158mm" viewBox="0 0 1800 1580" role="img" aria-labelledby="legacy-main-title legacy-main-description">
+  <title id="legacy-main-title">Legacy CANOE transportation model</title>
+  <desc id="legacy-main-description">Left-to-right legacy energy supply, vehicle families and transport service demands. Gold denotes imported fuels, blue technologies, green electricity or hydrogen, coral services and orange emissions accounting. The companion matrix specifies eligible fuels.</desc>
+  <defs>
+    <marker id="arrow-technology" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#416184" />
+    </marker>
+    <marker id="arrow-fuel" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#936C22" />
+    </marker>
+    <marker id="arrow-clean" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#537445" />
+    </marker>
+    <marker id="arrow-service" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#B35C58" />
+    </marker>
+    <marker id="arrow-emission" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#A35C32" />
+    </marker>
+  </defs>
+  <g id="paper">
+    <rect width="1800" height="1580" fill="#FFFFFF" />
+  </g>
+  <g id="zones">
+    <line x1="40" y1="165" x2="1760" y2="165" stroke="#D5DCE4" stroke-width="2" />
+    <line x1="60" y1="634" x2="620" y2="634" stroke="#D5DCE4" stroke-width="2" />
+    <line x1="40" y1="1450" x2="1760" y2="1450" stroke="#D5DCE4" stroke-width="2" />
+  </g>
+  <g id="links">
+    <path d="M 260 260 L 310 260" fill="none" stroke="#936C22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-fuel)" />
+    <path d="M 620 260 L 650 260" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 260 340 L 310 340" fill="none" stroke="#936C22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-fuel)" />
+    <path d="M 620 340 L 650 340" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 260 420 L 310 420" fill="none" stroke="#936C22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-fuel)" />
+    <path d="M 620 420 L 650 420" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 260 500 L 310 500" fill="none" stroke="#936C22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-fuel)" />
+    <path d="M 620 500 L 650 500" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 260 580 L 310 580" fill="none" stroke="#936C22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-fuel)" />
+    <path d="M 620 580 L 650 580" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 650 260 L 650 600" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 650 420 L 700 420" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 260 731 L 310 731" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-clean)" />
+    <path d="M 620 715 L 700 715" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 465 792 L 465 810" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-clean)" />
+    <path d="M 650 707 A 8 8 0 0 0 650 723" fill="none" stroke="#FFFFFF" stroke-width="9" />
+    <path d="M 650 600 V 707 A 8 8 0 0 0 650 723 V 794 Q 650 802 642 802 H 408 Q 400 802 400 810" fill="none" stroke="#936C22" stroke-width="3" marker-end="url(#arrow-fuel)" />
+    <path d="M 620 852 L 700 852" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 260 963 L 310 963" fill="none" stroke="#936C22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-fuel)" />
+    <path d="M 260 1087 L 310 1087" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-clean)" />
+    <path d="M 260 1108 L 276 1108 Q 284 1108 284 1116 L 284 1208 Q 284 1216 292 1216 L 310 1216" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-clean)" />
+    <path d="M 620 963 L 655 963 Q 663 963 663 971 L 663 1146 Q 663 1154 655 1154 L 473 1154 Q 465 1154 465 1162 L 465 1170" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-clean)" />
+    <path d="M 620 1087 L 663 1087" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 620 1236 L 700 1236" fill="none" stroke="#537445" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 700 233 L 700 1320" fill="none" stroke="#416184" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 700 233 L 750 233" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-technology)" />
+    <path d="M 700 580 L 750 580" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-technology)" />
+    <path d="M 700 930 L 750 930" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-technology)" />
+    <path d="M 700 1060 L 750 1060" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-technology)" />
+    <path d="M 700 1190 L 750 1190" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-technology)" />
+    <path d="M 700 1320 L 750 1320" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-technology)" />
+    <path d="M 700 410 L 750 410" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-technology)" />
+    <path d="M 700 750 L 750 750" fill="none" stroke="#416184" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-technology)" />
+    <path d="M 1290 233 L 1370 233" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 364 L 1370 364" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 458 L 1370 458" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 580 L 1370 580" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 710 L 1370 710" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 803 L 1370 803" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 930 L 1370 930" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 1060 L 1370 1060" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 1190 L 1370 1190" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 1290 1320 L 1370 1320" fill="none" stroke="#B35C58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-service)" />
+    <path d="M 60 260 L 48 260 Q 40 260 40 268 L 40 1370 Q 40 1378 48 1378 L 60 1378" fill="none" stroke="#A35C32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-emission)" stroke-dasharray="8 6" />
+    <path d="M 60 340 L 40 340" fill="none" stroke="#A35C32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6" />
+    <path d="M 60 420 L 40 420" fill="none" stroke="#A35C32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6" />
+    <path d="M 60 500 L 40 500" fill="none" stroke="#A35C32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6" />
+    <path d="M 60 580 L 40 580" fill="none" stroke="#A35C32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6" />
+    <path d="M 60 963 L 40 963" fill="none" stroke="#A35C32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6" />
+    <path d="M 620 980 L 630 980 Q 638 980 638 988 L 638 1370 Q 638 1378 630 1378 L 620 1378" fill="none" stroke="#A35C32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-emission)" stroke-dasharray="8 6" />
+    <path d="M 1380 1484 L 1425 1484" fill="none" stroke="#A35C32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-emission)" stroke-dasharray="8 6" />
+  </g>
+  <g id="nodes">
+    <rect id="import-gsl" x="60" y="230" width="200" height="60" rx="26" stroke-width="2" fill="#FFF3D4" stroke="#936C22" data-technologies="T_IMP_GSL T_IMP_ETH" />
+    <rect id="prepare-gsl" x="310" y="230" width="310" height="60" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_EA_GSL T_EA_ETH T_BLND_ETH_GSL" />
+    <rect id="import-dsl" x="60" y="310" width="200" height="60" rx="26" stroke-width="2" fill="#FFF3D4" stroke="#936C22" data-technologies="T_IMP_DSL T_IMP_RDSL" />
+    <rect id="prepare-dsl" x="310" y="310" width="310" height="60" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_EA_DSL T_EA_RDSL T_BLND_RDSL_DSL" />
+    <rect id="import-jtf" x="60" y="390" width="200" height="60" rx="26" stroke-width="2" fill="#FFF3D4" stroke="#936C22" data-technologies="T_IMP_JTF T_IMP_SPK" />
+    <rect id="prepare-jtf" x="310" y="390" width="310" height="60" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_EA_JTF T_EA_SPK T_BLND_JTF T_BLND_SPK" />
+    <rect id="import-cng" x="60" y="470" width="200" height="60" rx="26" stroke-width="2" fill="#FFF3D4" stroke="#936C22" data-technologies="T_IMP_CNG T_IMP_LNG" />
+    <rect id="prepare-cng" x="310" y="470" width="310" height="60" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_EA_CNG T_EA_LNG" />
+    <rect id="import-hfo" x="60" y="550" width="200" height="60" rx="26" stroke-width="2" fill="#FFF3D4" stroke="#936C22" data-technologies="T_IMP_HFO T_IMP_MDO" />
+    <rect id="prepare-hfo" x="310" y="550" width="310" height="60" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_EA_HFO T_EA_MDO" />
+    <rect id="electricity-interface" x="60" y="681" width="200" height="104" rx="26" stroke-width="2" fill="#E5EFDF" stroke="#537445" data-technologies="T_IMP_ELC" />
+    <rect id="ev-chargers" x="310" y="664" width="310" height="128" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_LDV_BEV_CHRG T_LDV_PHEV_CHRG T_MDV_CHRG T_HDV_CHRG" />
+    <rect id="phev-mixtures" x="310" y="810" width="310" height="84" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_BLND_GSL_ELC_PHEV35 T_BLND_GSL_ELC_PHEV50 T_BLND_DSL_ELC_MDV T_BLND_DSL_ELC_HDV" />
+    <rect id="ng-interface" x="60" y="916" width="200" height="96" rx="26" stroke-width="2" fill="#FFF3D4" stroke="#936C22" data-technologies="T_IMP_NG T_EA_NG" />
+    <rect id="smr" x="310" y="916" width="310" height="96" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="I_H2_SMR I_H2_SMR_CCS" />
+    <rect id="h2-electricity-interface" x="60" y="1040" width="200" height="96" rx="26" stroke-width="2" fill="#E5EFDF" stroke="#537445" />
+    <rect id="electrolysis" x="310" y="1040" width="310" height="96" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="ELC_AC_DC I_H2_ELC_ALK I_H2_ELC_PEM" />
+    <rect id="h2-delivery" x="310" y="1170" width="310" height="132" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="H2_distribution H2_COMP_10_100 H2_COMP_100_700 H2_storage T_H2_LDV_REFUEL T_H2_MDV_REFUEL T_H2_HDV_REFUEL" />
+    <rect id="vehicles-motorcycles" x="750" y="188" width="540" height="90" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_LDV_M_BEV_N T_LDV_M_GSL_EX T_LDV_M_GSL_N" data-modes="motorcycles" />
+    <rect id="vehicles-medium" x="750" y="530" width="540" height="100" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_MDV_T_BEV_N T_MDV_T_DSL_EX T_MDV_T_DSL_HEV_N T_MDV_T_DSL_N T_MDV_T_DSL_PHEV_N T_MDV_T_FCEV_N T_MDV_T_FCHEV_N T_MDV_T_GSL_EX T_MDV_T_GSL_N" data-modes="medium_trucks" />
+    <rect id="vehicles-aircraft" x="750" y="880" width="540" height="100" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_HDV_AJF_JFL_EX T_HDV_AJF_JFL_N T_HDV_AJF_SPK_N T_HDV_AJP_JFL_EX T_HDV_AJP_JFL_N T_HDV_AJP_SPK_N" data-modes="aircraft" />
+    <rect id="vehicles-rail" x="750" y="1010" width="540" height="100" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_HDV_RF_DSL_EX T_HDV_RF_DSL_N T_HDV_RF_H2_N T_HDV_RF_LNG_N T_HDV_RICP_DSL_EX T_HDV_RICP_DSL_N T_HDV_RICP_H2_N" data-modes="rail" />
+    <rect id="vehicles-marine" x="750" y="1140" width="540" height="100" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_HDV_WTF_HFO_EX T_HDV_WTF_HFO_N T_HDV_WTF_LNG_N T_HDV_WTF_MDO_EX T_HDV_WTF_MDO_N" data-modes="marine" />
+    <rect id="vehicles-offroad" x="750" y="1270" width="540" height="100" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_OFF" data-modes="offroad" />
+    <rect id="light-duty-family" x="750" y="310" width="540" height="190" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_LDV_C_BEV150_EX T_LDV_C_BEV150_N T_LDV_C_BEV200_N T_LDV_C_BEV300_N T_LDV_C_BEV400_N T_LDV_C_CNG_N T_LDV_C_DSL_EX T_LDV_C_DSL_N T_LDV_C_FCEV400_N T_LDV_C_GSL_EX T_LDV_C_GSL_HEV_EX T_LDV_C_GSL_HEV_N T_LDV_C_GSL_N T_LDV_C_GSL_PHEV35_EX T_LDV_C_GSL_PHEV35_N T_LDV_C_GSL_PHEV50_N T_LDV_LTF_BEV150_N T_LDV_LTF_BEV200_N T_LDV_LTF_BEV300_N T_LDV_LTF_BEV400_N T_LDV_LTF_CNG_N T_LDV_LTF_DSL_EX T_LDV_LTF_DSL_N T_LDV_LTF_FCEV400_N T_LDV_LTF_GSL_EX T_LDV_LTF_GSL_HEV_EX T_LDV_LTF_GSL_HEV_N T_LDV_LTF_GSL_N T_LDV_LTF_GSL_PHEV35_EX T_LDV_LTF_GSL_PHEV35_N T_LDV_LTF_GSL_PHEV50_N T_LDV_LTP_BEV150_N T_LDV_LTP_BEV200_N T_LDV_LTP_BEV300_EX T_LDV_LTP_BEV300_N T_LDV_LTP_BEV400_N T_LDV_LTP_CNG_N T_LDV_LTP_DSL_EX T_LDV_LTP_DSL_N T_LDV_LTP_FCEV400_N T_LDV_LTP_GSL_EX T_LDV_LTP_GSL_HEV_EX T_LDV_LTP_GSL_HEV_N T_LDV_LTP_GSL_N T_LDV_LTP_GSL_PHEV35_EX T_LDV_LTP_GSL_PHEV35_N T_LDV_LTP_GSL_PHEV50_N" data-modes="cars light_passenger light_freight" />
+    <rect x="770" y="374" width="126" height="96" rx="4" fill="#FFFFFF" stroke="#D5DCE4" stroke-width="2" />
+    <rect x="912" y="374" width="166" height="96" rx="4" fill="#FFFFFF" stroke="#D5DCE4" stroke-width="2" />
+    <rect x="1094" y="374" width="176" height="96" rx="4" fill="#FFFFFF" stroke="#D5DCE4" stroke-width="2" />
+    <rect id="heavy-duty-road-family" x="750" y="660" width="540" height="180" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" data-technologies="T_HDV_BIC_BEV_N T_HDV_BIC_DSL_EX T_HDV_BIC_DSL_HEV_N T_HDV_BIC_DSL_N T_HDV_BIC_FCEV_N T_HDV_BIC_GSL_EX T_HDV_BIC_GSL_N T_HDV_BS_BEV_N T_HDV_BS_CNG_EX T_HDV_BS_CNG_N T_HDV_BS_DSL_EX T_HDV_BS_DSL_HEV_N T_HDV_BS_DSL_N T_HDV_BS_DSL_PHEV_N T_HDV_BS_FCEV_N T_HDV_BS_FCHEV_N T_HDV_BS_GSL_EX T_HDV_BS_GSL_N T_HDV_BT_BEV_EX T_HDV_BT_BEV_N T_HDV_BT_CNG_EX T_HDV_BT_CNG_N T_HDV_BT_DSL_EX T_HDV_BT_DSL_HEV_N T_HDV_BT_DSL_N T_HDV_BT_DSL_PHEV_N T_HDV_BT_FCEV_N T_HDV_BT_FCHEV_N T_HDV_BT_GSL_EX T_HDV_BT_GSL_N T_HDV_T_BEV_N T_HDV_T_DSL_EX T_HDV_T_DSL_HEV_N T_HDV_T_DSL_N T_HDV_T_DSL_PHEV_N T_HDV_T_FCEV_N T_HDV_T_FCHEV_N" data-modes="heavy_trucks school_buses transit_buses intercity_buses" />
+    <rect id="heavy-truck-label" x="770" y="712" width="178" height="120" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" />
+    <rect id="bus-label" x="964" y="712" width="306" height="120" rx="6" stroke-width="2" fill="#E7EFF8" stroke="#416184" />
+    <rect id="service-0" x="1370" y="198" width="390" height="70" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_pkm_ldv_m" />
+    <rect id="service-1" x="1370" y="324" width="390" height="80" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_pkm_ldv_c T_D_pkm_ldv_t" />
+    <rect id="service-2" x="1370" y="418" width="390" height="80" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_tkm_ldv_t" />
+    <rect id="service-3" x="1370" y="540" width="390" height="80" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_tkm_mdv_t" />
+    <rect id="service-4" x="1370" y="670" width="390" height="80" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_tkm_hdv_t" />
+    <rect id="service-5" x="1370" y="766" width="390" height="74" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_pkm_hdv_bic T_D_pkm_hdv_bs T_D_pkm_hdv_bt" />
+    <rect id="service-6" x="1370" y="880" width="390" height="100" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_pkm_hdv_aj T_D_tkm_hdv_aj" />
+    <rect id="service-7" x="1370" y="1010" width="390" height="100" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_pkm_hdv_r T_D_tkm_hdv_r" />
+    <rect id="service-8" x="1370" y="1140" width="390" height="100" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_tkm_hdv_wt" />
+    <rect id="service-9" x="1370" y="1270" width="390" height="100" rx="26" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" data-demands="T_D_pj_off" />
+    <rect id="ghg-accounting" x="60" y="1330" width="560" height="96" rx="6" stroke-width="2" fill="#FBEADD" stroke="#A35C32" />
+    <rect id="legend-fuel" x="40" y="1470" width="38" height="28" rx="12" stroke-width="2" fill="#FFF3D4" stroke="#936C22" />
+    <rect id="legend-technology" x="362" y="1470" width="38" height="28" rx="3" stroke-width="2" fill="#E7EFF8" stroke="#416184" />
+    <rect id="legend-clean" x="690" y="1470" width="38" height="28" rx="12" stroke-width="2" fill="#E5EFDF" stroke="#537445" />
+    <rect id="legend-service" x="1040" y="1470" width="38" height="28" rx="12" stroke-width="2" fill="#F6E3E2" stroke="#B35C58" />
+  </g>
+  <g id="labels">
+    <text id="label-001" x="40" y="48" font-family="Arial" font-size="38" font-weight="600" text-anchor="start" fill="#253449">Legacy CANOE transportation model</text>
+    <text id="label-002" x="40" y="89" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#536174">Embedded energy supply, transport technology families and end-use services</text>
+    <text id="label-003" x="40" y="145" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">A   Energy supply and delivery</text>
+    <text id="label-004" x="750" y="145" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">B   Transport technologies</text>
+    <text id="label-005" x="1370" y="145" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">C   Transport services</text>
+    <text id="label-006" x="60" y="218" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#936C22">Imported fuels</text>
+    <text id="label-007" x="310" y="218" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#416184">Fuel preparation</text>
+    <text id="label-008" x="160.0" y="269.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">GSL + ETH</text>
+    <text id="label-009" x="465.0" y="269.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">Gasoline blend</text>
+    <text id="label-010" x="160.0" y="349.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">DSL + RDSL</text>
+    <text id="label-011" x="465.0" y="349.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">Diesel blend</text>
+    <text id="label-012" x="160.0" y="429.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">JTF + SPK</text>
+    <text id="label-013" x="465.0" y="429.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">Jet-fuel blends</text>
+    <text id="label-014" x="160.0" y="509.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">CNG / LNG</text>
+    <text id="label-015" x="465.0" y="509.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">Gas-fuel supply</text>
+    <text id="label-016" x="160.0" y="589.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">HFO / MDO</text>
+    <text id="label-017" x="465.0" y="589.52" font-family="Arial" font-size="28" font-weight="600" text-anchor="middle" fill="#253449">Marine-oil supply</text>
+    <text id="label-018" x="80" y="719" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Electricity</text>
+    <text id="label-019" x="80" y="754" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Supply input</text>
+    <text id="label-020" x="330" y="702" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">EV charging</text>
+    <text id="label-021" x="330" y="737" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">LDV / MDV / HDV</text>
+    <text id="label-022" x="330" y="769" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Hourly LDV BEV profile</text>
+    <text id="label-023" x="330" y="842" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">PHEV energy blends</text>
+    <text id="label-024" x="330" y="874" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Gasoline / diesel + ELC</text>
+    <text id="label-025" x="80" y="954" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Natural gas</text>
+    <text id="label-026" x="80" y="989" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">NG import</text>
+    <text id="label-027" x="330" y="954" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">SMR / SMR + CCS</text>
+    <text id="label-028" x="330" y="989" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Hydrogen production</text>
+    <text id="label-029" x="80" y="1078" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Electricity</text>
+    <text id="label-030" x="80" y="1113" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Supply input</text>
+    <text id="label-031" x="330" y="1078" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">ALK / PEM</text>
+    <text id="label-032" x="330" y="1113" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">AC/DC + electrolysis</text>
+    <text id="label-033" x="330" y="1208" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">H₂ delivery</text>
+    <text id="label-034" x="330" y="1243" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Pipeline, compression,</text>
+    <text id="label-035" x="330" y="1275" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">storage and refuelling</text>
+    <text id="label-036" x="60" y="1210" font-family="Arial" font-size="26" font-weight="600" text-anchor="start" fill="#536174">Endogenous</text>
+    <text id="label-037" x="60" y="1246" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#536174">H₂ production</text>
+    <text id="label-038" x="694" y="194" font-family="Arial" font-size="26" font-weight="400" text-anchor="middle" fill="#416184">Energy</text>
+    <text id="label-039" x="1020.0" y="243.2" font-family="Arial" font-size="30" font-weight="600" text-anchor="middle" fill="#253449">Motorcycles</text>
+    <text id="label-040" x="770" y="568" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Medium-duty trucks</text>
+    <text id="label-041" x="770" y="603" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Classes 2b-7</text>
+    <text id="label-042" x="770" y="918" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Jet aircraft</text>
+    <text id="label-043" x="770" y="953" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Passenger and freight</text>
+    <text id="label-044" x="770" y="1048" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Rail</text>
+    <text id="label-045" x="770" y="1083" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Passenger and freight</text>
+    <text id="label-046" x="770" y="1178" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Marine vessels</text>
+    <text id="label-047" x="770" y="1213" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Freight</text>
+    <text id="label-048" x="770" y="1308" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Off-road transportation</text>
+    <text id="label-049" x="770" y="1343" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Diesel-only energy demand</text>
+    <text id="label-050" x="770" y="350" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Light duty  |  Classes 1-2</text>
+    <text id="label-051" x="833.0" y="411" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Cars</text>
+    <text id="label-052" x="995.0" y="411" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Passenger</text>
+    <text id="label-053" x="995.0" y="443" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">trucks</text>
+    <text id="label-054" x="1182.0" y="411" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Freight</text>
+    <text id="label-055" x="1182.0" y="443" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">trucks</text>
+    <text id="label-056" x="770" y="700" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Heavy-duty road</text>
+    <text id="label-057" x="790" y="750" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Trucks</text>
+    <text id="label-058" x="790" y="785" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Class 8</text>
+    <text id="label-059" x="984" y="750" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Buses</text>
+    <text id="label-060" x="984" y="785" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Transit / school</text>
+    <text id="label-061" x="984" y="817" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Intercity</text>
+    <text id="label-062" x="1390" y="228" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Passenger-km</text>
+    <text id="label-063" x="1390" y="255" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Motorcycles</text>
+    <text id="label-064" x="1390" y="356" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Passenger-km</text>
+    <text id="label-065" x="1390" y="388" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Cars and light trucks</text>
+    <text id="label-066" x="1390" y="450" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Tonne-km</text>
+    <text id="label-067" x="1390" y="482" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Freight light trucks</text>
+    <text id="label-068" x="1390" y="572" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Tonne-km</text>
+    <text id="label-069" x="1390" y="604" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Medium trucks</text>
+    <text id="label-070" x="1390" y="702" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Tonne-km</text>
+    <text id="label-071" x="1390" y="734" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Heavy trucks</text>
+    <text id="label-072" x="1390" y="796" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Passenger-km</text>
+    <text id="label-073" x="1390" y="823" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Transit / school / intercity</text>
+    <text id="label-074" x="1390" y="918" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Aviation</text>
+    <text id="label-075" x="1390" y="953" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Passenger-km + tonne-km</text>
+    <text id="label-076" x="1390" y="1048" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Rail</text>
+    <text id="label-077" x="1390" y="1083" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Passenger-km + tonne-km</text>
+    <text id="label-078" x="1390" y="1178" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Tonne-km</text>
+    <text id="label-079" x="1390" y="1213" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Marine freight</text>
+    <text id="label-080" x="1390" y="1308" font-family="Arial" font-size="30" font-weight="600" text-anchor="start" fill="#253449">Energy demand</text>
+    <text id="label-081" x="1390" y="1343" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Off-road  |  PJ</text>
+    <text id="label-082" x="80" y="1368" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">GHG accounting</text>
+    <text id="label-083" x="80" y="1403" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Supply chain, combustion and SMR + CCS</text>
+    <text id="label-084" x="94" y="1493" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Imported fuels</text>
+    <text id="label-085" x="416" y="1493" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Technologies</text>
+    <text id="label-086" x="744" y="1493" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Electricity / H₂</text>
+    <text id="label-087" x="1094" y="1493" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Services</text>
+    <text id="label-088" x="1440" y="1493" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#253449">Emissions accounting</text>
+    <text id="label-089" x="40" y="1531" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#536174">Energy routes are grouped by eligibility; the companion matrix specifies carrier-to-mode links.</text>
+    <text id="label-090" x="40" y="1564" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#536174">Technology: capacity, efficiency, lifetime and costs.  Fuel: prices, blend shares and fuel-cycle factors.</text>
+  </g>
+</svg>

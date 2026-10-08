@@ -360,6 +360,7 @@ fetching:
           Fuel Type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
           Statistics: [Number of vehicles]
       "34-10-0254-01":
+        include_bc_for_bct: true
         normalizer: bus_lifetimes
         include_canada: true
         output_file: statcan_34100254_bus_expected_life.csv
@@ -1286,20 +1287,21 @@ parameterization:
         cars:
           Gasoline: T_LDV_C_GSL_EX
           Diesel: T_LDV_C_DSL_EX
-          Battery electric: T_LDV_C_BEV150_EX
+          Battery electric: T_LDV_C_BEV_EX
           Hybrid electric: T_LDV_C_GSL_HEV_EX
-          Plug-in hybrid electric: T_LDV_C_GSL_PHEV35_EX
+          Plug-in hybrid electric: T_LDV_C_GSL_PHEV_EX
         passenger_light_trucks:
           Gasoline: T_LDV_LTP_GSL_EX
           Diesel: T_LDV_LTP_DSL_EX
-          Battery electric: T_LDV_LTP_BEV300_EX
+          Battery electric: T_LDV_LTP_BEV_EX
           Hybrid electric: T_LDV_LTP_GSL_HEV_EX
-          Plug-in hybrid electric: T_LDV_LTP_GSL_PHEV35_EX
+          Plug-in hybrid electric: T_LDV_LTP_GSL_PHEV_EX
         freight_light_trucks:
           Gasoline: T_LDV_LTF_GSL_EX
           Diesel: T_LDV_LTF_DSL_EX
+          Battery electric: T_LDV_LTF_BEV_EX
           Hybrid electric: T_LDV_LTF_GSL_HEV_EX
-          Plug-in hybrid electric: T_LDV_LTF_GSL_PHEV35_EX
+          Plug-in hybrid electric: T_LDV_LTF_GSL_PHEV_EX
         medium_trucks: {Gasoline: T_MDV_T_GSL_EX, Diesel: T_MDV_T_DSL_EX, Battery electric: T_MDV_T_BEV_EX}
         heavy_trucks: {Diesel: T_HDV_T_DSL_EX}
         motorcycles: {Gasoline: T_LDV_M_GSL_EX}
@@ -1470,6 +1472,7 @@ parameterization:
   road_lifetimes_survival:
     bus_lifetimes:
       statcan_table_id: "34-10-0254-01"
+      region_source_proxy: {BCT: BC}
       canada_fallback_year: 2020
       powertrain_source_member:
         diesel: "Diesel buses, average expected useful life"
@@ -1538,7 +1541,7 @@ parameterization:
       Light Truck: Light Truck
 
   efficiencies:
-    transformation_version: '1'
+    transformation_version: '2'
     files:
       efficiency: efficiency.csv
       splits: limit_tech_input_split.csv
@@ -1592,7 +1595,8 @@ parameterization:
       evidence_join: exact_normalized_year_make_model
       ambiguous_evidence: retain_name_rule_and_report
       normalization_pattern: '[^a-z0-9]'
-      # Legacy Fuel_consumption_ratings.ipynb: (0,250], (250,500], (500,900] km.
+      range_mapping: omega_bucket_boundaries
+      # Retained only as legacy audit labels, separate from the production buckets.
       bev_range_edges_km: [0, 250, 500, 900]
       bev_range_labels: [bev_150_miles, bev_300_miles, bev_long_range]
       phev_range_edges_km: [0, 55, 210]
@@ -1600,6 +1604,10 @@ parameterization:
       phev_historical_index: combined_cs_consumption
       phev_baseline: nlr_atb
       ignored_classes: [Special purpose vehicle]
+    existing_phev_blends:
+      cars: {tech: T_BLND_GSL_ELC_PHEV_C_EX, output: T_gsl_elc_phev_c_ex}
+      passenger_light_trucks: {tech: T_BLND_GSL_ELC_PHEV_LTP_EX, output: T_gsl_elc_phev_ltp_ex}
+      freight_light_trucks: {tech: T_BLND_GSL_ELC_PHEV_LTF_EX, output: T_gsl_elc_phev_ltf_ex}
     ldv_archetypes:
       gasoline: {detail: 'Gasoline ICE Vehicle (spark ignition)', analogue: gasoline}
       diesel: {detail: Diesel Conventional Compression Ignition Vehicle, analogue: gasoline}
@@ -1741,18 +1749,21 @@ parameterization:
     hydrogen_inputs: {ldv: T_h2_ldv, mhdv: T_h2_mhdv, bus: T_h2_mhdv, intercity: T_h2_mhdv}
     phev_blends:
       ldv35:
+        aggregation_role: ldv
         tech: T_BLND_GSL_ELC_PHEV35
         output: T_gsl_elc_phev35
         fuel: T_gsl
         electricity: T_elc_ldv_chrg
         archetype: phev_35_miles
       ldv50:
+        aggregation_role: ldv
         tech: T_BLND_GSL_ELC_PHEV50
         output: T_gsl_elc_phev50
         fuel: T_gsl
         electricity: T_elc_ldv_chrg
         archetype: phev_50_miles
       mdv:
+        aggregation_role: medium_trucks
         tech: T_BLND_DSL_ELC_MDV
         output: T_dsl_elc_mdv
         fuel: T_dsl
@@ -1766,6 +1777,7 @@ parameterization:
         - 6
         - 7
       hdv:
+        aggregation_role: heavy_truck_haul
         tech: T_BLND_DSL_ELC_HDV
         output: T_dsl_elc_hdv
         fuel: T_dsl
@@ -1773,7 +1785,7 @@ parameterization:
         archetype: phev
         gvwr:
         - 8
-    phev_split_method: mean_energy_shares_across_classes_and_horizon_endpoints
+    phev_split_method: regional_consumption_weighted_classes_mean_horizon_endpoints
     phev_split_operator: e
     phev_split_target: limit_tech_input_split
     intercity:
@@ -1801,7 +1813,7 @@ parameterization:
       equal_incumbent_powertrains: [spk]
 
   costs:
-    transformation_version: '1'
+    transformation_version: '2'
     nlr_road_retail_price_equivalent_markup: 1.5
     aircraft_operating_days_per_year: 365
     ldv_repair_price_exponent_per_usd: 0.00002
@@ -1881,6 +1893,14 @@ parameterization:
         - {sub_category: phev_35_miles, upper: 35, upper_inclusive: false}
         - {sub_category: phev_50_miles, upper: null, upper_inclusive: false}
     category_to_market: {cars: car, passenger_light_trucks: light_truck, freight_light_trucks: light_truck}
+    existing:
+      weight_applicability: constant_historical_vintages_and_regions
+      ratings_range_mapping: omega_bucket_boundaries
+      phev_baseline: accepted_atb_level_with_range_specific_nrcan_history
+      families:
+        cars: {BEV: T_LDV_C_BEV_EX, PHEV: T_LDV_C_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_C_EX, phev_commodity: T_gsl_elc_phev_c_ex}
+        passenger_light_trucks: {BEV: T_LDV_LTP_BEV_EX, PHEV: T_LDV_LTP_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_LTP_EX, phev_commodity: T_gsl_elc_phev_ltp_ex}
+        freight_light_trucks: {BEV: T_LDV_LTF_BEV_EX, PHEV: T_LDV_LTF_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_LTF_EX, phev_commodity: T_gsl_elc_phev_ltf_ex}
     new_suffix: _N
     constraint_operator: ge  # MinNewCapacityShare!C23:F40; never silently use equality.
     group_prefix: canoe_transport_range
@@ -1916,7 +1936,10 @@ parameterization:
       members: tech_group_member.csv
       decisions: representative_decisions.json
   ev_chargers:
-    transformation_version: "1"
+    transformation_version: "2"
+    utilization_time_basis: vintage_input_year
+    historical_utilization: earliest_reviewed_value
+    utilization_operator: le
     manual_file: charger_parameters.csv
     capacity_output_file: charger_existing_capacity.csv
     port_audit_file: charger_port_reconciliation.csv
