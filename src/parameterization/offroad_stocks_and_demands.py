@@ -231,7 +231,7 @@ def redistribute_eligible_offroad_cohorts(
 ) -> pd.DataFrame:
     """Conserve each base-year proxy after excluding fully retired old cohorts."""
     keys = ["region", "mode", "tech"]
-    expected = {*keys, "vintage_year", "lifetime_years", "capacity_at_base_year"}
+    expected = {*keys, "vintage_year", "vintage", "lifetime_years", "capacity_at_base_year"}
     if missing := sorted(expected - set(cohorts.columns)):
         raise ValueError(f"Off-road cohorts are missing columns: {missing}")
     if missing := sorted({*keys, "capacity"} - set(base_year_capacity.columns)):
@@ -250,8 +250,14 @@ def redistribute_eligible_offroad_cohorts(
     if result["base_year_proxy"].isna().any():
         raise ValueError("Missing off-road base-year capacity proxy")
     result["raw_capacity_at_base_year"] = result["capacity_at_base_year"]
-    result["eligible_first_model_period"] = (
+    result["annual_cohort_eligible"] = (
         result["vintage_year"] + result["lifetime_years"] > first_model_period
+    )
+    result["model_vintage_eligible"] = (
+        result["vintage"] + result["lifetime_years"] > first_model_period
+    )
+    result["eligible_first_model_period"] = (
+        result["annual_cohort_eligible"] & result["model_vintage_eligible"]
     )
     eligible = result["capacity_at_base_year"].where(
         result["eligible_first_model_period"], 0.0
@@ -473,6 +479,7 @@ def build_offroad_existing_capacity(
     ]
     other_cohorts["base_year_fuel_share"] = 1.0
     cohorts = pd.concat([other_cohorts, marine_cohorts], ignore_index=True)
+    cohorts["vintage"] = cohorts["vintage_year"].map(period_config.existing_vintage)
     cohorts = redistribute_eligible_offroad_cohorts(
         cohorts,
         annual.loc[
@@ -480,7 +487,6 @@ def build_offroad_existing_capacity(
         ],
         first_model_period=first_model_period,
     )
-    cohorts["vintage"] = cohorts["vintage_year"].map(period_config.existing_vintage)
     capacity = (
         cohorts.groupby(["region", "mode", "tech", "vintage", "units"], as_index=False)[
             "capacity_at_base_year"

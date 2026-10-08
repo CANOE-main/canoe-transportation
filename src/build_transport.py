@@ -577,6 +577,7 @@ def prepare_transport_contribution(
             existing_capacity_contexts=contexts,
         )
         parameter_rows.extend(chargers.capacity_rows)
+        flat_factor_rows.extend(chargers.utilization_rows)
         if include_efficiencies is not False:
             efficiency_rows.extend(chargers.efficiency_rows)
         if include_costs is not False:

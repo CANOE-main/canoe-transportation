@@ -79,6 +79,7 @@ def workflow_repo(tmp_path: Path) -> Path:
     from fetching.cer_enerfuture import build_requests as cer_requests
     from fetching.statcan_tables import build_requests as statcan_requests
     from utils import load_config_bundle
+    from fetching.epa_omega_baseline import required_inputs as range_inputs
 
     for directory in ("config", "src", "workflow", "scripts"):
         shutil.copytree(REPO_ROOT / directory, tmp_path / directory)
@@ -103,6 +104,7 @@ def workflow_repo(tmp_path: Path) -> Path:
         for request in statcan_requests(bundle)
         for path in (request.archive_cache_path, request.metadata_cache_path)
     ]
+    cache_paths.extend(range_inputs(bundle))
     for path in cache_paths:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("fixture cache\n", encoding="utf-8")
@@ -277,7 +279,8 @@ def test_ldv_profile_and_range_evidence_dependencies_follow_independent_selectio
 
     root = workflow_repo
     bundle = load_config_bundle(SCENARIO, repo_root=root)
-    assert charging_inputs(bundle) == range_inputs(bundle) == []
+    assert charging_inputs(bundle) == []
+    assert len(range_inputs(bundle)) == 1
     scenario_path = root / SCENARIO
     payload = yaml.safe_load(scenario_path.read_text(encoding="utf-8"))
     payload["charging_profiles"]["travel_behavior_source"] = "nhts"
@@ -285,13 +288,15 @@ def test_ldv_profile_and_range_evidence_dependencies_follow_independent_selectio
     result = run_workflow(root, "--dry-run", succeeds=False)
     assert "ON-2022NHTS" in result.stdout + result.stderr
     bundle = load_config_bundle(SCENARIO, repo_root=root)
-    assert range_inputs(bundle) == []
+    assert len(range_inputs(bundle)) == 1
     for path in charging_inputs(bundle):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("fixture profile\n", encoding="utf-8")
     run_workflow(root, "--dry-run")
     payload["BEV_PHEV_range_representation"]["mode"] = "new_capacity_shares"
     scenario_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    omega = range_inputs(load_config_bundle(SCENARIO, repo_root=root))[0]
+    omega.unlink()
     result = run_workflow(root, "--dry-run", succeeds=False)
     assert "ldv_central_2022_plug_in" in result.stdout + result.stderr
     assert "model-year-2024-fuel-economy" not in result.stdout + result.stderr

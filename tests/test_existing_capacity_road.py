@@ -69,6 +69,9 @@ def test_truck_stock_eligibility_traces_selected_lifetime_source(
     })
     isolated = replace(bundle, paths=bundle.paths.model_copy(update={"artifacts": routes}), scenario=scenario)
     rows, contexts, _ = prepare_existing_capacity_rows(isolated)
+    motorcycles = [row for row in rows if row.tech == "T_LDV_M_GSL_EX"]
+    assert motorcycles
+    assert all(row.vintage + 17 > scenario.periods.model[0] for row in motorcycles)
     by_id = {context.data_id: context for context in contexts}
     for prefix, required, absent in (
         ("T_MDV_T_", "nhtsa_cafe_2024_ldv_survival", "eia_nems_hd_truck_scrappage"),
@@ -259,10 +262,13 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
         medium_latest["fuel_type"].eq("Gasoline"), "fuel_share"
     ].iloc[0] == pytest.approx(0.97 * 40 / 90)
     assert not capacity["tech"].str.contains("CHRG").any()
-    assert {"Other fuel types", "Battery electric"} <= set(excluded["fuel_type"])
-    assert "Battery electric" not in set(
+    assert "Other fuel types" in set(excluded["fuel_type"])
+    assert "Battery electric" in set(
         shares.loc[shares["road_class"].eq("freight_light_trucks"), "fuel_type"]
     )
+    assert set(shares.loc[
+        shares.road_class.eq("freight_light_trucks") & shares.fuel_type.eq("Battery electric"), "tech"
+    ]) == {"T_LDV_LTF_BEV_EX"}
     assert set(shares.loc[shares["road_class"].eq("heavy_trucks"), "fuel_type"]) == {
         "Diesel"
     }

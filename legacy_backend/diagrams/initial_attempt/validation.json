@@ -1,0 +1,106 @@
+{
+  "topology": {
+    "status": "pass",
+    "selected_vehicle_and_offroad_technologies": 115,
+    "mode_rows": 13,
+    "demand_commodities": 15,
+    "positive_unique_efficiency_links": 176,
+    "unresolved_vehicle_inputs": 0,
+    "unresolved_vehicle_outputs": 0
+  },
+  "figures": {
+    "canoe-legacy-transport": {
+      "status": "pass",
+      "native_text_elements": 90,
+      "raster_elements": 0,
+      "foreign_objects": 0,
+      "external_resources": 0,
+      "unique_ids": 145,
+      "physical_width_mm": 180,
+      "minimum_type_pt": 7.37,
+      "minimum_text_contrast": 4.763,
+      "svg_sha256": "f9a372d026fe48b62fff503763568c356b44c3a3549477cabe2f9c467cd22b95",
+      "model_membership": {
+        "drawn_technology_ids": 162,
+        "folded_annual_bridges": [
+          "T_dummy_pkm_ldv_c",
+          "T_dummy_pkm_ldv_m",
+          "T_dummy_pkm_ldv_t",
+          "T_dummy_tkm_ldv_t"
+        ],
+        "represented_demand_ids": 15
+      },
+      "text_bounds": {
+        "status": "pass",
+        "measured_labels": 90,
+        "overflows": 0
+      },
+      "pdf": {
+        "status": "pass",
+        "pages": 1,
+        "width_mm": 180.0,
+        "height_mm": 158.0,
+        "raster_images": 0,
+        "fonts": [
+          {
+            "name": "/JTHXQR+Arial-BoldMT",
+            "embedded": true
+          },
+          {
+            "name": "/GCFKDY+ArialMT",
+            "embedded": true
+          },
+          {
+            "name": "/CXLVMG+Verdana-Bold",
+            "embedded": true
+          },
+          {
+            "name": "/GKISAU+Verdana",
+            "embedded": true
+          }
+        ],
+        "extracted_text_characters": 1592
+      },
+      "png_dpi": 600
+    },
+    "canoe-legacy-carrier-matrix": {
+      "status": "pass",
+      "native_text_elements": 47,
+      "raster_elements": 0,
+      "foreign_objects": 0,
+      "external_resources": 0,
+      "unique_ids": 104,
+      "physical_width_mm": 180,
+      "minimum_type_pt": 7.37,
+      "minimum_text_contrast": 6.307,
+      "svg_sha256": "d5ef18e721be89377ca5fcea76c932302fa1b30da9d3193fcff4c4ba04acddbb",
+      "text_bounds": {
+        "status": "pass",
+        "measured_labels": 47,
+        "overflows": 0
+      },
+      "pdf": {
+        "status": "pass",
+        "pages": 1,
+        "width_mm": 180.0,
+        "height_mm": 112.0,
+        "raster_images": 0,
+        "fonts": [
+          {
+            "name": "/JZEJRS+Arial-BoldMT",
+            "embedded": true
+          },
+          {
+            "name": "/PNFJNO+ArialMT",
+            "embedded": true
+          }
+        ],
+        "extracted_text_characters": 843
+      },
+      "png_dpi": 600
+    }
+  },
+  "source_hashes_unchanged": true,
+  "installed_python_dependencies": [],
+  "network_access": false
+}

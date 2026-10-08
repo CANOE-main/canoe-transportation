@@ -369,7 +369,7 @@ def test_existing_capacity_preparation_keeps_charging_provenance(
         [
             {
                 "region": "ON",
-                "tech": "T_LDV_C_BEV150_EX",
+                "tech": "T_LDV_C_BEV_EX",
                 "vintage": 2020,
                 "capacity": 1,
                 "units": "k vehicles",

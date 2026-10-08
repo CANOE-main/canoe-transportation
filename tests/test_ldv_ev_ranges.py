@@ -151,6 +151,21 @@ def test_none_never_acquires_range_sources_and_preserves_templates(bundle, monke
     assert result.structural_dataset is None
 
 
+def test_existing_weights_are_independent_of_new_range_mode(bundle, evidence):
+    from parameterization.ldv_ev_ranges import existing_range_weights
+
+    baseline, _ = existing_range_weights(bundle, evidence=evidence)
+    for mode in ("none", "new_capacity_shares", "representative_archetype"):
+        configured = with_mode(bundle, mode)
+        weights, _ = existing_range_weights(configured, evidence=evidence)
+        assert weights == baseline
+        rules = module_rules(configured)
+        for category, family in rules.existing.families.items():
+            assert family.BEV.endswith("_EX") and family.PHEV.endswith("_EX")
+            assert sum(weights[category, "bev"].values()) == pytest.approx(1)
+            assert sum(weights[category, "phev"].values()) == pytest.approx(1)
+
+
 def test_constraints_use_new_class_powertrain_denominators_ge_and_model_vintages(
     bundle, evidence
 ):
@@ -352,7 +367,7 @@ def test_compact_registered_extract_matches_legacy_notebook_and_market(bundle):
     assert build_request(bundle).expected_bytes == 13977
     assert bundle.sources.sources["epa_omega_baseline"].status == "active"
     assert bundle.sources.sources["epa_automotive_trends"].status == "inactive"
-    assert required_inputs(bundle) == []
+    assert required_inputs(bundle) == [build_request(bundle).extract_path]
     assert required_inputs(with_mode(bundle, "new_capacity_shares")) == [
         build_request(bundle).extract_path
     ]
@@ -810,6 +825,25 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
 
     with closing(sqlite3.connect(database)) as standalone:
         assert standalone.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+        assert standalone.execute(
+            "SELECT COUNT(*) FROM limit_annual_capacity_factor WHERE tech_or_group LIKE '%CHRG%'"
+        ).fetchone() == (118,)
+        assert standalone.execute(
+            "SELECT DISTINCT vintage, factor FROM limit_annual_capacity_factor "
+            "WHERE tech_or_group='T_LDV_CHRG_EX'"
+        ).fetchall() == [(2020, 0.15)]
+        assert standalone.execute(
+            "SELECT DISTINCT vintage, factor FROM limit_annual_capacity_factor "
+            "WHERE tech_or_group='T_LDV_CHRG_N' AND vintage=2025"
+        ).fetchall() == [(2025, 0.2)]
+        assert standalone.execute(
+            "SELECT COUNT(*) FROM existing_capacity WHERE tech='T_LDV_LTF_BEV_EX'"
+        ).fetchone()[0] > 0
+        assert standalone.execute(
+            "SELECT COUNT(*) FROM technology WHERE tech IN "
+            "('T_LDV_C_BEV150_EX','T_LDV_LTP_BEV300_EX','T_LDV_C_GSL_PHEV35_EX',"
+            "'T_LDV_LTP_GSL_PHEV35_EX','T_LDV_LTF_GSL_PHEV35_EX')"
+        ).fetchone() == (0,)
         assert standalone.execute(
             "SELECT DISTINCT data_source FROM limit_new_capacity_share"
         ).fetchall() == [("T33",)]

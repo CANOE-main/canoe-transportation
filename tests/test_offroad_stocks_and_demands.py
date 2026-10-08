@@ -119,6 +119,7 @@ def test_first_model_period_redistributes_retired_cohort_without_losing_proxy() 
                 "mode": "freight_rail",
                 "tech": "RAIL",
                 "vintage_year": year,
+                "vintage": year,
                 "lifetime_years": 25,
                 "capacity_at_base_year": value,
             }
@@ -136,3 +137,20 @@ def test_first_model_period_redistributes_retired_cohort_without_losing_proxy() 
     assert result.eligible_first_model_period.tolist() == [False, True, True]
     assert result.capacity_at_base_year.tolist() == pytest.approx([0.0, 37.5, 62.5])
     assert result.raw_capacity_at_base_year.tolist() == [20.0, 30.0, 50.0]
+
+
+def test_prospective_rail_stock_does_not_remain_on_a_retired_model_vintage() -> None:
+    cohorts = pd.DataFrame([
+        {"region": "ON", "mode": "freight_rail", "tech": "RAIL",
+         "vintage_year": year, "vintage": vintage, "lifetime_years": 25,
+         "capacity_at_base_year": value}
+        for year, vintage, value in ((2003, 2000, 40.0), (2023, 2020, 60.0))
+    ])
+    proxy = pd.DataFrame([
+        {"region": "ON", "mode": "freight_rail", "tech": "RAIL", "capacity": 100.0}
+    ])
+    result = redistribute_eligible_offroad_cohorts(cohorts, proxy, first_model_period=2025)
+    assert result.annual_cohort_eligible.tolist() == [True, True]
+    assert result.model_vintage_eligible.tolist() == [False, True]
+    assert result.capacity_at_base_year.tolist() == pytest.approx([0.0, 100.0])
+    assert result.capacity_at_base_year.sum() == pytest.approx(100.0)

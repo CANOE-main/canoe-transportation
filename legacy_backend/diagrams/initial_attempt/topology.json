@@ -1,0 +1,3522 @@
+{
+  "source": {
+    "database": "legacy_backend/transportation[deprecated]/compiled_database/canoe_trn_on_vanilla4.sqlite",
+    "database_sha256": "0c9b163ebb440edc3f30cf808244d36660aad73c16298b6ac23a14ddd857f258",
+    "original_diagram": "legacy_backend/canoe-trn-diagram.svg",
+    "original_sha256": "4c35c4219fdd80fe528464a6556d6a63f754231699906b8595f363efc63d4aba",
+    "read_only": true
+  },
+  "technologies": {
+    "ELC_AC_DC": {
+      "description": "Transformation of electricity from AC to DC",
+      "category": "Fuel supply",
+      "flag": "p"
+    },
+    "H2_COMP_100_700": {
+      "description": "Technology that accounts energy use from hydrogen compression (100 bar to 700 bar)",
+      "category": "Fuel supply",
+      "flag": "p"
+    },
+    "H2_COMP_10_100": {
+      "description": "Technology that accounts energy use from hydrogen compression (10 bar to 100 bar)",
+      "category": "Fuel supply",
+      "flag": "p"
+    },
+    "H2_distribution": {
+      "description": "H2 pipeline distribution system for distances of less than 1,500 km",
+      "category": "Fuel supply",
+      "flag": "p"
+    },
+    "H2_storage": {
+      "description": "H2 underground geologic reservoir storage system",
+      "category": "Fuel supply",
+      "flag": "ps"
+    },
+    "I_H2_ELC_ALK": {
+      "description": "Hydrogen production through electrolysis (alkaline)",
+      "category": "Fuel supply",
+      "flag": "p"
+    },
+    "I_H2_ELC_PEM": {
+      "description": "Hydrogen production through electrolysis (proton exchange membrane)",
+      "category": "Fuel supply",
+      "flag": "p"
+    },
+    "I_H2_SMR": {
+      "description": "Hydrogen production through steam methane reforming (without CCS)",
+      "category": "Fuel supply",
+      "flag": "p"
+    },
+    "I_H2_SMR_CCS": {
+      "description": "Hydrogen production through steam methane reforming (with CCS)",
+      "category": "Fuel supply",
+      "flag": "p"
+    },
+    "T_BLND_DSL_ELC_HDV": {
+      "description": "Blending technology for diesel and electricity (HD-PHEV)",
+      "category": "Blending",
+      "flag": "p"
+    },
+    "T_BLND_DSL_ELC_MDV": {
+      "description": "Blending technology for diesel and electricity (MD-PHEV)",
+      "category": "Blending",
+      "flag": "p"
+    },
+    "T_BLND_ETH_GSL": {
+      "description": "Blending technology for ethanol and gasoline blendstock",
+      "category": "Blending",
+      "flag": "p"
+    },
+    "T_BLND_GSL_ELC_PHEV35": {
+      "description": "Blending technology for gasoline and electricity (LD-PHEV 35-mile CD range ratio)",
+      "category": "Blending",
+      "flag": "p"
+    },
+    "T_BLND_GSL_ELC_PHEV50": {
+      "description": "Blending technology for gasoline and electricity (LD-PHEV 50-mile CD range ratio)",
+      "category": "Blending",
+      "flag": "p"
+    },
+    "T_BLND_JTF": {
+      "description": "Blending technology for renewable jetfuel and jetfuel (jetfuel)",
+      "category": "Blending",
+      "flag": "p"
+    },
+    "T_BLND_RDSL_DSL": {
+      "description": "Blending technology for renewable diesel and diesel",
+      "category": "Blending",
+      "flag": "p"
+    },
+    "T_BLND_SPK": {
+      "description": "Blending technology for renewable jetfuel and jetfuel (SPK)",
+      "category": "Blending",
+      "flag": "p"
+    },
+    "T_EA_CNG": {
+      "description": "Technology that accounts for direct combustion emissions from compressed natural gas in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_DSL": {
+      "description": "Technology that accounts for direct combustion emissions from diesel in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_ETH": {
+      "description": "Technology that accounts for direct combustion emissions from ethanol in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_GSL": {
+      "description": "Technology that accounts for direct combustion emissions from gasoline in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_HFO": {
+      "description": "Technology that accounts for direct combustion emissions from residual fuel oil in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_JTF": {
+      "description": "Technology that accounts for direct combustion emissions from jet fuel in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_LNG": {
+      "description": "Technology that accounts for direct combustion emissions from liquefied natural gas in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_MDO": {
+      "description": "Technology that accounts for direct combustion emissions from marine gas oil in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_NG": {
+      "description": "Technology that accounts for direct emissions from steam methane reforming",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_RDSL": {
+      "description": "Technology that accounts for direct combustion emissions from renewable diesel in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_EA_SPK": {
+      "description": "Technology that accounts for direct combustion emissions from synthetic jet fuel in the transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_H2_HDV_REFUEL": {
+      "description": "Hydrogen refuelling station for on-road heavy-duty vehicles",
+      "category": "H2 refuelling",
+      "flag": "p"
+    },
+    "T_H2_LDV_REFUEL": {
+      "description": "Hydrogen refuelling station for light-duty vehicles",
+      "category": "H2 refuelling",
+      "flag": "p"
+    },
+    "T_H2_MDV_REFUEL": {
+      "description": "Hydrogen refuelling station for medium-duty vehicles",
+      "category": "H2 refuelling",
+      "flag": "p"
+    },
+    "T_HDV_AJF_JFL_EX": {
+      "description": "Existing jet freight aircraft (jet fuel)",
+      "category": "Air freight",
+      "flag": "p"
+    },
+    "T_HDV_AJF_JFL_N": {
+      "description": "New jet freight aircraft (jet fuel)",
+      "category": "Air freight",
+      "flag": "p"
+    },
+    "T_HDV_AJF_SPK_N": {
+      "description": "New jet freight aircraft (synthetic paraffinic kerosene)",
+      "category": "Air freight",
+      "flag": "p"
+    },
+    "T_HDV_AJP_JFL_EX": {
+      "description": "Existing jet passenger aircraft (jet fuel)",
+      "category": "Air travel",
+      "flag": "p"
+    },
+    "T_HDV_AJP_JFL_N": {
+      "description": "New jet passenger aircraft (jet fuel)",
+      "category": "Air travel",
+      "flag": "p"
+    },
+    "T_HDV_AJP_SPK_N": {
+      "description": "New jet passenger aircraft (synthetic paraffinic kerosene)",
+      "category": "Air travel",
+      "flag": "p"
+    },
+    "T_HDV_BIC_BEV_N": {
+      "description": "New inter-city bus (battery electric)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BIC_DSL_EX": {
+      "description": "Existing inter-city bus (diesel)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BIC_DSL_HEV_N": {
+      "description": "New inter-city bus (diesel, hybrid electric)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BIC_DSL_N": {
+      "description": "New inter-city bus (diesel)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BIC_FCEV_N": {
+      "description": "New inter-city bus (fuel cell electric, gaseous H2 @ 700 bar)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BIC_GSL_EX": {
+      "description": "Existing inter-city bus (gasoline)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BIC_GSL_N": {
+      "description": "New inter-city bus (gasoline)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_BEV_N": {
+      "description": "New school and employee bus (battery electric)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_CNG_EX": {
+      "description": "Existing school and employee bus (compressed natural gas)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_CNG_N": {
+      "description": "New school and employee bus (compressed natural gas)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_DSL_EX": {
+      "description": "Existing school and employee bus (diesel)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_DSL_HEV_N": {
+      "description": "New school and employee bus (diesel, hybrid electric)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_DSL_N": {
+      "description": "New school and employee bus (diesel)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_DSL_PHEV_N": {
+      "description": "New school and employee bus (diesel, plug-in hybrid)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_FCEV_N": {
+      "description": "New school and employee bus (fuel cell electric, gaseous H2 @ 700 bar)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_FCHEV_N": {
+      "description": "New school and employee bus (fuel cell hybrid, w/battery to assist during prolonged high-power use)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_GSL_EX": {
+      "description": "Existing school and employee bus (gasoline)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BS_GSL_N": {
+      "description": "New school and employee bus (gasoline)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_BEV_EX": {
+      "description": "Existing urban transit bus (battery electric)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_BEV_N": {
+      "description": "New urban transit bus (battery electric)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_CNG_EX": {
+      "description": "Existing urban transit bus (compressed natural gas)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_CNG_N": {
+      "description": "New urban transit bus (compressed natural gas)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_DSL_EX": {
+      "description": "Existing urban transit bus (diesel)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_DSL_HEV_N": {
+      "description": "New urban transit bus (diesel, hybrid electric)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_DSL_N": {
+      "description": "New urban transit bus (diesel)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_DSL_PHEV_N": {
+      "description": "New urban transit bus (diesel, plug-in hybrid)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_FCEV_N": {
+      "description": "New urban transit bus (fuel cell electric, gaseous H2 @ 700 bar)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_FCHEV_N": {
+      "description": "New urban transit bus (fuel cell hybrid, w/battery to assist during prolonged high-power use)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_GSL_EX": {
+      "description": "Existing urban transit bus (gasoline)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_BT_GSL_N": {
+      "description": "New urban transit bus (gasoline)",
+      "category": "Bus",
+      "flag": "p"
+    },
+    "T_HDV_CHRG": {
+      "description": "Charging infrastructure for on-road heavy-duty vehicles",
+      "category": "Charging",
+      "flag": "p"
+    },
+    "T_HDV_RF_DSL_EX": {
+      "description": "Existing freight rail (diesel)",
+      "category": "Rail freight",
+      "flag": "p"
+    },
+    "T_HDV_RF_DSL_N": {
+      "description": "New freight rail (diesel)",
+      "category": "Rail freight",
+      "flag": "p"
+    },
+    "T_HDV_RF_H2_N": {
+      "description": "New freight rail (fuel cell electric, gaseous H2 @ 700 bar)",
+      "category": "Rail freight",
+      "flag": "p"
+    },
+    "T_HDV_RF_LNG_N": {
+      "description": "New freight rail (liquified natural gas ICE)",
+      "category": "Rail freight",
+      "flag": "p"
+    },
+    "T_HDV_RICP_DSL_EX": {
+      "description": "Existing inter-city passenger rail (diesel)",
+      "category": "Rail travel",
+      "flag": "p"
+    },
+    "T_HDV_RICP_DSL_N": {
+      "description": "New inter-city passenger rail (diesel)",
+      "category": "Rail travel",
+      "flag": "p"
+    },
+    "T_HDV_RICP_H2_N": {
+      "description": "New inter-city passenger rail (fuel cell electric, gaseous H2 @ 700 bar)",
+      "category": "Rail travel",
+      "flag": "p"
+    },
+    "T_HDV_T_BEV_N": {
+      "description": "New heavy-duty freight truck (battery electric)",
+      "category": "Heavy trucks",
+      "flag": "p"
+    },
+    "T_HDV_T_DSL_EX": {
+      "description": "Existing heavy-duty freight truck (diesel)",
+      "category": "Heavy trucks",
+      "flag": "p"
+    },
+    "T_HDV_T_DSL_HEV_N": {
+      "description": "New heavy-duty freight truck (diesel, hybrid electric)",
+      "category": "Heavy trucks",
+      "flag": "p"
+    },
+    "T_HDV_T_DSL_N": {
+      "description": "New heavy-duty freight truck (diesel)",
+      "category": "Heavy trucks",
+      "flag": "p"
+    },
+    "T_HDV_T_DSL_PHEV_N": {
+      "description": "New heavy-duty freight truck (diesel, plug-in hybrid)",
+      "category": "Heavy trucks",
+      "flag": "p"
+    },
+    "T_HDV_T_FCEV_N": {
+      "description": "New heavy-duty freight truck (fuel cell electric, gaseous H2 @ 700 bar)",
+      "category": "Heavy trucks",
+      "flag": "p"
+    },
+    "T_HDV_T_FCHEV_N": {
+      "description": "New heavy-duty freight truck (fuel cell hybrid, w/battery to assist during prolonged high-power use)",
+      "category": "Heavy trucks",
+      "flag": "p"
+    },
+    "T_HDV_WTF_HFO_EX": {
+      "description": "Existing marine freight ship (heavy fuel oil) ",
+      "category": "Marine freight",
+      "flag": "p"
+    },
+    "T_HDV_WTF_HFO_N": {
+      "description": "New marine freight ship (heavy fuel oil) ",
+      "category": "Marine freight",
+      "flag": "p"
+    },
+    "T_HDV_WTF_LNG_N": {
+      "description": "New marine freight ship (liquified natural gas ICE) ",
+      "category": "Marine freight",
+      "flag": "p"
+    },
+    "T_HDV_WTF_MDO_EX": {
+      "description": "Existing marine freight ship (marine diesel oil) ",
+      "category": "Marine freight",
+      "flag": "p"
+    },
+    "T_HDV_WTF_MDO_N": {
+      "description": "New marine freight ship (marine diesel oil) ",
+      "category": "Marine freight",
+      "flag": "p"
+    },
+    "T_IMP_CNG": {
+      "description": "Technology that imports compressed natural gas into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_DSL": {
+      "description": "Technology that imports diesel into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_ELC": {
+      "description": "Dummy import of electricity to transportation sector",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_ETH": {
+      "description": "Technology that imports ethanol into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_GSL": {
+      "description": "Technology that imports gasoline into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_HFO": {
+      "description": "Technology that imports residual fuel oil into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_JTF": {
+      "description": "Technology that imports jet fuel into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_LNG": {
+      "description": "Technology that imports liquefied natural gas into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_MDO": {
+      "description": "Technology that imports marine gas oil into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_NG": {
+      "description": "Technology that imports natural gas; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_RDSL": {
+      "description": "Technology that imports renewable diesel into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_IMP_SPK": {
+      "description": "Technology that imports synthetic jet fuel into the transportation sector; also accounting for supply chain emissions and fuel costs",
+      "category": "Fuel supply",
+      "flag": "r"
+    },
+    "T_LDV_BEV_CHRG": {
+      "description": "Charging infrastructure for light-duty battery-electric vehicles and motorcycles",
+      "category": "Charging",
+      "flag": "p"
+    },
+    "T_LDV_C_BEV150_EX": {
+      "description": "Existing light-duty car (battery electric, 150-mile range)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_BEV150_N": {
+      "description": "New light-duty car (battery electric, 150-mile range)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_BEV200_N": {
+      "description": "New light-duty car (battery electric, 200-mile range)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_BEV300_N": {
+      "description": "New light-duty car (battery electric, 300-mile range)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_BEV400_N": {
+      "description": "New light-duty car (battery electric, 400-mile range)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_CNG_N": {
+      "description": "New light-duty car (compressed natural gas)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_DSL_EX": {
+      "description": "Existing light-duty car (diesel)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_DSL_N": {
+      "description": "New light-duty car (diesel)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_FCEV400_N": {
+      "description": "New light-duty car (fuel cell electric, gaseous H2 @ 700 bar, 400-mile range)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_GSL_EX": {
+      "description": "Existing light-duty car (gasoline)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_GSL_HEV_EX": {
+      "description": "Existing light-duty car (gasoline, hybrid electric)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_GSL_HEV_N": {
+      "description": "New light-duty car (gasoline, hybrid electric)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_GSL_N": {
+      "description": "New light-duty car (gasoline)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_GSL_PHEV35_EX": {
+      "description": "Existing light-duty car (gasoline, plug-in hybrid)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_GSL_PHEV35_N": {
+      "description": "New light-duty car (gasoline, parallel plug-in hybrid, 35-mile CD mode)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_C_GSL_PHEV50_N": {
+      "description": "New light-duty car (gasoline, parallel plug-in hybrid, 50-mile CD mode)",
+      "category": "Cars",
+      "flag": "p"
+    },
+    "T_LDV_LTF_BEV150_N": {
+      "description": "New light-duty freight truck (battery electric, 150-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_BEV200_N": {
+      "description": "New light-duty freight truck (battery electric, 200-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_BEV300_N": {
+      "description": "New light-duty freight truck (battery electric, 300-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_BEV400_N": {
+      "description": "New light-duty freight truck (battery electric, 400-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_CNG_N": {
+      "description": "New light-duty freight truck (compressed natural gas)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_DSL_EX": {
+      "description": "Existing light-duty freight truck (diesel)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_DSL_N": {
+      "description": "New light-duty freight truck (diesel)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_FCEV400_N": {
+      "description": "New light-duty freight truck (fuel cell electric, gaseous H2 @ 700 bar, 400-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_GSL_EX": {
+      "description": "Existing light-duty freight truck (gasoline)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_GSL_HEV_EX": {
+      "description": "Existing light-duty freight truck (gasoline, hybrid electric)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_GSL_HEV_N": {
+      "description": "New light-duty freight truck (gasoline, hybrid electric)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_GSL_N": {
+      "description": "New light-duty freight truck (gasoline)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_GSL_PHEV35_EX": {
+      "description": "Existing light-duty freight truck (gasoline, plug-in hybrid electric)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_GSL_PHEV35_N": {
+      "description": "New light-duty freight truck (gasoline, parallel plug-in hybrid, 35-mile CD mode)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTF_GSL_PHEV50_N": {
+      "description": "New light-duty freight truck (gasoline, parallel plug-in hybrid, 50-mile CD mode)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_BEV150_N": {
+      "description": "New light-duty passenger truck (battery electric, 150-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_BEV200_N": {
+      "description": "New light-duty passenger truck (battery electric, 200-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_BEV300_EX": {
+      "description": "Existing light-duty passenger truck (battery electric, 300-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_BEV300_N": {
+      "description": "New light-duty passenger truck (battery electric, 400-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_BEV400_N": {
+      "description": "New light-duty passenger truck (battery electric, 400-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_CNG_N": {
+      "description": "New light-duty passenger truck (compressed natural gas)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_DSL_EX": {
+      "description": "Existing light-duty passenger truck (diesel)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_DSL_N": {
+      "description": "New light-duty passenger truck (diesel)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_FCEV400_N": {
+      "description": "New light-duty passenger truck (fuel cell electric, gaseous H2 @ 700 bar, 400-mile range)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_GSL_EX": {
+      "description": "Existing light-duty passenger truck (gasoline)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_GSL_HEV_EX": {
+      "description": "Existing light-duty passenger truck (gasoline, hybrid electric)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_GSL_HEV_N": {
+      "description": "New light-duty passenger truck (gasoline, hybrid electric)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_GSL_N": {
+      "description": "New light-duty passenger truck (gasoline)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_GSL_PHEV35_EX": {
+      "description": "Existing light-duty passenger truck (gasoline, plug-in hybrid)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_GSL_PHEV35_N": {
+      "description": "New light-duty passenger truck (gasoline, parallel plug-in hybrid, 35-mile CD mode)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_LTP_GSL_PHEV50_N": {
+      "description": "New light-duty passenger truck (gasoline, parallel plug-in hybrid, 50-mile CD mode)",
+      "category": "Light trucks",
+      "flag": "p"
+    },
+    "T_LDV_M_BEV_N": {
+      "description": "New light-duty motorbike (battery electric)",
+      "category": "Motorcycles",
+      "flag": "p"
+    },
+    "T_LDV_M_GSL_EX": {
+      "description": "Existing light-duty motorbike (gasoline)",
+      "category": "Motorcycles",
+      "flag": "p"
+    },
+    "T_LDV_M_GSL_N": {
+      "description": "New light-duty motorbike (gasoline)",
+      "category": "Motorcycles",
+      "flag": "p"
+    },
+    "T_LDV_PHEV_CHRG": {
+      "description": "Charging infrastructure for light-duty plug-in hybrid vehicles and motorcycles",
+      "category": "Charging",
+      "flag": "p"
+    },
+    "T_MDV_CHRG": {
+      "description": "Charging infrastructure for medium-duty vehicles",
+      "category": "Charging",
+      "flag": "p"
+    },
+    "T_MDV_T_BEV_N": {
+      "description": "New medium-duty freight truck (battery electric)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_MDV_T_DSL_EX": {
+      "description": "Existing medium-duty freight truck (diesel)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_MDV_T_DSL_HEV_N": {
+      "description": "New medium-duty freight truck (diesel, hybrid electric)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_MDV_T_DSL_N": {
+      "description": "New medium-duty freight truck (diesel)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_MDV_T_DSL_PHEV_N": {
+      "description": "New medium-duty freight truck (diesel, plug-in hybrid)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_MDV_T_FCEV_N": {
+      "description": "New medium-duty freight truck (fuel cell electric, gaseous H2 @ 700 bar)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_MDV_T_FCHEV_N": {
+      "description": "New medium-duty freight truck (fuel cell hybrid, w/battery to assist during prolonged high-power use)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_MDV_T_GSL_EX": {
+      "description": "Existing medium-duty freight truck (gasoline)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_MDV_T_GSL_N": {
+      "description": "New medium-duty freight truck (gasoline)",
+      "category": "Medium trucks",
+      "flag": "p"
+    },
+    "T_OFF": {
+      "description": "Off-road transportation (assumed to consume diesel only), passed directly as demand in PJ. ",
+      "category": "Offroad",
+      "flag": "p"
+    },
+    "T_dummy_pkm_ldv_c": {
+      "description": "Dummy tech used to release non-profiled vehicles from charging demand distribution",
+      "category": "",
+      "flag": "p"
+    },
+    "T_dummy_pkm_ldv_m": {
+      "description": "Dummy tech used to release non-profiled vehicles from charging demand distribution",
+      "category": "",
+      "flag": "p"
+    },
+    "T_dummy_pkm_ldv_t": {
+      "description": "Dummy tech used to release non-profiled vehicles from charging demand distribution",
+      "category": "",
+      "flag": "p"
+    },
+    "T_dummy_tkm_ldv_t": {
+      "description": "Dummy tech used to release non-profiled vehicles from charging demand distribution",
+      "category": "",
+      "flag": "p"
+    }
+  },
+  "commodities": {
+    "E_elc_dx": {
+      "description": "Electricity used by supply technologies",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "I_elc": {
+      "description": "Electricity used by industry technologies",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "I_elc_dc": {
+      "description": "Electrolysis needs DC electricity",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "I_ethos": {
+      "description": "Non-physical technology used as a starting point for industry pathways",
+      "flag": "s",
+      "notes": ""
+    },
+    "T_D_pj_off": {
+      "description": "Demand for PJ by off-road vehicles",
+      "flag": "d",
+      "notes": "PJ"
+    },
+    "T_D_pkm_hdv_aj": {
+      "description": "Demand for total passenger-kilometers by jet aircrafts",
+      "flag": "d",
+      "notes": "billion passenger-km"
+    },
+    "T_D_pkm_hdv_bic": {
+      "description": "Demand for total passenger-kilometers driven by inter-city buses",
+      "flag": "d",
+      "notes": "billion passenger-km"
+    },
+    "T_D_pkm_hdv_bs": {
+      "description": "Demand for total passenger-kilometers driven by school and employee buses",
+      "flag": "d",
+      "notes": "billion passenger-km"
+    },
+    "T_D_pkm_hdv_bt": {
+      "description": "Demand for total passenger-kilometers driven by urban transit buses",
+      "flag": "d",
+      "notes": "billion passenger-km"
+    },
+    "T_D_pkm_hdv_r": {
+      "description": "Demand for total passenger-kilometers by inter-city and urban transit rails",
+      "flag": "d",
+      "notes": "billion passenger-km"
+    },
+    "T_D_pkm_ldv_c": {
+      "description": "Demand for total passenger-kilometers driven by cars",
+      "flag": "d",
+      "notes": "billion passenger-km"
+    },
+    "T_D_pkm_ldv_m": {
+      "description": "Demand for total passenger-kilometers driven by motorcycles",
+      "flag": "d",
+      "notes": "billion passenger-km"
+    },
+    "T_D_pkm_ldv_t": {
+      "description": "Demand for total passenger-kilometers driven by light-duty passenger trucks",
+      "flag": "d",
+      "notes": "billion passenger-km"
+    },
+    "T_D_tkm_hdv_aj": {
+      "description": "Demand for total tonne-kilometers by jet aircrafts",
+      "flag": "d",
+      "notes": "billion tonne-km"
+    },
+    "T_D_tkm_hdv_r": {
+      "description": "Demand for total tonne-kilometers by freight rails",
+      "flag": "d",
+      "notes": "billion tonne-km"
+    },
+    "T_D_tkm_hdv_t": {
+      "description": "Demand for total tonne-kilometers driven by heavy-duty trucks",
+      "flag": "d",
+      "notes": "billion tonne-km"
+    },
+    "T_D_tkm_hdv_wt": {
+      "description": "Demand for total tonne-kilometers by marine vessels",
+      "flag": "d",
+      "notes": "billion tonne-km"
+    },
+    "T_D_tkm_ldv_t": {
+      "description": "Demand for total tonne-kilometers driven by light-duty freight trucks",
+      "flag": "d",
+      "notes": "billion tonne-km"
+    },
+    "T_D_tkm_mdv_t": {
+      "description": "Demand for total tonne-kilometers driven by medium-duty trucks",
+      "flag": "d",
+      "notes": "billion tonne-km"
+    },
+    "T_annual_pkm_ldv_c": {
+      "description": "Dummy annual commodity used to release non-profiled vehicles from charging demand distribution",
+      "flag": "a",
+      "notes": ""
+    },
+    "T_annual_pkm_ldv_m": {
+      "description": "Dummy annual commodity used to release non-profiled vehicles from charging demand distribution",
+      "flag": "a",
+      "notes": ""
+    },
+    "T_annual_pkm_ldv_t": {
+      "description": "Dummy annual commodity used to release non-profiled vehicles from charging demand distribution",
+      "flag": "a",
+      "notes": ""
+    },
+    "T_annual_tkm_ldv_t": {
+      "description": "Dummy annual commodity used to release non-profiled vehicles from charging demand distribution",
+      "flag": "a",
+      "notes": ""
+    },
+    "T_cng": {
+      "description": "Compressed natural gas ",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_dsl": {
+      "description": "Diesel with 4% renewable diesel ",
+      "flag": "p",
+      "notes": "PJ; blend mandates as per the Cleaner Transportation Fuels regulation. "
+    },
+    "T_dsl_elc_hdv": {
+      "description": "Diesel and electricity for plug-in hybrid vehicles (heavy-duty class)",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_dsl_elc_mdv": {
+      "description": "Diesel and electricity for plug-in hybrid vehicles (medium-duty class)",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_cng": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_dsl": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_eth": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_gsl": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_hfo": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_jtf": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_lng": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_mdo": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_ng": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_rdsl": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ea_spk": {
+      "description": "Dummy commodity for direct combustion emissions accounting",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_elc": {
+      "description": "Electricity used by transportation technologies",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_elc_hdv_chrg": {
+      "description": "Electricity from heavy-duty EV charger",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_elc_ldv_bev_chrg": {
+      "description": "Electricity from light-duty BEV charger",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_elc_ldv_phev_chrg": {
+      "description": "Electricity from light-duty PHEV charger",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_elc_mdv_chrg": {
+      "description": "Electricity from medium-duty EV charger",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ethos": {
+      "description": "Non-physical technology used as a starting point for transportation pathways",
+      "flag": "s",
+      "notes": ""
+    },
+    "T_gsl": {
+      "description": "Gasoline with at least 10% ethanol ",
+      "flag": "p",
+      "notes": "PJ; blend mandates as per the Cleaner Transportation Fuels regulation. "
+    },
+    "T_gsl_elc_phev35": {
+      "description": "Gasoline and electricity for plug-in hybrid vehicles (35-mile CD range ratio)",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_gsl_elc_phev50": {
+      "description": "Gasoline and electricity for plug-in hybrid vehicles (50-mile CD range ratio)",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_h2_hdv": {
+      "description": "Gaseous H2 @ 700 bar for use in heavy-duty vehicles",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_h2_ldv": {
+      "description": "Gaseous H2 @ 700 bar for use in light-duty vehicles",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_h2_mdv": {
+      "description": "Gaseous H2 @ 700 bar for use in medium-duty vehicles",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_hfo": {
+      "description": "Heavy fuel oil, 0.1% sulfur content ",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_jtf": {
+      "description": "Conv. jet fuel, after potential blending with renewable jet fuel ",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_lng": {
+      "description": "Liquified natural gas ",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_mdo": {
+      "description": "Marine diesel oil, 0.1% sulfur content ",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_ng": {
+      "description": "Natural gas for industry process",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "T_spk": {
+      "description": "Conventional jet fuel with 50% HEFA SPK ",
+      "flag": "p",
+      "notes": "PJ; blend limit in compliance with ASTM D7566 standards."
+    },
+    "ch4": {
+      "description": "Methane",
+      "flag": "e",
+      "notes": "kt"
+    },
+    "co2": {
+      "description": "Carbon dioxide",
+      "flag": "e",
+      "notes": "kt"
+    },
+    "co2e": {
+      "description": "Carbon dioxide equivalent (GWP 100, IPCC AR6)",
+      "flag": "e",
+      "notes": "kt"
+    },
+    "dsl": {
+      "description": "Low-sulfur diesel",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "eth": {
+      "description": "Ethanol (100% corn-based ethanol)",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "gsl": {
+      "description": "Gasoline blendstock",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "h2": {
+      "description": "Ouput hydrogen from production process",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "h2_10": {
+      "description": "Gaseous H2 @ 10 bar",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "h2_100": {
+      "description": "Gaseous H2 @ 100 bar",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "h2_700": {
+      "description": "Gaseous H2 @ 700 bar",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "jtf": {
+      "description": "Petroleum conventional jet fuel",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "n2o": {
+      "description": "Nitrous oxide",
+      "flag": "e",
+      "notes": "kt"
+    },
+    "rdsl": {
+      "description": "Renewable diesel (50% soy-based biodiesel and 50% HDRD)",
+      "flag": "p",
+      "notes": "PJ"
+    },
+    "spk": {
+      "description": "Renewable synthetic jet fuel",
+      "flag": "p",
+      "notes": "PJ"
+    }
+  },
+  "efficiency_links": [
+    {
+      "input": "E_elc_dx",
+      "technology": "T_IMP_ELC",
+      "output": "T_elc"
+    },
+    {
+      "input": "I_elc",
+      "technology": "ELC_AC_DC",
+      "output": "I_elc_dc"
+    },
+    {
+      "input": "I_elc",
+      "technology": "H2_COMP_100_700",
+      "output": "h2_700"
+    },
+    {
+      "input": "I_elc",
+      "technology": "H2_COMP_10_100",
+      "output": "h2_100"
+    },
+    {
+      "input": "I_elc_dc",
+      "technology": "I_H2_ELC_ALK",
+      "output": "h2"
+    },
+    {
+      "input": "I_elc_dc",
+      "technology": "I_H2_ELC_PEM",
+      "output": "h2"
+    },
+    {
+      "input": "I_ethos",
+      "technology": "T_IMP_NG",
+      "output": "T_ea_ng"
+    },
+    {
+      "input": "T_annual_pkm_ldv_c",
+      "technology": "T_dummy_pkm_ldv_c",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_annual_pkm_ldv_m",
+      "technology": "T_dummy_pkm_ldv_m",
+      "output": "T_D_pkm_ldv_m"
+    },
+    {
+      "input": "T_annual_pkm_ldv_t",
+      "technology": "T_dummy_pkm_ldv_t",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_annual_tkm_ldv_t",
+      "technology": "T_dummy_tkm_ldv_t",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_cng",
+      "technology": "T_HDV_BS_CNG_EX",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_cng",
+      "technology": "T_HDV_BS_CNG_N",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_cng",
+      "technology": "T_HDV_BT_CNG_EX",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_cng",
+      "technology": "T_HDV_BT_CNG_N",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_cng",
+      "technology": "T_LDV_C_CNG_N",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_cng",
+      "technology": "T_LDV_LTF_CNG_N",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_cng",
+      "technology": "T_LDV_LTP_CNG_N",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_BLND_DSL_ELC_HDV",
+      "output": "T_dsl_elc_hdv"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_BLND_DSL_ELC_MDV",
+      "output": "T_dsl_elc_mdv"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BIC_DSL_EX",
+      "output": "T_D_pkm_hdv_bic"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BIC_DSL_HEV_N",
+      "output": "T_D_pkm_hdv_bic"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BIC_DSL_N",
+      "output": "T_D_pkm_hdv_bic"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BS_DSL_EX",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BS_DSL_HEV_N",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BS_DSL_N",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BT_DSL_EX",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BT_DSL_HEV_N",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_BT_DSL_N",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_RF_DSL_EX",
+      "output": "T_D_tkm_hdv_r"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_RF_DSL_N",
+      "output": "T_D_tkm_hdv_r"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_RICP_DSL_EX",
+      "output": "T_D_pkm_hdv_r"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_RICP_DSL_N",
+      "output": "T_D_pkm_hdv_r"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_T_DSL_EX",
+      "output": "T_D_tkm_hdv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_T_DSL_HEV_N",
+      "output": "T_D_tkm_hdv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_HDV_T_DSL_N",
+      "output": "T_D_tkm_hdv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_LDV_C_DSL_EX",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_LDV_C_DSL_N",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_LDV_LTF_DSL_EX",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_LDV_LTF_DSL_N",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_LDV_LTP_DSL_EX",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_LDV_LTP_DSL_N",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_MDV_T_DSL_EX",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_MDV_T_DSL_HEV_N",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_MDV_T_DSL_N",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_dsl",
+      "technology": "T_OFF",
+      "output": "T_D_pj_off"
+    },
+    {
+      "input": "T_dsl_elc_hdv",
+      "technology": "T_HDV_BS_DSL_PHEV_N",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_dsl_elc_hdv",
+      "technology": "T_HDV_BT_DSL_PHEV_N",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_dsl_elc_hdv",
+      "technology": "T_HDV_T_DSL_PHEV_N",
+      "output": "T_D_tkm_hdv_t"
+    },
+    {
+      "input": "T_dsl_elc_mdv",
+      "technology": "T_MDV_T_DSL_PHEV_N",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_ea_cng",
+      "technology": "T_EA_CNG",
+      "output": "T_cng"
+    },
+    {
+      "input": "T_ea_dsl",
+      "technology": "T_EA_DSL",
+      "output": "dsl"
+    },
+    {
+      "input": "T_ea_eth",
+      "technology": "T_EA_ETH",
+      "output": "eth"
+    },
+    {
+      "input": "T_ea_gsl",
+      "technology": "T_EA_GSL",
+      "output": "gsl"
+    },
+    {
+      "input": "T_ea_hfo",
+      "technology": "T_EA_HFO",
+      "output": "T_hfo"
+    },
+    {
+      "input": "T_ea_jtf",
+      "technology": "T_EA_JTF",
+      "output": "jtf"
+    },
+    {
+      "input": "T_ea_lng",
+      "technology": "T_EA_LNG",
+      "output": "T_lng"
+    },
+    {
+      "input": "T_ea_mdo",
+      "technology": "T_EA_MDO",
+      "output": "T_mdo"
+    },
+    {
+      "input": "T_ea_ng",
+      "technology": "T_EA_NG",
+      "output": "T_ng"
+    },
+    {
+      "input": "T_ea_rdsl",
+      "technology": "T_EA_RDSL",
+      "output": "rdsl"
+    },
+    {
+      "input": "T_ea_spk",
+      "technology": "T_EA_SPK",
+      "output": "spk"
+    },
+    {
+      "input": "T_elc",
+      "technology": "T_HDV_CHRG",
+      "output": "T_elc_hdv_chrg"
+    },
+    {
+      "input": "T_elc",
+      "technology": "T_LDV_BEV_CHRG",
+      "output": "T_elc_ldv_bev_chrg"
+    },
+    {
+      "input": "T_elc",
+      "technology": "T_LDV_PHEV_CHRG",
+      "output": "T_elc_ldv_phev_chrg"
+    },
+    {
+      "input": "T_elc",
+      "technology": "T_MDV_CHRG",
+      "output": "T_elc_mdv_chrg"
+    },
+    {
+      "input": "T_elc_hdv_chrg",
+      "technology": "T_BLND_DSL_ELC_HDV",
+      "output": "T_dsl_elc_hdv"
+    },
+    {
+      "input": "T_elc_hdv_chrg",
+      "technology": "T_HDV_BIC_BEV_N",
+      "output": "T_D_pkm_hdv_bic"
+    },
+    {
+      "input": "T_elc_hdv_chrg",
+      "technology": "T_HDV_BS_BEV_N",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_elc_hdv_chrg",
+      "technology": "T_HDV_BT_BEV_EX",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_elc_hdv_chrg",
+      "technology": "T_HDV_BT_BEV_N",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_elc_hdv_chrg",
+      "technology": "T_HDV_T_BEV_N",
+      "output": "T_D_tkm_hdv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_C_BEV150_EX",
+      "output": "T_annual_pkm_ldv_c"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_C_BEV150_N",
+      "output": "T_annual_pkm_ldv_c"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_C_BEV200_N",
+      "output": "T_annual_pkm_ldv_c"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_C_BEV300_N",
+      "output": "T_annual_pkm_ldv_c"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_C_BEV400_N",
+      "output": "T_annual_pkm_ldv_c"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTF_BEV150_N",
+      "output": "T_annual_tkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTF_BEV200_N",
+      "output": "T_annual_tkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTF_BEV300_N",
+      "output": "T_annual_tkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTF_BEV400_N",
+      "output": "T_annual_tkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTP_BEV150_N",
+      "output": "T_annual_pkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTP_BEV200_N",
+      "output": "T_annual_pkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTP_BEV300_EX",
+      "output": "T_annual_pkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTP_BEV300_N",
+      "output": "T_annual_pkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_LTP_BEV400_N",
+      "output": "T_annual_pkm_ldv_t"
+    },
+    {
+      "input": "T_elc_ldv_bev_chrg",
+      "technology": "T_LDV_M_BEV_N",
+      "output": "T_annual_pkm_ldv_m"
+    },
+    {
+      "input": "T_elc_ldv_phev_chrg",
+      "technology": "T_BLND_GSL_ELC_PHEV35",
+      "output": "T_gsl_elc_phev35"
+    },
+    {
+      "input": "T_elc_ldv_phev_chrg",
+      "technology": "T_BLND_GSL_ELC_PHEV50",
+      "output": "T_gsl_elc_phev50"
+    },
+    {
+      "input": "T_elc_mdv_chrg",
+      "technology": "T_BLND_DSL_ELC_MDV",
+      "output": "T_dsl_elc_mdv"
+    },
+    {
+      "input": "T_elc_mdv_chrg",
+      "technology": "T_MDV_T_BEV_N",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_CNG",
+      "output": "T_ea_cng"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_DSL",
+      "output": "T_ea_dsl"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_ETH",
+      "output": "T_ea_eth"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_GSL",
+      "output": "T_ea_gsl"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_HFO",
+      "output": "T_ea_hfo"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_JTF",
+      "output": "T_ea_jtf"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_LNG",
+      "output": "T_ea_lng"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_MDO",
+      "output": "T_ea_mdo"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_RDSL",
+      "output": "T_ea_rdsl"
+    },
+    {
+      "input": "T_ethos",
+      "technology": "T_IMP_SPK",
+      "output": "T_ea_spk"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_BLND_GSL_ELC_PHEV35",
+      "output": "T_gsl_elc_phev35"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_BLND_GSL_ELC_PHEV50",
+      "output": "T_gsl_elc_phev50"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_HDV_BIC_GSL_EX",
+      "output": "T_D_pkm_hdv_bic"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_HDV_BIC_GSL_N",
+      "output": "T_D_pkm_hdv_bic"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_HDV_BS_GSL_EX",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_HDV_BS_GSL_N",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_HDV_BT_GSL_EX",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_HDV_BT_GSL_N",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_C_GSL_EX",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_C_GSL_HEV_EX",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_C_GSL_HEV_N",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_C_GSL_N",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_LTF_GSL_EX",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_LTF_GSL_HEV_EX",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_LTF_GSL_HEV_N",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_LTF_GSL_N",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_LTP_GSL_EX",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_LTP_GSL_HEV_EX",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_LTP_GSL_HEV_N",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_LTP_GSL_N",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_M_GSL_EX",
+      "output": "T_D_pkm_ldv_m"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_LDV_M_GSL_N",
+      "output": "T_D_pkm_ldv_m"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_MDV_T_GSL_EX",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_gsl",
+      "technology": "T_MDV_T_GSL_N",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_gsl_elc_phev35",
+      "technology": "T_LDV_C_GSL_PHEV35_EX",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_gsl_elc_phev35",
+      "technology": "T_LDV_C_GSL_PHEV35_N",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_gsl_elc_phev35",
+      "technology": "T_LDV_LTF_GSL_PHEV35_EX",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_gsl_elc_phev35",
+      "technology": "T_LDV_LTF_GSL_PHEV35_N",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_gsl_elc_phev35",
+      "technology": "T_LDV_LTP_GSL_PHEV35_EX",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_gsl_elc_phev35",
+      "technology": "T_LDV_LTP_GSL_PHEV35_N",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_gsl_elc_phev50",
+      "technology": "T_LDV_C_GSL_PHEV50_N",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_gsl_elc_phev50",
+      "technology": "T_LDV_LTF_GSL_PHEV50_N",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_gsl_elc_phev50",
+      "technology": "T_LDV_LTP_GSL_PHEV50_N",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_BIC_FCEV_N",
+      "output": "T_D_pkm_hdv_bic"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_BS_FCEV_N",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_BS_FCHEV_N",
+      "output": "T_D_pkm_hdv_bs"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_BT_FCEV_N",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_BT_FCHEV_N",
+      "output": "T_D_pkm_hdv_bt"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_RF_H2_N",
+      "output": "T_D_tkm_hdv_r"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_RICP_H2_N",
+      "output": "T_D_pkm_hdv_r"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_T_FCEV_N",
+      "output": "T_D_tkm_hdv_t"
+    },
+    {
+      "input": "T_h2_hdv",
+      "technology": "T_HDV_T_FCHEV_N",
+      "output": "T_D_tkm_hdv_t"
+    },
+    {
+      "input": "T_h2_ldv",
+      "technology": "T_LDV_C_FCEV400_N",
+      "output": "T_D_pkm_ldv_c"
+    },
+    {
+      "input": "T_h2_ldv",
+      "technology": "T_LDV_LTF_FCEV400_N",
+      "output": "T_D_tkm_ldv_t"
+    },
+    {
+      "input": "T_h2_ldv",
+      "technology": "T_LDV_LTP_FCEV400_N",
+      "output": "T_D_pkm_ldv_t"
+    },
+    {
+      "input": "T_h2_mdv",
+      "technology": "T_MDV_T_FCEV_N",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_h2_mdv",
+      "technology": "T_MDV_T_FCHEV_N",
+      "output": "T_D_tkm_mdv_t"
+    },
+    {
+      "input": "T_hfo",
+      "technology": "T_HDV_WTF_HFO_EX",
+      "output": "T_D_tkm_hdv_wt"
+    },
+    {
+      "input": "T_hfo",
+      "technology": "T_HDV_WTF_HFO_N",
+      "output": "T_D_tkm_hdv_wt"
+    },
+    {
+      "input": "T_jtf",
+      "technology": "T_HDV_AJF_JFL_EX",
+      "output": "T_D_tkm_hdv_aj"
+    },
+    {
+      "input": "T_jtf",
+      "technology": "T_HDV_AJF_JFL_N",
+      "output": "T_D_tkm_hdv_aj"
+    },
+    {
+      "input": "T_jtf",
+      "technology": "T_HDV_AJP_JFL_EX",
+      "output": "T_D_pkm_hdv_aj"
+    },
+    {
+      "input": "T_jtf",
+      "technology": "T_HDV_AJP_JFL_N",
+      "output": "T_D_pkm_hdv_aj"
+    },
+    {
+      "input": "T_lng",
+      "technology": "T_HDV_RF_LNG_N",
+      "output": "T_D_tkm_hdv_r"
+    },
+    {
+      "input": "T_lng",
+      "technology": "T_HDV_WTF_LNG_N",
+      "output": "T_D_tkm_hdv_wt"
+    },
+    {
+      "input": "T_mdo",
+      "technology": "T_HDV_WTF_MDO_EX",
+      "output": "T_D_tkm_hdv_wt"
+    },
+    {
+      "input": "T_mdo",
+      "technology": "T_HDV_WTF_MDO_N",
+      "output": "T_D_tkm_hdv_wt"
+    },
+    {
+      "input": "T_ng",
+      "technology": "I_H2_SMR",
+      "output": "h2"
+    },
+    {
+      "input": "T_ng",
+      "technology": "I_H2_SMR_CCS",
+      "output": "h2"
+    },
+    {
+      "input": "T_spk",
+      "technology": "T_HDV_AJF_SPK_N",
+      "output": "T_D_tkm_hdv_aj"
+    },
+    {
+      "input": "T_spk",
+      "technology": "T_HDV_AJP_SPK_N",
+      "output": "T_D_pkm_hdv_aj"
+    },
+    {
+      "input": "dsl",
+      "technology": "T_BLND_RDSL_DSL",
+      "output": "T_dsl"
+    },
+    {
+      "input": "eth",
+      "technology": "T_BLND_ETH_GSL",
+      "output": "T_gsl"
+    },
+    {
+      "input": "gsl",
+      "technology": "T_BLND_ETH_GSL",
+      "output": "T_gsl"
+    },
+    {
+      "input": "h2",
+      "technology": "H2_distribution",
+      "output": "h2_10"
+    },
+    {
+      "input": "h2_10",
+      "technology": "H2_COMP_10_100",
+      "output": "h2_100"
+    },
+    {
+      "input": "h2_100",
+      "technology": "H2_COMP_100_700",
+      "output": "h2_700"
+    },
+    {
+      "input": "h2_100",
+      "technology": "H2_storage",
+      "output": "h2_100"
+    },
+    {
+      "input": "h2_700",
+      "technology": "T_H2_HDV_REFUEL",
+      "output": "T_h2_hdv"
+    },
+    {
+      "input": "h2_700",
+      "technology": "T_H2_LDV_REFUEL",
+      "output": "T_h2_ldv"
+    },
+    {
+      "input": "h2_700",
+      "technology": "T_H2_MDV_REFUEL",
+      "output": "T_h2_mdv"
+    },
+    {
+      "input": "jtf",
+      "technology": "T_BLND_JTF",
+      "output": "T_jtf"
+    },
+    {
+      "input": "jtf",
+      "technology": "T_BLND_SPK",
+      "output": "T_spk"
+    },
+    {
+      "input": "rdsl",
+      "technology": "T_BLND_RDSL_DSL",
+      "output": "T_dsl"
+    },
+    {
+      "input": "spk",
+      "technology": "T_BLND_JTF",
+      "output": "T_jtf"
+    },
+    {
+      "input": "spk",
+      "technology": "T_BLND_SPK",
+      "output": "T_spk"
+    }
+  ],
+  "demands": {
+    "T_D_pj_off": "PJ",
+    "T_D_pkm_hdv_aj": "bpkm",
+    "T_D_pkm_hdv_bic": "bpkm",
+    "T_D_pkm_hdv_bs": "bpkm",
+    "T_D_pkm_hdv_bt": "bpkm",
+    "T_D_pkm_hdv_r": "bpkm",
+    "T_D_pkm_ldv_c": "bpkm",
+    "T_D_pkm_ldv_m": "bpkm",
+    "T_D_pkm_ldv_t": "bpkm",
+    "T_D_tkm_hdv_aj": "btkm",
+    "T_D_tkm_hdv_r": "btkm",
+    "T_D_tkm_hdv_t": "btkm",
+    "T_D_tkm_hdv_wt": "btkm",
+    "T_D_tkm_ldv_t": "btkm",
+    "T_D_tkm_mdv_t": "btkm"
+  },
+  "modes": [
+    {
+      "id": "motorcycles",
+      "label": "Motorcycles",
+      "group": "motorcycles",
+      "prefixes": [
+        "T_LDV_M_"
+      ],
+      "technologies": [
+        "T_LDV_M_BEV_N",
+        "T_LDV_M_GSL_EX",
+        "T_LDV_M_GSL_N"
+      ],
+      "count": 3,
+      "fuels": {
+        "electricity": [
+          "T_LDV_M_BEV_N"
+        ],
+        "gasoline": [
+          "T_LDV_M_GSL_EX",
+          "T_LDV_M_GSL_N"
+        ]
+      },
+      "services": {
+        "T_D_pkm_ldv_m": [
+          "T_LDV_M_BEV_N",
+          "T_LDV_M_GSL_EX",
+          "T_LDV_M_GSL_N"
+        ]
+      }
+    },
+    {
+      "id": "cars",
+      "label": "Cars",
+      "group": "light_duty",
+      "prefixes": [
+        "T_LDV_C_"
+      ],
+      "technologies": [
+        "T_LDV_C_BEV150_EX",
+        "T_LDV_C_BEV150_N",
+        "T_LDV_C_BEV200_N",
+        "T_LDV_C_BEV300_N",
+        "T_LDV_C_BEV400_N",
+        "T_LDV_C_CNG_N",
+        "T_LDV_C_DSL_EX",
+        "T_LDV_C_DSL_N",
+        "T_LDV_C_FCEV400_N",
+        "T_LDV_C_GSL_EX",
+        "T_LDV_C_GSL_HEV_EX",
+        "T_LDV_C_GSL_HEV_N",
+        "T_LDV_C_GSL_N",
+        "T_LDV_C_GSL_PHEV35_EX",
+        "T_LDV_C_GSL_PHEV35_N",
+        "T_LDV_C_GSL_PHEV50_N"
+      ],
+      "count": 16,
+      "fuels": {
+        "cng": [
+          "T_LDV_C_CNG_N"
+        ],
+        "diesel": [
+          "T_LDV_C_DSL_EX",
+          "T_LDV_C_DSL_N"
+        ],
+        "electricity": [
+          "T_LDV_C_BEV150_EX",
+          "T_LDV_C_BEV150_N",
+          "T_LDV_C_BEV200_N",
+          "T_LDV_C_BEV300_N",
+          "T_LDV_C_BEV400_N",
+          "T_LDV_C_GSL_PHEV35_EX",
+          "T_LDV_C_GSL_PHEV35_N",
+          "T_LDV_C_GSL_PHEV50_N"
+        ],
+        "gasoline": [
+          "T_LDV_C_GSL_EX",
+          "T_LDV_C_GSL_HEV_EX",
+          "T_LDV_C_GSL_HEV_N",
+          "T_LDV_C_GSL_N",
+          "T_LDV_C_GSL_PHEV35_EX",
+          "T_LDV_C_GSL_PHEV35_N",
+          "T_LDV_C_GSL_PHEV50_N"
+        ],
+        "hydrogen": [
+          "T_LDV_C_FCEV400_N"
+        ]
+      },
+      "services": {
+        "T_D_pkm_ldv_c": [
+          "T_LDV_C_BEV150_EX",
+          "T_LDV_C_BEV150_N",
+          "T_LDV_C_BEV200_N",
+          "T_LDV_C_BEV300_N",
+          "T_LDV_C_BEV400_N",
+          "T_LDV_C_CNG_N",
+          "T_LDV_C_DSL_EX",
+          "T_LDV_C_DSL_N",
+          "T_LDV_C_FCEV400_N",
+          "T_LDV_C_GSL_EX",
+          "T_LDV_C_GSL_HEV_EX",
+          "T_LDV_C_GSL_HEV_N",
+          "T_LDV_C_GSL_N",
+          "T_LDV_C_GSL_PHEV35_EX",
+          "T_LDV_C_GSL_PHEV35_N",
+          "T_LDV_C_GSL_PHEV50_N"
+        ]
+      }
+    },
+    {
+      "id": "light_passenger",
+      "label": "Passenger light trucks",
+      "group": "light_duty",
+      "prefixes": [
+        "T_LDV_LTP_"
+      ],
+      "technologies": [
+        "T_LDV_LTP_BEV150_N",
+        "T_LDV_LTP_BEV200_N",
+        "T_LDV_LTP_BEV300_EX",
+        "T_LDV_LTP_BEV300_N",
+        "T_LDV_LTP_BEV400_N",
+        "T_LDV_LTP_CNG_N",
+        "T_LDV_LTP_DSL_EX",
+        "T_LDV_LTP_DSL_N",
+        "T_LDV_LTP_FCEV400_N",
+        "T_LDV_LTP_GSL_EX",
+        "T_LDV_LTP_GSL_HEV_EX",
+        "T_LDV_LTP_GSL_HEV_N",
+        "T_LDV_LTP_GSL_N",
+        "T_LDV_LTP_GSL_PHEV35_EX",
+        "T_LDV_LTP_GSL_PHEV35_N",
+        "T_LDV_LTP_GSL_PHEV50_N"
+      ],
+      "count": 16,
+      "fuels": {
+        "cng": [
+          "T_LDV_LTP_CNG_N"
+        ],
+        "diesel": [
+          "T_LDV_LTP_DSL_EX",
+          "T_LDV_LTP_DSL_N"
+        ],
+        "electricity": [
+          "T_LDV_LTP_BEV150_N",
+          "T_LDV_LTP_BEV200_N",
+          "T_LDV_LTP_BEV300_EX",
+          "T_LDV_LTP_BEV300_N",
+          "T_LDV_LTP_BEV400_N",
+          "T_LDV_LTP_GSL_PHEV35_EX",
+          "T_LDV_LTP_GSL_PHEV35_N",
+          "T_LDV_LTP_GSL_PHEV50_N"
+        ],
+        "gasoline": [
+          "T_LDV_LTP_GSL_EX",
+          "T_LDV_LTP_GSL_HEV_EX",
+          "T_LDV_LTP_GSL_HEV_N",
+          "T_LDV_LTP_GSL_N",
+          "T_LDV_LTP_GSL_PHEV35_EX",
+          "T_LDV_LTP_GSL_PHEV35_N",
+          "T_LDV_LTP_GSL_PHEV50_N"
+        ],
+        "hydrogen": [
+          "T_LDV_LTP_FCEV400_N"
+        ]
+      },
+      "services": {
+        "T_D_pkm_ldv_t": [
+          "T_LDV_LTP_BEV150_N",
+          "T_LDV_LTP_BEV200_N",
+          "T_LDV_LTP_BEV300_EX",
+          "T_LDV_LTP_BEV300_N",
+          "T_LDV_LTP_BEV400_N",
+          "T_LDV_LTP_CNG_N",
+          "T_LDV_LTP_DSL_EX",
+          "T_LDV_LTP_DSL_N",
+          "T_LDV_LTP_FCEV400_N",
+          "T_LDV_LTP_GSL_EX",
+          "T_LDV_LTP_GSL_HEV_EX",
+          "T_LDV_LTP_GSL_HEV_N",
+          "T_LDV_LTP_GSL_N",
+          "T_LDV_LTP_GSL_PHEV35_EX",
+          "T_LDV_LTP_GSL_PHEV35_N",
+          "T_LDV_LTP_GSL_PHEV50_N"
+        ]
+      }
+    },
+    {
+      "id": "light_freight",
+      "label": "Freight light trucks",
+      "group": "light_duty",
+      "prefixes": [
+        "T_LDV_LTF_"
+      ],
+      "technologies": [
+        "T_LDV_LTF_BEV150_N",
+        "T_LDV_LTF_BEV200_N",
+        "T_LDV_LTF_BEV300_N",
+        "T_LDV_LTF_BEV400_N",
+        "T_LDV_LTF_CNG_N",
+        "T_LDV_LTF_DSL_EX",
+        "T_LDV_LTF_DSL_N",
+        "T_LDV_LTF_FCEV400_N",
+        "T_LDV_LTF_GSL_EX",
+        "T_LDV_LTF_GSL_HEV_EX",
+        "T_LDV_LTF_GSL_HEV_N",
+        "T_LDV_LTF_GSL_N",
+        "T_LDV_LTF_GSL_PHEV35_EX",
+        "T_LDV_LTF_GSL_PHEV35_N",
+        "T_LDV_LTF_GSL_PHEV50_N"
+      ],
+      "count": 15,
+      "fuels": {
+        "cng": [
+          "T_LDV_LTF_CNG_N"
+        ],
+        "diesel": [
+          "T_LDV_LTF_DSL_EX",
+          "T_LDV_LTF_DSL_N"
+        ],
+        "electricity": [
+          "T_LDV_LTF_BEV150_N",
+          "T_LDV_LTF_BEV200_N",
+          "T_LDV_LTF_BEV300_N",
+          "T_LDV_LTF_BEV400_N",
+          "T_LDV_LTF_GSL_PHEV35_EX",
+          "T_LDV_LTF_GSL_PHEV35_N",
+          "T_LDV_LTF_GSL_PHEV50_N"
+        ],
+        "gasoline": [
+          "T_LDV_LTF_GSL_EX",
+          "T_LDV_LTF_GSL_HEV_EX",
+          "T_LDV_LTF_GSL_HEV_N",
+          "T_LDV_LTF_GSL_N",
+          "T_LDV_LTF_GSL_PHEV35_EX",
+          "T_LDV_LTF_GSL_PHEV35_N",
+          "T_LDV_LTF_GSL_PHEV50_N"
+        ],
+        "hydrogen": [
+          "T_LDV_LTF_FCEV400_N"
+        ]
+      },
+      "services": {
+        "T_D_tkm_ldv_t": [
+          "T_LDV_LTF_BEV150_N",
+          "T_LDV_LTF_BEV200_N",
+          "T_LDV_LTF_BEV300_N",
+          "T_LDV_LTF_BEV400_N",
+          "T_LDV_LTF_CNG_N",
+          "T_LDV_LTF_DSL_EX",
+          "T_LDV_LTF_DSL_N",
+          "T_LDV_LTF_FCEV400_N",
+          "T_LDV_LTF_GSL_EX",
+          "T_LDV_LTF_GSL_HEV_EX",
+          "T_LDV_LTF_GSL_HEV_N",
+          "T_LDV_LTF_GSL_N",
+          "T_LDV_LTF_GSL_PHEV35_EX",
+          "T_LDV_LTF_GSL_PHEV35_N",
+          "T_LDV_LTF_GSL_PHEV50_N"
+        ]
+      }
+    },
+    {
+      "id": "medium_trucks",
+      "label": "Medium trucks",
+      "group": "medium_duty",
+      "prefixes": [
+        "T_MDV_T_"
+      ],
+      "technologies": [
+        "T_MDV_T_BEV_N",
+        "T_MDV_T_DSL_EX",
+        "T_MDV_T_DSL_HEV_N",
+        "T_MDV_T_DSL_N",
+        "T_MDV_T_DSL_PHEV_N",
+        "T_MDV_T_FCEV_N",
+        "T_MDV_T_FCHEV_N",
+        "T_MDV_T_GSL_EX",
+        "T_MDV_T_GSL_N"
+      ],
+      "count": 9,
+      "fuels": {
+        "diesel": [
+          "T_MDV_T_DSL_EX",
+          "T_MDV_T_DSL_HEV_N",
+          "T_MDV_T_DSL_N",
+          "T_MDV_T_DSL_PHEV_N"
+        ],
+        "electricity": [
+          "T_MDV_T_BEV_N",
+          "T_MDV_T_DSL_PHEV_N"
+        ],
+        "gasoline": [
+          "T_MDV_T_GSL_EX",
+          "T_MDV_T_GSL_N"
+        ],
+        "hydrogen": [
+          "T_MDV_T_FCEV_N",
+          "T_MDV_T_FCHEV_N"
+        ]
+      },
+      "services": {
+        "T_D_tkm_mdv_t": [
+          "T_MDV_T_BEV_N",
+          "T_MDV_T_DSL_EX",
+          "T_MDV_T_DSL_HEV_N",
+          "T_MDV_T_DSL_N",
+          "T_MDV_T_DSL_PHEV_N",
+          "T_MDV_T_FCEV_N",
+          "T_MDV_T_FCHEV_N",
+          "T_MDV_T_GSL_EX",
+          "T_MDV_T_GSL_N"
+        ]
+      }
+    },
+    {
+      "id": "heavy_trucks",
+      "label": "Heavy trucks",
+      "group": "heavy_duty_and_nonroad",
+      "prefixes": [
+        "T_HDV_T_"
+      ],
+      "technologies": [
+        "T_HDV_T_BEV_N",
+        "T_HDV_T_DSL_EX",
+        "T_HDV_T_DSL_HEV_N",
+        "T_HDV_T_DSL_N",
+        "T_HDV_T_DSL_PHEV_N",
+        "T_HDV_T_FCEV_N",
+        "T_HDV_T_FCHEV_N"
+      ],
+      "count": 7,
+      "fuels": {
+        "diesel": [
+          "T_HDV_T_DSL_EX",
+          "T_HDV_T_DSL_HEV_N",
+          "T_HDV_T_DSL_N",
+          "T_HDV_T_DSL_PHEV_N"
+        ],
+        "electricity": [
+          "T_HDV_T_BEV_N",
+          "T_HDV_T_DSL_PHEV_N"
+        ],
+        "hydrogen": [
+          "T_HDV_T_FCEV_N",
+          "T_HDV_T_FCHEV_N"
+        ]
+      },
+      "services": {
+        "T_D_tkm_hdv_t": [
+          "T_HDV_T_BEV_N",
+          "T_HDV_T_DSL_EX",
+          "T_HDV_T_DSL_HEV_N",
+          "T_HDV_T_DSL_N",
+          "T_HDV_T_DSL_PHEV_N",
+          "T_HDV_T_FCEV_N",
+          "T_HDV_T_FCHEV_N"
+        ]
+      }
+    },
+    {
+      "id": "school_buses",
+      "label": "School buses",
+      "group": "heavy_duty_and_nonroad",
+      "prefixes": [
+        "T_HDV_BS_"
+      ],
+      "technologies": [
+        "T_HDV_BS_BEV_N",
+        "T_HDV_BS_CNG_EX",
+        "T_HDV_BS_CNG_N",
+        "T_HDV_BS_DSL_EX",
+        "T_HDV_BS_DSL_HEV_N",
+        "T_HDV_BS_DSL_N",
+        "T_HDV_BS_DSL_PHEV_N",
+        "T_HDV_BS_FCEV_N",
+        "T_HDV_BS_FCHEV_N",
+        "T_HDV_BS_GSL_EX",
+        "T_HDV_BS_GSL_N"
+      ],
+      "count": 11,
+      "fuels": {
+        "cng": [
+          "T_HDV_BS_CNG_EX",
+          "T_HDV_BS_CNG_N"
+        ],
+        "diesel": [
+          "T_HDV_BS_DSL_EX",
+          "T_HDV_BS_DSL_HEV_N",
+          "T_HDV_BS_DSL_N",
+          "T_HDV_BS_DSL_PHEV_N"
+        ],
+        "electricity": [
+          "T_HDV_BS_BEV_N",
+          "T_HDV_BS_DSL_PHEV_N"
+        ],
+        "gasoline": [
+          "T_HDV_BS_GSL_EX",
+          "T_HDV_BS_GSL_N"
+        ],
+        "hydrogen": [
+          "T_HDV_BS_FCEV_N",
+          "T_HDV_BS_FCHEV_N"
+        ]
+      },
+      "services": {
+        "T_D_pkm_hdv_bs": [
+          "T_HDV_BS_BEV_N",
+          "T_HDV_BS_CNG_EX",
+          "T_HDV_BS_CNG_N",
+          "T_HDV_BS_DSL_EX",
+          "T_HDV_BS_DSL_HEV_N",
+          "T_HDV_BS_DSL_N",
+          "T_HDV_BS_DSL_PHEV_N",
+          "T_HDV_BS_FCEV_N",
+          "T_HDV_BS_FCHEV_N",
+          "T_HDV_BS_GSL_EX",
+          "T_HDV_BS_GSL_N"
+        ]
+      }
+    },
+    {
+      "id": "transit_buses",
+      "label": "Transit buses",
+      "group": "heavy_duty_and_nonroad",
+      "prefixes": [
+        "T_HDV_BT_"
+      ],
+      "technologies": [
+        "T_HDV_BT_BEV_EX",
+        "T_HDV_BT_BEV_N",
+        "T_HDV_BT_CNG_EX",
+        "T_HDV_BT_CNG_N",
+        "T_HDV_BT_DSL_EX",
+        "T_HDV_BT_DSL_HEV_N",
+        "T_HDV_BT_DSL_N",
+        "T_HDV_BT_DSL_PHEV_N",
+        "T_HDV_BT_FCEV_N",
+        "T_HDV_BT_FCHEV_N",
+        "T_HDV_BT_GSL_EX",
+        "T_HDV_BT_GSL_N"
+      ],
+      "count": 12,
+      "fuels": {
+        "cng": [
+          "T_HDV_BT_CNG_EX",
+          "T_HDV_BT_CNG_N"
+        ],
+        "diesel": [
+          "T_HDV_BT_DSL_EX",
+          "T_HDV_BT_DSL_HEV_N",
+          "T_HDV_BT_DSL_N",
+          "T_HDV_BT_DSL_PHEV_N"
+        ],
+        "electricity": [
+          "T_HDV_BT_BEV_EX",
+          "T_HDV_BT_BEV_N",
+          "T_HDV_BT_DSL_PHEV_N"
+        ],
+        "gasoline": [
+          "T_HDV_BT_GSL_EX",
+          "T_HDV_BT_GSL_N"
+        ],
+        "hydrogen": [
+          "T_HDV_BT_FCEV_N",
+          "T_HDV_BT_FCHEV_N"
+        ]
+      },
+      "services": {
+        "T_D_pkm_hdv_bt": [
+          "T_HDV_BT_BEV_EX",
+          "T_HDV_BT_BEV_N",
+          "T_HDV_BT_CNG_EX",
+          "T_HDV_BT_CNG_N",
+          "T_HDV_BT_DSL_EX",
+          "T_HDV_BT_DSL_HEV_N",
+          "T_HDV_BT_DSL_N",
+          "T_HDV_BT_DSL_PHEV_N",
+          "T_HDV_BT_FCEV_N",
+          "T_HDV_BT_FCHEV_N",
+          "T_HDV_BT_GSL_EX",
+          "T_HDV_BT_GSL_N"
+        ]
+      }
+    },
+    {
+      "id": "intercity_buses",
+      "label": "Intercity buses",
+      "group": "heavy_duty_and_nonroad",
+      "prefixes": [
+        "T_HDV_BIC_"
+      ],
+      "technologies": [
+        "T_HDV_BIC_BEV_N",
+        "T_HDV_BIC_DSL_EX",
+        "T_HDV_BIC_DSL_HEV_N",
+        "T_HDV_BIC_DSL_N",
+        "T_HDV_BIC_FCEV_N",
+        "T_HDV_BIC_GSL_EX",
+        "T_HDV_BIC_GSL_N"
+      ],
+      "count": 7,
+      "fuels": {
+        "diesel": [
+          "T_HDV_BIC_DSL_EX",
+          "T_HDV_BIC_DSL_HEV_N",
+          "T_HDV_BIC_DSL_N"
+        ],
+        "electricity": [
+          "T_HDV_BIC_BEV_N"
+        ],
+        "gasoline": [
+          "T_HDV_BIC_GSL_EX",
+          "T_HDV_BIC_GSL_N"
+        ],
+        "hydrogen": [
+          "T_HDV_BIC_FCEV_N"
+        ]
+      },
+      "services": {
+        "T_D_pkm_hdv_bic": [
+          "T_HDV_BIC_BEV_N",
+          "T_HDV_BIC_DSL_EX",
+          "T_HDV_BIC_DSL_HEV_N",
+          "T_HDV_BIC_DSL_N",
+          "T_HDV_BIC_FCEV_N",
+          "T_HDV_BIC_GSL_EX",
+          "T_HDV_BIC_GSL_N"
+        ]
+      }
+    },
+    {
+      "id": "aircraft",
+      "label": "Jet aircraft",
+      "group": "heavy_duty_and_nonroad",
+      "prefixes": [
+        "T_HDV_AJP_",
+        "T_HDV_AJF_"
+      ],
+      "technologies": [
+        "T_HDV_AJF_JFL_EX",
+        "T_HDV_AJF_JFL_N",
+        "T_HDV_AJF_SPK_N",
+        "T_HDV_AJP_JFL_EX",
+        "T_HDV_AJP_JFL_N",
+        "T_HDV_AJP_SPK_N"
+      ],
+      "count": 6,
+      "fuels": {
+        "jet": [
+          "T_HDV_AJF_JFL_EX",
+          "T_HDV_AJF_JFL_N",
+          "T_HDV_AJF_SPK_N",
+          "T_HDV_AJP_JFL_EX",
+          "T_HDV_AJP_JFL_N",
+          "T_HDV_AJP_SPK_N"
+        ]
+      },
+      "services": {
+        "T_D_pkm_hdv_aj": [
+          "T_HDV_AJP_JFL_EX",
+          "T_HDV_AJP_JFL_N",
+          "T_HDV_AJP_SPK_N"
+        ],
+        "T_D_tkm_hdv_aj": [
+          "T_HDV_AJF_JFL_EX",
+          "T_HDV_AJF_JFL_N",
+          "T_HDV_AJF_SPK_N"
+        ]
+      }
+    },
+    {
+      "id": "rail",
+      "label": "Rail",
+      "group": "heavy_duty_and_nonroad",
+      "prefixes": [
+        "T_HDV_RICP_",
+        "T_HDV_RF_"
+      ],
+      "technologies": [
+        "T_HDV_RF_DSL_EX",
+        "T_HDV_RF_DSL_N",
+        "T_HDV_RF_H2_N",
+        "T_HDV_RF_LNG_N",
+        "T_HDV_RICP_DSL_EX",
+        "T_HDV_RICP_DSL_N",
+        "T_HDV_RICP_H2_N"
+      ],
+      "count": 7,
+      "fuels": {
+        "diesel": [
+          "T_HDV_RF_DSL_EX",
+          "T_HDV_RF_DSL_N",
+          "T_HDV_RICP_DSL_EX",
+          "T_HDV_RICP_DSL_N"
+        ],
+        "hydrogen": [
+          "T_HDV_RF_H2_N",
+          "T_HDV_RICP_H2_N"
+        ],
+        "lng": [
+          "T_HDV_RF_LNG_N"
+        ]
+      },
+      "services": {
+        "T_D_pkm_hdv_r": [
+          "T_HDV_RICP_DSL_EX",
+          "T_HDV_RICP_DSL_N",
+          "T_HDV_RICP_H2_N"
+        ],
+        "T_D_tkm_hdv_r": [
+          "T_HDV_RF_DSL_EX",
+          "T_HDV_RF_DSL_N",
+          "T_HDV_RF_H2_N",
+          "T_HDV_RF_LNG_N"
+        ]
+      }
+    },
+    {
+      "id": "marine",
+      "label": "Marine vessels",
+      "group": "heavy_duty_and_nonroad",
+      "prefixes": [
+        "T_HDV_WTF_"
+      ],
+      "technologies": [
+        "T_HDV_WTF_HFO_EX",
+        "T_HDV_WTF_HFO_N",
+        "T_HDV_WTF_LNG_N",
+        "T_HDV_WTF_MDO_EX",
+        "T_HDV_WTF_MDO_N"
+      ],
+      "count": 5,
+      "fuels": {
+        "lng": [
+          "T_HDV_WTF_LNG_N"
+        ],
+        "marine_oils": [
+          "T_HDV_WTF_HFO_EX",
+          "T_HDV_WTF_HFO_N",
+          "T_HDV_WTF_MDO_EX",
+          "T_HDV_WTF_MDO_N"
+        ]
+      },
+      "services": {
+        "T_D_tkm_hdv_wt": [
+          "T_HDV_WTF_HFO_EX",
+          "T_HDV_WTF_HFO_N",
+          "T_HDV_WTF_LNG_N",
+          "T_HDV_WTF_MDO_EX",
+          "T_HDV_WTF_MDO_N"
+        ]
+      }
+    },
+    {
+      "id": "offroad",
+      "label": "Off-road",
+      "group": "offroad",
+      "technology_ids": [
+        "T_OFF"
+      ],
+      "technologies": [
+        "T_OFF"
+      ],
+      "count": 1,
+      "fuels": {
+        "diesel": [
+          "T_OFF"
+        ]
+      },
+      "services": {
+        "T_D_pj_off": [
+          "T_OFF"
+        ]
+      }
+    }
+  ],
+  "assignments": {
+    "T_LDV_M_BEV_N": [
+      "motorcycles"
+    ],
+    "T_LDV_M_GSL_EX": [
+      "motorcycles"
+    ],
+    "T_LDV_M_GSL_N": [
+      "motorcycles"
+    ],
+    "T_LDV_C_BEV150_EX": [
+      "cars"
+    ],
+    "T_LDV_C_BEV150_N": [
+      "cars"
+    ],
+    "T_LDV_C_BEV200_N": [
+      "cars"
+    ],
+    "T_LDV_C_BEV300_N": [
+      "cars"
+    ],
+    "T_LDV_C_BEV400_N": [
+      "cars"
+    ],
+    "T_LDV_C_CNG_N": [
+      "cars"
+    ],
+    "T_LDV_C_DSL_EX": [
+      "cars"
+    ],
+    "T_LDV_C_DSL_N": [
+      "cars"
+    ],
+    "T_LDV_C_FCEV400_N": [
+      "cars"
+    ],
+    "T_LDV_C_GSL_EX": [
+      "cars"
+    ],
+    "T_LDV_C_GSL_HEV_EX": [
+      "cars"
+    ],
+    "T_LDV_C_GSL_HEV_N": [
+      "cars"
+    ],
+    "T_LDV_C_GSL_N": [
+      "cars"
+    ],
+    "T_LDV_C_GSL_PHEV35_EX": [
+      "cars"
+    ],
+    "T_LDV_C_GSL_PHEV35_N": [
+      "cars"
+    ],
+    "T_LDV_C_GSL_PHEV50_N": [
+      "cars"
+    ],
+    "T_LDV_LTP_BEV150_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_BEV200_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_BEV300_EX": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_BEV300_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_BEV400_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_CNG_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_DSL_EX": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_DSL_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_FCEV400_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_GSL_EX": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_GSL_HEV_EX": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_GSL_HEV_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_GSL_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_GSL_PHEV35_EX": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_GSL_PHEV35_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTP_GSL_PHEV50_N": [
+      "light_passenger"
+    ],
+    "T_LDV_LTF_BEV150_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_BEV200_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_BEV300_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_BEV400_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_CNG_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_DSL_EX": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_DSL_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_FCEV400_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_GSL_EX": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_GSL_HEV_EX": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_GSL_HEV_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_GSL_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_GSL_PHEV35_EX": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_GSL_PHEV35_N": [
+      "light_freight"
+    ],
+    "T_LDV_LTF_GSL_PHEV50_N": [
+      "light_freight"
+    ],
+    "T_MDV_T_BEV_N": [
+      "medium_trucks"
+    ],
+    "T_MDV_T_DSL_EX": [
+      "medium_trucks"
+    ],
+    "T_MDV_T_DSL_HEV_N": [
+      "medium_trucks"
+    ],
+    "T_MDV_T_DSL_N": [
+      "medium_trucks"
+    ],
+    "T_MDV_T_DSL_PHEV_N": [
+      "medium_trucks"
+    ],
+    "T_MDV_T_FCEV_N": [
+      "medium_trucks"
+    ],
+    "T_MDV_T_FCHEV_N": [
+      "medium_trucks"
+    ],
+    "T_MDV_T_GSL_EX": [
+      "medium_trucks"
+    ],
+    "T_MDV_T_GSL_N": [
+      "medium_trucks"
+    ],
+    "T_HDV_T_BEV_N": [
+      "heavy_trucks"
+    ],
+    "T_HDV_T_DSL_EX": [
+      "heavy_trucks"
+    ],
+    "T_HDV_T_DSL_HEV_N": [
+      "heavy_trucks"
+    ],
+    "T_HDV_T_DSL_N": [
+      "heavy_trucks"
+    ],
+    "T_HDV_T_DSL_PHEV_N": [
+      "heavy_trucks"
+    ],
+    "T_HDV_T_FCEV_N": [
+      "heavy_trucks"
+    ],
+    "T_HDV_T_FCHEV_N": [
+      "heavy_trucks"
+    ],
+    "T_HDV_BS_BEV_N": [
+      "school_buses"
+    ],
+    "T_HDV_BS_CNG_EX": [
+      "school_buses"
+    ],
+    "T_HDV_BS_CNG_N": [
+      "school_buses"
+    ],
+    "T_HDV_BS_DSL_EX": [
+      "school_buses"
+    ],
+    "T_HDV_BS_DSL_HEV_N": [
+      "school_buses"
+    ],
+    "T_HDV_BS_DSL_N": [
+      "school_buses"
+    ],
+    "T_HDV_BS_DSL_PHEV_N": [
+      "school_buses"
+    ],
+    "T_HDV_BS_FCEV_N": [
+      "school_buses"
+    ],
+    "T_HDV_BS_FCHEV_N": [
+      "school_buses"
+    ],
+    "T_HDV_BS_GSL_EX": [
+      "school_buses"
+    ],
+    "T_HDV_BS_GSL_N": [
+      "school_buses"
+    ],
+    "T_HDV_BT_BEV_EX": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_BEV_N": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_CNG_EX": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_CNG_N": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_DSL_EX": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_DSL_HEV_N": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_DSL_N": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_DSL_PHEV_N": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_FCEV_N": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_FCHEV_N": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_GSL_EX": [
+      "transit_buses"
+    ],
+    "T_HDV_BT_GSL_N": [
+      "transit_buses"
+    ],
+    "T_HDV_BIC_BEV_N": [
+      "intercity_buses"
+    ],
+    "T_HDV_BIC_DSL_EX": [
+      "intercity_buses"
+    ],
+    "T_HDV_BIC_DSL_HEV_N": [
+      "intercity_buses"
+    ],
+    "T_HDV_BIC_DSL_N": [
+      "intercity_buses"
+    ],
+    "T_HDV_BIC_FCEV_N": [
+      "intercity_buses"
+    ],
+    "T_HDV_BIC_GSL_EX": [
+      "intercity_buses"
+    ],
+    "T_HDV_BIC_GSL_N": [
+      "intercity_buses"
+    ],
+    "T_HDV_AJF_JFL_EX": [
+      "aircraft"
+    ],
+    "T_HDV_AJF_JFL_N": [
+      "aircraft"
+    ],
+    "T_HDV_AJF_SPK_N": [
+      "aircraft"
+    ],
+    "T_HDV_AJP_JFL_EX": [
+      "aircraft"
+    ],
+    "T_HDV_AJP_JFL_N": [
+      "aircraft"
+    ],
+    "T_HDV_AJP_SPK_N": [
+      "aircraft"
+    ],
+    "T_HDV_RF_DSL_EX": [
+      "rail"
+    ],
+    "T_HDV_RF_DSL_N": [
+      "rail"
+    ],
+    "T_HDV_RF_H2_N": [
+      "rail"
+    ],
+    "T_HDV_RF_LNG_N": [
+      "rail"
+    ],
+    "T_HDV_RICP_DSL_EX": [
+      "rail"
+    ],
+    "T_HDV_RICP_DSL_N": [
+      "rail"
+    ],
+    "T_HDV_RICP_H2_N": [
+      "rail"
+    ],
+    "T_HDV_WTF_HFO_EX": [
+      "marine"
+    ],
+    "T_HDV_WTF_HFO_N": [
+      "marine"
+    ],
+    "T_HDV_WTF_LNG_N": [
+      "marine"
+    ],
+    "T_HDV_WTF_MDO_EX": [
+      "marine"
+    ],
+    "T_HDV_WTF_MDO_N": [
+      "marine"
+    ],
+    "T_OFF": [
+      "offroad"
+    ]
+  },
+  "grouped_counts": {
+    "heavy_duty_and_nonroad": 55,
+    "light_duty": 47,
+    "medium_duty": 9,
+    "motorcycles": 3,
+    "offroad": 1
+  },
+  "original_count_reconciliation": {
+    "motorcycles": {
+      "original_svg": 3,
+      "inspected_sqlite": 3
+    },
+    "light_duty": {
+      "original_svg": 54,
+      "inspected_sqlite": 47
+    },
+    "medium_duty": {
+      "original_svg": 10,
+      "inspected_sqlite": 9
+    },
+    "heavy_duty_and_nonroad": {
+      "original_svg": 57,
+      "inspected_sqlite": 55
+    }
+  },
+  "emission_activity_membership": [
+    [
+      "I_H2_SMR_CCS",
+      "co2"
+    ],
+    [
+      "I_H2_SMR_CCS",
+      "co2e"
+    ],
+    [
+      "T_EA_CNG",
+      "ch4"
+    ],
+    [
+      "T_EA_CNG",
+      "co2"
+    ],
+    [
+      "T_EA_CNG",
+      "co2e"
+    ],
+    [
+      "T_EA_CNG",
+      "n2o"
+    ],
+    [
+      "T_EA_DSL",
+      "ch4"
+    ],
+    [
+      "T_EA_DSL",
+      "co2"
+    ],
+    [
+      "T_EA_DSL",
+      "co2e"
+    ],
+    [
+      "T_EA_DSL",
+      "n2o"
+    ],
+    [
+      "T_EA_ETH",
+      "ch4"
+    ],
+    [
+      "T_EA_ETH",
+      "co2"
+    ],
+    [
+      "T_EA_ETH",
+      "co2e"
+    ],
+    [
+      "T_EA_ETH",
+      "n2o"
+    ],
+    [
+      "T_EA_GSL",
+      "ch4"
+    ],
+    [
+      "T_EA_GSL",
+      "co2"
+    ],
+    [
+      "T_EA_GSL",
+      "co2e"
+    ],
+    [
+      "T_EA_GSL",
+      "n2o"
+    ],
+    [
+      "T_EA_HFO",
+      "ch4"
+    ],
+    [
+      "T_EA_HFO",
+      "co2"
+    ],
+    [
+      "T_EA_HFO",
+      "co2e"
+    ],
+    [
+      "T_EA_HFO",
+      "n2o"
+    ],
+    [
+      "T_EA_JTF",
+      "ch4"
+    ],
+    [
+      "T_EA_JTF",
+      "co2"
+    ],
+    [
+      "T_EA_JTF",
+      "co2e"
+    ],
+    [
+      "T_EA_JTF",
+      "n2o"
+    ],
+    [
+      "T_EA_LNG",
+      "ch4"
+    ],
+    [
+      "T_EA_LNG",
+      "co2"
+    ],
+    [
+      "T_EA_LNG",
+      "co2e"
+    ],
+    [
+      "T_EA_LNG",
+      "n2o"
+    ],
+    [
+      "T_EA_MDO",
+      "ch4"
+    ],
+    [
+      "T_EA_MDO",
+      "co2"
+    ],
+    [
+      "T_EA_MDO",
+      "co2e"
+    ],
+    [
+      "T_EA_MDO",
+      "n2o"
+    ],
+    [
+      "T_EA_NG",
+      "ch4"
+    ],
+    [
+      "T_EA_NG",
+      "co2"
+    ],
+    [
+      "T_EA_NG",
+      "co2e"
+    ],
+    [
+      "T_EA_NG",
+      "n2o"
+    ],
+    [
+      "T_EA_RDSL",
+      "ch4"
+    ],
+    [
+      "T_EA_RDSL",
+      "co2"
+    ],
+    [
+      "T_EA_RDSL",
+      "co2e"
+    ],
+    [
+      "T_EA_RDSL",
+      "n2o"
+    ],
+    [
+      "T_EA_SPK",
+      "ch4"
+    ],
+    [
+      "T_EA_SPK",
+      "co2"
+    ],
+    [
+      "T_EA_SPK",
+      "co2e"
+    ],
+    [
+      "T_EA_SPK",
+      "n2o"
+    ],
+    [
+      "T_IMP_CNG",
+      "ch4"
+    ],
+    [
+      "T_IMP_CNG",
+      "co2"
+    ],
+    [
+      "T_IMP_CNG",
+      "co2e"
+    ],
+    [
+      "T_IMP_CNG",
+      "n2o"
+    ],
+    [
+      "T_IMP_DSL",
+      "ch4"
+    ],
+    [
+      "T_IMP_DSL",
+      "co2"
+    ],
+    [
+      "T_IMP_DSL",
+      "co2e"
+    ],
+    [
+      "T_IMP_DSL",
+      "n2o"
+    ],
+    [
+      "T_IMP_ETH",
+      "ch4"
+    ],
+    [
+      "T_IMP_ETH",
+      "co2"
+    ],
+    [
+      "T_IMP_ETH",
+      "co2e"
+    ],
+    [
+      "T_IMP_ETH",
+      "n2o"
+    ],
+    [
+      "T_IMP_GSL",
+      "ch4"
+    ],
+    [
+      "T_IMP_GSL",
+      "co2"
+    ],
+    [
+      "T_IMP_GSL",
+      "co2e"
+    ],
+    [
+      "T_IMP_GSL",
+      "n2o"
+    ],
+    [
+      "T_IMP_HFO",
+      "ch4"
+    ],
+    [
+      "T_IMP_HFO",
+      "co2"
+    ],
+    [
+      "T_IMP_HFO",
+      "co2e"
+    ],
+    [
+      "T_IMP_HFO",
+      "n2o"
+    ],
+    [
+      "T_IMP_JTF",
+      "ch4"
+    ],
+    [
+      "T_IMP_JTF",
+      "co2"
+    ],
+    [
+      "T_IMP_JTF",
+      "co2e"
+    ],
+    [
+      "T_IMP_JTF",
+      "n2o"
+    ],
+    [
+      "T_IMP_LNG",
+      "ch4"
+    ],
+    [
+      "T_IMP_LNG",
+      "co2"
+    ],
+    [
+      "T_IMP_LNG",
+      "co2e"
+    ],
+    [
+      "T_IMP_LNG",
+      "n2o"
+    ],
+    [
+      "T_IMP_MDO",
+      "ch4"
+    ],
+    [
+      "T_IMP_MDO",
+      "co2"
+    ],
+    [
+      "T_IMP_MDO",
+      "co2e"
+    ],
+    [
+      "T_IMP_MDO",
+      "n2o"
+    ],
+    [
+      "T_IMP_NG",
+      "ch4"
+    ],
+    [
+      "T_IMP_NG",
+      "co2"
+    ],
+    [
+      "T_IMP_NG",
+      "co2e"
+    ],
+    [
+      "T_IMP_NG",
+      "n2o"
+    ],
+    [
+      "T_IMP_RDSL",
+      "ch4"
+    ],
+    [
+      "T_IMP_RDSL",
+      "co2"
+    ],
+    [
+      "T_IMP_RDSL",
+      "co2e"
+    ],
+    [
+      "T_IMP_RDSL",
+      "n2o"
+    ],
+    [
+      "T_IMP_SPK",
+      "ch4"
+    ],
+    [
+      "T_IMP_SPK",
+      "co2"
+    ],
+    [
+      "T_IMP_SPK",
+      "co2e"
+    ],
+    [
+      "T_IMP_SPK",
+      "n2o"
+    ]
+  ],
+  "embodied_rows": 0,
+  "hourly_profile_technologies": [
+    "T_LDV_BEV_CHRG"
+  ],
+  "external_electricity_interfaces": [
+    "E_elc_dx",
+    "I_elc"
+  ],
+  "unresolved_inputs": [],
+  "unresolved_outputs": [],
+  "skipped_nonpositive_or_null_efficiency_rows": 0,
+  "aggregation": {
+    "energy_bus": "Grouped eligible pathways; not an all-to-all fuel connection.",
+    "annual_service_bridges": "Four T_dummy_* technologies folded into final demand links.",
+    "variant_membership": "Existing/new technologies and range variants remain distinct in counts and audit.",
+    "emissions": "Fuel supply-chain and direct emissions recorded at T_IMP_*/T_EA_*; separate process emissions at I_H2_SMR_CCS.",
+    "embodied": "Original vehicle-cycle parameter annotation retained in the guide; inspected EmissionEmbodied is empty.",
+    "electricity": "E_elc_dx and I_elc are external interfaces; no internal producer inferred."
+  }
+}

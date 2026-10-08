@@ -128,9 +128,13 @@ def classify_ratings(
     rules: dict,
     conversions: dict,
     phev_contract: dict | None = None,
+    range_rules=None,
 ) -> pd.DataFrame:
     """Retain native rows; exact EPA hybrid evidence supplements the legacy name rule."""
     spec = rules["ratings"]
+    if spec["range_mapping"] != "omega_bucket_boundaries" or range_rules is None:
+        raise ValueError("NRCan EV ratings require the configured OMEGA range-bucket contract")
+    from parameterization.ldv_ev_ranges import range_bucket
     fields = spec["fields"]
     supported = {
         "evidence_join": "exact_normalized_year_make_model",
@@ -166,11 +170,15 @@ def classify_ratings(
         frame["rating_class"] = frame[fields["class"]]
         frame["classification_method"] = "source_fuel"
         if fields["electricity"] in frame:
-            frame["powertrain"] = pd.cut(
+            frame["legacy_range_label"] = pd.cut(
                 frame[fields["bev_range"]],
                 spec["bev_range_edges_km"],
                 labels=spec["bev_range_labels"],
             ).astype("string")
+            frame["range_km"] = pd.to_numeric(frame[fields["bev_range"]], errors="raise")
+            frame["powertrain"] = frame.range_km.map(
+                lambda value: range_bucket("BEV", value / conversions["length"]["mile_to_km"], range_rules)
+            )
             frame["native_consumption"] = pd.to_numeric(
                 frame[fields["electricity"]], errors="raise"
             )
@@ -180,7 +188,7 @@ def classify_ratings(
                 * conversions["energy"]["kwh_to_mj"]
                 * conversions["service"]["per_100_km_to_per_km"]
             )
-            frame["classification_method"] = "legacy_range_bin"
+            frame["classification_method"] = "omega_range_bucket"
         elif fields["phev_range"] in frame:
             if (
                 phev_contract is None
@@ -189,11 +197,15 @@ def classify_ratings(
                 raise ValueError(
                     "NRCan PHEV requires the configured leading-number audit contract"
                 )
-            frame["powertrain"] = pd.cut(
+            frame["legacy_range_label"] = pd.cut(
                 frame[fields["phev_range"]],
                 spec["phev_range_edges_km"],
                 labels=spec["phev_range_labels"],
             ).astype("string")
+            frame["range_km"] = pd.to_numeric(frame[fields["phev_range"]], errors="raise")
+            frame["powertrain"] = frame.range_km.map(
+                lambda value: range_bucket("PHEV", value / conversions["length"]["mile_to_km"], range_rules)
+            )
             frame["native_consumption"] = pd.to_numeric(
                 frame[fields["consumption"]], errors="raise"
             )
@@ -213,7 +225,7 @@ def classify_ratings(
             if cd.isna().any() or not np.isfinite(cd).all() or cd.lt(0).any():
                 raise ValueError("NRCan PHEV CD leading value is missing or invalid")
             frame["consumption_mj_per_vkm"] = np.nan
-            frame["classification_method"] = "legacy_range_bin_cs_index_only"
+            frame["classification_method"] = "omega_range_bucket_cs_index_only"
         else:
             frame["powertrain"] = frame[fields["fuel"]].map(spec["fuel_codes"])
             frame["make_key"], frame["model_key"] = (

@@ -18,6 +18,8 @@ from canoe_schema.v4_0 import DataSet, Efficiency, LimitTechInputSplit
 from fetching.fueleconomy_vehicles import build_request, validate_cache
 from fetching.nlr_atb_autonomie import configured_trajectory
 from parameterization.manual_parameters import validate_manual_registry
+from parameterization.ldv_ev_ranges import existing_range_weights, module_rules as range_module_rules
+from fetching.epa_omega_baseline import SOURCE as OMEGA, COMPONENT as OMEGA_COMPONENT, build_request as omega_request
 from parameterization.offroad_efficiencies import derive_offroad_efficiency
 from parameterization.road_efficiencies import (
     RoadEfficiencyEvidence,
@@ -63,6 +65,16 @@ class EfficiencyPreparation:
     audit: dict
 
 
+def phev_blend_relationships(rules: dict) -> dict:
+    blends = {key: dict(spec) for key, spec in rules["phev_blends"].items()}
+    for category, spec in rules["existing_phev_blends"].items():
+        blends[f"existing_{category}"] = {
+            **rules["phev_blends"]["ldv35"], **spec, "category": category,
+            "archetype": "phev", "existing_representative": True,
+        }
+    return blends
+
+
 def technology_relationships(
     technology: pd.DataFrame,
     commodity: pd.DataFrame,
@@ -73,7 +85,7 @@ def technology_relationships(
 ) -> pd.DataFrame:
     """Expand template ownership using explicit configured fuel/service edges."""
     records = []
-    blends = rules["phev_blends"]
+    blends = phev_blend_relationships(rules)
     blend_techs = {spec["tech"] for spec in blends.values()}
     for item in technology.fillna("").itertuples(index=False):
         if item.category in rules["excluded_categories"] or any(
@@ -117,7 +129,9 @@ def technology_relationships(
             pathway = mode["pathway"]
             output = road_outputs[item.category]
             if powertrain.startswith("phev"):
-                blend_key = next(
+                blend_key = f"existing_{item.category}" if (
+                    powertrain == "phev" and pathway == "ldv" and item.tech.endswith(rules["existing_suffix"])
+                ) else next(
                     (
                         key
                         for key, s in blends.items()
@@ -180,8 +194,14 @@ def technology_relationships(
 
 
 def phev_split_evidence(
-    atb: pd.DataFrame, *, endpoints: list[int], rules: dict, fleet_rules: dict,
+    atb: pd.DataFrame, *, endpoints: list[int], rules: dict, fleet,
 ) -> pd.DataFrame:
+    """Weight component consumption with the selected regional fleet evidence.
+
+    LDV35/50 remain shared car/light-truck blends, so their source-class weights
+    use pooled Report A stock counts. Medium and heavy blends use their selected
+    regional GVWR/vocation and haul weights. Endpoints retain equal horizon weight.
+    """
     records = []
     for blend, spec in rules["phev_blends"].items():
         selected = atb.loc[
@@ -195,35 +215,83 @@ def phev_split_evidence(
             if blend == "mdv":
                 selected = selected.loc[
                     ~selected.vehicle_class.str.contains(
-                        "|".join(map(re.escape, fleet_rules["medium_trucks"]["excluded_vocations"]))
+                        "|".join(map(re.escape, fleet.rules["medium_trucks"]["excluded_vocations"]))
                     )
                 ]
-        for vehicle_class, history in selected.groupby("vehicle_class", sort=True):
-            history = history.copy()
-            history["electricity_mj_per_vkm"] = (
-                history.consumption_mj_per_vkm * history.electricity_input_share
-            )
+        role = spec["aggregation_role"]
+        for region in fleet.bundle.scenario.geography.regions:
+            if role == "ldv":
+                counts = fleet.ldv.groupby("nlr_atb_class").fit_active_stock.sum()
+                weights = (counts / counts.sum()).to_dict()
+            elif role == "medium_trucks":
+                weights = fleet.medium_weights(region, sorted(selected.vehicle_class.unique()))
+            elif role == "heavy_truck_haul":
+                weights = fleet.heavy_weights(region)
+            else:
+                raise ValueError(f"Unsupported PHEV aggregation role: {role}")
+            if not set(weights).issubset(set(selected.vehicle_class)):
+                raise ValueError(f"Incomplete PHEV fleet-class coverage: {region}/{blend}")
+            source, component = aggregation_component(fleet.bundle, role, region)
             for year in endpoints:
-                total = interpolate(history, year, "consumption_mj_per_vkm")
-                electric = interpolate(
-                    history, year, "electricity_mj_per_vkm", allow_zero=True
+                native = []
+                for vehicle_class, weight in sorted(weights.items()):
+                    history = selected.loc[selected.vehicle_class.eq(vehicle_class)].copy()
+                    history["electricity_mj_per_vkm"] = (
+                        history.consumption_mj_per_vkm * history.electricity_input_share
+                    )
+                    total = interpolate(history, year, "consumption_mj_per_vkm")
+                    electric = interpolate(history, year, "electricity_mj_per_vkm", allow_zero=True)
+                    native.append({
+                        "region": region, "blend": blend, "tech": spec["tech"],
+                        "vehicle_class": vehicle_class, "year": year, "weight": weight,
+                        "electricity_mj_per_vkm": electric, "total_mj_per_vkm": total,
+                        "weighted_electricity_mj_per_vkm": weight * electric,
+                        "weighted_total_mj_per_vkm": weight * total,
+                        "aggregation_source": source, "aggregation_component": str(component),
+                    })
+                fraction = sum(r["weighted_electricity_mj_per_vkm"] for r in native) / sum(
+                    r["weighted_total_mj_per_vkm"] for r in native
                 )
-                records.append(
-                    {
-                        "blend": blend,
-                        "tech": spec["tech"],
-                        "vehicle_class": vehicle_class,
-                        "year": year,
-                        "electricity_mj_per_vkm": electric,
-                        "total_mj_per_vkm": total,
-                        "electricity_share": electric / total,
-                        "fuel_share": 1 - electric / total,
-                    }
-                )
+                records.extend({**r, "electricity_share": fraction, "fuel_share": 1 - fraction} for r in native)
     result = pd.DataFrame(records)
     if set(result.blend) != set(rules["phev_blends"]):
         raise ValueError("Incomplete PHEV blend evidence")
     return result
+
+
+def existing_phev_split_evidence(
+    atb_audit: pd.DataFrame, *, endpoints: list[int], rules: dict,
+    range_weights: dict, regions: list[str],
+) -> pd.DataFrame:
+    """Keep each category's class and range consumption before its shared blend."""
+    records = []
+    for category, spec in rules["existing_phev_blends"].items():
+        for region in regions:
+            for year in endpoints:
+                native = []
+                for bucket, share in range_weights[category, "phev"].items():
+                    selected = atb_audit.loc[
+                        atb_audit.region.eq(region) & atb_audit["mode"].eq(category)
+                        & atb_audit.powertrain.eq(bucket)
+                    ].copy()
+                    selected["weighted_electricity"] = selected.weighted_consumption * selected.electricity_input_share
+                    annual = selected.groupby("year", as_index=False).agg(
+                        total=("weighted_consumption", "sum"), electric=("weighted_electricity", "sum"),
+                    )
+                    total = interpolate(annual, year, "total")
+                    electric = interpolate(annual, year, "electric", allow_zero=True)
+                    native.append({
+                        "region": region, "blend": f"existing_{category}", "tech": spec["tech"],
+                        "range_bucket": bucket, "year": year, "weight": share,
+                        "electricity_mj_per_vkm": electric, "total_mj_per_vkm": total,
+                        "weighted_electricity_mj_per_vkm": share * electric,
+                        "weighted_total_mj_per_vkm": share * total,
+                    })
+                fraction = sum(r["weighted_electricity_mj_per_vkm"] for r in native) / sum(
+                    r["weighted_total_mj_per_vkm"] for r in native
+                )
+                records.extend({**r, "electricity_share": fraction, "fuel_share": 1 - fraction} for r in native)
+    return pd.DataFrame(records)
 
 
 def validate_efficiency_outputs(
@@ -246,7 +314,7 @@ def validate_efficiency_outputs(
                     for reg, tech, v in existing_keys
                     if reg == region and tech == r.tech
                 ]
-                if r.tech.endswith(rules["existing_suffix"])
+                if r.tech.endswith(rules["existing_suffix"]) and r.kind != "unit"
                 else periods
             )
             expected.update(
@@ -261,7 +329,7 @@ def validate_efficiency_outputs(
         (region, period, spec["tech"], spec[role])
         for region in regions
         for period in periods
-        for spec in rules["phev_blends"].values()
+        for spec in phev_blend_relationships(rules).values()
         for role in ("fuel", "electricity")
     }
     actual_splits = {(r.region, r.period, r.tech, r.input_comm) for r in splits}
@@ -275,9 +343,9 @@ def validate_efficiency_outputs(
     totals = split_frame.groupby(["region", "period", "tech"]).proportion.sum()
     if not np.allclose(totals, 1, rtol=0, atol=rules["tolerances"]["split_sum"]):
         raise ValueError("PHEV energy shares do not sum to one")
-    if (split_frame.groupby(["tech", "input_comm"]).proportion.nunique() != 1).any():
+    if (split_frame.groupby(["region", "tech", "input_comm"]).proportion.nunique() != 1).any():
         raise ValueError(
-            "PHEV broad mean must remain constant across regions and horizon"
+            "PHEV regional mean must remain constant across the horizon"
         )
     for row in [*rows, *splits]:
         if row.data_id is None:
@@ -316,7 +384,7 @@ def prepare_efficiency_rows(
         "historical_first_bin": "available_source_years_only",
         "future_load_factor": "base_year",
         "missing_annual_rating": "configured_analogue_index",
-        "phev_split_method": "mean_energy_shares_across_classes_and_horizon_endpoints",
+        "phev_split_method": "regional_consumption_weighted_classes_mean_horizon_endpoints",
     }
     if any(rules[key] != value for key, value in supported_policies.items()):
         raise ValueError("Unsupported efficiency modeling policy; no silent fallback")
@@ -351,6 +419,9 @@ def prepare_efficiency_rows(
         return frame
 
     technology = read(resolve_input_path(bundle, "template", "technology.csv"))
+    range_rules = range_module_rules(bundle)
+    historical_weights, range_evidence = existing_range_weights(bundle)
+    paths.append(omega_request(bundle).extract_path)
     commodity = read(resolve_input_path(bundle, "template", "commodity.csv"))
     region_template = read(resolve_input_path(bundle, "template", "region.csv"))
     period_template = read(resolve_input_path(bundle, "template", "time_period.csv"))
@@ -445,6 +516,7 @@ def prepare_efficiency_rows(
         phev_contract=atb_rules["components"]["phev_efficiency"][
             "future_nrcan_phev_contract"
         ],
+        range_rules=range_rules,
     )
     aggregation = load_harmonization_rules(bundle, "road_aggregation")
     weights_dir = resolve_artifact_path(bundle, "road_aggregation")
@@ -553,17 +625,17 @@ def prepare_efficiency_rows(
                     for v in scenario.periods.existing
                     if (region, edge.tech, v) in existing_keys
                 ]
-                if edge.tech.endswith(rules["existing_suffix"])
+                if edge.tech.endswith(rules["existing_suffix"]) and edge.kind != "unit"
                 else scenario.periods.model
             )
             for vintage in vintages:
                 years = (
                     scenario.periods.historical_years(vintage)
-                    if edge.tech.endswith(rules["existing_suffix"])
+                    if edge.tech.endswith(rules["existing_suffix"]) and edge.kind != "unit"
                     else [scenario.periods.projection_year(vintage, legacy_at_end=True)]
                 )
                 if (
-                    edge.tech.endswith(rules["existing_suffix"])
+                    edge.tech.endswith(rules["existing_suffix"]) and edge.kind != "unit"
                     and vintage == scenario.periods.existing[0]
                 ):
                     first_source_year = int(
@@ -586,6 +658,8 @@ def prepare_efficiency_rows(
                         )
                     years = [source_year]
                 values = []
+                component_values = {}
+                range_mix = historical_weights.get((edge.mode, edge.powertrain), {}) if edge.tech.endswith(rules["existing_suffix"]) else {}
                 for year in years:
                     if edge.kind == "unit":
                         result = {
@@ -593,9 +667,27 @@ def prepare_efficiency_rows(
                             "treatment": "intentional_unit_efficiency",
                         }
                     elif edge.kind == "road":
-                        result = evidence.derive(
-                            source_region, edge.mode, edge.powertrain, year
-                        )
+                        if range_mix:
+                            components = {
+                                bucket: evidence.derive(source_region, edge.mode, bucket, year)
+                                for bucket in range_mix
+                            }
+                            for bucket, component in components.items():
+                                component_values.setdefault(bucket, []).append(component["efficiency"])
+                                annual_records.append({
+                                    **edge._asdict(), "powertrain": bucket,
+                                    "region": region, "ceud_region": source_region,
+                                    "vintage": vintage, "source_year": year,
+                                    "trajectory": trajectory, "range_weight": range_mix[bucket],
+                                    "range_representative_component": True, **component,
+                                })
+                            result = {"efficiency": 1 / sum(
+                                range_mix[bucket] / component["efficiency"] for bucket, component in components.items()
+                            ), "treatment": "OMEGA_range_weighted_consumption"}
+                        else:
+                            result = evidence.derive(
+                                source_region, edge.mode, edge.powertrain, year
+                            )
                     else:
                         key = (edge.mode, edge.powertrain, year)
                         if key not in offroad_values:
@@ -629,15 +721,22 @@ def prepare_efficiency_rows(
                         "input_comm": edge.input_comm,
                         "output_comm": edge.output_comm,
                         "vintage": vintage,
-                        "efficiency": float(np.mean(values)),
+                        "efficiency": 1 / sum(
+                            share / float(np.mean(component_values[bucket])) for bucket, share in range_mix.items()
+                        ) if range_mix else float(np.mean(values)),
                         "units": edge.units,
                         "notes": f"{edge.mode}/{edge.powertrain}; {trajectory}; source years {years[0]}..{years[-1]}",
                         "mode": edge.mode,
                         "kind": edge.kind,
+                        "range_aggregated": bool(range_mix),
                     }
                 )
     endpoints = [scenario.periods.projection_year(p, legacy_at_end=True) for p in scenario.periods.model]
-    split_audit = phev_split_evidence(atb, endpoints=endpoints, rules=rules, fleet_rules=fleet.rules)
+    split_audit = phev_split_evidence(atb, endpoints=endpoints, rules=rules, fleet=fleet)
+    split_audit = pd.concat([split_audit, existing_phev_split_evidence(
+        atb_audit, endpoints=endpoints, rules=rules, range_weights=historical_weights,
+        regions=scenario.geography.regions,
+    )], ignore_index=True)
     digest = hashlib.sha256(
         json.dumps(
             {
@@ -651,6 +750,8 @@ def prepare_efficiency_rows(
                 "trajectory": trajectory,
                 "periods": scenario.periods.model_dump(),
                 "existing_keys": sorted(existing_keys),
+                "historical_range_rules": range_rules.existing.model_dump(),
+                "historical_range_weights": range_evidence.bucket_totals.to_dict("records"),
             },
             sort_keys=True,
         ).encode()
@@ -669,9 +770,9 @@ def prepare_efficiency_rows(
     )
     contexts, rows = [], []
     input_regions = {rules["region_output_map"].get(r, r): r for r in scenario.geography.regions}
-    for (mode, region), group in pd.DataFrame(payloads).groupby(["mode", "region"], sort=True):
+    for (mode, region, range_aggregated), group in pd.DataFrame(payloads).groupby(["mode", "region", "range_aggregated"], sort=True):
         kind = group.kind.iloc[0]
-        records = group.drop(columns=["mode", "kind"]).to_dict("records")
+        records = group.drop(columns=["mode", "kind", "range_aggregated"]).to_dict("records")
         if kind == "unit":
             rows.extend(
                 Efficiency.model_validate({**record, "data_id": assumption.data_id})
@@ -681,37 +782,33 @@ def prepare_efficiency_rows(
         components = efficiency_components(
             bundle, mode, rules, road_rules, offroad_rules, region=input_regions[region],
         )
-        context = efficiency_context(bundle, components, mode, {**variant, "region": region}, rules)
+        if range_aggregated:
+            components.append((OMEGA, OMEGA_COMPONENT))
+        context = efficiency_context(bundle, components, mode, {**variant, "region": region, "historical_range_aggregation": bool(range_aggregated)}, rules)
         contexts.append(context)
         rows.extend(validate_parameter_rows(Efficiency, records, context))
-    split_context = efficiency_context(
-        bundle,
-        [
-            (ATB, key)
-            for key in (
-                "phev_vehicle_inputs",
-                "phev_utility_factor_ldv",
-                "phev_utility_factor_mdhd",
-            )
-        ]
-        + [("argonne_rd_greet_2025_rev1", "fuel_heating_values")],
-        "phev_splits",
-        variant,
-        rules,
-    )
-    contexts.append(split_context)
-    split_records = []
-    for blend, spec in rules["phev_blends"].items():
-        electricity = float(
-            split_audit.loc[split_audit.blend.eq(blend), "electricity_share"].mean()
-        )
+    splits = []
+    for blend, spec in phev_blend_relationships(rules).items():
         for region in scenario.geography.regions:
+            selected = split_audit.loc[split_audit.blend.eq(blend) & split_audit.region.eq(region)]
+            electricity = float(selected.groupby("year").electricity_share.first().mean())
+            components = [(ATB, "phev_vehicle_inputs"),
+                          (ATB, "phev_utility_factor_ldv" if spec["aggregation_role"] == "ldv" else "phev_utility_factor_mdhd"),
+                          ("argonne_rd_greet_2025_rev1", "fuel_heating_values"),
+                          aggregation_component(bundle, spec["aggregation_role"], region)]
+            if spec.get("existing_representative"):
+                components.append((OMEGA, OMEGA_COMPONENT))
+            split_context = efficiency_context(
+                bundle, components, "phev_splits", {**variant, "region": region, "blend": blend}, rules,
+            )
+            contexts.append(split_context)
+            regional_records = []
             for period in scenario.periods.model:
                 for input_comm, proportion in (
                     (spec["electricity"], electricity),
                     (spec["fuel"], 1 - electricity),
                 ):
-                    split_records.append(
+                    regional_records.append(
                         {
                             "region": rules["region_output_map"].get(region, region),
                             "period": period,
@@ -719,10 +816,10 @@ def prepare_efficiency_rows(
                             "input_comm": input_comm,
                             "operator": rules["phev_split_operator"],
                             "proportion": proportion,
-                            "notes": f"{trajectory}; broad class/endpoint mean energy share, not distance UF; fixed horizon",
+                            "notes": f"{trajectory}; regional fleet-weighted component consumption; mean endpoint energy share; fixed horizon",
                         }
                     )
-    splits = validate_parameter_rows(LimitTechInputSplit, split_records, split_context)
+            splits.extend(validate_parameter_rows(LimitTechInputSplit, regional_records, split_context))
     rows.sort(key=lambda r: (r.region, r.tech, r.vintage, r.input_comm, r.output_comm))
     splits.sort(key=lambda r: (r.region, r.period, r.tech, r.input_comm))
     regions = {rules["region_output_map"].get(r, r) for r in scenario.geography.regions}
@@ -747,6 +844,12 @@ def prepare_efficiency_rows(
         existing_keys - capacity_keys
     )
     audit["phev_energy_basis"] = rules["atb"]["phev_energy_basis"]
+    audit["existing_ev_representatives"] = {
+        "rules": range_rules.existing.model_dump(),
+        "weights": range_evidence.bucket_totals.to_dict("records"),
+        "rating_observations_by_range": classified.loc[classified.powertrain.str.startswith(("bev", "phev"))].groupby("powertrain").size().to_dict(),
+        "stock_redistributed_by_range": False,
+    }
     selected_phev = phev_source.loc[phev_source.trajectory.eq(trajectory)]
     audit["phev_source_reconciliation"] = {
         "rows": len(selected_phev),

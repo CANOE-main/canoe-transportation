@@ -1,191 +1,119 @@
-region,period,source_year,tech,output_comm,operator,factor,units,notes,data_source,data_id,dq_cred,dq_geog,dq_struc,dq_tech,dq_time
-AB,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2025,2030,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2030,2035,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2035,2040,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2040,2045,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2045,2050,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-AB,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2025,2030,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2030,2035,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2035,2040,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2040,2045,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2045,2050,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-BCT,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2025,2030,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2030,2035,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2035,2040,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2040,2045,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2045,2050,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-MB,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NB,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2025,2030,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2030,2035,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2035,2040,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2040,2045,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2045,2050,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NLLAB,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2025,2030,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2030,2035,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2035,2040,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2040,2045,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2045,2050,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-NS,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2025,2030,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2030,2035,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2035,2040,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2040,2045,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2045,2050,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-ON,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-PEI,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2025,2030,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2030,2035,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2035,2040,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2040,2045,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2045,2050,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-QC,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2025,2030,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2025,2030,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2025,2030,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2025,2030,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2030,2035,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2030,2035,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2030,2035,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2030,2035,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2035,2040,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2035,2040,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2035,2040,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2035,2040,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2040,2045,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2040,2045,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2040,2045,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2040,2045,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2045,2050,T_LDV_CHRG_EX,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2045,2050,T_LDV_CHRG_N,T_elc_ldv_chrg,≤,0.2,fraction,Reviewed ldv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2045,2050,T_MHDV_CHRG_EX,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
-SK,2045,2050,T_MHDV_CHRG_N,T_elc_mhdv_chrg,≤,0.3,fraction,Reviewed mhdv annual charging utilization,T24,ev-chargers-utilization:composite:1:ebe7fb65dd343eaa,5,5,5,5,5
+region,tech_or_group,vintage,output_comm,operator,factor,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id,source_year,units
+AB,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+AB,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+AB,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+AB,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+AB,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+AB,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+AB,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+AB,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+AB,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+AB,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+AB,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+AB,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+BCT,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+BCT,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+BCT,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+BCT,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+BCT,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+BCT,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+BCT,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+BCT,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+BCT,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+BCT,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+BCT,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+BCT,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+MB,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+MB,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+MB,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+MB,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+MB,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+MB,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+MB,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+MB,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+MB,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+MB,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+MB,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+MB,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+NB,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+NB,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+NB,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+NB,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+NB,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+NB,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+NB,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+NB,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+NB,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+NB,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+NB,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+NLLAB,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+NLLAB,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+NLLAB,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+NLLAB,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+NLLAB,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+NLLAB,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+NLLAB,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+NLLAB,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+NLLAB,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+NLLAB,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+NLLAB,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+NLLAB,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+NS,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+NS,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+NS,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+NS,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+NS,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+NS,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+NS,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+NS,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+NS,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+NS,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+NS,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+NS,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+ON,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+ON,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+ON,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+ON,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+ON,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+ON,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+ON,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+ON,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+ON,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+ON,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+ON,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+ON,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+PEI,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+PEI,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+PEI,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+PEI,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+PEI,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+PEI,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+PEI,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+PEI,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+PEI,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+PEI,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+PEI,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+QC,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+QC,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+QC,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+QC,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+QC,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+QC,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+QC,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+QC,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+QC,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+QC,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+QC,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+QC,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+SK,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,le,0.15,Reviewed ldv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+SK,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2025 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2025,fraction
+SK,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+SK,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2030 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2030,fraction
+SK,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+SK,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2035 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2035,fraction
+SK,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+SK,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2040 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2040,fraction
+SK,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+SK,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2045 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2045,fraction
+SK,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,le,0.2,Reviewed ldv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction
+SK,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,le,0.3,Reviewed mhdv annual charging utilization; 2050 input year; constant over cohort lifetime,T24,5,5,5,5,5,ev-chargers-utilization:composite:2:5befe86a48cff01d,2050,fraction

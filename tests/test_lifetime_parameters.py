@@ -61,7 +61,7 @@ def test_fixed_road_medians_use_existing_class_contract() -> None:
         bundle, medians=medians, manual=manual, technology=technology
     )
     assert len(contexts) == 4
-    assert len(rows) == 10 * 57
+    assert len(rows) == 10 * 58
     ontario = {row.tech: row for row in rows if row.region == "ON"}
     assert ontario["T_LDV_C_GSL_EX"].lifetime == 14
     assert ontario["T_LDV_LTP_GSL_EX"].lifetime == 16
@@ -106,7 +106,7 @@ def test_established_fixed_rows_insert_with_full_provenance() -> None:
             [*manual_rows, *road_rows],
         ):
             insert_models(connection, batch)
-        assert connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 910
+        assert connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 920
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
         assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
     finally:
@@ -123,8 +123,14 @@ def test_bus_latest_province_and_canada_fallback() -> None:
     assert by_key[("ON", "T_HDV_BT_GSL_EX")] == 12
     assert by_key[("ON", "T_HDV_BT_BEV_EX")] == 13
     assert by_key[("BCT", "T_HDV_BT_BEV_EX")] == 15
-    assert audit.loc[audit.region.eq("BCT"), "canada_fallback"].all()
-    assert set(audit.loc[audit.region.eq("BCT"), "source_year"]) == {2020}
+    bct = audit.loc[audit.region.eq("BCT")]
+    electric = bct.source_member.str.startswith("Electric buses")
+    assert bct.loc[electric, "canada_fallback"].all()
+    assert set(bct.loc[electric, "source_region"]) == {"Canada"}
+    assert not bct.loc[~electric, "canada_fallback"].any()
+    assert set(bct.loc[~electric, "source_region"]) == {"BC"}
+    assert by_key[("BCT", "T_HDV_BT_DSL_HEV_N")] == 13
+    assert set(audit.loc[audit.region.eq("BCT"), "source_year"]) == {2018, 2020}
     assert set(audit.loc[audit.tech.str.contains("FCEV|PHEV"), "source_member"]) == {
         "Electric buses, average expected useful life"
     }
@@ -172,7 +178,7 @@ def test_survival_period_blocks_and_representation_switch() -> None:
     assert all(row.period - row.vintage + 4 <= 10 for row in short_curves)
     prepared = prepare_lifetime_rows(bundle)
     assert prepared.audit["fixed_technologies"] == 57
-    assert prepared.audit["curve_technologies"] == 64
+    assert prepared.audit["curve_technologies"] == 65
     heavy_at_age_20 = next(
         row for row in prepared.curve_rows
         if row.region == "ON" and row.tech == "T_HDV_T_DSL_N"
@@ -190,7 +196,7 @@ def test_survival_period_blocks_and_representation_switch() -> None:
         "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": False})
     }))
     fixed = prepare_lifetime_rows(fixed_bundle)
-    assert len(fixed.fixed_rows) == 1210
+    assert len(fixed.fixed_rows) == 1220
     assert fixed.curve_rows == []
     manual = pd.read_csv(ROOT / "inputs/0_manual_params/lifetime_process.csv")
     heavy_lifetime = float(manual.loc[

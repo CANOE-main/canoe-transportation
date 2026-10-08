@@ -1,0 +1,135 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="180mm" height="112mm" viewBox="0 0 1800 1120" role="img" aria-labelledby="legacy-matrix-title legacy-matrix-description">
+  <title id="legacy-matrix-title">Legacy fuel-to-mode compatibility</title>
+  <desc id="legacy-matrix-description">A filled dot means at least one legacy vehicle technology has an Efficiency path from that carrier. PHEV mixtures resolve to both their liquid fuel and electricity. Counts include existing and new variants.</desc>
+  <defs>
+    <marker id="arrow-technology" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#416184" />
+    </marker>
+    <marker id="arrow-fuel" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#936C22" />
+    </marker>
+    <marker id="arrow-clean" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#537445" />
+    </marker>
+    <marker id="arrow-service" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#B35C58" />
+    </marker>
+    <marker id="arrow-emission" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#A35C32" />
+    </marker>
+  </defs>
+  <g id="paper">
+    <rect width="1800" height="1120" fill="#FFFFFF" />
+  </g>
+  <g id="zones">
+    <line x1="40" y1="130" x2="1760" y2="130" stroke="#D5DCE4" stroke-width="2" />
+    <line x1="40" y1="235" x2="1760" y2="235" stroke="#D5DCE4" stroke-width="2" />
+    <rect x="40" y="243" width="1720" height="52" fill="#FAFBFC" />
+    <rect x="40" y="347" width="1720" height="52" fill="#FAFBFC" />
+    <rect x="40" y="451" width="1720" height="52" fill="#FAFBFC" />
+    <rect x="40" y="555" width="1720" height="52" fill="#FAFBFC" />
+    <rect x="40" y="659" width="1720" height="52" fill="#FAFBFC" />
+    <rect x="40" y="763" width="1720" height="52" fill="#FAFBFC" />
+    <rect x="40" y="867" width="1720" height="52" fill="#FAFBFC" />
+    <line x1="40" y1="930" x2="1760" y2="930" stroke="#D5DCE4" stroke-width="2" />
+  </g>
+  <g id="links" />
+  <g id="nodes">
+    <circle id="cell-motorcycles-gasoline" cx="730" cy="270" r="12" fill="#936C22" />
+    <circle id="cell-motorcycles-electricity" cx="1552" cy="270" r="12" fill="#537445" />
+    <circle id="cell-cars-gasoline" cx="730" cy="322" r="12" fill="#936C22" />
+    <circle id="cell-cars-diesel" cx="867" cy="322" r="12" fill="#936C22" />
+    <circle id="cell-cars-cng" cx="1004" cy="322" r="12" fill="#936C22" />
+    <circle id="cell-cars-electricity" cx="1552" cy="322" r="12" fill="#537445" />
+    <circle id="cell-cars-hydrogen" cx="1689" cy="322" r="12" fill="#537445" />
+    <circle id="cell-light_passenger-gasoline" cx="730" cy="374" r="12" fill="#936C22" />
+    <circle id="cell-light_passenger-diesel" cx="867" cy="374" r="12" fill="#936C22" />
+    <circle id="cell-light_passenger-cng" cx="1004" cy="374" r="12" fill="#936C22" />
+    <circle id="cell-light_passenger-electricity" cx="1552" cy="374" r="12" fill="#537445" />
+    <circle id="cell-light_passenger-hydrogen" cx="1689" cy="374" r="12" fill="#537445" />
+    <circle id="cell-light_freight-gasoline" cx="730" cy="426" r="12" fill="#936C22" />
+    <circle id="cell-light_freight-diesel" cx="867" cy="426" r="12" fill="#936C22" />
+    <circle id="cell-light_freight-cng" cx="1004" cy="426" r="12" fill="#936C22" />
+    <circle id="cell-light_freight-electricity" cx="1552" cy="426" r="12" fill="#537445" />
+    <circle id="cell-light_freight-hydrogen" cx="1689" cy="426" r="12" fill="#537445" />
+    <circle id="cell-medium_trucks-gasoline" cx="730" cy="478" r="12" fill="#936C22" />
+    <circle id="cell-medium_trucks-diesel" cx="867" cy="478" r="12" fill="#936C22" />
+    <circle id="cell-medium_trucks-electricity" cx="1552" cy="478" r="12" fill="#537445" />
+    <circle id="cell-medium_trucks-hydrogen" cx="1689" cy="478" r="12" fill="#537445" />
+    <circle id="cell-heavy_trucks-diesel" cx="867" cy="530" r="12" fill="#936C22" />
+    <circle id="cell-heavy_trucks-electricity" cx="1552" cy="530" r="12" fill="#537445" />
+    <circle id="cell-heavy_trucks-hydrogen" cx="1689" cy="530" r="12" fill="#537445" />
+    <circle id="cell-school_buses-gasoline" cx="730" cy="582" r="12" fill="#936C22" />
+    <circle id="cell-school_buses-diesel" cx="867" cy="582" r="12" fill="#936C22" />
+    <circle id="cell-school_buses-cng" cx="1004" cy="582" r="12" fill="#936C22" />
+    <circle id="cell-school_buses-electricity" cx="1552" cy="582" r="12" fill="#537445" />
+    <circle id="cell-school_buses-hydrogen" cx="1689" cy="582" r="12" fill="#537445" />
+    <circle id="cell-transit_buses-gasoline" cx="730" cy="634" r="12" fill="#936C22" />
+    <circle id="cell-transit_buses-diesel" cx="867" cy="634" r="12" fill="#936C22" />
+    <circle id="cell-transit_buses-cng" cx="1004" cy="634" r="12" fill="#936C22" />
+    <circle id="cell-transit_buses-electricity" cx="1552" cy="634" r="12" fill="#537445" />
+    <circle id="cell-transit_buses-hydrogen" cx="1689" cy="634" r="12" fill="#537445" />
+    <circle id="cell-intercity_buses-gasoline" cx="730" cy="686" r="12" fill="#936C22" />
+    <circle id="cell-intercity_buses-diesel" cx="867" cy="686" r="12" fill="#936C22" />
+    <circle id="cell-intercity_buses-electricity" cx="1552" cy="686" r="12" fill="#537445" />
+    <circle id="cell-intercity_buses-hydrogen" cx="1689" cy="686" r="12" fill="#537445" />
+    <circle id="cell-aircraft-jet" cx="1278" cy="738" r="12" fill="#936C22" />
+    <circle id="cell-rail-diesel" cx="867" cy="790" r="12" fill="#936C22" />
+    <circle id="cell-rail-lng" cx="1141" cy="790" r="12" fill="#936C22" />
+    <circle id="cell-rail-hydrogen" cx="1689" cy="790" r="12" fill="#537445" />
+    <circle id="cell-marine-lng" cx="1141" cy="842" r="12" fill="#936C22" />
+    <circle id="cell-marine-marine_oils" cx="1415" cy="842" r="12" fill="#936C22" />
+    <circle id="cell-offroad-diesel" cx="867" cy="894" r="12" fill="#936C22" />
+    <circle cx="52" cy="974" r="12" fill="#416184" />
+  </g>
+  <g id="labels">
+    <text id="label-001" x="40" y="50" font-family="Arial" font-size="38" font-weight="600" text-anchor="start" fill="#253449">Legacy fuel-to-mode compatibility</text>
+    <text id="label-002" x="40" y="92" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#536174">Eligibility derived from the compiled legacy SQLite, including blends and charging</text>
+    <text id="label-003" x="40" y="196" font-family="Arial" font-size="28" font-weight="600" text-anchor="start" fill="#253449">Technology family</text>
+    <text id="label-004" x="590" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Tech.</text>
+    <text id="label-005" x="590" y="211" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">count</text>
+    <text id="label-006" x="730" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Gasoline</text>
+    <text id="label-007" x="730" y="211" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">blend</text>
+    <text id="label-008" x="867" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Diesel</text>
+    <text id="label-009" x="867" y="211" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">blend</text>
+    <text id="label-010" x="1004" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">CNG</text>
+    <text id="label-011" x="1141" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">LNG</text>
+    <text id="label-012" x="1278" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Jet</text>
+    <text id="label-013" x="1278" y="211" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">fuels</text>
+    <text id="label-014" x="1415" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Marine</text>
+    <text id="label-015" x="1415" y="211" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">oils</text>
+    <text id="label-016" x="1552" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Electricity</text>
+    <text id="label-017" x="1689" y="177" font-family="Arial" font-size="26" font-weight="600" text-anchor="middle" fill="#253449">Hydrogen</text>
+    <text id="label-018" x="60" y="279" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Motorcycles</text>
+    <text id="label-019" x="590" y="279" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">3</text>
+    <text id="label-020" x="60" y="331" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Cars</text>
+    <text id="label-021" x="590" y="331" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">16</text>
+    <text id="label-022" x="60" y="383" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Passenger light trucks</text>
+    <text id="label-023" x="590" y="383" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">16</text>
+    <text id="label-024" x="60" y="435" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Freight light trucks</text>
+    <text id="label-025" x="590" y="435" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">15</text>
+    <text id="label-026" x="60" y="487" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Medium trucks</text>
+    <text id="label-027" x="590" y="487" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">9</text>
+    <text id="label-028" x="60" y="539" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Heavy trucks</text>
+    <text id="label-029" x="590" y="539" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">7</text>
+    <text id="label-030" x="60" y="591" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">School buses</text>
+    <text id="label-031" x="590" y="591" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">11</text>
+    <text id="label-032" x="60" y="643" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Transit buses</text>
+    <text id="label-033" x="590" y="643" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">12</text>
+    <text id="label-034" x="60" y="695" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Intercity buses</text>
+    <text id="label-035" x="590" y="695" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">7</text>
+    <text id="label-036" x="60" y="747" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Jet aircraft</text>
+    <text id="label-037" x="590" y="747" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">6</text>
+    <text id="label-038" x="60" y="799" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Rail</text>
+    <text id="label-039" x="590" y="799" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">7</text>
+    <text id="label-040" x="60" y="851" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Marine vessels</text>
+    <text id="label-041" x="590" y="851" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">5</text>
+    <text id="label-042" x="60" y="903" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">Off-road</text>
+    <text id="label-043" x="590" y="903" font-family="Arial" font-size="28" font-weight="400" text-anchor="middle" fill="#253449">1</text>
+    <text id="label-044" x="80" y="983" font-family="Arial" font-size="28" font-weight="400" text-anchor="start" fill="#253449">At least one technology uses this carrier; an empty cell has no such represented path.</text>
+    <text id="label-045" x="40" y="1027" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#536174">PHEVs mark both liquid fuel and electricity. Hydrogen is classified at vehicle input, irrespective of production route.</text>
+    <text id="label-046" x="40" y="1069" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#536174">Counts include existing/new and range variants; charging, blending and supply technologies are counted separately.</text>
+    <text id="label-047" x="40" y="1104" font-family="Arial" font-size="26" font-weight="400" text-anchor="start" fill="#536174">Off-road is represented as diesel energy demand (PJ), rather than passenger-km or tonne-km.</text>
+  </g>
+</svg>
