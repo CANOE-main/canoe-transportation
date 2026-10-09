@@ -216,7 +216,7 @@ The four package initializers are `fetching/__init__.py` (0 lines) and
 `parameterization/__init__.py`, `validation/__init__.py`,
 `scripts/__init__.py` (1 line each); they contain no runtime owner logic.
 
-The research notebook `docs/insights/vehicle_population_aggregation_mapping.py`
+The research notebook `docs/insights/vehicle_stock_diagnosis.py`
 (3,969 lines, 75 functions) has substantial inspection, plotting and review responsibility
 but is not a production parameter owner. Tests are evidence for the boundaries above,
 not alternate transformations. No notebook or test-module decomposition was performed.

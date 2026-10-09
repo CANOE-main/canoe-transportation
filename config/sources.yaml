@@ -1869,3 +1869,460 @@ sources:
           expected_sha256: fb9b3ef747ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98
           expected_bytes: 13977
           expected_rows: 78
+
+  # Opt-in research; append order preserves prior source IDs.
+  hatch_original_growth_evidence:
+    title: Original HATCH observations and metadata
+    status: inactive
+    required: false
+    source_type: research_evidence
+    file_type: mixed
+    version: Zenodo 10231865 / record-specific release
+    citation: https://zenodo.org/records/10231865
+    units: Source-native quantities; growth estimates require quantity-specific interpretation.
+    database_note: ''
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    validation_rule: Pinned bytes/SHA256 and physical/native schema; preserve raw rows, zero and missing observations.
+      Research only.
+    refresh_notes: Opt-in diagnostic only; no production readiness or parameter_modules. Acquire missing caches explicitly.
+      Changed releases require review and newly pinned snapshots.
+    components:
+      research:
+        label: Original HATCH observations and metadata
+        short_name: hatch_original_growth_evidence
+        required: false
+        inputs:
+        - raw_observations
+        - source_metadata
+        produces:
+        - growth_diagnostic_evidence
+        parameter_modules: []
+    adapter:
+      assets:
+      - key: 10231865:HATCH_1.0.csv
+        cache_path: 10231865/HATCH_1.0.csv
+        sha256: cb690dbecb4aca6100ab8974884a1c4d0c707d20b51f4dbe1bc888401952e37e
+        bytes: 103054
+        format: csv
+        url: https://zenodo.org/api/records/10231865/files/HATCH_1.0.csv/content
+      - key: 10231865:HATCH_v1.5_Clean.csv
+        cache_path: 10231865/HATCH_v1.5_Clean.csv
+        sha256: fad68762b73cbdfe46c23e5303bfec152885cff7ea0243f7ef9b48475ad5d5bf
+        bytes: 4659711
+        format: csv
+        url: https://zenodo.org/api/records/10231865/files/HATCH_v1.5_Clean.csv/content
+      - key: 10231865:HATCH_v1.5_DataSources.csv
+        encoding: cp1252
+        cache_path: 10231865/HATCH_v1.5_DataSources.csv
+        sha256: 1a84a7f4fe46059cb35bd6e5fea0f6d07d9cfd1bf8b5d64694c92181b49f6c40
+        bytes: 78338
+        format: csv
+        url: https://zenodo.org/api/records/10231865/files/HATCH_v1.5_DataSources.csv/content
+      - key: 10231865:Tech_Growth_V1.5_variabledescriptions_Clean.yaml
+        cache_path: 10231865/Tech_Growth_V1.5_variabledescriptions_Clean.yaml
+        sha256: 8ff1b51e7f03d3a89001ccd2d8a4ec6700c32b23a9c454adb12d79f361bc8344
+        bytes: 37139
+        format: yaml
+        url: https://zenodo.org/api/records/10231865/files/Tech_Growth_V1.5_variabledescriptions_Clean.yaml/content
+      - key: original_growth_estimates
+        cache_path: 10056128/AllGrowthRates.csv
+        sha256: e7f4df9caf102822f17ebe4af22ecd4811277a0d842f4bbdbc4c8c7e6d3e941d
+        bytes: 10062
+        format: csv
+        url: https://zenodo.org/records/10056128/files/AllGrowthRates.csv?download=1
+  hatch_extended_growth_evidence:
+    title: Extended HATCH national observations and growth characteristics
+    status: inactive
+    required: false
+    source_type: research_evidence
+    file_type: mixed
+    version: Zenodo 19579793 / record-specific release
+    citation: https://zenodo.org/records/19579793
+    units: Source-native quantities; growth estimates require quantity-specific interpretation.
+    database_note: ''
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    validation_rule: Pinned bytes/SHA256 and physical/native schema; preserve raw rows, zero and missing observations.
+      Research only.
+    refresh_notes: Opt-in diagnostic only; no production readiness or parameter_modules. Acquire missing caches explicitly.
+      Changed releases require review and newly pinned snapshots.
+    components:
+      research:
+        label: Extended HATCH national observations and growth characteristics
+        short_name: hatch_extended_growth_evidence
+        required: false
+        inputs:
+        - raw_observations
+        - source_metadata
+        produces:
+        - growth_diagnostic_evidence
+        parameter_modules: []
+    adapter:
+      assets:
+      - key: 19579793:Complexity.xlsx
+        cache_path: 19579793/Complexity.xlsx
+        sha256: a461f38be5868b422d1be1a1c61d93975cd4cc7f03637a2a52d24f14a84a8090
+        bytes: 13471
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Complexity.xlsx/content
+      - key: 19579793:Feedstock.xlsx
+        cache_path: 19579793/Feedstock.xlsx
+        sha256: 06dc2951e6263f3e377465691265d1fe3ee4413a75d10f079372f6db326df6b5
+        bytes: 18503
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Feedstock.xlsx/content
+      - key: 19579793:Granularity.xlsx
+        cache_path: 19579793/Granularity.xlsx
+        sha256: b9d8c7a3579494454b6ff2561e03f3a7fa5cd598888792c53727b810372429d0
+        bytes: 51705
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Granularity.xlsx/content
+      - key: 19579793:HATCH_growth_characteristics.csv
+        cache_path: 19579793/HATCH_growth_characteristics.csv
+        sha256: 9d91a695bd9d3d54fac58e43447bbb00fd7d17d9e3d7b64d7f0a2a72c19a4fa7
+        bytes: 2458166
+        format: csv
+        url: https://zenodo.org/api/records/19579793/files/HATCH_growth_characteristics.csv/content
+      - key: 19579793:HATCH_national_1.5.csv
+        cache_path: 19579793/HATCH_national_1.5.csv
+        sha256: 75e06e0280bc5120c35644b6b560eb2e5f2927921c53ef5fda8f5510985d1688
+        bytes: 4455497
+        format: csv
+        url: https://zenodo.org/api/records/19579793/files/HATCH_national_1.5.csv/content
+      - key: 19579793:HATCH_variable_descriptions.xlsx
+        cache_path: 19579793/HATCH_variable_descriptions.xlsx
+        sha256: c58f33ffb11ce630c116d98a5afe723026fa3ba87c4bf45ec5774540f6d86797
+        bytes: 15501
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/HATCH_variable_descriptions.xlsx/content
+      - key: 19579793:MaterialUse.xlsx
+        cache_path: 19579793/MaterialUse.xlsx
+        sha256: 6f41856d8f2f975dec97c4cde6152087f3c813fd4a25153f7a87e38c015067db
+        bytes: 77248
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/MaterialUse.xlsx/content
+      - key: 19579793:Need_For_Customization.xlsx
+        cache_path: 19579793/Need_For_Customization.xlsx
+        sha256: 3c53ca5be2aec8af74cea66bb9f34a5c51aa941c7ee134627a4a940fa7dda75b
+        bytes: 13456
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Need_For_Customization.xlsx/content
+      - key: 19579793:Tech_Lifetime.xlsx
+        cache_path: 19579793/Tech_Lifetime.xlsx
+        sha256: 17eb1861073e61498cc2a04e8fa1456b2278500f973958a0c70deda5aa304b6c
+        bytes: 33770
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Tech_Lifetime.xlsx/content
+      - key: 19579793:Tech_Replacement.xlsx
+        cache_path: 19579793/Tech_Replacement.xlsx
+        sha256: c23ceb0f100f33c205c57f6d1d6e2bdd6c79fd33b869544caf630b0a64635f1a
+        bytes: 17974
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Tech_Replacement.xlsx/content
+      - key: 19579793:Technology Categories.xlsx
+        cache_path: 19579793/Technology Categories.xlsx
+        sha256: dc8a487635db0c197795416ff4cca38522ceee483acd49fc47b0990526ddcccc
+        bytes: 15322
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Technology%20Categories.xlsx/content
+      - key: 19579793:Type_Of_Adopter.xlsx
+        cache_path: 19579793/Type_Of_Adopter.xlsx
+        sha256: 9a721f339682962966b9522e97ee421e5ba88ddab48692dd9f040fa12d93278b
+        bytes: 13434
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Type_Of_Adopter.xlsx/content
+      - key: 19579793:Year_First_Commercialization.xlsx
+        cache_path: 19579793/Year_First_Commercialization.xlsx
+        sha256: da8406bf227775d2b7e52d04f4ac9cfaf94cde12c5b53835a8635a1f19fdc280
+        bytes: 44851
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Year_First_Commercialization.xlsx/content
+  eafo_norway_growth_evidence:
+    title: EAFO Norway fleet, registrations and shares (M1/N1/N2-N3)
+    status: inactive
+    required: false
+    source_type: research_evidence
+    file_type: mixed
+    version: 2026-10-07; fleet Q2 2026 / registrations July 2026; full annual data through 2025
+    citation: https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet
+    units: Source-native quantities; growth estimates require quantity-specific interpretation.
+    database_note: ''
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    validation_rule: Pinned bytes/SHA256 and physical/native schema; preserve raw rows, zero and missing observations.
+      Research only.
+    refresh_notes: Opt-in diagnostic only; no production readiness or parameter_modules. Acquire missing caches explicitly.
+      Changed releases require review and newly pinned snapshots.
+    components:
+      research:
+        label: EAFO Norway fleet, registrations and shares (M1/N1/N2-N3)
+        short_name: eafo_norway_growth_evidence
+        required: false
+        inputs:
+        - raw_observations
+        - source_metadata
+        produces:
+        - growth_diagnostic_evidence
+        parameter_modules: []
+    adapter:
+      assets:
+      - key: eafo_page
+        cache_path: eafo_norway_2026-10-07.html
+        sha256: f08f9f60cd1985280a57c3f580dc96caa272d16ead8a034fa1c70b3777f9d7f5
+        bytes: 109119
+        format: html
+        url: https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet
+      - key: eafo:af_percentage_total_fleet_m1
+        cache_path: eafo_2026-10-07/af_percentage_total_fleet_m1.csv
+        sha256: 4192409ec8ec49c8a36d87b6a6a727e9e4a123af2e799909b9e70f4e2c01f6a1
+        bytes: 479
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/af_percentage_total_fleet_m1.csv
+      - key: eafo:af_percentage_total_fleet_n1
+        cache_path: eafo_2026-10-07/af_percentage_total_fleet_n1.csv
+        sha256: 97a00600e4c3e17dd9b011c609c07a260c37f7345f3771001f7d711b5304b05f
+        bytes: 358
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/af_percentage_total_fleet_n1.csv
+      - key: eafo:af_percentage_total_fleet_n2_n3
+        cache_path: eafo_2026-10-07/af_percentage_total_fleet_n2_n3.csv
+        sha256: 8dd6318344c0fbbedcaaad8aa803e0c0af0d164ee5aefc0744c436764ac1e6eb
+        bytes: 342
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/af_percentage_total_fleet_n2_n3.csv
+      - key: eafo:fleet_m1_total_number
+        cache_path: eafo_2026-10-07/fleet_m1_total_number.csv
+        sha256: 40f657ff0724ae6b1bba0e213731fe3180f0b8f1390cb3b3207339e8dd7d3694
+        bytes: 532
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/fleet_m1_total_number.csv
+      - key: eafo:fleet_n1_total_number
+        cache_path: eafo_2026-10-07/fleet_n1_total_number.csv
+        sha256: c5e0e390584431fe2a741ddf6eb52f12b31e862dac383cf11e574f8501fd98c6
+        bytes: 371
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/fleet_n1_total_number.csv
+      - key: eafo:fleet_n2_n3_total_number
+        cache_path: eafo_2026-10-07/fleet_n2_n3_total_number.csv
+        sha256: 87e5ebcff48a795f1fefb6356e3bdb2da0bb2223ffa860c8224cb9ddd9c042c9
+        bytes: 329
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/fleet_n2_n3_total_number.csv
+      - key: eafo:market_share_new_registrations_m1
+        cache_path: eafo_2026-10-07/market_share_new_registrations_m1.csv
+        sha256: 274f9fbfc631f4c1b4b33be867934cbb6fcd0983f5b4104ed7adcc35700c7b6e
+        bytes: 447
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/market_share_new_registrations_m1.csv
+      - key: eafo:market_share_new_registrations_n1
+        cache_path: eafo_2026-10-07/market_share_new_registrations_n1.csv
+        sha256: 09415fe62d0111a24ea6244f376e37dbc3a3d2b4b18a296d86cbbe9269aa81ce
+        bytes: 332
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/market_share_new_registrations_n1.csv
+      - key: eafo:market_share_new_registrations_n2_n3
+        cache_path: eafo_2026-10-07/market_share_new_registrations_n2_n3.csv
+        sha256: fb5b40e65e805a65d9e88cd025346899596d21f803418de95d48248aaca45c8d
+        bytes: 321
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/market_share_new_registrations_n2_n3.csv
+      - key: eafo:new_registrations_m1
+        cache_path: eafo_2026-10-07/new_registrations_m1.csv
+        sha256: dc3bba72171ee8bf593066b47354f81e9f01009ba27842e14f74f495cf3db7b2
+        bytes: 432
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/new_registrations_m1.csv
+      - key: eafo:new_registrations_n1
+        cache_path: eafo_2026-10-07/new_registrations_n1.csv
+        sha256: de116b63ea6cfafdab707c92bf29f4d54a4b781062228623817848c89c2f4036
+        bytes: 314
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/new_registrations_n1.csv
+      - key: eafo:new_registrations_n2_n3
+        cache_path: eafo_2026-10-07/new_registrations_n2_n3.csv
+        sha256: 672949f6ebef2af949ae9effcdcea5992f2bbb3cdfc0444bb3933ac938224583
+        bytes: 287
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/new_registrations_n2_n3.csv
+  technology_growth_literature:
+    title: Odenweller 2022; Nemet 2023 and SI; Edwards 2024 and SI; Greene and Nemet 2026 and SI
+    status: inactive
+    required: false
+    source_type: research_evidence
+    file_type: mixed
+    version: Supplied PDFs / extended research 2026-10-07
+    citation: https://doi.org/10.1038/s41560-022-01097-4; https://doi.org/10.1038/s43247-023-01056-1; https://doi.org/10.1073/pnas.2215679121;
+      https://doi.org/10.1038/s41467-026-73563-6
+    units: Source-native quantities; growth estimates require quantity-specific interpretation.
+    database_note: ''
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    validation_rule: Pinned bytes/SHA256 and physical/native schema; preserve raw rows, zero and missing observations.
+      Research only.
+    refresh_notes: Opt-in diagnostic only; no production readiness or parameter_modules. Acquire missing caches explicitly.
+      Changed releases require review and newly pinned snapshots.
+    components:
+      research:
+        label: Odenweller 2022; Nemet 2023 and SI; Edwards 2024 and SI; Greene and Nemet 2026 and SI
+        short_name: technology_growth_literature
+        required: false
+        inputs:
+        - raw_observations
+        - source_metadata
+        produces:
+        - growth_diagnostic_evidence
+        parameter_modules: []
+    adapter:
+      assets:
+      - key: odenweller_feasibility-space-green-h2-scaling_2022
+        cache_path: papers/odenweller_feasibility-space-green-h2-scaling_2022.pdf
+        sha256: 37a61b826d095fcfcc220e7b7d95d454e8c582d4fc5cbe557fcaaba86587c44b
+        bytes: 8442974
+        format: pdf
+        supplied_name: odenweller_feasibility-space-green-h2-scaling_2022.pdf
+      - key: nemet_dataset-adoption-historical-technologies-growth-rates_2023
+        cache_path: papers/nemet_dataset-adoption-historical-technologies-growth-rates_2023.pdf
+        sha256: b734dfc8ea610d0ded7be279863b8947b90f835dbe10903eb7bb40cfb9dcf9b9
+        bytes: 1366813
+        format: pdf
+        supplied_name: nemet_dataset-adoption-historical-technologies-growth-rates_2023.pdf
+      - key: nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI
+        cache_path: papers/nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI.pdf
+        sha256: 8029a0c9807e2dadf3425a67f85da1ad8d24e84e421ac78f359a66462ce193d1
+        bytes: 889386
+        format: pdf
+        supplied_name: nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI.pdf
+      - key: edwards_modeling-DACCS-historical-analogs_2024
+        cache_path: papers/edwards_modeling-DACCS-historical-analogs_2024.pdf
+        sha256: 244b1c0784c401579a7334e1c9281748346058a3984d3b51629b2b5b1ece8240
+        bytes: 934967
+        format: pdf
+        supplied_name: edwards_modeling-DACCS-historical-analogs_2024.pdf
+      - key: edwards_modeling-DACCS-historical-analogs_2024_SI
+        cache_path: papers/edwards_modeling-DACCS-historical-analogs_2024_SI.pdf
+        sha256: db7b9f77f401ba538cb94e1f4ddaba2e9210d8037b64bc461063c872160e1cd8
+        bytes: 7866158
+        format: pdf
+        supplied_name: edwards_modeling-DACCS-historical-analogs_2024_SI.pdf
+      - key: extended_research
+        cache_path: extended_research.html
+        sha256: 2ebae077011413e431852093697293ad7e38223dbdcb903a6bb360437a301206
+        bytes: 431504
+        format: html
+        url: https://www.nature.com/articles/s41467-026-73563-6
+      - key: extended_research_SI
+        cache_path: extended_research_SI.pdf
+        sha256: 43b5b50f5cb8777d318cefee5295b66bdd0744b472a53197d13e2f2048e1d5b4
+        bytes: 3544268
+        format: pdf
+        url: https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-73563-6/MediaObjects/41467_2026_73563_MOESM1_ESM.pdf
+  temoa_growth_reference:
+    title: Temoa growth equations and pinned implementation
+    status: inactive
+    required: false
+    source_type: research_evidence
+    file_type: mixed
+    version: main a2b0bf24cc0dd2a99570ae48772316341e79c0b5 / documentation 4.0.0a2 2026-10-07
+    citation: https://docs.temoaproject.org/en/latest/extensions/growth_rates.html; https://github.com/TemoaProject/temoa/tree/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates
+    units: Source-native quantities; growth estimates require quantity-specific interpretation.
+    database_note: ''
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    validation_rule: Pinned bytes/SHA256 and physical/native schema; preserve raw rows, zero and missing observations.
+      Research only.
+    refresh_notes: Opt-in diagnostic only; no production readiness or parameter_modules. Acquire missing caches explicitly.
+      Changed releases require review and newly pinned snapshots.
+    components:
+      research:
+        label: Temoa growth equations and pinned implementation
+        short_name: temoa_growth_reference
+        required: false
+        inputs:
+        - raw_observations
+        - source_metadata
+        produces:
+        - growth_diagnostic_evidence
+        parameter_modules: []
+    adapter:
+      assets:
+      - key: temoa_documentation
+        cache_path: growth_rates.html
+        sha256: 3ab128e785a1e7686d57c94cf9eb102881f16c20803b6ca719899e1181187f3e
+        bytes: 43644
+        format: html
+        url: https://docs.temoaproject.org/en/latest/extensions/growth_rates.html
+      - key: temoa:temoa/extensions/growth_rates/__init__.py
+        cache_path: temoa_source/temoa__extensions__growth_rates____init__.py
+        sha256: 5401c659d80579f2b7b9bf56f3c358d7e2053ea0178106ca7193925121846ae4
+        bytes: 113
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/__init__.py
+      - key: temoa:temoa/extensions/growth_rates/components/__init__.py
+        cache_path: temoa_source/temoa__extensions__growth_rates__components____init__.py
+        sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        bytes: 0
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/components/__init__.py
+      - key: temoa:temoa/extensions/growth_rates/components/growth_capacity.py
+        cache_path: temoa_source/temoa__extensions__growth_rates__components__growth_capacity.py
+        sha256: c7d884065eff5e1666f5208c982ea16c8c979e7f8642982e2867e0cdec721b97
+        bytes: 4355
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/components/growth_capacity.py
+      - key: temoa:temoa/extensions/growth_rates/components/growth_new_capacity.py
+        cache_path: temoa_source/temoa__extensions__growth_rates__components__growth_new_capacity.py
+        sha256: 5dbd732f3b0d446dd8c26fc9129ba08985c92b29081e906377ad198de6330b27
+        bytes: 4314
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/components/growth_new_capacity.py
+      - key: temoa:temoa/extensions/growth_rates/components/growth_new_capacity_delta.py
+        cache_path: temoa_source/temoa__extensions__growth_rates__components__growth_new_capacity_delta.py
+        sha256: 8d18eede0f76b73bd65a9cecf3c73d621b15afe8bc90594799ec26448110895b
+        bytes: 5868
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/components/growth_new_capacity_delta.py
+      - key: temoa:temoa/extensions/growth_rates/core/__init__.py
+        cache_path: temoa_source/temoa__extensions__growth_rates__core____init__.py
+        sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        bytes: 0
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/core/__init__.py
+      - key: temoa:temoa/extensions/growth_rates/core/model.py
+        cache_path: temoa_source/temoa__extensions__growth_rates__core__model.py
+        sha256: 7cd3c9fb118a4302e7d63a5b38b9bd8a0fa6fca04220f9fff53806928e76ba2f
+        bytes: 4636
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/core/model.py
+      - key: temoa:temoa/extensions/growth_rates/data_manifest.py
+        cache_path: temoa_source/temoa__extensions__growth_rates__data_manifest.py
+        sha256: 19b72df205d65a30f20282bfda738be5d4f11b661bd2306018997b7ffde920b4
+        bytes: 2760
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/data_manifest.py
+      - key: temoa:temoa/extensions/growth_rates/extension.py
+        cache_path: temoa_source/temoa__extensions__growth_rates__extension.py
+        sha256: e2c3fd9aa48a909b5d4160a848787c8bd89e0d632d1d89458c54bdaee4ccb121
+        bytes: 1099
+        format: python
+        url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/extension.py

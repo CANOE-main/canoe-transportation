@@ -32,6 +32,42 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  # Opt-in growth research: these are evidence/review products, not production inputs.
+  technology_growth_cache:
+    path: inputs/0_cache/technology_growth
+    layer: cache
+    owner: fetching.technology_growth_evidence
+    producers: [fetching.technology_growth_evidence.acquire_evidence]
+    consumers: [diagnostics.technology_growth, reviewers]
+    validation_surfaces: [fetching.technology_growth_evidence.validate_asset]
+  technology_growth_interim:
+    path: inputs/1_interim/technology_growth
+    layer: interim
+    owner: fetching.technology_growth_evidence
+    producers: [fetching.technology_growth_evidence.normalize_hatch, fetching.technology_growth_evidence.normalize_eafo, diagnostics.technology_growth.build_diagnostic]
+    consumers: [diagnostics.technology_growth, reviewers]
+    validation_surfaces: [diagnostics.technology_growth.audit_series]
+  technology_growth_validation:
+    path: inputs/validation/technology_growth
+    layer: input_validation
+    owner: diagnostics.technology_growth
+    producers: [diagnostics.technology_growth.build_diagnostic]
+    consumers: [docs.insights.growth_constraint_diagnosis, reviewers]
+    validation_surfaces: [diagnostics.technology_growth.validate_diagnostic]
+  technology_growth_notebook:
+    path: docs/insights/growth_constraint_diagnosis.py
+    layer: documentation
+    owner: diagnostics.technology_growth
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  technology_growth_report:
+    path: outputs/validation/technology_growth
+    layer: output_validation
+    owner: diagnostics.technology_growth
+    producers: [diagnostics.technology_growth.build_diagnostic, marimo.export]
+    consumers: [reviewers]
+    validation_surfaces: [diagnostics.technology_growth.validate_diagnostic, marimo.check]
   # User-owned legacy publication figure; no production ETL or workflow consumer.
   legacy_transport_diagram:
     path: legacy_backend/diagrams

@@ -1,0 +1,29 @@
+{
+  "states": [
+    {
+      "state": "default",
+      "cells": 31,
+      "reference": "cars:bev"
+    },
+    {
+      "state": "growth_new_capacity",
+      "reference": "cars:bev",
+      "start_year": 2025,
+      "initial_k": 42.134
+    },
+    {
+      "state": "growth_new_capacity_delta",
+      "reference": "cars:bev",
+      "start_year": 2025,
+      "initial_k": 42.134
+    },
+    {
+      "state": "cars:fcev",
+      "missing_stock_not_observed_zero": true,
+      "all_modes_insufficient": true
+    }
+  ],
+  "rendered_charts": 10,
+  "renderer": "1.9.0",
+  "browser_available": false
+}
