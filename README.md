@@ -331,15 +331,14 @@ info
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   s0[("`**Maintained sources**
     Public datasets that are curated, maintained and updated regularly`")]
   s1@{shape: doc, label: "**Heterogeneous sources**
@@ -347,7 +346,7 @@ flowchart LR
   s2@{shape: win-pane, label: "**External model outputs**
     Soft-linked outputs from external models, can be entire models (e.g., GREET), or results alone (e.g., RAMP-mobility)" }
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p0@{shape: hex, label: "**Conditional switch**
     *feature:* true or false"}
   p0_2@{shape: hex, label: "**Scenario selector**
@@ -376,15 +375,14 @@ flowchart LR
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   s0[("`**NRCan CEUD**
     Provincial vehicle sales, stocks, off-road energy use, and energy intensities`")]
 
@@ -413,36 +411,33 @@ flowchart LR
   s6[("`**Transport Canada (TC) EV Dashboard**
     Latest quarterly medium- and heavy-duty EV market shares by province; annual shares not disclosed by province`")]
 
-  %% ########### Processes ###########
-  subgraph age["`**Age cohort derivation and diagnosis**`"]
-    direction TB
-    p1["`**Fleet age distribution**
-      • *Road:* distribute baseline stock by age.
-      *MTO Report A is mapped into NRCan CEUD cars and light trucks via MTO code-to-model inference; and Report 5 distributes MHD truck, bus, and motorcycle age cohorts*<br>
-      • *Off-road:* treat provincial energy use ÷ intensity as stock, then distribute by age`"]
+  %% ############ Processes ###########
+  p1["`**Fleet age distribution**
+    • *Road:* distribute baseline stock by age.
+    *MTO Report A is mapped into NRCan CEUD cars and light trucks via MTO code-to-model inference; and Report 5 distributes MHD truck, bus, and motorcycle age cohorts*<br>
+    • *Off-road:* treat provincial energy use ÷ intensity as stock, then distribute by age`"]
 
-    p1_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
-      MTO make-model codes are difficult to map. This notebook visualizes:<br>
-      • mapped fit-active stock
-      • stock that cannot be mapped reliably
-      • vehicle class and vintage weights
-      • Report A vs Report 5 age cohorts
-      • MTO stock vs NRCan CEUD data
-      • survival rates from mapped cohorts"}
-    p1 -- vehicle_population_aggregation_mapping.py --> p1_2
-  end
-  s0 -- nrcan_ceud.py --> age
-  s1 -- vehicle_population.py --> age
-  s1_2 -- nrcan_ceud.py --> age
+  p1_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
+    MTO make-model codes are difficult to map. This notebook visualizes:<br>
+    • mapped fit-active stock
+    • stock that cannot be mapped reliably
+    • vehicle class and vintage weights
+    • Report A vs Report 5 age cohorts
+    • MTO stock vs NRCan CEUD data
+    • survival rates from mapped cohorts"}
+  p1 -- vehicle_stock_diagnosis.py --> p1_2
+  s0 -- nrcan_ceud.py --> p1
+  s1 -- vehicle_population.py --> p1
+  s1_2 -- nrcan_ceud.py --> p1
   s1_3 -- fueleconomy_vehicles.py
   vpic_model_years.py
-  vpic_vehicle_types.py --> age
+  vpic_vehicle_types.py --> p1
 
   p2["`**Fleet powertrain distribution**
     • *Road:* distribute age-specific stock by powertrain<br>
     • *Off-road:* incumbent techs mostly use diesel or jet fuel<br>
     • Aggregate into 5-year vintages`"]
-  age -- road_aggregation.py --> p2
+  p1 -- road_aggregation.py --> p2
   s4 -- statcan_tables.py --> p2
   s5 -- statcan_tables.py --> p2
   s6 -- assorted_sources.py --> p2
@@ -477,8 +472,8 @@ flowchart LR
 #### Existing period handling
 Existing stock by vintage is mapped into 5-year periods and aggregated the following way:
 
-| Legacy backend | v2.0 backend |
-| --------------------- | --------------------- |
+| Legacy backend | v2.0 backend | 
+| --------------------- | --------------------- | 
 | - 2014 → 2015<br>- 2015 → 2015<br>- 2016 → 2020<br>- 2019 → 2020<br>- 2020 → 2020<br>- 2021 → 2023<br>- 2023* → 2023<br> | - 2014 → 2010<br>- 2015 → 2010<br>- 2016 → 2015<br>- 2019 → 2015<br>- 2020 → 2015<br>- 2021 → 2020<br>- 2023* → 2020<br> |
 
 *As per the latest update, existing vintages from NRCan CEUD only reach 2023.
@@ -488,22 +483,21 @@ Existing stock by vintage is mapped into 5-year periods and aggregated the follo
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   s0[("`**NRCan CEUD**
     Provincial vehicle activity and off-road energy use; national off-road energy intensity`")]
   s1[("`**CER Canada's Energy Future**
     Real GDP projections by scenario
     ***Def. scenario:*** current measures`")]
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p0@{shape: hex, label: "**config/scenarios/**
     *future_car_demand:* GDP-indexed or extrapolated<br>
     When extrapolated, light trucks carry the residual GDP-indexed demand from both passenger LDV classes"}
@@ -535,15 +529,14 @@ flowchart LR
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   s0[("`**NRCan CEUD**
     Provincial vehicle activity [bn tonne-km] and stock [k vehicles]`")]
   s0_2@{shape: doc, label: "***capacity_to_activity***
@@ -553,7 +546,7 @@ flowchart LR
   s2@{shape: processes, label: "**Road aggregation maps**
     Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p0["`**Annual vehicle utilization (UF)**
     **eq. (i)** 5-year avg of activity ÷ stock excluding 2020-2021, then scaled by **capacity_to_activity**`"]
   s0 -- nrcan_ceud.py --> p0
@@ -611,15 +604,14 @@ flowchart LR
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   subgraph survival["`**Road vehicle fleet survival rates (US sources)**`"]
     direction LR
     s2[("`**NHTSA CAFE model**
@@ -639,33 +631,30 @@ flowchart LR
   s6@{shape: processes, label: "**Road aggregation maps**
     Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
-  %% ########### Processes ###########
-  subgraph age["`**Vehicle cohort mapping and survival rate estimation**`"]
-    direction TB
-    p0["`**Survival rate estimation**
-      • **eq. (i)** Estimate apparent retirement from make-model-vintage cohorts across Report A editions before mapping<br>
-      • The MTO make-model mapping separates LDV stock exposure from unmapped and non-LDV; and aggregates evidence accordingly<br>
-      • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
-      • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only the latter are promoted as parameters together with NEMS MHDV rates**`"]
+  %% ############ Processes ###########
+  p0["`**Survival rate estimation**
+    • **eq. (i)** Estimate apparent retirement from make-model-vintage cohorts across Report A editions before mapping<br>
+    • The MTO make-model mapping separates LDV stock exposure from unmapped and non-LDV; and aggregates evidence accordingly<br>
+    • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
+    • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only the latter are promoted as parameters together with NEMS MHDV rates**`"]
 
-    p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
-      MTO make-model codes are difficult to map. This notebook visualizes:<br>
-      • mapped fit-active stock
-      • stock that cannot be mapped reliably
-      • vehicle class and vintage weights
-      • Report A vs Report 5 age cohorts
-      • MTO stock vs NRCan CEUD data
-      • survival rates from mapped cohorts"}
-    p0 -- vehicle_population_aggregation_mapping.py --> p0_2
-  end
-  survival -- "assorted_sources.py" --> age
+  p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
+    MTO make-model codes are difficult to map. This notebook visualizes:<br>
+    • mapped fit-active stock
+    • stock that cannot be mapped reliably
+    • vehicle class and vintage weights
+    • Report A vs Report 5 age cohorts
+    • MTO stock vs NRCan CEUD data
+    • survival rates from mapped cohorts"}
+  p0 -- vehicle_stock_diagnosis.py --> p0_2
+  survival -- "assorted_sources.py" --> p0
   s0 -. "`vehicle_population.py
-    *\*diagnostic-only*`" .-> age
-  s6 -- road_aggregation.py --> age
+    *\*diagnostic-only*`" .-> p0
+  s6 -- road_aggregation.py --> p0
 
   p1@{shape: hex, label: "**config/scenarios/**
     *survival_curves:* true or false"}
-  age -- road_lifetimes_survival.py --> p1
+  p0 -- road_lifetimes_survival.py --> p1
 
   s4[("`**StatCan table**
     Buses avg. lifetime by province`")]
@@ -733,7 +722,7 @@ The cumulative MTO survival is a product of those empirical rates with an explic
   loading MTO history or its reviewed mapping. `--mto-diagnostics` publishes the MTO
   review evidence; `--all` runs both paths.
 - Detailed MTO filters, evidence checks, and comparisons are documented in
-  `docs/insights/vehicle_population_aggregation_mapping.py`.
+  `docs/insights/vehicle_stock_diagnosis.py`.
 
 ### `efficiency`
 
@@ -743,16 +732,15 @@ The cumulative MTO survival is a product of those empirical rates with an explic
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
-  subgraph road_agg["`**Road aggregation maps**`"]
+  %% ############ Sources ###########
+  subgraph road_agg["`**Road vehicle class aggregation**`"]
     subgraph agg["`**Road vehicle population evidence**`"]
       s3@{shape: doc, label: "**Wards Intelligence**
         National LDV and MHDV sales from 2021 by make-model, and GVWR class; covers aggregation in provinces without detailed vehicle population data"}
@@ -765,29 +753,25 @@ flowchart LR
         Active vehicle counts by make-model, vintage, and inferred size class`")]
     end
 
-    subgraph aggregation["`**Vehicle class aggregation and diagnosis**`"]
-      direction TB
-      p0["`**Road aggregation mapping**
-        • *LDVs:* map vehicle size classes and derive efficiency aggregation weights
-        *MTO Report A is mapped into NRCan and NLR classes via MTO make-model similarity*<br>
-        • *MD/HD trucks:* map truck weight classes and derive efficiency aggregation weights
-        *Report 4 distributes medium truck gross weight class cohorts*<br>
-        • *HD trucks:* derive regional- and long-haul activity weights`"]
-      
-      p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
-        MTO make-model codes are difficult to map. This notebook visualizes:<br>
-        • mapped fit-active stock
-        • what cannot be mapped reliably
-        • vehicle class and vintage weights
-        • Report A vs Wards LDV class shares
-        • Report 4 vs Wards MD truck shares
-        • survival rates from mapped cohorts"}
-      p0 -- vehicle_population_aggregation_mapping.py --> p0_2
-    end
-    s3 -- inputs/0_manual_params/ --> aggregation
-    s4 -- vehicle_population.py --> aggregation
-    s10 -- statcan_tables.py --> aggregation
+    p0["`**Road aggregation mapping**
+      • *LDVs:* map vehicle size classes and derive efficiency aggregation weights
+      *MTO Report A is mapped into NRCan and NLR classes via MTO make-model similarity*<br>
+      • *MD/HD trucks:* map truck weight classes and derive efficiency aggregation weights
+      *Report 4 distributes medium truck gross weight class cohorts*<br>
+      • *HD trucks:* derive regional- and long-haul activity weights`"]
+    s3 -- inputs/0_manual_params/ --> p0
+    s4 -- vehicle_population.py --> p0
+    s10 -- statcan_tables.py --> p0
   end
+    p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
+      MTO make-model codes are difficult to map. This notebook visualizes:<br>
+      • mapped fit-active stock
+      • what cannot be mapped reliably
+      • vehicle class and vintage weights
+      • Report A vs Wards LDV class shares
+      • Report 4 vs Wards MD truck shares
+      • survival rates from mapped cohorts"}
+    p0 -- vehicle_stock_diagnosis.py --> p0_2
 
   subgraph road["`**Road efficiencies**`"]
     s1[("`**NRCan Fuel Consum. Ratings**
@@ -812,9 +796,7 @@ flowchart LR
   s9[("`**NRCan CEUD**
     Vehicle/mode occupancy and payload factors`")]
 
-  %% ########### Processes ###########
-  s0 -- nrcan_ceud.py --> p3 & p2
-
+  %% ############ Processes ###########
   p2_2@{shape: hex, label: "**config/scenarios/**
     *atb_scenario:* mid, conservative, or advanced"}
   p2["`**Road baseline and indexing**
@@ -823,11 +805,13 @@ flowchart LR
     • *New LDVs:* index existing efficiencies to aggregated future multipliers<br>
     • *New MD/HD trucks:* use reported efficiencies from NLR ATB<br>
     `"]
+  p0 -- road_aggregation.py --> p2
   s1 -- nrcan_ceud.py --> p2
   s2 -- nlr_atb_autonomie.py --> p2_2 --> p2
   s2_2 -- assorted_sources.py --> p2
-  aggregation -- road_aggregation.py --> p2
   
+  s0 -- nrcan_ceud.py --> p3 & p2
+
   p3["`**Off-road baseline and indexing**
     • *Existing off-road modes:* use incumbent fleet energy intensity<br>
     • *New off-road modes:* index existing efficiencies to future multipliers`"]
@@ -888,15 +872,14 @@ flowchart LR
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   s3[("`**CER Canada's Energy Future**
     Currency exchange rates and GDP deflator by scenario
     ***Def. scenario:*** current measures`")]
@@ -910,14 +893,14 @@ flowchart LR
       • *Table 3-7 & 3-10:* Avg. daily utilization"}
   end
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p3["`**Cost of new off-road demand**
     • Capital cost of building new transport capacity to satisfy off-road demand *[dollars/demand unit]*<br>
     • *Aircraft:* CAPEX normalized with utilization and load factors from FAA`"]
   s7 & s8 -- inputs/0_manual_params/ --> p3
   s9 -- assorted_sources.py --> p3
 
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   subgraph road["`**Road vehicle costs**`"]
     s1@{shape: processes, label: "**Road aggregation maps**
       Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
@@ -928,7 +911,7 @@ flowchart LR
       Vehicle price projections of intercity buses"}
   end
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p0_2@{shape: hex, label: "**config/scenarios/**
     *atb_scenario:* mid, conservative, advanced"}
   p2["`**Vehicle manufacturing costs**
@@ -983,15 +966,14 @@ flowchart LR
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   subgraph offroad["`**Off-road OPEX**`"]
     s7@{shape: docs, label: "**CMU OEO model assumptions**
       Variable costs of rail techs set to 6% (freight) and 10% (passenger) of CAPEX; marine freight set to 5%"}
@@ -1000,14 +982,14 @@ flowchart LR
       • *Table 3-6 & 3-9:* Average block speeds, aircraft capacities, and load factors"}
   end
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p3["`**Variable costs from off-road**
     • *Aircraft:* **eq. (i-ii)** normalized maintenance costs per demand unit<br>
     • *Other off-road:* estimate variable costs with OEO ratios`"]
   s7 -- inputs/0_manual_params/ --> p3
   s8 -- assorted_sources.py --> p3
 
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   subgraph road["`**Road M&R costs**`"]
     s1@{shape: processes, label: "**Road aggregation maps**
       Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
@@ -1020,7 +1002,7 @@ flowchart LR
       Maintenance and repair linear model coefficients for MHDVs"}
   end
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p0_2@{shape: hex, label: "**config/scenarios/**
     *atb_scenario:* mid, conservative, or advanced"}
   p2["`**Maintenance & repair costs**
@@ -1110,16 +1092,16 @@ FAA source PDFs: [Section 3 — Aircraft Capacity and Utilization Factors](https
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   subgraph greet["`**Argonne National Lab GREET model**`"]
+    direction TB
     s1@{shape: win-pane, label: "**GREET_1 (fuel-cycle) and GREET_2 (vehicle-cycle) Excel models**
       Solved with default inputs for model year 2025, can vary through 2050 if *xlwings* is configured to do so. Default classes are:<br>
       • LDVs: Cars, SUVs, and pickup trucks
@@ -1127,13 +1109,13 @@ flowchart LR
     s3@{shape: docs, label: "**Solved GREET model runs**
       Vehicle-cycle lifetime emissions by scenario
       *Def. scenario*: conventional materials"}
-    s1 -- "`solved via *xlwings* library*`" --> s3
+    s1 -- "`solved via *xlwings* library`" --> s3
   end
 
   s2@{shape: processes, label: "**Road aggregation maps**
     Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p1@{shape: hex, label: "**config/scenarios/**
     *embodied_emissions:* true or false
     *embodied_materials*: conventional or lightweight"}
@@ -1162,15 +1144,14 @@ flowchart LR
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   s1@{shape: doc, label: "**NRCan/Dunsky 2024 EV Charging Infrastructure Assessment**
     • *Annual LD UFs:* Table 31; average LDV charging port utilization rate<br>
     • *EV-to-port ratios*: Tables 7 and 37; 1 LDEV: 1 LD charger, including residential ports, and 1.5 MHDEV: 1 MHD charger<br>
@@ -1190,7 +1171,7 @@ flowchart LR
     [k vehicles]
     *Retrieve LD and MHD EV stock`"/]  
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   p0["`**Aggregated capital and fixed costs**
     Cost of GW installed of charging ports, aggregated from projected type shares:<br>
     • *LDVs*: Derived type shares from Table 6 used to aggregate Table 12 per-port installation and equipment costs<br>
@@ -1260,17 +1241,16 @@ flowchart LR
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
 
   %% --- Hyperlinks ---
 ```
@@ -1282,17 +1262,16 @@ A light-duty BEV charging demand profile is an aggregated hourly time-series fro
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: elk
   flowchart:
     nodeSpacing: 35
     rankSpacing: 50
     wrappingWidth: 250
-    curve: linear
 ---
 flowchart LR
-  %% ########### Sources ###########
+  %% ############ Sources ###########
   subgraph vehicle["`**Vehicle fleet characteristics; these inputs are actively fetched for other parameters**`"]
-    direction TB
+    direction LR
     s3[("`**StatCan table**
       Registered vehicle size class shares by province; regardless of powertrain type`")]
     s8[("`**Autonomie TEA via NLR ATB**
@@ -1302,6 +1281,7 @@ flowchart LR
   end
 
   subgraph legacy["`**legacy_backend/; currently not fetched by canoe-transportation v2**`"]
+    direction TB
     s0[("`**Renewables Ninja weather profiles**
       Population-weighted, annual temperature profiles by province from MERRA-2 global dataset.`")]
     direction LR
@@ -1328,6 +1308,7 @@ flowchart LR
     end
 
     subgraph driver["`**Driver occupation composition**`"]
+      direction LR
       s4[("`**StatCan 2021 Census of Population**
         Share of population in the labour force by province; unspecified driving status`")]
       s5[("`**StatCan 2021 Census of Population**
@@ -1335,6 +1316,7 @@ flowchart LR
     end
 
     subgraph charger["`**Charger characteristics and availability**`"]
+      direction LR
       s6@{shape: doc, label: "**ICCT 2022 Quebec Charging Infrastructure Assessment**
         Shares of EV owners with access to home and workplace charging, respectively"}
       s7@{shape: doc, label: "**NRCan/Dunsky 2024 EV Charging Infrastructure Assessment**
@@ -1342,7 +1324,7 @@ flowchart LR
     end
   end
 
-  %% ########### Processes ###########
+  %% ############ Processes ###########
   subgraph ramp["`**legacy_backend/; simulation runs done externally**`"]
     direction TB
     p2@{shape: win-pane, label: "**RAMP-mobility simulation model**

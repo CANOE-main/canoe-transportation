@@ -1,0 +1,8 @@
+{
+  "identical_tables": 20,
+  "identical_summary": true,
+  "network_blocked": true,
+  "sqlite_blocked": true,
+  "tables_loaded": 20,
+  "production_growth_rows_written": 0
+}

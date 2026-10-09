@@ -95,6 +95,8 @@ class ArtifactRoute(MappingModel):
 
     path: str = Field(min_length=1)
     layer: Literal[
+        "cache",
+        "documentation",
         "external",
         "interim",
         "processed",
@@ -128,6 +130,8 @@ class PathsConfig(MappingModel):
     @model_validator(mode="after")
     def validate_artifact_layers(self) -> Self:
         layer_roots = {
+            "cache": self.inputs.cache,
+            "documentation": "docs",
             "external": self.inputs.external,
             "interim": self.inputs.interim,
             "processed": self.inputs.processed,

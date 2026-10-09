@@ -1,0 +1,124 @@
+# Research controls only. No production module or scenario consumes these values.
+version: 1
+diagnostic_only: true
+scenario: config/scenarios/legacy_reproduction.yaml
+snapshot_year: 2026
+legacy_notebook: legacy_backend/model_constraints[deprecated]/growth_rates.ipynb
+source_assets:
+  original: '10231865:HATCH_v1.5_Clean.csv'
+  extended: '19579793:HATCH_national_1.5.csv'
+  extended_estimates: '19579793:HATCH_growth_characteristics.csv'
+  descriptions: '10231865:Tech_Growth_V1.5_variabledescriptions_Clean.yaml'
+  original_estimates: original_growth_estimates
+
+curation:
+  min_points: 10
+  legacy_min_points: 20
+  legacy_max_gap: 5
+  legacy_countries: [ARG, AUS, BRA, CAN, CHN, FRA, DEU, IND, IDN, ITA, JPN, KOR, MEX, RUS, SAU, ZAF, TUR, GBR, USA, AUT, BEL, BGR, HRV, CYP, CZE, DNK, EST, FIN, GRC, HUN, IRL, LVA, LTU, LUX, MLT, NLD, POL, PRT, ROU, SVK, SVN, ESP, SWE]
+  legacy_metrics: [Total Number, Annual Production, Cumulative Total Capacity, Cumulative Length, Installed Capacity]
+  legacy_removed_ids: [Cellphones_Cumulative Total Capacity_World, Passenger Cars_Cumulative Total Capacity_World, Passenger Cars_Cumulative Total Capacity_US, Passenger Cars_Total Number_PT]
+  legacy_removed_technologies: [Aquaculture Production, Beer Production, Cane Sugar, Capture Fisheries, Caustic Soda, 'Copper|Mining', 'Copper|RefiningCrude Oil', Milk Production, Nitrogen Fertilizer, Nuclear Weapons, Oil Production, Postal Traffic, Primary Bauxite Production, 'Sand and Gravel|Industrial', Space Launches]
+  legacy_clipped_technologies: [Telegraph Traffic, Nickel Production, Nuclear Energy, Solar Photovoltaic]
+  legacy_clip_value: 0.1
+
+# Quantity labels route review, never establish stock/flow suitability by themselves.
+metric_families:
+  Total Number: count_needs_definition
+  Number of Units: count_needs_definition
+  Cumulative Number of Units: cumulative_needs_retirement_audit
+  Cumulative Total Capacity: cumulative_needs_retirement_audit
+  Cumulative total capacity: cumulative_needs_retirement_audit
+  Net Total Capacity: active_stock_candidate
+  Installed Capacity: active_stock_candidate
+  Installed electricity capacity: active_stock_candidate
+  Cumulative Rated Power: active_stock_candidate
+  Cumulative Rated Capacity: active_stock_candidate
+  Total Capacity: active_stock_candidate
+  Annual Production: annual_output_needs_utilization
+  Annual production: annual_output_needs_utilization
+  Cumulative Calculation: transformed_sum_needs_definition
+  Share of Market: share_needs_denominator
+  Share of Households: share_needs_denominator
+  Share of Population: share_needs_denominator
+  Share of Boilers: share_needs_denominator
+  Cumulative Length: infrastructure_length_proxy
+  Total Length: infrastructure_length_proxy
+  Cumulative Acreage: area_proxy
+  Computing Capacity: performance_not_deployment
+  Average Capacity of Unit Additions: unit_size_not_additions
+  fleet: active_stock
+  registrations: annual_gross_additions_proxy
+  fleet_share: stock_share
+  registrations_share: sales_share
+
+fitting:
+  countries: [CAN, NOR, USA, GBR, FRA, DEU, SWE, World]
+  technologies: [Passenger Cars, Electric Bicycles, Motorcycles, Lead-Acid Battery Storage, Lithium-Ion Battery Storage, Solar Photovoltaic, Onshore Wind Energy, Offshore Wind Energy, Natural Gas Pipelines, Cellphones, Refrigerators, Washing Machines, Air-Source Heat Pumps, Ground Source Heat Pumps]
+  window_spans: [7, 10]
+  minimum_window_points: 5
+  max_missing_window_years: 1
+  max_nfev: 1800
+  k_upper: 3.0
+  fit_r2_review: 0.8
+  published_r2_review: 0.95
+  published_k_upper: 1.0
+  ceiling_multipliers: [1.1, 2.0, 10.0, 100.0]
+  legacy_ceiling_lower: 0.9
+  broad_ceiling_lower: 1.0
+  inflection_margin_years: 50
+  start_k: [0.05, 0.3]
+  truncation_years: 5
+
+calibration:
+  # Match observed analogue stock SHARE at window start to the v2 reference share.
+  # This is a diagnostic maturity proxy, not a known fraction of future saturation.
+  maturity_match_factor: 2.0
+  candidate_quantiles: [0.25, 0.5, 0.75]
+  seed_batch_vehicles: [0, 1, 10, 100]
+  seed_class_stock_fractions: [0, 0.000001, 0.00001, 0.0001]
+  stress_annual_rates: [0, 0.1, 0.3, 0.6]
+  historical_period_width: 5
+  horizon_year: 2050
+  illustrative_ceiling_multiples: [2, 10, 100]
+
+fuel_names:
+  bev: Battery electric
+  phev: Plug-in hybrid electric
+  hev: Hybrid electric
+  diesel: Diesel
+  cng: CNG
+  fcev: H2
+norway_powertrains: {bev: BEV, phev: PHEV, fcev: H2, cng: CNG}
+target_classes:
+  cars:
+    prefix: T_LDV_C
+    powertrains: [bev, phev, hev, fcev, cng, diesel]
+    norway_class: M1
+    legacy_bev: BEV150
+  passenger_light_trucks:
+    prefix: T_LDV_LTP
+    powertrains: [bev, phev, hev, fcev, cng]
+    norway_class: M1
+    legacy_bev: BEV300
+  freight_light_trucks:
+    prefix: T_LDV_LTF
+    powertrains: [bev, phev, hev, fcev, cng]
+    norway_class: N1
+    legacy_bev: BEV300
+  medium_trucks:
+    prefix: T_MDV_T
+    powertrains: [bev, phev, hev, fcev]
+    norway_class: N2_N3
+    legacy_bev: BEV
+  heavy_trucks:
+    prefix: T_HDV_T
+    powertrains: [bev, phev, hev, fcev]
+    norway_class: N2_N3
+    legacy_bev: BEV
+
+analogue_rationale:
+  direct_vehicles: 'Norway BEV/PHEV/H2/CNG: same product family and stock/registration quantities; strong policy and different class boundaries limit transfer. Separate fuels, shares and partial years.'
+  historical_cars: 'HATCH passenger cars: durable manufactured products, adoption and infrastructure; historical incumbent-market expansion differs from powertrain substitution. Extended cumulative sums require audit.'
+  manufactured_hardware: 'Bicycles, appliances and batteries: repeatable manufacture and individual adoption; capital, lifetime, infrastructure and supply-chain differences preclude treating their rates as vehicle estimates.'
+  infrastructure: 'Wind, solar and gas pipelines: policy-dependent system coordination, permitting and enabling infrastructure; not direct vehicle additions. Useful sensitivity context for FCEV and commercial fleets.'

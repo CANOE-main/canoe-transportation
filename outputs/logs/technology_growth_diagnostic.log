@@ -1,0 +1,505 @@
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_1.0.csv verified_cache (103054 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_Clean.csv verified_cache (4659711 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_DataSources.csv verified_cache (78338 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:Tech_Growth_V1.5_variabledescriptions_Clean.yaml verified_cache (37139 bytes)
+INFO:fetching.technology_growth_evidence:Evidence original_growth_estimates verified_cache (10062 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Complexity.xlsx verified_cache (13471 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Feedstock.xlsx verified_cache (18503 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Granularity.xlsx verified_cache (51705 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_growth_characteristics.csv verified_cache (2458166 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_national_1.5.csv verified_cache (4455497 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_variable_descriptions.xlsx verified_cache (15501 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:MaterialUse.xlsx verified_cache (77248 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Need_For_Customization.xlsx verified_cache (13456 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Lifetime.xlsx verified_cache (33770 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Replacement.xlsx verified_cache (17974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Technology Categories.xlsx verified_cache (15322 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Type_Of_Adopter.xlsx verified_cache (13434 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Year_First_Commercialization.xlsx verified_cache (44851 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo_page verified_cache (109119 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_m1 verified_cache (479 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n1 verified_cache (358 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n2_n3 verified_cache (342 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_m1_total_number verified_cache (532 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n1_total_number verified_cache (371 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n2_n3_total_number verified_cache (329 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_m1 verified_cache (447 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n1 verified_cache (332 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n2_n3 verified_cache (321 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_m1 verified_cache (432 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n1 verified_cache (314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n2_n3 verified_cache (287 bytes)
+INFO:fetching.technology_growth_evidence:Evidence odenweller_feasibility-space-green-h2-scaling_2022 verified_cache (8442974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023 verified_cache (1366813 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI verified_cache (889386 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024 verified_cache (934967 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024_SI verified_cache (7866158 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research verified_cache (431504 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research_SI verified_cache (3544268 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa_documentation verified_cache (43644 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates//init/.py verified_cache (113 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components//init/.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_capacity.py verified_cache (4355 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity.py verified_cache (4314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity_delta.py verified_cache (5868 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core//init/.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/model.py verified_cache (4636 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/data_manifest.py verified_cache (2760 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/extension.py verified_cache (1099 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_1.0.csv verified_cache (103054 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_Clean.csv verified_cache (4659711 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_DataSources.csv verified_cache (78338 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:Tech_Growth_V1.5_variabledescriptions_Clean.yaml verified_cache (37139 bytes)
+INFO:fetching.technology_growth_evidence:Evidence original_growth_estimates verified_cache (10062 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Complexity.xlsx verified_cache (13471 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Feedstock.xlsx verified_cache (18503 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Granularity.xlsx verified_cache (51705 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_growth_characteristics.csv verified_cache (2458166 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_national_1.5.csv verified_cache (4455497 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_variable_descriptions.xlsx verified_cache (15501 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:MaterialUse.xlsx verified_cache (77248 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Need_For_Customization.xlsx verified_cache (13456 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Lifetime.xlsx verified_cache (33770 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Replacement.xlsx verified_cache (17974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Technology Categories.xlsx verified_cache (15322 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Type_Of_Adopter.xlsx verified_cache (13434 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Year_First_Commercialization.xlsx verified_cache (44851 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo_page verified_cache (109119 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_m1 verified_cache (479 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n1 verified_cache (358 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n2_n3 verified_cache (342 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_m1_total_number verified_cache (532 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n1_total_number verified_cache (371 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n2_n3_total_number verified_cache (329 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_m1 verified_cache (447 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n1 verified_cache (332 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n2_n3 verified_cache (321 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_m1 verified_cache (432 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n1 verified_cache (314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n2_n3 verified_cache (287 bytes)
+INFO:fetching.technology_growth_evidence:Evidence odenweller_feasibility-space-green-h2-scaling_2022 verified_cache (8442974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023 verified_cache (1366813 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI verified_cache (889386 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024 verified_cache (934967 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024_SI verified_cache (7866158 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research verified_cache (431504 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research_SI verified_cache (3544268 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa_documentation verified_cache (43644 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/__init__.py verified_cache (113 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/__init__.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_capacity.py verified_cache (4355 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity.py verified_cache (4314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity_delta.py verified_cache (5868 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/__init__.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/model.py verified_cache (4636 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/data_manifest.py verified_cache (2760 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/extension.py verified_cache (1099 bytes)
+INFO:__main__:Existing capacity reconciled after documented epsilon=0.001; removed 0.004265992367436411 k vehicles
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_1.0.csv verified_cache (103054 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_Clean.csv verified_cache (4659711 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_DataSources.csv verified_cache (78338 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:Tech_Growth_V1.5_variabledescriptions_Clean.yaml verified_cache (37139 bytes)
+INFO:fetching.technology_growth_evidence:Evidence original_growth_estimates verified_cache (10062 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Complexity.xlsx verified_cache (13471 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Feedstock.xlsx verified_cache (18503 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Granularity.xlsx verified_cache (51705 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_growth_characteristics.csv verified_cache (2458166 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_national_1.5.csv verified_cache (4455497 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_variable_descriptions.xlsx verified_cache (15501 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:MaterialUse.xlsx verified_cache (77248 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Need_For_Customization.xlsx verified_cache (13456 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Lifetime.xlsx verified_cache (33770 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Replacement.xlsx verified_cache (17974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Technology Categories.xlsx verified_cache (15322 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Type_Of_Adopter.xlsx verified_cache (13434 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Year_First_Commercialization.xlsx verified_cache (44851 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo_page verified_cache (109119 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_m1 verified_cache (479 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n1 verified_cache (358 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n2_n3 verified_cache (342 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_m1_total_number verified_cache (532 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n1_total_number verified_cache (371 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n2_n3_total_number verified_cache (329 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_m1 verified_cache (447 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n1 verified_cache (332 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n2_n3 verified_cache (321 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_m1 verified_cache (432 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n1 verified_cache (314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n2_n3 verified_cache (287 bytes)
+INFO:fetching.technology_growth_evidence:Evidence odenweller_feasibility-space-green-h2-scaling_2022 verified_cache (8442974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023 verified_cache (1366813 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI verified_cache (889386 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024 verified_cache (934967 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024_SI verified_cache (7866158 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research verified_cache (431504 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research_SI verified_cache (3544268 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa_documentation verified_cache (43644 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/__init__.py verified_cache (113 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/__init__.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_capacity.py verified_cache (4355 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity.py verified_cache (4314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity_delta.py verified_cache (5868 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/__init__.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/model.py verified_cache (4636 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/data_manifest.py verified_cache (2760 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/extension.py verified_cache (1099 bytes)
+INFO:__main__:Existing capacity reconciled after documented epsilon=0.001; removed 0.004265992367436411 k vehicles
+INFO:__main__:Observed windows: 8992; status counts {'usable': 6746, 'zero_or_negative_log_undefined': 1346, 'insufficient_coverage': 816, 'missing_endpoint': 84}
+INFO:__main__:Fitted eafo:M1:fleet:BEV
+INFO:__main__:Fitted eafo:M1:fleet:CNG
+INFO:__main__:Fitted eafo:M1:fleet:H2
+INFO:__main__:Fitted eafo:M1:fleet:PHEV
+INFO:__main__:Fitted eafo:M1:fleet_share:BEV
+INFO:__main__:Fitted eafo:M1:fleet_share:CNG
+INFO:__main__:Fitted eafo:M1:fleet_share:H2
+INFO:__main__:Fitted eafo:M1:fleet_share:PHEV
+INFO:__main__:Fitted eafo:M1:registrations:BEV
+INFO:__main__:Fitted eafo:M1:registrations:H2
+INFO:__main__:Fitted eafo:M1:registrations:PHEV
+INFO:__main__:Fitted eafo:M1:registrations_share:BEV
+INFO:__main__:Fitted eafo:M1:registrations_share:H2
+INFO:__main__:Fitted eafo:M1:registrations_share:PHEV
+INFO:__main__:Fitted eafo:N1:fleet:BEV
+INFO:__main__:Fitted eafo:N1:fleet:CNG
+INFO:__main__:Fitted eafo:N1:fleet:H2
+INFO:__main__:Fitted eafo:N1:fleet:PHEV
+INFO:__main__:Fitted eafo:N1:fleet_share:BEV
+INFO:__main__:Fitted eafo:N1:fleet_share:CNG
+INFO:__main__:Fitted eafo:N1:registrations:BEV
+INFO:__main__:Fitted eafo:N1:registrations_share:BEV
+INFO:__main__:Fitted eafo:N2_N3:fleet:BEV
+INFO:__main__:Fitted eafo:N2_N3:fleet:CNG
+INFO:__main__:Fitted eafo:N2_N3:fleet:PHEV
+INFO:__main__:Fitted eafo:N2_N3:fleet_share:BEV
+INFO:__main__:Fitted eafo:N2_N3:fleet_share:CNG
+INFO:__main__:Fitted eafo:N2_N3:fleet_share:PHEV
+INFO:__main__:Fitted extended:Cellphones_Total Number_CA
+INFO:__main__:Fitted extended:Cellphones_Total Number_DE
+INFO:__main__:Fitted extended:Cellphones_Total Number_FR
+INFO:__main__:Fitted extended:Cellphones_Total Number_GB
+INFO:__main__:Fitted extended:Cellphones_Total Number_NO
+INFO:__main__:Fitted extended:Cellphones_Total Number_SE
+INFO:__main__:Fitted extended:Cellphones_Total Number_US
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_DE
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_FR
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_GB
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_NO
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_SE
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_CA
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_DE
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_FR
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_GB
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_NO
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_US
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_CA
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_DE
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_FR
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_GB
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_NO
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_SE
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_US
+INFO:__main__:Fitted extended:Refrigerators_Cumulative Total Capacity_US
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_CA
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_DE
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_FR
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_GB
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_NO
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_SE
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_US
+INFO:__main__:Fitted extended:Washing Machines_Cumulative Total Capacity_US
+INFO:__main__:Fitted original:Bicycles_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Cellphones_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Cellphones_Total Number_CA
+INFO:__main__:Fitted original:Cellphones_Total Number_DE
+INFO:__main__:Fitted original:Cellphones_Total Number_FR
+INFO:__main__:Fitted original:Cellphones_Total Number_GB
+INFO:__main__:Fitted original:Cellphones_Total Number_NO
+INFO:__main__:Fitted original:Cellphones_Total Number_SE
+INFO:__main__:Fitted original:Cellphones_Total Number_US
+INFO:__main__:Fitted original:Motorcycles_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Passenger Cars_Cumulative Total Capacity_US
+INFO:__main__:Fitted original:Passenger Cars_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Passenger Cars_Total Number_CA
+INFO:__main__:Fitted original:Passenger Cars_Total Number_DE
+INFO:__main__:Fitted original:Passenger Cars_Total Number_FR
+INFO:__main__:Fitted original:Passenger Cars_Total Number_GB
+INFO:__main__:Fitted original:Passenger Cars_Total Number_NO
+INFO:__main__:Fitted original:Passenger Cars_Total Number_SE
+INFO:__main__:Fitted original:Passenger Cars_Total Number_US
+INFO:__main__:Fitted original:Refrigerators_Cumulative Total Capacity_US
+INFO:__main__:Fitted original:Refrigerators_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_CA
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_DE
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_FR
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_GB
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_NO
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_SE
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_US
+INFO:__main__:Fitted original:Washing Machines_Cumulative Total Capacity_US
+INFO:__main__:Fitted original:Washing Machines_Cumulative Total Capacity_World
+INFO:__main__:Wrote diagnostic source_manifest: 48 rows
+INFO:__main__:Wrote diagnostic observations: 529803 rows
+INFO:__main__:Wrote diagnostic series_audit: 13424 rows
+INFO:__main__:Wrote diagnostic release_comparison: 8012 rows
+INFO:__main__:Wrote diagnostic original_published_estimates: 151 rows
+INFO:__main__:Wrote diagnostic extended_published_estimates: 5990 rows
+INFO:__main__:Wrote diagnostic eafo_observations: 1350 rows
+INFO:__main__:Wrote diagnostic canadian_registration_evidence: 3552 rows
+INFO:__main__:Wrote diagnostic target_references: 240 rows
+INFO:__main__:Wrote diagnostic target_members: 49 rows
+INFO:__main__:Wrote diagnostic window_rates: 8992 rows
+INFO:__main__:Wrote diagnostic curve_fits: 920 rows
+INFO:__main__:Wrote diagnostic period_additions: 362 rows
+INFO:__main__:Wrote diagnostic candidate_calibrations: 720 rows
+INFO:__main__:Wrote diagnostic release_inventory: 13352 rows
+INFO:__main__:Wrote diagnostic original_native_metadata: 219 rows
+INFO:__main__:Wrote diagnostic extended_native_metadata: 42 rows
+INFO:__main__:Wrote diagnostic seed_frontiers: 662 rows
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_1.0.csv verified_cache (103054 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_Clean.csv verified_cache (4659711 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_DataSources.csv verified_cache (78338 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:Tech_Growth_V1.5_variabledescriptions_Clean.yaml verified_cache (37139 bytes)
+INFO:fetching.technology_growth_evidence:Evidence original_growth_estimates verified_cache (10062 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Complexity.xlsx verified_cache (13471 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Feedstock.xlsx verified_cache (18503 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Granularity.xlsx verified_cache (51705 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_growth_characteristics.csv verified_cache (2458166 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_national_1.5.csv verified_cache (4455497 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_variable_descriptions.xlsx verified_cache (15501 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:MaterialUse.xlsx verified_cache (77248 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Need_For_Customization.xlsx verified_cache (13456 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Lifetime.xlsx verified_cache (33770 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Replacement.xlsx verified_cache (17974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Technology Categories.xlsx verified_cache (15322 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Type_Of_Adopter.xlsx verified_cache (13434 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Year_First_Commercialization.xlsx verified_cache (44851 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo_page verified_cache (109119 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_m1 verified_cache (479 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n1 verified_cache (358 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n2_n3 verified_cache (342 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_m1_total_number verified_cache (532 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n1_total_number verified_cache (371 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n2_n3_total_number verified_cache (329 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_m1 verified_cache (447 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n1 verified_cache (332 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n2_n3 verified_cache (321 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_m1 verified_cache (432 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n1 verified_cache (314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n2_n3 verified_cache (287 bytes)
+INFO:fetching.technology_growth_evidence:Evidence odenweller_feasibility-space-green-h2-scaling_2022 verified_cache (8442974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023 verified_cache (1366813 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI verified_cache (889386 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024 verified_cache (934967 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024_SI verified_cache (7866158 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research verified_cache (431504 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research_SI verified_cache (3544268 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa_documentation verified_cache (43644 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/__init__.py verified_cache (113 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/__init__.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_capacity.py verified_cache (4355 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity.py verified_cache (4314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity_delta.py verified_cache (5868 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/__init__.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/model.py verified_cache (4636 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/data_manifest.py verified_cache (2760 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/extension.py verified_cache (1099 bytes)
+INFO:__main__:Canadian source counts divided by 1000 to k vehicles; stock and gross registrations retain distinct quantities
+INFO:__main__:Existing capacity reconciled after documented epsilon=0.001; removed 0.004265992367436411 k vehicles
+INFO:__main__:Selected 161 observation series for growth-window analysis; 124 S-curve eligible
+INFO:__main__:Observed windows: 9640; status counts {'usable': 7141, 'zero_or_negative_log_undefined': 1346, 'insufficient_coverage': 1066, 'missing_endpoint': 87}
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_1.0.csv verified_cache (103054 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_Clean.csv verified_cache (4659711 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:HATCH_v1.5_DataSources.csv verified_cache (78338 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 10231865:Tech_Growth_V1.5_variabledescriptions_Clean.yaml verified_cache (37139 bytes)
+INFO:fetching.technology_growth_evidence:Evidence original_growth_estimates verified_cache (10062 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Complexity.xlsx verified_cache (13471 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Feedstock.xlsx verified_cache (18503 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Granularity.xlsx verified_cache (51705 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_growth_characteristics.csv verified_cache (2458166 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_national_1.5.csv verified_cache (4455497 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:HATCH_variable_descriptions.xlsx verified_cache (15501 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:MaterialUse.xlsx verified_cache (77248 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Need_For_Customization.xlsx verified_cache (13456 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Lifetime.xlsx verified_cache (33770 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Tech_Replacement.xlsx verified_cache (17974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Technology Categories.xlsx verified_cache (15322 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Type_Of_Adopter.xlsx verified_cache (13434 bytes)
+INFO:fetching.technology_growth_evidence:Evidence 19579793:Year_First_Commercialization.xlsx verified_cache (44851 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo_page verified_cache (109119 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_m1 verified_cache (479 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n1 verified_cache (358 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:af_percentage_total_fleet_n2_n3 verified_cache (342 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_m1_total_number verified_cache (532 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n1_total_number verified_cache (371 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:fleet_n2_n3_total_number verified_cache (329 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_m1 verified_cache (447 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n1 verified_cache (332 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:market_share_new_registrations_n2_n3 verified_cache (321 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_m1 verified_cache (432 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n1 verified_cache (314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence eafo:new_registrations_n2_n3 verified_cache (287 bytes)
+INFO:fetching.technology_growth_evidence:Evidence odenweller_feasibility-space-green-h2-scaling_2022 verified_cache (8442974 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023 verified_cache (1366813 bytes)
+INFO:fetching.technology_growth_evidence:Evidence nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI verified_cache (889386 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024 verified_cache (934967 bytes)
+INFO:fetching.technology_growth_evidence:Evidence edwards_modeling-DACCS-historical-analogs_2024_SI verified_cache (7866158 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research verified_cache (431504 bytes)
+INFO:fetching.technology_growth_evidence:Evidence extended_research_SI verified_cache (3544268 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa_documentation verified_cache (43644 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/__init__.py verified_cache (113 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/__init__.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_capacity.py verified_cache (4355 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity.py verified_cache (4314 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/components/growth_new_capacity_delta.py verified_cache (5868 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/__init__.py verified_cache (0 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/core/model.py verified_cache (4636 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/data_manifest.py verified_cache (2760 bytes)
+INFO:fetching.technology_growth_evidence:Evidence temoa:temoa/extensions/growth_rates/extension.py verified_cache (1099 bytes)
+INFO:__main__:Canadian source counts divided by 1000 to k vehicles; stock and gross registrations retain distinct quantities
+INFO:__main__:Existing capacity reconciled after documented epsilon=0.001; removed 0.004265992367436411 k vehicles
+INFO:__main__:Selected 161 observation series for growth-window analysis; 124 S-curve eligible
+INFO:__main__:Observed windows: 9640; status counts {'usable': 7141, 'zero_or_negative_log_undefined': 1346, 'insufficient_coverage': 1066, 'missing_endpoint': 87}
+INFO:__main__:Fitted eafo:M1:fleet:BEV
+INFO:__main__:Fitted eafo:M1:fleet:CNG
+INFO:__main__:Fitted eafo:M1:fleet:H2
+INFO:__main__:Fitted eafo:M1:fleet:PHEV
+INFO:__main__:Fitted eafo:M1:fleet_share:BEV
+INFO:__main__:Fitted eafo:M1:fleet_share:CNG
+INFO:__main__:Fitted eafo:M1:fleet_share:H2
+INFO:__main__:Fitted eafo:M1:fleet_share:PHEV
+INFO:__main__:Fitted eafo:M1:registrations:BEV
+INFO:__main__:Fitted eafo:M1:registrations:H2
+INFO:__main__:Fitted eafo:M1:registrations:PHEV
+INFO:__main__:Fitted eafo:M1:registrations_share:BEV
+INFO:__main__:Fitted eafo:M1:registrations_share:H2
+INFO:__main__:Fitted eafo:M1:registrations_share:PHEV
+INFO:__main__:Fitted eafo:N1:fleet:BEV
+INFO:__main__:Fitted eafo:N1:fleet:CNG
+INFO:__main__:Fitted eafo:N1:fleet:H2
+INFO:__main__:Fitted eafo:N1:fleet:PHEV
+INFO:__main__:Fitted eafo:N1:fleet_share:BEV
+INFO:__main__:Fitted eafo:N1:fleet_share:CNG
+INFO:__main__:Fitted eafo:N1:registrations:BEV
+INFO:__main__:Fitted eafo:N1:registrations_share:BEV
+INFO:__main__:Fitted eafo:N2_N3:fleet:BEV
+INFO:__main__:Fitted eafo:N2_N3:fleet:CNG
+INFO:__main__:Fitted eafo:N2_N3:fleet:PHEV
+INFO:__main__:Fitted eafo:N2_N3:fleet_share:BEV
+INFO:__main__:Fitted eafo:N2_N3:fleet_share:CNG
+INFO:__main__:Fitted eafo:N2_N3:fleet_share:PHEV
+INFO:__main__:Fitted extended:Air-Source Heat Pumps_Annual Production_DE
+INFO:__main__:Fitted extended:Air-Source Heat Pumps_Annual Production_NO
+INFO:__main__:Fitted extended:Air-Source Heat Pumps_Annual Production_US
+INFO:__main__:Fitted extended:Cellphones_Total Number_CA
+INFO:__main__:Fitted extended:Cellphones_Total Number_DE
+INFO:__main__:Fitted extended:Cellphones_Total Number_FR
+INFO:__main__:Fitted extended:Cellphones_Total Number_GB
+INFO:__main__:Fitted extended:Cellphones_Total Number_NO
+INFO:__main__:Fitted extended:Cellphones_Total Number_SE
+INFO:__main__:Fitted extended:Cellphones_Total Number_US
+INFO:__main__:Fitted extended:Lead-Acid Battery Storage_Cumulative Rated Power_US
+INFO:__main__:Fitted extended:Lithium-Ion Battery Storage_Cumulative Rated Power_US
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_DE
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_FR
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_GB
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_NO
+INFO:__main__:Fitted extended:Motorcycles_Cumulative Number of Units_SE
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_CA
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_DE
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_FR
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_GB
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_NO
+INFO:__main__:Fitted extended:Natural Gas Pipelines_Cumulative Number of Units_US
+INFO:__main__:Fitted extended:Offshore Wind Energy_Installed electricity capacity_DE
+INFO:__main__:Fitted extended:Offshore Wind Energy_Installed electricity capacity_GB
+INFO:__main__:Fitted extended:Offshore Wind Energy_Installed electricity capacity_NO
+INFO:__main__:Fitted extended:Offshore Wind Energy_Installed electricity capacity_SE
+INFO:__main__:Fitted extended:Onshore Wind Energy_Installed electricity capacity_CA
+INFO:__main__:Fitted extended:Onshore Wind Energy_Installed electricity capacity_DE
+INFO:__main__:Fitted extended:Onshore Wind Energy_Installed electricity capacity_FR
+INFO:__main__:Fitted extended:Onshore Wind Energy_Installed electricity capacity_GB
+INFO:__main__:Fitted extended:Onshore Wind Energy_Installed electricity capacity_NO
+INFO:__main__:Fitted extended:Onshore Wind Energy_Installed electricity capacity_SE
+INFO:__main__:Fitted extended:Onshore Wind Energy_Installed electricity capacity_US
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_CA
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_DE
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_FR
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_GB
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_NO
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_SE
+INFO:__main__:Fitted extended:Passenger Vehicles_Total Number_US
+INFO:__main__:Fitted extended:Refrigerators_Cumulative Total Capacity_US
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_CA
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_DE
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_FR
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_GB
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_NO
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_SE
+INFO:__main__:Fitted extended:Solar Photovoltaic_Installed electricity capacity_US
+INFO:__main__:Fitted extended:Washing Machines_Cumulative Total Capacity_US
+INFO:__main__:Fitted original:Air-Source Heat Pumps_Annual Production_US
+INFO:__main__:Fitted original:Cellphones_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Cellphones_Total Number_CA
+INFO:__main__:Fitted original:Cellphones_Total Number_DE
+INFO:__main__:Fitted original:Cellphones_Total Number_FR
+INFO:__main__:Fitted original:Cellphones_Total Number_GB
+INFO:__main__:Fitted original:Cellphones_Total Number_NO
+INFO:__main__:Fitted original:Cellphones_Total Number_SE
+INFO:__main__:Fitted original:Cellphones_Total Number_US
+INFO:__main__:Fitted original:Electric Bicycles_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Lead-Acid Battery Storage_Cumulative Rated Capacity_US
+INFO:__main__:Fitted original:Lead-Acid Battery Storage_Cumulative Rated Power_US
+INFO:__main__:Fitted original:Lithium-Ion Battery Storage_Cumulative Rated Capacity_US
+INFO:__main__:Fitted original:Lithium-Ion Battery Storage_Cumulative Rated Power_US
+INFO:__main__:Fitted original:Motorcycles_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Offshore Wind Energy_Installed electricity capacity_DE
+INFO:__main__:Fitted original:Offshore Wind Energy_Installed electricity capacity_GB
+INFO:__main__:Fitted original:Offshore Wind Energy_Installed electricity capacity_NO
+INFO:__main__:Fitted original:Offshore Wind Energy_Installed electricity capacity_SE
+INFO:__main__:Fitted original:Onshore Wind Energy_Installed electricity capacity_CA
+INFO:__main__:Fitted original:Onshore Wind Energy_Installed electricity capacity_DE
+INFO:__main__:Fitted original:Onshore Wind Energy_Installed electricity capacity_FR
+INFO:__main__:Fitted original:Onshore Wind Energy_Installed electricity capacity_GB
+INFO:__main__:Fitted original:Onshore Wind Energy_Installed electricity capacity_NO
+INFO:__main__:Fitted original:Onshore Wind Energy_Installed electricity capacity_SE
+INFO:__main__:Fitted original:Onshore Wind Energy_Installed electricity capacity_US
+INFO:__main__:Fitted original:Passenger Cars_Cumulative Total Capacity_US
+INFO:__main__:Fitted original:Passenger Cars_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Passenger Cars_Total Number_CA
+INFO:__main__:Fitted original:Passenger Cars_Total Number_DE
+INFO:__main__:Fitted original:Passenger Cars_Total Number_FR
+INFO:__main__:Fitted original:Passenger Cars_Total Number_GB
+INFO:__main__:Fitted original:Passenger Cars_Total Number_NO
+INFO:__main__:Fitted original:Passenger Cars_Total Number_SE
+INFO:__main__:Fitted original:Passenger Cars_Total Number_US
+INFO:__main__:Fitted original:Refrigerators_Cumulative Total Capacity_US
+INFO:__main__:Fitted original:Refrigerators_Cumulative Total Capacity_World
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_CA
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_DE
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_FR
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_GB
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_NO
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_SE
+INFO:__main__:Fitted original:Solar Photovoltaic_Installed electricity capacity_US
+INFO:__main__:Fitted original:Washing Machines_Cumulative Total Capacity_US
+INFO:__main__:Fitted original:Washing Machines_Cumulative Total Capacity_World
+INFO:__main__:Wrote diagnostic source_manifest: 48 rows
+INFO:__main__:Wrote diagnostic observations: 529803 rows
+INFO:__main__:Wrote diagnostic series_audit: 13424 rows
+INFO:__main__:Wrote diagnostic release_comparison: 8079 rows
+INFO:__main__:Wrote diagnostic original_published_estimates: 151 rows
+INFO:__main__:Wrote diagnostic extended_published_estimates: 5990 rows
+INFO:__main__:Wrote diagnostic eafo_observations: 1350 rows
+INFO:__main__:Wrote diagnostic canadian_registration_evidence: 3552 rows
+INFO:__main__:Wrote diagnostic target_references: 240 rows
+INFO:__main__:Wrote diagnostic target_members: 49 rows
+INFO:__main__:Wrote diagnostic window_rates: 9640 rows
+INFO:__main__:Wrote diagnostic curve_fits: 1240 rows
+INFO:__main__:Wrote diagnostic release_fit_comparison: 370 rows
+INFO:__main__:Wrote diagnostic period_additions: 362 rows
+INFO:__main__:Wrote diagnostic candidate_calibrations: 720 rows
+INFO:__main__:Wrote diagnostic release_inventory: 13352 rows
+INFO:__main__:Wrote diagnostic original_native_metadata: 219 rows
+INFO:__main__:Wrote diagnostic extended_native_metadata: 42 rows
+INFO:__main__:Wrote diagnostic seed_frontiers: 662 rows
+INFO:__main__:Wrote diagnostic paper_pages: 196 rows
