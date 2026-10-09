@@ -23,12 +23,6 @@ RUNTIME_GLOBS = (
     ".pytest-tmp*",
     ".ruff_cache",
 )
-SNAKEMAKE_RUNTIME = (
-    ".snakemake/locks",
-    ".snakemake/metadata",
-    ".snakemake/incomplete",
-    ".snakemake/iocache",
-)
 GENERATED_PATHS = (
     "inputs/1_interim",
     "inputs/2_processed",
@@ -125,7 +119,6 @@ def build_cleanup_plan(
     targets: list[CleanupTarget] = []
     for pattern in RUNTIME_GLOBS:
         targets.extend(existing_glob_targets(root, pattern, "runtime"))
-    targets.extend(existing_literal_targets(root, SNAKEMAKE_RUNTIME, "runtime"))
     if include_generated:
         targets.extend(existing_literal_targets(root, GENERATED_PATHS, "generated"))
     if include_cache:

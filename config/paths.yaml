@@ -178,7 +178,7 @@ artifacts:
       - parameterization.road_aggregation
       - parameterization.road_fleet_weights
       - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
-    validation_surfaces: [fetching.vehicle_population.validate_source]
+    validation_surfaces: [fetching.vehicle_population.registered_requests, fetching.vehicle_population.validate_source]
   vehicle_survival_interim:
     path: inputs/1_interim/vehicle_survival
     layer: interim

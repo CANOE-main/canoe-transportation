@@ -261,6 +261,96 @@ sources:
           year_fields: [name, url]
           year_pattern: '(?<!\d)(20\d{2})(?!\d)'
       cache_path_template: "ontario_vehicle_population/{year}_vehicle_population_data.zip"
+      # Verified archive identities for offline replay; refresh deliberately after source review.
+      registered_resources:
+      - year: 2014
+        resource_id: f512f110-bf88-4c59-b223-af5ea0a14f6d
+        resource_name: Vehicle population data - 2014
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/f512f110-bf88-4c59-b223-af5ea0a14f6d/download/2014.zip
+        resource_format: ZIP
+        created: '2019-12-31T18:20:05.815382'
+        last_modified: '2025-11-06T19:55:49.522670'
+        cache_sha256: 3e4d6bede76fa09e38cfd22cf3aa50d17244d04e7222de79726f15ea421647ae
+      - year: 2016
+        resource_id: f94b0f78-7ebf-4c66-b937-7f7798508606
+        resource_name: Vehicle population data - 2016
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/f94b0f78-7ebf-4c66-b937-7f7798508606/download/2016.zip
+        resource_format: ZIP
+        created: '2019-12-31T18:20:05.815398'
+        last_modified: '2025-11-06T19:56:50.777397'
+        cache_sha256: eb10e08613c53612b316c44f7dcbe72fa74d5064915844db6a915301fe716a7e
+      - year: 2017
+        resource_id: c61643a9-8338-47c9-b0a8-00f7c6298d05
+        resource_name: Vehicle population data - 2017
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/c61643a9-8338-47c9-b0a8-00f7c6298d05/download/vps_2017.zip
+        resource_format: ZIP
+        created: '2019-12-31T18:20:05.815400'
+        last_modified: '2025-11-27T16:31:12.630460'
+        cache_sha256: 3d2f83dc16bf3f36c67471fdd727bc91bfa09c13cf15b2a0bd7d319a6fc47514
+      - year: 2018
+        resource_id: 52a9329b-1486-48af-94c4-e68e3684b50b
+        resource_name: Vehicle population data - 2018
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/52a9329b-1486-48af-94c4-e68e3684b50b/download/2018.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:03:01.015991'
+        last_modified: '2023-10-19T15:03:00.627276'
+        cache_sha256: 9f6a85addd0b60273d4c7940dfca6c5f8e5d74aa14556ad3bb83c018fe3d6f27
+      - year: 2019
+        resource_id: 8ca7517e-b524-4dde-8c20-b488f5978800
+        resource_name: Vehicle population data - 2019
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/8ca7517e-b524-4dde-8c20-b488f5978800/download/vps_2019.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:04:38.259968'
+        last_modified: '2025-11-27T14:47:42.449483'
+        cache_sha256: f1567693c423ffea2cee59ab8e1c8bda80678ff34efb3e19f7d87bf007f996b4
+      - year: 2020
+        resource_id: 0d6c5fc6-bb23-4b6b-8310-35965ef78548
+        resource_name: Vehicle population data - 2020
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/0d6c5fc6-bb23-4b6b-8310-35965ef78548/download/2020.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:05:33.188582'
+        last_modified: '2023-10-19T15:05:32.710224'
+        cache_sha256: 9de874bb917c225f8062ccd001ca971ac41439dd5f5e56ff95b82ad029af0226
+      - year: 2021
+        resource_id: de3411dc-c21b-41f3-ae92-59503b414138
+        resource_name: Vehicle population data - 2021
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/de3411dc-c21b-41f3-ae92-59503b414138/download/2021.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:16:02.156057'
+        last_modified: '2023-10-19T15:16:01.737871'
+        cache_sha256: 1a4a415ba83560e265c781581640ebf3e3a1bff492ba2753b083b841d08c9dfb
+      - year: 2022
+        resource_id: 7ff95539-e7b2-45c7-b2bb-89070ca739cf
+        resource_name: Vehicle population data - 2022
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/7ff95539-e7b2-45c7-b2bb-89070ca739cf/download/2022.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:16:55.865120'
+        last_modified: '2023-10-19T15:16:55.436524'
+        cache_sha256: b15910e2653cd7bbea515ed26cf51102298b5c265f65819434103eba5ef4e3d1
+      - year: 2023
+        resource_id: 997f4781-5ec5-4ac0-b3ec-6f7ab56f475d
+        resource_name: Vehicle population data - 2023
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/997f4781-5ec5-4ac0-b3ec-6f7ab56f475d/download/2023.zip
+        resource_format: ZIP
+        created: '2024-12-12T17:07:15.214683'
+        last_modified: '2024-12-12T17:07:14.921595'
+        cache_sha256: b9d11dfef4119e1343be168594359b35125fa4354c21cba5ef42a600a524bc25
+      - year: 2024
+        resource_id: 285aeac6-0027-4321-87dd-beb7794f4aab
+        resource_name: Vehicle population data - 2024
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/285aeac6-0027-4321-87dd-beb7794f4aab/download/2024.zip
+        resource_format: ZIP
+        created: '2025-05-06T18:03:42.327420'
+        last_modified: '2025-05-06T18:03:41.857994'
+        cache_sha256: fc95b0a3a13fd5022c086588bb196083df8bcd0ecb55968e2368779087330b70
+      - year: 2025
+        resource_id: 36dd48e7-f8a8-43e6-a7fa-3d88d356ebf1
+        resource_name: Vehicle population data - 2025
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/36dd48e7-f8a8-43e6-a7fa-3d88d356ebf1/download/2025_vps.zip
+        resource_format: ZIP
+        created: '2026-01-27T15:28:24.766209'
+        last_modified: '2026-01-27T15:28:24.477299'
+        cache_sha256: 672201ec44dd78af96adcce5b3459aa205fb9a03f3983d97d029cd72dcf6e69b
       years:
         default: latest
     components:
@@ -1222,7 +1312,10 @@ sources:
           macros/functions, controls, labels, units, finite results, repeated full
           calculations, class/range response and MHDV independence. Offline consumers
           validate result-bank hashes against registered inputs and extraction/control
-          contracts. Retain the full report and case/exclusion audits and verify finite
+          contracts. A regenerated ATB CSV may differ only in the run-selection Boolean
+          is_default_trajectory: restoring one registered trajectory's marker must reproduce
+          the retained whole-file SHA-256 exactly; changed values, rows or labels still fail.
+          Retain the full report and case/exclusion audits and verify finite
           saved glider inputs. The configured lightweight policy may accept a native
           selector mismatch only when its affected range inputs are identical.
           Exclude combined CO2 (VOC, CO, CO2).

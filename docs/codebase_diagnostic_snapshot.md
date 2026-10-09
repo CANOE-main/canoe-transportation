@@ -11,7 +11,7 @@ local_commit_reviewed: 1bd946bc19a6d8df2cc00331a7f284626d125167
 # Codebase diagnostic snapshot
 
 The largest remaining responsibility concentrations are parameter assembly plus artifact
-publication, incomplete prerequisite orchestration, and shared mechanics held by domain
+publication and shared mechanics held by domain
 modules with broader names. Recent changes have improved fleet-weight ownership, typed
 configuration, parameter-support checks and read-only scenario comparison. This refresh
 also completes four bounded corrections; it identifies subsequent work without selecting
@@ -67,7 +67,6 @@ rg -n '^def |^class |^from |^import ' src scripts
 rg -n 'prepare_|resolve_artifact_path|read_csv|write_text|write_dataframe_atomic' src
 uv run --offline pytest --collect-only -q
 uv run --offline ruff check src scripts tests --statistics
-uv run --offline snakemake --snakefile workflow/Snakefile --cores 1 --dry-run --config scenario=config/scenarios/legacy_reproduction.yaml
 ```
 
 No production ETL/build, source refresh, notebook execution or legacy parity run was
@@ -221,12 +220,12 @@ The research notebook `docs/insights/vehicle_stock_diagnosis.py`
 but is not a production parameter owner. Tests are evidence for the boundaries above,
 not alternate transformations. No notebook or test-module decomposition was performed.
 
-The five-rule [workflow](../workflow/Snakefile) remains scenario-level coordination:
-`all`, `doctor_smoke`, `statcan_transport_tables`, `cer_enerfuture`,
-`transport_database`. It uses cached source inputs by default; explicit download
-configuration enables acquisition. Its local [source-cache profile](../workflow/profiles/default/profile.yaml)
-is retained. The database rule runs the shared Python build; it does not duplicate
-parameter transformations.
+Orchestration update (2026-10-08): the supported scenario interface is
+`build_transport.build_from_scenario`, including ordered production prerequisite replay
+through `prepare_scenario_inputs`. It rebuilds derived evidence from registered raw inputs
+on each invocation and retains the existing live preparation/insertion seam. The older
+workflow and source-cache profile have been removed. Earlier module metrics above remain
+a dated snapshot, not a remeasurement of this change.
 
 ## 4. Bounded fixes completed in this refresh
 
@@ -234,7 +233,6 @@ parameter transformations.
 | --- | --- | --- |
 | `road_lifetimes_survival` imported a fixed-lifetime selector from stocks, while stock-age preparation lazily imported accepted lifetime derivation. | Moved `fixed_existing_lifetimes` into `road_lifetimes_survival`; updated capacity/test imports and removed the old definition. No forwarding alias or new module. | Function AST is identical before/after relocation; reviewed fixed values, both capacity eligibility modes, lifetime rows and caller insertion tests pass. Static cycle removed. |
 | FuelEconomy, Ontario population, vPIC temporal and StatCan metadata had separate text/JSON replacement mechanics. Some paths used deterministic temporary names or could leave a temporary file after write failure. | One `utils.files.write_text_atomic` implementation creates a unique sibling, replaces the destination and cleans up on write/replace failure. Callers retain JSON sorting/formatting and LF versus platform-newline contracts. Streaming/binary source publication is unchanged. | UTF-8/newline/empty-text cases and write/replace failures pass; source request/parser/cache-replay tests pass. No cached artifact was rewritten. |
-| Parameter builders import helpers from `fetching.nlr_atb_autonomie` and `fetching.fueleconomy_vehicles`, but the database rule did not track those files. | Added both files to `transport_database.input.code`; retained the same rules and entrypoints. CER helper code was already covered by its source rule. | Existing workflow fixtures pass; added invalidation cases require a database rebuild when either helper changes. |
 | Dashboard input routing omitted the capacity builder, and prepared capacity routing omitted the charger's file fingerprint dependency. | Added the demonstrated consumers in `config/paths.yaml`. | Route owners/producers/consumers resolve; configuration and architecture checks pass. This is impact metadata, with no parameter or path-value change. |
 
 ## 5. Remaining shared ownership and execution gaps
@@ -271,19 +269,20 @@ the preparation/publication boundary rather than adding a global mutable cache.
 | Legacy versus scenario SQLite comparison | Distinct schemas, keys and diagnostic meanings justify separate comparators. Shared quoting/read-only opening already has one owner. |
 | `assorted_sources` versus individual adapters | Separate source identities/requests support eventual source-family extraction. Shared archive/path mechanics do not justify merging parsing and harmonization policy. |
 
-### Coarse workflow coverage
+### Native prerequisite coverage (2026-10-08)
 
-The two helper invalidation gaps are fixed. Remaining production prerequisites include
-CEUD/rating evidence, ATB/Autonomie/FuelEconomy normalized artifacts, assorted source outputs,
-Ontario/mapping/fleet evidence and source/manual review readiness beyond the declared
-StatCan/CER jobs. Not all of those files or producer relationships are direct rule inputs.
+The scenario command replays CEUD/ratings, StatCan, CER, ATB/Autonomie, assorted inputs,
+TC dashboard and the selected Ontario edition, validates FuelEconomy cache evidence and
+rebuilds reviewed road aggregation. Parameter preparation consumes those fresh products;
+GREET, charging and OMEGA validation stay with their existing owners. Ontario cache
+identities now live in the source registry, removing dependence on an interim manifest.
+No transformation implementation or second dependency graph is introduced.
 
-A five-job dry-run proves the declared DAG can be built. It does not prove all hidden
-prerequisites exist, are current, or will invalidate a reused database. Dependency
-coverage should expand only with complete persisted interfaces: parameter CSVs alone
-omit row-model/provenance/audit context needed by later families. Preserve the coarse
-shared build while inventorying its real input contract; avoid parallel Snakemake
-parameterization.
+Full replay deliberately replaces incremental scheduling. Shared paths still require
+serial scenarios; standalone atomic publication preserves the database on build failures
+and restores the prior report if database replacement fails. The pair of files cannot be
+crash-atomic together. Optional historical/mapping diagnostics and external-model generation
+remain separate. Validation commands and measured results are recorded in ExecPlan 075.
 
 ## 6. Priorities and concrete next slices
 
@@ -291,7 +290,6 @@ parameterization.
 | --- | --- | --- |
 | 1 — Prepared-input and artifact identity | Charger disk fingerprint plus supplied rows; preparation side effects and shared scenario paths. These affect reproducibility and adapter safety. | Define a complete capacity preparation result/digest and an explicit publication step for one family. Test supplied-input replay and isolated scenario artifacts; preserve numerical row batches and provenance. |
 | 2 — Long family assembly functions | Cost 717 lines/132 branch signals, efficiency 512/70, capacity 553/54; source/pathway selection and publication share state. | Start with efficiency stage helpers within its current owner/result interface. Separate evidence loading, pathway calculation, row/provenance assembly and publication one layer at a time. Verify keys, units, source chains, missing behavior and row equivalence. |
-| 3 — Declared prerequisite completeness | StatCan/CER are orchestrated; many other inputs are implicitly prebuilt or regenerated by Python. | Enumerate the database's required registered-input contract and add preflight/invalidation coverage. Add rules only after producer outputs form complete handoffs; test stale/missing inputs and offline execution. |
 | 4 — Remaining helper ownership | Utilization in stocks; general selectors in efficiency; road bus lifetimes in an off-road owner. | Relocate one proven contract and update its callers without forwarding copies. Preserve domain-specific unit/eligibility semantics and proportional boundary tests. |
 | 5 — Review/source-family separation | Large lifetime/mapping modules combine runtime and opt-in review; assorted adapters have independent source identities. | Extract one review or source family when independent maintenance warrants it. Verify production preparation never invokes review, and deterministic offline source replay is retained. |
 | 6 — CANOE-main adapter | Industry now demonstrates pure entity assembly; scope, shared rows, schema notes and fuel/emissions remain unresolved. | Resolve the contracts in the upstream context and construct an upstream-initialized fixture. Wrap the existing contribution seam; require conflict, provenance, connected endpoints and rollback checks before registration. |
@@ -312,7 +310,6 @@ for vectorization, caching or larger architectural changes.
 | Lifetime/stock/file/architecture boundaries | 49 tests passed. Relocated function AST unchanged; UTF-8/newline and publication-failure cleanup verified. | Existing accepted inputs were read; no full row-batch/parity comparison performed here. |
 | Source/config/provenance-related support, schema, fleet weights and scenario comparison | 156 tests passed across nine test modules. | Fixture/source-boundary evidence; no new acquisition or full integrated database build. |
 | Caller-owned contribution | Two template-only transaction/schema tests passed; with the schema module above, six focused seam tests passed. | No CANOE-main-initialized multi-sector fixture. |
-| Workflow | Eight existing fixtures and two added source-helper invalidation cases passed. Production five-rule DAG dry-run passed after the dependency edit. | Fixture entrypoints replace production ETL. Historical Windows shell failures were not reproduced and are not a current finding. |
 | Test discovery | 417 cases collected. | The entire suite was not executed. |
 | Ruff and whitespace/doc contracts | Ruff, task diff whitespace, frontmatter, metrics and local/commit-pinned source links checked with the completed task. | Does not establish legacy parity, solver feasibility or benchmark performance. |
 

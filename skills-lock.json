@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "ast-grep": {
+      "source": "ast-grep/agent-skill",
+      "sourceType": "github",
+      "skillPath": "ast-grep/skills/ast-grep/SKILL.md",
+      "computedHash": "f1f159516d3071a3b9443c390161ff6a34a416c891295aebb0cc51e8f4ec7306"
+    },
     "marimo-notebook": {
       "source": "marimo-team/skills",
       "sourceType": "github",
@@ -12,6 +18,12 @@
       "sourceType": "github",
       "skillPath": "skills/marimo-pair/SKILL.md",
       "computedHash": "b91b7438f965405fc10a595887f57ce91a308232ede8e64b5445ca6d8c0ff004"
+    },
+    "pydantic": {
+      "source": "pydantic/skills",
+      "sourceType": "github",
+      "skillPath": "skills/pydantic/SKILL.md",
+      "computedHash": "5e9c70289cf543ee4664431b6b9566c36f2efa53a938613c2e38defca4984c9a"
     }
   }
 }

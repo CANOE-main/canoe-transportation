@@ -35,7 +35,6 @@ def test_cleanup_plan_separates_runtime_generated_cache_and_external(tmp_path: P
     touch(tmp_path / ".pytest_cache" / "nodeids")
     touch(tmp_path / ".pytest-basetemp-example" / "file.txt")
     touch(tmp_path / ".pytest-tmp-example" / "file.txt")
-    touch(tmp_path / ".snakemake" / "locks" / "0.input.lock")
     touch(tmp_path / "inputs" / "1_interim" / "generated.csv")
     touch(tmp_path / "inputs" / "2_processed" / "processed.csv")
     touch(tmp_path / "inputs" / "validation" / "review.csv")
@@ -56,7 +55,6 @@ def test_cleanup_plan_separates_runtime_generated_cache_and_external(tmp_path: P
     assert ".pytest_cache" in default_targets
     assert ".pytest-basetemp-example" in default_targets
     assert ".pytest-tmp-example" in default_targets
-    assert ".snakemake/locks" in default_targets
     assert "inputs/1_interim" not in default_targets
     assert "outputs" not in default_targets
     assert "inputs/0_cache" not in default_targets
@@ -137,21 +135,3 @@ def test_pytest_defaults_do_not_pin_runtime_directories() -> None:
     assert "cache_dir" not in pytest_options
     addopts = pytest_options.get("addopts", [])
     assert all("--basetemp" not in option for option in addopts)
-
-
-def test_snakefile_keeps_coarse_source_and_single_writer_build_layers() -> None:
-    snakefile = (REPO_ROOT / "workflow" / "Snakefile").read_text(encoding="utf-8")
-
-    assert "load_config_bundle" in snakefile
-    assert "SCENARIO.scenario.outputs.sqlite_name" in snakefile
-    assert "SCENARIO.scenario.outputs.validation_report" in snakefile
-    assert 'config.get("download_sources", False)' in snakefile
-    assert "configured_edition" in snakefile
-    assert "scripts/doctor.py" in snakefile
-    assert "fetching.statcan_tables" in snakefile
-    assert "STATCAN_RULES['interim_subdir']" in snakefile
-    assert "rule transport_database" in snakefile
-    assert "src/build_transport.py" in snakefile
-    assert "{params.scenario:q}" in snakefile
-    assert "fetching.vehicle_population" not in snakefile
-    assert "configfile:" not in snakefile

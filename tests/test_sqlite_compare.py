@@ -137,6 +137,7 @@ def test_scenario_entrypoint_dispatches_optional_comparison(
         return {"ok": True, "validation": {"ok": True}, "comparison": result}
 
     monkeypatch.setattr(build_transport, "bootstrap_database", bootstrap)
+    monkeypatch.setattr(build_transport, "prepare_scenario_inputs", lambda *args, **kwargs: None)
     report, report_path = build_transport.build_from_scenario("scenario.yaml")
     assert report["validation"]["ok"] is True
     assert report["comparison"]["mode"] == mode

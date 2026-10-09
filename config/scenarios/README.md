@@ -97,7 +97,7 @@ registered source bank explicitly on Windows with desktop Excel:
 `uv run python -m fetching.greet_automation --scenario config/scenarios/legacy_reproduction.yaml`.
 The runner uses disposable copies of the configured pair and publishes gas,
 exclusion, case and report evidence with a manifest. Ordinary preparation and the
-scenario DAG validate and read this bank offline, without starting Excel. After
+native scenario build validate and read this bank offline, without starting Excel. After
 changing source inputs, controls, anchors or ATB archetypes, regenerate it.
 
 The source adapter selects one simulation target and the expected imported LDV
@@ -238,10 +238,13 @@ configured validation report; integrity/provenance/FK checks live under `validat
 Configuration loading rejects unknown fields, missing parameter controls, duplicate YAML
 keys, inactive/unsupported source selectors, invalid period grids, unregistered ATB/CER
 choices, invalid DQ scores, and rates outside zero to one. Scenario paths are accepted by
-the existing Python entrypoints and Snakemake workflow.
-
-Snakemake uses cached inputs without downloading by default. Pass
-`--config download_sources=true` to refresh sources; this is an execution option.
+the existing Python entrypoints. Build a complete scenario with
+`uv run python src/build_transport.py --scenario <scenario.yaml> --overwrite`.
+The command replays production prerequisites from registered caches on every invocation,
+offline by default. `--download-sources` permits acquisition of missing caches; it does not
+refresh existing caches. Paths and all model/source selections stay in YAML. Run scenarios
+serially while derived artifact paths are shared. Manual review, optional diagnostics and
+external-model generation remain explicit operations.
 
 Version 3 requires the explicit period mode, replaces `switches` with `lifetimes` and `road_utilization`, adds separate
 efficiency/cost ATB selections and an economic CER selection, and moves the MTO

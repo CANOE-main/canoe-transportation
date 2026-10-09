@@ -110,9 +110,8 @@ The overview is conceptual: the current scenario template is
 | [`config/parameters/conversion.yaml`](config/parameters/conversion.yaml) | Reusable units and currency conversion factors. |
 | [`config/paths.yaml`](config/paths.yaml) | Canonical artifact locations, owners, producers, and consumers. |
 
-Python owns preparation and database publication. Snakemake currently coordinates
-readiness, StatCan and CER normalization, and the shared database entrypoint. Its
-partial dependency coverage is described in [Common commands](#common-commands).
+The native Python scenario command owns source replay, prerequisite preparation,
+validated assembly and database publication. See [Common commands](#common-commands).
 
 The architecture and ETL sections below reproduce
 [`docs/backend_architecture.md`](docs/backend_architecture.md) and
@@ -154,8 +153,6 @@ requirements.
 │   └── parameters/
 │       ├── rules.yaml                       # Extraction and harmonization contracts
 │       └── conversion.yaml                  # Reusable conversion factors
-├── workflow/
-│   └── Snakefile                            # Coarse dependency and artifact orchestration
 ├── src/
 │   ├── setup.py                             # Configuration/schema smoke entrypoint
 │   ├── build_transport.py                   # Transport contribution and atomic database assembly
@@ -268,28 +265,35 @@ mechanics remain in `validation/`, backed by the pinned `canoe-schema` package.
 
 From the repository root, use `uv run python src/setup.py --scenario <scenario.yaml>` for
 configuration/schema setup and `uv run python scripts/doctor.py --scenario <scenario.yaml>`
-for readiness checks. Run a prepared scenario with
-`uv run python src/build_transport.py --scenario <scenario.yaml>`; use
-`uv run python -m parameterization.build_<family> --scenario <scenario.yaml>` for an
-individual builder. Preparation also publishes audit CSVs. Fetching entrypoints support
-explicit cache replay with `--no-download` where implemented.
+for non-mutating readiness checks. The supported scenario command is
+`uv run python src/build_transport.py --scenario <scenario.yaml> --overwrite`. It owns the
+complete production lifecycle through `prepare_scenario_inputs`, followed by the shared
+contribution preparation, validated insertion and atomic SQLite publication.
 
-Use `uv run snakemake --snakefile workflow/Snakefile --cores 1 --config
-scenario=<scenario.yaml>` for coarse orchestration; add `--dry-run` to inspect pending
-jobs. The workflow calls existing Python entrypoints, requires readiness and the declared
-StatCan/CER tables before assembly, and tracks control files, production manual tables,
-templates, implementation files, and offline caches at those boundaries. Downloads require
-`download_sources=true`; this permits fetching missing caches rather than refreshing them.
-The default profile keeps runtime metadata under ignored `.snakemake/`. Failed database
-jobs restore the previous SQLite and validation report.
+Every invocation regenerates CEUD/ratings, StatCan, CER, ATB/Autonomie, assorted sources,
+the TC dashboard, the selected Ontario Report A/4/5 edition and reviewed road aggregation
+from registered inputs. FuelEconomy class evidence is validated directly from its cache.
+Lifetime and other parameter families use the existing live preparation contracts; CSVs
+remain audit products rather than serialized contribution handoffs. Registered GREET,
+OMEGA and charging evidence is validated by its owning preparation functions.
 
-This is still a partial DAG: other normalized evidence, road aggregation, and accepted
-road lifetime products must already be prepared. Changes to those undeclared prerequisites
-require `--forcerun transport_database`. Parameter CSVs are audit exports rather than
-complete serialized preparation results: assembly also needs provenance contexts, internal
-datasets, and audits returned by the builders. Assembly therefore prepares parameters once
-through the shared Python path. Run one scenario at a time while interim/processed products
-share configured directories.
+Execution is offline by default. `--download-sources` explicitly permits acquisition of
+missing caches; existing caches are reused. Ontario replay uses the resource identities
+and hashes in `sources.yaml`, independently of generated manifests. Source refresh,
+reviewed mapping changes and external-model generation remain separate operations.
+
+Derived prerequisites are rebuilt even when files already exist, so changes to source
+content, YAML or implementation cannot leave the database silently reused. This is a
+serial full rebuild, with no incremental job cache. Run one scenario at a time while
+interim/processed paths are shared. Individual fetching and parameter entrypoints remain
+available for development. Caller-owned assembly can call `prepare_scenario_inputs`
+before the existing contribution/insertion seam without invoking publication.
+
+The scenario command stages the validated database and report before publication. Build
+and ordinary I/O failures retain the previous pair; a failed SQLite replacement restores
+the prior report. SQLite replacement is atomic, but the two files are not crash-atomic
+as a pair across power loss or process termination. Intermediate audit files may reflect
+a failed attempt and are regenerated on the next invocation.
 
 Mapping bootstrap and `--mapping-diagnostics` are opt-in development paths; road lifetime
 generation defaults to accepted evidence, with MTO review enabled by `--mto-diagnostics`
@@ -1378,11 +1382,11 @@ Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and use Py
 uv sync --frozen
 ```
 
-A runnable scenario also needs its registered source artifacts and prepared evidence.
-Check [`config/sources.yaml`](config/sources.yaml) for access and availability and
-[`config/paths.yaml`](config/paths.yaml) for their locations. Downloads, normalized
-inputs, reviewed mappings, accepted lifetime products, and external-model evidence
-have different owners; installing packages does not prepare these inputs.
+A runnable scenario needs registered source caches, reviewed mappings/manual tables and
+the selected external-model evidence. Check [`config/sources.yaml`](config/sources.yaml)
+for source identities and [`config/paths.yaml`](config/paths.yaml) for locations. The
+scenario command regenerates derived production inputs; no prebuilt interim or processed
+tables are required. Installing packages alone does not provide registered raw inputs.
 
 The current template uses the registered GREET result bank and inherited charging
 profiles. Generating new GREET evidence requires Windows and desktop Excel; ordinary
@@ -1409,47 +1413,31 @@ $scenario = "config/scenarios/legacy_reproduction.yaml"
 uv run python scripts/doctor.py --scenario $scenario
 ```
 
-Inspect pending scenario jobs, then run the current orchestration:
+Build the complete scenario from registered inputs, offline by default:
 
 ```powershell
-uv run snakemake --snakefile workflow/Snakefile --cores 1 --config "scenario=$scenario" --dry-run
-uv run snakemake --snakefile workflow/Snakefile --cores 1 --config "scenario=$scenario"
+uv run --offline python src/build_transport.py --scenario $scenario --overwrite
 ```
 
-The workflow uses cached source inputs by default. Add `download_sources=true` to
-the `--config` values to permit missing StatCan/CER caches to be downloaded; existing
-caches are reused. Other source preparation remains explicit through its owning
-adapter. Keep the [workspace-local profile](workflow/profiles/default/profile.yaml)
-for Snakemake runtime metadata.
-
-The current DAG has four executable stages plus its aggregate target:
-
-| Stage | Current role |
-| --- | --- |
-| `doctor_smoke` | Validate readiness and produce a scenario-named completion marker. |
-| `statcan_transport_tables` | Normalize declared StatCan tables and publish manifests/warnings. |
-| `cer_enerfuture` | Normalize the selected CER edition and publish manifests/warnings. |
-| `transport_database` | Call the shared Python build and publish the SQLite database and validation report. |
-
-Snakemake can reuse these declared outputs and invalidate them when tracked inputs
-change. Its [update output handling](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#updating-existing-output-files)
-restores the previous database and report if its database job fails.
-However, CEUD and ratings evidence, other ATB/Autonomie and assorted-source artifacts,
-road aggregation, and accepted lifetime products are not comprehensively orchestrated
-or tracked. Prepare them before the build, and add `--forcerun transport_database`
-after changing an undeclared prerequisite. A successful dry-run checks the declared
-DAG, not complete source readiness.
-
-When inputs are already prepared, the same build is available directly:
+`uv --offline` also prevents package downloads. The build itself disables source downloads
+by default. To permit its source adapters to acquire missing caches, use:
 
 ```powershell
-uv run python src/build_transport.py --scenario $scenario --overwrite
+uv run python src/build_transport.py --scenario $scenario --overwrite --download-sources
 ```
 
-`--overwrite` explicitly replaces an existing configured database. Snakemake's
-`transport_database` rule supplies that flag itself. Both paths prepare parameters
-through the same Python functions; processed CSVs are audit exports and do not carry
-the complete provenance and preparation context needed for independent stage reuse.
+Existing caches are reused; refreshing a source identity remains an explicit adapter and
+registry-review operation. Reviewed tables, mappings and external-model result banks must
+already be supplied. The build validates them without generating replacement evidence.
+
+`--overwrite` permits replacement of the configured database. Every invocation rebuilds
+derived production prerequisites and parameters through their existing Python owners.
+Changes to sources, YAML and code are therefore applied without timestamps, completion
+markers or force flags. There is no incremental job cache. Failed preparation or ordinary
+publication errors retain the previous database/report; rerunning regenerates intermediate
+artifacts. SQLite replacement is atomic, while the separate report is not crash-atomic
+with it across power loss or termination. Run scenarios serially when artifact paths are
+shared. Individual source/parameter commands remain useful for development.
 
 ## Outputs and validation
 
@@ -1460,7 +1448,7 @@ the complete provenance and preparation context needed for independent stage reu
 | `inputs/validation/` | Source, transformation, mapping, and reconciliation evidence. |
 | `outputs/sqlite/` | The database named by `outputs.sqlite_name`. |
 | `outputs/validation/` | The configured database validation and comparison report. |
-| `outputs/logs/` | Run logs, warnings, and workflow readiness markers. |
+| `outputs/logs/` | Run logs and warnings. |
 
 Review the report's `validation` results for schema support, provenance/data quality,
 foreign keys, and database integrity. Review `comparison` separately for the selected
@@ -1471,17 +1459,12 @@ is established by the consuming optimization run.
 ## Development approach
 
 Keep one shared Python preparation and insertion path for standalone and caller-owned
-compilation. Stabilize source/configuration boundaries and complete persisted artifacts
-before adding workflow stages. Source downloads and reviewed mappings, opt-in diagnostics,
-and research experiments retain their explicit entrypoints.
-
-Snakemake currently serves a small, useful dependency boundary. Production Python
-modules do not import it, so orchestration can evolve independently of parameter
-preparation and insertion. A broader scenario workflow first needs complete
-prerequisite tracking and artifact locations for each scenario. Splitting builders into rules would also require complete persisted row,
-provenance, internal-dataset, and audit handoffs; adding rules around CSV exports alone
-would repeat preparation. Orchestration changes should preserve the shared Python
-path and validate the affected dependencies.
+compilation. Add material production prerequisites to `prepare_scenario_inputs` in
+`src/build_transport.py`, with transformations and validation in their existing owners.
+Exercise changes with offline source replay, missing/stale input checks and publication
+failure checks. Optional diagnostics, mapping review and external-model generation retain
+their explicit entrypoints. The caller-owned contribution/insertion API remains usable
+without standalone database publication.
 
 Contributors should follow [`AGENTS.md`](AGENTS.md) and the bounded planning protocol
 in [`.agents/PLANS.md`](.agents/PLANS.md). Use the focused tests and validation surfaces
