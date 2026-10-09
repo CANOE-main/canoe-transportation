@@ -1,4 +1,4 @@
-"""Build an atomic CANOE v4 transportation database from validated templates."""
+"""Compile a complete CANOE v4 transportation scenario from registered inputs."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import hashlib
 import json
 import logging
 import os
+import shutil
 import sqlite3
 import tempfile
 from collections import Counter
@@ -56,6 +57,7 @@ from utils import (
     resolve_configured_path,
     resolve_input_path,
     resolve_repo_path,
+    write_text_atomic,
 )
 from validation.database_bootstrap import validate_database
 from validation.insertion import ConflictPolicy, insert_models, validate_transport_parameter_support
@@ -1064,18 +1066,85 @@ def compare_transport_database(
 
 def write_validation_report(report: dict[str, Any], path: Path) -> None:
     """Write the concise configured validation artifact atomically."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    write_text_atomic(json.dumps(report, indent=2) + "\n", path)
+
+
+def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> None:
+    """Replay production prerequisites in order; derived files are never reused.
+
+    Registered caches, reviewed mappings/manual tables and external model results
+    remain inputs. Source adapters own acquisition/normalization; parameter builders
+    retain their live row/provenance/audit handoffs. Shared outputs require serial runs.
+    """
+    from fetching import (
+        assorted_sources, cer_enerfuture, fueleconomy_vehicles,
+        nlr_atb_autonomie, nrcan_ceud, statcan_tables, vehicle_population,
+    )
+    from parameterization.road_aggregation import build_road_aggregation_artifacts
+
+    scenario = bundle.scenario_path
+    LOGGER.info("Preparing scenario inputs: cache downloads %s", "enabled" if download else "disabled")
+    for prepare in (
+        nrcan_ceud.fetch_and_normalize,
+        nrcan_ceud.fetch_and_normalize_ratings,
+        statcan_tables.fetch_and_normalize,
+        cer_enerfuture.fetch_and_normalize,
+        nlr_atb_autonomie.fetch_and_normalize,
+        assorted_sources.fetch_and_normalize,
+        assorted_sources.fetch_and_normalize_tc_dashboard,
+    ):
+        LOGGER.info("Rebuilding prerequisite: %s.%s", prepare.__module__, prepare.__name__)
+        prepare(scenario, download=download)
+    # Only the scenario's Report A/4/5 edition is a production prerequisite.
+    # Historical MTO diagnostics and mapping bootstrap remain explicit operations.
+    LOGGER.info("Rebuilding Ontario vehicle evidence for %s", bundle.scenario.existing_capacity.vehicle_population_year)
+    vehicle_population.fetch_and_normalize(
+        scenario, year=bundle.scenario.existing_capacity.vehicle_population_year,
+        download=download, registered_only=True,
+    )
+    request = fueleconomy_vehicles.build_request(bundle)
+    if download:
+        fueleconomy_vehicles.fetch_to_cache(request)
+    fueleconomy_vehicles.validate_cache(request)
+    LOGGER.info("Validated FuelEconomy class evidence: %s", request.cache_path)
+    LOGGER.info("Rebuilding road aggregation from reviewed mappings")
+    build_road_aggregation_artifacts(scenario)
+
+
+def _publish_scenario(
+    candidate: Path, database: Path, report: dict[str, Any], validation: Path,
+) -> None:
+    """Stage both outputs; restore the previous report if SQLite replacement fails.
+
+    SQLite replacement is atomic. Two separate files cannot be crash-atomic as a
+    pair; ordinary build/I/O exceptions leave the prior publication intact.
+    """
+    validation.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=f".{validation.name}.", dir=validation.parent) as directory:
+        stage = Path(directory)
+        previous = stage / "previous.json"
+        if validation.exists():
+            shutil.copyfile(validation, previous)
+        prepared = stage / "prepared.json"
+        write_validation_report(report, prepared)
+        os.replace(prepared, validation)
+        try:
+            os.replace(candidate, database)
+        except BaseException:
+            if previous.exists():
+                os.replace(previous, validation)
+            else:
+                validation.unlink()
+            raise
 
 
 def build_from_scenario(
     scenario_path: str | Path,
     *,
     overwrite: bool = False,
+    download_sources: bool = False,
 ) -> tuple[dict[str, Any], Path]:
-    """Resolve scenario paths, build the database, and write validation JSON."""
+    """Prepare sources, assemble validated rows and publish one complete scenario."""
     bundle = load_config_bundle(scenario_path)
     database_path = resolve_configured_path(
         bundle,
@@ -1083,6 +1152,14 @@ def build_from_scenario(
         "sqlite",
         bundle.scenario.outputs.sqlite_name,
     )
+    if database_path.exists() and not overwrite:
+        raise FileExistsError(
+            f"Refusing to overwrite existing SQLite database: {database_path}. "
+            "Pass --overwrite to replace it explicitly."
+        )
+    validation_path = resolve_repo_path(bundle.repo_root, bundle.scenario.outputs.validation_report)
+    if validation_path.resolve() == database_path.resolve():
+        raise ValueError("Validation report must differ from the output database")
     comparison = bundle.scenario.comparison
     reference = None
     if comparison.mode != "none":
@@ -1093,39 +1170,41 @@ def build_from_scenario(
             raise FileNotFoundError(f"Comparison reference is missing: {reference}")
         if comparison.mode == "scenario":
             validate_scenario_comparison_reference(reference)
-    report = bootstrap_database(
-        bundle=bundle,
-        template_dir=resolve_input_path(bundle, "template"),
-        database_path=database_path,
-        overwrite=overwrite,
-        comparison_reference=reference,
-    )
-    report.update(
-        {
-            "timestamp_utc": datetime.now(UTC).isoformat(),
-            "scenario": bundle.scenario.scenario.name,
-            "config": {
-                "scenario": {
-                    "path": str(bundle.scenario_path),
-                    "sha256": file_sha256(bundle.scenario_path),
+        if validation_path.resolve() == reference.resolve():
+            raise ValueError("Validation report must differ from the comparison reference")
+    prepare_scenario_inputs(bundle, download=download_sources)
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=f".{database_path.name}.", dir=database_path.parent) as directory:
+        candidate = Path(directory) / database_path.name
+        report = bootstrap_database(
+            bundle=bundle,
+            template_dir=resolve_input_path(bundle, "template"),
+            database_path=candidate,
+            comparison_reference=reference,
+        )
+        report.update(
+            {
+                "database": str(database_path),
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+                "scenario": bundle.scenario.scenario.name,
+                "orchestration": {"prerequisites": "replayed", "download_sources": download_sources},
+                "config": {
+                    "scenario": {
+                        "path": str(bundle.scenario_path),
+                        "sha256": file_sha256(bundle.scenario_path),
+                    },
+                    "paths": {
+                        "path": str(bundle.paths_path),
+                        "sha256": file_sha256(bundle.paths_path),
+                    },
+                    "sources": {
+                        "path": str(bundle.sources_path),
+                        "sha256": file_sha256(bundle.sources_path),
+                    },
                 },
-                "paths": {
-                    "path": str(bundle.paths_path),
-                    "sha256": file_sha256(bundle.paths_path),
-                },
-                "sources": {
-                    "path": str(bundle.sources_path),
-                    "sha256": file_sha256(bundle.sources_path),
-                },
-            },
-        }
-    )
-
-    validation_path = resolve_repo_path(
-        bundle.repo_root,
-        bundle.scenario.outputs.validation_report,
-    )
-    write_validation_report(report, validation_path)
+            }
+        )
+        _publish_scenario(candidate, database_path, report, validation_path)
     return report, validation_path
 
 
@@ -1141,6 +1220,10 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Explicitly replace the configured SQLite output if it already exists.",
     )
+    parser.add_argument(
+        "--download-sources", action="store_true",
+        help="Permit source adapters to acquire missing caches; default is offline replay.",
+    )
     return parser.parse_args()
 
 
@@ -1151,10 +1234,10 @@ def main() -> None:
         report, validation_path = build_from_scenario(
             args.scenario,
             overwrite=args.overwrite,
+            download_sources=args.download_sources,
         )
     except (
-        FileNotFoundError,
-        FileExistsError,
+        OSError,
         TemplateLoadError,
         ValidationError,
         ValueError,

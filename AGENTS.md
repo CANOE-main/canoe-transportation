@@ -30,11 +30,10 @@ create a parallel transport implementation.
   contracts organized around coherent modeling behavior. It must not own SQLite transactions
   or CANOE-main orchestration.
 - `src/build_transport.py` exposes caller-owned contribution preparation/insertion and owns
-  standalone atomic database publication for reproducibility and legacy parity.
+  the complete native scenario lifecycle: registered-source replay, prerequisite preparation,
+  and standalone atomic database publication for reproducibility and legacy parity.
 - `src/validation/` owns configuration, provenance, schema, insertion, integrity,
   parity, and validation-report logic.
-- `workflow/` provides lightweight scenario-level dependency and artifact orchestration;
-  substantive transformations remain in importable Python modules.
 - `docs/` and `docs/insights/` provide targeted explanation, diagnostics, and research
   context. `docs/assumptions.md` records enduring source and data challenges and the
   assumptions used to handle them. Docs are not runtime ETL owners or authorities for
@@ -98,11 +97,9 @@ archived ExecPlans, and plan histories. These exemptions do not imply that assum
 or decisions are accepted; the existing evidence, ownership, and validation rules apply.
 
 For a repository or artifact-layer seam, use the affected `config/paths.yaml` routes to
-bound impact, context, and tests. New modules and artifacts need one owner and configured
-layer; keep opt-in diagnostics out of normal ETL readiness. Current code, configuration,
-tests, schemas, and generated validation evidence outrank stale prose or plans. Treat
-plans and histories as orientation/audit evidence, and investigate uncertain architecture
-or modelling choices rather than inventing them.
+bound impact, context, and tests. New modules and artifacts need one owner and configured layer; keep opt-in diagnostics out of normal ETL readiness. Current code, configuration, tests, schemas, and generated validation evidence outrank stale prose or plans. Treat plans and histories as orientation/audit evidence, and investigate uncertain architecture or modelling choices rather than inventing them.
+
+You are operating in an environment where `ast-grep` is installed. For any code search that requires understanding of syntax or code structure, you should default to using `ast-grep --lang [language] -p '<pattern>'`. Adjust the `--lang` flag as needed for the specific programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
 
 ## Data, provenance, and parity
 
@@ -153,13 +150,20 @@ adapter is acceptable only for a documented upstream gap.
 Checks should be proportional to the changed interface and cover relevant schema,
 keys, coverage, units, normalization, provenance, skipped/fallback behavior, and parity.
 
-## Snakemake boundary
+## Scenario orchestration boundary
 
-Use Snakemake as the scenario-level dependency and artifact orchestrator once stage
-interfaces are stable. Keep rules short, legible, and limited to declared inputs,
-outputs, logs, parameters, and importable Python entrypoints. Direct Python entrypoints
-remain valid for isolated development and validation; not every development step belongs
-in the DAG. Snakemake must not become a second transformation implementation layer.
+`uv run python src/build_transport.py --scenario <scenario.yaml>` is the supported
+scenario-build command. It replays production prerequisites from registered inputs on
+every invocation, offline by default; `--download-sources` explicitly permits acquisition
+of missing caches. `--overwrite` permits replacing the configured database. Model and
+source selections remain in YAML. Run scenarios serially while generated paths are shared.
+
+Keep the ordered lifecycle in `build_transport.py` and transformations in their existing
+source/parameter owners. Add new production prerequisites to this lifecycle and exercise
+them in real offline tests; do not add a second scheduler or reuse outputs merely because
+they exist. Manual review, mapping bootstrap, optional diagnostics and external-model
+generation remain explicit operations. Caller-owned integration reuses prerequisite
+preparation, contribution preparation and validated insertion without standalone publication.
 
 ## Implementation and completion
 

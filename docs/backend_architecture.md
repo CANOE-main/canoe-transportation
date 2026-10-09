@@ -37,8 +37,6 @@ requirements.
 │   └── parameters/
 │       ├── rules.yaml                       # Extraction and harmonization contracts
 │       └── conversion.yaml                  # Reusable conversion factors
-├── workflow/
-│   └── Snakefile                            # Coarse dependency and artifact orchestration #to-review
 ├── src/
 │   ├── setup.py                             # Configuration/schema smoke entrypoint
 │   ├── build_transport.py                   # Transport contribution and atomic database assembly
@@ -52,8 +50,8 @@ requirements.
 │   │   ├── greet_automation.py              # Explicit disposable-copy Excel generation of vehicle-cycle evidence
 │   │   ├── greet_vehicle_cycle.py           # Registered source contracts, extraction and offline bank validation
 │   │   ├── fueleconomy_vehicles.py          # Opt-in FuelEconomy.gov class evidence
-│   │   ├── legacy_charging_profiles.py     # Immutable NHTS/TTS charging evidence and legacy hourly transformation #to-review
-│   │   ├── epa_omega_baseline.py           # Compact legacy OMEGA baseline sales/CD ranges and source identity validation #to-review
+│   │   ├── legacy_charging_profiles.py     # Immutable NHTS/TTS charging evidence and legacy hourly transformation
+│   │   ├── epa_omega_baseline.py           # Compact legacy OMEGA baseline sales/CD ranges and source identity validation
 │   │   ├── vpic_vehicle_types.py            # Opt-in vPIC vehicle-type evidence
 │   │   ├── vpic_model_years.py              # Opt-in vPIC make/model-year evidence
 │   │   └── assorted_sources.py              # Smaller registered source adapters
@@ -78,8 +76,8 @@ requirements.
 │   │   ├── currency.py                      # CER-backed currency and price-year conversion
 │   │   ├── road_embodied_emissions.py       # Road vehicle-cycle lifetime gases and regional aggregation
 │   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
-│   │   ├── ldv_charging_profiles.py         # Shared LDV charger factors and inherited temporal projection #to-review
-│   │   ├── ldv_ev_ranges.py                 # OMEGA range shares, minimum constraints and parameter-specific representative LDV aggregation #to-review
+│   │   ├── ldv_charging_profiles.py         # Inherited legacy LDEV charging profiles, to be refactored
+│   │   ├── ldv_ev_ranges.py                 # OMEGA range shares, minimum constraints and parameter-specific representative LDV aggregation
 │   │   └── adoption_constraints.py          # Vehicle technology adoption constraints - #to-do
 │   ├── utils/
 │   │   ├── __init__.py                      # Typed config loading and artifact path resolution
@@ -141,7 +139,7 @@ coverage and keys, and publish configured artifacts without opening SQLite conne
 `build_transport.py` calls the same preparation functions for standalone and caller-owned
 assembly. `prepare_transport_contribution` gathers structural templates, capacity, demand,
 road utilization, lifetimes, efficiencies, costs, charger rows, charging profiles,
-range-share groups/constraints and embodied emissions as selected. #to-review
+range-share groups/constraints and embodied emissions as selected.
 `insert_transport_contribution` registers provenance and inserts validated rows into a
 compatible caller-owned connection. The standalone path also owns schema initialization,
 transactions, integrity checks, and atomic publication. Schema contracts and insertion
@@ -151,28 +149,35 @@ mechanics remain in `validation/`, backed by the pinned `canoe-schema` package.
 
 From the repository root, use `uv run python src/setup.py --scenario <scenario.yaml>` for
 configuration/schema setup and `uv run python scripts/doctor.py --scenario <scenario.yaml>`
-for readiness checks. Run a prepared scenario with
-`uv run python src/build_transport.py --scenario <scenario.yaml>`; use
-`uv run python -m parameterization.build_<family> --scenario <scenario.yaml>` for an
-individual builder. Preparation also publishes audit CSVs. Fetching entrypoints support
-explicit cache replay with `--no-download` where implemented.
+for non-mutating readiness checks. The supported scenario command is
+`uv run python src/build_transport.py --scenario <scenario.yaml> --overwrite`. It owns the
+complete production lifecycle through `prepare_scenario_inputs`, followed by the shared
+contribution preparation, validated insertion and atomic SQLite publication.
 
-Use `uv run snakemake --snakefile workflow/Snakefile --cores 1 --config
-scenario=<scenario.yaml>` for coarse orchestration; add `--dry-run` to inspect pending
-jobs. The workflow calls existing Python entrypoints, requires readiness and the declared
-StatCan/CER tables before assembly, and tracks control files, production manual tables,
-templates, implementation files, and offline caches at those boundaries. Downloads require
-`download_sources=true`; this permits fetching missing caches rather than refreshing them.
-The default profile keeps runtime metadata under ignored `.snakemake/`. Failed database
-jobs restore the previous SQLite and validation report.
+Every invocation regenerates CEUD/ratings, StatCan, CER, ATB/Autonomie, assorted sources,
+the TC dashboard, the selected Ontario Report A/4/5 edition and reviewed road aggregation
+from registered inputs. FuelEconomy class evidence is validated directly from its cache.
+Lifetime and other parameter families use the existing live preparation contracts; CSVs
+remain audit products rather than serialized contribution handoffs. Registered GREET,
+OMEGA and charging evidence is validated by its owning preparation functions.
 
-This is still a partial DAG: other normalized evidence, road aggregation, and accepted
-road lifetime products must already be prepared. Changes to those undeclared prerequisites
-require `--forcerun transport_database`. Parameter CSVs are audit exports rather than
-complete serialized preparation results: assembly also needs provenance contexts, internal
-datasets, and audits returned by the builders. Assembly therefore prepares parameters once
-through the shared Python path. Run one scenario at a time while interim/processed products
-share configured directories.
+Execution is offline by default. `--download-sources` explicitly permits acquisition of
+missing caches; existing caches are reused. Ontario replay uses the resource identities
+and hashes in `sources.yaml`, independently of generated manifests. Source refresh,
+reviewed mapping changes and external-model generation remain separate operations.
+
+Derived prerequisites are rebuilt even when files already exist, so changes to source
+content, YAML or implementation cannot leave the database silently reused. This is a
+serial full rebuild, with no incremental job cache. Run one scenario at a time while
+interim/processed paths are shared. Individual fetching and parameter entrypoints remain
+available for development. Caller-owned assembly can call `prepare_scenario_inputs`
+before the existing contribution/insertion seam without invoking publication.
+
+The scenario command stages the validated database and report before publication. Build
+and ordinary I/O failures retain the previous pair; a failed SQLite replacement restores
+the prior report. SQLite replacement is atomic, but the two files are not crash-atomic
+as a pair across power loss or process termination. Intermediate audit files may reflect
+a failed attempt and are regenerated on the next invocation.
 
 Mapping bootstrap and `--mapping-diagnostics` are opt-in development paths; road lifetime
 generation defaults to accepted evidence, with MTO review enabled by `--mto-diagnostics`

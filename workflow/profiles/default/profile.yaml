@@ -1,2 +1,0 @@
-# Keep Snakemake runtime metadata in the ignored workspace directory.
-runtime-source-cache-path: .snakemake/source-cache

@@ -14,7 +14,7 @@ from zipfile import BadZipFile, ZipFile
 
 import pandas as pd
 import requests
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
 from utils import (
     ConfigBundle,
@@ -76,6 +76,12 @@ class DiscoveredOntarioResource(BaseModel):
         return self
 
 
+class RegisteredOntarioResource(DiscoveredOntarioResource):
+    """Reviewed cache identity retained independently of generated interim files."""
+
+    cache_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 class OntarioVehiclePopulationRequest(BaseModel):
     """One year-specific Ontario vehicle population archive request."""
 
@@ -94,6 +100,7 @@ class OntarioVehiclePopulationRequest(BaseModel):
     archive_depth: int = Field(default=1, ge=0, le=1)
     resource_created: str = ""
     resource_last_modified: str = ""
+    expected_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
     @model_validator(mode="after")
     def validate_request(self) -> "OntarioVehiclePopulationRequest":
@@ -598,6 +605,13 @@ def validate_source(
     require_auxiliary: bool = True,
 ) -> dict[str, ArchiveMember]:
     """Validate one cached ZIP and resolve its required report members."""
+    if request.expected_sha256 is not None:
+        actual = file_sha256(request.cache_path)
+        if actual != request.expected_sha256:
+            raise ValueError(
+                f"Cached Ontario archive SHA-256 changed for {request.year}: "
+                f"{actual} != {request.expected_sha256}"
+            )
     validate_zip_integrity(request.cache_path)
     resolved = {
         "A": resolve_archive_member(
@@ -1385,18 +1399,17 @@ def current_stock_input(
     )
 
 
-def _manifest_requests(
+def registered_requests(
     bundle: ConfigBundle,
-    manifest_path: Path,
     *,
     year: int | None,
 ) -> list[OntarioVehiclePopulationRequest]:
-    if not manifest_path.is_file():
-        raise FileNotFoundError(
-            "Offline Ontario vehicle replay requires the source manifest: "
-            f"{manifest_path}"
-        )
-    manifest = pd.read_csv(manifest_path, dtype=str, keep_default_na=False)
+    """Resolve pinned archive requests before I/O, without generated manifests."""
+    resources = TypeAdapter(list[RegisteredOntarioResource]).validate_python(
+        bundle.sources.sources[SOURCE_ID].adapter["registered_resources"]
+    )
+    if len({resource.year for resource in resources}) != len(resources):
+        raise ValueError("Registered Ontario resources contain duplicate years")
     excluded_years = {
         int(value)
         for value in module_rules(bundle)["reports"]["A"].get(
@@ -1408,53 +1421,23 @@ def _manifest_requests(
         raise ValueError(
             f"Ontario Report A edition {year} is excluded by configuration"
         )
-    required = {
-        "year",
-        "resource_id",
-        "resource_name",
-        "url",
-        "resource_format",
-        "resource_created",
-        "resource_last_modified",
-        "cache_sha256",
-    }
-    missing = sorted(required - set(manifest.columns))
-    if missing:
-        raise ValueError(
-            "Ontario vehicle source manifest missing columns: "
-            + ", ".join(missing)
-        )
-    requests_from_manifest: list[OntarioVehiclePopulationRequest] = []
-    for row in manifest.to_dict("records"):
-        report_year = int(row["year"])
+    requests: list[OntarioVehiclePopulationRequest] = []
+    for resource in resources:
+        report_year = resource.year
         if report_year in excluded_years:
             continue
         if year is not None and report_year != year:
             continue
-        resource = DiscoveredOntarioResource(
-            year=report_year,
-            resource_id=row["resource_id"],
-            resource_name=row["resource_name"],
-            url=row["url"],
-            resource_format=row["resource_format"],
-            created=row["resource_created"],
-            last_modified=row["resource_last_modified"],
-        )
         request = request_from_resource(bundle, resource)
-        if not request.cache_path.is_file():
-            raise FileNotFoundError(request.cache_path)
-        actual_sha = sha256_file(request.cache_path)
-        if actual_sha != row["cache_sha256"]:
-            raise ValueError(
-                f"Cached Ontario archive SHA-256 changed for {report_year}: "
-                f"{actual_sha} != {row['cache_sha256']}"
-            )
-        requests_from_manifest.append(request)
-    if not requests_from_manifest:
+        requests.append(OntarioVehiclePopulationRequest.model_validate({
+            **request.model_dump(), "expected_sha256": resource.cache_sha256,
+        }))
+    if not requests:
         raise ValueError(
-            f"Ontario vehicle source manifest has no rows for requested year {year}"
+            f"No registered Ontario archive for requested year {year}; "
+            "review and register the source identity in config/sources.yaml"
         )
-    return sorted(requests_from_manifest, key=lambda request: request.year)
+    return sorted(requests, key=lambda request: request.year)
 
 
 def _manifest_row(
@@ -1494,6 +1477,7 @@ def fetch_and_normalize(
     year: int | None = None,
     download: bool = True,
     package_metadata: dict[str, Any] | None = None,
+    registered_only: bool = False,
 ) -> Path:
     """Fetch/cache all usable editions and publish source-normalized artifacts."""
     bundle = load_config_bundle(scenario_path)
@@ -1504,7 +1488,9 @@ def fetch_and_normalize(
     manifest_path = output_dir / str(rules["manifest_file"])
     gaps: list[int] = []
 
-    if download or package_metadata is not None:
+    if registered_only or (not download and package_metadata is None):
+        requests_to_process = registered_requests(bundle, year=year)
+    else:
         source = bundle.sources["sources"][SOURCE_ID]
         access = source.adapter["access"]
         metadata = package_metadata or fetch_ckan_package_metadata(
@@ -1514,12 +1500,6 @@ def fetch_and_normalize(
         requests_to_process, gaps = build_requests(
             bundle,
             metadata,
-            year=year,
-        )
-    else:
-        requests_to_process = _manifest_requests(
-            bundle,
-            manifest_path,
             year=year,
         )
 

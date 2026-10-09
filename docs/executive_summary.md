@@ -70,8 +70,9 @@ transformation contracts; reusable factors belong in
 [conversion configuration](../config/parameters/conversion.yaml); and
 [scenario YAML](../config/scenarios/legacy_reproduction.yaml) selects editions,
 trajectories, regions, periods, outputs, and active switches. Canonical locations are
-owned by [path configuration](../config/paths.yaml). Modular Python performs acquisition
-and transformation, while Snakemake coordinates only stable dependencies and artifacts.
+owned by [path configuration](../config/paths.yaml). The native Python scenario command
+replays registered source inputs, prepares prerequisites and assembles the database through
+the existing source and parameter modules. Derived production inputs are rebuilt on each run.
 Pydantic and the pinned `canoe-schema` package form trust boundaries before atomic
 SQLite publication.
 

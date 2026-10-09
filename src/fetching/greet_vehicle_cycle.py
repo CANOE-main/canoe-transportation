@@ -1,7 +1,9 @@
 """GREET source contracts, physical extraction and deterministic offline evidence."""
 
 from dataclasses import dataclass
+import csv
 import hashlib
+import io
 import json
 import logging
 from math import isfinite
@@ -154,7 +156,7 @@ def result_bank_paths(bundle: ConfigBundle) -> dict[str, Path]:
 
 
 def required_inputs(bundle: ConfigBundle) -> list[Path]:
-    """The coarse assembly consumes a complete source handoff, never starts Excel."""
+    """Scenario assembly consumes a complete source handoff, never starts Excel."""
     if not bundle.scenario.embodied_emissions:
         return []
     atb = load_harmonization_rules(bundle, "nlr_atb_autonomie")
@@ -162,15 +164,55 @@ def required_inputs(bundle: ConfigBundle) -> list[Path]:
     return [*registered_workbooks(bundle)[1], *result_bank_paths(bundle).values(), atb_path]
 
 
-def generation_profile(bundle: ConfigBundle) -> str:
+def _atb_replay_digest(path: Path, expected: str | None, trajectories: list[str]) -> str:
+    """Match retained bytes, allowing only a valid run-selection marker to differ.
+
+    All physical vehicle values, labels, rows and formatting must reproduce the
+    registered digest exactly. The Boolean marker is not consumed by GREET.
+    No source or external-model file is rewritten.
+    """
+    raw = path.read_bytes()
+    actual = hashlib.sha256(raw).hexdigest()
+    if expected is None or actual == expected:
+        return actual
+    rows = list(csv.reader(io.StringIO(raw.decode("utf-8"), newline="")))
+    if not rows:
+        raise ValueError("Stale GREET ATB evidence: empty vehicle table")
+    header, records = rows[0], rows[1:]
+    marker = header.index("is_default_trajectory")
+    trajectory = header.index("trajectory")
+    if not records or any(len(row) != len(header) for row in records) or not any(
+        all(row[marker] == str(row[trajectory] == selection) for row in records)
+        for selection in trajectories
+    ):
+        raise ValueError("Invalid ATB default-trajectory marker in GREET evidence")
+    for selection in trajectories:
+        restored = io.StringIO(newline="")
+        writer = csv.writer(restored, lineterminator="\r\n" if b"\r\n" in raw else "\n")
+        writer.writerow(header)
+        for row in records:
+            fields = row.copy()
+            fields[marker] = str(row[trajectory] == selection)
+            writer.writerow(fields)
+        if hashlib.sha256(restored.getvalue().encode("utf-8")).hexdigest() == expected:
+            LOGGER.info("GREET ATB replay matches retained SHA-256 after restoring only the %s default-trajectory marker", selection)
+            return expected
+    raise ValueError("Stale GREET ATB evidence: differences exceed the default-trajectory marker; explicitly regenerate")
+
+
+def generation_profile(bundle: ConfigBundle, *, atb_reference_sha256: str | None = None) -> str:
     """Exclude run paths/timing and material selection from the source identity."""
     from fetching.greet_automation import probe_archetypes
 
     registration, _ = registered_workbooks(bundle)
     ranges, atb = probe_archetypes(bundle)
+    atb_digest = _atb_replay_digest(
+        atb, atb_reference_sha256,
+        list(bundle.sources.sources["nlr_atb_transportation_2024"].adapter["expected_trajectories"]),
+    )
     payload = {"registration": registration.model_dump(),
                "extraction": load_harmonization_rules(bundle, "greet_vehicle_cycle"),
-               "archetypes": ranges, "atb_sha256": file_sha256(atb)}
+               "archetypes": ranges, "atb_sha256": atb_digest}
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
@@ -239,7 +281,9 @@ def validate_generation_evidence(bundle, raw, exclusions, cases, report) -> dict
         raise ValueError("GREET generation report has not passed source-preservation validation")
     if report.get("source_id") != SOURCE or report.get("component") != COMPONENT:
         raise ValueError("Unexpected GREET generation source/component")
-    if report.get("profile_sha256") != generation_profile(bundle):
+    if report.get("profile_sha256") != generation_profile(
+        bundle, atb_reference_sha256=report.get("atb_evidence", {}).get("sha256"),
+    ):
         raise ValueError("Stale GREET generation profile; explicitly regenerate the result bank")
     hashes = {p.relative_to(bundle.repo_root).as_posix(): file_sha256(p) for p in paths}
     if report.get("source_hashes") != hashes:
@@ -299,16 +343,29 @@ def normalize_generated_results(bundle: ConfigBundle) -> GreetEvidence:
         if not path.is_file():
             raise FileNotFoundError(f"Missing GREET evidence {path}; run uv run python -m fetching.greet_automation --scenario {bundle.scenario_path}")
     manifest = ResultManifest.model_validate_json(bank["manifest"].read_text(encoding="utf-8"))
-    if (manifest.source_id, manifest.component, manifest.profile_sha256) != (SOURCE, COMPONENT, generation_profile(bundle)):
-        raise ValueError("Stale GREET result-bank identity/profile; explicitly regenerate")
     hashes = {p.relative_to(bundle.repo_root).as_posix(): file_sha256(p) for p in workbooks}
     if manifest.source_hashes != hashes or manifest.files != {p.name: file_sha256(p) for k, p in bank.items() if k != "manifest"}:
         raise ValueError("Stale or altered GREET result-bank/source hashes; explicitly regenerate")
+    report = json.loads(bank["report"].read_text(encoding="utf-8"))
+    # Authenticate the retained report before using its ATB evidence digest.
+    profile = generation_profile(bundle, atb_reference_sha256=report.get("atb_evidence", {}).get("sha256"))
+    if (manifest.source_id, manifest.component, manifest.profile_sha256) != (SOURCE, COMPONENT, profile):
+        raise ValueError("Stale GREET result-bank identity/profile; explicitly regenerate")
     raw = pd.read_csv(bank["results"], float_precision="round_trip")
     exclusions = pd.read_csv(bank["exclusions"], float_precision="round_trip")
     cases = pd.read_csv(bank["cases"], float_precision="round_trip")
-    report = json.loads(bank["report"].read_text(encoding="utf-8"))
     validate_generation_evidence(bundle, raw, exclusions, cases, report)
+    atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
+    current_atb_sha256 = file_sha256(resolve_input_path(
+        bundle, "interim", atb_rules["interim_subdir"], atb_rules["components"]["vehicles"]["output_file"],
+    ))
+    retained_atb_sha256 = report.get("atb_evidence", {}).get("sha256", current_atb_sha256)
+    report["atb_replay"] = {
+        "current_sha256": current_atb_sha256,
+        "retained_sha256": retained_atb_sha256,
+        "default_trajectory_marker_only": current_atb_sha256 != retained_atb_sha256,
+        "all_other_bytes_match": True,
+    }
     from fetching.greet_automation import inspect_lightweight_glider_formulas
 
     # Supplement the retained generation report with read-only physical evidence.

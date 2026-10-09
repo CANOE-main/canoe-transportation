@@ -1,1 +1,25 @@
 group_name,notes,data_id
+canoe_transport_range:cars:bev,Denominator: new-build class/powertrain capacity only,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:cars:bev:bev_150_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:cars:bev:bev_200_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:cars:bev:bev_300_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:cars:bev:bev_400_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:cars:phev,Denominator: new-build class/powertrain capacity only,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:cars:phev:phev_35_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:cars:phev:phev_50_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:passenger_light_trucks:bev,Denominator: new-build class/powertrain capacity only,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:passenger_light_trucks:bev:bev_150_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:passenger_light_trucks:bev:bev_200_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:passenger_light_trucks:bev:bev_300_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:passenger_light_trucks:bev:bev_400_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:passenger_light_trucks:phev,Denominator: new-build class/powertrain capacity only,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:passenger_light_trucks:phev:phev_35_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:passenger_light_trucks:phev:phev_50_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:freight_light_trucks:bev,Denominator: new-build class/powertrain capacity only,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:freight_light_trucks:bev:bev_150_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:freight_light_trucks:bev:bev_200_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:freight_light_trucks:bev:bev_300_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:freight_light_trucks:bev:bev_400_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:freight_light_trucks:phev,Denominator: new-build class/powertrain capacity only,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:freight_light_trucks:phev:phev_35_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
+canoe_transport_range:freight_light_trucks:phev:phev_50_miles,Numerator: one investable range variant,canoe-transport-range-groups:internal:1:6f740c4860501f97
