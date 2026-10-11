@@ -60,6 +60,11 @@ def test_yaml_order_pins_current_source_mapping(bundle) -> None:
         "legacy_charging_profiles": "T31",
         "epa_automotive_trends": "T32",
         "epa_omega_baseline": "T33",
+        "hatch_original_growth_evidence": "T34",
+        "hatch_extended_growth_evidence": "T35",
+        "eafo_norway_growth_evidence": "T36",
+        "technology_growth_literature": "T37",
+        "temoa_growth_reference": "T38",
     }
 
 

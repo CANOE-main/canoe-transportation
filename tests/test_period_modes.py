@@ -182,8 +182,8 @@ def test_charger_vintages_costs_and_utilization_follow_the_selected_mode(prepare
     for tech, vintage in costs["prospective"]:
         if vintage == 2025:
             assert costs["prospective"][tech, vintage] == pytest.approx(costs["legacy"][tech, 2030])
-    prospective = factors["prospective"].query("period == 2025 and region == 'ON'").set_index("tech").factor
-    legacy = factors["legacy"].query("period == 2030 and region == 'ON'").set_index("tech").factor
+    prospective = factors["prospective"].query("vintage == 2025 and region == 'ON'").set_index("tech_or_group").factor
+    legacy = factors["legacy"].query("vintage == 2030 and region == 'ON'").set_index("tech_or_group").factor
     assert prospective.to_dict() == legacy.to_dict()
 
 

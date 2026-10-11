@@ -190,9 +190,16 @@ def prepare_ev_charger_rows(
     region_map = rules["public_charger_region_map"]
     if set(sum((list(labels) for labels in region_map.values()), [])) != set(provincial.source_region):
         raise ValueError("TC provinces/territories do not map to template regions")
-    model_regions = set(pd.read_csv(resolve_input_path(bundle, "template", "region.csv")).region)
-    if set(region_map) != model_regions:
+    template_regions = set(pd.read_csv(resolve_input_path(bundle, "template", "region.csv")).region)
+    if set(region_map) != template_regions:
         raise ValueError("Charger region mapping does not cover the template")
+    output_region_map = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]["region_output_map"]
+    model_regions = {output_region_map.get(region, region) for region in bundle.scenario.geography.regions}
+    if model_regions - template_regions:
+        raise ValueError(f"Charger scenario regions are absent from template: {sorted(model_regions - template_regions)}")
+    LOGGER.info("Preparing charger parameters for selected regions: %s", sorted(model_regions))
     public_by_region = {
         region: int(provincial.loc[provincial.source_region.isin(labels), "public_chargers"].sum())
         for region, labels in region_map.items()
@@ -203,7 +210,12 @@ def prepare_ev_charger_rows(
     stock_class_map = rules["stock_classes"]
     stock_data_ids: set[str] = set()
     stock_by_region: dict[tuple[str, str], float] = {}
+    excluded_rows = sum(row.region not in model_regions for row in existing_capacity_rows)
+    if excluded_rows:
+        LOGGER.info("Skipped %d vehicle capacity rows outside selected charger regions", excluded_rows)
     for row in existing_capacity_rows:
+        if row.region not in model_regions:
+            continue
         if row.tech not in technology.index:
             raise ValueError(f"Vehicle capacity technology is absent from template: {row.tech}")
         item = technology.loc[row.tech]

@@ -104,6 +104,9 @@ def bundle(tmp_path):
     scenario = tmp_path / SCENARIO
     payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
     payload["embodied_emissions"] = True
+    # This fixture supplies GREET/fleet evidence for the isolated embodied layer.
+    payload["BEV_PHEV_range_representation"]["mode"] = "none"
+    payload["charging_profiles"]["travel_behavior_source"] = "none"
     payload["geography"]["regions"] = ["ON", "QC", "BCT", "NL", "PE"]
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     # Preserve the explicit exclusion test; production includes approved CNG=ICEV.

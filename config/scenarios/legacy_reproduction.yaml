@@ -82,12 +82,12 @@ lifetimes:
 
 existing_capacity:
   # Regional fleet-source precedence is shared under this scenario's aggregation_sources.
-  vehicle_population_year: 2025
+  vehicle_population_year: 2025 # todo: rename this entry to mto_vehicle_population_year to match the source name
   cleanup_tolerance: 0.001
 
 demand:
   cer_scenario: Current Measures
-  future_car_demand: GDP-indexed
+  future_car_demand: GDP-indexed  # GDP-indexed | extrapolated
 
 road_utilization:
   # Age-dependent rows are retained as audit artifacts while v4 lacks vintage/period.
@@ -122,11 +122,11 @@ BEV_PHEV_range_representation:
   # representative_archetype keeps EX stock; one new BEV/PHEV per LDV category.
   # PHEV category blends use the accepted horizon mean; vintage fuel differences are audited.
 
+# Road vehicle-cycle layer; materials apply only to LDVs.
+embodied_emissions: true
+embodied_materials: conventional
+
 row_note_overrides:
   # Replace technology.notes by exact technology key for this scenario.
   # Source notes remain in sources.yaml; {} keeps the structural template notes.
   technology: {}
-
-# Road vehicle-cycle layer; materials apply only to LDVs.
-embodied_emissions: true
-embodied_materials: conventional

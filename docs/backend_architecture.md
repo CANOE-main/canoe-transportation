@@ -183,6 +183,14 @@ Mapping bootstrap and `--mapping-diagnostics` are opt-in development paths; road
 generation defaults to accepted evidence, with MTO review enabled by `--mto-diagnostics`
 or `--all`.
 
+Single-edition Ontario replay publishes its audit files under `editions/<year>/` and
+preserves the aggregate history manifest, status, quality and key-inventory products.
+Full-history preparation is explicit through `fetching.vehicle_population --no-download`
+without `--year`. Historical consumers validate registered edition coverage and normalized
+file hashes before reading it. The vehicle notebook also needs mapping and MTO diagnostics;
+the growth notebook needs `diagnostics.technology_growth` after its fingerprinted inputs
+change. Both notebooks read persisted artifacts without running ETL. #to-review
+
 For a change, follow the affected `config/paths.yaml` artifact family to its owner,
 producers, consumers, and validation surfaces, then verify the current code and focused
 tests. Module renames change those references; artifact keys and schema table names retain

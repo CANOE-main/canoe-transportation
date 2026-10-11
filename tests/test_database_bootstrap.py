@@ -36,7 +36,11 @@ def csv_row_count(path: Path) -> int:
 
 @pytest.fixture
 def bundle(legacy_bundle):
-    return legacy_bundle
+    # These cases exercise schema/publication behavior and lifetime switches.
+    # Full ten-region production parity is covered by the offline scenario replay.
+    payload = legacy_bundle.scenario.model_dump(mode="python")
+    payload["geography"]["regions"] = ["ON"]
+    return replace(legacy_bundle, scenario=type(legacy_bundle.scenario).model_validate(payload))
 
 
 def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
@@ -58,13 +62,15 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
     }
     assert database.is_file()
     assert report["ok"] is True
-    assert report["lifetimes"]["fixed_rows"] == 570
-    assert report["lifetimes"]["curve_rows"] == 9420
-    assert report["costs"]["cost_invest_rows"] == 4050
+    regions = len(bundle.scenario.geography.regions)
+    assert report["lifetimes"]["fixed_rows"] == 57 * regions
+    # The current structural template includes the existing medium-truck BEV.
+    assert report["lifetimes"]["curve_rows"] == 956 * regions
+    assert report["costs"]["cost_invest_rows"] == 405 * regions
     assert report["costs"]["cost_variable_rows"] > 0
     with sqlite3.connect(database) as lifetime_connection:
-        assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 570
-        assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_survival_curve").fetchone()[0] == 9420
+        assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 57 * regions
+        assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_survival_curve").fetchone()[0] == 956 * regions
         assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_invest").fetchone()[0] == report["costs"]["cost_invest_rows"] + report["ev_chargers"]["invest_rows"]
         assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_fixed").fetchone()[0] == report["ev_chargers"]["fixed_rows"]
         assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_variable").fetchone()[0] == report["costs"]["cost_variable_rows"]
@@ -113,6 +119,11 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "legacy_charging_profiles": "T31",
         "epa_automotive_trends": "T32",
         "epa_omega_baseline": "T33",
+        "hatch_original_growth_evidence": "T34",
+        "hatch_extended_growth_evidence": "T35",
+        "eafo_norway_growth_evidence": "T36",
+        "technology_growth_literature": "T37",
+        "temoa_growth_reference": "T38",
     }
     assert report["template"]["kind"] == "backend_internal_reference"
     assert report["template"]["data_id"].startswith("canoe-transport-template:")
@@ -146,7 +157,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         assert connection.execute("SELECT COUNT(DISTINCT region) FROM demand").fetchone()[0] == len(bundle.scenario.geography.regions)
         assert connection.execute("SELECT COUNT(DISTINCT period) FROM demand").fetchone()[0] == len(bundle.scenario.periods.model)
         assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity").fetchone()[0] == report["road_utilization"]["capacity_to_activity_rows"]
-        assert connection.execute("SELECT COUNT(*) FROM limit_annual_capacity_factor").fetchone()[0] == report["road_utilization"]["flat_factor_rows"]
+        assert connection.execute("SELECT COUNT(*) FROM limit_annual_capacity_factor").fetchone()[0] == report["road_utilization"]["flat_factor_rows"] + report["ev_chargers"]["utilization_rows"]
         assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity WHERE data_source IS NOT NULL OR dq_cred IS NOT NULL").fetchone()[0] == 0
         assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity WHERE data_id NOT IN (SELECT data_id FROM data_set)").fetchone()[0] == 0
         assert connection.execute("SELECT COUNT(*) FROM data_source").fetchone()[0] > 0
@@ -165,10 +176,11 @@ def test_fixed_lifetime_mode_inserts_one_row_per_modeled_technology(bundle, tmp_
         template_dir=TEMPLATES,
         database_path=database,
     )
-    assert report["lifetimes"]["fixed_rows"] == 1210
+    expected_rows = 122 * len(bundle.scenario.geography.regions)
+    assert report["lifetimes"]["fixed_rows"] == expected_rows
     assert report["lifetimes"]["curve_rows"] == 0
     with sqlite3.connect(database) as connection:
-        assert connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 1210
+        assert connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == expected_rows
         assert connection.execute("SELECT COUNT(*) FROM lifetime_survival_curve").fetchone()[0] == 0
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
 
@@ -187,7 +199,7 @@ def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Pat
     assert report["road_utilization"]["age_factor_rows"] > 0
     with sqlite3.connect(database) as connection:
         assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity").fetchone()[0] == report["road_utilization"]["capacity_to_activity_rows"]
-        assert connection.execute("SELECT COUNT(*) FROM limit_annual_capacity_factor").fetchone()[0] == report["road_utilization"]["flat_factor_rows"]
+        assert connection.execute("SELECT COUNT(*) FROM limit_annual_capacity_factor").fetchone()[0] == report["road_utilization"]["flat_factor_rows"] + report["ev_chargers"]["utilization_rows"]
         assert "period" not in {
             row[1] for row in connection.execute("PRAGMA table_info(limit_annual_capacity_factor)")
         }

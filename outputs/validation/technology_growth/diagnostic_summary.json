@@ -25,11 +25,11 @@
   "eafo_snapshot": "2026-10-07; fleet Q2 2026 / registrations July 2026; full annual data through 2025",
   "fit_rows": 1240,
   "input_hashes": {
-    "config/parameters/rules.yaml": "f7721359a34b0581eff0f58131927b5b9b9b43c8cd2ed317451e4f3ce082e3d9",
+    "config/parameters/rules.yaml": "c34a75f8a647aad583a298833d820444a453a8e3b1e876a93f8f753af5faa732",
     "config/parameters/technology_growth_diagnostic.yaml": "a68e8efbf049db4d395f87d4d94c1cfe50b4103555e5159c4a387c4fbd2ecf76",
-    "config/paths.yaml": "6f952efa1ba684f5d1a2726a50e88a24f6fc9b809924f5a400ba004f0edeef87",
+    "config/paths.yaml": "4554d555ab010ff8dd3a94d8b6041d4bf5aa71bc68a19f13ad59de4fc67139a1",
     "config/scenarios/legacy_reproduction.yaml": "620c64857764891882916ac2ef2624bab66bc90dee7fec7c7fd3f0b29695390f",
-    "config/sources.yaml": "93ec0c2415705e7fff1dc47d145dffd589d948b55a6ffb77b5919bfd95adf979",
+    "config/sources.yaml": "9d47cb039ff38f33e18bb0effcad6db4b0ff950ef8547072c01ef519b51a3351",
     "inputs/0_canoe_template/technology.csv": "8d5b96a303d90c770be8bebe9761f0fc2eb86b4dca81ac43267f1e2d4a977bb6",
     "inputs/1_interim/existing_capacity/road_existing_capacity_age_cohorts.csv": "477f7e292817c85fc4abf36bcbe6224d954a9b3bc1c7b001ea780c30777df176",
     "inputs/1_interim/existing_capacity/road_existing_capacity_fuel_shares.csv": "3fb346f69d680fc982ceef368acdc35a350ab0dbcdb1f21af30752ecd58a1172",
@@ -39,7 +39,7 @@
     "src/diagnostics/technology_growth.py": "1719185db7d39f43d0945e7ef0516cb80fe6e51d6f387a5806881de59fdfe124",
     "src/fetching/technology_growth_evidence.py": "95d7bc191163c4d62b06640a607d5370c8790b276a26296c36a04f7a60b6a075",
     "src/validation/config_models.py": "fbe2a67126c8f9b33f9563e4bf1682780f9c2e96399850cdf7c953633090e231",
-    "uv.lock": "c8594c7139caceff8cdcf21838bd1213cd0eda2a246595b865af54233c482594"
+    "uv.lock": "b4eb1f4ee4357896b34ad92782dcfd83134b523b30a4adc3d792bb2e8f606224"
   },
   "insufficient_candidates": 652,
   "native_series_by_release": {

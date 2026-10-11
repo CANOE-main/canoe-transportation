@@ -30,6 +30,7 @@ def legacy_bundle():
     payload = bundle.scenario.model_dump(mode="python")
     payload["periods"].update(period_mode="legacy", existing=[2000, 2005, 2010, 2015, 2020, 2023])
     payload["lifetimes"]["survival_curve_max_age"] = 25
-    # Original numerical baseline predates the independently selected charging slice.
+    # Pin both later representation selections for the original numerical baseline.
     payload["charging_profiles"]["travel_behavior_source"] = "none"
+    payload["BEV_PHEV_range_representation"]["mode"] = "none"
     return replace(bundle, scenario=ScenarioConfig.model_validate(payload))
