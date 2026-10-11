@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import importlib
 from pathlib import Path
+import subprocess
+import sys
 
 from utils import load_config_bundle, resolve_artifact_path
 
@@ -26,19 +28,37 @@ def _resolve_dotted_object(reference: str):
     raise ImportError(reference)
 
 
-def test_impact_routes_have_live_owners_producers_and_validation_surfaces() -> None:
+def _assert_live_interface(reference: str) -> None:
+    if reference in {"marimo.check", "marimo.export"}:
+        # These configured validation/export interfaces are CLI subcommands.
+        subprocess.run(
+            [sys.executable, "-m", "marimo", reference.split(".")[1], "--help"],
+            check=True, capture_output=True, cwd=REPO_ROOT,
+        )
+    else:
+        assert callable(_resolve_dotted_object(reference)), reference
+
+
+def test_impact_routes_have_live_owners_producers_and_validation_surfaces(monkeypatch) -> None:
+    monkeypatch.syspath_prepend(str(REPO_ROOT))
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
 
     for family, route in bundle.paths.artifacts.items():
         assert resolve_artifact_path(bundle, family).is_relative_to(REPO_ROOT)
         importlib.import_module(route.owner)
         for producer in route.producers:
-            assert callable(_resolve_dotted_object(producer))
+            if producer == "reviewers":
+                assert route.layer == "documentation"
+            else:
+                _assert_live_interface(producer)
         for consumer in route.consumers:
-            if consumer not in {"reviewers", "temoa"}:
+            if consumer.startswith("docs."):
+                # Notebook routes are document files, not installed runtime packages.
+                assert (REPO_ROOT / Path(*consumer.split("."))).with_suffix(".py").is_file()
+            elif consumer not in {"reviewers", "publication_reviewers", "temoa"}:
                 _resolve_dotted_object(consumer)
         for surface in route.validation_surfaces:
-            assert callable(_resolve_dotted_object(surface)), (family, surface)
+            _assert_live_interface(surface)
 
 
 def test_important_artifact_families_cover_each_declared_layer() -> None:
@@ -60,6 +80,9 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
         "input_validation",
         "database",
         "output_validation",
+        "cache",
+        "documentation",
+        "legacy",
     }
 
 

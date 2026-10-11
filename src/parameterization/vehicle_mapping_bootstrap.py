@@ -13,6 +13,7 @@ from typing import Any
 
 import pandas as pd
 
+from fetching.vehicle_population import load_history_manifest
 from parameterization.road_aggregation import (
     ONTARIO_RULE_KEY,
     apply_vehicle_mapping,
@@ -1456,7 +1457,7 @@ def build_bootstrap_mapping(
         "interim",
         ontario_rules["interim_subdir"],
     )
-    manifest = pd.read_csv(output_dir / str(ontario_rules["manifest_file"]))
+    manifest = load_history_manifest(bundle)
     historical_frames: list[pd.DataFrame] = []
     usecols = [
         "report_year",

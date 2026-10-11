@@ -201,6 +201,8 @@ fetching:
   ontario_vehicle_population:
     interim_subdir: fetched_ontario_vehicle_population
     manifest_file: manifest.csv
+    # Single-year production replay must not replace all-edition diagnostic evidence.
+    edition_audit_subdir_template: "editions/{year}"
     warnings_file: warnings.log
     long_status_file: ontario_vehicle_population_report_a_status_long.csv
     reconciliation_file: ontario_vehicle_population_report_a_reconciliation.csv

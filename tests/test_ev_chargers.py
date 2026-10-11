@@ -1,6 +1,7 @@
 """Focused offline checks for the reviewed EV charger parameter family."""
 
 import math
+from dataclasses import replace
 from pathlib import Path
 
 import pandas as pd
@@ -8,6 +9,7 @@ import pytest
 from pydantic import ValidationError
 from canoe_schema.v4_0 import LimitAnnualCapacityFactor
 
+from parameterization import ev_chargers as layer
 from parameterization.ev_chargers import _validate_shares, prepare_ev_charger_rows
 from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 from utils import load_harmonization_rules, resolve_artifact_path
@@ -120,3 +122,27 @@ def test_charger_share_contract_rejects_mismatch() -> None:
 def test_ev_to_port_ratios_are_positive_scenario_values() -> None:
     with pytest.raises(ValidationError):
         ScenarioEvChargers(ld_evs_per_port=0, mhd_evs_per_port=1.5)
+
+
+@pytest.mark.parametrize("regions, expected", [(["ON"], {"ON"}), (["NL", "PE"], {"NLLAB", "PEI"})])
+def test_selected_regions_keep_full_source_validation_and_equivalent_rows(prepared, tmp_path, monkeypatch, regions, expected):
+    bundle, full = prepared
+    stock, contexts, _ = prepare_existing_capacity_rows(bundle)
+    payload = bundle.scenario.model_dump(mode="python")
+    payload["geography"]["regions"] = regions
+    selected = replace(bundle, scenario=type(bundle.scenario).model_validate(payload))
+    original = layer.resolve_artifact_path
+
+    def output_path(config, family, *parts):
+        if family in {"ev_chargers_processed", "ev_chargers_validation"}:
+            return tmp_path / family / Path(*parts)
+        return original(config, family, *parts)
+
+    monkeypatch.setattr(layer, "resolve_artifact_path", output_path)
+    subset = prepare_ev_charger_rows(selected, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
+    for name in ("capacity_rows", "invest_rows", "fixed_rows", "efficiency_rows", "utilization_rows"):
+        actual = [row.model_dump(exclude={"data_id"}) for row in getattr(subset, name)]
+        baseline = [row.model_dump(exclude={"data_id"}) for row in getattr(full, name) if row.region in expected]
+        assert actual == baseline
+    assert {row["region"] for row in subset.audit["port_reconciliation"]} == expected
+    assert sum(subset.audit["tc_type_counts"].values()) == 39220

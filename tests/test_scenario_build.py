@@ -151,6 +151,33 @@ def test_real_offline_scenario_clean_replay_freshness_and_failure(tmp_path, monk
         build_transport.build_from_scenario(SCENARIO)
     assert original == (file_sha256(database), file_sha256(report_path))
 
+    # Explicit research preparation must survive every later production replay.
+    from fetching.vehicle_population import fetch_and_normalize, load_history_manifest
+    from fetching.fueleconomy_vehicles import fetch_and_normalize as normalize_fueleconomy
+    from parameterization.road_aggregation import build_mapping_diagnostic_artifacts
+    from parameterization.road_lifetimes_survival import build_mto_survival_diagnostic_artifacts
+    fetch_and_normalize(SCENARIO, download=False)
+    assert len(load_history_manifest(bundle)) == 11
+    normalize_fueleconomy(SCENARIO, download=False)
+    build_mapping_diagnostic_artifacts(SCENARIO)
+    build_mto_survival_diagnostic_artifacts(SCENARIO)
+    # The actual notebook loader must work without obsolete processed copies.
+    import runpy
+    notebook = runpy.run_path(str(ROOT / "docs/insights/vehicle_stock_diagnosis.py"))
+    _, definitions = notebook["load_evidence"].run()
+    evidence = definitions["load_evidence"](tmp_path / SCENARIO)
+    years = set(evidence["source_manifest"].year)
+    assert len(years) == 11 and set(evidence["status_long"].report_year) == years
+    assert set(evidence["passenger_cohorts"].report_year) == years
+    assert not evidence["legacy_survival"].empty
+    diagnostic_families = ("ontario_vehicle_population", "vehicle_survival_interim", "lifetime_validation", "vehicle_mapping_review")
+    history_hashes = {
+        path: file_sha256(path)
+        for family in diagnostic_families
+        for path in resolve_artifact_path(bundle, family).rglob("*")
+        if path.is_file()
+    }
+
     # Both corrupt existing and absent derived prerequisites must be regenerated.
     bundle = load_config_bundle(SCENARIO)
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
@@ -165,6 +192,8 @@ def test_real_offline_scenario_clean_replay_freshness_and_failure(tmp_path, monk
     comparison = compare_scenario_databases(database, reference, absolute_tolerance=0, relative_tolerance=0, include_provenance=True)
     assert comparison["equivalent"], comparison
     assert missing.is_file() and "stale derived evidence" not in ceud.read_text()
+    assert history_hashes == {path: file_sha256(path) for path in history_hashes}
+    assert len(load_history_manifest(bundle)) == 11
 
     # A genuine absent registered cache cannot be masked by the freshly built CSVs.
     from fetching.nrcan_ceud import iter_table_requests

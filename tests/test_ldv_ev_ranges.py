@@ -51,6 +51,8 @@ def bundle():
     payload["geography"]["regions"] = ["ON"]
     payload["charging_profiles"]["travel_behavior_source"] = "none"
     payload["embodied_emissions"] = False
+    # Active-mode cases opt in with with_mode(); the baseline exercises none.
+    payload["BEV_PHEV_range_representation"]["mode"] = "none"
     return replace(b, scenario=ScenarioConfig.model_validate(payload))
 
 

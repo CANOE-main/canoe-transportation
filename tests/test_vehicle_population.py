@@ -1,9 +1,11 @@
 from pathlib import Path
 from zipfile import ZipFile
+import hashlib
 
 import pandas as pd
 import pytest
 
+from fetching import vehicle_population as adapter
 from fetching.vehicle_population import (
     CkanLookupRequest,
     OntarioVehiclePopulationRequest,
@@ -515,3 +517,102 @@ def test_fetch_to_cache_reuses_existing_zip_without_request(tmp_path: Path, monk
     monkeypatch.setattr("fetching.vehicle_population.requests.get", fail_get)
 
     assert fetch_to_cache(request) == "cached"
+
+
+@pytest.fixture
+def edition_publisher(tmp_path, monkeypatch):
+    """Real tiny registered archives exercise normalization and publication offline."""
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    output = tmp_path / "interim"
+    requests = {}
+
+    def archive(year, *, valid=True):
+        request = requests[year]
+        cache = tmp_path / f"{year}.zip"
+        headers = "VEHICLE-CLASS\tMAKE\tMODEL\tMODEL-YEAR\tFIT-ACTIVE\tFIT-INACTIVE\tUNFIT\tWRECKED\tOUT-OF-PROV\tSOLD\tSUSPENDED\tTEMPORARY\tTOTAL\n"
+        with ZipFile(cache, "w") as zipped:
+            zipped.writestr(request.report_a_members[0], headers + f"PASSENGER\tFORD\tF15\t{year-1}\t10\t2\t0\t0\t0\t0\t0\t0\t12\n")
+            zipped.writestr(request.report4_member, "WEIGHT_CLASS\tKG_FROM\tKG_TO\tFIT-ACTIVE\nCOMMERCIAL\t2001\t3000\t10\n")
+            zipped.writestr(request.report5_member, f"VEHICLE_CLASS\tDESCRIPTOR\tVALUE\tFIT-ACTIVE\nPASSENGER\tYEAR\t{year-1}\t10\n" if valid else "missing\nvalue\n")
+        requests[year] = request.model_copy(update={"cache_path": cache, "expected_sha256": hashlib.sha256(cache.read_bytes()).hexdigest()})
+
+    # Resolve the real registrations before substituting the small fixture archives.
+    for year in (2024, 2025):
+        requests[year] = adapter.registered_requests(bundle, year=year)[0]
+    for year in requests:
+        archive(year)
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("offline replay must not use network/CKAN metadata")
+
+    monkeypatch.setattr(adapter, "load_config_bundle", lambda _: bundle)
+    monkeypatch.setattr(adapter, "resolve_input_path", lambda *args: output)
+    monkeypatch.setattr(adapter, "registered_requests", lambda _, *, year: [request for edition, request in requests.items() if year is None or edition == year])
+    monkeypatch.setattr(adapter, "fetch_ckan_package_metadata", no_network)
+    monkeypatch.setattr(adapter.requests, "get", no_network)
+    return bundle, output, requests, archive
+
+
+def tree_bytes(directory):
+    return {path.relative_to(directory).as_posix(): path.read_bytes() for path in directory.rglob("*") if path.is_file()}
+
+
+@pytest.mark.parametrize("year", [2024, 2025])
+def test_single_edition_replay_preserves_complete_history(edition_publisher, year):
+    bundle, output, _, _ = edition_publisher
+    rules = module_rules(bundle)
+    adapter.fetch_and_normalize(SCENARIO, download=False)
+    history_names = [rules[key] for key in ("manifest_file", "long_status_file", "reconciliation_file", "findings_file", "warnings_file", "all_edition_make_model_keys_file")]
+    before = {name: (output / name).read_bytes() for name in history_names}
+    adapter.fetch_and_normalize(SCENARIO, year=year, download=False, registered_only=True)
+    assert before == {name: (output / name).read_bytes() for name in history_names}
+    assert adapter.load_history_manifest(bundle).year.tolist() == [2024, 2025]
+    assert set(pd.read_csv(output / rules["current_stock_file"]).report_year) == {year}
+    audit = output / rules["edition_audit_subdir_template"].format(year=year)
+    assert pd.read_csv(audit / rules["manifest_file"]).year.tolist() == [year]
+    assert set(pd.read_csv(audit / rules["long_status_file"]).report_year) == {year}
+    assert not list(output.glob(".ontario-*"))
+
+
+def test_clean_production_edition_does_not_claim_complete_history(edition_publisher):
+    bundle, output, _, _ = edition_publisher
+    adapter.fetch_and_normalize(SCENARIO, year=2025, download=False)
+    rules = module_rules(bundle)
+    assert (output / rules["current_stock_file"]).is_file()
+    assert (output / rules["reports"][4]["distribution_output_template"].format(year=2025)).is_file()
+    assert (output / rules["reports"][5]["distribution_output_template"].format(year=2025)).is_file()
+    assert not (output / rules["manifest_file"]).exists()
+    with pytest.raises(FileNotFoundError, match="Rebuild history explicitly"):
+        adapter.load_history_manifest(bundle)
+
+
+@pytest.mark.parametrize("year", [None, 2025])
+def test_invalid_source_batch_preserves_every_published_artifact(edition_publisher, year):
+    _, output, _, archive = edition_publisher
+    adapter.fetch_and_normalize(SCENARIO, download=False)
+    before = tree_bytes(output)
+    archive(2025, valid=False)
+    with pytest.raises(ValueError, match="Report 5 missing columns"):
+        adapter.fetch_and_normalize(SCENARIO, year=year, download=False)
+    assert tree_bytes(output) == before
+    assert not list(output.glob(".ontario-*"))
+
+
+@pytest.mark.parametrize("damage", ["partial", "duplicate", "identity", "normalized"])
+def test_history_reader_rejects_incomplete_or_changed_handoff(edition_publisher, damage):
+    bundle, output, _, _ = edition_publisher
+    adapter.fetch_and_normalize(SCENARIO, download=False)
+    rules = module_rules(bundle)
+    manifest_path = output / rules["manifest_file"]
+    manifest = pd.read_csv(manifest_path)
+    if damage == "partial":
+        manifest = manifest.tail(1)
+    elif damage == "duplicate":
+        manifest = pd.concat([manifest, manifest.tail(1)], ignore_index=True)
+    elif damage == "identity":
+        manifest.loc[0, "cache_sha256"] = "0" * 64
+    else:
+        (output / manifest.normalized_report_a_output.iloc[0]).write_text("edited handoff\n")
+    manifest.to_csv(manifest_path, index=False)
+    with pytest.raises(ValueError, match="(Incomplete|Changed|Missing/changed) Ontario history"):
+        adapter.load_history_manifest(bundle)

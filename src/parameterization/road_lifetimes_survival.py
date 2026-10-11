@@ -11,6 +11,7 @@ from typing import Any
 import pandas as pd
 from canoe_schema.v4_0 import LifetimeSurvivalCurve, LifetimeTech
 
+from fetching.vehicle_population import load_history_manifest
 from parameterization.road_aggregation import (
     apply_vehicle_mapping,
     validate_vehicle_mapping,
@@ -1949,7 +1950,7 @@ def _derive_mto_diagnostic_outputs(
         rules=rules,
     )
     source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
-    manifest = pd.read_csv(source_dir / ontario_rules["manifest_file"])
+    manifest = load_history_manifest(bundle)
     report_rules = ontario_rules["reports"]["A"]
     status_columns = [str(value) for value in report_rules["status_columns"]]
     normalized_frames = _load_normalized_frames(

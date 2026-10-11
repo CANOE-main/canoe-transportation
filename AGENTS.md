@@ -2,17 +2,21 @@
 
 ## Mission and priority
 
-This repository is the v2.0 refactor of the CANOE transportation backend. It replaces
-the legacy Excel-centered compiler with a reproducible, auditable Python pipeline that
-builds Temoa/CANOE-ready SQLite databases for Canadian multi-sector energy system modelling.
+Develop the CANOE transportation backend as a reproducible, auditable,
+configuration-driven Python pipeline converting registered data, external-model
+outputs, and reviewed assumptions into validated, provenance-traceable parameters
+for the CANOE database used in the Temoa energy system optimization modeling framework.
 
-Baseline reproduction is the first priority. Reproduce legacy-equivalent outputs within
-documented tolerances and explain or accept parity gaps before adding new assumptions,
-scenarios, representation experiments, or sensitivity workflows.
+Legacy reproduction is the initial validation priority and ongoing regression
+reference. Verify equivalence within documented tolerances; investigate and document
+deviations, distinguishing intentional changes from regressions. New assumptions,
+scenarios, and representation experiments must be explicit, evidence-based,
+configurable, and independently validated without silently altering the baseline.
 
-Standalone transport compilation remains first-class. Any future integrated assembly must
-reuse the same transport parameterization and validated-insertion behavior rather than
-create a parallel transport implementation.
+Support independently usable standalone Temoa/CANOE-ready SQLite compilation and
+CANOE-main integration through the same transport parameterization and
+validated-insertion contracts. Integrated assembly must respect upstream ownership
+of shared structures and resources without duplicating transport logic.
 
 ## Repository responsibilities
 
@@ -21,7 +25,7 @@ create a parallel transport implementation.
 - `config/sources.yaml` owns external-source identity, access, cache registration,
   source-native metadata, provenance, refresh notes, validation expectations, and
   source-specific data-quality evidence, defaults, and reviewed overrides.
-- `config/scenarios/*.yaml` owns run selections, periods, regions, outputs, and modelling
+- `config/scenarios/*.yaml` owns run selections, periods, regions, outputs, and modeling
   switches. See `config/scenarios/README.md` when authoring a scenario.
 - `config/parameters/*.yaml` owns extraction maps, harmonization rules, class mappings,
   filters, bins, conversion factors, units, and parameter metadata.
@@ -40,7 +44,7 @@ create a parallel transport implementation.
   accepted development decisions.
 
 User-selectable values belong in YAML. Python may contain source-invariant
-implementation constants, but not modelling choices, source selections, reproducibility
+implementation constants, but not modeling choices, source selections, reproducibility
 controls, or output locations.
 
 Use `inputs/0_cache/` for downloads, `inputs/0_external_models/` for registered model
@@ -97,9 +101,15 @@ archived ExecPlans, and plan histories. These exemptions do not imply that assum
 or decisions are accepted; the existing evidence, ownership, and validation rules apply.
 
 For a repository or artifact-layer seam, use the affected `config/paths.yaml` routes to
-bound impact, context, and tests. New modules and artifacts need one owner and configured layer; keep opt-in diagnostics out of normal ETL readiness. Current code, configuration, tests, schemas, and generated validation evidence outrank stale prose or plans. Treat plans and histories as orientation/audit evidence, and investigate uncertain architecture or modelling choices rather than inventing them.
+bound impact, context, and tests. New modules and artifacts need one owner and configured layer; 
+keep opt-in diagnostics out of normal ETL readiness. Current code, configuration, tests, schemas, 
+and generated validation evidence outrank stale prose or plans. Treat plans and histories as 
+orientation/audit evidence, and investigate uncertain architecture or modeling choices rather than inventing them.
 
-You are operating in an environment where `ast-grep` is installed. For any code search that requires understanding of syntax or code structure, you should default to using `ast-grep --lang [language] -p '<pattern>'`. Adjust the `--lang` flag as needed for the specific programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
+You are operating in an environment where `ast-grep` is installed. For any code search that 
+requires understanding of syntax or code structure, you should default to using 
+`ast-grep --lang [language] -p '<pattern>'`. Adjust the `--lang` flag as needed for the specific 
+programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
 
 ## Data, provenance, and parity
 
@@ -119,7 +129,7 @@ Keep acquisition, physical validation, parsing, harmonization, and writing separ
 testable. Preserve source-native audit values, make reruns safe, and prohibit hidden
 network access during offline or `--no-download` execution.
 
-Diagnostic or research evidence does not become an accepted modelling assumption merely
+Diagnostic or research evidence does not become an accepted modeling assumption merely
 because it exists. Promote it only through the owning configuration or contract, with
 review and validation appropriate to the changed interface.
 
@@ -164,6 +174,11 @@ them in real offline tests; do not add a second scheduler or reuse outputs merel
 they exist. Manual review, mapping bootstrap, optional diagnostics and external-model
 generation remain explicit operations. Caller-owned integration reuses prerequisite
 preparation, contribution preparation and validated insertion without standalone publication.
+
+Production replay must preserve broader opt-in evidence. A selected source edition may
+refresh its annual model inputs and edition-scoped audits, but must not narrow aggregate
+historical manifests, status tables or diagnostic handoffs. Explicit historical consumers
+must reject incomplete registered coverage rather than silently display partial history.
 
 ## Implementation and completion
 

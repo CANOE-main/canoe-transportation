@@ -285,7 +285,7 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     }
     assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_2022_sales_shares"
     assert status["parameter_options"]["charging_profiles"]["travel_behavior_source"] == "nhts"
-    assert status["parameter_options"]["BEV_PHEV_range_representation"]["mode"] == "none"
+    assert status["parameter_options"]["BEV_PHEV_range_representation"]["mode"] == "new_capacity_shares"
 
 
 def _write_config_copy(tmp_path: Path) -> tuple[Path, Path, Path]:

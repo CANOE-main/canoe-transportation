@@ -38,6 +38,8 @@ def bundle():
     payload = b.scenario.model_dump()
     payload["geography"]["regions"] = ["ON"]
     payload["embodied_emissions"] = False
+    # This fixture supplies charging evidence/axes, not range-share model periods.
+    payload["BEV_PHEV_range_representation"]["mode"] = "none"
     return replace(b, scenario=ScenarioConfig.model_validate(payload))
 
 

@@ -5,6 +5,7 @@ import io
 import logging
 import os
 import re
+import tempfile
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -1471,6 +1472,46 @@ def _manifest_row(
     }
 
 
+def load_history_manifest(bundle: ConfigBundle) -> pd.DataFrame:
+    """Read complete, registered Report A history; never accept a partial replay."""
+    rules = module_rules(bundle)
+    output_dir = resolve_input_path(bundle, "interim", rules["interim_subdir"])
+    path = output_dir / str(rules["manifest_file"])
+    rebuild = (
+        "Rebuild history explicitly with uv run python -m fetching.vehicle_population "
+        f"--scenario {bundle.scenario_path} --no-download"
+    )
+    if not path.is_file():
+        raise FileNotFoundError(f"Missing Ontario history manifest: {path}. {rebuild}")
+    manifest = pd.read_csv(path, low_memory=False)
+    required = {
+        "year", "resource_id", "cache_sha256", "normalized_report_a_output",
+        "normalized_report_a_sha256", "cohort_snapshot_usable",
+    }
+    if not required <= set(manifest):
+        raise ValueError(f"Incomplete Ontario history manifest: missing {sorted(required - set(manifest))}. {rebuild}")
+    requests = {request.year: request for request in registered_requests(bundle, year=None)}
+    years = pd.to_numeric(manifest["year"], errors="raise")
+    if years.duplicated().any() or set(years) != set(requests):
+        raise ValueError(
+            f"Incomplete Ontario history: expected editions {sorted(requests)}, "
+            f"found {sorted(years.tolist())}. {rebuild}"
+        )
+    for row in manifest.itertuples(index=False):
+        request = requests[row.year]
+        output_name = str(rules["reports"]["A"]["normalized_output_template"]).format(year=row.year)
+        if (
+            row.resource_id != request.resource_id
+            or row.cache_sha256 != request.expected_sha256
+            or row.normalized_report_a_output != output_name
+        ):
+            raise ValueError(f"Changed Ontario history identity for {row.year}. {rebuild}")
+        artifact = output_dir / output_name
+        if not artifact.is_file() or file_sha256(artifact) != row.normalized_report_a_sha256:
+            raise ValueError(f"Missing/changed Ontario history artifact for {row.year}. {rebuild}")
+    return manifest
+
+
 def fetch_and_normalize(
     scenario_path: str | Path,
     *,
@@ -1479,13 +1520,17 @@ def fetch_and_normalize(
     package_metadata: dict[str, Any] | None = None,
     registered_only: bool = False,
 ) -> Path:
-    """Fetch/cache all usable editions and publish source-normalized artifacts."""
+    """Normalize all editions, or refresh one production edition.
+
+    A year override publishes annual model inputs and edition-scoped audits;
+    it never replaces the aggregate historical manifest/status/quality evidence.
+    Validate and stage the entire requested batch before publishing any files.
+    """
     bundle = load_config_bundle(scenario_path)
     rules = module_rules(bundle)
     conversions = load_conversion_factors(bundle)
     kg_to_lb = float(conversions["mass"]["kg_to_lb"])
     output_dir = resolve_input_path(bundle, "interim", rules["interim_subdir"])
-    manifest_path = output_dir / str(rules["manifest_file"])
     gaps: list[int] = []
 
     if registered_only or (not download and package_metadata is None):
@@ -1508,201 +1553,222 @@ def fetch_and_normalize(
         key=lambda request: request.year,
     )
     current_year = max(request.year for request in requests_to_process)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    report_a_rules = rules["reports"]["A"]
-    for excluded_year in report_a_rules["excluded_years"]:
-        excluded_output = output_dir / str(
-            report_a_rules["normalized_output_template"]
-        ).format(year=int(excluded_year))
-        if excluded_output.is_file():
-            excluded_output.unlink()
-            logging.info(
-                "Removed excluded Ontario Report A interim artifact: %s",
-                excluded_output,
-            )
-    long_path = output_dir / str(rules["long_status_file"])
-    long_temporary = long_path.with_suffix(long_path.suffix + ".tmp")
-    if long_temporary.exists():
-        long_temporary.unlink()
-    normalized_current: pd.DataFrame | None = None
-    inventory_frames: list[pd.DataFrame] = []
-    inventory_columns = [
-        "source_id",
-        "report_year",
-        str(report_a_rules["vehicle_class_column"]),
-        str(report_a_rules["make_column"]),
-        str(report_a_rules["model_column"]),
-        str(report_a_rules["model_year_column"]),
-        "FIT_ACTIVE",
-    ]
-    reconciliation_frames: list[pd.DataFrame] = []
-    finding_frames: list[pd.DataFrame] = []
-    manifest_rows: list[dict[str, Any]] = []
-    report4_cleaned = pd.DataFrame()
-    report4_distribution = pd.DataFrame()
-    report5_cleaned = pd.DataFrame()
-    report5_distribution = pd.DataFrame()
-
-    try:
-        for request_index, request in enumerate(requests_to_process):
-            if download:
-                cache_status = fetch_to_cache(request)
-                logging.info(
-                    "Ontario vehicle %s archive %s: %s",
-                    request.year,
-                    cache_status,
-                    request.cache_path,
-                )
-            else:
-                validate_zip_integrity(request.cache_path)
-            resolved = validate_source(
-                request,
-                require_auxiliary=request.year == current_year,
-            )
-            report_a_raw = read_report_from_zip(request.cache_path, resolved["A"])
-            normalized, status_long, reconciliation, findings = normalize_report_a(
-                report_a_raw,
-                source_id=request.source_id,
-                year=request.year,
-                raw_file=resolved["A"].display_name,
-                cached_zip=request.cache_path,
-                rules=rules,
-            )
-            cohort_usable, cohort_reason = report_a_cohort_usability(
-                normalized,
-                rules=rules,
-            )
-            output_name = rules["reports"]["A"][
-                "normalized_output_template"
-            ].format(year=request.year)
-            write_dataframe_atomic(normalized, output_dir / output_name)
-            inventory_frames.append(normalized.loc[:, inventory_columns].copy())
-            status_long.to_csv(
-                long_temporary,
-                mode="a",
-                header=request_index == 0,
-                index=False,
-            )
-            reconciliation_frames.append(reconciliation)
-            finding_frames.append(findings)
-            manifest_rows.append(
-                _manifest_row(
-                    request,
-                    resolved=resolved,
-                    output_name=output_name,
-                    cohort_snapshot_usable=cohort_usable,
-                    cohort_snapshot_usability_reason=cohort_reason,
-                )
-            )
-            if request.year == current_year:
-                normalized_current = normalized
-                report4_raw = read_report_from_zip(
-                    request.cache_path,
-                    resolved["4"],
-                )
-                report5_raw = read_report_from_zip(
-                    request.cache_path,
-                    resolved["5"],
-                )
-                report4_cleaned, report4_distribution = normalize_report4(
-                    report4_raw,
-                    source_id=request.source_id,
-                    year=request.year,
-                    raw_file=resolved["4"].display_name,
-                    cached_zip=request.cache_path,
-                    rules=rules,
-                    kg_to_lb=kg_to_lb,
-                )
-                report5_cleaned, report5_distribution = normalize_report5(
-                    report5_raw,
-                    source_id=request.source_id,
-                    year=request.year,
-                    raw_file=resolved["5"].display_name,
-                    cached_zip=request.cache_path,
-                    rules=rules,
-                )
-        os.replace(long_temporary, long_path)
-    finally:
+    destination_dir = output_dir
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".ontario-", dir=destination_dir) as directory:
+        output_dir = Path(directory)
+        audit_dir = (
+            output_dir
+            if year is None
+            else output_dir / str(rules["edition_audit_subdir_template"]).format(year=year)
+        )
+        audit_dir.mkdir(parents=True, exist_ok=True)
+        report_a_rules = rules["reports"]["A"]
+        long_path = audit_dir / str(rules["long_status_file"])
+        long_temporary = long_path.with_suffix(long_path.suffix + ".tmp")
         if long_temporary.exists():
             long_temporary.unlink()
+        normalized_current: pd.DataFrame | None = None
+        inventory_frames: list[pd.DataFrame] = []
+        inventory_columns = [
+            "source_id",
+            "report_year",
+            str(report_a_rules["vehicle_class_column"]),
+            str(report_a_rules["make_column"]),
+            str(report_a_rules["model_column"]),
+            str(report_a_rules["model_year_column"]),
+            "FIT_ACTIVE",
+        ]
+        reconciliation_frames: list[pd.DataFrame] = []
+        finding_frames: list[pd.DataFrame] = []
+        manifest_rows: list[dict[str, Any]] = []
+        report4_cleaned = pd.DataFrame()
+        report4_distribution = pd.DataFrame()
+        report5_cleaned = pd.DataFrame()
+        report5_distribution = pd.DataFrame()
 
-    reconciliation = pd.concat(reconciliation_frames, ignore_index=True)
-    findings = pd.concat(finding_frames, ignore_index=True)
-    for gap in gaps:
-        findings.loc[len(findings)] = {
-            "report_year": gap,
-            "original_mto_class": "",
-            "issue_type": "missing_annual_snapshot",
-            "row_count": 0,
-            "fit_active_stock": 0,
-            "detail": "No annual ZIP resource was present in CKAN metadata.",
-        }
-    if normalized_current is None:
-        raise AssertionError("Latest Ontario Report A was not normalized")
-    current_stock = current_stock_input(normalized_current, rules=rules)
-    write_dataframe_atomic(
-        reconciliation,
-        output_dir / str(rules["reconciliation_file"]),
-    )
-    write_dataframe_atomic(
-        findings,
-        output_dir / str(rules["findings_file"]),
-    )
-    write_dataframe_atomic(
-        current_stock,
-        output_dir / str(rules["current_stock_file"]),
+        try:
+            for request_index, request in enumerate(requests_to_process):
+                if download:
+                    cache_status = fetch_to_cache(request)
+                    logging.info(
+                        "Ontario vehicle %s archive %s: %s",
+                        request.year,
+                        cache_status,
+                        request.cache_path,
+                    )
+                else:
+                    validate_zip_integrity(request.cache_path)
+                resolved = validate_source(
+                    request,
+                    require_auxiliary=request.year == current_year,
+                )
+                report_a_raw = read_report_from_zip(request.cache_path, resolved["A"])
+                normalized, status_long, reconciliation, findings = normalize_report_a(
+                    report_a_raw,
+                    source_id=request.source_id,
+                    year=request.year,
+                    raw_file=resolved["A"].display_name,
+                    cached_zip=request.cache_path,
+                    rules=rules,
+                )
+                cohort_usable, cohort_reason = report_a_cohort_usability(
+                    normalized,
+                    rules=rules,
+                )
+                output_name = rules["reports"]["A"][
+                    "normalized_output_template"
+                ].format(year=request.year)
+                write_dataframe_atomic(normalized, output_dir / output_name)
+                inventory_frames.append(normalized.loc[:, inventory_columns].copy())
+                status_long.to_csv(
+                    long_temporary,
+                    mode="a",
+                    header=request_index == 0,
+                    index=False,
+                )
+                reconciliation_frames.append(reconciliation)
+                finding_frames.append(findings)
+                manifest_rows.append(
+                    _manifest_row(
+                        request,
+                        resolved=resolved,
+                        output_name=output_name,
+                        cohort_snapshot_usable=cohort_usable,
+                        cohort_snapshot_usability_reason=cohort_reason,
+                    )
+                )
+                manifest_rows[-1]["normalized_report_a_sha256"] = file_sha256(output_dir / output_name)
+                if request.year == current_year:
+                    normalized_current = normalized
+                    report4_raw = read_report_from_zip(
+                        request.cache_path,
+                        resolved["4"],
+                    )
+                    report5_raw = read_report_from_zip(
+                        request.cache_path,
+                        resolved["5"],
+                    )
+                    report4_cleaned, report4_distribution = normalize_report4(
+                        report4_raw,
+                        source_id=request.source_id,
+                        year=request.year,
+                        raw_file=resolved["4"].display_name,
+                        cached_zip=request.cache_path,
+                        rules=rules,
+                        kg_to_lb=kg_to_lb,
+                    )
+                    report5_cleaned, report5_distribution = normalize_report5(
+                        report5_raw,
+                        source_id=request.source_id,
+                        year=request.year,
+                        raw_file=resolved["5"].display_name,
+                        cached_zip=request.cache_path,
+                        rules=rules,
+                    )
+            os.replace(long_temporary, long_path)
+        finally:
+            if long_temporary.exists():
+                long_temporary.unlink()
+
+        reconciliation = pd.concat(reconciliation_frames, ignore_index=True)
+        findings = pd.concat(finding_frames, ignore_index=True)
+        for gap in gaps:
+            findings.loc[len(findings)] = {
+                "report_year": gap,
+                "original_mto_class": "",
+                "issue_type": "missing_annual_snapshot",
+                "row_count": 0,
+                "fit_active_stock": 0,
+                "detail": "No annual ZIP resource was present in CKAN metadata.",
+            }
+        if normalized_current is None:
+            raise AssertionError("Latest Ontario Report A was not normalized")
+        current_stock = current_stock_input(normalized_current, rules=rules)
+        write_dataframe_atomic(
+            reconciliation,
+            audit_dir / str(rules["reconciliation_file"]),
+        )
+        write_dataframe_atomic(
+            findings,
+            audit_dir / str(rules["findings_file"]),
+        )
+        write_dataframe_atomic(
+            current_stock,
+            output_dir / str(rules["current_stock_file"]),
+        )
+        if year is None:
+            key_inventory = make_model_key_inventory(inventory_frames, rules=rules)
+            write_dataframe_atomic(
+                key_inventory,
+                output_dir / str(rules["all_edition_make_model_keys_file"]),
+            )
+            logging.info(
+                "Published %d unique nonsuppressed MTO make-model keys across %d editions",
+                len(key_inventory),
+                len(requests_to_process),
+            )
+        else:
+            logging.info(
+                "Skipped all-edition MTO key inventory during single-year override %d",
+                year,
+            )
+        report4_rules = rules["reports"][4]
+        report5_rules = rules["reports"][5]
+        write_dataframe_atomic(
+            report4_cleaned,
+            output_dir
+            / report4_rules["cleaned_output_template"].format(year=current_year),
+        )
+        write_dataframe_atomic(
+            report4_distribution,
+            output_dir
+            / report4_rules["distribution_output_template"].format(year=current_year),
+        )
+        write_dataframe_atomic(
+            report5_cleaned,
+            output_dir
+            / report5_rules["cleaned_output_template"].format(year=current_year),
+        )
+        write_dataframe_atomic(
+            report5_distribution,
+            output_dir
+            / report5_rules["distribution_output_template"].format(year=current_year),
+        )
+        manifest = pd.DataFrame(manifest_rows).sort_values("year").reset_index(drop=True)
+        write_dataframe_atomic(manifest, audit_dir / str(rules["manifest_file"]))
+        warning_lines = [
+            f"{row.issue_type}: year={row.report_year}, "
+            f"class={row.original_mto_class}, rows={row.row_count}, "
+            f"fit_active={row.fit_active_stock}"
+            for row in findings.itertuples(index=False)
+        ]
+        write_text_atomic(
+            "\n".join(warning_lines) + ("\n" if warning_lines else ""),
+            audit_dir / str(rules["warnings_file"]),
+        )
+        for artifact in sorted(output_dir.rglob("*")):
+            if artifact.is_file():
+                destination = destination_dir / artifact.relative_to(output_dir)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(artifact, destination)
+    logging.info(
+        "Published Ontario %s; audit evidence: %s",
+        "complete history" if year is None else f"production edition {year} (aggregate history preserved)",
+        destination_dir / audit_dir.relative_to(output_dir),
     )
     if year is None:
-        key_inventory = make_model_key_inventory(inventory_frames, rules=rules)
-        write_dataframe_atomic(
-            key_inventory,
-            output_dir / str(rules["all_edition_make_model_keys_file"]),
-        )
-        logging.info(
-            "Published %d unique nonsuppressed MTO make-model keys across %d editions",
-            len(key_inventory),
-            len(requests_to_process),
-        )
-    else:
-        logging.info(
-            "Skipped all-edition MTO key inventory during single-year override %d",
-            year,
-        )
-    report4_rules = rules["reports"][4]
-    report5_rules = rules["reports"][5]
-    write_dataframe_atomic(
-        report4_cleaned,
-        output_dir
-        / report4_rules["cleaned_output_template"].format(year=current_year),
-    )
-    write_dataframe_atomic(
-        report4_distribution,
-        output_dir
-        / report4_rules["distribution_output_template"].format(year=current_year),
-    )
-    write_dataframe_atomic(
-        report5_cleaned,
-        output_dir
-        / report5_rules["cleaned_output_template"].format(year=current_year),
-    )
-    write_dataframe_atomic(
-        report5_distribution,
-        output_dir
-        / report5_rules["distribution_output_template"].format(year=current_year),
-    )
-    manifest = pd.DataFrame(manifest_rows).sort_values("year").reset_index(drop=True)
-    write_dataframe_atomic(manifest, manifest_path)
-    warning_lines = [
-        f"{row.issue_type}: year={row.report_year}, "
-        f"class={row.original_mto_class}, rows={row.row_count}, "
-        f"fit_active={row.fit_active_stock}"
-        for row in findings.itertuples(index=False)
-    ]
-    write_text_atomic(
-        "\n".join(warning_lines) + ("\n" if warning_lines else ""),
-        output_dir / str(rules["warnings_file"]),
-    )
-    return output_dir
+        for excluded_year in report_a_rules["excluded_years"]:
+            excluded_output = destination_dir / str(
+                report_a_rules["normalized_output_template"]
+            ).format(year=int(excluded_year))
+            if excluded_output.is_file():
+                excluded_output.unlink()
+                logging.info(
+                    "Removed excluded Ontario Report A interim artifact: %s",
+                    excluded_output,
+                )
+    return destination_dir
 
 
 def parse_args() -> argparse.Namespace:
@@ -1715,7 +1781,7 @@ def parse_args() -> argparse.Namespace:
         "--year",
         type=int,
         default=None,
-        help="Optional single-edition override; omitted processes every usable edition.",
+        help="Refresh one production edition and its scoped audits, preserving aggregate history; omitted rebuilds every usable edition.",
     )
     parser.add_argument("--no-download", action="store_true")
     return parser.parse_args()
