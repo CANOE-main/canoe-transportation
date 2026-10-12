@@ -61,10 +61,14 @@ representations unless the task explicitly places them in scope.
 
 ## Context retrieval and presentation
 
-Do not discover or retrieve Markdown trees by default. Normal agent-facing docs are limited
+Do not discover or retrieve Markdown trees by default. Normal documentation is limited
 to `docs/backend_architecture.md`, `docs/etl_flowcharts.md`, `docs/assumptions.md`,
-`docs/codebase_diagnostic_snapshot.md`, `docs/canoe_main_orchestrator.md`, and documents
-the user explicitly names. Frontmatter routes them; it cannot enroll new ones.
+`docs/codebase_diagnostic_snapshot.md`, `docs/canoe_main_orchestrator.md`, and user-named
+documents. Frontmatter routes them; it cannot enroll new ones.
+
+Select skills from session metadata; read only applicable `SKILL.md` files and required
+references. Skill, ExecPlan, and scenario-authoring procedures are exceptions to this
+documentation list; they do not override task scope or repository safeguards.
 
 `README.md` is normally unnecessary implementation context and is the intentional human
 presentation/redundancy exception. Never routinely redesign, deduplicate, condense,
@@ -86,30 +90,22 @@ Retrieve `docs/canoe_main_orchestrator.md` only for a CANOE-main integration sea
 as a routing snapshot: verify the referenced upstream branch and affected interfaces before
 acting, and do not turn unfinished upstream details into durable transport policy.
 
-Edit docs only for a concrete task reason. The `#to-review` requirement applies only to
-`docs/etl_flowcharts.md`, `docs/backend_architecture.md`, and `docs/assumptions.md`.
-In these three user-authored context documents, unless exact content is user-approved or
-the edit is mechanical, every Codex-authored substantive reviewable change—assumption,
-interpretation, evidence/table/bullet, research conclusion, or data-gap/challenge
-resolution—must carry `#to-review`. Do not tag unchanged history or remove existing
-review markers without explicit user authorization.
+Edit docs only for a concrete task reason. In `docs/etl_flowcharts.md`,
+`docs/backend_architecture.md`, and `docs/assumptions.md`, mark every LLM/agent-authored
+substantive change `#to-review` unless its exact content is user-approved or the edit is
+mechanical. Do not tag unchanged history or remove existing markers without explicit
+user authorization. Do not add these tags anywhere else, including the two LLM-generated
+snapshots, other docs, ExecPlans, or histories; absence of tags does not imply acceptance.
 
-The LLM-generated context snapshots `docs/canoe_main_orchestrator.md` and
-`docs/codebase_diagnostic_snapshot.md` are exempt: do not add `#to-review` tags to them.
-Do not use review tags in any other files, including other documentation, active or
-archived ExecPlans, and plan histories. These exemptions do not imply that assumptions
-or decisions are accepted; the existing evidence, ownership, and validation rules apply.
+Use affected `config/paths.yaml` routes to bound seam changes, context and tests. Each new
+module or artifact needs one owner and configured layer; opt-in diagnostics stay outside
+ETL readiness. Current code, config, tests, schemas and generated validation evidence
+outrank prose/plans. Treat plans/history as audit context; investigate uncertain
+architecture or modeling choices.
 
-For a repository or artifact-layer seam, use the affected `config/paths.yaml` routes to
-bound impact, context, and tests. New modules and artifacts need one owner and configured layer; 
-keep opt-in diagnostics out of normal ETL readiness. Current code, configuration, tests, schemas, 
-and generated validation evidence outrank stale prose or plans. Treat plans and histories as 
-orientation/audit evidence, and investigate uncertain architecture or modeling choices rather than inventing them.
-
-You are operating in an environment where `ast-grep` is installed. For any code search that 
-requires understanding of syntax or code structure, you should default to using 
-`ast-grep --lang [language] -p '<pattern>'`. Adjust the `--lang` flag as needed for the specific 
-programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
+Use `rg` for filenames and literal text; use
+`uv run ast-grep --lang python -p '<pattern>' <path>` for structural Python searches
+(adjust the language as needed).
 
 ## Data, provenance, and parity
 
@@ -182,7 +178,16 @@ must reject incomplete registered coverage rather than silently display partial 
 
 ## Implementation and completion
 
-- Use `uv` for dependency management and commands.
+Use subagents for independent investigation, review or implementation when parallelism
+or context isolation justifies coordination; handle small or sequential tasks directly.
+Assign bounded scopes and exclusive write ownership; the lead reviews evidence, resolves conflicts and
+validates integration. Contexts/worktrees and different SQLite destinations do not prove
+artifact isolation. Resolve caches, registered/reviewed inputs, interim/processed tables,
+manifests, reports, logs and database paths via `config/paths.yaml`; use disjoint disposable
+write roots or serialize operations sharing mutable artifacts, including tests.
+
+- Use `uv` for dependencies and commands; run focused `uv run pytest <test-path>` and
+  `uv run ruff check <python-path>` checks.
 - Add focused tests for parsing, conversions, config interfaces, schema insertion, and
   parity-sensitive transformations as applicable.
 - Avoid speculative abstractions, parallel authorities, generic validation frameworks,
@@ -192,7 +197,7 @@ must reject incomplete registered coverage rather than silently display partial 
 For multi-file, risky, staged, or explicitly planned work, follow `.agents/PLANS.md` and
 maintain a task-specific ExecPlan. Planning procedure belongs there, not in this file.
 
-A change is complete when its entrypoint runs, expected artifacts exist, focused
+A change is complete when applicable entrypoints run, expected artifacts exist, focused
 validation passes or differences are documented, and the result is reproducible from
 versioned files plus registered inputs. Record changed assumptions or interfaces in
 their durable owner.
