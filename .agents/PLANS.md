@@ -85,7 +85,9 @@ Keep plans concise and task-specific, normally with:
 Add risks where failure could damage artifacts, alter behavior silently, require network
 or external inputs, or make rollback difficult. Add a short Decision log only for
 choices that affect source metadata, interfaces, module seams, assumptions, or later
-work. Reference `AGENTS.md` instead of copying repository policy.
+work. Reference `AGENTS.md` instead of copying repository policy. For delegated work,
+record worker scopes, write boundaries, dependencies, returned evidence, and the
+integration/validation owner.
 
 ## Plan the verification
 
@@ -93,7 +95,7 @@ Choose the lightest tier that can exercise the changed contract:
 
 - **Interface/static:** parse, import, schema, link, lint, or structural checks.
 - **Focused behavior:** unit or fixture tests at the changed interface.
-- **Artifact/integration:** deterministic offline smoke, affected DAG target, temporary
+- **Artifact/integration:** deterministic offline smoke, affected lifecycle stage, temporary
   database, or source-to-output reconciliation.
 - **End-to-end/parity:** full build and comparison against accepted reference outputs.
 
