@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from diagnostics.technology_growth import (
+from parameterization.road_adoption_constraints import (
     GrowthDiagnosticConfig,
     annual_seed_to_period,
     annual_to_period,
@@ -26,7 +26,6 @@ from diagnostics.technology_growth import (
     period_additions,
     s_curve,
 )
-from diagnostics import technology_growth as analysis
 from fetching import technology_growth_evidence as acquisition
 from fetching.technology_growth_evidence import (
     EvidenceAsset,
@@ -35,6 +34,7 @@ from fetching.technology_growth_evidence import (
     normalize_hatch,
     validate_asset,
 )
+from parameterization import road_adoption_constraints as analysis
 from utils import active_source_keys, load_config_bundle, load_harmonization_rules
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -630,7 +630,7 @@ def test_existing_reference_respects_cleanup_and_missing_fuel_representation(
         analysis.existing_capacity_references(bundle, controls)
 
 
-@pytest.mark.parametrize("changed_kind", ["input", "artifact"])
+@pytest.mark.parametrize("changed_kind", ["input", "artifact", "missing_input"])
 def test_notebook_handoff_rejects_stale_input_or_edited_artifact(
     bundle, controls, tmp_path, monkeypatch, changed_kind
 ):
@@ -647,7 +647,10 @@ def test_notebook_handoff_rejects_stale_input_or_edited_artifact(
             }
         )
     )
-    (input_path if changed_kind == "input" else output_path).write_text("a,b\n3,4\n")
+    if changed_kind == "missing_input":
+        input_path.unlink()
+    else:
+        (input_path if changed_kind == "input" else output_path).write_text("a,b\n3,4\n")
     monkeypatch.setattr(analysis, "registered_assets", lambda _: [])
     monkeypatch.setattr(analysis, "load_diagnostic_config", lambda _: controls)
     monkeypatch.setattr(
@@ -657,6 +660,6 @@ def test_notebook_handoff_rejects_stale_input_or_edited_artifact(
         analysis, "resolve_repo_path", lambda root, name: tmp_path / name
     )
     with pytest.raises(
-        ValueError, match="Stale" if changed_kind == "input" else "Changed"
+        ValueError, match="Changed" if changed_kind == "artifact" else "Stale"
     ):
         analysis.load_diagnostic_tables(bundle)

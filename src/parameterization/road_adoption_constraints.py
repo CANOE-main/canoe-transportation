@@ -1,7 +1,8 @@
-"""Reproducible, opt-in technology growth evidence and calibration diagnostics.
+"""Shared road-adoption evidence, calibration and constraint calculations.
 
-No production parameter preparation, growth schema rows or SQLite connections live
-here. The notebook and CLI use this one preparation path. SciPy is a dev dependency.
+The notebook and offline CLI reuse this parameterization owner. Current calibration
+outputs remain provisional: no accepted growth rows or SQLite insertion are exposed.
+SciPy is a development dependency for the opt-in evidence analysis.
 """
 
 from __future__ import annotations
@@ -1487,7 +1488,7 @@ def validate_diagnostic(tables: dict[str, pd.DataFrame], bundle: ConfigBundle) -
 
 def implementation_hashes(bundle: ConfigBundle) -> dict[str, str]:
     files = [
-        "src/diagnostics/technology_growth.py",
+        "src/parameterization/road_adoption_constraints.py",
         "src/fetching/technology_growth_evidence.py",
         "src/validation/config_models.py",
         "config/parameters/rules.yaml",
@@ -1719,7 +1720,8 @@ def load_diagnostic_tables(bundle: ConfigBundle) -> dict[str, pd.DataFrame]:
         ).read_text(encoding="utf-8")
     )
     for name, digest in summary["input_hashes"].items():
-        if file_sha256(resolve_repo_path(bundle.repo_root, name)) != digest:
+        path = resolve_repo_path(bundle.repo_root, name)
+        if not path.is_file() or file_sha256(path) != digest:
             raise ValueError(
                 f"Stale growth diagnostic handoff: {name}; rebuild explicitly"
             )

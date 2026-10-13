@@ -4,6 +4,8 @@ import importlib.util
 import sys
 import tomllib
 
+import pytest
+
 from utils import load_config_bundle
 from validation.config_models import ScenarioConfig
 
@@ -35,6 +37,7 @@ def test_cleanup_plan_separates_runtime_generated_cache_and_external(tmp_path: P
     touch(tmp_path / ".pytest_cache" / "nodeids")
     touch(tmp_path / ".pytest-basetemp-example" / "file.txt")
     touch(tmp_path / ".pytest-tmp-example" / "file.txt")
+    touch(tmp_path / ".tmp_export" / "browser-profile.log")
     touch(tmp_path / "inputs" / "1_interim" / "generated.csv")
     touch(tmp_path / "inputs" / "2_processed" / "processed.csv")
     touch(tmp_path / "inputs" / "validation" / "review.csv")
@@ -55,6 +58,7 @@ def test_cleanup_plan_separates_runtime_generated_cache_and_external(tmp_path: P
     assert ".pytest_cache" in default_targets
     assert ".pytest-basetemp-example" in default_targets
     assert ".pytest-tmp-example" in default_targets
+    assert ".tmp_export" in default_targets
     assert "inputs/1_interim" not in default_targets
     assert "outputs" not in default_targets
     assert "inputs/0_cache" not in default_targets
@@ -89,6 +93,31 @@ def test_cleanup_skips_tracked_targets(tmp_path: Path) -> None:
     assert results[0].action == "skipped"
     assert "tracked" in results[0].reason
     assert tracked_file.exists()
+
+
+@pytest.mark.parametrize("link_check", ["is_symlink", "is_junction"])
+def test_cleanup_rejects_linked_runtime_target(tmp_path, monkeypatch, link_check):
+    target = tmp_path / ".tmp_export"
+    touch(target / "profile.log")
+    monkeypatch.setattr(Path, link_check, lambda path: path == target)
+
+    with pytest.raises(ValueError, match="linked target"):
+        clean_runtime.build_cleanup_plan(tmp_path)
+    assert (target / "profile.log").exists()
+
+
+def test_cleanup_refuses_apply_when_git_tracking_is_unavailable(tmp_path, monkeypatch):
+    target = tmp_path / ".tmp_export" / "profile.log"
+    touch(target)
+
+    def unavailable_git(*args, **kwargs):
+        raise OSError("git unavailable")
+
+    monkeypatch.setattr(clean_runtime.subprocess, "run", unavailable_git)
+    monkeypatch.setattr(sys, "argv", ["clean_runtime.py", "--repo-root", str(tmp_path), "--apply"])
+
+    assert clean_runtime.main() == 1
+    assert target.exists()
 
 
 def test_doctor_runs_without_mutating_by_default() -> None:

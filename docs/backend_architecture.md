@@ -52,6 +52,7 @@ requirements.
 │   │   ├── fueleconomy_vehicles.py          # Opt-in FuelEconomy.gov class evidence
 │   │   ├── legacy_charging_profiles.py     # Immutable NHTS/TTS charging evidence and legacy hourly transformation
 │   │   ├── epa_omega_baseline.py           # Compact legacy OMEGA baseline sales/CD ranges and source identity validation
+│   │   ├── technology_growth_evidence.py   # Registered adoption evidence acquisition and normalization - #to-review
 │   │   ├── vpic_vehicle_types.py            # Opt-in vPIC vehicle-type evidence
 │   │   ├── vpic_model_years.py              # Opt-in vPIC make/model-year evidence
 │   │   └── assorted_sources.py              # Smaller registered source adapters
@@ -78,7 +79,7 @@ requirements.
 │   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
 │   │   ├── ldv_charging_profiles.py         # Inherited legacy LDEV charging profiles, to be refactored
 │   │   ├── ldv_ev_ranges.py                 # OMEGA range shares, minimum constraints and parameter-specific representative LDV aggregation
-│   │   └── adoption_constraints.py          # Vehicle technology adoption constraints - #to-do
+│   │   └── road_adoption_constraints.py     # Shared road-adoption calculations and provisional growth calibration - #to-review
 │   ├── utils/
 │   │   ├── __init__.py                      # Typed config loading and artifact path resolution
 │   │   ├── files.py                         # Shared hashing and atomic CSV publication
@@ -188,7 +189,7 @@ preserves the aggregate history manifest, status, quality and key-inventory prod
 Full-history preparation is explicit through `fetching.vehicle_population --no-download`
 without `--year`. Historical consumers validate registered edition coverage and normalized
 file hashes before reading it. The vehicle notebook also needs mapping and MTO diagnostics;
-the growth notebook needs `diagnostics.technology_growth` after its fingerprinted inputs
+the growth notebook needs `parameterization.road_adoption_constraints` after its fingerprinted inputs
 change. Both notebooks read persisted artifacts without running ETL. #to-review
 
 For a change, follow the affected `config/paths.yaml` artifact family to its owner,

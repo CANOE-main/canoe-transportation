@@ -22,6 +22,7 @@ RUNTIME_GLOBS = (
     ".pytest-runtime*",
     ".pytest-tmp*",
     ".ruff_cache",
+    ".tmp_*",
 )
 GENERATED_PATHS = (
     "inputs/1_interim",
@@ -59,6 +60,8 @@ def find_repo_root(start: Path | None = None) -> Path:
 
 def resolve_under_root(repo_root: Path, path: Path) -> Path:
     """Resolve a path and ensure it stays inside the repository."""
+    if path.is_symlink() or path.is_junction():
+        raise ValueError(f"Refusing to clean linked target: {path}")
     resolved = path.resolve()
     if resolved == repo_root:
         raise ValueError("Refusing to clean repository root")
@@ -68,7 +71,7 @@ def resolve_under_root(repo_root: Path, path: Path) -> Path:
 
 
 def tracked_files(repo_root: Path) -> set[Path]:
-    """Return git-tracked files, or an empty set if git is unavailable."""
+    """Return git-tracked files; refuse cleanup if tracking cannot be checked."""
     try:
         completed = subprocess.run(
             ["git", "ls-files", "-z"],
@@ -76,8 +79,8 @@ def tracked_files(repo_root: Path) -> set[Path]:
             check=True,
             capture_output=True,
         )
-    except (OSError, subprocess.CalledProcessError):
-        return set()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("Cannot verify Git-tracked files; cleanup refused") from exc
     names = completed.stdout.decode("utf-8", errors="replace").split("\0")
     return {(repo_root / name).resolve() for name in names if name}
 
@@ -194,7 +197,12 @@ def main() -> int:
         include_generated=args.include_generated,
         include_cache=args.include_cache,
     )
-    results = run_cleanup(targets, dry_run=not args.apply, tracked=tracked_files(repo_root))
+    try:
+        tracked = tracked_files(repo_root)
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    results = run_cleanup(targets, dry_run=not args.apply, tracked=tracked)
     mode = "dry-run" if not args.apply else "apply"
     print(f"clean_runtime mode={mode} targets={len(results)}")
     for result in results:
