@@ -32,6 +32,28 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  # Opt-in database review; no production prerequisite consumes these products.
+  transport_comparison_notebook:
+    path: docs/insights/transport_comparison_diagnosis.py
+    layer: documentation
+    owner: validation.transport_comparison
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  transport_comparison_report:
+    path: outputs/validation/transport_comparison
+    layer: output_validation
+    owner: validation.transport_comparison
+    producers: [validation.transport_comparison, marimo.export]
+    consumers: [docs.insights.transport_comparison_diagnosis, reviewers]
+    validation_surfaces: [validation.transport_comparison.load_diagnostic]
+  transport_comparison_database:
+    path: outputs/sqlite/legacy_reproduction.sqlite
+    layer: database
+    owner: build_transport
+    producers: [build_transport.build_from_scenario]
+    consumers: [validation.transport_comparison]
+    validation_surfaces: [validation.transport_comparison.load_diagnostic]
   # Opt-in growth research: these are evidence/review products, not production inputs.
   technology_growth_cache:
     path: inputs/0_cache/technology_growth

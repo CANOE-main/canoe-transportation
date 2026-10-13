@@ -120,6 +120,8 @@ def test_scenario_entrypoint_dispatches_optional_comparison(
 ) -> None:
     reference = database(tmp_path / "reference.sqlite")
     bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    shutil.copytree(bundle.repo_root / "config/parameters", tmp_path / "config/parameters")
+    shutil.copytree(bundle.repo_root / "inputs/0_manual_params", tmp_path / "inputs/0_manual_params")
     payload = bundle.scenario.model_dump(mode="python")
     payload["comparison"].update(mode=mode, reference_sqlite=str(reference))
     payload["outputs"]["validation_report"] = "comparison.json"
@@ -145,6 +147,11 @@ def test_scenario_entrypoint_dispatches_optional_comparison(
     if mode == "scenario":
         assert report["comparison"]["equivalent"] is True
     assert report_path.exists()
+    assert report["database_sha256"] == build_transport.file_sha256(Path(report["database"]))
+    assert {Path(item["path"]).name for item in report["config"]["parameters"]} == {
+        "rules.yaml", "conversion.yaml", "vehicle_size_class_map.csv",
+    }
+    assert report["config"]["manual_inputs"]
 
 
 @pytest.mark.parametrize("changes", [
@@ -187,7 +194,8 @@ def test_comparison_failure_preserves_published_database_and_cleans_candidate(
         return prepare(*args, **kwargs, include_existing_capacity=False,
                        include_demand=False, include_road_utilization=False,
                        include_lifetimes=False, include_efficiencies=False,
-                       include_costs=False, include_ev_chargers=False)
+                       include_costs=False, include_ev_chargers=False,
+                       include_emission_embodied=False, include_charging_profiles=False)
 
     def reject(*args):
         raise ValueError("comparison failed")

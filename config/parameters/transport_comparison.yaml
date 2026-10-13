@@ -1,0 +1,900 @@
+# Opt-in review diagnostic; these settings do not alter production parameters.
+# Summaries identify documented review cues, not a quantitative attribution of
+# every difference. Re-read the linked assumptions, row notes and audits on refresh.
+scenario: config/scenarios/legacy_comparison.yaml
+reference_sqlite: legacy_backend/canoe_transport_baseline.sqlite
+assumptions_path: docs/assumptions.md
+existing_range: [2000, 2023]
+future_range: [2025, 2050]
+top_n: 10
+
+explanations:
+  capacity_factor_tech:
+    summary: >-
+      The refactored backend uses the scenario-selected Ontario charging shape
+      and time mapping for shared LDV chargers. Compare the actual hourly values
+      and normalization with the legacy BEV profile; the selected travel source
+      is charging_profiles.travel_behavior_source. Legacy notes describe a
+      0.20 mean, but the supplied hourly table has a peak of 1 and a mean near
+      0.449, so those notes alone cannot establish the cause of a shape difference.
+    assumption_sections:
+      - '`capacity_factor_tech` for LDV charging profiles'
+    evidence_paths:
+      - src/parameterization/ldv_charging_profiles.py
+      - config/parameters/rules.yaml
+      - inputs/validation/ldv_charging_profiles/integrity.json
+      - inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv
+    drivers:
+      - scope: Shared existing and new LDV chargers
+        legacy_basis: >-
+          The supplied legacy hourly BEV profile embeds its simulated Ontario
+          fleet, travel behaviour, range mix and charger composition.
+        refactored_basis: >-
+          The scenario selects a registered Ontario charging shape and CANOE
+          time mapping, applied unchanged to both shared LDV charger cohorts.
+        explanation: >-
+          Hourly differences can reflect the selected travel-behaviour series
+          and its projection onto model slices. The profile is not reweighted
+          with the current OMEGA vehicle mix, so vehicle-parameter aggregation
+          does not itself explain a charging-shape difference. Inspect the
+          selected source and hourly mapping to establish the affected hours.
+        assumption_sections:
+          - '`capacity_factor_tech` for LDV charging profiles'
+        evidence_paths:
+          - config/scenarios/legacy_comparison.yaml
+          - src/parameterization/ldv_charging_profiles.py
+          - inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv
+      - scope: Legacy hourly normalization and coverage
+        legacy_basis: >-
+          Legacy row notes describe a mean capacity factor of 0.20, while the
+          supplied hourly values have peak 1 and mean approximately 0.449.
+        refactored_basis: >-
+          The registered shape is peak-normalized and its hourly/time-slice
+          mapping is validated before insertion.
+        explanation: >-
+          The legacy note and numeric series do not establish the same
+          normalization. The supplied reference also contains a duplicate hour
+          and an absent hour; ambiguous or unmatched keys remain coverage
+          evidence. Neither those keys nor the stale mean note can support a
+          numerical attribution of the ranked shape differences by themselves.
+        assumption_sections:
+          - '`capacity_factor_tech` for LDV charging profiles'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - inputs/validation/ldv_charging_profiles/integrity.json
+          - inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv
+
+  capacity_to_activity:
+    summary: >-
+      Both representations use vehicle-class scaling factors to convert capacity
+      into potential activity. The reviewed manual factors now assume 16 hours
+      per day (5,840 hours per year), rather than the legacy 6,500 hours per year,
+      with rounding to one decimal. For heavy trucks this gives 2.9 rather than
+      3.25 billion tonne-km per thousand vehicles. These are potential-activity
+      assumptions; observed utilization is represented separately by annual
+      capacity factors, whose denominator also contains this scaling factor.
+    assumption_sections:
+      - '`capacity_to_activity`'
+    evidence_paths:
+      - inputs/0_manual_params/capacity_to_activity.csv
+      - src/parameterization/road_utilization.py
+      - inputs/2_processed/road_utilization/capacity_to_activity.csv
+    drivers:
+      - scope: Road vehicle potential-activity scaling, especially heavy trucks
+        legacy_basis: >-
+          Legacy vehicle-class factors use 6,500 operating hours per year; the
+          heavy-truck factor is 3.25 billion tonne-km per thousand vehicles.
+        refactored_basis: >-
+          Reviewed manual factors use 16 hours per day, or 5,840 hours per year,
+          with class assumptions and rounding to one decimal; heavy trucks use 2.9.
+        explanation: >-
+          This changes the conversion from installed vehicle capacity to
+          potential service output. It is an explicit scaling assumption,
+          rather than a measured utilization change. The same factor enters
+          the denominator used to derive annual road capacity factors, so
+          review both parameters together when judging its modeled effect.
+        assumption_sections:
+          - '`capacity_to_activity`'
+        evidence_paths:
+          - inputs/0_manual_params/capacity_to_activity.csv
+          - src/parameterization/road_utilization.py
+          - inputs/2_processed/road_utilization/capacity_to_activity.csv
+
+  cost_fixed:
+    summary: >-
+      Charger fixed costs retain a 1% relationship to capital costs in both
+      versions. Review differences in charger composition, cost input years,
+      currency conversion and cohort representation; the refactored backend
+      applies reviewed national port shares and the earliest available cost
+      rates to existing chargers. The 1% relationship itself is not a changed
+      assumption.
+    assumption_sections:
+      - EV charger parameters
+    evidence_paths:
+      - src/parameterization/ev_chargers.py
+      - inputs/0_manual_params/charger_parameters.csv
+      - inputs/2_processed/ev_chargers/charger_cost_fixed.csv
+      - inputs/validation/ev_chargers/integrity.json
+    drivers:
+      - scope: Existing and new charger fixed-cost levels
+        legacy_basis: >-
+          Legacy charger fixed-cost notes use the OEO relationship of annual
+          fixed costs equal to 1% of charger capital costs.
+        refactored_basis: >-
+          The same reviewed 1% ratio is applied to per-GW capital costs with
+          current national charger-type port shares and currency/year conversions.
+        explanation: >-
+          Differences originate in the weighted capital-cost inputs and their
+          conversion, while the fixed-to-capital ratio is retained. The
+          diagnostic compares bridged legacy charger rates only when the
+          constituent legacy technologies have identical per-GW rates; it does
+          not add together rates for distinct chargers.
+        assumption_sections:
+          - EV charger parameters
+        evidence_paths:
+          - inputs/0_manual_params/charger_parameters.csv
+          - src/parameterization/ev_chargers.py
+          - inputs/2_processed/ev_chargers/charger_cost_fixed.csv
+      - scope: Existing charger cohorts and future cost input years
+        legacy_basis: >-
+          Legacy fixed costs are attached to the legacy charger technologies
+          and their original vintage/period cost evidence.
+        refactored_basis: >-
+          Existing chargers use the earliest reviewed 2025 rates; future
+          chargers use their vintage-label rates in this legacy-mode scenario.
+        explanation: >-
+          Existing stock is calibrated to 2023 although reviewed costs start in
+          2025. This explicit earliest-rate proxy and the selected future
+          input years can alter fixed-cost rows even where the 1% ratio agrees.
+          Inspect the cohort and cost audit before assigning a remaining
+          difference to inflation or charger composition alone.
+        assumption_sections:
+          - EV charger parameters
+        evidence_paths:
+          - config/scenarios/legacy_comparison.yaml
+          - inputs/2_processed/ev_chargers/charger_cost_fixed.csv
+          - inputs/validation/ev_chargers/integrity.json
+
+  cost_invest:
+    summary: >-
+      Marine costs replace legacy OEO vessel costs weighted by ICCT Great
+      Lakes-St Lawrence activity with a CIMS capital-cost/service-output
+      baseline and reviewed relative factors. This changes the cost level,
+      not the billion-tonne-km unit scale. Road costs use selected ATB retail
+      prices divided by the configured markup and current fleet weights instead
+      of legacy Autonomie manufacturing prices and earlier weights; missing
+      gasoline/CNG options use diesel proxies. Aircraft use CIMS capital cost
+      divided by FAA annual service output instead of legacy freight cost ratios.
+      Source currency years and provisional metadata remain separate review cues.
+    assumption_sections:
+      - '`cost_invest`'
+      - Shared road fleet composition
+      - EV charger parameters
+    evidence_paths:
+      - src/parameterization/build_costs.py
+      - inputs/1_interim/transport_costs/currency_harmonization.csv
+      - inputs/validation/transport_costs/cost_integrity.json
+      - config/sources.yaml
+    drivers:
+      - scope: Marine freight capital costs
+        legacy_basis: >-
+          Legacy marine notes use OEO vessel costs and ICCT Great Lakes-St
+          Lawrence activity weights across vessel types.
+        refactored_basis: >-
+          CIMS capital cost divided by CIMS service output establishes the
+          incumbent baseline; reviewed relative factors supply alternatives,
+          with HFO and MDO capital costs assumed equal.
+        explanation: >-
+          A different capital-cost/service-output baseline is the principal
+          documented review target for the large marine investment difference.
+          Both compared rows already use cost per billion tonne-km, so applying
+          another tonne-km scale conversion would misstate this mechanism.
+          Currency harmonization is recorded separately from the baseline choice.
+        assumption_sections:
+          - '`cost_invest`'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - src/parameterization/build_costs.py
+          - inputs/1_interim/transport_costs/currency_harmonization.csv
+      - scope: Cars, light trucks, medium/heavy trucks and buses
+        legacy_basis: >-
+          Legacy road costs use Autonomie manufacturing-price series and
+          earlier vehicle-class weights, including separate SI/CNG evidence.
+        refactored_basis: >-
+          Selected ATB retail prices are divided by the reviewed 1.5 markup
+          and aggregated with current class/vocation weights. Missing gasoline
+          and CNG MHDV options use diesel purchase prices.
+        explanation: >-
+          Price editions, the explicit retail-to-manufacturing adjustment,
+          fleet composition and powertrain proxies can each change the
+          aggregate capital cost. These are distinct mechanisms; the current
+          audit does not quantitatively isolate their separate contributions
+          to each technology's difference.
+        assumption_sections:
+          - '`cost_invest`'
+          - Shared road fleet composition
+        evidence_paths:
+          - src/parameterization/build_costs.py
+          - config/parameters/rules.yaml
+          - inputs/validation/transport_costs/cost_integrity.json
+      - scope: Passenger and freight aircraft
+        legacy_basis: >-
+          Legacy aircraft notes normalize passenger costs through their
+          original capacity assumptions and use freight cost relationships.
+        refactored_basis: >-
+          CIMS aircraft capital costs are divided by FAA All Aircraft annual
+          service output, using service-specific speed, capacity, load and
+          daily utilization; cargo tons are interpreted as U.S. short tons.
+        explanation: >-
+          Changing the denominator changes the capital cost per passenger-km
+          or tonne-km even without changing the aircraft purchase price.
+          Passenger and freight service normalizations are kept separate, and
+          SPK aircraft retain the corresponding jet-fuel capital-cost basis.
+        assumption_sections:
+          - '`cost_invest`'
+        evidence_paths:
+          - src/parameterization/build_costs.py
+          - config/sources.yaml
+          - inputs/validation/transport_costs/cost_integrity.json
+      - scope: Charger investment and cost source metadata
+        legacy_basis: >-
+          Legacy cost rows retain their original charger composition, input
+          years and declared source dollar bases.
+        refactored_basis: >-
+          Reviewed charger-type costs use national port-count shares and
+          declared currency/year conversions; new chargers alone receive
+          investment rows. Other sources retain explicit provisional metadata.
+        explanation: >-
+          Charger mix and source-year conversion can produce smaller rate
+          differences alongside vehicle cost changes. An unspecified currency
+          or dollar year remains a review uncertainty in the metadata audit;
+          it is not proof that conversion explains a particular ranked delta.
+        assumption_sections:
+          - '`cost_invest`'
+          - EV charger parameters
+        evidence_paths:
+          - inputs/0_manual_params/charger_parameters.csv
+          - inputs/1_interim/transport_costs/currency_harmonization.csv
+          - inputs/validation/transport_costs/cost_integrity.json
+
+  cost_variable:
+    summary: >-
+      Marine maintenance applies the reviewed OEO class ratio to the CIMS
+      service-capital baseline; legacy costs aggregate vessel-type OEO/ICCT
+      evidence. The legacy marine numeric OPEX/CAPEX ratio does not reproduce
+      its note's simple 5% relationship, leaving its additional normalization
+      unresolved. This cost-baseline change drives large marine differences
+      without a billion-tonne-km unit conversion. Other drivers are LDV repair/MSRP
+      and age assumptions, BEAN truck proxies and payloads, purchase-price-scaled
+      bus maintenance, and FAA service-normalized aircraft costs. Legacy gasoline
+      trucks also cite an AFLEET ratio; intercity buses cite a separate class ratio.
+    assumption_sections:
+      - '`cost_variable`'
+      - '`cost_invest`'
+      - Shared road fleet composition
+    evidence_paths:
+      - src/parameterization/build_costs.py
+      - inputs/1_interim/transport_costs/road_cost_variable.csv
+      - inputs/1_interim/transport_costs/offroad_cost_variable.csv
+      - inputs/validation/transport_costs/cost_integrity.json
+    drivers:
+      - scope: Marine freight and rail variable costs
+        legacy_basis: >-
+          Legacy marine notes combine OEO vessel-type maintenance and ICCT
+          activity evidence; the marine numeric OPEX/CAPEX ratio does not
+          reproduce the note's simple 5% relationship.
+        refactored_basis: >-
+          Reviewed class-specific OEO operating-to-capital ratios are applied
+          directly to the corresponding CIMS service-capital baseline.
+        explanation: >-
+          The changed service-capital baseline directly changes maintenance
+          per unit of transport output and is a documented driver of the marine
+          outlier. Additional legacy marine OPEX normalization remains
+          unresolved, so the full numerical gap cannot yet be attributed to
+          the baseline or the 5% ratio alone. No extra billion-tonne-km scale
+          conversion is justified by the compared units.
+        assumption_sections:
+          - '`cost_variable`'
+          - '`cost_invest`'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - src/parameterization/build_costs.py
+          - inputs/1_interim/transport_costs/offroad_cost_variable.csv
+      - scope: Cars and light-truck maintenance and repair
+        legacy_basis: >-
+          Legacy LDV costs use the earlier repair/maintenance implementation,
+          original price evidence and legacy vehicle-class composition.
+        refactored_basis: >-
+          ATB/Burnham repair coefficients use selected retail MSRP and current
+          class weights; earlier vintages use the first available MSRP and
+          repair costs remain constant after age 14.
+        explanation: >-
+          Repair cost depends on purchase-price inputs, while maintenance and
+          repair also depend on vehicle age and service output. The retained
+          2020-dollar coefficient calibration is applied to selected MSRP
+          despite its differing dollar basis, an explicit assumption to review
+          alongside price-edition and fleet-weight changes.
+        assumption_sections:
+          - '`cost_variable`'
+          - Shared road fleet composition
+        evidence_paths:
+          - src/parameterization/build_costs.py
+          - inputs/1_interim/transport_costs/road_cost_variable.csv
+          - inputs/validation/transport_costs/cost_integrity.json
+      - scope: Medium/heavy trucks and school/intercity buses
+        legacy_basis: >-
+          Legacy gasoline-truck notes include an AFLEET relationship, while
+          intercity buses cite a separate class maintenance ratio.
+        refactored_basis: >-
+          BEAN maintenance proxies classes 2-5 with Class 4 and classes 6-7
+          with Class 6. School/intercity maintenance uses the BEAN transit
+          maintenance-to-purchase relationship scaled to each bus purchase cost.
+        explanation: >-
+          Changed class proxies, class/vocation weights, payloads and purchase
+          costs alter the service-normalized variable cost. Bus investment
+          assumptions therefore also affect bus variable costs. Review the
+          row's source treatment rather than assigning all truck/bus changes
+          to the same maintenance coefficient.
+        assumption_sections:
+          - '`cost_variable`'
+          - '`cost_invest`'
+          - Shared road fleet composition
+        evidence_paths:
+          - src/parameterization/build_costs.py
+          - inputs/1_interim/transport_costs/road_cost_variable.csv
+          - config/parameters/rules.yaml
+      - scope: Passenger and freight aircraft maintenance
+        legacy_basis: >-
+          Legacy aircraft maintenance retains its original operating-cost and
+          freight-ratio assumptions.
+        refactored_basis: >-
+          FAA All Aircraft maintenance per block-hour is divided by the
+          applicable passenger or cargo speed, capacity and load evidence;
+          SPK retains the jet-fuel maintenance basis.
+        explanation: >-
+          The service-output denominator and the maintenance source both
+          differ from the legacy approach. Passenger and freight normalizations
+          must be reviewed independently. The FAA price year is retained as
+          provisional metadata, limiting precise attribution of any remaining
+          currency-related difference.
+        assumption_sections:
+          - '`cost_variable`'
+          - '`cost_invest`'
+        evidence_paths:
+          - src/parameterization/build_costs.py
+          - inputs/1_interim/transport_costs/offroad_cost_variable.csv
+          - inputs/validation/transport_costs/cost_integrity.json
+
+  demand:
+    summary: >-
+      Legacy marine and other off-road notes divide 2021 provincial energy by
+      mean 2015-2019 national intensity; the refactored backend uses energy and
+      intensity from the same configured observation year. This service-baseline
+      change is a direct review target for the large marine-demand difference,
+      alongside updated CEUD evidence and CER GDP projections. Legacy demand
+      notes cite the COVID-affected 2021 baseline and CER Energy Futures 2023.
+      Read demand.future_car_demand from the current scenario for GDP-indexed
+      growth versus the optional extrapolated car/light-truck split.
+    assumption_sections:
+      - '`demand`'
+    evidence_paths:
+      - src/parameterization/build_demand.py
+      - config/sources.yaml
+      - inputs/2_processed/demand/demand.csv
+    drivers:
+      - scope: Marine, rail and aviation service baselines
+        legacy_basis: >-
+          Legacy off-road notes divide 2021 provincial energy by mean
+          2015-2019 national intensity, using a COVID-affected energy year.
+        refactored_basis: >-
+          Provincial mode energy is divided by national intensity from the
+          same configured observation year in the selected CEUD edition.
+        explanation: >-
+          Pairing a different energy year with same-year intensity changes the
+          estimated service baseline before any future growth is applied.
+          This is a direct review target for the large marine-demand difference.
+          Aviation demand includes gasoline energy although incumbent aircraft
+          capacity excludes it, so demand and capacity scopes differ explicitly.
+        assumption_sections:
+          - '`demand`'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - src/parameterization/build_demand.py
+          - inputs/2_processed/demand/demand.csv
+      - scope: Future transport demand and the car/light-truck split
+        legacy_basis: >-
+          Legacy future-demand notes cite CER Energy Futures 2023 GDP growth
+          applied to their original service baseline.
+        refactored_basis: >-
+          The selected CER GDP series grows the configured CEUD baseline.
+          demand.future_car_demand chooses GDP-indexed service growth or the
+          optional car CAGR with passenger light trucks as the combined residual.
+        explanation: >-
+          Updated GDP evidence changes the growth multiplier, while the
+          selected car/light-truck method can redistribute combined passenger
+          activity. Both mechanisms operate after the baseline calculation.
+          Read the current scenario selection on refresh before attributing a
+          car or light-truck difference to the optional extrapolation method.
+        assumption_sections:
+          - '`demand`'
+        evidence_paths:
+          - config/scenarios/legacy_comparison.yaml
+          - config/sources.yaml
+          - src/parameterization/build_demand.py
+
+  efficiency:
+    summary: >-
+      Legacy urban gasoline-bus notes apply a GREET gasoline factor to CEUD
+      diesel intensity; current historical values backcast an ATB diesel-proxy
+      bus level with the CEUD class intensity trend and occupancy. Replacing
+      that gasoline-specific penalty is a direct driver of the bus difference.
+      LDVs use Canadian ratings and relative ATB improvements with MTO weights,
+      replacing legacy absolute Autonomie projections and Wards weights. Other
+      drivers include truck/vocation weights, missing-powertrain proxies, PHEV
+      energy weighting and off-road CEUD/REGEN/GREET factors. These mechanisms
+      identify review targets without quantitatively decomposing each delta.
+    assumption_sections:
+      - '`efficiency`'
+      - Shared road fleet composition
+      - EV charger parameters
+    evidence_paths:
+      - src/parameterization/build_efficiencies.py
+      - inputs/1_interim/efficiencies/annual_efficiency_evidence.csv
+      - inputs/1_interim/efficiencies/road_load_factors.csv
+      - inputs/validation/efficiencies/findings.csv
+    drivers:
+      - scope: Urban gasoline buses and other bus powertrain proxies
+        legacy_basis: >-
+          Legacy urban gasoline-bus notes multiply CEUD diesel efficiency by
+          the GREET gasoline factor; other bus rows use their original class
+          and technology relationships.
+        refactored_basis: >-
+          Historical buses backcast an ATB level with the CEUD class intensity
+          trend and occupancy. Missing gasoline/CNG archetypes use diesel;
+          intercity alternatives use supported REGEN relationships.
+        explanation: >-
+          Replacing the gasoline-specific penalty with the diesel proxy is a
+          direct driver of the large urban gasoline-bus difference. ATB levels,
+          CEUD trends and occupancy also affect the result; their individual
+          contributions are not decomposed by the ranking. Intercity CNG must
+          be reviewed against its REGEN relationship rather than that proxy.
+        assumption_sections:
+          - '`efficiency`'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - src/parameterization/build_efficiencies.py
+          - inputs/1_interim/efficiencies/annual_efficiency_evidence.csv
+      - scope: Cars and light trucks, including existing electrified archetypes
+        legacy_basis: >-
+          Legacy LDV projections use absolute Autonomie efficiency evidence
+          and earlier Wards vehicle-class composition.
+        refactored_basis: >-
+          Canadian NRCan ratings establish historical levels, ATB supplies
+          relative future improvements, and mapped MTO counts supply class
+          weights. Existing BEV/PHEV archetypes retain OMEGA range weighting.
+        explanation: >-
+          Changing both baseline consumption and aggregation weights can move
+          efficiency even when the technology trend is similar. Rating-history
+          gaps use configured analogues, and PHEVs retain their utility-weighted
+          ATB energy level. These source/proxy choices should be reviewed with
+          the annual evidence rather than inferred from one vintage's delta.
+        assumption_sections:
+          - '`efficiency`'
+          - Shared road fleet composition
+        evidence_paths:
+          - src/parameterization/build_efficiencies.py
+          - inputs/1_interim/efficiencies/annual_efficiency_evidence.csv
+          - inputs/validation/efficiencies/findings.csv
+      - scope: Medium/heavy trucks and road service-output conversion
+        legacy_basis: >-
+          Legacy truck efficiencies use their original Autonomie classes,
+          vocation mix and occupancy/payload assumptions.
+        refactored_basis: >-
+          Selected GVWR/vocation and haul weights aggregate ATB vehicles;
+          CEUD gasoline/diesel trends backcast historical values. CEUD activity,
+          distance and stock determine class occupancy/payload.
+        explanation: >-
+          Consumption per vehicle-km and passengers/tonnes per vehicle-km both
+          determine the final service-per-energy efficiency. New fleet weights,
+          missing-powertrain diesel proxies and changed loads therefore each
+          contribute possible mechanisms. Load-factor and annual-efficiency
+          evidence identify which inputs apply to the selected technology.
+        assumption_sections:
+          - '`efficiency`'
+          - Shared road fleet composition
+        evidence_paths:
+          - src/parameterization/build_efficiencies.py
+          - inputs/1_interim/efficiencies/road_load_factors.csv
+          - inputs/1_interim/efficiencies/annual_efficiency_evidence.csv
+      - scope: Off-road modes and charger energy efficiency
+        legacy_basis: >-
+          Legacy off-road and charger rows use their original service
+          intensities, relative technology relationships and charging losses.
+        refactored_basis: >-
+          CEUD national intensities establish incumbent off-road levels,
+          reviewed REGEN/GREET factors supply alternatives, and manual charger
+          efficiencies are 95% for LDV and 80% for MHDV.
+        explanation: >-
+          National intensity, relative technology factors and charger losses
+          are separate assumptions. Marine HFO uses the GREET relationship to
+          MDO, LNG rail uses REGEN CNG evidence, and SPK uses jet-fuel aircraft
+          efficiency. Inspect the row treatment before assigning an off-road
+          difference to a uniform technology-improvement factor.
+        assumption_sections:
+          - '`efficiency`'
+          - EV charger parameters
+        evidence_paths:
+          - src/parameterization/build_efficiencies.py
+          - inputs/0_manual_params/charger_parameters.csv
+          - inputs/validation/efficiencies/findings.csv
+
+  existing_capacity:
+    summary: >-
+      Freight-light-truck HEV differences chiefly concern fuel composition:
+      legacy notes select pickups/vans with commercial MTO ages; current rules
+      include multi-purpose vehicles, mapped Report A ages and the registered
+      annual fuel-share series. The fuel-share audit reconstructs each cohort;
+      the very small legacy HEV denominator magnifies percentage changes.
+      Road totals also move from the legacy 2021 stock anchor to the configured
+      observation year with survival redistribution. Off-road turnover reconciles
+      annual activity; chargers derive from BEV stock/public ports instead of
+      energy consumption. The additional 2023 capacity is unmatched coverage,
+      never zero legacy stock.
+    assumption_sections:
+      - '`existing_capacity`'
+      - EV charger parameters
+    evidence_paths:
+      - src/parameterization/build_existing_capacity.py
+      - inputs/validation/existing_capacity/integrity.json
+      - inputs/validation/existing_capacity/bus_existing_capacity_technology_transfers.csv
+      - inputs/2_processed/ev_chargers/charger_port_reconciliation.csv
+    drivers:
+      - scope: Freight light-truck HEVs and road stock disaggregation
+        legacy_basis: >-
+          Legacy freight-light-truck notes use pickup/van fuel composition and
+          commercial MTO ages, producing a very small HEV allocation.
+        refactored_basis: >-
+          Fuel shares combine pickups, multipurpose vehicles and vans; mapped
+          MTO Report A ages distribute the selected CEUD stock-year totals.
+          Registered annual fuel shares reconstruct the technology cohorts.
+        explanation: >-
+          Changed vehicle scope, age allocation and annual fuel composition
+          are documented drivers of the HEV stock difference. Its exceptionally
+          large percentage is magnified by the tiny legacy denominator. The
+          precise legacy fuel-share calculation is not fully reconciled, so
+          these mechanisms do not establish a quantitative decomposition.
+        assumption_sections:
+          - '`existing_capacity`'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - src/parameterization/build_existing_capacity.py
+          - inputs/validation/existing_capacity/integrity.json
+      - scope: Road and bus cohort survival
+        legacy_basis: >-
+          Legacy road stocks are anchored to 2021 and their original age,
+          fuel-allocation and first-period survival treatment.
+        refactored_basis: >-
+          The configured observation-year totals are distributed to eligible
+          cohorts. Retired stock is redistributed within technology; buses can
+          transfer stock to eligible technologies in the same regional class.
+        explanation: >-
+          A changed stock anchor changes the total, while survival eligibility
+          and redistribution change its vintage allocation. Bus transfers may
+          also change the powertrain split when no cohort of the original
+          technology survives. Compare totals and transfer audits alongside
+          the largest cohort-level differences.
+        assumption_sections:
+          - '`existing_capacity`'
+        evidence_paths:
+          - src/parameterization/build_existing_capacity.py
+          - inputs/validation/existing_capacity/integrity.json
+          - inputs/validation/existing_capacity/bus_existing_capacity_technology_transfers.csv
+      - scope: Off-road service capacity and the 2023 coverage extension
+        legacy_basis: >-
+          Legacy off-road capacities use their original energy/intensity and
+          lifetime assumptions; existing vintage coverage ends at 2020.
+        refactored_basis: >-
+          Same-year provincial energy and national intensity establish annual
+          totals. CIMS lifetimes govern turnover, excess survivors are retired
+          proportionally, and legacy-mode cohort labels extend through 2023.
+        explanation: >-
+          The service baseline and turnover reconciliation alter matched
+          vintage values. The additional 2023 vintage is separate unmatched
+          coverage and supplies no numerical legacy difference. It must not be
+          merged into 2020 or interpreted as zero legacy capacity.
+        assumption_sections:
+          - '`existing_capacity`'
+        evidence_paths:
+          - src/parameterization/build_existing_capacity.py
+          - config/scenarios/legacy_comparison.yaml
+          - inputs/validation/existing_capacity/integrity.json
+      - scope: Existing LDV and MHDV charger capacity
+        legacy_basis: >-
+          Legacy charger stock follows its original energy-based calibration
+          and charger-technology representation.
+        refactored_basis: >-
+          Required ports derive from BEV stock only. Private LDV ports subtract
+          reported public ports; reviewed charger-type shares and rated powers
+          convert port counts to GW, with a separate MHDV allocation.
+        explanation: >-
+          Vehicle-stock calibration, public counts, assumed EVs per port and
+          charger mix jointly change installed GW. PHEV stocks are excluded
+          from this calibration. The public-count date differs from the 2023
+          BEV stock year and remains explicit in the reconciliation audit.
+        assumption_sections:
+          - '`existing_capacity`'
+          - EV charger parameters
+        evidence_paths:
+          - src/parameterization/ev_chargers.py
+          - inputs/0_manual_params/charger_parameters.csv
+          - inputs/2_processed/ev_chargers/charger_port_reconciliation.csv
+
+  lifetime_tech:
+    summary: >-
+      Compare only technologies represented by fixed lifetimes in both
+      databases. Aircraft now use the reviewed CIMS lifetime of 30 years;
+      legacy aircraft use a 24-year median from Boeing's economic-life study.
+      Legacy road rows include NHTSA median and MOVES heavy-truck
+      values; the refactored backend can instead represent selected classes
+      with NHTSA/NEMS survival curves. Bus lifetimes follow supported provincial
+      and powertrain-specific StatCan evidence, while other technologies use
+      reviewed category lifetimes. Fixed-versus-curve coverage is a representation
+      difference and must not be interpreted as a missing lifetime of zero.
+    assumption_sections:
+      - '`lifetime_tech` and `lifetime_survival_curve`'
+    evidence_paths:
+      - src/parameterization/build_lifetime_parameters.py
+      - src/parameterization/road_lifetimes_survival.py
+      - inputs/0_manual_params/lifetime_process.csv
+      - inputs/2_processed/road_lifetimes_survival/source_derived_median_lifetimes.csv
+    drivers:
+      - scope: Passenger and freight aircraft fixed lifetimes
+        legacy_basis: >-
+          Legacy aircraft rows use a 24-year median from Boeing's 2013
+          economic-life study.
+        refactored_basis: >-
+          The reviewed manual CIMS aircraft category lifetime is 30 years.
+        explanation: >-
+          This is a direct change in the fixed-lifetime source/assumption and
+          explains the aircraft lifetime difference. It also affects cohort
+          eligibility in existing-capacity construction; those capacity effects
+          are separate from the lifetime row comparison.
+        assumption_sections:
+          - '`lifetime_tech` and `lifetime_survival_curve`'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - inputs/0_manual_params/lifetime_process.csv
+          - src/parameterization/build_lifetime_parameters.py
+      - scope: Road fixed lifetimes and survival-curve representation
+        legacy_basis: >-
+          Legacy road rows include NHTSA median lifetimes and MOVES
+          heavy-truck values as fixed-lifetime parameters.
+        refactored_basis: >-
+          Selected road classes can use NHTSA/NEMS survival curves instead of
+          fixed lifetimes; source-derived medians support applicable fixed
+          lifetime configurations and reviewed manual values cover other classes.
+        explanation: >-
+          Compare numerical lifetimes only where both representations supply
+          fixed rows. A fixed row replaced by a survival curve is a modeling
+          representation difference, rather than a zero or missing lifespan.
+          Current light-truck medians also depend on the shared class weights.
+        assumption_sections:
+          - '`lifetime_tech` and `lifetime_survival_curve`'
+        evidence_paths:
+          - src/parameterization/build_lifetime_parameters.py
+          - src/parameterization/road_lifetimes_survival.py
+          - inputs/2_processed/road_lifetimes_survival/source_derived_median_lifetimes.csv
+      - scope: Bus fixed lifetimes
+        legacy_basis: >-
+          Legacy buses retain the original fixed-lifetime evidence and
+          class/powertrain assignments in their row notes.
+        refactored_basis: >-
+          Latest supported 2016-2020 StatCan values are assigned by region and
+          powertrain across all bus classes, with explicit province/Canada
+          fallbacks and diesel/electric proxies for unsupported powertrains.
+        explanation: >-
+          Regional evidence, reporting gaps and proxy assignments can change
+          bus lifetimes independently of the aircraft assumption. Gasoline uses
+          diesel useful life; PHEV/FCEV use electric useful life. Inspect which
+          reported value or fallback supplies each compared bus row.
+        assumption_sections:
+          - '`lifetime_tech` and `lifetime_survival_curve`'
+        evidence_paths:
+          - src/parameterization/build_lifetime_parameters.py
+          - config/sources.yaml
+          - inputs/0_manual_params/lifetime_process.csv
+
+  limit_annual_capacity_factor:
+    summary: >-
+      Legacy road notes use 2021 utilization for the first period and the
+      2015-2019 average thereafter, with a minimum at 99.9% of the maximum.
+      Current utilization uses the latest five eligible years excluding
+      2020-2021, and the changed capacity-to-activity scaling changes the
+      activity / (stock times scaling) denominator. Legacy bounds index operating periods while current bounds
+      index vintages, so retain that applicability distinction during comparison.
+      Charger bounds follow reviewed cohort-year assumptions; the prepared
+      age-dependent road trajectories remain outside the current database seam.
+    assumption_sections:
+      - '`limit_annual_capacity_factor`'
+      - EV charger parameters
+    evidence_paths:
+      - src/parameterization/road_utilization.py
+      - inputs/2_processed/road_utilization/road_baseline_utilization.csv
+      - inputs/validation/road_utilization/vintage_period_schema_gap.json
+      - src/parameterization/ev_chargers.py
+    drivers:
+      - scope: Road class utilization baselines
+        legacy_basis: >-
+          Legacy notes use 2021 utilization for the first operating period and
+          the 2015-2019 mean thereafter, with a minimum at 99.9% of the maximum.
+        refactored_basis: >-
+          Current baselines average the latest five eligible CEUD annual
+          activity-to-stock ratios excluding 2020-2021, then divide by the
+          reviewed capacity-to-activity scaling.
+        explanation: >-
+          Changing the observation window changes measured activity per
+          vehicle. Changing capacity-to-activity scaling changes the same
+          annual factor's denominator even if activity and stock were identical.
+          Both mechanisms are needed to interpret the ranked bound differences;
+          prepared age trajectories are not inserted by the current schema seam.
+        assumption_sections:
+          - '`limit_annual_capacity_factor`'
+        evidence_paths:
+          - src/parameterization/road_utilization.py
+          - inputs/0_manual_params/capacity_to_activity.csv
+          - inputs/2_processed/road_utilization/road_baseline_utilization.csv
+      - scope: Period-based legacy bounds and vintage-based current bounds
+        legacy_basis: >-
+          Legacy annual constraints index the operating period and can supply
+          a lower/upper interval for that period.
+        refactored_basis: >-
+          The pinned schema indexes current bounds by installation vintage;
+          the current class baseline stays with the cohort.
+        explanation: >-
+          Comparison projects existing cohorts to the first model period and
+          new cohorts to their installation period. A current value inside the
+          legacy interval has no bound violation; outside it, the nearest edge
+          provides the numerical comparison. This exposes the changed
+          applicability without claiming that cohort and calendar trajectories
+          are fully equivalent.
+        assumption_sections:
+          - '`limit_annual_capacity_factor`'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - inputs/validation/road_utilization/vintage_period_schema_gap.json
+          - src/validation/transport_comparison.py
+      - scope: LDV and MHDV charger annual bounds
+        legacy_basis: >-
+          Legacy charger rows retain the original operating-period
+          utilization bounds and charger assumptions.
+        refactored_basis: >-
+          Reviewed LDV upper bounds are 0.15 for the earliest 2025 cost/input
+          year and 0.20 thereafter; MHDV bounds are 0.30. Existing LDV chargers
+          keep 0.15 and each new cohort retains its selected factor.
+        explanation: >-
+          The selected factor is attached to the vintage rather than updated
+          in each operating period. Legacy mode reads the vintage label, so
+          the 2025 cohort uses 0.15 even when later operating periods exist.
+          Review this cohort assumption separately from hourly charging shape.
+        assumption_sections:
+          - '`limit_annual_capacity_factor`'
+          - EV charger parameters
+        evidence_paths:
+          - inputs/0_manual_params/charger_parameters.csv
+          - src/parameterization/ev_chargers.py
+          - config/scenarios/legacy_comparison.yaml
+
+  limit_tech_input_split:
+    summary: >-
+      Legacy PHEV blend notes describe averages across vehicle classes and
+      model years. Current blends sum class-weighted electrical and total
+      energy before taking their ratio, then average future endpoints; existing
+      LDV representatives use category-specific range weights. These are
+      fuel-input proportions, distinct from the excluded vehicle market-share
+      constraints. Compare only supported equivalent blend technologies.
+    assumption_sections:
+      - '`efficiency`'
+      - Shared road fleet composition
+    evidence_paths:
+      - src/parameterization/build_efficiencies.py
+      - inputs/1_interim/efficiencies/phev_blend_energy_share_evidence.csv
+      - config/parameters/rules.yaml
+    drivers:
+      - scope: Ordinary LDV, MDV and HDV PHEV fuel blends
+        legacy_basis: >-
+          Legacy blend notes describe averaging input proportions across
+          vehicle classes and future model years.
+        refactored_basis: >-
+          Current blends sum class-weighted electrical consumption and total
+          consumption before taking the ratio, then average future endpoint
+          fractions. Selected regional GVWR/vocation and haul weights apply
+          to MDV/HDV; buses retain the HDV blend.
+        explanation: >-
+          A ratio of weighted energy sums differs from a mean of class-level
+          ratios when classes have different total consumption. Updated class
+          weights and energy conversion also change the fraction. These rows
+          describe fuel-input composition, independently of the excluded PEV
+          vehicle market-share constraints.
+        assumption_sections:
+          - '`efficiency`'
+          - Shared road fleet composition
+        evidence_paths:
+          - src/parameterization/build_efficiencies.py
+          - inputs/1_interim/efficiencies/phev_blend_energy_share_evidence.csv
+          - config/parameters/rules.yaml
+      - scope: Existing LDV PHEV representative blends
+        legacy_basis: >-
+          Legacy LDV blends retain their original range/class aggregation and
+          input-share assumptions.
+        refactored_basis: >-
+          Existing representatives have category-specific blends using
+          corresponding class weights and OMEGA range sales weights, while
+          retaining ATB utility-weighted electrical and liquid-fuel energy.
+        explanation: >-
+          Existing car and light-truck archetypes need not share the ordinary
+          future LDV blend. Their distinct range/class energy aggregation is an
+          explicit representation choice; compare only supported equivalent
+          blend technologies and keep unmatched blends as coverage evidence.
+        assumption_sections:
+          - '`efficiency`'
+          - Shared road fleet composition
+        evidence_paths:
+          - src/parameterization/build_efficiencies.py
+          - inputs/1_interim/efficiencies/phev_blend_energy_share_evidence.csv
+          - config/parameters/rules.yaml
+
+  lifetime_survival_curve:
+    summary: >-
+      The refactored backend can supply NHTSA light/medium-vehicle and NEMS
+      heavy-truck survival schedules, aggregated to model age blocks using
+      current class weights. The supplied legacy database has no survival-curve
+      table, so this is one-sided representation coverage with no numerical
+      legacy ranking. Review the source schedules and fixed-lifetime relationship
+      without treating absent legacy curves as zero survival.
+    assumption_sections:
+      - '`lifetime_tech` and `lifetime_survival_curve`'
+      - Shared road fleet composition
+    evidence_paths:
+      - src/parameterization/road_lifetimes_survival.py
+      - src/parameterization/build_lifetime_parameters.py
+      - inputs/2_processed/road_lifetimes_survival/road_vehicle_transformed_survival_curves.csv
+    drivers:
+      - scope: Road survival-curve representation
+        legacy_basis: >-
+          The supplied legacy database provides fixed road lifetimes and has
+          no survival-curve parameter table.
+        refactored_basis: >-
+          NHTSA schedules supply light/medium-vehicle survival, and NEMS
+          annual scrappage supplies heavy-truck survival when selected.
+        explanation: >-
+          This is one-sided representation coverage, so no numerical legacy
+          ranking is possible. Curves describe gradual cohort survival instead
+          of a fixed retirement age. Review their source schedules and their
+          relationship to fixed lifetimes without inventing zero legacy survival.
+        assumption_sections:
+          - '`lifetime_tech` and `lifetime_survival_curve`'
+        evidence_paths:
+          - legacy_backend/canoe_transport_baseline.sqlite
+          - src/parameterization/road_lifetimes_survival.py
+          - src/parameterization/build_lifetime_parameters.py
+      - scope: Light-truck class aggregation and model age blocks
+        legacy_basis: >-
+          Fixed-lifetime rows do not encode annual survival curves or the
+          distribution of survival within a five-year model age block.
+        refactored_basis: >-
+          Shared MTO class weights combine NHTSA Vans/SUVs and Pickups for
+          both light-truck classes; complete annual-age blocks are averaged
+          and schedules are held across regions, powertrains and vintages.
+        explanation: >-
+          Curve values depend on both source schedules and the aggregation
+          rule. Ages 0-4, for example, form the new five-year cohort's first
+          block. Changing class weights can change the curve without changing
+          the underlying NHTSA schedules; changes should be reviewed through
+          the transformed-curve evidence rather than a legacy difference score.
+        assumption_sections:
+          - '`lifetime_tech` and `lifetime_survival_curve`'
+          - Shared road fleet composition
+        evidence_paths:
+          - src/parameterization/road_lifetimes_survival.py
+          - config/parameters/rules.yaml
+          - inputs/2_processed/road_lifetimes_survival/road_vehicle_transformed_survival_curves.csv
