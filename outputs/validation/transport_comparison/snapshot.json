@@ -1,0 +1,2098 @@
+{
+  "config": {
+    "scenario": "config/scenarios/legacy_comparison.yaml",
+    "reference_sqlite": "legacy_backend/canoe_transport_baseline.sqlite",
+    "assumptions_path": "docs/assumptions.md",
+    "existing_range": [
+      2000,
+      2023
+    ],
+    "future_range": [
+      2025,
+      2050
+    ],
+    "top_n": 10,
+    "explanations": {
+      "capacity_factor_tech": {
+        "summary": "The refactored backend uses the scenario-selected Ontario charging shape and time mapping for shared LDV chargers. Compare the actual hourly values and normalization with the legacy BEV profile; the selected travel source is charging_profiles.travel_behavior_source. Legacy notes describe a 0.20 mean, but the supplied hourly table has a peak of 1 and a mean near 0.449, so those notes alone cannot establish the cause of a shape difference.",
+        "assumption_sections": [
+          "`capacity_factor_tech` for LDV charging profiles"
+        ],
+        "evidence_paths": [
+          "src/parameterization/ldv_charging_profiles.py",
+          "config/parameters/rules.yaml",
+          "inputs/validation/ldv_charging_profiles/integrity.json",
+          "inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv"
+        ],
+        "drivers": [
+          {
+            "scope": "Shared existing and new LDV chargers",
+            "legacy_basis": "The supplied legacy hourly BEV profile embeds its simulated Ontario fleet, travel behaviour, range mix and charger composition.",
+            "refactored_basis": "The scenario selects a registered Ontario charging shape and CANOE time mapping, applied unchanged to both shared LDV charger cohorts.",
+            "explanation": "Hourly differences can reflect the selected travel-behaviour series and its projection onto model slices. The profile is not reweighted with the current OMEGA vehicle mix, so vehicle-parameter aggregation does not itself explain a charging-shape difference. Inspect the selected source and hourly mapping to establish the affected hours.",
+            "assumption_sections": [
+              "`capacity_factor_tech` for LDV charging profiles"
+            ],
+            "evidence_paths": [
+              "config/scenarios/legacy_comparison.yaml",
+              "src/parameterization/ldv_charging_profiles.py",
+              "inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv"
+            ]
+          },
+          {
+            "scope": "Legacy hourly normalization and coverage",
+            "legacy_basis": "Legacy row notes describe a mean capacity factor of 0.20, while the supplied hourly values have peak 1 and mean approximately 0.449.",
+            "refactored_basis": "The registered shape is peak-normalized and its hourly/time-slice mapping is validated before insertion.",
+            "explanation": "The legacy note and numeric series do not establish the same normalization. The supplied reference also contains a duplicate hour and an absent hour; ambiguous or unmatched keys remain coverage evidence. Neither those keys nor the stale mean note can support a numerical attribution of the ranked shape differences by themselves.",
+            "assumption_sections": [
+              "`capacity_factor_tech` for LDV charging profiles"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "inputs/validation/ldv_charging_profiles/integrity.json",
+              "inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv"
+            ]
+          }
+        ]
+      },
+      "capacity_to_activity": {
+        "summary": "Both representations use vehicle-class scaling factors to convert capacity into potential activity. The reviewed manual factors now assume 16 hours per day (5,840 hours per year), rather than the legacy 6,500 hours per year, with rounding to one decimal. For heavy trucks this gives 2.9 rather than 3.25 billion tonne-km per thousand vehicles. These are potential-activity assumptions; observed utilization is represented separately by annual capacity factors, whose denominator also contains this scaling factor.",
+        "assumption_sections": [
+          "`capacity_to_activity`"
+        ],
+        "evidence_paths": [
+          "inputs/0_manual_params/capacity_to_activity.csv",
+          "src/parameterization/road_utilization.py",
+          "inputs/2_processed/road_utilization/capacity_to_activity.csv"
+        ],
+        "drivers": [
+          {
+            "scope": "Road vehicle potential-activity scaling, especially heavy trucks",
+            "legacy_basis": "Legacy vehicle-class factors use 6,500 operating hours per year; the heavy-truck factor is 3.25 billion tonne-km per thousand vehicles.",
+            "refactored_basis": "Reviewed manual factors use 16 hours per day, or 5,840 hours per year, with class assumptions and rounding to one decimal; heavy trucks use 2.9.",
+            "explanation": "This changes the conversion from installed vehicle capacity to potential service output. It is an explicit scaling assumption, rather than a measured utilization change. The same factor enters the denominator used to derive annual road capacity factors, so review both parameters together when judging its modeled effect.",
+            "assumption_sections": [
+              "`capacity_to_activity`"
+            ],
+            "evidence_paths": [
+              "inputs/0_manual_params/capacity_to_activity.csv",
+              "src/parameterization/road_utilization.py",
+              "inputs/2_processed/road_utilization/capacity_to_activity.csv"
+            ]
+          }
+        ]
+      },
+      "cost_fixed": {
+        "summary": "Charger fixed costs retain a 1% relationship to capital costs in both versions. Review differences in charger composition, cost input years, currency conversion and cohort representation; the refactored backend applies reviewed national port shares and the earliest available cost rates to existing chargers. The 1% relationship itself is not a changed assumption.",
+        "assumption_sections": [
+          "EV charger parameters"
+        ],
+        "evidence_paths": [
+          "src/parameterization/ev_chargers.py",
+          "inputs/0_manual_params/charger_parameters.csv",
+          "inputs/2_processed/ev_chargers/charger_cost_fixed.csv",
+          "inputs/validation/ev_chargers/integrity.json"
+        ],
+        "drivers": [
+          {
+            "scope": "Existing and new charger fixed-cost levels",
+            "legacy_basis": "Legacy charger fixed-cost notes use the OEO relationship of annual fixed costs equal to 1% of charger capital costs.",
+            "refactored_basis": "The same reviewed 1% ratio is applied to per-GW capital costs with current national charger-type port shares and currency/year conversions.",
+            "explanation": "Differences originate in the weighted capital-cost inputs and their conversion, while the fixed-to-capital ratio is retained. The diagnostic compares bridged legacy charger rates only when the constituent legacy technologies have identical per-GW rates; it does not add together rates for distinct chargers.",
+            "assumption_sections": [
+              "EV charger parameters"
+            ],
+            "evidence_paths": [
+              "inputs/0_manual_params/charger_parameters.csv",
+              "src/parameterization/ev_chargers.py",
+              "inputs/2_processed/ev_chargers/charger_cost_fixed.csv"
+            ]
+          },
+          {
+            "scope": "Existing charger cohorts and future cost input years",
+            "legacy_basis": "Legacy fixed costs are attached to the legacy charger technologies and their original vintage/period cost evidence.",
+            "refactored_basis": "Existing chargers use the earliest reviewed 2025 rates; future chargers use their vintage-label rates in this legacy-mode scenario.",
+            "explanation": "Existing stock is calibrated to 2023 although reviewed costs start in 2025. This explicit earliest-rate proxy and the selected future input years can alter fixed-cost rows even where the 1% ratio agrees. Inspect the cohort and cost audit before assigning a remaining difference to inflation or charger composition alone.",
+            "assumption_sections": [
+              "EV charger parameters"
+            ],
+            "evidence_paths": [
+              "config/scenarios/legacy_comparison.yaml",
+              "inputs/2_processed/ev_chargers/charger_cost_fixed.csv",
+              "inputs/validation/ev_chargers/integrity.json"
+            ]
+          }
+        ]
+      },
+      "cost_invest": {
+        "summary": "Marine costs replace legacy OEO vessel costs weighted by ICCT Great Lakes-St Lawrence activity with a CIMS capital-cost/service-output baseline and reviewed relative factors. This changes the cost level, not the billion-tonne-km unit scale. Road costs use selected ATB retail prices divided by the configured markup and current fleet weights instead of legacy Autonomie manufacturing prices and earlier weights; missing gasoline/CNG options use diesel proxies. Aircraft use CIMS capital cost divided by FAA annual service output instead of legacy freight cost ratios. Source currency years and provisional metadata remain separate review cues.",
+        "assumption_sections": [
+          "`cost_invest`",
+          "Shared road fleet composition",
+          "EV charger parameters"
+        ],
+        "evidence_paths": [
+          "src/parameterization/build_costs.py",
+          "inputs/1_interim/transport_costs/currency_harmonization.csv",
+          "inputs/validation/transport_costs/cost_integrity.json",
+          "config/sources.yaml"
+        ],
+        "drivers": [
+          {
+            "scope": "Marine freight capital costs",
+            "legacy_basis": "Legacy marine notes use OEO vessel costs and ICCT Great Lakes-St Lawrence activity weights across vessel types.",
+            "refactored_basis": "CIMS capital cost divided by CIMS service output establishes the incumbent baseline; reviewed relative factors supply alternatives, with HFO and MDO capital costs assumed equal.",
+            "explanation": "A different capital-cost/service-output baseline is the principal documented review target for the large marine investment difference. Both compared rows already use cost per billion tonne-km, so applying another tonne-km scale conversion would misstate this mechanism. Currency harmonization is recorded separately from the baseline choice.",
+            "assumption_sections": [
+              "`cost_invest`"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "src/parameterization/build_costs.py",
+              "inputs/1_interim/transport_costs/currency_harmonization.csv"
+            ]
+          },
+          {
+            "scope": "Cars, light trucks, medium/heavy trucks and buses",
+            "legacy_basis": "Legacy road costs use Autonomie manufacturing-price series and earlier vehicle-class weights, including separate SI/CNG evidence.",
+            "refactored_basis": "Selected ATB retail prices are divided by the reviewed 1.5 markup and aggregated with current class/vocation weights. Missing gasoline and CNG MHDV options use diesel purchase prices.",
+            "explanation": "Price editions, the explicit retail-to-manufacturing adjustment, fleet composition and powertrain proxies can each change the aggregate capital cost. These are distinct mechanisms; the current audit does not quantitatively isolate their separate contributions to each technology's difference.",
+            "assumption_sections": [
+              "`cost_invest`",
+              "Shared road fleet composition"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_costs.py",
+              "config/parameters/rules.yaml",
+              "inputs/validation/transport_costs/cost_integrity.json"
+            ]
+          },
+          {
+            "scope": "Passenger and freight aircraft",
+            "legacy_basis": "Legacy aircraft notes normalize passenger costs through their original capacity assumptions and use freight cost relationships.",
+            "refactored_basis": "CIMS aircraft capital costs are divided by FAA All Aircraft annual service output, using service-specific speed, capacity, load and daily utilization; cargo tons are interpreted as U.S. short tons.",
+            "explanation": "Changing the denominator changes the capital cost per passenger-km or tonne-km even without changing the aircraft purchase price. Passenger and freight service normalizations are kept separate, and SPK aircraft retain the corresponding jet-fuel capital-cost basis.",
+            "assumption_sections": [
+              "`cost_invest`"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_costs.py",
+              "config/sources.yaml",
+              "inputs/validation/transport_costs/cost_integrity.json"
+            ]
+          },
+          {
+            "scope": "Charger investment and cost source metadata",
+            "legacy_basis": "Legacy cost rows retain their original charger composition, input years and declared source dollar bases.",
+            "refactored_basis": "Reviewed charger-type costs use national port-count shares and declared currency/year conversions; new chargers alone receive investment rows. Other sources retain explicit provisional metadata.",
+            "explanation": "Charger mix and source-year conversion can produce smaller rate differences alongside vehicle cost changes. An unspecified currency or dollar year remains a review uncertainty in the metadata audit; it is not proof that conversion explains a particular ranked delta.",
+            "assumption_sections": [
+              "`cost_invest`",
+              "EV charger parameters"
+            ],
+            "evidence_paths": [
+              "inputs/0_manual_params/charger_parameters.csv",
+              "inputs/1_interim/transport_costs/currency_harmonization.csv",
+              "inputs/validation/transport_costs/cost_integrity.json"
+            ]
+          }
+        ]
+      },
+      "cost_variable": {
+        "summary": "Marine maintenance applies the reviewed OEO class ratio to the CIMS service-capital baseline; legacy costs aggregate vessel-type OEO/ICCT evidence. The legacy marine numeric OPEX/CAPEX ratio does not reproduce its note's simple 5% relationship, leaving its additional normalization unresolved. This cost-baseline change drives large marine differences without a billion-tonne-km unit conversion. Other drivers are LDV repair/MSRP and age assumptions, BEAN truck proxies and payloads, purchase-price-scaled bus maintenance, and FAA service-normalized aircraft costs. Legacy gasoline trucks also cite an AFLEET ratio; intercity buses cite a separate class ratio.",
+        "assumption_sections": [
+          "`cost_variable`",
+          "`cost_invest`",
+          "Shared road fleet composition"
+        ],
+        "evidence_paths": [
+          "src/parameterization/build_costs.py",
+          "inputs/1_interim/transport_costs/road_cost_variable.csv",
+          "inputs/1_interim/transport_costs/offroad_cost_variable.csv",
+          "inputs/validation/transport_costs/cost_integrity.json"
+        ],
+        "drivers": [
+          {
+            "scope": "Marine freight and rail variable costs",
+            "legacy_basis": "Legacy marine notes combine OEO vessel-type maintenance and ICCT activity evidence; the marine numeric OPEX/CAPEX ratio does not reproduce the note's simple 5% relationship.",
+            "refactored_basis": "Reviewed class-specific OEO operating-to-capital ratios are applied directly to the corresponding CIMS service-capital baseline.",
+            "explanation": "The changed service-capital baseline directly changes maintenance per unit of transport output and is a documented driver of the marine outlier. Additional legacy marine OPEX normalization remains unresolved, so the full numerical gap cannot yet be attributed to the baseline or the 5% ratio alone. No extra billion-tonne-km scale conversion is justified by the compared units.",
+            "assumption_sections": [
+              "`cost_variable`",
+              "`cost_invest`"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "src/parameterization/build_costs.py",
+              "inputs/1_interim/transport_costs/offroad_cost_variable.csv"
+            ]
+          },
+          {
+            "scope": "Cars and light-truck maintenance and repair",
+            "legacy_basis": "Legacy LDV costs use the earlier repair/maintenance implementation, original price evidence and legacy vehicle-class composition.",
+            "refactored_basis": "ATB/Burnham repair coefficients use selected retail MSRP and current class weights; earlier vintages use the first available MSRP and repair costs remain constant after age 14.",
+            "explanation": "Repair cost depends on purchase-price inputs, while maintenance and repair also depend on vehicle age and service output. The retained 2020-dollar coefficient calibration is applied to selected MSRP despite its differing dollar basis, an explicit assumption to review alongside price-edition and fleet-weight changes.",
+            "assumption_sections": [
+              "`cost_variable`",
+              "Shared road fleet composition"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_costs.py",
+              "inputs/1_interim/transport_costs/road_cost_variable.csv",
+              "inputs/validation/transport_costs/cost_integrity.json"
+            ]
+          },
+          {
+            "scope": "Medium/heavy trucks and school/intercity buses",
+            "legacy_basis": "Legacy gasoline-truck notes include an AFLEET relationship, while intercity buses cite a separate class maintenance ratio.",
+            "refactored_basis": "BEAN maintenance proxies classes 2-5 with Class 4 and classes 6-7 with Class 6. School/intercity maintenance uses the BEAN transit maintenance-to-purchase relationship scaled to each bus purchase cost.",
+            "explanation": "Changed class proxies, class/vocation weights, payloads and purchase costs alter the service-normalized variable cost. Bus investment assumptions therefore also affect bus variable costs. Review the row's source treatment rather than assigning all truck/bus changes to the same maintenance coefficient.",
+            "assumption_sections": [
+              "`cost_variable`",
+              "`cost_invest`",
+              "Shared road fleet composition"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_costs.py",
+              "inputs/1_interim/transport_costs/road_cost_variable.csv",
+              "config/parameters/rules.yaml"
+            ]
+          },
+          {
+            "scope": "Passenger and freight aircraft maintenance",
+            "legacy_basis": "Legacy aircraft maintenance retains its original operating-cost and freight-ratio assumptions.",
+            "refactored_basis": "FAA All Aircraft maintenance per block-hour is divided by the applicable passenger or cargo speed, capacity and load evidence; SPK retains the jet-fuel maintenance basis.",
+            "explanation": "The service-output denominator and the maintenance source both differ from the legacy approach. Passenger and freight normalizations must be reviewed independently. The FAA price year is retained as provisional metadata, limiting precise attribution of any remaining currency-related difference.",
+            "assumption_sections": [
+              "`cost_variable`",
+              "`cost_invest`"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_costs.py",
+              "inputs/1_interim/transport_costs/offroad_cost_variable.csv",
+              "inputs/validation/transport_costs/cost_integrity.json"
+            ]
+          }
+        ]
+      },
+      "demand": {
+        "summary": "Legacy marine and other off-road notes divide 2021 provincial energy by mean 2015-2019 national intensity; the refactored backend uses energy and intensity from the same configured observation year. This service-baseline change is a direct review target for the large marine-demand difference, alongside updated CEUD evidence and CER GDP projections. Legacy demand notes cite the COVID-affected 2021 baseline and CER Energy Futures 2023. Read demand.future_car_demand from the current scenario for GDP-indexed growth versus the optional extrapolated car/light-truck split.",
+        "assumption_sections": [
+          "`demand`"
+        ],
+        "evidence_paths": [
+          "src/parameterization/build_demand.py",
+          "config/sources.yaml",
+          "inputs/2_processed/demand/demand.csv"
+        ],
+        "drivers": [
+          {
+            "scope": "Marine, rail and aviation service baselines",
+            "legacy_basis": "Legacy off-road notes divide 2021 provincial energy by mean 2015-2019 national intensity, using a COVID-affected energy year.",
+            "refactored_basis": "Provincial mode energy is divided by national intensity from the same configured observation year in the selected CEUD edition.",
+            "explanation": "Pairing a different energy year with same-year intensity changes the estimated service baseline before any future growth is applied. This is a direct review target for the large marine-demand difference. Aviation demand includes gasoline energy although incumbent aircraft capacity excludes it, so demand and capacity scopes differ explicitly.",
+            "assumption_sections": [
+              "`demand`"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "src/parameterization/build_demand.py",
+              "inputs/2_processed/demand/demand.csv"
+            ]
+          },
+          {
+            "scope": "Future transport demand and the car/light-truck split",
+            "legacy_basis": "Legacy future-demand notes cite CER Energy Futures 2023 GDP growth applied to their original service baseline.",
+            "refactored_basis": "The selected CER GDP series grows the configured CEUD baseline. demand.future_car_demand chooses GDP-indexed service growth or the optional car CAGR with passenger light trucks as the combined residual.",
+            "explanation": "Updated GDP evidence changes the growth multiplier, while the selected car/light-truck method can redistribute combined passenger activity. Both mechanisms operate after the baseline calculation. Read the current scenario selection on refresh before attributing a car or light-truck difference to the optional extrapolation method.",
+            "assumption_sections": [
+              "`demand`"
+            ],
+            "evidence_paths": [
+              "config/scenarios/legacy_comparison.yaml",
+              "config/sources.yaml",
+              "src/parameterization/build_demand.py"
+            ]
+          }
+        ]
+      },
+      "efficiency": {
+        "summary": "Legacy urban gasoline-bus notes apply a GREET gasoline factor to CEUD diesel intensity; current historical values backcast an ATB diesel-proxy bus level with the CEUD class intensity trend and occupancy. Replacing that gasoline-specific penalty is a direct driver of the bus difference. LDVs use Canadian ratings and relative ATB improvements with MTO weights, replacing legacy absolute Autonomie projections and Wards weights. Other drivers include truck/vocation weights, missing-powertrain proxies, PHEV energy weighting and off-road CEUD/REGEN/GREET factors. These mechanisms identify review targets without quantitatively decomposing each delta.",
+        "assumption_sections": [
+          "`efficiency`",
+          "Shared road fleet composition",
+          "EV charger parameters"
+        ],
+        "evidence_paths": [
+          "src/parameterization/build_efficiencies.py",
+          "inputs/1_interim/efficiencies/annual_efficiency_evidence.csv",
+          "inputs/1_interim/efficiencies/road_load_factors.csv",
+          "inputs/validation/efficiencies/findings.csv"
+        ],
+        "drivers": [
+          {
+            "scope": "Urban gasoline buses and other bus powertrain proxies",
+            "legacy_basis": "Legacy urban gasoline-bus notes multiply CEUD diesel efficiency by the GREET gasoline factor; other bus rows use their original class and technology relationships.",
+            "refactored_basis": "Historical buses backcast an ATB level with the CEUD class intensity trend and occupancy. Missing gasoline/CNG archetypes use diesel; intercity alternatives use supported REGEN relationships.",
+            "explanation": "Replacing the gasoline-specific penalty with the diesel proxy is a direct driver of the large urban gasoline-bus difference. ATB levels, CEUD trends and occupancy also affect the result; their individual contributions are not decomposed by the ranking. Intercity CNG must be reviewed against its REGEN relationship rather than that proxy.",
+            "assumption_sections": [
+              "`efficiency`"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "src/parameterization/build_efficiencies.py",
+              "inputs/1_interim/efficiencies/annual_efficiency_evidence.csv"
+            ]
+          },
+          {
+            "scope": "Cars and light trucks, including existing electrified archetypes",
+            "legacy_basis": "Legacy LDV projections use absolute Autonomie efficiency evidence and earlier Wards vehicle-class composition.",
+            "refactored_basis": "Canadian NRCan ratings establish historical levels, ATB supplies relative future improvements, and mapped MTO counts supply class weights. Existing BEV/PHEV archetypes retain OMEGA range weighting.",
+            "explanation": "Changing both baseline consumption and aggregation weights can move efficiency even when the technology trend is similar. Rating-history gaps use configured analogues, and PHEVs retain their utility-weighted ATB energy level. These source/proxy choices should be reviewed with the annual evidence rather than inferred from one vintage's delta.",
+            "assumption_sections": [
+              "`efficiency`",
+              "Shared road fleet composition"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_efficiencies.py",
+              "inputs/1_interim/efficiencies/annual_efficiency_evidence.csv",
+              "inputs/validation/efficiencies/findings.csv"
+            ]
+          },
+          {
+            "scope": "Medium/heavy trucks and road service-output conversion",
+            "legacy_basis": "Legacy truck efficiencies use their original Autonomie classes, vocation mix and occupancy/payload assumptions.",
+            "refactored_basis": "Selected GVWR/vocation and haul weights aggregate ATB vehicles; CEUD gasoline/diesel trends backcast historical values. CEUD activity, distance and stock determine class occupancy/payload.",
+            "explanation": "Consumption per vehicle-km and passengers/tonnes per vehicle-km both determine the final service-per-energy efficiency. New fleet weights, missing-powertrain diesel proxies and changed loads therefore each contribute possible mechanisms. Load-factor and annual-efficiency evidence identify which inputs apply to the selected technology.",
+            "assumption_sections": [
+              "`efficiency`",
+              "Shared road fleet composition"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_efficiencies.py",
+              "inputs/1_interim/efficiencies/road_load_factors.csv",
+              "inputs/1_interim/efficiencies/annual_efficiency_evidence.csv"
+            ]
+          },
+          {
+            "scope": "Off-road modes and charger energy efficiency",
+            "legacy_basis": "Legacy off-road and charger rows use their original service intensities, relative technology relationships and charging losses.",
+            "refactored_basis": "CEUD national intensities establish incumbent off-road levels, reviewed REGEN/GREET factors supply alternatives, and manual charger efficiencies are 95% for LDV and 80% for MHDV.",
+            "explanation": "National intensity, relative technology factors and charger losses are separate assumptions. Marine HFO uses the GREET relationship to MDO, LNG rail uses REGEN CNG evidence, and SPK uses jet-fuel aircraft efficiency. Inspect the row treatment before assigning an off-road difference to a uniform technology-improvement factor.",
+            "assumption_sections": [
+              "`efficiency`",
+              "EV charger parameters"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_efficiencies.py",
+              "inputs/0_manual_params/charger_parameters.csv",
+              "inputs/validation/efficiencies/findings.csv"
+            ]
+          }
+        ]
+      },
+      "existing_capacity": {
+        "summary": "Freight-light-truck HEV differences chiefly concern fuel composition: legacy notes select pickups/vans with commercial MTO ages; current rules include multi-purpose vehicles, mapped Report A ages and the registered annual fuel-share series. The fuel-share audit reconstructs each cohort; the very small legacy HEV denominator magnifies percentage changes. Road totals also move from the legacy 2021 stock anchor to the configured observation year with survival redistribution. Off-road turnover reconciles annual activity; chargers derive from BEV stock/public ports instead of energy consumption. The additional 2023 capacity is unmatched coverage, never zero legacy stock.",
+        "assumption_sections": [
+          "`existing_capacity`",
+          "EV charger parameters"
+        ],
+        "evidence_paths": [
+          "src/parameterization/build_existing_capacity.py",
+          "inputs/validation/existing_capacity/integrity.json",
+          "inputs/validation/existing_capacity/bus_existing_capacity_technology_transfers.csv",
+          "inputs/2_processed/ev_chargers/charger_port_reconciliation.csv"
+        ],
+        "drivers": [
+          {
+            "scope": "Freight light-truck HEVs and road stock disaggregation",
+            "legacy_basis": "Legacy freight-light-truck notes use pickup/van fuel composition and commercial MTO ages, producing a very small HEV allocation.",
+            "refactored_basis": "Fuel shares combine pickups, multipurpose vehicles and vans; mapped MTO Report A ages distribute the selected CEUD stock-year totals. Registered annual fuel shares reconstruct the technology cohorts.",
+            "explanation": "Changed vehicle scope, age allocation and annual fuel composition are documented drivers of the HEV stock difference. Its exceptionally large percentage is magnified by the tiny legacy denominator. The precise legacy fuel-share calculation is not fully reconciled, so these mechanisms do not establish a quantitative decomposition.",
+            "assumption_sections": [
+              "`existing_capacity`"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "src/parameterization/build_existing_capacity.py",
+              "inputs/validation/existing_capacity/integrity.json"
+            ]
+          },
+          {
+            "scope": "Road and bus cohort survival",
+            "legacy_basis": "Legacy road stocks are anchored to 2021 and their original age, fuel-allocation and first-period survival treatment.",
+            "refactored_basis": "The configured observation-year totals are distributed to eligible cohorts. Retired stock is redistributed within technology; buses can transfer stock to eligible technologies in the same regional class.",
+            "explanation": "A changed stock anchor changes the total, while survival eligibility and redistribution change its vintage allocation. Bus transfers may also change the powertrain split when no cohort of the original technology survives. Compare totals and transfer audits alongside the largest cohort-level differences.",
+            "assumption_sections": [
+              "`existing_capacity`"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_existing_capacity.py",
+              "inputs/validation/existing_capacity/integrity.json",
+              "inputs/validation/existing_capacity/bus_existing_capacity_technology_transfers.csv"
+            ]
+          },
+          {
+            "scope": "Off-road service capacity and the 2023 coverage extension",
+            "legacy_basis": "Legacy off-road capacities use their original energy/intensity and lifetime assumptions; existing vintage coverage ends at 2020.",
+            "refactored_basis": "Same-year provincial energy and national intensity establish annual totals. CIMS lifetimes govern turnover, excess survivors are retired proportionally, and legacy-mode cohort labels extend through 2023.",
+            "explanation": "The service baseline and turnover reconciliation alter matched vintage values. The additional 2023 vintage is separate unmatched coverage and supplies no numerical legacy difference. It must not be merged into 2020 or interpreted as zero legacy capacity.",
+            "assumption_sections": [
+              "`existing_capacity`"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_existing_capacity.py",
+              "config/scenarios/legacy_comparison.yaml",
+              "inputs/validation/existing_capacity/integrity.json"
+            ]
+          },
+          {
+            "scope": "Existing LDV and MHDV charger capacity",
+            "legacy_basis": "Legacy charger stock follows its original energy-based calibration and charger-technology representation.",
+            "refactored_basis": "Required ports derive from BEV stock only. Private LDV ports subtract reported public ports; reviewed charger-type shares and rated powers convert port counts to GW, with a separate MHDV allocation.",
+            "explanation": "Vehicle-stock calibration, public counts, assumed EVs per port and charger mix jointly change installed GW. PHEV stocks are excluded from this calibration. The public-count date differs from the 2023 BEV stock year and remains explicit in the reconciliation audit.",
+            "assumption_sections": [
+              "`existing_capacity`",
+              "EV charger parameters"
+            ],
+            "evidence_paths": [
+              "src/parameterization/ev_chargers.py",
+              "inputs/0_manual_params/charger_parameters.csv",
+              "inputs/2_processed/ev_chargers/charger_port_reconciliation.csv"
+            ]
+          }
+        ]
+      },
+      "lifetime_tech": {
+        "summary": "Compare only technologies represented by fixed lifetimes in both databases. Aircraft now use the reviewed CIMS lifetime of 30 years; legacy aircraft use a 24-year median from Boeing's economic-life study. Legacy road rows include NHTSA median and MOVES heavy-truck values; the refactored backend can instead represent selected classes with NHTSA/NEMS survival curves. Bus lifetimes follow supported provincial and powertrain-specific StatCan evidence, while other technologies use reviewed category lifetimes. Fixed-versus-curve coverage is a representation difference and must not be interpreted as a missing lifetime of zero.",
+        "assumption_sections": [
+          "`lifetime_tech` and `lifetime_survival_curve`"
+        ],
+        "evidence_paths": [
+          "src/parameterization/build_lifetime_parameters.py",
+          "src/parameterization/road_lifetimes_survival.py",
+          "inputs/0_manual_params/lifetime_process.csv",
+          "inputs/2_processed/road_lifetimes_survival/source_derived_median_lifetimes.csv"
+        ],
+        "drivers": [
+          {
+            "scope": "Passenger and freight aircraft fixed lifetimes",
+            "legacy_basis": "Legacy aircraft rows use a 24-year median from Boeing's 2013 economic-life study.",
+            "refactored_basis": "The reviewed manual CIMS aircraft category lifetime is 30 years.",
+            "explanation": "This is a direct change in the fixed-lifetime source/assumption and explains the aircraft lifetime difference. It also affects cohort eligibility in existing-capacity construction; those capacity effects are separate from the lifetime row comparison.",
+            "assumption_sections": [
+              "`lifetime_tech` and `lifetime_survival_curve`"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "inputs/0_manual_params/lifetime_process.csv",
+              "src/parameterization/build_lifetime_parameters.py"
+            ]
+          },
+          {
+            "scope": "Road fixed lifetimes and survival-curve representation",
+            "legacy_basis": "Legacy road rows include NHTSA median lifetimes and MOVES heavy-truck values as fixed-lifetime parameters.",
+            "refactored_basis": "Selected road classes can use NHTSA/NEMS survival curves instead of fixed lifetimes; source-derived medians support applicable fixed lifetime configurations and reviewed manual values cover other classes.",
+            "explanation": "Compare numerical lifetimes only where both representations supply fixed rows. A fixed row replaced by a survival curve is a modeling representation difference, rather than a zero or missing lifespan. Current light-truck medians also depend on the shared class weights.",
+            "assumption_sections": [
+              "`lifetime_tech` and `lifetime_survival_curve`"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_lifetime_parameters.py",
+              "src/parameterization/road_lifetimes_survival.py",
+              "inputs/2_processed/road_lifetimes_survival/source_derived_median_lifetimes.csv"
+            ]
+          },
+          {
+            "scope": "Bus fixed lifetimes",
+            "legacy_basis": "Legacy buses retain the original fixed-lifetime evidence and class/powertrain assignments in their row notes.",
+            "refactored_basis": "Latest supported 2016-2020 StatCan values are assigned by region and powertrain across all bus classes, with explicit province/Canada fallbacks and diesel/electric proxies for unsupported powertrains.",
+            "explanation": "Regional evidence, reporting gaps and proxy assignments can change bus lifetimes independently of the aircraft assumption. Gasoline uses diesel useful life; PHEV/FCEV use electric useful life. Inspect which reported value or fallback supplies each compared bus row.",
+            "assumption_sections": [
+              "`lifetime_tech` and `lifetime_survival_curve`"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_lifetime_parameters.py",
+              "config/sources.yaml",
+              "inputs/0_manual_params/lifetime_process.csv"
+            ]
+          }
+        ]
+      },
+      "limit_annual_capacity_factor": {
+        "summary": "Legacy road notes use 2021 utilization for the first period and the 2015-2019 average thereafter, with a minimum at 99.9% of the maximum. Current utilization uses the latest five eligible years excluding 2020-2021, and the changed capacity-to-activity scaling changes the activity / (stock times scaling) denominator. Legacy bounds index operating periods while current bounds index vintages, so retain that applicability distinction during comparison. Charger bounds follow reviewed cohort-year assumptions; the prepared age-dependent road trajectories remain outside the current database seam.",
+        "assumption_sections": [
+          "`limit_annual_capacity_factor`",
+          "EV charger parameters"
+        ],
+        "evidence_paths": [
+          "src/parameterization/road_utilization.py",
+          "inputs/2_processed/road_utilization/road_baseline_utilization.csv",
+          "inputs/validation/road_utilization/vintage_period_schema_gap.json",
+          "src/parameterization/ev_chargers.py"
+        ],
+        "drivers": [
+          {
+            "scope": "Road class utilization baselines",
+            "legacy_basis": "Legacy notes use 2021 utilization for the first operating period and the 2015-2019 mean thereafter, with a minimum at 99.9% of the maximum.",
+            "refactored_basis": "Current baselines average the latest five eligible CEUD annual activity-to-stock ratios excluding 2020-2021, then divide by the reviewed capacity-to-activity scaling.",
+            "explanation": "Changing the observation window changes measured activity per vehicle. Changing capacity-to-activity scaling changes the same annual factor's denominator even if activity and stock were identical. Both mechanisms are needed to interpret the ranked bound differences; prepared age trajectories are not inserted by the current schema seam.",
+            "assumption_sections": [
+              "`limit_annual_capacity_factor`"
+            ],
+            "evidence_paths": [
+              "src/parameterization/road_utilization.py",
+              "inputs/0_manual_params/capacity_to_activity.csv",
+              "inputs/2_processed/road_utilization/road_baseline_utilization.csv"
+            ]
+          },
+          {
+            "scope": "Period-based legacy bounds and vintage-based current bounds",
+            "legacy_basis": "Legacy annual constraints index the operating period and can supply a lower/upper interval for that period.",
+            "refactored_basis": "The pinned schema indexes current bounds by installation vintage; the current class baseline stays with the cohort.",
+            "explanation": "Comparison projects existing cohorts to the first model period and new cohorts to their installation period. A current value inside the legacy interval has no bound violation; outside it, the nearest edge provides the numerical comparison. This exposes the changed applicability without claiming that cohort and calendar trajectories are fully equivalent.",
+            "assumption_sections": [
+              "`limit_annual_capacity_factor`"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "inputs/validation/road_utilization/vintage_period_schema_gap.json",
+              "src/validation/transport_comparison.py"
+            ]
+          },
+          {
+            "scope": "LDV and MHDV charger annual bounds",
+            "legacy_basis": "Legacy charger rows retain the original operating-period utilization bounds and charger assumptions.",
+            "refactored_basis": "Reviewed LDV upper bounds are 0.15 for the earliest 2025 cost/input year and 0.20 thereafter; MHDV bounds are 0.30. Existing LDV chargers keep 0.15 and each new cohort retains its selected factor.",
+            "explanation": "The selected factor is attached to the vintage rather than updated in each operating period. Legacy mode reads the vintage label, so the 2025 cohort uses 0.15 even when later operating periods exist. Review this cohort assumption separately from hourly charging shape.",
+            "assumption_sections": [
+              "`limit_annual_capacity_factor`",
+              "EV charger parameters"
+            ],
+            "evidence_paths": [
+              "inputs/0_manual_params/charger_parameters.csv",
+              "src/parameterization/ev_chargers.py",
+              "config/scenarios/legacy_comparison.yaml"
+            ]
+          }
+        ]
+      },
+      "limit_tech_input_split": {
+        "summary": "Legacy PHEV blend notes describe averages across vehicle classes and model years. Current blends sum class-weighted electrical and total energy before taking their ratio, then average future endpoints; existing LDV representatives use category-specific range weights. These are fuel-input proportions, distinct from the excluded vehicle market-share constraints. Compare only supported equivalent blend technologies.",
+        "assumption_sections": [
+          "`efficiency`",
+          "Shared road fleet composition"
+        ],
+        "evidence_paths": [
+          "src/parameterization/build_efficiencies.py",
+          "inputs/1_interim/efficiencies/phev_blend_energy_share_evidence.csv",
+          "config/parameters/rules.yaml"
+        ],
+        "drivers": [
+          {
+            "scope": "Ordinary LDV, MDV and HDV PHEV fuel blends",
+            "legacy_basis": "Legacy blend notes describe averaging input proportions across vehicle classes and future model years.",
+            "refactored_basis": "Current blends sum class-weighted electrical consumption and total consumption before taking the ratio, then average future endpoint fractions. Selected regional GVWR/vocation and haul weights apply to MDV/HDV; buses retain the HDV blend.",
+            "explanation": "A ratio of weighted energy sums differs from a mean of class-level ratios when classes have different total consumption. Updated class weights and energy conversion also change the fraction. These rows describe fuel-input composition, independently of the excluded PEV vehicle market-share constraints.",
+            "assumption_sections": [
+              "`efficiency`",
+              "Shared road fleet composition"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_efficiencies.py",
+              "inputs/1_interim/efficiencies/phev_blend_energy_share_evidence.csv",
+              "config/parameters/rules.yaml"
+            ]
+          },
+          {
+            "scope": "Existing LDV PHEV representative blends",
+            "legacy_basis": "Legacy LDV blends retain their original range/class aggregation and input-share assumptions.",
+            "refactored_basis": "Existing representatives have category-specific blends using corresponding class weights and OMEGA range sales weights, while retaining ATB utility-weighted electrical and liquid-fuel energy.",
+            "explanation": "Existing car and light-truck archetypes need not share the ordinary future LDV blend. Their distinct range/class energy aggregation is an explicit representation choice; compare only supported equivalent blend technologies and keep unmatched blends as coverage evidence.",
+            "assumption_sections": [
+              "`efficiency`",
+              "Shared road fleet composition"
+            ],
+            "evidence_paths": [
+              "src/parameterization/build_efficiencies.py",
+              "inputs/1_interim/efficiencies/phev_blend_energy_share_evidence.csv",
+              "config/parameters/rules.yaml"
+            ]
+          }
+        ]
+      },
+      "lifetime_survival_curve": {
+        "summary": "The refactored backend can supply NHTSA light/medium-vehicle and NEMS heavy-truck survival schedules, aggregated to model age blocks using current class weights. The supplied legacy database has no survival-curve table, so this is one-sided representation coverage with no numerical legacy ranking. Review the source schedules and fixed-lifetime relationship without treating absent legacy curves as zero survival.",
+        "assumption_sections": [
+          "`lifetime_tech` and `lifetime_survival_curve`",
+          "Shared road fleet composition"
+        ],
+        "evidence_paths": [
+          "src/parameterization/road_lifetimes_survival.py",
+          "src/parameterization/build_lifetime_parameters.py",
+          "inputs/2_processed/road_lifetimes_survival/road_vehicle_transformed_survival_curves.csv"
+        ],
+        "drivers": [
+          {
+            "scope": "Road survival-curve representation",
+            "legacy_basis": "The supplied legacy database provides fixed road lifetimes and has no survival-curve parameter table.",
+            "refactored_basis": "NHTSA schedules supply light/medium-vehicle survival, and NEMS annual scrappage supplies heavy-truck survival when selected.",
+            "explanation": "This is one-sided representation coverage, so no numerical legacy ranking is possible. Curves describe gradual cohort survival instead of a fixed retirement age. Review their source schedules and their relationship to fixed lifetimes without inventing zero legacy survival.",
+            "assumption_sections": [
+              "`lifetime_tech` and `lifetime_survival_curve`"
+            ],
+            "evidence_paths": [
+              "legacy_backend/canoe_transport_baseline.sqlite",
+              "src/parameterization/road_lifetimes_survival.py",
+              "src/parameterization/build_lifetime_parameters.py"
+            ]
+          },
+          {
+            "scope": "Light-truck class aggregation and model age blocks",
+            "legacy_basis": "Fixed-lifetime rows do not encode annual survival curves or the distribution of survival within a five-year model age block.",
+            "refactored_basis": "Shared MTO class weights combine NHTSA Vans/SUVs and Pickups for both light-truck classes; complete annual-age blocks are averaged and schedules are held across regions, powertrains and vintages.",
+            "explanation": "Curve values depend on both source schedules and the aggregation rule. Ages 0-4, for example, form the new five-year cohort's first block. Changing class weights can change the curve without changing the underlying NHTSA schedules; changes should be reviewed through the transformed-curve evidence rather than a legacy difference score.",
+            "assumption_sections": [
+              "`lifetime_tech` and `lifetime_survival_curve`",
+              "Shared road fleet composition"
+            ],
+            "evidence_paths": [
+              "src/parameterization/road_lifetimes_survival.py",
+              "config/parameters/rules.yaml",
+              "inputs/2_processed/road_lifetimes_survival/road_vehicle_transformed_survival_curves.csv"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "metadata": {
+    "scope": {
+      "existing_capacity": {
+        "candidate_total": 1316,
+        "candidate_in_scope": 147,
+        "candidate_ignored": 1169,
+        "legacy_total": 107,
+        "legacy_in_scope": 91,
+        "legacy_ignored": 16
+      },
+      "demand": {
+        "candidate_total": 700,
+        "candidate_in_scope": 70,
+        "candidate_ignored": 630,
+        "legacy_total": 105,
+        "legacy_in_scope": 98,
+        "legacy_ignored": 7
+      },
+      "capacity_to_activity": {
+        "candidate_total": 980,
+        "candidate_in_scope": 98,
+        "candidate_ignored": 882,
+        "legacy_total": 108,
+        "legacy_in_scope": 91,
+        "legacy_ignored": 17
+      },
+      "lifetime_tech": {
+        "candidate_total": 570,
+        "candidate_in_scope": 57,
+        "candidate_ignored": 513,
+        "legacy_total": 131,
+        "legacy_in_scope": 110,
+        "legacy_ignored": 21
+      },
+      "efficiency": {
+        "candidate_total": 6216,
+        "candidate_in_scope": 637,
+        "candidate_ignored": 5579,
+        "legacy_total": 838,
+        "legacy_in_scope": 667,
+        "legacy_ignored": 171
+      },
+      "cost_invest": {
+        "candidate_total": 4150,
+        "candidate_in_scope": 415,
+        "candidate_ignored": 3735,
+        "legacy_total": 666,
+        "legacy_in_scope": 589,
+        "legacy_ignored": 77
+      },
+      "cost_fixed": {
+        "candidate_total": 390,
+        "candidate_in_scope": 40,
+        "candidate_ignored": 350,
+        "legacy_total": 270,
+        "legacy_in_scope": 92,
+        "legacy_ignored": 178
+      },
+      "cost_variable": {
+        "candidate_total": 15142,
+        "candidate_in_scope": 1534,
+        "candidate_ignored": 13608,
+        "legacy_total": 2072,
+        "legacy_in_scope": 1935,
+        "legacy_ignored": 137
+      },
+      "limit_tech_input_split": {
+        "candidate_total": 700,
+        "candidate_in_scope": 70,
+        "candidate_ignored": 630,
+        "legacy_total": 140,
+        "legacy_in_scope": 56,
+        "legacy_ignored": 84
+      },
+      "capacity_factor_tech": {
+        "candidate_total": 175200,
+        "candidate_in_scope": 17520,
+        "candidate_ignored": 157680,
+        "legacy_total": 8760,
+        "legacy_in_scope": 8760,
+        "legacy_ignored": 0
+      },
+      "lifetime_survival_curve": {
+        "candidate_total": 9560,
+        "candidate_in_scope": 956,
+        "candidate_ignored": 8604,
+        "legacy_total": 0,
+        "legacy_in_scope": 0,
+        "legacy_ignored": 0
+      },
+      "limit_annual_capacity_factor": {
+        "candidate_total": 5018,
+        "candidate_in_scope": 502,
+        "candidate_ignored": 4516,
+        "legacy_total": 1203,
+        "legacy_in_scope": 1118,
+        "legacy_ignored": 85,
+        "legacy_upper_total": 612,
+        "legacy_lower_total": 591,
+        "legacy_lower_in_scope": 559
+      }
+    },
+    "inventory": {
+      "candidate": {
+        "metadata": 2,
+        "metadata_real": 2,
+        "commodity_label": 44,
+        "technology_label": 138,
+        "tech_group_label": 24,
+        "sector_label": 0,
+        "commodity_type": 8,
+        "technology_type": 3,
+        "time_period_type": 2,
+        "operator": 3,
+        "data_quality_credibility": 5,
+        "data_quality_geography": 5,
+        "data_quality_structure": 5,
+        "data_quality_technology": 5,
+        "data_quality_time": 5,
+        "data_source_label": 29,
+        "data_set": 752,
+        "data_source": 3316,
+        "time_period": 13,
+        "time_of_day": 24,
+        "time_season": 365,
+        "time_season_sequential": 0,
+        "region": 10,
+        "commodity": 44,
+        "technology": 138,
+        "tech_group": 24,
+        "tech_group_member": 36,
+        "capacity_credit": 0,
+        "capacity_factor_process": 0,
+        "capacity_factor_tech": 175200,
+        "capacity_to_activity": 980,
+        "construction_input": 0,
+        "cost_emission": 0,
+        "cost_fixed": 390,
+        "cost_invest": 4150,
+        "cost_variable": 15142,
+        "demand": 700,
+        "demand_specific_distribution": 0,
+        "end_of_life_output": 0,
+        "efficiency": 6216,
+        "efficiency_variable": 0,
+        "emission_activity": 0,
+        "emission_embodied": 6900,
+        "emission_end_of_life": 0,
+        "existing_capacity": 1316,
+        "loan_lifetime_process": 0,
+        "loan_rate": 0,
+        "lifetime_process": 0,
+        "lifetime_tech": 570,
+        "limit_growth_capacity": 0,
+        "limit_degrowth_capacity": 0,
+        "limit_growth_new_capacity": 0,
+        "limit_degrowth_new_capacity": 0,
+        "limit_growth_new_capacity_delta": 0,
+        "limit_degrowth_new_capacity_delta": 0,
+        "limit_storage_level_fraction": 0,
+        "limit_activity": 0,
+        "limit_activity_share": 0,
+        "limit_annual_capacity_factor": 5018,
+        "limit_capacity": 0,
+        "limit_capacity_share": 0,
+        "limit_new_capacity": 0,
+        "limit_new_capacity_share": 900,
+        "limit_resource": 0,
+        "limit_seasonal_capacity_factor": 0,
+        "limit_tech_input_split": 700,
+        "limit_tech_input_split_annual": 0,
+        "limit_tech_output_split": 0,
+        "limit_tech_output_split_annual": 0,
+        "limit_emission": 0,
+        "linked_tech": 0,
+        "planning_reserve_margin": 0,
+        "ramp_down_hourly": 0,
+        "ramp_up_hourly": 0,
+        "reserve_capacity_derate": 0,
+        "storage_duration": 0,
+        "lifetime_survival_curve": 9560,
+        "rps_requirement": 0,
+        "output_dual_variable": 0,
+        "output_objective": 0,
+        "output_curtailment": 0,
+        "output_net_capacity": 0,
+        "output_built_capacity": 0,
+        "output_retired_capacity": 0,
+        "output_flow_in": 0,
+        "output_flow_out": 0,
+        "output_storage_level": 0,
+        "output_emission": 0,
+        "output_cost": 0,
+        "myopic_efficiency": 0,
+        "output_flow_out_summary": 0
+      },
+      "legacy": {
+        "Technology": 166,
+        "Commodity": 70,
+        "TechOutputSplit": 0,
+        "TechInputSplit": 140,
+        "TechInputSplitAverage": 0,
+        "TimeSegmentFraction": 0,
+        "PlanningReserveMargin": 0,
+        "RampDown": 0,
+        "RampUp": 0,
+        "MinCapacity": 0,
+        "MinActivity": 0,
+        "MaxCapacity": 0,
+        "MaxActivity": 0,
+        "MinAnnualCapacityFactor": 591,
+        "MaxAnnualCapacityFactor": 612,
+        "LifetimeTech": 131,
+        "LifetimeProcess": 0,
+        "LoanLifetimeTech": 0,
+        "GrowthRateSeed": 0,
+        "GrowthRateMax": 0,
+        "ExistingCapacity": 107,
+        "EmissionLimit": 0,
+        "EmissionActivity": 90,
+        "Efficiency": 838,
+        "DemandSpecificDistribution": 0,
+        "Demand": 105,
+        "CostVariable": 2072,
+        "CostInvest": 666,
+        "CostFixed": 270,
+        "CapacityToActivity": 108,
+        "CapacityFactorProcess": 0,
+        "CapacityCredit": 0,
+        "MaxResource": 0,
+        "LinkedTech": 0,
+        "MaxSeasonalActivity": 0,
+        "MinSeasonalActivity": 0,
+        "references": 83,
+        "EmissionEmbodied": 0,
+        "CommodityType": 4,
+        "currencies": 2,
+        "dq_estimate": 5,
+        "dq_reliability": 5,
+        "dq_completeness": 5,
+        "dq_time": 5,
+        "dq_geography": 5,
+        "dq_technology": 5,
+        "Region": 6,
+        "SectorLabel": 6,
+        "TechnologyType": 4,
+        "TimePeriodType": 2,
+        "TimePeriod": 13,
+        "TimeSeason": 365,
+        "TimeOfDay": 24,
+        "StorageDuration": 6,
+        "CapacityFactorTech": 8760,
+        "CostEmission": 0,
+        "LoanRate": 0,
+        "MaxActivityGroup": 0,
+        "MaxActivityShare": 0,
+        "MaxCapacityGroup": 0,
+        "MaxCapacityShare": 0,
+        "MaxNewCapacity": 0,
+        "MaxNewCapacityGroup": 0,
+        "MaxNewCapacityShare": 0,
+        "MetaData": 3,
+        "MetaDataReal": 2,
+        "MinActivityGroup": 0,
+        "MinActivityShare": 0,
+        "MinCapacityGroup": 0,
+        "MinCapacityShare": 0,
+        "MinNewCapacity": 0,
+        "MinNewCapacityGroup": 0,
+        "MinNewCapacityShare": 0,
+        "MaxNewCapacityGroupShare": 0,
+        "MinNewCapacityGroupShare": 0,
+        "OutputBuiltCapacity": 0,
+        "OutputCost": 0,
+        "OutputCurtailment": 0,
+        "OutputDualVariable": 0,
+        "OutputEmission": 0,
+        "OutputFlowIn": 0,
+        "OutputFlowOut": 0,
+        "OutputNetCapacity": 0,
+        "OutputObjective": 0,
+        "OutputRetiredCapacity": 0,
+        "RPSRequirement": 0,
+        "StorageInit": 0,
+        "TechGroup": 0,
+        "TechGroupMember": 0
+      }
+    },
+    "shared_regions": [
+      "ON"
+    ],
+    "candidate_regions_without_legacy": [
+      "AB",
+      "BCT",
+      "MB",
+      "NB",
+      "NLLAB",
+      "NS",
+      "PEI",
+      "QC",
+      "SK"
+    ],
+    "legacy_existing_end": 2020,
+    "candidate_existing_end": 2023,
+    "excluded": {
+      "emission_embodied": "Absent from the legacy baseline; excluded by review scope",
+      "growth_constraints": "Absent from the legacy baseline; excluded by review scope",
+      "limit_new_capacity_share": "PEV market-share constraints excluded by review scope"
+    },
+    "periods": {
+      "period_mode": "legacy",
+      "base_year": 2023,
+      "existing": [
+        2000,
+        2005,
+        2010,
+        2015,
+        2020,
+        2023
+      ],
+      "model": [
+        2025,
+        2030,
+        2035,
+        2040,
+        2045
+      ],
+      "step": 5,
+      "base_year_role": "latest observed year for stock, demand and historical calibration",
+      "historical_years_by_vintage": {
+        "2000": [
+          1996,
+          1997,
+          1998,
+          1999,
+          2000
+        ],
+        "2005": [
+          2001,
+          2002,
+          2003,
+          2004,
+          2005
+        ],
+        "2010": [
+          2006,
+          2007,
+          2008,
+          2009,
+          2010
+        ],
+        "2015": [
+          2011,
+          2012,
+          2013,
+          2014,
+          2015
+        ],
+        "2020": [
+          2016,
+          2017,
+          2018,
+          2019,
+          2020
+        ],
+        "2023": [
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "empty_observation_vintages": [],
+      "latest_observed_vintage": 2023,
+      "efficiency_and_demand_years": {
+        "2025": 2030,
+        "2030": 2035,
+        "2035": 2040,
+        "2040": 2045,
+        "2045": 2050
+      },
+      "cost_and_charger_years": {
+        "2025": 2025,
+        "2030": 2030,
+        "2035": 2035,
+        "2040": 2040,
+        "2045": 2045
+      },
+      "end_of_horizon": 2050
+    },
+    "annual_factor_alignment": "Existing cohorts at first model period; future cohorts at vintage. Equality values rank by distance outside legacy interval.",
+    "freshness": {
+      "status": "verified",
+      "checked_files": [
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\legacy_comparison.yaml",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\sources.yaml",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\rules.yaml",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\conversion.yaml",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\vehicle_size_class_map.csv",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\capacity_to_activity.csv",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\charger_parameters.csv",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\cost_invest_multipliers.csv",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\cost_variable_multipliers.csv",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\efficiency_multipliers.csv",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\lifetime_process.csv",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\mapped_mto_make_model_keys.csv",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\vehicle_class_market_shares.csv"
+      ],
+      "build_timestamp_utc": "2026-10-13T13:06:16.911155+00:00",
+      "unused_template_existing_labels": [
+        2021
+      ]
+    },
+    "assumption_excerpts": {
+      "capacity_factor_tech": [
+        {
+          "heading": "`capacity_factor_tech` for LDV charging profiles",
+          "text": "Configuration: [`legacy_charging_profiles` source](../config/sources.yaml), [`legacy_charging_profiles` / `ldv_charging_profiles` rules](../config/parameters/rules.yaml), and [`charging_profiles` selection](../config/scenarios/legacy_reproduction.yaml). #to-review\n\n| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | StatCan Table 23-10-0308-01 — registered vehicle size class shares | Shares are irrespective of powertrain type given that charging profiles are also meant to represent future vehicle compositions, not just present-day fleets. |\n| Cars and Light Trucks | StatCan 2021 Census — occupation demographics by province | Occupation shares between workers, students, and inactive individuals aged 15+ in private households do not differentiate between drivers and non-drivers |\n| Shared LDV chargers | Legacy RAMP-mobility outputs describe an Ontario BEV fleet | Use the selected Ontario shape unchanged in every configured region on existing and new shared LDV chargers, including PHEV and motorcycle charging. #to-review |\n| LDV charging composition | Fleet, range shares and charger mix are already embedded in the profiles | Keep the inherited composition across model periods. It may differ from the OMEGA market mix; applying new range shares to the profile again would double-count them. #to-review |\n| TTS charging selection | The inherited TTS simulation uses weekday travel only | Accept the frozen weekday-based behaviour without reconstructing weekend travel. #to-review |\n| LDV charging timing | The reference year uses Toronto time and includes DST transitions | Reuse the peak-normalized 2018 hourly shape across model years. Elapsed-hour labels preserve physical hours through DST without province-specific timezone shifts; `time_mapping` projects onto CANOE slices rather than changing the reference timezone. #to-review |"
+        }
+      ],
+      "capacity_to_activity": [
+        {
+          "heading": "`capacity_to_activity`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | Manual `capacity_to_activity` values are arbitrary activity-per-vehicle scaling factors, not measured source values | Treat each road-class factor as a model scaling assumption shared across regions and powertrains.  |"
+        }
+      ],
+      "cost_fixed": [
+        {
+          "heading": "EV charger parameters",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| LDV chargers | TC provincial public port counts are March 2026 while the prepared BEV stock is for 2023 | Apply the pinned March 2026 public counts to 2023 BEV stock when estimating private ports; record both dates in the charger audit. #to-review |\n| LDV chargers in BCT | TC separates British Columbia and the territories; CANOE's BCT region groups them | Sum British Columbia, Yukon, Northwest Territories, and Nunavut public ports before estimating BCT charger capacity. #to-review |\n| Existing LDV chargers | Provincial public counts do not specify charger-type composition | Apply national TC L2/DCFC shares to each region's public ports and a 15/85 L1/L2 mix to private ports. Convert counts to GW using 1.5/7.2/50 kW for L1/L2/DCFC in every region. #to-review |\n| LDV and MHDV chargers | Reviewed efficiencies simplify charger-type and operating-load differences | Apply constant 95% LDV and 80% MHDV charging efficiency across regions, vintages and periods, independent of charger type; see the [reviewed charger parameters](../inputs/0_manual_params/charger_parameters.csv). #to-review |\n| Existing and new chargers | Reviewed costs begin in 2025, while existing capacity is calibrated to 2023 stocks | Use the earliest reviewed 2025 cost rates for existing chargers' annual fixed costs, with vintage 2020 in prospective mode or 2023 in the prior legacy grid. Only new chargers receive investment rows. Future costs read vintage interval-end years in prospective mode and vintage labels in legacy mode. Apply the same reviewed national port-count shares to per-GW costs across regions/vintages and the OEO 1% fixed-cost ratio. #to-review |\n| Charger utilization | The pinned annual capacity factor is indexed by vintage rather than calendar period | Insert vintage-based upper bounds: LDV historical chargers retain the earliest reviewed 2025 factor of 0.15; new LDV cohorts use 0.15 for a 2025 input year and 0.20 thereafter. MHDV factors are 0.30. Prospective new vintage 2025 reads the 2030 input year; legacy vintage 2025 reads 2025. A factor stays with its cohort throughout its lifetime. #to-review |"
+        }
+      ],
+      "cost_invest": [
+        {
+          "heading": "Shared road fleet composition",
+          "text": "Configuration: [`aggregation_sources` selections](../config/scenarios/legacy_reproduction.yaml) and [`road_aggregation` rules](../config/parameters/rules.yaml). #to-review\n\nEfficiencies, costs and prepared road mileage profiles share these class/vocation weights. LDV weights also aggregate NHTSA light-truck survival. Hold each mix across powertrains and vintages. #to-review\n\n| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Ontario MTO Report A is the available class-composition evidence; its reviewed crosswalk is incomplete | Pool mapped FIT_ACTIVE counts across model years in the selected Ontario edition and normalize over mapped classes. Treat this subset as representative across Canadian regions; passenger and freight light trucks share the same class mix. #to-review |\n| Medium Trucks | Ontario fleet counts and national sales evidence cover different GVWR classes and lack vocation shares | Use MTO Report 4 Class 2b–7 counts in ON, mapping 2b to ATB Class 2; elsewhere use 2020 Wards Class 3–7 shares. Weight available freight vocations equally within class, excluding School/Transit/Refuse, including vocations with identical mileage schedules. #to-review |\n| Heavy Trucks | StatCan 23-10-0142-01 for-hire shipments proxy regional cab-type use | Pool 2011–2017 origin-or-destination tonne-km, counting within-province shipments once. Retain shipment groups whose mean load plus a 13,000-kg curb weight reaches 14,970 kg. Distances up to 350 miles represent DayCab; longer distances represent Sleeper. Split DayCab weight equally among Beverage/Drayage/Regional vocations; use BC-only evidence for BCT. #to-review |"
+        },
+        {
+          "heading": "`cost_invest`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | NLR ATB vehicle prices include a retail-price-equivalent markup | Treat the selected purchase prices as retail evidence and divide by the reviewed 1.5 factor to estimate manufacturing cost. Do not apply that factor to other capital-cost sources. #to-review |\n| Transport Technologies | Projected cost trajectories and historical evidence have different temporal coverage | Prospective future costs use end-of-period conditions: period 2025 reads 2030 values. Historical year-varying cost evidence uses the bin's last observed year, retaining earliest-available price proxies and manual baseline conventions. Legacy preserves the prior adapter timing. Dollar-year conversion remains independent. #to-review |\n| Medium Trucks and Buses | Current normalized NLR prices lack gasoline/CNG MHDV archetypes; the legacy workbook used separate Autonomie SI/CNG series | Use the NLR diesel purchase price for gasoline/CNG medium trucks and school/transit buses. #to-review |\n| Intercity buses | REGEN Chart 3 has ICEV, CNGV, BEV, and HFCV purchase prices but no HEV | Use ICEV for gasoline/diesel and apply the NLR transit-bus HEV/diesel ratio to REGEN ICEV for intercity HEV. Preserve the REGEN purchase-price basis without the NLR 1.5 adjustment. #to-review |\n| Aircraft | FAA reports aggregate passenger and cargo operating evidence; cargo capacity is labelled only tons | Use each applicable All Aircraft average for speed, capacity, load, and daily utilization. Interpret cargo tons as U.S. short tons and annualize service output over 365 days. SPK uses jet-fuel aircraft capital cost. #to-review |\n| Rail and Marine | REGEN supplies relative 2035/2050 capital-cost factors against reviewed CIMS incumbent baselines | Apply each factor to its corresponding CIMS baseline; interpolate between 2035 and 2050 and hold the 2035 factor earlier. #to-review |\n| Marine Freight | The reviewed manual HFO capital-cost factor has no external citation | Treat HFO and MDO marine freight capital costs as equal. #to-review |\n| Cost source metadata | Some sources omit currency or dollar-year evidence | Source-documented ATB vehicle prices are 2022 USD and ATB/Burnham LDV M&R coefficients are 2020 USD. Preliminary entries remain BEAN MHDV M&R: 2020 USD (year unspecified); GCAM motorcycles: 2005 USD (currency unspecified); REGEN intercity purchases: 2025 USD (currency and price year unspecified); FAA maintenance: 2023 USD (price year unspecified). Keep all entries and their status in the cost metadata audit; manual CIMS/OEO and charger currency/year declarations remain visible in their input rows and conversion evidence. #to-review |"
+        },
+        {
+          "heading": "EV charger parameters",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| LDV chargers | TC provincial public port counts are March 2026 while the prepared BEV stock is for 2023 | Apply the pinned March 2026 public counts to 2023 BEV stock when estimating private ports; record both dates in the charger audit. #to-review |\n| LDV chargers in BCT | TC separates British Columbia and the territories; CANOE's BCT region groups them | Sum British Columbia, Yukon, Northwest Territories, and Nunavut public ports before estimating BCT charger capacity. #to-review |\n| Existing LDV chargers | Provincial public counts do not specify charger-type composition | Apply national TC L2/DCFC shares to each region's public ports and a 15/85 L1/L2 mix to private ports. Convert counts to GW using 1.5/7.2/50 kW for L1/L2/DCFC in every region. #to-review |\n| LDV and MHDV chargers | Reviewed efficiencies simplify charger-type and operating-load differences | Apply constant 95% LDV and 80% MHDV charging efficiency across regions, vintages and periods, independent of charger type; see the [reviewed charger parameters](../inputs/0_manual_params/charger_parameters.csv). #to-review |\n| Existing and new chargers | Reviewed costs begin in 2025, while existing capacity is calibrated to 2023 stocks | Use the earliest reviewed 2025 cost rates for existing chargers' annual fixed costs, with vintage 2020 in prospective mode or 2023 in the prior legacy grid. Only new chargers receive investment rows. Future costs read vintage interval-end years in prospective mode and vintage labels in legacy mode. Apply the same reviewed national port-count shares to per-GW costs across regions/vintages and the OEO 1% fixed-cost ratio. #to-review |\n| Charger utilization | The pinned annual capacity factor is indexed by vintage rather than calendar period | Insert vintage-based upper bounds: LDV historical chargers retain the earliest reviewed 2025 factor of 0.15; new LDV cohorts use 0.15 for a 2025 input year and 0.20 thereafter. MHDV factors are 0.30. Prospective new vintage 2025 reads the 2030 input year; legacy vintage 2025 reads 2025. A factor stays with its cohort throughout its lifetime. #to-review |"
+        }
+      ],
+      "cost_variable": [
+        {
+          "heading": "Shared road fleet composition",
+          "text": "Configuration: [`aggregation_sources` selections](../config/scenarios/legacy_reproduction.yaml) and [`road_aggregation` rules](../config/parameters/rules.yaml). #to-review\n\nEfficiencies, costs and prepared road mileage profiles share these class/vocation weights. LDV weights also aggregate NHTSA light-truck survival. Hold each mix across powertrains and vintages. #to-review\n\n| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Ontario MTO Report A is the available class-composition evidence; its reviewed crosswalk is incomplete | Pool mapped FIT_ACTIVE counts across model years in the selected Ontario edition and normalize over mapped classes. Treat this subset as representative across Canadian regions; passenger and freight light trucks share the same class mix. #to-review |\n| Medium Trucks | Ontario fleet counts and national sales evidence cover different GVWR classes and lack vocation shares | Use MTO Report 4 Class 2b–7 counts in ON, mapping 2b to ATB Class 2; elsewhere use 2020 Wards Class 3–7 shares. Weight available freight vocations equally within class, excluding School/Transit/Refuse, including vocations with identical mileage schedules. #to-review |\n| Heavy Trucks | StatCan 23-10-0142-01 for-hire shipments proxy regional cab-type use | Pool 2011–2017 origin-or-destination tonne-km, counting within-province shipments once. Retain shipment groups whose mean load plus a 13,000-kg curb weight reaches 14,970 kg. Distances up to 350 miles represent DayCab; longer distances represent Sleeper. Split DayCab weight equally among Beverage/Drayage/Regional vocations; use BC-only evidence for BCT. #to-review |"
+        },
+        {
+          "heading": "`cost_invest`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | NLR ATB vehicle prices include a retail-price-equivalent markup | Treat the selected purchase prices as retail evidence and divide by the reviewed 1.5 factor to estimate manufacturing cost. Do not apply that factor to other capital-cost sources. #to-review |\n| Transport Technologies | Projected cost trajectories and historical evidence have different temporal coverage | Prospective future costs use end-of-period conditions: period 2025 reads 2030 values. Historical year-varying cost evidence uses the bin's last observed year, retaining earliest-available price proxies and manual baseline conventions. Legacy preserves the prior adapter timing. Dollar-year conversion remains independent. #to-review |\n| Medium Trucks and Buses | Current normalized NLR prices lack gasoline/CNG MHDV archetypes; the legacy workbook used separate Autonomie SI/CNG series | Use the NLR diesel purchase price for gasoline/CNG medium trucks and school/transit buses. #to-review |\n| Intercity buses | REGEN Chart 3 has ICEV, CNGV, BEV, and HFCV purchase prices but no HEV | Use ICEV for gasoline/diesel and apply the NLR transit-bus HEV/diesel ratio to REGEN ICEV for intercity HEV. Preserve the REGEN purchase-price basis without the NLR 1.5 adjustment. #to-review |\n| Aircraft | FAA reports aggregate passenger and cargo operating evidence; cargo capacity is labelled only tons | Use each applicable All Aircraft average for speed, capacity, load, and daily utilization. Interpret cargo tons as U.S. short tons and annualize service output over 365 days. SPK uses jet-fuel aircraft capital cost. #to-review |\n| Rail and Marine | REGEN supplies relative 2035/2050 capital-cost factors against reviewed CIMS incumbent baselines | Apply each factor to its corresponding CIMS baseline; interpolate between 2035 and 2050 and hold the 2035 factor earlier. #to-review |\n| Marine Freight | The reviewed manual HFO capital-cost factor has no external citation | Treat HFO and MDO marine freight capital costs as equal. #to-review |\n| Cost source metadata | Some sources omit currency or dollar-year evidence | Source-documented ATB vehicle prices are 2022 USD and ATB/Burnham LDV M&R coefficients are 2020 USD. Preliminary entries remain BEAN MHDV M&R: 2020 USD (year unspecified); GCAM motorcycles: 2005 USD (currency unspecified); REGEN intercity purchases: 2025 USD (currency and price year unspecified); FAA maintenance: 2023 USD (price year unspecified). Keep all entries and their status in the cost metadata audit; manual CIMS/OEO and charger currency/year declarations remain visible in their input rows and conversion evidence. #to-review |"
+        },
+        {
+          "heading": "`cost_variable`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Burnham et al. (2021) and Islam et al. (2022) — empirical model coefficients are based on US mileage profiles | The same empirical-model coefficients used in these studies are applied to estimate maintenance and repair (M&R) costs per mile by vehicle age. |\n| Cars and Light Trucks | ATB MSRP prices begin in 2023; Burnham's repair relationship uses a 2020-dollar MSRP basis and its age coefficients end at 14 | Use the selected retail MSRP with the original calibrated coefficients despite the dollar-basis difference. Proxy earlier vintages with the first ATB MSRP and hold repair cost constant after age 14. #to-review |\n| Road Vehicles | Age-dependent maintenance and partial historical intervals | Prospective maintenance uses the period-end year relative to the vintage's evidence year; the latest historical bin ends at the observed year rather than an unobserved future endpoint. Legacy retains period-label minus vintage-label ages. #to-review |\n| Medium and Heavy Trucks | BEAN lacks coefficients for several modeled GVWR classes | Proxy GVWR classes 2–5 with BEAN Class 4 and classes 6–7 with Class 6; retain the reviewed road class weights. #to-review |\n| School and Intercity Buses | Their own maintenance evidence is incomplete | Use BEAN Class 8 transit maintenance and the transit-bus maintenance-to-purchase-cost relationship, scaled to each bus purchase cost. #to-review |\n| Rail and Marine | OEO gives class-specific operating-to-capital-cost relationships rather than complete technology-specific variable costs | Apply each reviewed class ratio to its corresponding CIMS capital-cost baseline for existing and new vintages. #to-review |\n| Passenger and Freight Aircraft | FAA supplies aggregate maintenance cost per block-hour rather than Canadian service-distance costs | Use the applicable All Aircraft maintenance cost with its passenger or cargo speed, capacity, and load evidence; keep the two service types separate. SPK uses jet-fuel aircraft operating cost. #to-review |"
+        }
+      ],
+      "demand": [
+        {
+          "heading": "`demand`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Air, Rail, and Marine | NRCan CEUD reports provincial energy but only national service intensity | Apply the same-year national intensity to each province's total mode energy to estimate provincial activity. Total air energy includes aviation gasoline, although existing incumbent capacity excludes it.  |\n| All Transport Services | CER Canada's Energy Future macro indicators provide Canada-wide real GDP only | Apply national real GDP growth at period-end years to each province's CEUD service baseline, retaining the combined passenger-LDV total under the optional split below. Provincial GDP differences are unrepresented. #to-review |\n| Cars and Passenger Light Trucks | National GDP does not determine their future service split | With `future_car_demand: extrapolated`, extend provincial car activity using the 2013–base-year endpoint CAGR (currently 2013–2023). Assign passenger light trucks the residual of the GDP-indexed combined total; reject car projections exceeding that total. `GDP-indexed` grows both services separately with GDP. #to-review |"
+        }
+      ],
+      "efficiency": [
+        {
+          "heading": "Shared road fleet composition",
+          "text": "Configuration: [`aggregation_sources` selections](../config/scenarios/legacy_reproduction.yaml) and [`road_aggregation` rules](../config/parameters/rules.yaml). #to-review\n\nEfficiencies, costs and prepared road mileage profiles share these class/vocation weights. LDV weights also aggregate NHTSA light-truck survival. Hold each mix across powertrains and vintages. #to-review\n\n| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Ontario MTO Report A is the available class-composition evidence; its reviewed crosswalk is incomplete | Pool mapped FIT_ACTIVE counts across model years in the selected Ontario edition and normalize over mapped classes. Treat this subset as representative across Canadian regions; passenger and freight light trucks share the same class mix. #to-review |\n| Medium Trucks | Ontario fleet counts and national sales evidence cover different GVWR classes and lack vocation shares | Use MTO Report 4 Class 2b–7 counts in ON, mapping 2b to ATB Class 2; elsewhere use 2020 Wards Class 3–7 shares. Weight available freight vocations equally within class, excluding School/Transit/Refuse, including vocations with identical mileage schedules. #to-review |\n| Heavy Trucks | StatCan 23-10-0142-01 for-hire shipments proxy regional cab-type use | Pool 2011–2017 origin-or-destination tonne-km, counting within-province shipments once. Retain shipment groups whose mean load plus a 13,000-kg curb weight reaches 14,970 kg. Distances up to 350 miles represent DayCab; longer distances represent Sleeper. Split DayCab weight equally among Beverage/Drayage/Regional vocations; use BC-only evidence for BCT. #to-review |"
+        },
+        {
+          "heading": "`efficiency`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | CEUD activity, annual distance, and stock describe whole vehicle classes, not individual powertrains | Derive class occupancy/payload as activity divided by distance and stock; apply it across powertrains and hold the base-year factor constant for future vintages. #to-review |\n| Cars, Trucks and PHEV Blends | Fuel-volume ratings and electrical consumption need a common energy basis | Convert gasoline/diesel volume consumption with GREET higher heating values and electricity with 3.6 MJ/kWh when deriving model efficiencies and PHEV input-energy fractions. See the [conversion factors](../config/parameters/conversion.yaml). #to-review |\n| Road and Off-road | Historical evidence ends before the latest prospective interval ends | Average available annual efficiency values within each selected historical bin, stopping at the observation year. Future efficiencies use period-end projections in both prospective and legacy modes; the incomplete 2020 interval uses observed 2021–2023 values. #to-review |\n| Cars and Light Trucks | NRCan model-year ratings are not measurements of the surviving fleet's in-use consumption | Treat ratings as vintage-specific fleet efficiency proxies, without a separate aging adjustment; weight rating observations equally within each class and powertrain. #to-review |\n| Cars and Light Trucks | Historical ratings combine SUV sizes and omit some class/powertrain combinations | Give unsplit SUVs the combined small/standard SUV weight; redistribute missing-class weights only across observed classes. #to-review |\n| Cars and Light Trucks | NRCan ratings lack a complete HEV flag | Identify hybrids by model-name wording or unambiguous year/make/model matches to US FuelEconomy.gov hybrid records. Otherwise retain the reported fuel classification, which can leave unidentified HEVs among conventional vehicles. #to-review |\n| Cars and Light Trucks | NRCan electric ranges do not coincide with ATB archetypes | Classify BEVs with `Range (km)` and PHEVs with `Range 1 (km)`, converted to miles, using the same OMEGA range-bucket boundaries as the sales weights. Use all four BEV and both PHEV buckets before existing-fleet aggregation. #to-review |\n| Existing LDV BEVs and PHEVs | A single stock archetype still requires range-specific efficiency evidence | Derive each NRCan range bucket's historical efficiency before OMEGA aggregation. Retain the accepted ATB utility-weighted total-energy level for each PHEV range and its NRCan charge-sustaining historical index. Preserve configured analogue fallbacks when a range lacks observations; do not drop that range or renormalize its sales weight. #to-review |\n| Existing LDV BEVs and PHEVs | Registered NRCan range histories begin at different years | Car BEV150/200/300/400 observations begin in 2012/2013/2013/2019; PHEV35/50 begin in 2012/2013. Light-truck BEV200/300/400 begin in 2016/2016/2020; PHEV35/50 begin in 2015/2020. Earlier required years use the configured historical analogues. Light-truck BEV150 has no rating observations and zero OMEGA weight. These are source-history gaps, not unfilled final parameter rows. #to-review |\n| Cars and Light Trucks | Some powertrains lack continuous historical ratings | Retain the latest own observation and extend it with the approved analogue's historical index. Where no own baseline exists, use the analogue's level scaled by the ATB powertrain relationship. #to-review |\n| Cars and Light Trucks | NLR ATB light-duty hybrid diesel electric powertrains are neglected | LDV hybrid electric powertrains that utilize diesel are neglected; it is assumed that gasoline-powered HEVs will remain the dominant variant for the light-duty sector.  |\n| Cars and Light Trucks | US ATB scenarios provide projected technology improvements, not Canadian fleet observations | Apply ATB relative improvements to Canadian rating-based baselines; do not substitute ATB absolute levels except for PHEVs or missing-baseline analogues. #to-review |\n| PHEVs | ATB fleet utility factors describe distance in charge-depleting operation | Represent charge-depleting travel by electricity consumption and charge-sustaining travel by liquid-fuel consumption. Derive input shares from these utility-weighted energy components. #to-review |\n| PHEVs | Fuel/electricity shares differ across ATB classes and regional truck compositions | For ordinary LDV35/LDV50 blends use pooled MTO Report A class stock counts; for MDV and HDV blends use the selected regional GVWR/vocation and haul weights. Sum weighted electrical and total consumption before taking their ratio, then average future interval-end fractions equally. Hold each regional blend constant across periods; buses retain the HDV blend. Existing LDV representatives have separate category-specific blends with their class and OMEGA range weights. #to-review |\n| Medium/Heavy Trucks and Buses | Selected ATB evidence lacks gasoline and CNG archetypes | Use the diesel incumbent as their efficiency proxy; intercity CNG instead uses the REGEN relative relationship. #to-review |\n| Medium and Heavy Trucks | Historical CEUD fuel consumption describes the fleet rather than individual model years | Use its gasoline/diesel trajectory as a vintage backcasting index from the ATB baseline, with higher consumption implying lower efficiency. #to-review |\n| Medium and Heavy Trucks | ANL Autonomie, as incorporated in NLR ATB — PHEV utility-weighted combined efficiency | Islam et al. (2023) assume a utility factor of 80%. |\n| Buses | CEUD historical intensity is class-specific but not powertrain-specific | Apply each bus class's intensity trend across its existing powertrains; use ATB school/transit levels for future vehicles, weighting the two school-bus classes equally. #to-review |\n| Intercity Buses | ATB transit buses and REGEN relative efficiencies proxy intercity technology performance | Use transit-bus efficiency levels with REGEN intercity powertrain ratios; retain the ATB transit HEV relationship where REGEN has no HEV series. #to-review |\n| Motorcycles | GCAM Canada supplies technology trajectories rather than provincial motorcycle observations | Apply GCAM gasoline/BEV intensity relationships to each province's CEUD motorcycle baseline. #to-review |\n| Air, Rail, and Marine | CEUD service intensities are national mode averages, not province- or powertrain-specific | Apply the national historical intensity across provinces as the incumbent baseline; use reviewed relative multipliers for alternative powertrains. #to-review |\n| Off-road Modes | Reviewed EPRI US-REGEN assumptions proxy Canadian future performance | Apply the same relative technology factors and compound annual efficiency improvements across provinces; interpolate hydrogen-rail ratios between the reviewed 2035 and 2050 values. #to-review |\n| Passenger and Freight Rail | REGEN natural-gas rail assumptions describe CNG, not LNG | Use the CNG-to-diesel efficiency relationship for LNG rail technologies. #to-review |\n| Marine Freight | CEUD reports one marine intensity; GREET's HFO/MDO ratio describes a predefined trip | Treat CEUD intensity as the MDO baseline and apply the GREET HFO/MDO consumption ratio across historical and future vessels, regions, and vintages. #to-review |\n| Aviation | No separate SPK aircraft-efficiency relationship is used | Assign SPK aircraft the same service-per-energy efficiency and improvement rate as jet-fuel aircraft. #to-review |\n\n### Example LDV Class Mapping by Source\n\n| **Vehicle Model** | **NRCan Fuel Ratings** | **Autonomie TEA** | **NRCan CEUD** |\n| ----------------- | ---------------------- | ----------------- | -------------- |\n| **Nissan Sentra** | Midsize                | Midsize           | Car            |\n| **Nissan Versa**  | Compact                | Compact           | Car            |\n| **Toyota RAV4**   | Small SUV              | Small SUV         | Light Truck    |\n| **Ford F-150**    | Standard pickup truck  | Pickup truck      | Light Truck    |\n| **Ford Explorer** | Standard SUV           | Midsize SUV       | Light Truck    |"
+        },
+        {
+          "heading": "EV charger parameters",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| LDV chargers | TC provincial public port counts are March 2026 while the prepared BEV stock is for 2023 | Apply the pinned March 2026 public counts to 2023 BEV stock when estimating private ports; record both dates in the charger audit. #to-review |\n| LDV chargers in BCT | TC separates British Columbia and the territories; CANOE's BCT region groups them | Sum British Columbia, Yukon, Northwest Territories, and Nunavut public ports before estimating BCT charger capacity. #to-review |\n| Existing LDV chargers | Provincial public counts do not specify charger-type composition | Apply national TC L2/DCFC shares to each region's public ports and a 15/85 L1/L2 mix to private ports. Convert counts to GW using 1.5/7.2/50 kW for L1/L2/DCFC in every region. #to-review |\n| LDV and MHDV chargers | Reviewed efficiencies simplify charger-type and operating-load differences | Apply constant 95% LDV and 80% MHDV charging efficiency across regions, vintages and periods, independent of charger type; see the [reviewed charger parameters](../inputs/0_manual_params/charger_parameters.csv). #to-review |\n| Existing and new chargers | Reviewed costs begin in 2025, while existing capacity is calibrated to 2023 stocks | Use the earliest reviewed 2025 cost rates for existing chargers' annual fixed costs, with vintage 2020 in prospective mode or 2023 in the prior legacy grid. Only new chargers receive investment rows. Future costs read vintage interval-end years in prospective mode and vintage labels in legacy mode. Apply the same reviewed national port-count shares to per-GW costs across regions/vintages and the OEO 1% fixed-cost ratio. #to-review |\n| Charger utilization | The pinned annual capacity factor is indexed by vintage rather than calendar period | Insert vintage-based upper bounds: LDV historical chargers retain the earliest reviewed 2025 factor of 0.15; new LDV cohorts use 0.15 for a 2025 input year and 0.20 thereafter. MHDV factors are 0.30. Prospective new vintage 2025 reads the 2030 input year; legacy vintage 2025 reads 2025. A factor stays with its cohort throughout its lifetime. #to-review |"
+        }
+      ],
+      "existing_capacity": [
+        {
+          "heading": "`existing_capacity`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Ontario MTO is the available vehicle-population evidence | Treat latest mapped Report A FIT_ACTIVE ages as the CEUD stock-year age profile, even when the MTO edition is newer. Normalize eligible age shares to distribute full CEUD class totals across regions; unmapped records do not reduce those totals. #to-review |\n| Existing LDV BEVs and PHEVs | Historical Canadian stock lacks range-specific sales weights | Always use one existing BEV and PHEV archetype per class, independently of the new-vehicle range mode. Retain registered stock totals and lifetime-limited cohort allocation; use OMEGA MY2022 range weights across historical vintages and regions for the corresponding parameters. #to-review |\n| Cars and Light Trucks | StatCan LDV vehicle types differ from CEUD classes | Passenger-car fuel shares apply to cars; combined pickup, multipurpose-vehicle, and van shares apply to light-truck class.  |\n| Cars and Light Trucks | CEUD and StatCan pickup weight bins differ | CEUD light trucks end at 8,500 lb; StatCan pickups extend to 14,000 lb. Treat the mismatch as negligible for fuel shares.  |\n| Medium and Heavy Trucks | StatCan truck weight groups do not match CEUD exactly | The 10,001–33,000 lb groups proxy medium trucks and Class 8 proxies heavy trucks; 8,501–10,000 lb is uncovered.  |\n| Cars and Trucks | StatCan fuel registrations start after some surviving vintages; some fuel types lack existing technologies | Earlier vintages repeat the oldest available gasoline/diesel shares after renormalization. Other unsupported shares are excluded and audited.  |\n| Road Vehicles | StatCan LDV fuel registrations do not disclose AB and NL shares | BC shares proxy BCT. Canada-level shares proxy AB and NL only for LDVs; medium/heavy trucks use their provincial StatCan 23-10-0308-01 evidence. |\n| Medium Trucks, Heavy Trucks, and Motorcycles | Ontario MTO Report 5 is the available age evidence | The latest COMMERCIAL ages proxy both truck classes; MOTORCYCLE ages proxy motorcycles across CEUD regions.  |\n| Medium Trucks | Transport Canada's year-to-date medium/heavy EV share | Treat the reported share as medium-truck BEV stock in the latest existing vintage; split the remainder by StatCan gasoline/diesel proportions.  |\n| Heavy Trucks and Motorcycles | Existing incumbent powertrains | Retain diesel heavy trucks and gasoline motorcycles only; exclude and audit non-diesel heavy-truck registration shares.  |\n| Buses | CEUD bus stock powertrain disaggregation | Split latest CEUD stocks using each cohort year's CEUD fuel consumption times its powertrain efficiency. Map ethanol to gasoline and biodiesel to diesel; exclude propane with an audit.  |\n| Buses | Ontario MTO Report 5 provides the available age profile | Apply its latest BUS ages to each bus class and region. Use 2000 fuel/activity evidence for older source ages, subject to the common first-period lifetime eligibility rule below. #to-review |\n| Buses | Some historical fuel allocations have no cohort surviving to the first model period | Redistribute stock proportionally among eligible ages of the same technology. If none survives, transfer its stock proportionally to eligible technologies in the same region and bus class. #to-review |\n| Air Transportation | NRCan CEUD aviation fuel use | Use aviation turbo fuel only; exclude and audit aviation gasoline.  |\n| Passenger Rail | NRCan CEUD does not report electric passenger-rail energy | Build diesel passenger-rail capacity only; electric rail remains unrepresented.  |\n| Air, Rail, and Marine | NRCan CEUD does not report provincial fleet stocks | Divide provincial energy use by same-year national energy intensity to estimate capacity in billion passenger-km or tonne-km.  |\n| Air, Rail, and Marine | Annual turnover and CIMS model fixed lifetimes | First estimate each annual fleet total from CEUD energy divided by intensity. Earlier cohorts retain `max(0, 1 - age/lifetime)` of their effective starting capacity. Subtract these survivors to estimate additions, bounded below by zero. When survivors exceed the observed total, retire that excess proportionally across cohorts so their sum reconciles with the fleet estimate. #to-review |\n| Marine Freight | CEUD reports separate HFO/MDO energy but one marine intensity | Use the shared marine intensity and combined fleet turnover, then split each active vintage by provincial 2023 HFO/MDO energy shares.  |\n| Road and Off-road | Annual cohorts and configured existing periods | `period_mode`: `prospective` represents the following interval: 2021–2025 cohorts belong to vintage 2020, using observations through the latest CEUD vintage. `legacy` retains ceiling labels ending at the observation year. |\n| Road and Off-road | Capacity must survive to the first model period | For fixed lifetimes, require both annual cohorts and their mapped model vintages to survive the first period. Redistribute retired cohorts' base-year capacity proportionally among eligible vintages of the same region and technology, with the bus recipient exception above. #to-review |\n| LD and MHD EV Chargers | Existing private/MHD charger stocks are inferred from vehicle stocks | Estimate required ports from BEV stocks only, using 1 LD EV/port and 1.5 MHD EV/port. LD private ports equal required ports minus reported public ports; split MHD ports 80/20 between 50/350 kW. PHEV stocks do not enter this calibration. #to-review |\n| LDEV Chargers | Transport Canada — undisclosed capacity vintage | Assign all reported capacity to the latest existing period. |"
+        },
+        {
+          "heading": "EV charger parameters",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| LDV chargers | TC provincial public port counts are March 2026 while the prepared BEV stock is for 2023 | Apply the pinned March 2026 public counts to 2023 BEV stock when estimating private ports; record both dates in the charger audit. #to-review |\n| LDV chargers in BCT | TC separates British Columbia and the territories; CANOE's BCT region groups them | Sum British Columbia, Yukon, Northwest Territories, and Nunavut public ports before estimating BCT charger capacity. #to-review |\n| Existing LDV chargers | Provincial public counts do not specify charger-type composition | Apply national TC L2/DCFC shares to each region's public ports and a 15/85 L1/L2 mix to private ports. Convert counts to GW using 1.5/7.2/50 kW for L1/L2/DCFC in every region. #to-review |\n| LDV and MHDV chargers | Reviewed efficiencies simplify charger-type and operating-load differences | Apply constant 95% LDV and 80% MHDV charging efficiency across regions, vintages and periods, independent of charger type; see the [reviewed charger parameters](../inputs/0_manual_params/charger_parameters.csv). #to-review |\n| Existing and new chargers | Reviewed costs begin in 2025, while existing capacity is calibrated to 2023 stocks | Use the earliest reviewed 2025 cost rates for existing chargers' annual fixed costs, with vintage 2020 in prospective mode or 2023 in the prior legacy grid. Only new chargers receive investment rows. Future costs read vintage interval-end years in prospective mode and vintage labels in legacy mode. Apply the same reviewed national port-count shares to per-GW costs across regions/vintages and the OEO 1% fixed-cost ratio. #to-review |\n| Charger utilization | The pinned annual capacity factor is indexed by vintage rather than calendar period | Insert vintage-based upper bounds: LDV historical chargers retain the earliest reviewed 2025 factor of 0.15; new LDV cohorts use 0.15 for a 2025 input year and 0.20 thereafter. MHDV factors are 0.30. Prospective new vintage 2025 reads the 2030 input year; legacy vintage 2025 reads 2025. A factor stays with its cohort throughout its lifetime. #to-review |"
+        }
+      ],
+      "lifetime_tech": [
+        {
+          "heading": "`lifetime_tech` and `lifetime_survival_curve`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Ontario registration changes include migration/re-registration and do not isolate physical scrappage; NHTSA CAFE supplies US survival schedules | Use reported cumulative car rates directly across regions. Combine Vans/SUVs and Pickups for both Canadian light-truck classes using the shared Ontario class weights. #to-review |\n| Medium Trucks | NHTSA CAFE 2b/3 Trucks survival rates | Apply this cumulative survival schedule to every medium-truck GVWR class, powertrain, and region. #to-review |\n| Heavy Trucks | Reviewed fixed lifetimes and NEMS scrappage rates provide different lifetime representations | With survival curves off, heavy-truck fixed lifetime fetched from `inputs/0_manual_params/lifetime_process.csv`. With curves on, NEMS Class 7–8 annual scrappage rates used to derive survival rates. |\n| Cars and Trucks | Annual survival schedules must represent multi-year model periods | Use mean cumulative survival over each complete annual-age block: ages 0–4 for a new five-year cohort. Hold each class schedule unchanged across regions, powertrains and vintage years. #to-review |\n| Road Vehicles | `period_mode`: `prospective` shifts surviving annual cohorts into earlier model vintages | Use supported NHTSA/NEMS ages through 29 for the default prospective grid, supplying the complete ages 25–29 block for vintage 2000 in the first model period. |\n| Cars, Light Trucks, and Medium Trucks | Their fixed lifetimes are derived from accepted survival schedules | Use the first annual age at which cumulative survival reaches 50% or less as the fixed lifetime.  |\n| Buses | StatCan reports average public-transit asset lifetimes and suppresses some provincial cells | Apply the latest reported 2016–2020 value by powertrain to all three bus classes. For BCT, use BC first; use Canada 2020 only when that province or proxy has no reported value for the powertrain. |\n| Buses | StatCan has no gasoline, plug-in hybrid, or fuel-cell bus useful-life series | Use diesel bus lifetimes for gasoline buses and electric bus lifetimes for plug-in hybrid and fuel-cell buses. |\n| Other Road, Off-road, and Infrastructure Technologies | Reviewed manual lifetime evidence is at vehicle or equipment category level | Apply each reviewed category lifetime across its technologies and regions where no survival curve or StatCan lifetime supplies that technology. |"
+        }
+      ],
+      "limit_annual_capacity_factor": [
+        {
+          "heading": "`limit_annual_capacity_factor`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | NRCan CEUD annual vehicle activity and stock; recent activity-to-stock ratios have declined | Use the mean of the latest five eligible annual activity-to-stock ratios, excluding 2020–2021, to establish each region and road class's utilization baseline.  |\n| Cars and Trucks | NLR ATB age-based mileage profiles describe how Canadian utilization levels vary with age | Use each aggregated ATB profile only as a relative age trajectory, normalized to a peak of one; retain the CEUD-derived baseline as the utilization level.  |\n| LDV range variants | Range sales weights do not describe vehicle utilization | Use the same annual utilization and capacity-to-activity factor for every powertrain/range within a region and vehicle class. Range aggregation weights parameter values; it does not alter utilization. Fixed lifetimes and survival curves also remain common across ranges. #to-review |\n| Age-dependent road utilization | The pinned annual factor cannot index both vintage and operating period | Keep the prepared vintage/period age trajectories available for future schema support; the current database uses the common class-level annual baseline. #to-review |\n| Air, Rail, and Marine | NRCan CEUD — no explicit fleet stocks | Utilization is not represented; UF = 1. |"
+        },
+        {
+          "heading": "EV charger parameters",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| LDV chargers | TC provincial public port counts are March 2026 while the prepared BEV stock is for 2023 | Apply the pinned March 2026 public counts to 2023 BEV stock when estimating private ports; record both dates in the charger audit. #to-review |\n| LDV chargers in BCT | TC separates British Columbia and the territories; CANOE's BCT region groups them | Sum British Columbia, Yukon, Northwest Territories, and Nunavut public ports before estimating BCT charger capacity. #to-review |\n| Existing LDV chargers | Provincial public counts do not specify charger-type composition | Apply national TC L2/DCFC shares to each region's public ports and a 15/85 L1/L2 mix to private ports. Convert counts to GW using 1.5/7.2/50 kW for L1/L2/DCFC in every region. #to-review |\n| LDV and MHDV chargers | Reviewed efficiencies simplify charger-type and operating-load differences | Apply constant 95% LDV and 80% MHDV charging efficiency across regions, vintages and periods, independent of charger type; see the [reviewed charger parameters](../inputs/0_manual_params/charger_parameters.csv). #to-review |\n| Existing and new chargers | Reviewed costs begin in 2025, while existing capacity is calibrated to 2023 stocks | Use the earliest reviewed 2025 cost rates for existing chargers' annual fixed costs, with vintage 2020 in prospective mode or 2023 in the prior legacy grid. Only new chargers receive investment rows. Future costs read vintage interval-end years in prospective mode and vintage labels in legacy mode. Apply the same reviewed national port-count shares to per-GW costs across regions/vintages and the OEO 1% fixed-cost ratio. #to-review |\n| Charger utilization | The pinned annual capacity factor is indexed by vintage rather than calendar period | Insert vintage-based upper bounds: LDV historical chargers retain the earliest reviewed 2025 factor of 0.15; new LDV cohorts use 0.15 for a 2025 input year and 0.20 thereafter. MHDV factors are 0.30. Prospective new vintage 2025 reads the 2030 input year; legacy vintage 2025 reads 2025. A factor stays with its cohort throughout its lifetime. #to-review |"
+        }
+      ],
+      "limit_tech_input_split": [
+        {
+          "heading": "Shared road fleet composition",
+          "text": "Configuration: [`aggregation_sources` selections](../config/scenarios/legacy_reproduction.yaml) and [`road_aggregation` rules](../config/parameters/rules.yaml). #to-review\n\nEfficiencies, costs and prepared road mileage profiles share these class/vocation weights. LDV weights also aggregate NHTSA light-truck survival. Hold each mix across powertrains and vintages. #to-review\n\n| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Ontario MTO Report A is the available class-composition evidence; its reviewed crosswalk is incomplete | Pool mapped FIT_ACTIVE counts across model years in the selected Ontario edition and normalize over mapped classes. Treat this subset as representative across Canadian regions; passenger and freight light trucks share the same class mix. #to-review |\n| Medium Trucks | Ontario fleet counts and national sales evidence cover different GVWR classes and lack vocation shares | Use MTO Report 4 Class 2b–7 counts in ON, mapping 2b to ATB Class 2; elsewhere use 2020 Wards Class 3–7 shares. Weight available freight vocations equally within class, excluding School/Transit/Refuse, including vocations with identical mileage schedules. #to-review |\n| Heavy Trucks | StatCan 23-10-0142-01 for-hire shipments proxy regional cab-type use | Pool 2011–2017 origin-or-destination tonne-km, counting within-province shipments once. Retain shipment groups whose mean load plus a 13,000-kg curb weight reaches 14,970 kg. Distances up to 350 miles represent DayCab; longer distances represent Sleeper. Split DayCab weight equally among Beverage/Drayage/Regional vocations; use BC-only evidence for BCT. #to-review |"
+        },
+        {
+          "heading": "`efficiency`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | CEUD activity, annual distance, and stock describe whole vehicle classes, not individual powertrains | Derive class occupancy/payload as activity divided by distance and stock; apply it across powertrains and hold the base-year factor constant for future vintages. #to-review |\n| Cars, Trucks and PHEV Blends | Fuel-volume ratings and electrical consumption need a common energy basis | Convert gasoline/diesel volume consumption with GREET higher heating values and electricity with 3.6 MJ/kWh when deriving model efficiencies and PHEV input-energy fractions. See the [conversion factors](../config/parameters/conversion.yaml). #to-review |\n| Road and Off-road | Historical evidence ends before the latest prospective interval ends | Average available annual efficiency values within each selected historical bin, stopping at the observation year. Future efficiencies use period-end projections in both prospective and legacy modes; the incomplete 2020 interval uses observed 2021–2023 values. #to-review |\n| Cars and Light Trucks | NRCan model-year ratings are not measurements of the surviving fleet's in-use consumption | Treat ratings as vintage-specific fleet efficiency proxies, without a separate aging adjustment; weight rating observations equally within each class and powertrain. #to-review |\n| Cars and Light Trucks | Historical ratings combine SUV sizes and omit some class/powertrain combinations | Give unsplit SUVs the combined small/standard SUV weight; redistribute missing-class weights only across observed classes. #to-review |\n| Cars and Light Trucks | NRCan ratings lack a complete HEV flag | Identify hybrids by model-name wording or unambiguous year/make/model matches to US FuelEconomy.gov hybrid records. Otherwise retain the reported fuel classification, which can leave unidentified HEVs among conventional vehicles. #to-review |\n| Cars and Light Trucks | NRCan electric ranges do not coincide with ATB archetypes | Classify BEVs with `Range (km)` and PHEVs with `Range 1 (km)`, converted to miles, using the same OMEGA range-bucket boundaries as the sales weights. Use all four BEV and both PHEV buckets before existing-fleet aggregation. #to-review |\n| Existing LDV BEVs and PHEVs | A single stock archetype still requires range-specific efficiency evidence | Derive each NRCan range bucket's historical efficiency before OMEGA aggregation. Retain the accepted ATB utility-weighted total-energy level for each PHEV range and its NRCan charge-sustaining historical index. Preserve configured analogue fallbacks when a range lacks observations; do not drop that range or renormalize its sales weight. #to-review |\n| Existing LDV BEVs and PHEVs | Registered NRCan range histories begin at different years | Car BEV150/200/300/400 observations begin in 2012/2013/2013/2019; PHEV35/50 begin in 2012/2013. Light-truck BEV200/300/400 begin in 2016/2016/2020; PHEV35/50 begin in 2015/2020. Earlier required years use the configured historical analogues. Light-truck BEV150 has no rating observations and zero OMEGA weight. These are source-history gaps, not unfilled final parameter rows. #to-review |\n| Cars and Light Trucks | Some powertrains lack continuous historical ratings | Retain the latest own observation and extend it with the approved analogue's historical index. Where no own baseline exists, use the analogue's level scaled by the ATB powertrain relationship. #to-review |\n| Cars and Light Trucks | NLR ATB light-duty hybrid diesel electric powertrains are neglected | LDV hybrid electric powertrains that utilize diesel are neglected; it is assumed that gasoline-powered HEVs will remain the dominant variant for the light-duty sector.  |\n| Cars and Light Trucks | US ATB scenarios provide projected technology improvements, not Canadian fleet observations | Apply ATB relative improvements to Canadian rating-based baselines; do not substitute ATB absolute levels except for PHEVs or missing-baseline analogues. #to-review |\n| PHEVs | ATB fleet utility factors describe distance in charge-depleting operation | Represent charge-depleting travel by electricity consumption and charge-sustaining travel by liquid-fuel consumption. Derive input shares from these utility-weighted energy components. #to-review |\n| PHEVs | Fuel/electricity shares differ across ATB classes and regional truck compositions | For ordinary LDV35/LDV50 blends use pooled MTO Report A class stock counts; for MDV and HDV blends use the selected regional GVWR/vocation and haul weights. Sum weighted electrical and total consumption before taking their ratio, then average future interval-end fractions equally. Hold each regional blend constant across periods; buses retain the HDV blend. Existing LDV representatives have separate category-specific blends with their class and OMEGA range weights. #to-review |\n| Medium/Heavy Trucks and Buses | Selected ATB evidence lacks gasoline and CNG archetypes | Use the diesel incumbent as their efficiency proxy; intercity CNG instead uses the REGEN relative relationship. #to-review |\n| Medium and Heavy Trucks | Historical CEUD fuel consumption describes the fleet rather than individual model years | Use its gasoline/diesel trajectory as a vintage backcasting index from the ATB baseline, with higher consumption implying lower efficiency. #to-review |\n| Medium and Heavy Trucks | ANL Autonomie, as incorporated in NLR ATB — PHEV utility-weighted combined efficiency | Islam et al. (2023) assume a utility factor of 80%. |\n| Buses | CEUD historical intensity is class-specific but not powertrain-specific | Apply each bus class's intensity trend across its existing powertrains; use ATB school/transit levels for future vehicles, weighting the two school-bus classes equally. #to-review |\n| Intercity Buses | ATB transit buses and REGEN relative efficiencies proxy intercity technology performance | Use transit-bus efficiency levels with REGEN intercity powertrain ratios; retain the ATB transit HEV relationship where REGEN has no HEV series. #to-review |\n| Motorcycles | GCAM Canada supplies technology trajectories rather than provincial motorcycle observations | Apply GCAM gasoline/BEV intensity relationships to each province's CEUD motorcycle baseline. #to-review |\n| Air, Rail, and Marine | CEUD service intensities are national mode averages, not province- or powertrain-specific | Apply the national historical intensity across provinces as the incumbent baseline; use reviewed relative multipliers for alternative powertrains. #to-review |\n| Off-road Modes | Reviewed EPRI US-REGEN assumptions proxy Canadian future performance | Apply the same relative technology factors and compound annual efficiency improvements across provinces; interpolate hydrogen-rail ratios between the reviewed 2035 and 2050 values. #to-review |\n| Passenger and Freight Rail | REGEN natural-gas rail assumptions describe CNG, not LNG | Use the CNG-to-diesel efficiency relationship for LNG rail technologies. #to-review |\n| Marine Freight | CEUD reports one marine intensity; GREET's HFO/MDO ratio describes a predefined trip | Treat CEUD intensity as the MDO baseline and apply the GREET HFO/MDO consumption ratio across historical and future vessels, regions, and vintages. #to-review |\n| Aviation | No separate SPK aircraft-efficiency relationship is used | Assign SPK aircraft the same service-per-energy efficiency and improvement rate as jet-fuel aircraft. #to-review |\n\n### Example LDV Class Mapping by Source\n\n| **Vehicle Model** | **NRCan Fuel Ratings** | **Autonomie TEA** | **NRCan CEUD** |\n| ----------------- | ---------------------- | ----------------- | -------------- |\n| **Nissan Sentra** | Midsize                | Midsize           | Car            |\n| **Nissan Versa**  | Compact                | Compact           | Car            |\n| **Toyota RAV4**   | Small SUV              | Small SUV         | Light Truck    |\n| **Ford F-150**    | Standard pickup truck  | Pickup truck      | Light Truck    |\n| **Ford Explorer** | Standard SUV           | Midsize SUV       | Light Truck    |"
+        }
+      ],
+      "lifetime_survival_curve": [
+        {
+          "heading": "Shared road fleet composition",
+          "text": "Configuration: [`aggregation_sources` selections](../config/scenarios/legacy_reproduction.yaml) and [`road_aggregation` rules](../config/parameters/rules.yaml). #to-review\n\nEfficiencies, costs and prepared road mileage profiles share these class/vocation weights. LDV weights also aggregate NHTSA light-truck survival. Hold each mix across powertrains and vintages. #to-review\n\n| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Ontario MTO Report A is the available class-composition evidence; its reviewed crosswalk is incomplete | Pool mapped FIT_ACTIVE counts across model years in the selected Ontario edition and normalize over mapped classes. Treat this subset as representative across Canadian regions; passenger and freight light trucks share the same class mix. #to-review |\n| Medium Trucks | Ontario fleet counts and national sales evidence cover different GVWR classes and lack vocation shares | Use MTO Report 4 Class 2b–7 counts in ON, mapping 2b to ATB Class 2; elsewhere use 2020 Wards Class 3–7 shares. Weight available freight vocations equally within class, excluding School/Transit/Refuse, including vocations with identical mileage schedules. #to-review |\n| Heavy Trucks | StatCan 23-10-0142-01 for-hire shipments proxy regional cab-type use | Pool 2011–2017 origin-or-destination tonne-km, counting within-province shipments once. Retain shipment groups whose mean load plus a 13,000-kg curb weight reaches 14,970 kg. Distances up to 350 miles represent DayCab; longer distances represent Sleeper. Split DayCab weight equally among Beverage/Drayage/Regional vocations; use BC-only evidence for BCT. #to-review |"
+        },
+        {
+          "heading": "`lifetime_tech` and `lifetime_survival_curve`",
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Cars and Light Trucks | Ontario registration changes include migration/re-registration and do not isolate physical scrappage; NHTSA CAFE supplies US survival schedules | Use reported cumulative car rates directly across regions. Combine Vans/SUVs and Pickups for both Canadian light-truck classes using the shared Ontario class weights. #to-review |\n| Medium Trucks | NHTSA CAFE 2b/3 Trucks survival rates | Apply this cumulative survival schedule to every medium-truck GVWR class, powertrain, and region. #to-review |\n| Heavy Trucks | Reviewed fixed lifetimes and NEMS scrappage rates provide different lifetime representations | With survival curves off, heavy-truck fixed lifetime fetched from `inputs/0_manual_params/lifetime_process.csv`. With curves on, NEMS Class 7–8 annual scrappage rates used to derive survival rates. |\n| Cars and Trucks | Annual survival schedules must represent multi-year model periods | Use mean cumulative survival over each complete annual-age block: ages 0–4 for a new five-year cohort. Hold each class schedule unchanged across regions, powertrains and vintage years. #to-review |\n| Road Vehicles | `period_mode`: `prospective` shifts surviving annual cohorts into earlier model vintages | Use supported NHTSA/NEMS ages through 29 for the default prospective grid, supplying the complete ages 25–29 block for vintage 2000 in the first model period. |\n| Cars, Light Trucks, and Medium Trucks | Their fixed lifetimes are derived from accepted survival schedules | Use the first annual age at which cumulative survival reaches 50% or less as the fixed lifetime.  |\n| Buses | StatCan reports average public-transit asset lifetimes and suppresses some provincial cells | Apply the latest reported 2016–2020 value by powertrain to all three bus classes. For BCT, use BC first; use Canada 2020 only when that province or proxy has no reported value for the powertrain. |\n| Buses | StatCan has no gasoline, plug-in hybrid, or fuel-cell bus useful-life series | Use diesel bus lifetimes for gasoline buses and electric bus lifetimes for plug-in hybrid and fuel-cell buses. |\n| Other Road, Off-road, and Infrastructure Technologies | Reviewed manual lifetime evidence is at vehicle or equipment category level | Apply each reviewed category lifetime across its technologies and regions where no survival curve or StatCan lifetime supplies that technology. |"
+        }
+      ]
+    },
+    "files": {
+      "candidate": {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\legacy_reproduction.sqlite",
+        "sha256": "8b5ee4b368ef5d2d3d4d008e393ff3f8b320947cd38c9af85d67b6a6a908c9ca"
+      },
+      "legacy": {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\canoe_transport_baseline.sqlite",
+        "sha256": "72dcd117b038092a8651305880bce56f158a771280ddcec3a45dbc600fa1a65f"
+      },
+      "build_report": {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\transport_comparison_build.json",
+        "sha256": "bae80ac6b1dfc0b6e7f53c37ba1cac933bde9090a6e03c1949c53ebeaf23545d"
+      },
+      "diagnostic_config": {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\transport_comparison.yaml",
+        "sha256": "6670cda5151e90ed30f530dd735373afbcd3722ff21307eda9755a041e1b04a6"
+      },
+      "assumptions": {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\docs\\assumptions.md",
+        "sha256": "2aeb356c8b1a1f5dd8bc0b49656d0fd2f4492f9db52df2791ab1ba5844b05a30"
+      }
+    },
+    "tolerances": {
+      "absolute_tolerance": 1e-09,
+      "relative_tolerance": 1e-06
+    },
+    "source_id_mapping": {
+      "nrcan_ceud_transport_provincial": "T01",
+      "nrcan_ceud_transport_national": "T02",
+      "ontario_ministry_transport_vehicle_population": "T03",
+      "statcan_transport_tables": "T04",
+      "cer_canadas_energy_future": "T05",
+      "nlr_atb_transportation_2024": "T06",
+      "anl_autonomie_bean_2022": "T07",
+      "nrcan_fuel_consumption_ratings": "T08",
+      "nhtsa_cafe_2024_ldv_survival": "T09",
+      "eia_nems_hd_truck_scrappage": "T10",
+      "jgcri_gcam_motorcycle_inputs": "T11",
+      "epri_us_regen_2025_transportation": "T12",
+      "faa_economic_values_2024": "T13",
+      "wards_intelligence_2022_sales_shares": "T14",
+      "emrg_sfu_cims_model": "T15",
+      "open_energy_outlook_2022": "T16",
+      "argonne_rd_greet_2025_rev1": "T17",
+      "epa_moves4_population_activity_2023": "T18",
+      "canada_energy_policy_simulator_3_4_7": "T19",
+      "argonne_hdsam_4_5": "T20",
+      "fueleconomy_gov_vehicle_data": "T21",
+      "reviewed_mto_make_model_evidence": "T22",
+      "nhtsa_vpic_vehicle_models": "T23",
+      "dunsky_ev_charging_infrastructure_2024": "T24",
+      "transport_canada_ev_dashboard": "T25",
+      "pollution_probe_ev_charging_survey_2024": "T26",
+      "nlr_alternative_fueling_infrastructure_2024": "T27",
+      "icct_ev_charge_2024": "T28",
+      "icct_hdv_charge_2024": "T29",
+      "iea_future_of_hydrogen_2019": "T30",
+      "legacy_charging_profiles": "T31",
+      "epa_automotive_trends": "T32",
+      "epa_omega_baseline": "T33",
+      "hatch_original_growth_evidence": "T34",
+      "hatch_extended_growth_evidence": "T35",
+      "eafo_norway_growth_evidence": "T36",
+      "technology_growth_literature": "T37",
+      "temoa_growth_reference": "T38"
+    }
+  },
+  "development_comparisons": {
+    "existing_capacity": {
+      "scope": "Ontario transport existing capacity; reference excludes chargers",
+      "candidate_rows": 147,
+      "reference_rows": 100,
+      "shared_tech_vintage_keys": 79,
+      "candidate_only_keys": 68,
+      "reference_only_keys": 21,
+      "candidate_vintages": [
+        2000,
+        2005,
+        2010,
+        2015,
+        2020,
+        2023
+      ],
+      "reference_vintages": [
+        2005,
+        2010,
+        2015,
+        2020
+      ],
+      "unit_mismatches": [],
+      "value_differences": 79,
+      "absolute_tolerance": 1e-09,
+      "relative_tolerance": 1e-06,
+      "largest_absolute_differences": [
+        {
+          "tech": "T_LDV_C_GSL_EX",
+          "vintage": 2020,
+          "current_capacity": 977.3758872162092,
+          "legacy_capacity": 1658.203203455,
+          "absolute_difference": 680.8273162387908,
+          "relative_difference": 0.4105813538535158
+        },
+        {
+          "tech": "T_LDV_C_GSL_EX",
+          "vintage": 2015,
+          "current_capacity": 1020.4527312692699,
+          "legacy_capacity": 1357.132043612,
+          "absolute_difference": 336.6793123427301,
+          "relative_difference": 0.24808146998479222
+        },
+        {
+          "tech": "T_LDV_LTP_GSL_EX",
+          "vintage": 2020,
+          "current_capacity": 1309.1857462543965,
+          "legacy_capacity": 1570.01071173,
+          "absolute_difference": 260.82496547560345,
+          "relative_difference": 0.1661294177975382
+        },
+        {
+          "tech": "T_LDV_LTP_GSL_EX",
+          "vintage": 2010,
+          "current_capacity": 574.9433790654834,
+          "legacy_capacity": 790.394234638,
+          "absolute_difference": 215.4508555725165,
+          "relative_difference": 0.2725865727894547
+        },
+        {
+          "tech": "T_LDV_LTF_GSL_EX",
+          "vintage": 2020,
+          "current_capacity": 365.4008572900312,
+          "legacy_capacity": 471.3724331,
+          "absolute_difference": 105.97157580996884,
+          "relative_difference": 0.2248149623707149
+        },
+        {
+          "tech": "T_LDV_LTP_GSL_EX",
+          "vintage": 2015,
+          "current_capacity": 1187.1348069338435,
+          "legacy_capacity": 1281.35795142,
+          "absolute_difference": 94.22314448615657,
+          "relative_difference": 0.07353381963388024
+        },
+        {
+          "tech": "T_LDV_M_GSL_EX",
+          "vintage": 2010,
+          "current_capacity": 25.15725559304796,
+          "legacy_capacity": 86.701901504,
+          "absolute_difference": 61.54464591095204,
+          "relative_difference": 0.7098419393732982
+        },
+        {
+          "tech": "T_LDV_LTF_GSL_EX",
+          "vintage": 2015,
+          "current_capacity": 331.3357767708016,
+          "legacy_capacity": 277.314842915,
+          "absolute_difference": 54.020933855801616,
+          "relative_difference": 0.1948000088562141
+        },
+        {
+          "tech": "T_LDV_LTF_GSL_EX",
+          "vintage": 2010,
+          "current_capacity": 160.4698219521648,
+          "legacy_capacity": 211.138327932,
+          "absolute_difference": 50.6685059798352,
+          "relative_difference": 0.23997777417349678
+        },
+        {
+          "tech": "T_LDV_LTF_DSL_EX",
+          "vintage": 2020,
+          "current_capacity": 13.64234927880193,
+          "legacy_capacity": 45.969138572,
+          "absolute_difference": 32.32678929319807,
+          "relative_difference": 0.7032280851329343
+        }
+      ],
+      "status": "diagnostic; vintage coverage and derivation differ; no parity tolerance accepted"
+    },
+    "demand": {
+      "scope": "Ontario passenger-km and tonne-km service commodities",
+      "candidate_rows": 70,
+      "reference_rows": 98,
+      "shared_keys": 70,
+      "candidate_only_keys": 0,
+      "reference_only_keys": 28,
+      "candidate_periods": [
+        2025,
+        2030,
+        2035,
+        2040,
+        2045
+      ],
+      "reference_periods": [
+        2021,
+        2025,
+        2030,
+        2035,
+        2040,
+        2045,
+        2050
+      ],
+      "unit_mismatches": [],
+      "value_differences": 70,
+      "absolute_tolerance": 1e-09,
+      "relative_tolerance": 1e-06,
+      "largest_absolute_differences": [
+        {
+          "commodity": "T_D_tkm_hdv_wt",
+          "period": 2045,
+          "current_demand": 11.798242009862307,
+          "legacy_demand": 78.886436958,
+          "absolute_difference": 67.0881949481377
+        },
+        {
+          "commodity": "T_D_tkm_hdv_wt",
+          "period": 2040,
+          "current_demand": 10.944233116889881,
+          "legacy_demand": 73.987441003,
+          "absolute_difference": 63.04320788611012
+        },
+        {
+          "commodity": "T_D_tkm_hdv_wt",
+          "period": 2035,
+          "current_demand": 10.232001574639089,
+          "legacy_demand": 69.015368044,
+          "absolute_difference": 58.783366469360914
+        },
+        {
+          "commodity": "T_D_tkm_hdv_wt",
+          "period": 2030,
+          "current_demand": 9.450425105631771,
+          "legacy_demand": 64.071587007,
+          "absolute_difference": 54.62116190136823
+        },
+        {
+          "commodity": "T_D_pkm_ldv_c",
+          "period": 2045,
+          "current_demand": 127.88158975909963,
+          "legacy_demand": 180.011736822,
+          "absolute_difference": 52.13014706290036
+        },
+        {
+          "commodity": "T_D_pkm_ldv_c",
+          "period": 2040,
+          "current_demand": 118.62495518503083,
+          "legacy_demand": 168.83266974,
+          "absolute_difference": 50.20771455496917
+        },
+        {
+          "commodity": "T_D_tkm_hdv_wt",
+          "period": 2025,
+          "current_demand": 8.639266635416043,
+          "legacy_demand": 57.560754858,
+          "absolute_difference": 48.92148822258396
+        },
+        {
+          "commodity": "T_D_pkm_ldv_c",
+          "period": 2035,
+          "current_demand": 110.90505065828263,
+          "legacy_demand": 157.486847525,
+          "absolute_difference": 46.58179686671737
+        },
+        {
+          "commodity": "T_D_pkm_ldv_c",
+          "period": 2030,
+          "current_demand": 102.43351385717187,
+          "legacy_demand": 146.205584924,
+          "absolute_difference": 43.77207106682812
+        },
+        {
+          "commodity": "T_D_pkm_ldv_c",
+          "period": 2025,
+          "current_demand": 93.64133663017184,
+          "legacy_demand": 131.348452969,
+          "absolute_difference": 37.70711633882816
+        }
+      ],
+      "status": "diagnostic; baseline and projection reconciliation pending; no parity tolerance accepted"
+    },
+    "lifetime_tech": {
+      "scope": "Ontario numeric fixed lifetimes on exact technology keys; curve technologies excluded",
+      "candidate_rows": 57,
+      "reference_numeric_rows": 130,
+      "reference_blank_rows": 1,
+      "shared_keys": 52,
+      "equal_values": 20,
+      "value_differences": 32,
+      "absolute_tolerance": 1e-09,
+      "relative_tolerance": 1e-06,
+      "candidate_only_keys": 5,
+      "reference_only_keys": 78,
+      "difference_examples": [
+        {
+          "tech": "T_HDV_AJF_JFL_EX",
+          "candidate_years": 30.0,
+          "legacy_years": 24.0
+        },
+        {
+          "tech": "T_HDV_AJF_JFL_N",
+          "candidate_years": 30.0,
+          "legacy_years": 24.0
+        },
+        {
+          "tech": "T_HDV_AJF_SPK_N",
+          "candidate_years": 30.0,
+          "legacy_years": 24.0
+        },
+        {
+          "tech": "T_HDV_AJP_JFL_EX",
+          "candidate_years": 30.0,
+          "legacy_years": 24.0
+        },
+        {
+          "tech": "T_HDV_AJP_JFL_N",
+          "candidate_years": 30.0,
+          "legacy_years": 24.0
+        },
+        {
+          "tech": "T_HDV_AJP_SPK_N",
+          "candidate_years": 30.0,
+          "legacy_years": 24.0
+        },
+        {
+          "tech": "T_HDV_BIC_DSL_EX",
+          "candidate_years": 12.0,
+          "legacy_years": 13.0
+        },
+        {
+          "tech": "T_HDV_BIC_DSL_HEV_N",
+          "candidate_years": 12.0,
+          "legacy_years": 13.0
+        },
+        {
+          "tech": "T_HDV_BIC_DSL_N",
+          "candidate_years": 12.0,
+          "legacy_years": 13.0
+        },
+        {
+          "tech": "T_HDV_BIC_GSL_EX",
+          "candidate_years": 12.0,
+          "legacy_years": 13.0
+        },
+        {
+          "tech": "T_HDV_BIC_GSL_N",
+          "candidate_years": 12.0,
+          "legacy_years": 13.0
+        },
+        {
+          "tech": "T_HDV_BS_CNG_EX",
+          "candidate_years": 9.0,
+          "legacy_years": 12.0
+        },
+        {
+          "tech": "T_HDV_BS_CNG_N",
+          "candidate_years": 9.0,
+          "legacy_years": 12.0
+        },
+        {
+          "tech": "T_HDV_BS_DSL_EX",
+          "candidate_years": 12.0,
+          "legacy_years": 13.0
+        },
+        {
+          "tech": "T_HDV_BS_DSL_HEV_N",
+          "candidate_years": 12.0,
+          "legacy_years": 13.0
+        }
+      ],
+      "status": "diagnostic; reviewed source choices can differ from legacy; no parity tolerance accepted"
+    },
+    "efficiency": {
+      "scope": "Ontario exact technology/vintage/input/output keys; legacy service-per-PJ numeric values",
+      "candidate_rows": 637,
+      "reference_rows": 767,
+      "shared_keys": 342,
+      "candidate_only_keys": 295,
+      "reference_only_keys": 425,
+      "equal_within_diagnostic_tolerance": 5,
+      "value_differences": 337,
+      "absolute_tolerance": 1e-09,
+      "relative_tolerance": 1e-06,
+      "largest_absolute_differences": [
+        {
+          "tech": "T_HDV_WTF_LNG_N",
+          "vintage": 2045,
+          "input_comm": "T_lng",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 3.776686621950454,
+          "legacy_efficiency": 8.179199707,
+          "absolute_difference": 4.402513085049547,
+          "relative_difference": 0.5382571941948974
+        },
+        {
+          "tech": "T_HDV_WTF_HFO_EX",
+          "vintage": 2005,
+          "input_comm": "T_hfo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 1.9387526962672372,
+          "legacy_efficiency": 6.333938452,
+          "absolute_difference": 4.395185755732763,
+          "relative_difference": 0.6939103985680414
+        },
+        {
+          "tech": "T_HDV_WTF_HFO_EX",
+          "vintage": 2010,
+          "input_comm": "T_hfo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 1.9439399183736943,
+          "legacy_efficiency": 6.333938452,
+          "absolute_difference": 4.389998533626306,
+          "relative_difference": 0.6930914417458734
+        },
+        {
+          "tech": "T_HDV_WTF_LNG_N",
+          "vintage": 2040,
+          "input_comm": "T_lng",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 3.5057483526468554,
+          "legacy_efficiency": 7.770113922,
+          "absolute_difference": 4.264365569353145,
+          "relative_difference": 0.5488163509777102
+        },
+        {
+          "tech": "T_HDV_WTF_LNG_N",
+          "vintage": 2035,
+          "input_comm": "T_lng",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 3.2542471066182554,
+          "legacy_efficiency": 7.38159427,
+          "absolute_difference": 4.127347163381744,
+          "relative_difference": 0.5591403445399261
+        },
+        {
+          "tech": "T_HDV_WTF_MDO_EX",
+          "vintage": 2005,
+          "input_comm": "T_mdo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 1.9790633237556388,
+          "legacy_efficiency": 6.065365284,
+          "absolute_difference": 4.086301960244361,
+          "relative_difference": 0.6737107773251074
+        },
+        {
+          "tech": "T_HDV_WTF_MDO_EX",
+          "vintage": 2010,
+          "input_comm": "T_mdo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 1.9843583988019966,
+          "legacy_efficiency": 6.065365284,
+          "absolute_difference": 4.081006885198004,
+          "relative_difference": 0.6728377754862364
+        },
+        {
+          "tech": "T_HDV_WTF_LNG_N",
+          "vintage": 2030,
+          "input_comm": "T_lng",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 3.0207884781398238,
+          "legacy_efficiency": 7.012500481,
+          "absolute_difference": 3.9917120028601762,
+          "relative_difference": 0.5692280540551133
+        },
+        {
+          "tech": "T_HDV_WTF_LNG_N",
+          "vintage": 2025,
+          "input_comm": "T_lng",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 2.8040780956996803,
+          "legacy_efficiency": 6.662015379,
+          "absolute_difference": 3.8579372833003194,
+          "relative_difference": 0.5790946228466098
+        },
+        {
+          "tech": "T_HDV_WTF_HFO_EX",
+          "vintage": 2015,
+          "input_comm": "T_hfo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 2.4996038695683844,
+          "legacy_efficiency": 6.333938452,
+          "absolute_difference": 3.8343345824316155,
+          "relative_difference": 0.6053634103787177
+        },
+        {
+          "tech": "T_HDV_WTF_MDO_EX",
+          "vintage": 2015,
+          "input_comm": "T_mdo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 2.551575738207813,
+          "legacy_efficiency": 6.065365284,
+          "absolute_difference": 3.5137895457921875,
+          "relative_difference": 0.5793203510860777
+        },
+        {
+          "tech": "T_HDV_WTF_HFO_N",
+          "vintage": 2045,
+          "input_comm": "T_hfo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 5.031675007760902,
+          "legacy_efficiency": 8.185837021,
+          "absolute_difference": 3.1541620132390973,
+          "relative_difference": 0.38531942489783144
+        },
+        {
+          "tech": "T_HDV_WTF_HFO_N",
+          "vintage": 2040,
+          "input_comm": "T_hfo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 4.67070428003956,
+          "legacy_efficiency": 7.776419257,
+          "absolute_difference": 3.1057149769604395,
+          "relative_difference": 0.3993759691087653
+        },
+        {
+          "tech": "T_HDV_WTF_HFO_N",
+          "vintage": 2035,
+          "input_comm": "T_hfo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 4.335629474863037,
+          "legacy_efficiency": 7.387584303,
+          "absolute_difference": 3.051954828136963,
+          "relative_difference": 0.4131194586703538
+        },
+        {
+          "tech": "T_HDV_WTF_HFO_EX",
+          "vintage": 2020,
+          "input_comm": "T_hfo",
+          "output_comm": "T_D_tkm_hdv_wt",
+          "candidate_efficiency": 3.339642127700153,
+          "legacy_efficiency": 6.333938452,
+          "absolute_difference": 2.994296324299847,
+          "relative_difference": 0.472738462331343
+        }
+      ],
+      "status": "diagnostic only; MTO weights, source editions, HHV PHEV calculation, vintage semantics and network representation differ; parity not asserted"
+    },
+    "costs": {
+      "scope": "Ontario exact cost technology/vintage and period keys; activity-unit interpretations and source editions may differ",
+      "absolute_tolerance": 1e-09,
+      "relative_tolerance": 1e-06,
+      "status": "diagnostic only; cost source bases and representations require reviewed parity reconciliation",
+      "invest": {
+        "candidate_ontario_rows": 415,
+        "legacy_ontario_rows": 666,
+        "shared_keys": 403,
+        "candidate_only_keys": 12,
+        "legacy_only_keys": 263,
+        "equal_within_diagnostic_tolerance": 0,
+        "value_differences": 403,
+        "median_candidate_to_legacy_ratio": 0.9210273491515509,
+        "largest_absolute_differences": [
+          {
+            "key": [
+              "T_HDV_AJF_JFL_N",
+              2025
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_JFL_N",
+              2030
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_JFL_N",
+              2035
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_JFL_N",
+              2040
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_JFL_N",
+              2045
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_SPK_N",
+              2025
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_SPK_N",
+              2030
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_SPK_N",
+              2035
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_SPK_N",
+              2040
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_AJF_SPK_N",
+              2045
+            ],
+            "candidate_cost": 6132.623678803439,
+            "legacy_cost": 2722.833566153,
+            "absolute_difference": 3409.7901126504394,
+            "relative_difference": 1.2522947252585905
+          },
+          {
+            "key": [
+              "T_HDV_RICP_H2_N",
+              2030
+            ],
+            "candidate_cost": 2168.5409706792916,
+            "legacy_cost": 716.696413331,
+            "absolute_difference": 1451.8445573482916,
+            "relative_difference": 2.0257455323384876
+          },
+          {
+            "key": [
+              "T_HDV_RICP_H2_N",
+              2035
+            ],
+            "candidate_cost": 2168.5409706792916,
+            "legacy_cost": 716.696413331,
+            "absolute_difference": 1451.8445573482916,
+            "relative_difference": 2.0257455323384876
+          },
+          {
+            "key": [
+              "T_HDV_RICP_H2_N",
+              2040
+            ],
+            "candidate_cost": 2080.5422066517262,
+            "legacy_cost": 716.696413331,
+            "absolute_difference": 1363.8457933207262,
+            "relative_difference": 1.9029616556638826
+          },
+          {
+            "key": [
+              "T_HDV_RICP_DSL_N",
+              2025
+            ],
+            "candidate_cost": 1885.6878005906885,
+            "legacy_cost": 540.223281,
+            "absolute_difference": 1345.4645195906885,
+            "relative_difference": 2.490571152542921
+          },
+          {
+            "key": [
+              "T_HDV_RICP_DSL_N",
+              2030
+            ],
+            "candidate_cost": 1885.6878005906885,
+            "legacy_cost": 540.223281,
+            "absolute_difference": 1345.4645195906885,
+            "relative_difference": 2.490571152542921
+          }
+        ]
+      },
+      "variable": {
+        "candidate_ontario_rows": 1534,
+        "legacy_ontario_rows": 2072,
+        "shared_keys": 1224,
+        "candidate_only_keys": 310,
+        "legacy_only_keys": 848,
+        "equal_within_diagnostic_tolerance": 0,
+        "value_differences": 1224,
+        "median_candidate_to_legacy_ratio": 1.5064335833357738,
+        "largest_absolute_differences": [
+          {
+            "key": [
+              "T_MDV_T_GSL_EX",
+              2025,
+              2010
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 276.289033152,
+            "absolute_difference": 647.5652178848402,
+            "relative_difference": 2.3437963153918715
+          },
+          {
+            "key": [
+              "T_MDV_T_GSL_EX",
+              2030,
+              2015
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 276.289033152,
+            "absolute_difference": 647.5652178848402,
+            "relative_difference": 2.3437963153918715
+          },
+          {
+            "key": [
+              "T_MDV_T_GSL_EX",
+              2035,
+              2020
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 276.289033152,
+            "absolute_difference": 647.5652178848402,
+            "relative_difference": 2.3437963153918715
+          },
+          {
+            "key": [
+              "T_MDV_T_GSL_N",
+              2040,
+              2025
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 276.289033152,
+            "absolute_difference": 647.5652178848402,
+            "relative_difference": 2.3437963153918715
+          },
+          {
+            "key": [
+              "T_MDV_T_GSL_N",
+              2045,
+              2030
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 276.289033152,
+            "absolute_difference": 647.5652178848402,
+            "relative_difference": 2.3437963153918715
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_EX",
+              2025,
+              2010
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 420.388054752,
+            "absolute_difference": 503.4661962848402,
+            "relative_difference": 1.1976225075706552
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_EX",
+              2030,
+              2015
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 420.388054752,
+            "absolute_difference": 503.4661962848402,
+            "relative_difference": 1.1976225075706552
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_EX",
+              2035,
+              2020
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 420.388054752,
+            "absolute_difference": 503.4661962848402,
+            "relative_difference": 1.1976225075706552
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_N",
+              2040,
+              2025
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 420.388054752,
+            "absolute_difference": 503.4661962848402,
+            "relative_difference": 1.1976225075706552
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_N",
+              2045,
+              2030
+            ],
+            "candidate_cost": 923.8542510368402,
+            "legacy_cost": 420.388054752,
+            "absolute_difference": 503.4661962848402,
+            "relative_difference": 1.1976225075706552
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_HEV_N",
+              2040,
+              2025
+            ],
+            "candidate_cost": 803.7531984020503,
+            "legacy_cost": 365.737607635,
+            "absolute_difference": 438.0155907670503,
+            "relative_difference": 1.197622507566087
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_HEV_N",
+              2045,
+              2030
+            ],
+            "candidate_cost": 803.7531984020503,
+            "legacy_cost": 365.737607635,
+            "absolute_difference": 438.0155907670503,
+            "relative_difference": 1.197622507566087
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_PHEV_N",
+              2040,
+              2025
+            ],
+            "candidate_cost": 776.0375708709449,
+            "legacy_cost": 353.125965992,
+            "absolute_difference": 422.91160487894496,
+            "relative_difference": 1.1976225075686617
+          },
+          {
+            "key": [
+              "T_MDV_T_DSL_PHEV_N",
+              2045,
+              2030
+            ],
+            "candidate_cost": 776.0375708709449,
+            "legacy_cost": 353.125965992,
+            "absolute_difference": 422.91160487894496,
+            "relative_difference": 1.1976225075686617
+          },
+          {
+            "key": [
+              "T_MDV_T_GSL_EX",
+              2025,
+              2015
+            ],
+            "candidate_cost": 666.7186101901033,
+            "legacy_cost": 261.608853595,
+            "absolute_difference": 405.10975659510325,
+            "relative_difference": 1.5485322879104801
+          }
+        ]
+      }
+    }
+  },
+  "exports": {
+    "summary.csv": {
+      "rows": 20,
+      "sha256": "36dbff47c02192686eaf6e3339af6ae19549b46550e667501d7904b4884dbb41"
+    },
+    "rows.csv": {
+      "rows": 23867,
+      "sha256": "54689bf3e4e4121e714259dcf9d745c188d880aa7e32802e91fa9f1eeba28fd6"
+    },
+    "ranked_relative.csv": {
+      "rows": 524,
+      "sha256": "36cad7987f58c35606c1c22a7b1586e2abb37acf8e79948346c66317011c3dda"
+    },
+    "ranked_absolute.csv": {
+      "rows": 524,
+      "sha256": "07c9de9b1dd39fcb0b121d52771eb16e84846f343752d21c89a0c4e7be9ccbe5"
+    },
+    "explanations.csv": {
+      "rows": 33,
+      "sha256": "951e5e9f78c9aaada4a023556301712aa59eb0eb61847df898701fda26c26117"
+    }
+  }
+}

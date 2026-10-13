@@ -56,6 +56,7 @@ from utils import (
     load_harmonization_rules,
     resolve_configured_path,
     resolve_input_path,
+    resolve_parameter_path,
     resolve_repo_path,
     write_text_atomic,
 )
@@ -1185,6 +1186,7 @@ def build_from_scenario(
         report.update(
             {
                 "database": str(database_path),
+                "database_sha256": file_sha256(candidate),
                 "timestamp_utc": datetime.now(UTC).isoformat(),
                 "scenario": bundle.scenario.scenario.name,
                 "orchestration": {"prerequisites": "replayed", "download_sources": download_sources},
@@ -1201,6 +1203,18 @@ def build_from_scenario(
                         "path": str(bundle.sources_path),
                         "sha256": file_sha256(bundle.sources_path),
                     },
+                    "parameters": [
+                        {"path": str(path), "sha256": file_sha256(path)}
+                        for path in (
+                            resolve_parameter_path(bundle, "rules.yaml"),
+                            resolve_parameter_path(bundle, "conversion.yaml"),
+                            resolve_parameter_path(bundle, "vehicle_size_class_map.csv"),
+                        )
+                    ],
+                    "manual_inputs": [
+                        {"path": str(path), "sha256": file_sha256(path)}
+                        for path in sorted(resolve_input_path(bundle, "manual").glob("*.csv"))
+                    ],
                 },
             }
         )
