@@ -1,6 +1,6 @@
 """Technology growth evidence, deployment calibration and constraint diagnostics.
 
-Prepare the pinned handoff with ``uv run python -m diagnostics.technology_growth``.
+Prepare with ``uv run python -m parameterization.road_adoption_constraints``.
 Run with ``uv run marimo run docs/insights/growth_constraint_diagnosis.py``.
 All parameters and envelopes here are provisional research outputs.
 """
@@ -21,7 +21,7 @@ def _():
     import numpy as np
     import pandas as pd
 
-    from diagnostics.technology_growth import (
+    from parameterization.road_adoption_constraints import (
         annual_seed_to_period,
         annual_to_period,
         limit_envelope,
@@ -115,7 +115,7 @@ def _(growth_bundle, growth_tables, json, mo, resolve_artifact_path):
                 # Explicit acquisition of missing registered snapshots only:
                 uv run python -m fetching.technology_growth_evidence --download-missing --papers-dir '<supplied PDF directory>'
                 # Default acquisition verification and all analysis are offline:
-                uv run python -m diagnostics.technology_growth
+                uv run python -m parameterization.road_adoption_constraints
                 uv run marimo run docs/insights/growth_constraint_diagnosis.py
                 ```
 

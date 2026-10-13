@@ -27,8 +27,8 @@
   "input_hashes": {
     "config/parameters/rules.yaml": "c34a75f8a647aad583a298833d820444a453a8e3b1e876a93f8f753af5faa732",
     "config/parameters/technology_growth_diagnostic.yaml": "a68e8efbf049db4d395f87d4d94c1cfe50b4103555e5159c4a387c4fbd2ecf76",
-    "config/paths.yaml": "4554d555ab010ff8dd3a94d8b6041d4bf5aa71bc68a19f13ad59de4fc67139a1",
-    "config/scenarios/legacy_reproduction.yaml": "620c64857764891882916ac2ef2624bab66bc90dee7fec7c7fd3f0b29695390f",
+    "config/paths.yaml": "abc2a7a06246583d57e020b98928e10dcc3a0c029161b38cc06097b19d467dcf",
+    "config/scenarios/legacy_reproduction.yaml": "552ed0bd6321b6d5b126093612d883a55de86c8e19dfeb269ac5ed44082c4c73",
     "config/sources.yaml": "9d47cb039ff38f33e18bb0effcad6db4b0ff950ef8547072c01ef519b51a3351",
     "inputs/0_canoe_template/technology.csv": "8d5b96a303d90c770be8bebe9761f0fc2eb86b4dca81ac43267f1e2d4a977bb6",
     "inputs/1_interim/existing_capacity/road_existing_capacity_age_cohorts.csv": "477f7e292817c85fc4abf36bcbe6224d954a9b3bc1c7b001ea780c30777df176",
@@ -36,8 +36,8 @@
     "inputs/1_interim/fetched_statcan_transport/statcan_23100308_medium_truck_fuels.csv": "58d36019ce5489fcf141e08d72b425eedc7f04f6873e20500b03dd25556e697d",
     "inputs/1_interim/fetched_statcan_transport/statcan_ldv_registrations_historical.csv": "5295542b5f81d2448faa818c92b0c8e91c05ef621a403cdc0fccc6e9408244e0",
     "inputs/2_processed/existing_capacity/road_existing_capacity.csv": "a8140155aed15da37d78253906fd1a01290f1c28d004ac28433481d3a324606b",
-    "src/diagnostics/technology_growth.py": "1719185db7d39f43d0945e7ef0516cb80fe6e51d6f387a5806881de59fdfe124",
     "src/fetching/technology_growth_evidence.py": "95d7bc191163c4d62b06640a607d5370c8790b276a26296c36a04f7a60b6a075",
+    "src/parameterization/road_adoption_constraints.py": "3bdf6d74e6e78ca9dedbb4f10eb562c34948915dd9bbf6f3b1bbb56ef88a57fe",
     "src/validation/config_models.py": "fbe2a67126c8f9b33f9563e4bf1682780f9c2e96399850cdf7c953633090e231",
     "uv.lock": "b4eb1f4ee4357896b34ad92782dcfd83134b523b30a4adc3d792bb2e8f606224"
   },

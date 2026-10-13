@@ -26,7 +26,7 @@ requires = ["uv_build>=0.9.10,<0.10.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = ["fetching", "parameterization", "utils", "validation", "diagnostics"]
+module-name = ["fetching", "parameterization", "utils", "validation"]
 
 [tool.uv.sources]
 canoe-schema = { git = "https://github.com/CANOE-main/canoe-schema.git", branch = "main" }
