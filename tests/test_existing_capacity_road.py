@@ -23,7 +23,7 @@ from validation.insertion import cleanup_transport_parameter_batches
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_fixed_lifetime_sources_resolve_reviewed_medium_truck_proxy() -> None:
+def test_fixed_lifetime_sources_resolve_nhtsa_and_nems_medians() -> None:
     bundle = load_config_bundle(
         "config/scenarios/legacy_reproduction.yaml", repo_root=ROOT
     )
@@ -45,7 +45,7 @@ def test_fixed_lifetime_sources_resolve_reviewed_medium_truck_proxy() -> None:
         "passenger_light_trucks": 16.0,
         "freight_light_trucks": 16.0,
         "medium_trucks": 18.0,
-        "heavy_trucks": 19.0,
+        "heavy_trucks": 25.0,
         "motorcycles": 17.0,
     }
 
@@ -77,8 +77,8 @@ def test_truck_stock_eligibility_traces_selected_lifetime_source(
         ("T_MDV_T_", "nhtsa_cafe_2024_ldv_survival", "eia_nems_hd_truck_scrappage"),
         (
             "T_HDV_T_",
-            "eia_nems_hd_truck_scrappage" if survival_curves else "epa_moves4_population_activity_2023",
-            "epa_moves4_population_activity_2023" if survival_curves else "eia_nems_hd_truck_scrappage",
+            "eia_nems_hd_truck_scrappage",
+            "epa_moves4_population_activity_2023",
         ),
     ):
         selected = [row for row in rows if row.tech.startswith(prefix)]
@@ -87,6 +87,10 @@ def test_truck_stock_eligibility_traces_selected_lifetime_source(
             sources = {item.source_key for item in by_id[row.data_id].contributors}
             assert required in sources
             assert absent not in sources
+    if not survival_curves:
+        heavy = [row for row in rows if row.tech.startswith("T_HDV_T_")]
+        assert all(row.vintage + 25 > scenario.periods.model[0] for row in heavy)
+        assert any(row.vintage == 2005 for row in heavy)
 
 
 def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
@@ -220,7 +224,7 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
             "passenger_light_trucks": 16,
             "freight_light_trucks": 16,
             "medium_trucks": 25,
-            "heavy_trucks": 19,
+            "heavy_trucks": 25,
             "motorcycles": 17,
         },
         curve_ages_by_class={

@@ -225,7 +225,7 @@ def prepare_cost_rows(
     atb_currency, atb_year = _metadata(bundle, ATB, "vehicles")
     prices = select_nlr_purchase_prices(
         atb_vehicles, trajectory=trajectory, efficiency_rules=efficiency,
-        rpe_markup=rules["nlr_road_retail_price_equivalent_markup"],
+        rpe_markups=rules["nlr_road_retail_price_equivalent_markup"],
         source_currency=atb_currency, source_dollar_year=atb_year,
     )
     assorted = load_harmonization_rules(bundle, "assorted_sources")
@@ -384,7 +384,9 @@ def prepare_cost_rows(
             prices, powertrain=selected_powertrain, year=year,
             weights=weights[region, mode],
         )
-        treatment = "NLR manufacturing price (RPE / 1.5)"
+        family = "ldv" if efficiency["road_classes"][mode]["pathway"] == "ldv" else "mhdv"
+        markup = rules["nlr_road_retail_price_equivalent_markup"][family]
+        treatment = f"NLR manufacturing price (retail / {markup:g}; {family} RPE)"
         if selected_powertrain != powertrain:
             treatment += f"; reviewed {powertrain}->{selected_powertrain} purchase proxy"
         return manufacturing, atb_currency, atb_year, treatment, [(ATB, "vehicles"), *weight_components(mode, region)]
@@ -443,6 +445,13 @@ def prepare_cost_rows(
                         price, curr, year, treatment, components = road_price(
                             mode, powertrain, source_year, source_region
                         )
+                        rpe_family = (
+                            "ldv" if efficiency["road_classes"][mode]["pathway"] == "ldv" else "mhdv"
+                        ) if treatment.startswith("NLR") else None
+                        applied_rpe = (
+                            rules["nlr_road_retail_price_equivalent_markup"][rpe_family]
+                            if rpe_family is not None else None
+                        )
                         add(
                             family="invest", region=region, tech=item.tech,
                             vintage=vintage, mode=mode, source_value=price,
@@ -452,14 +461,11 @@ def prepare_cost_rows(
                             treatment=treatment,
                             details={"purchase_evidence_year": source_year,
                                      "rpe_applied": treatment.startswith("NLR"),
+                                     "rpe_family": rpe_family,
                                      "source_retail_price_per_vehicle": (
-                                         price * rules["nlr_road_retail_price_equivalent_markup"]
-                                         if treatment.startswith("NLR") else price
+                                         price * applied_rpe if applied_rpe is not None else price
                                      ),
-                                     "rpe_markup": (
-                                         rules["nlr_road_retail_price_equivalent_markup"]
-                                         if treatment.startswith("NLR") else None
-                                     ),
+                                     "rpe_markup": applied_rpe,
                                      "source_raw_unit": (
                                          "$" if mode == "inter_city_buses" else
                                          "2005$/veh" if mode == "motorcycles" else

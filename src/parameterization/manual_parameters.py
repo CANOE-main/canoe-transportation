@@ -110,9 +110,11 @@ def _canonical_powertrain(value: str, aliases: dict[str, str]) -> str:
 
 
 def registered_manual_components(bundle: ConfigBundle) -> list[ManualRegistration]:
-    """Return every component-level manual adapter after Pydantic validation."""
+    """Return active component-level manual adapters after Pydantic validation."""
     registrations: list[ManualRegistration] = []
     for source_id, source in bundle.sources.sources.items():
+        if source.status != "active":
+            continue
         for component_id, component in source.components.items():
             if "manual_parameter_path" not in component.adapter:
                 continue

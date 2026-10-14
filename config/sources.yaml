@@ -891,6 +891,11 @@ sources:
       Update only after reviewing a newer immutable Git commit and the workbook
       layout. The GitHub blob URL is discovery evidence; acquisition uses the
       commit-pinned Git LFS media URL and cached checksum.
+      The selected national table trnhdv!A86:D120 is marked NOT USED See regional
+      below in this workbook; it remains the backend's registered proxy, not the
+      active upstream regional/vintage schedule. Adopting SURV_D/SURV_ND requires
+      reviewed class, region and fuel mappings. These annual rates apply to
+      surviving stock; cumulative survival is product(1 - annual rate).
     adapter:
       access:
         method: immutable_git_lfs_media
@@ -1363,7 +1368,7 @@ sources:
 
   epa_moves4_population_activity_2023:
     title: "Population and Activity of Onroad Vehicles in MOVES4"
-    status: active
+    status: inactive
     source_type: manual_parameter
     file_type: csv
     version: "EPA-420-R-23-005, August 2023"
@@ -1371,10 +1376,10 @@ sources:
     citation: "EPA. (2023). Population and Activity of Onroad Vehicles in MOVES4 (EPA-420-R-23-005). https://www.epa.gov/system/files/documents/2023-08/420r23005.pdf"
     database_note: ""
     data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
-    validation_rule: "Select the compact heavy_trucks lifetime row, preserve its reviewed report year and DQ fields, and audit its expansion through technology.category."
+    validation_rule: "Historical registration only; heavy-truck fixed lifetimes now use the NEMS Class 7–8 survival median."
     refresh_notes: >
-      Revisit the MOVES survival-rate derivation before changing the median
-      lifetime or extending it to another vehicle class.
+      Retain this source identity for historical provenance. The manual 19-year
+      heavy-truck lifetime has been retired in favor of NEMS scrappage evidence.
     adapter:
       access:
         method: version_controlled_manual_parameter

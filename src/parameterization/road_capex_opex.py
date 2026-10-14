@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from math import exp, isfinite
 
 import pandas as pd
@@ -14,13 +15,19 @@ def select_nlr_purchase_prices(
     *,
     trajectory: str,
     efficiency_rules: dict,
-    rpe_markup: float,
+    rpe_markups: Mapping[str, float],
     source_currency: str,
     source_dollar_year: int,
 ) -> pd.DataFrame:
-    """Preserve ATB MSRP and reverse RPE on selected road vehicle prices only."""
-    if not isfinite(rpe_markup) or rpe_markup <= 1:
-        raise ValueError("NLR road RPE markup must be finite and greater than one")
+    """Preserve ATB MSRP and reverse the source family's purchase-price markup."""
+    if not isinstance(rpe_markups, Mapping) or set(rpe_markups) != {"ldv", "mhdv"}:
+        raise ValueError("NLR road RPE markups require exactly ldv and mhdv factors")
+    if any(
+        isinstance(value, bool) or not isinstance(value, (int, float))
+        or not isfinite(value) or value <= 1
+        for value in rpe_markups.values()
+    ):
+        raise ValueError("NLR road RPE markups must be finite numbers greater than one")
     required = {
         "year", "vehicle_weight_category", "vehicle_class", "vehicle_powertrain",
         "vehicle_detail", "metric_key", "value", "unit", "trajectory", "source_id",
@@ -39,6 +46,7 @@ def select_nlr_purchase_prices(
         ("ldv", efficiency_rules["ldv_archetypes"]),
         ("mhdv", efficiency_rules["mhdv_archetypes"]),
     ):
+        rpe_markup = float(rpe_markups[family])
         weight_category = efficiency_rules["atb"]["weight_categories"][family]
         for powertrain, spec in archetypes.items():
             # An efficiency-only fuel proxy is not a reviewed purchase-price basis.

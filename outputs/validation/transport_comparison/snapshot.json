@@ -125,7 +125,7 @@
         ]
       },
       "cost_invest": {
-        "summary": "Marine costs replace legacy OEO vessel costs weighted by ICCT Great Lakes-St Lawrence activity with a CIMS capital-cost/service-output baseline and reviewed relative factors. This changes the cost level, not the billion-tonne-km unit scale. Road costs use selected ATB retail prices divided by the configured markup and current fleet weights instead of legacy Autonomie manufacturing prices and earlier weights; missing gasoline/CNG options use diesel proxies. Aircraft use CIMS capital cost divided by FAA annual service output instead of legacy freight cost ratios. Source currency years and provisional metadata remain separate review cues.",
+        "summary": "Marine costs replace legacy OEO vessel costs weighted by ICCT Great Lakes-St Lawrence activity with a CIMS capital-cost/service-output baseline and reviewed relative factors. This changes the cost level, not the billion-tonne-km unit scale. Road costs use ATB manufacturing-cost estimates with source-family retail markups. The dedicated road review quantifies source-price, currency and controlled weight effects. LDV PHEV architecture and FCEV source inputs differ. Missing gasoline/CNG MHDV options use diesel proxies. Aircraft use CIMS capital cost divided by FAA annual service output instead of legacy freight cost ratios. Source currency years and provisional metadata remain separate review cues.",
         "assumption_sections": [
           "`cost_invest`",
           "Shared road fleet composition",
@@ -154,9 +154,9 @@
           },
           {
             "scope": "Cars, light trucks, medium/heavy trucks and buses",
-            "legacy_basis": "Legacy road costs use Autonomie manufacturing-price series and earlier vehicle-class weights, including separate SI/CNG evidence.",
-            "refactored_basis": "Selected ATB retail prices are divided by the reviewed 1.5 markup and aggregated with current class/vocation weights. Missing gasoline and CNG MHDV options use diesel purchase prices.",
-            "explanation": "Price editions, the explicit retail-to-manufacturing adjustment, fleet composition and powertrain proxies can each change the aggregate capital cost. These are distinct mechanisms; the current audit does not quantitatively isolate their separate contributions to each technology's difference.",
+            "legacy_basis": "Legacy road costs use Autonomie manufacturing-price series and earlier vehicle-class weights, including parallel LDV PHEVs and separate gasoline SI MDV evidence. Some workbook source assignments differ from their technology labels.",
+            "refactored_basis": "Selected ATB retail prices are divided by their source-family factors, 1.5 for LDVs and 1.2 for MHDVs, and aggregated with current class/vocation weights. Current LDV PHEVs use EREV variants; missing gasoline/CNG MHDV options use diesel purchase prices.",
+            "explanation": "The separate road investment review isolates the native source-price basis, currency factor and controlled weight effect. Ordinary LDV/MDV weight changes are small; school buses reuse heavy-haul shares in the legacy workbook. LDV PHEV architecture, FCEV component/source assumptions and legacy fuel-label wiring require distinct source tests. The remaining native-basis factor is exposed, not assigned to one cause.",
             "assumption_sections": [
               "`cost_invest`",
               "Shared road fleet composition"
@@ -164,7 +164,8 @@
             "evidence_paths": [
               "src/parameterization/build_costs.py",
               "config/parameters/rules.yaml",
-              "inputs/validation/transport_costs/cost_integrity.json"
+              "inputs/validation/transport_costs/cost_integrity.json",
+              "src/validation/road_investment_review.py"
             ]
           },
           {
@@ -664,6 +665,204 @@
           }
         ]
       }
+    },
+    "road_investment_review": {
+      "region": "ON",
+      "legacy_workbook": "legacy_backend/transportation[deprecated]/spreadsheet_database/CANOE_TRN_ON_v4_master.xlsx",
+      "legacy_sheet": "CostInvest",
+      "legacy_currency_sheet": "Conversion Factors",
+      "legacy_currency_cell": "R13",
+      "legacy_ldv_raw_workbook": "legacy_backend/transportation[deprecated]/autonomie_assessment/ANL - TAPS-2303 Report  - Light Duty - Autonomie Results.xlsx",
+      "legacy_ldv_raw_sheet": "Autonomie results",
+      "legacy_ldv_filters": {
+        "performance": "Base",
+        "progress": "Low"
+      },
+      "legacy_ldv_columns": {
+        "performance": "Vehicle Performance Category: {string}",
+        "progress": "Technology Progress: {string}",
+        "class": "Vehicle Class: {string}",
+        "powertrain": "Vehicle Powertrain: {string}",
+        "year": "Model Years: {years}",
+        "manufacturing": "Vehicle Manufacturing Cost {2023$}",
+        "fuel_cell_power_w": "Fuel Cell Max Power: {W}",
+        "fuel_cell_cost": "Fuel Cell System Cost {2020$)",
+        "hydrogen_storage_cost": "Hydrogen Storage Cost {2023$}",
+        "usable_hydrogen_kg": "H2 Storage, usable (kg)"
+      },
+      "legacy_ldv_powertrains": {
+        "gasoline": "Conventional SI",
+        "diesel": "Conventional CI",
+        "cng": "Conventional CNG",
+        "hev": "SplitHEV",
+        "phev_35_miles": "Par PHEV35",
+        "phev_50_miles": "Par PHEV50",
+        "bev_150_miles": "BEV150",
+        "bev_200_miles": "BEV200",
+        "bev_300_miles": "BEV300",
+        "bev_400_miles": "BEV400",
+        "fcev": "FCEV"
+      },
+      "ldv_alternative_powertrains": {
+        "phev_35_miles": "EREVPHEV 35AER",
+        "phev_50_miles": "EREVPHEV 50AER"
+      },
+      "legacy_weight_cells": {
+        "cars": {
+          "Compact": "AB137",
+          "Midsize": "AB138"
+        },
+        "passenger_light_trucks": {
+          "Small SUV": "AB140",
+          "Midsize SUV": "AB141",
+          "Pickup": "AB142"
+        },
+        "freight_light_trucks": {
+          "Small SUV": "AB140",
+          "Midsize SUV": "AB141",
+          "Pickup": "AB142"
+        },
+        "school_buses": {
+          "Class 3 Medium School": "AB154",
+          "Class 7 Medium School": "AB155"
+        },
+        "urban_transit": {
+          "Class 8 Transit Heavy": 1.0
+        }
+      },
+      "legacy_medium_gvwr_cells": {
+        "2": "AC144",
+        "3": "AC145",
+        "4": "AC146",
+        "5": "AC147",
+        "6": "AC148",
+        "7": "AC149"
+      },
+      "legacy_heavy_groups": {
+        "AB154": [
+          "Class 8 Beverage DayCab",
+          "Class 8 Drayage DayCab",
+          "Class 8 Regional DayCab"
+        ],
+        "AB155": [
+          "Class 8 Longhaul Sleeper"
+        ]
+      },
+      "atb_inputs_member": "input/inputs_vehicles.csv",
+      "primary_sources": {
+        "ATB 2024 definitions": "https://atb.nlr.gov/transportation/2024/definitions",
+        "ATB fuel-cell assumptions": "https://atb.nlr.gov/transportation/2024/fuel_cell_electric_vehicle_assumptions",
+        "ATB 2024 data": "https://atb.nlr.gov/transportation/2024/data"
+      },
+      "findings": [
+        {
+          "status": "Measured controlled counterfactual",
+          "driver": "Class weights and available vocations",
+          "scope": "Cars, light trucks and medium/heavy trucks",
+          "interpretation": "Replace current class weights with the actual legacy weights while holding current class prices, vintage, powertrain, RPE and currency fixed. The table measures this effect rather than assigning the entire gap to fleet weights. For MDVs this changes GVWR shares while retaining current available vocations; legacy Class 3 also included Box, absent from the current ATB price classes.",
+          "evidence": [
+            "src/parameterization/road_fleet_weights.py",
+            "inputs/1_interim/transport_costs/road_cost_invest.csv",
+            "legacy CostInvest!AB137:AC149; AB154:AB155"
+          ]
+        },
+        {
+          "status": "Confirmed legacy formula",
+          "driver": "School-bus aggregation",
+          "scope": "School buses",
+          "interpretation": "Legacy CostInvest!AL49:AR54 weights Classes 3 and 7 with AB154:AB155, the same regional/longhaul shipment shares used for heavy trucks. Current school classes receive equal weights. Reusing the legacy weights materially raises the current aggregate and explains why school buses can depart further than source-price and currency differences alone. The supplied database reproduces this formula.",
+          "evidence": [
+            "legacy CostInvest!AL49:AR54 and AB154:AB155",
+            "src/parameterization/build_costs.py"
+          ]
+        },
+        {
+          "status": "Confirmed legacy wiring and current proxy",
+          "driver": "Gasoline/diesel MDV source assignment",
+          "scope": "Medium-truck incumbent powertrains and missing gasoline/CNG prices",
+          "interpretation": "Legacy gasoline L39 references the CI aggregate AM34; diesel L40 references the SI aggregate AM35. SI additionally omits Class 7 and renormalizes Classes 2–6. Current missing gasoline/CNG prices use the reviewed diesel proxy. Therefore fuel labels alone do not establish equivalent source vehicles. The native-basis residual includes these source-assignment differences.",
+          "evidence": [
+            "legacy CostInvest!L39:L40 and AM34:AM35",
+            "config/parameters/rules.yaml"
+          ]
+        },
+        {
+          "status": "Measured monetary and native-basis factors",
+          "driver": "Dollar year, exchange rate and deflation",
+          "scope": "All matched ATB road costs",
+          "interpretation": "The legacy worksheet labels its prices 2023 USD and uses its stored USD2023-to-CAD2020 factor; current ATB prices declare 2022 USD and use the selected CER conversion. Their ratio is isolated in the table. Native source amounts also use different dollar years, so their residual cannot be called a pure technology-price change. Raw LDV totals explicitly say 2023$; the MHDV year is inherited from the embedded legacy annotation.",
+          "evidence": [
+            "legacy Conversion Factors!R13; CostInvest!E:G",
+            "src/parameterization/currency.py",
+            "inputs/1_interim/transport_costs/currency_harmonization.csv"
+          ]
+        },
+        {
+          "status": "Measured same-source architecture counterfactual",
+          "driver": "Parallel versus extended-range LDV PHEVs",
+          "scope": "PHEV35 and PHEV50, particularly later vintages",
+          "interpretation": "The preserved workbook selects Par PHEV35/50, despite the old preparation notebook's intended EREV selection. Current ATB uses extended-range variants. Compare parallel and EREV manufacturing costs in the same raw ANL class, year and Low/Base case before comparing ATB with that EREV value. This separates architecture from weights and the remaining source-price basis.",
+          "evidence": [
+            "legacy CostInvest!AA9:AA10 and AC9:AH10",
+            "legacy_backend/transportation[deprecated]/autonomie_assessment/autonomie_data.ipynb",
+            "inputs/1_interim/fetched_nlr_atb_autonomie/atb_vehicles.csv"
+          ]
+        },
+        {
+          "status": "Confirmed source-input changes; full contribution unresolved",
+          "driver": "Fuel-cell and hydrogen-storage assumptions",
+          "scope": "LDV FCEVs and MHDV hydrogen technologies",
+          "interpretation": "FCEV class prices differ before aggregation, with a stronger early-year gap. The ATB archive supplies different fuel-cell/storage cost coefficients, and official assumptions document production-volume adjustments. The component table exposes those inputs. It does not claim a complete full-vehicle reconstruction: sizes and dollar bases must also align, and the old LDV fuel-cell header says 2020$ while its description/vehicle total says 2023$.",
+          "evidence": [
+            "https://atb.nlr.gov/transportation/2024/fuel_cell_electric_vehicle_assumptions",
+            "registered ATB ZIP input/inputs_vehicles.csv",
+            "raw ANL LDV columns R, CL, CM, CR"
+          ]
+        },
+        {
+          "status": "Checked alignment",
+          "driver": "Trajectory, vintage and interpolation",
+          "scope": "The selected legacy-mode comparison",
+          "interpretation": "ATB Mid corresponds to Base performance/Low progress apart from documented fuel-cell adjustments. The review shows each actual purchase-evidence year. Legacy 2040/2045 prices interpolate 2035–2050; the raw LDV reconstruction checks the same interpolation. A prospective five-year shift is not assumed here; a changed timing selection must be assessed from the recorded years.",
+          "evidence": [
+            "config/scenarios/legacy_comparison.yaml",
+            "src/parameterization/build_costs.py",
+            "https://atb.nlr.gov/transportation/2024/fuel_cell_electric_vehicle_assumptions"
+          ]
+        },
+        {
+          "status": "Ruled out by numerical reconstruction",
+          "driver": "Units, vehicle scale and SQLite rounding",
+          "scope": "Matched ATB road investment rows",
+          "interpretation": "Both calculations convert cost per vehicle to million CAD per thousand vehicles by dividing by 1000. The workbook and raw LDV reconstructions reproduce the supplied SQLite to its nine-decimal storage rounding. These effects cannot explain percentage-scale differences.",
+          "evidence": [
+            "src/parameterization/build_costs.py",
+            "legacy CostInvest!L3 and equivalent rows",
+            "legacy compile_transport.py parameter rounding"
+          ]
+        },
+        {
+          "status": "Unsupported attribution",
+          "driver": "FCEV range inferred from technology names",
+          "scope": "Technologies named FCEV400",
+          "interpretation": "The raw legacy source has one FCEV variant and cycle-dependent ranges; the normalized current ATB FCEV rows do not provide a comparable range series. A 400-versus-300-mile mismatch is therefore unproven. Do not infer it from the backend technology identifier or assign the residual to battery range.",
+          "evidence": [
+            "raw ANL LDV range columns M:N",
+            "inputs/1_interim/fetched_nlr_atb_autonomie/atb_vehicles.csv"
+          ]
+        },
+        {
+          "status": "Separate source or representation contract",
+          "driver": "Non-ATB purchases and range aggregation",
+          "scope": "Motorcycles, intercity buses and representative-archetype scenarios",
+          "interpretation": "Motorcycles and intercity buses use GCAM/REGEN purchase sources and do not receive the ATB RPE reversal. The current new_capacity_shares mode adds constraints without averaging new-vehicle CAPEX across range variants. Those mechanisms must be checked separately if the source or representation selection changes; the current attribution table covers matched ATB-backed rows.",
+          "evidence": [
+            "src/parameterization/build_costs.py",
+            "src/parameterization/ldv_ev_ranges.py",
+            "config/scenarios/legacy_comparison.yaml"
+          ]
+        }
+      ]
     }
   },
   "metadata": {
@@ -1074,7 +1273,7 @@
         "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\mapped_mto_make_model_keys.csv",
         "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\vehicle_class_market_shares.csv"
       ],
-      "build_timestamp_utc": "2026-10-13T13:06:16.911155+00:00",
+      "build_timestamp_utc": "2026-10-14T03:26:32.829100+00:00",
       "unused_template_existing_labels": [
         2021
       ]
@@ -1105,7 +1304,7 @@
         },
         {
           "heading": "`cost_invest`",
-          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | NLR ATB vehicle prices include a retail-price-equivalent markup | Treat the selected purchase prices as retail evidence and divide by the reviewed 1.5 factor to estimate manufacturing cost. Do not apply that factor to other capital-cost sources. #to-review |\n| Transport Technologies | Projected cost trajectories and historical evidence have different temporal coverage | Prospective future costs use end-of-period conditions: period 2025 reads 2030 values. Historical year-varying cost evidence uses the bin's last observed year, retaining earliest-available price proxies and manual baseline conventions. Legacy preserves the prior adapter timing. Dollar-year conversion remains independent. #to-review |\n| Medium Trucks and Buses | Current normalized NLR prices lack gasoline/CNG MHDV archetypes; the legacy workbook used separate Autonomie SI/CNG series | Use the NLR diesel purchase price for gasoline/CNG medium trucks and school/transit buses. #to-review |\n| Intercity buses | REGEN Chart 3 has ICEV, CNGV, BEV, and HFCV purchase prices but no HEV | Use ICEV for gasoline/diesel and apply the NLR transit-bus HEV/diesel ratio to REGEN ICEV for intercity HEV. Preserve the REGEN purchase-price basis without the NLR 1.5 adjustment. #to-review |\n| Aircraft | FAA reports aggregate passenger and cargo operating evidence; cargo capacity is labelled only tons | Use each applicable All Aircraft average for speed, capacity, load, and daily utilization. Interpret cargo tons as U.S. short tons and annualize service output over 365 days. SPK uses jet-fuel aircraft capital cost. #to-review |\n| Rail and Marine | REGEN supplies relative 2035/2050 capital-cost factors against reviewed CIMS incumbent baselines | Apply each factor to its corresponding CIMS baseline; interpolate between 2035 and 2050 and hold the 2035 factor earlier. #to-review |\n| Marine Freight | The reviewed manual HFO capital-cost factor has no external citation | Treat HFO and MDO marine freight capital costs as equal. #to-review |\n| Cost source metadata | Some sources omit currency or dollar-year evidence | Source-documented ATB vehicle prices are 2022 USD and ATB/Burnham LDV M&R coefficients are 2020 USD. Preliminary entries remain BEAN MHDV M&R: 2020 USD (year unspecified); GCAM motorcycles: 2005 USD (currency unspecified); REGEN intercity purchases: 2025 USD (currency and price year unspecified); FAA maintenance: 2023 USD (price year unspecified). Keep all entries and their status in the cost metadata audit; manual CIMS/OEO and charger currency/year declarations remain visible in their input rows and conversion evidence. #to-review |"
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | NLR ATB vehicle prices include a source-family retail-price-equivalent markup | Divide selected retail purchase prices by 1.5 for LDVs and 1.2 for MHDVs, following [ATB definitions](https://atb.nlr.gov/transportation/2024/definitions), and preserve original retail MSRP for repair calculations. These factors describe Mid/Advanced Autonomie-derived prices; using them for Conservative AEO retail prices is a manufacturing-cost proxy. Do not apply ATB markups to other capital-cost sources. #to-review |\n| Transport Technologies | Projected cost trajectories and historical evidence have different temporal coverage | Prospective future costs use end-of-period conditions: period 2025 reads 2030 values. Historical year-varying cost evidence uses the bin's last observed year, retaining earliest-available price proxies and manual baseline conventions. Legacy preserves the prior adapter timing. Dollar-year conversion remains independent. #to-review |\n| Medium Trucks and Buses | Selected ATB prices lack gasoline/CNG MHDV archetypes; original Islam et al. (2023) results used by legacy included separate gasoline SI series | Use the ATB diesel purchase price for gasoline/CNG medium trucks and school/transit buses. This is a vehicle-price proxy; BEAN maintenance coefficients and fuel-specific historical efficiency indices retain their own source treatment. #to-review |\n| Intercity buses | REGEN Chart 3 has ICEV, CNGV, BEV, and HFCV purchase prices but no HEV | Use ICEV for gasoline/diesel and apply the NLR transit-bus HEV/diesel ratio to REGEN ICEV for intercity HEV. Preserve the REGEN purchase-price basis without an ATB markup adjustment. #to-review |\n| Aircraft | FAA reports aggregate passenger and cargo operating evidence; cargo capacity is labelled only tons | Use each applicable All Aircraft average for speed, capacity, load, and daily utilization. Interpret cargo tons as U.S. short tons and annualize service output over 365 days. SPK uses jet-fuel aircraft capital cost. #to-review |\n| Rail and Marine | REGEN supplies relative 2035/2050 capital-cost factors against reviewed CIMS incumbent baselines | Apply each factor to its corresponding CIMS baseline; interpolate between 2035 and 2050 and hold the 2035 factor earlier. #to-review |\n| Marine Freight | The reviewed manual HFO capital-cost factor has no external citation | Treat HFO and MDO marine freight capital costs as equal. #to-review |\n| Cost source metadata | Some sources omit currency or dollar-year evidence | Source-documented ATB vehicle prices are 2022 USD and ATB/Burnham LDV M&R coefficients are 2020 USD. Preliminary entries remain BEAN MHDV M&R: 2020 USD (year unspecified); GCAM motorcycles: 2005 USD (currency unspecified); REGEN intercity purchases: 2025 USD (currency and price year unspecified); FAA maintenance: 2023 USD (price year unspecified). Keep all entries and their status in the cost metadata audit; manual CIMS/OEO and charger currency/year declarations remain visible in their input rows and conversion evidence. #to-review |"
         },
         {
           "heading": "EV charger parameters",
@@ -1119,7 +1318,7 @@
         },
         {
           "heading": "`cost_invest`",
-          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | NLR ATB vehicle prices include a retail-price-equivalent markup | Treat the selected purchase prices as retail evidence and divide by the reviewed 1.5 factor to estimate manufacturing cost. Do not apply that factor to other capital-cost sources. #to-review |\n| Transport Technologies | Projected cost trajectories and historical evidence have different temporal coverage | Prospective future costs use end-of-period conditions: period 2025 reads 2030 values. Historical year-varying cost evidence uses the bin's last observed year, retaining earliest-available price proxies and manual baseline conventions. Legacy preserves the prior adapter timing. Dollar-year conversion remains independent. #to-review |\n| Medium Trucks and Buses | Current normalized NLR prices lack gasoline/CNG MHDV archetypes; the legacy workbook used separate Autonomie SI/CNG series | Use the NLR diesel purchase price for gasoline/CNG medium trucks and school/transit buses. #to-review |\n| Intercity buses | REGEN Chart 3 has ICEV, CNGV, BEV, and HFCV purchase prices but no HEV | Use ICEV for gasoline/diesel and apply the NLR transit-bus HEV/diesel ratio to REGEN ICEV for intercity HEV. Preserve the REGEN purchase-price basis without the NLR 1.5 adjustment. #to-review |\n| Aircraft | FAA reports aggregate passenger and cargo operating evidence; cargo capacity is labelled only tons | Use each applicable All Aircraft average for speed, capacity, load, and daily utilization. Interpret cargo tons as U.S. short tons and annualize service output over 365 days. SPK uses jet-fuel aircraft capital cost. #to-review |\n| Rail and Marine | REGEN supplies relative 2035/2050 capital-cost factors against reviewed CIMS incumbent baselines | Apply each factor to its corresponding CIMS baseline; interpolate between 2035 and 2050 and hold the 2035 factor earlier. #to-review |\n| Marine Freight | The reviewed manual HFO capital-cost factor has no external citation | Treat HFO and MDO marine freight capital costs as equal. #to-review |\n| Cost source metadata | Some sources omit currency or dollar-year evidence | Source-documented ATB vehicle prices are 2022 USD and ATB/Burnham LDV M&R coefficients are 2020 USD. Preliminary entries remain BEAN MHDV M&R: 2020 USD (year unspecified); GCAM motorcycles: 2005 USD (currency unspecified); REGEN intercity purchases: 2025 USD (currency and price year unspecified); FAA maintenance: 2023 USD (price year unspecified). Keep all entries and their status in the cost metadata audit; manual CIMS/OEO and charger currency/year declarations remain visible in their input rows and conversion evidence. #to-review |"
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | NLR ATB vehicle prices include a source-family retail-price-equivalent markup | Divide selected retail purchase prices by 1.5 for LDVs and 1.2 for MHDVs, following [ATB definitions](https://atb.nlr.gov/transportation/2024/definitions), and preserve original retail MSRP for repair calculations. These factors describe Mid/Advanced Autonomie-derived prices; using them for Conservative AEO retail prices is a manufacturing-cost proxy. Do not apply ATB markups to other capital-cost sources. #to-review |\n| Transport Technologies | Projected cost trajectories and historical evidence have different temporal coverage | Prospective future costs use end-of-period conditions: period 2025 reads 2030 values. Historical year-varying cost evidence uses the bin's last observed year, retaining earliest-available price proxies and manual baseline conventions. Legacy preserves the prior adapter timing. Dollar-year conversion remains independent. #to-review |\n| Medium Trucks and Buses | Selected ATB prices lack gasoline/CNG MHDV archetypes; original Islam et al. (2023) results used by legacy included separate gasoline SI series | Use the ATB diesel purchase price for gasoline/CNG medium trucks and school/transit buses. This is a vehicle-price proxy; BEAN maintenance coefficients and fuel-specific historical efficiency indices retain their own source treatment. #to-review |\n| Intercity buses | REGEN Chart 3 has ICEV, CNGV, BEV, and HFCV purchase prices but no HEV | Use ICEV for gasoline/diesel and apply the NLR transit-bus HEV/diesel ratio to REGEN ICEV for intercity HEV. Preserve the REGEN purchase-price basis without an ATB markup adjustment. #to-review |\n| Aircraft | FAA reports aggregate passenger and cargo operating evidence; cargo capacity is labelled only tons | Use each applicable All Aircraft average for speed, capacity, load, and daily utilization. Interpret cargo tons as U.S. short tons and annualize service output over 365 days. SPK uses jet-fuel aircraft capital cost. #to-review |\n| Rail and Marine | REGEN supplies relative 2035/2050 capital-cost factors against reviewed CIMS incumbent baselines | Apply each factor to its corresponding CIMS baseline; interpolate between 2035 and 2050 and hold the 2035 factor earlier. #to-review |\n| Marine Freight | The reviewed manual HFO capital-cost factor has no external citation | Treat HFO and MDO marine freight capital costs as equal. #to-review |\n| Cost source metadata | Some sources omit currency or dollar-year evidence | Source-documented ATB vehicle prices are 2022 USD and ATB/Burnham LDV M&R coefficients are 2020 USD. Preliminary entries remain BEAN MHDV M&R: 2020 USD (year unspecified); GCAM motorcycles: 2005 USD (currency unspecified); REGEN intercity purchases: 2025 USD (currency and price year unspecified); FAA maintenance: 2023 USD (price year unspecified). Keep all entries and their status in the cost metadata audit; manual CIMS/OEO and charger currency/year declarations remain visible in their input rows and conversion evidence. #to-review |"
         },
         {
           "heading": "`cost_variable`",
@@ -1139,7 +1338,7 @@
         },
         {
           "heading": "`efficiency`",
-          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | CEUD activity, annual distance, and stock describe whole vehicle classes, not individual powertrains | Derive class occupancy/payload as activity divided by distance and stock; apply it across powertrains and hold the base-year factor constant for future vintages. #to-review |\n| Cars, Trucks and PHEV Blends | Fuel-volume ratings and electrical consumption need a common energy basis | Convert gasoline/diesel volume consumption with GREET higher heating values and electricity with 3.6 MJ/kWh when deriving model efficiencies and PHEV input-energy fractions. See the [conversion factors](../config/parameters/conversion.yaml). #to-review |\n| Road and Off-road | Historical evidence ends before the latest prospective interval ends | Average available annual efficiency values within each selected historical bin, stopping at the observation year. Future efficiencies use period-end projections in both prospective and legacy modes; the incomplete 2020 interval uses observed 2021–2023 values. #to-review |\n| Cars and Light Trucks | NRCan model-year ratings are not measurements of the surviving fleet's in-use consumption | Treat ratings as vintage-specific fleet efficiency proxies, without a separate aging adjustment; weight rating observations equally within each class and powertrain. #to-review |\n| Cars and Light Trucks | Historical ratings combine SUV sizes and omit some class/powertrain combinations | Give unsplit SUVs the combined small/standard SUV weight; redistribute missing-class weights only across observed classes. #to-review |\n| Cars and Light Trucks | NRCan ratings lack a complete HEV flag | Identify hybrids by model-name wording or unambiguous year/make/model matches to US FuelEconomy.gov hybrid records. Otherwise retain the reported fuel classification, which can leave unidentified HEVs among conventional vehicles. #to-review |\n| Cars and Light Trucks | NRCan electric ranges do not coincide with ATB archetypes | Classify BEVs with `Range (km)` and PHEVs with `Range 1 (km)`, converted to miles, using the same OMEGA range-bucket boundaries as the sales weights. Use all four BEV and both PHEV buckets before existing-fleet aggregation. #to-review |\n| Existing LDV BEVs and PHEVs | A single stock archetype still requires range-specific efficiency evidence | Derive each NRCan range bucket's historical efficiency before OMEGA aggregation. Retain the accepted ATB utility-weighted total-energy level for each PHEV range and its NRCan charge-sustaining historical index. Preserve configured analogue fallbacks when a range lacks observations; do not drop that range or renormalize its sales weight. #to-review |\n| Existing LDV BEVs and PHEVs | Registered NRCan range histories begin at different years | Car BEV150/200/300/400 observations begin in 2012/2013/2013/2019; PHEV35/50 begin in 2012/2013. Light-truck BEV200/300/400 begin in 2016/2016/2020; PHEV35/50 begin in 2015/2020. Earlier required years use the configured historical analogues. Light-truck BEV150 has no rating observations and zero OMEGA weight. These are source-history gaps, not unfilled final parameter rows. #to-review |\n| Cars and Light Trucks | Some powertrains lack continuous historical ratings | Retain the latest own observation and extend it with the approved analogue's historical index. Where no own baseline exists, use the analogue's level scaled by the ATB powertrain relationship. #to-review |\n| Cars and Light Trucks | NLR ATB light-duty hybrid diesel electric powertrains are neglected | LDV hybrid electric powertrains that utilize diesel are neglected; it is assumed that gasoline-powered HEVs will remain the dominant variant for the light-duty sector.  |\n| Cars and Light Trucks | US ATB scenarios provide projected technology improvements, not Canadian fleet observations | Apply ATB relative improvements to Canadian rating-based baselines; do not substitute ATB absolute levels except for PHEVs or missing-baseline analogues. #to-review |\n| PHEVs | ATB fleet utility factors describe distance in charge-depleting operation | Represent charge-depleting travel by electricity consumption and charge-sustaining travel by liquid-fuel consumption. Derive input shares from these utility-weighted energy components. #to-review |\n| PHEVs | Fuel/electricity shares differ across ATB classes and regional truck compositions | For ordinary LDV35/LDV50 blends use pooled MTO Report A class stock counts; for MDV and HDV blends use the selected regional GVWR/vocation and haul weights. Sum weighted electrical and total consumption before taking their ratio, then average future interval-end fractions equally. Hold each regional blend constant across periods; buses retain the HDV blend. Existing LDV representatives have separate category-specific blends with their class and OMEGA range weights. #to-review |\n| Medium/Heavy Trucks and Buses | Selected ATB evidence lacks gasoline and CNG archetypes | Use the diesel incumbent as their efficiency proxy; intercity CNG instead uses the REGEN relative relationship. #to-review |\n| Medium and Heavy Trucks | Historical CEUD fuel consumption describes the fleet rather than individual model years | Use its gasoline/diesel trajectory as a vintage backcasting index from the ATB baseline, with higher consumption implying lower efficiency. #to-review |\n| Medium and Heavy Trucks | ANL Autonomie, as incorporated in NLR ATB — PHEV utility-weighted combined efficiency | Islam et al. (2023) assume a utility factor of 80%. |\n| Buses | CEUD historical intensity is class-specific but not powertrain-specific | Apply each bus class's intensity trend across its existing powertrains; use ATB school/transit levels for future vehicles, weighting the two school-bus classes equally. #to-review |\n| Intercity Buses | ATB transit buses and REGEN relative efficiencies proxy intercity technology performance | Use transit-bus efficiency levels with REGEN intercity powertrain ratios; retain the ATB transit HEV relationship where REGEN has no HEV series. #to-review |\n| Motorcycles | GCAM Canada supplies technology trajectories rather than provincial motorcycle observations | Apply GCAM gasoline/BEV intensity relationships to each province's CEUD motorcycle baseline. #to-review |\n| Air, Rail, and Marine | CEUD service intensities are national mode averages, not province- or powertrain-specific | Apply the national historical intensity across provinces as the incumbent baseline; use reviewed relative multipliers for alternative powertrains. #to-review |\n| Off-road Modes | Reviewed EPRI US-REGEN assumptions proxy Canadian future performance | Apply the same relative technology factors and compound annual efficiency improvements across provinces; interpolate hydrogen-rail ratios between the reviewed 2035 and 2050 values. #to-review |\n| Passenger and Freight Rail | REGEN natural-gas rail assumptions describe CNG, not LNG | Use the CNG-to-diesel efficiency relationship for LNG rail technologies. #to-review |\n| Marine Freight | CEUD reports one marine intensity; GREET's HFO/MDO ratio describes a predefined trip | Treat CEUD intensity as the MDO baseline and apply the GREET HFO/MDO consumption ratio across historical and future vessels, regions, and vintages. #to-review |\n| Aviation | No separate SPK aircraft-efficiency relationship is used | Assign SPK aircraft the same service-per-energy efficiency and improvement rate as jet-fuel aircraft. #to-review |\n\n### Example LDV Class Mapping by Source\n\n| **Vehicle Model** | **NRCan Fuel Ratings** | **Autonomie TEA** | **NRCan CEUD** |\n| ----------------- | ---------------------- | ----------------- | -------------- |\n| **Nissan Sentra** | Midsize                | Midsize           | Car            |\n| **Nissan Versa**  | Compact                | Compact           | Car            |\n| **Toyota RAV4**   | Small SUV              | Small SUV         | Light Truck    |\n| **Ford F-150**    | Standard pickup truck  | Pickup truck      | Light Truck    |\n| **Ford Explorer** | Standard SUV           | Midsize SUV       | Light Truck    |"
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | CEUD activity, annual distance, and stock describe whole vehicle classes, not individual powertrains | Derive class occupancy/payload as activity divided by distance and stock; apply it across powertrains and hold the base-year factor constant for future vintages. #to-review |\n| Cars, Trucks and PHEV Blends | Fuel-volume ratings and electrical consumption need a common energy basis | Convert gasoline/diesel volume consumption with GREET higher heating values and electricity with 3.6 MJ/kWh when deriving model efficiencies and PHEV input-energy fractions. See the [conversion factors](../config/parameters/conversion.yaml). #to-review |\n| Road and Off-road | Historical evidence ends before the latest prospective interval ends | Average available annual efficiency values within each selected historical bin, stopping at the observation year. Future efficiencies use period-end projections in both prospective and legacy modes; the incomplete 2020 interval uses observed 2021–2023 values. #to-review |\n| Cars and Light Trucks | NRCan model-year ratings are not measurements of the surviving fleet's in-use consumption | Treat ratings as vintage-specific fleet efficiency proxies, without a separate aging adjustment; weight rating observations equally within each class and powertrain. #to-review |\n| Cars and Light Trucks | Historical ratings combine SUV sizes and omit some class/powertrain combinations | Give unsplit SUVs the combined small/standard SUV weight; redistribute missing-class weights only across observed classes. #to-review |\n| Cars and Light Trucks | NRCan ratings lack a complete HEV flag | Identify hybrids by model-name wording or unambiguous year/make/model matches to US FuelEconomy.gov hybrid records. Otherwise retain the reported fuel classification, which can leave unidentified HEVs among conventional vehicles. #to-review |\n| Cars and Light Trucks | NRCan electric ranges do not coincide with ATB archetypes | Classify BEVs with `Range (km)` and PHEVs with `Range 1 (km)`, converted to miles, using the same OMEGA range-bucket boundaries as the sales weights. Use all four BEV and both PHEV buckets before existing-fleet aggregation. #to-review |\n| Existing LDV BEVs and PHEVs | A single stock archetype still requires range-specific efficiency evidence | Derive each NRCan range bucket's historical efficiency before OMEGA aggregation. Retain the accepted ATB utility-weighted total-energy level for each PHEV range and its NRCan charge-sustaining historical index. Preserve configured analogue fallbacks when a range lacks observations; do not drop that range or renormalize its sales weight. #to-review |\n| Existing LDV BEVs and PHEVs | Registered NRCan range histories begin at different years | Car BEV150/200/300/400 observations begin in 2012/2013/2013/2019; PHEV35/50 begin in 2012/2013. Light-truck BEV200/300/400 begin in 2016/2016/2020; PHEV35/50 begin in 2015/2020. Earlier required years use the configured historical analogues. Light-truck BEV150 has no rating observations and zero OMEGA weight. These are source-history gaps, not unfilled final parameter rows. #to-review |\n| Cars and Light Trucks | Some powertrains lack continuous historical ratings | Retain the latest own observation and extend it with the approved analogue's historical index. Where no own baseline exists, use the analogue's level scaled by the ATB powertrain relationship. #to-review |\n| Cars and Light Trucks | The [2024 ATB archive](https://atb.nlr.gov/transportation/2024/data) offers different hybrid architectures at different electric ranges | Represent full gasoline HEVs with power-split and 35/50-mile PHEVs with Voltec EREV powertrains. EREV is the only ATB PHEV architecture matching those two modeled ranges; its power-split PHEV is 30 miles. The original Autonomie results additionally offered parallel PHEV35/50 variants selected by the supplied legacy workbook. #to-review |\n| Cars and Light Trucks | NLR ATB light-duty hybrid diesel electric powertrains are neglected | LDV hybrid electric powertrains that utilize diesel are neglected; it is assumed that gasoline-powered HEVs will remain the dominant variant for the light-duty sector.  |\n| Cars and Light Trucks | US ATB scenarios provide projected technology improvements, not Canadian fleet observations | Apply ATB relative improvements to Canadian rating-based baselines; do not substitute ATB absolute levels except for PHEVs or missing-baseline analogues. #to-review |\n| PHEVs | ATB fleet utility factors describe distance in charge-depleting operation | Represent charge-depleting travel by electricity consumption and charge-sustaining travel by liquid-fuel consumption. Derive input shares from these utility-weighted energy components. #to-review |\n| PHEVs | Fuel/electricity shares differ across ATB classes and regional truck compositions | For ordinary LDV35/LDV50 blends use pooled MTO Report A class stock counts; for MDV and HDV blends use the selected regional GVWR/vocation and haul weights. Sum weighted electrical and total consumption before taking their ratio, then average future interval-end fractions equally. Hold each regional blend constant across periods; buses retain the HDV blend. Existing LDV representatives have separate category-specific blends with their class and OMEGA range weights. #to-review |\n| Medium/Heavy Trucks and Buses | Selected ATB evidence lacks gasoline and CNG archetypes; the original Islam et al. (2023) results used by legacy included separate gasoline MDV parameters | Use the diesel incumbent as their ATB efficiency proxy; MDV gasoline retains its fuel-specific CEUD historical backcasting index. Intercity CNG instead uses the REGEN relative relationship. #to-review |\n| Medium and Heavy Trucks | Historical CEUD fuel consumption describes the fleet rather than individual model years | Use its gasoline/diesel trajectory as a vintage backcasting index from the ATB baseline, with higher consumption implying lower efficiency. #to-review |\n| Medium and Heavy Trucks | ANL Autonomie, as incorporated in NLR ATB — PHEV utility-weighted combined efficiency | Islam et al. (2023) assume a utility factor of 80%. |\n| Buses | CEUD historical intensity is class-specific but not powertrain-specific | Apply each bus class's intensity trend across its existing powertrains; use ATB school/transit levels for future vehicles, weighting the two school-bus classes equally. #to-review |\n| Intercity Buses | ATB transit buses and REGEN relative efficiencies proxy intercity technology performance | Use transit-bus efficiency levels with REGEN intercity powertrain ratios; retain the ATB transit HEV relationship where REGEN has no HEV series. #to-review |\n| Motorcycles | GCAM Canada supplies technology trajectories rather than provincial motorcycle observations | Apply GCAM gasoline/BEV intensity relationships to each province's CEUD motorcycle baseline. #to-review |\n| Air, Rail, and Marine | CEUD service intensities are national mode averages, not province- or powertrain-specific | Apply the national historical intensity across provinces as the incumbent baseline; use reviewed relative multipliers for alternative powertrains. #to-review |\n| Off-road Modes | Reviewed EPRI US-REGEN assumptions proxy Canadian future performance | Apply the same relative technology factors and compound annual efficiency improvements across provinces; interpolate hydrogen-rail ratios between the reviewed 2035 and 2050 values. #to-review |\n| Passenger and Freight Rail | REGEN natural-gas rail assumptions describe CNG, not LNG | Use the CNG-to-diesel efficiency relationship for LNG rail technologies. #to-review |\n| Marine Freight | CEUD reports one marine intensity; GREET's HFO/MDO ratio describes a predefined trip | Treat CEUD intensity as the MDO baseline and apply the GREET HFO/MDO consumption ratio across historical and future vessels, regions, and vintages. #to-review |\n| Aviation | No separate SPK aircraft-efficiency relationship is used | Assign SPK aircraft the same service-per-energy efficiency and improvement rate as jet-fuel aircraft. #to-review |\n\n### Example LDV Class Mapping by Source\n\n| **Vehicle Model** | **NRCan Fuel Ratings** | **Autonomie TEA** | **NRCan CEUD** |\n| ----------------- | ---------------------- | ----------------- | -------------- |\n| **Nissan Sentra** | Midsize                | Midsize           | Car            |\n| **Nissan Versa**  | Compact                | Compact           | Car            |\n| **Toyota RAV4**   | Small SUV              | Small SUV         | Light Truck    |\n| **Ford F-150**    | Standard pickup truck  | Pickup truck      | Light Truck    |\n| **Ford Explorer** | Standard SUV           | Midsize SUV       | Light Truck    |"
         },
         {
           "heading": "EV charger parameters",
@@ -1179,7 +1378,7 @@
         },
         {
           "heading": "`efficiency`",
-          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | CEUD activity, annual distance, and stock describe whole vehicle classes, not individual powertrains | Derive class occupancy/payload as activity divided by distance and stock; apply it across powertrains and hold the base-year factor constant for future vintages. #to-review |\n| Cars, Trucks and PHEV Blends | Fuel-volume ratings and electrical consumption need a common energy basis | Convert gasoline/diesel volume consumption with GREET higher heating values and electricity with 3.6 MJ/kWh when deriving model efficiencies and PHEV input-energy fractions. See the [conversion factors](../config/parameters/conversion.yaml). #to-review |\n| Road and Off-road | Historical evidence ends before the latest prospective interval ends | Average available annual efficiency values within each selected historical bin, stopping at the observation year. Future efficiencies use period-end projections in both prospective and legacy modes; the incomplete 2020 interval uses observed 2021–2023 values. #to-review |\n| Cars and Light Trucks | NRCan model-year ratings are not measurements of the surviving fleet's in-use consumption | Treat ratings as vintage-specific fleet efficiency proxies, without a separate aging adjustment; weight rating observations equally within each class and powertrain. #to-review |\n| Cars and Light Trucks | Historical ratings combine SUV sizes and omit some class/powertrain combinations | Give unsplit SUVs the combined small/standard SUV weight; redistribute missing-class weights only across observed classes. #to-review |\n| Cars and Light Trucks | NRCan ratings lack a complete HEV flag | Identify hybrids by model-name wording or unambiguous year/make/model matches to US FuelEconomy.gov hybrid records. Otherwise retain the reported fuel classification, which can leave unidentified HEVs among conventional vehicles. #to-review |\n| Cars and Light Trucks | NRCan electric ranges do not coincide with ATB archetypes | Classify BEVs with `Range (km)` and PHEVs with `Range 1 (km)`, converted to miles, using the same OMEGA range-bucket boundaries as the sales weights. Use all four BEV and both PHEV buckets before existing-fleet aggregation. #to-review |\n| Existing LDV BEVs and PHEVs | A single stock archetype still requires range-specific efficiency evidence | Derive each NRCan range bucket's historical efficiency before OMEGA aggregation. Retain the accepted ATB utility-weighted total-energy level for each PHEV range and its NRCan charge-sustaining historical index. Preserve configured analogue fallbacks when a range lacks observations; do not drop that range or renormalize its sales weight. #to-review |\n| Existing LDV BEVs and PHEVs | Registered NRCan range histories begin at different years | Car BEV150/200/300/400 observations begin in 2012/2013/2013/2019; PHEV35/50 begin in 2012/2013. Light-truck BEV200/300/400 begin in 2016/2016/2020; PHEV35/50 begin in 2015/2020. Earlier required years use the configured historical analogues. Light-truck BEV150 has no rating observations and zero OMEGA weight. These are source-history gaps, not unfilled final parameter rows. #to-review |\n| Cars and Light Trucks | Some powertrains lack continuous historical ratings | Retain the latest own observation and extend it with the approved analogue's historical index. Where no own baseline exists, use the analogue's level scaled by the ATB powertrain relationship. #to-review |\n| Cars and Light Trucks | NLR ATB light-duty hybrid diesel electric powertrains are neglected | LDV hybrid electric powertrains that utilize diesel are neglected; it is assumed that gasoline-powered HEVs will remain the dominant variant for the light-duty sector.  |\n| Cars and Light Trucks | US ATB scenarios provide projected technology improvements, not Canadian fleet observations | Apply ATB relative improvements to Canadian rating-based baselines; do not substitute ATB absolute levels except for PHEVs or missing-baseline analogues. #to-review |\n| PHEVs | ATB fleet utility factors describe distance in charge-depleting operation | Represent charge-depleting travel by electricity consumption and charge-sustaining travel by liquid-fuel consumption. Derive input shares from these utility-weighted energy components. #to-review |\n| PHEVs | Fuel/electricity shares differ across ATB classes and regional truck compositions | For ordinary LDV35/LDV50 blends use pooled MTO Report A class stock counts; for MDV and HDV blends use the selected regional GVWR/vocation and haul weights. Sum weighted electrical and total consumption before taking their ratio, then average future interval-end fractions equally. Hold each regional blend constant across periods; buses retain the HDV blend. Existing LDV representatives have separate category-specific blends with their class and OMEGA range weights. #to-review |\n| Medium/Heavy Trucks and Buses | Selected ATB evidence lacks gasoline and CNG archetypes | Use the diesel incumbent as their efficiency proxy; intercity CNG instead uses the REGEN relative relationship. #to-review |\n| Medium and Heavy Trucks | Historical CEUD fuel consumption describes the fleet rather than individual model years | Use its gasoline/diesel trajectory as a vintage backcasting index from the ATB baseline, with higher consumption implying lower efficiency. #to-review |\n| Medium and Heavy Trucks | ANL Autonomie, as incorporated in NLR ATB — PHEV utility-weighted combined efficiency | Islam et al. (2023) assume a utility factor of 80%. |\n| Buses | CEUD historical intensity is class-specific but not powertrain-specific | Apply each bus class's intensity trend across its existing powertrains; use ATB school/transit levels for future vehicles, weighting the two school-bus classes equally. #to-review |\n| Intercity Buses | ATB transit buses and REGEN relative efficiencies proxy intercity technology performance | Use transit-bus efficiency levels with REGEN intercity powertrain ratios; retain the ATB transit HEV relationship where REGEN has no HEV series. #to-review |\n| Motorcycles | GCAM Canada supplies technology trajectories rather than provincial motorcycle observations | Apply GCAM gasoline/BEV intensity relationships to each province's CEUD motorcycle baseline. #to-review |\n| Air, Rail, and Marine | CEUD service intensities are national mode averages, not province- or powertrain-specific | Apply the national historical intensity across provinces as the incumbent baseline; use reviewed relative multipliers for alternative powertrains. #to-review |\n| Off-road Modes | Reviewed EPRI US-REGEN assumptions proxy Canadian future performance | Apply the same relative technology factors and compound annual efficiency improvements across provinces; interpolate hydrogen-rail ratios between the reviewed 2035 and 2050 values. #to-review |\n| Passenger and Freight Rail | REGEN natural-gas rail assumptions describe CNG, not LNG | Use the CNG-to-diesel efficiency relationship for LNG rail technologies. #to-review |\n| Marine Freight | CEUD reports one marine intensity; GREET's HFO/MDO ratio describes a predefined trip | Treat CEUD intensity as the MDO baseline and apply the GREET HFO/MDO consumption ratio across historical and future vessels, regions, and vintages. #to-review |\n| Aviation | No separate SPK aircraft-efficiency relationship is used | Assign SPK aircraft the same service-per-energy efficiency and improvement rate as jet-fuel aircraft. #to-review |\n\n### Example LDV Class Mapping by Source\n\n| **Vehicle Model** | **NRCan Fuel Ratings** | **Autonomie TEA** | **NRCan CEUD** |\n| ----------------- | ---------------------- | ----------------- | -------------- |\n| **Nissan Sentra** | Midsize                | Midsize           | Car            |\n| **Nissan Versa**  | Compact                | Compact           | Car            |\n| **Toyota RAV4**   | Small SUV              | Small SUV         | Light Truck    |\n| **Ford F-150**    | Standard pickup truck  | Pickup truck      | Light Truck    |\n| **Ford Explorer** | Standard SUV           | Midsize SUV       | Light Truck    |"
+          "text": "| Technology class | Source / challenge | Assumption |\n| --- | --- | --- |\n| Road Vehicles | CEUD activity, annual distance, and stock describe whole vehicle classes, not individual powertrains | Derive class occupancy/payload as activity divided by distance and stock; apply it across powertrains and hold the base-year factor constant for future vintages. #to-review |\n| Cars, Trucks and PHEV Blends | Fuel-volume ratings and electrical consumption need a common energy basis | Convert gasoline/diesel volume consumption with GREET higher heating values and electricity with 3.6 MJ/kWh when deriving model efficiencies and PHEV input-energy fractions. See the [conversion factors](../config/parameters/conversion.yaml). #to-review |\n| Road and Off-road | Historical evidence ends before the latest prospective interval ends | Average available annual efficiency values within each selected historical bin, stopping at the observation year. Future efficiencies use period-end projections in both prospective and legacy modes; the incomplete 2020 interval uses observed 2021–2023 values. #to-review |\n| Cars and Light Trucks | NRCan model-year ratings are not measurements of the surviving fleet's in-use consumption | Treat ratings as vintage-specific fleet efficiency proxies, without a separate aging adjustment; weight rating observations equally within each class and powertrain. #to-review |\n| Cars and Light Trucks | Historical ratings combine SUV sizes and omit some class/powertrain combinations | Give unsplit SUVs the combined small/standard SUV weight; redistribute missing-class weights only across observed classes. #to-review |\n| Cars and Light Trucks | NRCan ratings lack a complete HEV flag | Identify hybrids by model-name wording or unambiguous year/make/model matches to US FuelEconomy.gov hybrid records. Otherwise retain the reported fuel classification, which can leave unidentified HEVs among conventional vehicles. #to-review |\n| Cars and Light Trucks | NRCan electric ranges do not coincide with ATB archetypes | Classify BEVs with `Range (km)` and PHEVs with `Range 1 (km)`, converted to miles, using the same OMEGA range-bucket boundaries as the sales weights. Use all four BEV and both PHEV buckets before existing-fleet aggregation. #to-review |\n| Existing LDV BEVs and PHEVs | A single stock archetype still requires range-specific efficiency evidence | Derive each NRCan range bucket's historical efficiency before OMEGA aggregation. Retain the accepted ATB utility-weighted total-energy level for each PHEV range and its NRCan charge-sustaining historical index. Preserve configured analogue fallbacks when a range lacks observations; do not drop that range or renormalize its sales weight. #to-review |\n| Existing LDV BEVs and PHEVs | Registered NRCan range histories begin at different years | Car BEV150/200/300/400 observations begin in 2012/2013/2013/2019; PHEV35/50 begin in 2012/2013. Light-truck BEV200/300/400 begin in 2016/2016/2020; PHEV35/50 begin in 2015/2020. Earlier required years use the configured historical analogues. Light-truck BEV150 has no rating observations and zero OMEGA weight. These are source-history gaps, not unfilled final parameter rows. #to-review |\n| Cars and Light Trucks | Some powertrains lack continuous historical ratings | Retain the latest own observation and extend it with the approved analogue's historical index. Where no own baseline exists, use the analogue's level scaled by the ATB powertrain relationship. #to-review |\n| Cars and Light Trucks | The [2024 ATB archive](https://atb.nlr.gov/transportation/2024/data) offers different hybrid architectures at different electric ranges | Represent full gasoline HEVs with power-split and 35/50-mile PHEVs with Voltec EREV powertrains. EREV is the only ATB PHEV architecture matching those two modeled ranges; its power-split PHEV is 30 miles. The original Autonomie results additionally offered parallel PHEV35/50 variants selected by the supplied legacy workbook. #to-review |\n| Cars and Light Trucks | NLR ATB light-duty hybrid diesel electric powertrains are neglected | LDV hybrid electric powertrains that utilize diesel are neglected; it is assumed that gasoline-powered HEVs will remain the dominant variant for the light-duty sector.  |\n| Cars and Light Trucks | US ATB scenarios provide projected technology improvements, not Canadian fleet observations | Apply ATB relative improvements to Canadian rating-based baselines; do not substitute ATB absolute levels except for PHEVs or missing-baseline analogues. #to-review |\n| PHEVs | ATB fleet utility factors describe distance in charge-depleting operation | Represent charge-depleting travel by electricity consumption and charge-sustaining travel by liquid-fuel consumption. Derive input shares from these utility-weighted energy components. #to-review |\n| PHEVs | Fuel/electricity shares differ across ATB classes and regional truck compositions | For ordinary LDV35/LDV50 blends use pooled MTO Report A class stock counts; for MDV and HDV blends use the selected regional GVWR/vocation and haul weights. Sum weighted electrical and total consumption before taking their ratio, then average future interval-end fractions equally. Hold each regional blend constant across periods; buses retain the HDV blend. Existing LDV representatives have separate category-specific blends with their class and OMEGA range weights. #to-review |\n| Medium/Heavy Trucks and Buses | Selected ATB evidence lacks gasoline and CNG archetypes; the original Islam et al. (2023) results used by legacy included separate gasoline MDV parameters | Use the diesel incumbent as their ATB efficiency proxy; MDV gasoline retains its fuel-specific CEUD historical backcasting index. Intercity CNG instead uses the REGEN relative relationship. #to-review |\n| Medium and Heavy Trucks | Historical CEUD fuel consumption describes the fleet rather than individual model years | Use its gasoline/diesel trajectory as a vintage backcasting index from the ATB baseline, with higher consumption implying lower efficiency. #to-review |\n| Medium and Heavy Trucks | ANL Autonomie, as incorporated in NLR ATB — PHEV utility-weighted combined efficiency | Islam et al. (2023) assume a utility factor of 80%. |\n| Buses | CEUD historical intensity is class-specific but not powertrain-specific | Apply each bus class's intensity trend across its existing powertrains; use ATB school/transit levels for future vehicles, weighting the two school-bus classes equally. #to-review |\n| Intercity Buses | ATB transit buses and REGEN relative efficiencies proxy intercity technology performance | Use transit-bus efficiency levels with REGEN intercity powertrain ratios; retain the ATB transit HEV relationship where REGEN has no HEV series. #to-review |\n| Motorcycles | GCAM Canada supplies technology trajectories rather than provincial motorcycle observations | Apply GCAM gasoline/BEV intensity relationships to each province's CEUD motorcycle baseline. #to-review |\n| Air, Rail, and Marine | CEUD service intensities are national mode averages, not province- or powertrain-specific | Apply the national historical intensity across provinces as the incumbent baseline; use reviewed relative multipliers for alternative powertrains. #to-review |\n| Off-road Modes | Reviewed EPRI US-REGEN assumptions proxy Canadian future performance | Apply the same relative technology factors and compound annual efficiency improvements across provinces; interpolate hydrogen-rail ratios between the reviewed 2035 and 2050 values. #to-review |\n| Passenger and Freight Rail | REGEN natural-gas rail assumptions describe CNG, not LNG | Use the CNG-to-diesel efficiency relationship for LNG rail technologies. #to-review |\n| Marine Freight | CEUD reports one marine intensity; GREET's HFO/MDO ratio describes a predefined trip | Treat CEUD intensity as the MDO baseline and apply the GREET HFO/MDO consumption ratio across historical and future vessels, regions, and vintages. #to-review |\n| Aviation | No separate SPK aircraft-efficiency relationship is used | Assign SPK aircraft the same service-per-energy efficiency and improvement rate as jet-fuel aircraft. #to-review |\n\n### Example LDV Class Mapping by Source\n\n| **Vehicle Model** | **NRCan Fuel Ratings** | **Autonomie TEA** | **NRCan CEUD** |\n| ----------------- | ---------------------- | ----------------- | -------------- |\n| **Nissan Sentra** | Midsize                | Midsize           | Car            |\n| **Nissan Versa**  | Compact                | Compact           | Car            |\n| **Toyota RAV4**   | Small SUV              | Small SUV         | Light Truck    |\n| **Ford F-150**    | Standard pickup truck  | Pickup truck      | Light Truck    |\n| **Ford Explorer** | Standard SUV           | Midsize SUV       | Light Truck    |"
         }
       ],
       "lifetime_survival_curve": [
@@ -1196,7 +1395,7 @@
     "files": {
       "candidate": {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\legacy_reproduction.sqlite",
-        "sha256": "8b5ee4b368ef5d2d3d4d008e393ff3f8b320947cd38c9af85d67b6a6a908c9ca"
+        "sha256": "5666ff81aeb7e1ca4a0f4f9352fd9a0241e70ea04210f53e68e6132804287dcd"
       },
       "legacy": {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\canoe_transport_baseline.sqlite",
@@ -1204,15 +1403,15 @@
       },
       "build_report": {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\transport_comparison_build.json",
-        "sha256": "bae80ac6b1dfc0b6e7f53c37ba1cac933bde9090a6e03c1949c53ebeaf23545d"
+        "sha256": "0fd37fd6e832235854c03b2f84cc1d7f3846defb79777923273e9d36b78bdfa1"
       },
       "diagnostic_config": {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\transport_comparison.yaml",
-        "sha256": "6670cda5151e90ed30f530dd735373afbcd3722ff21307eda9755a041e1b04a6"
+        "sha256": "865c2575b948342cd3cdd12fe84f0db9a7cc22c816babc35991a270d37ef6969"
       },
       "assumptions": {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\docs\\assumptions.md",
-        "sha256": "2aeb356c8b1a1f5dd8bc0b49656d0fd2f4492f9db52df2791ab1ba5844b05a30"
+        "sha256": "66e0ae56479e045c8083dc827dbc14369568d2c723c2a45c11a6f19d48451f6c"
       }
     },
     "tolerances": {
@@ -1258,6 +1457,35 @@
       "eafo_norway_growth_evidence": "T36",
       "technology_growth_literature": "T37",
       "temoa_growth_reference": "T38"
+    },
+    "road_investment_review": {
+      "files": {
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\transport_costs\\road_cost_invest.csv": "784bd62ad9fe7dd910d089d49028ec9f0b1fafd318347269d2d7b961f3198a88",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\fetched_nlr_atb_autonomie\\atb_vehicles.csv": "4371694524147993ab068a1deeb1190d3e0263c437b7a2ca9867d4c46e97c652",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_canoe_template\\technology.csv": "8d5b96a303d90c770be8bebe9761f0fc2eb86b4dca81ac43267f1e2d4a977bb6",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_cache\\nlr_atb_autonomie\\2024\\2024_atb_transportation_data_v1.zip": "447082c63d7433dad1d3691cb216687096921b73a677db204fb45a0631fb45e3",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\transportation[deprecated]\\spreadsheet_database\\CANOE_TRN_ON_v4_master.xlsx": "5d4faf23afc0f9f2da55dd9800076e161ef85ff193c61fd07e901e903209a95a",
+        "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\transportation[deprecated]\\autonomie_assessment\\ANL - TAPS-2303 Report  - Light Duty - Autonomie Results.xlsx": "277642f1649195ec38327b884da35cb02ae1e303fa7598e47a58e38c964170fc"
+      },
+      "region": "ON",
+      "atb_trajectory": "Mid",
+      "rows": 310,
+      "audit_rows_without_matched_reference": 0,
+      "legacy_currency_factor_cell": "Conversion Factors!R13",
+      "primary_sources": {
+        "ATB 2024 definitions": "https://atb.nlr.gov/transportation/2024/definitions",
+        "ATB fuel-cell assumptions": "https://atb.nlr.gov/transportation/2024/fuel_cell_electric_vehicle_assumptions",
+        "ATB 2024 data": "https://atb.nlr.gov/transportation/2024/data"
+      },
+      "identity": "current / legacy = currency factor * class-weight factor * native-basis residual",
+      "applied_rpe_by_family": {
+        "ldv": 1.5,
+        "mhdv": 1.2
+      },
+      "native_basis_caution": "Native amounts use different dollar years and may differ in technology, source inputs and within-class composition; this factor is not a pure engineering-price effect.",
+      "counterfactual_caution": "Weight counterfactuals hold current source prices, family markup, vintage and currency fixed; they do not promote a production assumption.",
+      "maximum_reconciliation_error": 4.944524789607385e-10,
+      "maximum_workbook_error": 4.984528345630679e-10
     }
   },
   "development_comparisons": {
@@ -1740,7 +1968,7 @@
         "legacy_only_keys": 263,
         "equal_within_diagnostic_tolerance": 0,
         "value_differences": 403,
-        "median_candidate_to_legacy_ratio": 0.9210273491515509,
+        "median_candidate_to_legacy_ratio": 0.924755020407329,
         "largest_absolute_differences": [
           {
             "key": [
@@ -1902,7 +2130,7 @@
         "legacy_only_keys": 848,
         "equal_within_diagnostic_tolerance": 0,
         "value_differences": 1224,
-        "median_candidate_to_legacy_ratio": 1.5064335833357738,
+        "median_candidate_to_legacy_ratio": 1.4811995316900046,
         "largest_absolute_differences": [
           {
             "key": [
@@ -2076,23 +2304,43 @@
   "exports": {
     "summary.csv": {
       "rows": 20,
-      "sha256": "36dbff47c02192686eaf6e3339af6ae19549b46550e667501d7904b4884dbb41"
+      "sha256": "59b62d0a59ef10059af8fbedff3d0eef1783fd042c3b468025b12b890b9db598"
     },
     "rows.csv": {
       "rows": 23867,
-      "sha256": "54689bf3e4e4121e714259dcf9d745c188d880aa7e32802e91fa9f1eeba28fd6"
+      "sha256": "322adf03ff59865fac3d7810c0ddf48416d7d5588f80f5ca345b12d070204a7d"
     },
     "ranked_relative.csv": {
       "rows": 524,
-      "sha256": "36cad7987f58c35606c1c22a7b1586e2abb37acf8e79948346c66317011c3dda"
+      "sha256": "40855f9bcd07427b7377f010da13b9e0b14e2aebf41116abdf34b8ef97a694fd"
     },
     "ranked_absolute.csv": {
       "rows": 524,
-      "sha256": "07c9de9b1dd39fcb0b121d52771eb16e84846f343752d21c89a0c4e7be9ccbe5"
+      "sha256": "e8d2a6a7dcfdd14093dbb3e4e5c69b64b15c52e9a2d08c926e66d8c343837b18"
     },
     "explanations.csv": {
       "rows": 33,
-      "sha256": "951e5e9f78c9aaada4a023556301712aa59eb0eb61847df898701fda26c26117"
+      "sha256": "d8b4505a3f75b9fc009ef291163bb69dd6f879a71aed3d409837d19c0b5f1943"
+    },
+    "road_cost_attribution.csv": {
+      "rows": 310,
+      "sha256": "1cf5d7bfacfab82d62f0bd81804361a579270f6fdec5da060e2198e452243e90"
+    },
+    "road_cost_weights.csv": {
+      "rows": 28,
+      "sha256": "fb8f5c1cc44d7a794cdb8d4bc5237084394e9e90103f0e42aae72f5d7f216cd5"
+    },
+    "road_cost_ldv_architecture.csv": {
+      "rows": 440,
+      "sha256": "4ba433d922b87add60bf0630bb366c13e7040c8ac186a5ddc7a3a4ff13c1a364"
+    },
+    "road_cost_hydrogen_inputs.csv": {
+      "rows": 30,
+      "sha256": "b09baf87999e67cf1902ddbe28e12349f3e6ad74a0c7a0b7b9d10c0d88d7aa12"
+    },
+    "road_cost_findings.csv": {
+      "rows": 10,
+      "sha256": "6757dfb24e93607ef0dfe9cbb78b1ea1a629b62de924cb924c30f976efbcd58f"
     }
   }
 }

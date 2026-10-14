@@ -1,0 +1,13 @@
+{"kind":"deck","id":"pr/7trzcm","name":"Deck"}
+{"kind":"layout","id":"ly/4zy903a5","editable":false,"name":"Master","type":"master"}
+{"kind":"layout","id":"ly/29wzy143","editable":false,"name":"Title Slide","type":"title","placeholders":[{"name":"title","type":"title"},{"name":"subtitle","type":"subtitle"}]}
+{"kind":"layout","id":"ly/itsbqpkz","editable":false,"name":"Section Header","type":"sectionHeader","placeholders":[{"name":"title","type":"title"}]}
+{"kind":"layout","id":"ly/tknetw7q","editable":false,"name":"Title and Body","type":"tx","placeholders":[{"name":"title","type":"title"},{"name":"body","type":"body"}]}
+{"kind":"layout","id":"ly/k3a54nit","editable":false,"name":"Title and Two Column","type":"twoColTx","placeholders":[{"name":"title","type":"title"},{"name":"Left column","type":"body"},{"name":"Right column","type":"body"}]}
+{"kind":"layout","id":"ly/qpg7mt8f","editable":false,"name":"Title and One Column","type":"tx","placeholders":[{"name":"title","type":"title"},{"name":"body","type":"body"}]}
+{"kind":"layout","id":"ly/29czatwr","editable":false,"name":"Blank","type":"blank"}
+{"kind":"slide","id":"sl/28oy86","slideIndex":0,"layout":{"id":"ly/29czatwr","name":"Blank"},"title":"Legacy and new backend","textShapes":1,"backgroundColor":"rgba(255,255,255,1)"}
+{"kind":"textbox","id":"sh/21cjid8n","slideIndex":0,"position":{"left":60,"top":40,"width":1150,"height":80},"text":"Legacy and new backend","geometry":"rect","lineWidth":0,"style":{"fontSize":44,"typeface":"Aptos","color":"#173F35","bold":true,"alignment":"left"}}
+{"kind":"chart","id":"ch/hwne1kz6","slideIndex":0,"position":{"left":60,"top":150,"width":690,"height":400},"name":"","chartType":"bar"}
+{"kind":"table","id":"tb/p03at4bu","slideIndex":0,"position":{"left":800,"top":160,"width":400,"height":270},"name":"","rows":3,"cols":2,"preview":"Class | Driver"}
+{"kind":"notes","id":"nt/28oy86","slideIndex":0,"text":"Probe. Local artifacts only."}

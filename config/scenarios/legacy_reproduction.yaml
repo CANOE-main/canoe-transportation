@@ -26,6 +26,19 @@ periods:
   model: [2025, 2030, 2035, 2040, 2045]
   step: 5
 
+outputs:
+  sqlite_name: canoe_transport_legacy_reproduction.sqlite
+  validation_report: outputs/validation/legacy_reproduction_database_bootstrap.json
+  setup_log: outputs/logs/setup_smoke_legacy_reproduction.json
+
+comparison:
+  # Integrity validation always runs; this selects an optional diagnostic comparison.
+  mode: legacy  # none | legacy | scenario (another database from this backend)
+  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+  absolute_tolerance: 1.0e-9
+  relative_tolerance: 1.0e-6
+  include_provenance: false  # Scenario comparisons can also include source IDs/DQ/notes.
+
 sources:
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
@@ -59,19 +72,6 @@ economics:
   default_loan_rate: 0.03
   cost_reference_currency: CAD
   cost_reference_year: 2020
-
-outputs:
-  sqlite_name: canoe_transport_legacy_reproduction.sqlite
-  validation_report: outputs/validation/legacy_reproduction_database_bootstrap.json
-  setup_log: outputs/logs/setup_smoke_legacy_reproduction.json
-
-comparison:
-  # Integrity validation always runs; this selects an optional diagnostic comparison.
-  mode: legacy  # none | legacy | scenario (another database from this backend)
-  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
-  absolute_tolerance: 1.0e-9
-  relative_tolerance: 1.0e-6
-  include_provenance: false  # Scenario comparisons can also include source IDs/DQ/notes.
 
 lifetimes:
   # Use accepted road survival curves; remaining technologies use fixed lifetimes.

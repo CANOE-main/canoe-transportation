@@ -4913,7 +4913,7 @@
       },
       "end_of_horizon": 2050
     },
-    "input_digest": "4909297f1a2b4d93fee134e352954f49d8bb015744aded72d3e4819d7b2759d3",
+    "input_digest": "b015cad109b2af6a571fe8d170bbd1aefd4fad1b1a23dff52db15840c86e3f9f",
     "atb_scenario": "Mid",
     "aggregation_sources": {
       "stock_age": {
@@ -7794,7 +7794,7 @@
         "legacy_only_keys": 263,
         "equal_within_diagnostic_tolerance": 0,
         "value_differences": 403,
-        "median_candidate_to_legacy_ratio": 0.9210273491515509,
+        "median_candidate_to_legacy_ratio": 0.924755020407329,
         "largest_absolute_differences": [
           {
             "key": [
@@ -7956,7 +7956,7 @@
         "legacy_only_keys": 848,
         "equal_within_diagnostic_tolerance": 0,
         "value_differences": 1224,
-        "median_candidate_to_legacy_ratio": 1.5064335833357738,
+        "median_candidate_to_legacy_ratio": 1.4811995316900046,
         "largest_absolute_differences": [
           {
             "key": [
@@ -8826,8 +8826,8 @@
     "foreign_key_violations": 0,
     "foreign_keys_enabled": true
   },
-  "database_sha256": "8b5ee4b368ef5d2d3d4d008e393ff3f8b320947cd38c9af85d67b6a6a908c9ca",
-  "timestamp_utc": "2026-10-13T13:06:16.911155+00:00",
+  "database_sha256": "5666ff81aeb7e1ca4a0f4f9352fd9a0241e70ea04210f53e68e6132804287dcd",
+  "timestamp_utc": "2026-10-14T03:26:32.829100+00:00",
   "scenario": "legacy_comparison",
   "orchestration": {
     "prerequisites": "replayed",
@@ -8849,7 +8849,7 @@
     "parameters": [
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\rules.yaml",
-        "sha256": "c34a75f8a647aad583a298833d820444a453a8e3b1e876a93f8f753af5faa732"
+        "sha256": "c3bd84996db77e61a5f1835b0a04b498baeda7b4cc1ce05c49e999e2114a839d"
       },
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\conversion.yaml",

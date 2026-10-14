@@ -30,6 +30,9 @@ from validation.legacy_compare import (
     compare_legacy_existing_capacity, compare_legacy_lifetime_tech,
 )
 from validation.sqlite_utils import open_sqlite_readonly, quote_identifier
+from validation.road_investment_review import (
+    RoadInvestmentReview, RoadInvestmentReviewConfig, prepare_road_investment_review,
+)
 
 
 class DifferenceDriver(MappingModel):
@@ -56,6 +59,7 @@ class ComparisonConfig(MappingModel):
     future_range: tuple[int, int]
     top_n: int = Field(gt=0)
     explanations: dict[str, Explanation]
+    road_investment_review: RoadInvestmentReviewConfig | None = None
 
     @model_validator(mode="after")
     def ordered_ranges(self) -> Self:
@@ -73,6 +77,7 @@ class Diagnostic:
     rows: pd.DataFrame
     metadata: dict[str, Any]
     development_comparisons: dict[str, Any]
+    road_investment_review: RoadInvestmentReview | None = None
 
 
 @dataclass(frozen=True)
@@ -765,7 +770,11 @@ def load_diagnostic(config_path: str | Path = "config/parameters/transport_compa
         ("costs", compare_legacy_costs),
     ):
         development[name] = compare(database, reference, **tolerances)
-    return Diagnostic(config, bundle, summary, rows, metadata, development)
+    road_review = (prepare_road_investment_review(bundle, rows, config.road_investment_review)
+                   if config.road_investment_review is not None else None)
+    if road_review is not None:
+        metadata["road_investment_review"] = road_review.metadata
+    return Diagnostic(config, bundle, summary, rows, metadata, development, road_review)
 
 
 def write_report(diagnostic: Diagnostic) -> Path:
@@ -778,6 +787,8 @@ def write_report(diagnostic: Diagnostic) -> Path:
         "ranked_absolute.csv": ranked_rows(diagnostic.rows, max(1, len(diagnostic.rows)), "absolute_difference"),
         "explanations.csv": explanation_rows(diagnostic.config),
     }
+    if diagnostic.road_investment_review is not None:
+        frames.update(diagnostic.road_investment_review.frames())
     for filename, frame in frames.items():
         write_dataframe_atomic(frame, destination / filename)
     snapshot = {

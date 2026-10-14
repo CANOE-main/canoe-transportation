@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "plotted_records": 52,
+  "read_only_sqlite_queries": 220,
+  "parameter_slide_counts": {
+    "cost_fixed": 1,
+    "cost_invest": 2,
+    "cost_variable": 2,
+    "demand": 1,
+    "efficiency": 3,
+    "existing_capacity": 2,
+    "limit_annual_capacity_factor": 1
+  },
+  "native_charts": 13,
+  "embedded_workbooks": 13,
+  "source_hashes": {
+    "candidate": "8b5ee4b368ef5d2d3d4d008e393ff3f8b320947cd38c9af85d67b6a6a908c9ca",
+    "legacy": "72dcd117b038092a8651305880bce56f158a771280ddcec3a45dbc600fa1a65f"
+  },
+  "deck_sha256": "f29fff7061168d433e3b163e9d985988e9c130d83d1dc43aafcc12d291cb0427",
+  "chart_series_reconciled": 19,
+  "chart_precision": "10 significant figures; source values retained in notes"
+}
