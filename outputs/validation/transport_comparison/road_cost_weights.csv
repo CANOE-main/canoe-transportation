@@ -1,0 +1,29 @@
+mode,vehicle_class,legacy_weight,current_weight,change_percentage_points,legacy_basis
+cars,Compact,0.5450039768562561,0.4905062822713357,-5.449769458492043,Actual legacy worksheet weights
+cars,Midsize,0.4549960231437439,0.5094937177286644,5.449769458492049,Actual legacy worksheet weights
+passenger_light_trucks,Midsize SUV,0.14746865808631804,0.2046977380104558,5.722907992413775,Actual legacy worksheet weights
+passenger_light_trucks,Pickup,0.28384509480798514,0.2396726335498403,-4.417246125814484,Actual legacy worksheet weights
+passenger_light_trucks,Small SUV,0.5686862471056968,0.5556296284397038,-1.3056618665993058,Actual legacy worksheet weights
+freight_light_trucks,Midsize SUV,0.14746865808631804,0.2046977380104558,5.722907992413775,Actual legacy worksheet weights
+freight_light_trucks,Pickup,0.28384509480798514,0.2396726335498403,-4.417246125814484,Actual legacy worksheet weights
+freight_light_trucks,Small SUV,0.5686862471056968,0.5556296284397038,-1.3056618665993058,Actual legacy worksheet weights
+medium_trucks,Class 2 Medium Van,0.6436804875714907,0.6579026885966418,1.4222201025151149,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 3 Medium Pickup,0.02950344847891533,0.02512962263503073,-0.4373825843884599,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 3 Medium Van,0.02950344847891533,0.02512962263503073,-0.4373825843884599,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 4 Medium Box,0.015513861388567881,0.014144605065870045,-0.13692563226978366,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 4 Medium Service,0.015513861388567881,0.014144605065870045,-0.13692563226978366,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 4 Medium StepVan,0.015513861388567881,0.014144605065870045,-0.13692563226978366,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 5 Medium Utility,0.028552080496404307,0.024317549702983898,-0.42345307934204096,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 6 Medium Box,0.06695520535072418,0.06833888450136776,0.13836791506435797,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 6 Medium Construction,0.06695520535072418,0.06833888450136776,0.13836791506435797,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 6 Medium StepVan,0.06695520535072418,0.06833888450136776,0.13836791506435797,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 7 Medium Box,0.007117778252132757,0.00669001590953313,-0.04277623425996274,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 7 Medium Vocational,0.007117778252132757,0.00669001590953313,-0.04277623425996274,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+medium_trucks,Class 7 Tractor DayCab,0.007117778252132757,0.00669001590953313,-0.04277623425996274,Legacy Ontario 2022 GVWR shares; current available freight vocations (Class 3 Box absent)
+heavy_trucks,Class 8 Beverage DayCab,0.06090952701177795,0.08525472793775297,2.434520092597502,Legacy 2018 shipment shares; equal daycab vocations
+heavy_trucks,Class 8 Drayage DayCab,0.06090952701177795,0.08525472793775297,2.434520092597502,Legacy 2018 shipment shares; equal daycab vocations
+heavy_trucks,Class 8 Longhaul Sleeper,0.8172714189646662,0.7442358161867411,-7.303560277792509,Legacy 2018 shipment shares; equal daycab vocations
+heavy_trucks,Class 8 Regional DayCab,0.06090952701177795,0.08525472793775297,2.434520092597502,Legacy 2018 shipment shares; equal daycab vocations
+school_buses,Class 3 Medium School,0.18272858103533385,0.5,31.727141896466616,Actual legacy school formula reuses heavy-truck shipment weights
+school_buses,Class 7 Medium School,0.8172714189646662,0.5,-31.727141896466616,Actual legacy school formula reuses heavy-truck shipment weights
+urban_transit,Class 8 Transit Heavy,1.0,1.0,0.0,Actual legacy worksheet weights

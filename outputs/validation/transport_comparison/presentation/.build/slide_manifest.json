@@ -1,0 +1,2617 @@
+{
+  "pages": [
+    {
+      "slide": 1,
+      "parameter": "cover",
+      "title": "Legacy and new backend: Observed differences"
+    },
+    {
+      "slide": 2,
+      "parameter": "cost_fixed",
+      "title": "Small differences in charger fixed costs",
+      "ids": [
+        "fixed_chargers"
+      ]
+    },
+    {
+      "slide": 3,
+      "parameter": "cost_invest",
+      "title": "Investment cost for heavy off-road modes",
+      "ids": [
+        "investment_offroad"
+      ]
+    },
+    {
+      "slide": 4,
+      "parameter": "cost_invest",
+      "title": "Investment cost for road vehicles",
+      "ids": [
+        "investment_road"
+      ]
+    },
+    {
+      "slide": 5,
+      "parameter": "cost_variable",
+      "title": "Operating cost for heavy off-road modes",
+      "ids": [
+        "variable_offroad"
+      ]
+    },
+    {
+      "slide": 6,
+      "parameter": "cost_variable",
+      "title": "Road operating costs now use formulas",
+      "ids": [
+        "variable_road"
+      ]
+    },
+    {
+      "slide": 7,
+      "parameter": "demand",
+      "title": "Demand changes with the edition and base year",
+      "ids": [
+        "demand_marine",
+        "demand_other"
+      ]
+    },
+    {
+      "slide": 8,
+      "parameter": "efficiency",
+      "title": "Existing bus efficiency uses CEUD backcasting",
+      "ids": [
+        "efficiency_bus_marine"
+      ]
+    },
+    {
+      "slide": 9,
+      "parameter": "efficiency",
+      "title": "Marine efficiency uses CEUD and REGEN",
+      "ids": [
+        "efficiency_bus_marine"
+      ]
+    },
+    {
+      "slide": 10,
+      "parameter": "efficiency",
+      "title": "Existing BEV and PHEV archetypes merge range evidence",
+      "ids": [
+        "efficiency_merged_ev"
+      ]
+    },
+    {
+      "slide": 11,
+      "parameter": "existing_capacity",
+      "title": "Existing capacity changes with the source baseline",
+      "ids": [
+        "capacity_marine_road"
+      ]
+    },
+    {
+      "slide": 12,
+      "parameter": "existing_capacity",
+      "title": "Charger capacity follows ports and EV-to-port ratios",
+      "ids": [
+        "capacity_chargers"
+      ]
+    },
+    {
+      "slide": 13,
+      "parameter": "limit_annual_capacity_factor",
+      "title": "Road utilization reflects a revised CEUD averaging window",
+      "ids": [
+        "annual_cf"
+      ]
+    }
+  ],
+  "charts": [
+    {
+      "slide": 2,
+      "title": "Change from legacy",
+      "kind": "percent",
+      "categories": [
+        "MHDV chargers",
+        "LDV chargers"
+      ],
+      "series": [
+        {
+          "name": "Change from legacy",
+          "values": [
+            0.006289383505,
+            0.00876716222
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "LDV chargers",
+          "table": "cost_fixed",
+          "region": "ON",
+          "tech": "T_LDV_CHRG_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_LDV_CHRG_N",
+            "vintage": 2025
+          },
+          "candidate": 16.204762204209946,
+          "legacy": 16.063927149,
+          "candidate_units": "$M 2020CAD / GW",
+          "legacy_units": "$M 2020CAD / GW",
+          "units": "$M 2020CAD / GW",
+          "unit_basis": "declared units",
+          "comparison_grain": "charger class rate bridge; legacy constituent rates must agree",
+          "delta": 0.14083505520994422,
+          "absolute_difference": 0.14083505520994422,
+          "relative_percent": 0.876716222027385,
+          "status": "different",
+          "period": 2025,
+          "legacy_keys": [
+            {
+              "period": 2025,
+              "region": "ON",
+              "tech": "T_LDV_BEV_CHRG",
+              "vintage": 2025
+            },
+            {
+              "period": 2025,
+              "region": "ON",
+              "tech": "T_LDV_PHEV_CHRG",
+              "vintage": 2025
+            }
+          ],
+          "legacy_constituent_rows": 2
+        },
+        {
+          "label": "MHDV chargers",
+          "table": "cost_fixed",
+          "region": "ON",
+          "tech": "T_MHDV_CHRG_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_MHDV_CHRG_N",
+            "vintage": 2025
+          },
+          "candidate": 12.064830702390768,
+          "legacy": 11.989424613,
+          "candidate_units": "$M 2020CAD / GW",
+          "legacy_units": "$M 2020CAD / GW",
+          "units": "$M 2020CAD / GW",
+          "unit_basis": "declared units",
+          "comparison_grain": "charger class rate bridge; legacy constituent rates must agree",
+          "delta": 0.07540608939076776,
+          "absolute_difference": 0.07540608939076776,
+          "relative_percent": 0.6289383504610035,
+          "status": "different",
+          "period": 2025,
+          "legacy_keys": [
+            {
+              "period": 2025,
+              "region": "ON",
+              "tech": "T_MDV_CHRG",
+              "vintage": 2025
+            },
+            {
+              "period": 2025,
+              "region": "ON",
+              "tech": "T_HDV_CHRG",
+              "vintage": 2025
+            }
+          ],
+          "legacy_constituent_rows": 2
+        }
+      ]
+    },
+    {
+      "slide": 3,
+      "title": "Change from legacy",
+      "kind": "percent",
+      "categories": [
+        "Passenger air, jet fuel",
+        "Passenger rail, diesel",
+        "Air freight, jet fuel",
+        "Rail freight, diesel",
+        "Marine freight, MDO"
+      ],
+      "series": [
+        {
+          "name": "Change from legacy",
+          "values": [
+            0.5250576336,
+            2.490571153,
+            1.252294725,
+            0.4369542044,
+            6.565467214
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Marine freight, MDO",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_HDV_WTF_MDO_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_HDV_WTF_MDO_N",
+            "vintage": 2025
+          },
+          "candidate": 159.71497923605244,
+          "legacy": 21.111052987,
+          "candidate_units": "$M 2020CAD / bn tonne-km",
+          "legacy_units": "$M 2020CAD / bn tonne-km",
+          "units": "$M 2020CAD / bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 138.60392624905245,
+          "absolute_difference": 138.60392624905245,
+          "relative_percent": 656.5467214468341,
+          "status": "different"
+        },
+        {
+          "label": "Rail freight, diesel",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_HDV_RF_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_HDV_RF_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 39.10602039451965,
+          "legacy": 27.214521015,
+          "candidate_units": "$M 2020CAD / bn tonne-km",
+          "legacy_units": "$M 2020CAD / bn tonne-km",
+          "units": "$M 2020CAD / bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 11.891499379519654,
+          "absolute_difference": 11.891499379519654,
+          "relative_percent": 43.69542044471532,
+          "status": "different"
+        },
+        {
+          "label": "Air freight, jet fuel",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_HDV_AJF_JFL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_HDV_AJF_JFL_N",
+            "vintage": 2025
+          },
+          "candidate": 6132.623678803439,
+          "legacy": 2722.833566153,
+          "candidate_units": "$M 2020CAD / bn tonne-km",
+          "legacy_units": "$M 2020CAD / bn tonne-km",
+          "units": "$M 2020CAD / bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 3409.7901126504394,
+          "absolute_difference": 3409.7901126504394,
+          "relative_percent": 125.22947252585905,
+          "status": "different"
+        },
+        {
+          "label": "Passenger rail, diesel",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_HDV_RICP_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_HDV_RICP_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 1885.6878005906885,
+          "legacy": 540.223281,
+          "candidate_units": "$M 2020CAD / bn passenger-km",
+          "legacy_units": "$M 2020CAD / bn passenger-km",
+          "units": "$M 2020CAD / bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 1345.4645195906885,
+          "absolute_difference": 1345.4645195906885,
+          "relative_percent": 249.05711525429214,
+          "status": "different"
+        },
+        {
+          "label": "Passenger air, jet fuel",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_HDV_AJP_JFL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_HDV_AJP_JFL_N",
+            "vintage": 2025
+          },
+          "candidate": 1032.1218289023984,
+          "legacy": 676.775622209,
+          "candidate_units": "$M 2020CAD / bn passenger-km",
+          "legacy_units": "$M 2020CAD / bn passenger-km",
+          "units": "$M 2020CAD / bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 355.34620669339847,
+          "absolute_difference": 355.34620669339847,
+          "relative_percent": 52.505763362685286,
+          "status": "different"
+        }
+      ]
+    },
+    {
+      "slide": 4,
+      "title": "Change from legacy",
+      "kind": "percent",
+      "categories": [
+        "Heavy truck, BEV",
+        "Heavy truck, diesel",
+        "Medium truck, gasoline",
+        "Medium truck, diesel",
+        "Passenger light truck, gasoline",
+        "Car, gasoline"
+      ],
+      "series": [
+        {
+          "name": "Change from legacy",
+          "values": [
+            -0.2869441773,
+            -0.2639054799,
+            -0.2554183138,
+            -0.2447532241,
+            -0.07641558958,
+            -0.06397630681
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Car, gasoline",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_LDV_C_GSL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_LDV_C_GSL_N",
+            "vintage": 2025
+          },
+          "candidate": 18.099727473265236,
+          "legacy": 19.336826199,
+          "candidate_units": "$M 2020CAD / k vehicles",
+          "legacy_units": "$M 2020CAD / k vehicles",
+          "units": "$M 2020CAD / k vehicles",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -1.2370987257347643,
+          "absolute_difference": 1.2370987257347643,
+          "relative_percent": -6.397630681495914,
+          "status": "different"
+        },
+        {
+          "label": "Passenger light truck, gasoline",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_LDV_LTP_GSL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_LDV_LTP_GSL_N",
+            "vintage": 2025
+          },
+          "candidate": 22.976303566477313,
+          "legacy": 24.877318529,
+          "candidate_units": "$M 2020CAD / k vehicles",
+          "legacy_units": "$M 2020CAD / k vehicles",
+          "units": "$M 2020CAD / k vehicles",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -1.9010149625226873,
+          "absolute_difference": 1.9010149625226873,
+          "relative_percent": -7.641558957837981,
+          "status": "different"
+        },
+        {
+          "label": "Medium truck, diesel",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_MDV_T_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_MDV_T_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 41.288421469437736,
+          "legacy": 54.668782164,
+          "candidate_units": "$M 2020CAD / k vehicles",
+          "legacy_units": "$M 2020CAD / k vehicles",
+          "units": "$M 2020CAD / k vehicles",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -13.380360694562263,
+          "absolute_difference": 13.380360694562263,
+          "relative_percent": -24.475322414212073,
+          "status": "different"
+        },
+        {
+          "label": "Medium truck, gasoline",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_MDV_T_GSL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_MDV_T_GSL_N",
+            "vintage": 2025
+          },
+          "candidate": 41.288421469437736,
+          "legacy": 55.45183589,
+          "candidate_units": "$M 2020CAD / k vehicles",
+          "legacy_units": "$M 2020CAD / k vehicles",
+          "units": "$M 2020CAD / k vehicles",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -14.163414420562262,
+          "absolute_difference": 14.163414420562262,
+          "relative_percent": -25.54183138076488,
+          "status": "different"
+        },
+        {
+          "label": "Heavy truck, diesel",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_HDV_T_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_HDV_T_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 110.99023673741151,
+          "legacy": 150.78258797,
+          "candidate_units": "$M 2020CAD / k vehicles",
+          "legacy_units": "$M 2020CAD / k vehicles",
+          "units": "$M 2020CAD / k vehicles",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -39.7923512325885,
+          "absolute_difference": 39.7923512325885,
+          "relative_percent": -26.390547985889235,
+          "status": "different"
+        },
+        {
+          "label": "Heavy truck, BEV",
+          "table": "cost_invest",
+          "region": "ON",
+          "tech": "T_HDV_T_BEV_N",
+          "vintage": 2025,
+          "keys": {
+            "region": "ON",
+            "tech": "T_HDV_T_BEV_N",
+            "vintage": 2025
+          },
+          "candidate": 342.1920178229556,
+          "legacy": 479.89513156,
+          "candidate_units": "$M 2020CAD / k vehicles",
+          "legacy_units": "$M 2020CAD / k vehicles",
+          "units": "$M 2020CAD / k vehicles",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -137.70311373704436,
+          "absolute_difference": 137.70311373704436,
+          "relative_percent": -28.694417734435326,
+          "status": "different"
+        }
+      ]
+    },
+    {
+      "slide": 5,
+      "title": "Million 2020 CAD / billion tonne-km",
+      "kind": "value",
+      "categories": [
+        "Marine freight, MDO"
+      ],
+      "series": [
+        {
+          "name": "Legacy",
+          "values": [
+            0.035749317
+          ]
+        },
+        {
+          "name": "New backend",
+          "values": [
+            7.985748962
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Marine freight, MDO",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_HDV_WTF_MDO_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_HDV_WTF_MDO_N",
+            "vintage": 2025
+          },
+          "candidate": 7.9857489618026225,
+          "legacy": 0.035749317,
+          "candidate_units": "$M 2020CAD / bn tonne-km",
+          "legacy_units": "$M 2020CAD / bn tonne-km",
+          "units": "$M 2020CAD / bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 7.949999644802623,
+          "absolute_difference": 7.949999644802623,
+          "relative_percent": 22238.186102415948,
+          "status": "different",
+          "period": 2025
+        }
+      ]
+    },
+    {
+      "slide": 5,
+      "title": "Other modes: change from legacy",
+      "kind": "percent",
+      "categories": [
+        "Passenger air, jet fuel",
+        "Passenger rail, diesel",
+        "Air freight, jet fuel",
+        "Rail freight, diesel"
+      ],
+      "series": [
+        {
+          "name": "Change from legacy",
+          "values": [
+            1.219003298,
+            2.490571153,
+            4.144166209,
+            0.4369542044
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Rail freight, diesel",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_HDV_RF_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_HDV_RF_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 2.3463612236711793,
+          "legacy": 1.632871261,
+          "candidate_units": "$M 2020CAD / bn tonne-km",
+          "legacy_units": "$M 2020CAD / bn tonne-km",
+          "units": "$M 2020CAD / bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 0.7134899626711793,
+          "absolute_difference": 0.7134899626711793,
+          "relative_percent": 43.69542043591514,
+          "status": "different",
+          "period": 2025
+        },
+        {
+          "label": "Air freight, jet fuel",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_HDV_AJF_JFL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_HDV_AJF_JFL_N",
+            "vintage": 2025
+          },
+          "candidate": 123.92235600905248,
+          "legacy": 24.089881813,
+          "candidate_units": "$M 2020CAD / bn tonne-km",
+          "legacy_units": "$M 2020CAD / bn tonne-km",
+          "units": "$M 2020CAD / bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 99.83247419605247,
+          "absolute_difference": 99.83247419605247,
+          "relative_percent": 414.41662093243775,
+          "status": "different",
+          "period": 2025
+        },
+        {
+          "label": "Passenger rail, diesel",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_HDV_RICP_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_HDV_RICP_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 188.56878005906887,
+          "legacy": 54.0223281,
+          "candidate_units": "$M 2020CAD / bn passenger-km",
+          "legacy_units": "$M 2020CAD / bn passenger-km",
+          "units": "$M 2020CAD / bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 134.54645195906886,
+          "absolute_difference": 134.54645195906886,
+          "relative_percent": 249.05711525429214,
+          "status": "different",
+          "period": 2025
+        },
+        {
+          "label": "Passenger air, jet fuel",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_HDV_AJP_JFL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_HDV_AJP_JFL_N",
+            "vintage": 2025
+          },
+          "candidate": 13.758879463241271,
+          "legacy": 6.200477247,
+          "candidate_units": "$M 2020CAD / bn passenger-km",
+          "legacy_units": "$M 2020CAD / bn passenger-km",
+          "units": "$M 2020CAD / bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 7.558402216241271,
+          "absolute_difference": 7.558402216241271,
+          "relative_percent": 121.90032984796906,
+          "status": "different",
+          "period": 2025
+        }
+      ]
+    },
+    {
+      "slide": 6,
+      "title": "Change from legacy",
+      "kind": "percent",
+      "categories": [
+        "Heavy truck, diesel",
+        "Medium truck, diesel",
+        "Transit bus, diesel",
+        "School bus, diesel",
+        "Passenger light truck, gasoline",
+        "Car, gasoline"
+      ],
+      "series": [
+        {
+          "name": "Change from legacy",
+          "values": [
+            -0.1675300544,
+            -0.2706970765,
+            -0.284192278,
+            -0.8653328364,
+            0.8628758454,
+            0.9291041718
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Car, gasoline",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_LDV_C_GSL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_LDV_C_GSL_N",
+            "vintage": 2025
+          },
+          "candidate": 53.00414575170667,
+          "legacy": 27.476041225,
+          "candidate_units": "$M 2020CAD / bn passenger-km",
+          "legacy_units": "$M 2020CAD / bn passenger-km",
+          "units": "$M 2020CAD / bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 25.528104526706674,
+          "absolute_difference": 25.528104526706674,
+          "relative_percent": 92.91041718003783,
+          "status": "different",
+          "period": 2025
+        },
+        {
+          "label": "Passenger light truck, gasoline",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_LDV_LTP_GSL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_LDV_LTP_GSL_N",
+            "vintage": 2025
+          },
+          "candidate": 49.06726369156515,
+          "legacy": 26.339524351,
+          "candidate_units": "$M 2020CAD / bn passenger-km",
+          "legacy_units": "$M 2020CAD / bn passenger-km",
+          "units": "$M 2020CAD / bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 22.72773934056515,
+          "absolute_difference": 22.72773934056515,
+          "relative_percent": 86.28758453530035,
+          "status": "different",
+          "period": 2025
+        },
+        {
+          "label": "School bus, diesel",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_HDV_BS_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_HDV_BS_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 1.3143676267937874,
+          "legacy": 9.760119627,
+          "candidate_units": "$M 2020CAD / bn passenger-km",
+          "legacy_units": "$M 2020CAD / bn passenger-km",
+          "units": "$M 2020CAD / bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -8.445752000206213,
+          "absolute_difference": 8.445752000206213,
+          "relative_percent": -86.53328363765364,
+          "status": "different",
+          "period": 2025
+        },
+        {
+          "label": "Transit bus, diesel",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_HDV_BT_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_HDV_BT_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 7.4729038428853425,
+          "legacy": 10.439820099,
+          "candidate_units": "$M 2020CAD / bn passenger-km",
+          "legacy_units": "$M 2020CAD / bn passenger-km",
+          "units": "$M 2020CAD / bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -2.966916256114658,
+          "absolute_difference": 2.966916256114658,
+          "relative_percent": -28.419227802583016,
+          "status": "different",
+          "period": 2025
+        },
+        {
+          "label": "Medium truck, diesel",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_MDV_T_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_MDV_T_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 152.447328496631,
+          "legacy": 209.031560942,
+          "candidate_units": "$M 2020CAD / bn tonne-km",
+          "legacy_units": "$M 2020CAD / bn tonne-km",
+          "units": "$M 2020CAD / bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -56.584232445369,
+          "absolute_difference": 56.584232445369,
+          "relative_percent": -27.069707651022817,
+          "status": "different",
+          "period": 2025
+        },
+        {
+          "label": "Heavy truck, diesel",
+          "table": "cost_variable",
+          "region": "ON",
+          "tech": "T_HDV_T_DSL_N",
+          "vintage": 2025,
+          "keys": {
+            "period": 2025,
+            "region": "ON",
+            "tech": "T_HDV_T_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 14.327485393495275,
+          "legacy": 17.210813999,
+          "candidate_units": "$M 2020CAD / bn tonne-km",
+          "legacy_units": "$M 2020CAD / bn tonne-km",
+          "units": "$M 2020CAD / bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -2.8833286055047243,
+          "absolute_difference": 2.8833286055047243,
+          "relative_percent": -16.75300543990688,
+          "status": "different",
+          "period": 2025
+        }
+      ]
+    },
+    {
+      "slide": 7,
+      "title": "Change from legacy",
+      "kind": "percent",
+      "categories": [
+        "Passenger air",
+        "Heavy trucks",
+        "Passenger light trucks",
+        "Cars",
+        "Intercity bus",
+        "Marine freight"
+      ],
+      "series": [
+        {
+          "name": "Change from legacy",
+          "values": [
+            0.08322320902,
+            0.04381084382,
+            0.01859823908,
+            -0.2870769734,
+            -0.5852967759,
+            -0.8499104701
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Marine freight",
+          "table": "demand",
+          "region": "ON",
+          "keys": {
+            "commodity": "T_D_tkm_hdv_wt",
+            "period": 2025,
+            "region": "ON"
+          },
+          "candidate": 8.639266635416043,
+          "legacy": 57.560754858,
+          "candidate_units": "bn tonne-km",
+          "legacy_units": "bn tonne-km",
+          "units": "bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -48.92148822258396,
+          "absolute_difference": 48.92148822258396,
+          "relative_percent": -84.99104701331878,
+          "status": "different",
+          "commodity": "T_D_tkm_hdv_wt",
+          "period": 2025
+        },
+        {
+          "label": "Intercity bus",
+          "table": "demand",
+          "region": "ON",
+          "keys": {
+            "commodity": "T_D_pkm_hdv_bic",
+            "period": 2025,
+            "region": "ON"
+          },
+          "candidate": 0.819704110801976,
+          "legacy": 1.976604143,
+          "candidate_units": "bn passenger-km",
+          "legacy_units": "bn passenger-km",
+          "units": "bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -1.156900032198024,
+          "absolute_difference": 1.156900032198024,
+          "relative_percent": -58.52967759351823,
+          "status": "different",
+          "commodity": "T_D_pkm_hdv_bic",
+          "period": 2025
+        },
+        {
+          "label": "Cars",
+          "table": "demand",
+          "region": "ON",
+          "keys": {
+            "commodity": "T_D_pkm_ldv_c",
+            "period": 2025,
+            "region": "ON"
+          },
+          "candidate": 93.64133663017184,
+          "legacy": 131.348452969,
+          "candidate_units": "bn passenger-km",
+          "legacy_units": "bn passenger-km",
+          "units": "bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -37.70711633882816,
+          "absolute_difference": 37.70711633882816,
+          "relative_percent": -28.707697339783323,
+          "status": "different",
+          "commodity": "T_D_pkm_ldv_c",
+          "period": 2025
+        },
+        {
+          "label": "Passenger light trucks",
+          "table": "demand",
+          "region": "ON",
+          "keys": {
+            "commodity": "T_D_pkm_ldv_t",
+            "period": 2025,
+            "region": "ON"
+          },
+          "candidate": 135.5185829981731,
+          "legacy": 133.044195247,
+          "candidate_units": "bn passenger-km",
+          "legacy_units": "bn passenger-km",
+          "units": "bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 2.474387751173083,
+          "absolute_difference": 2.474387751173083,
+          "relative_percent": 1.859823907821997,
+          "status": "different",
+          "commodity": "T_D_pkm_ldv_t",
+          "period": 2025
+        },
+        {
+          "label": "Heavy trucks",
+          "table": "demand",
+          "region": "ON",
+          "keys": {
+            "commodity": "T_D_tkm_hdv_t",
+            "period": 2025,
+            "region": "ON"
+          },
+          "candidate": 103.19632643574776,
+          "legacy": 98.864968731,
+          "candidate_units": "bn tonne-km",
+          "legacy_units": "bn tonne-km",
+          "units": "bn tonne-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 4.331357704747759,
+          "absolute_difference": 4.331357704747759,
+          "relative_percent": 4.381084382409381,
+          "status": "different",
+          "commodity": "T_D_tkm_hdv_t",
+          "period": 2025
+        },
+        {
+          "label": "Passenger air",
+          "table": "demand",
+          "region": "ON",
+          "keys": {
+            "commodity": "T_D_pkm_hdv_aj",
+            "period": 2025,
+            "region": "ON"
+          },
+          "candidate": 82.69772409009096,
+          "legacy": 76.344121324,
+          "candidate_units": "bn passenger-km",
+          "legacy_units": "bn passenger-km",
+          "units": "bn passenger-km",
+          "unit_basis": "declared units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 6.353602766090958,
+          "absolute_difference": 6.353602766090958,
+          "relative_percent": 8.322320901601104,
+          "status": "different",
+          "commodity": "T_D_pkm_hdv_aj",
+          "period": 2025
+        }
+      ]
+    },
+    {
+      "slide": 8,
+      "title": "Billion passenger-km / PJ",
+      "kind": "value",
+      "categories": [
+        "Transit bus, CNG (2020)",
+        "Transit bus, diesel (2020)",
+        "School bus, gasoline (2020)",
+        "School bus, diesel (2020)"
+      ],
+      "series": [
+        {
+          "name": "Legacy",
+          "values": [
+            0.458794084,
+            0.539757746,
+            1.862472082,
+            2.234966498
+          ]
+        },
+        {
+          "name": "New backend",
+          "values": [
+            1.188124447,
+            1.188124447,
+            3.562951106,
+            3.562951106
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "School bus, diesel (2020)",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_HDV_BS_DSL_EX",
+          "vintage": 2020,
+          "keys": {
+            "input_comm": "T_dsl",
+            "output_comm": "T_D_pkm_hdv_bs",
+            "region": "ON",
+            "tech": "T_HDV_BS_DSL_EX",
+            "vintage": 2020
+          },
+          "candidate": 3.5629511057368903,
+          "legacy": 2.234966498,
+          "candidate_units": "bn passenger-km/PJ",
+          "legacy_units": "bn passenger-km/PJ",
+          "units": "bn passenger-km/PJ",
+          "unit_basis": "legacy implicit parameter units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 1.3279846077368904,
+          "absolute_difference": 1.3279846077368904,
+          "relative_percent": 59.418546493885316,
+          "status": "different",
+          "input_comm": "T_dsl",
+          "output_comm": "T_D_pkm_hdv_bs"
+        },
+        {
+          "label": "School bus, gasoline (2020)",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_HDV_BS_GSL_EX",
+          "vintage": 2020,
+          "keys": {
+            "input_comm": "T_gsl",
+            "output_comm": "T_D_pkm_hdv_bs",
+            "region": "ON",
+            "tech": "T_HDV_BS_GSL_EX",
+            "vintage": 2020
+          },
+          "candidate": 3.5629511057368903,
+          "legacy": 1.862472082,
+          "candidate_units": "bn passenger-km/PJ",
+          "legacy_units": "bn passenger-km/PJ",
+          "units": "bn passenger-km/PJ",
+          "unit_basis": "legacy implicit parameter units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 1.7004790237368903,
+          "absolute_difference": 1.7004790237368903,
+          "relative_percent": 91.30225575842431,
+          "status": "different",
+          "input_comm": "T_gsl",
+          "output_comm": "T_D_pkm_hdv_bs"
+        },
+        {
+          "label": "Transit bus, diesel (2020)",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_HDV_BT_DSL_EX",
+          "vintage": 2020,
+          "keys": {
+            "input_comm": "T_dsl",
+            "output_comm": "T_D_pkm_hdv_bt",
+            "region": "ON",
+            "tech": "T_HDV_BT_DSL_EX",
+            "vintage": 2020
+          },
+          "candidate": 1.1881244472551553,
+          "legacy": 0.539757746,
+          "candidate_units": "bn passenger-km/PJ",
+          "legacy_units": "bn passenger-km/PJ",
+          "units": "bn passenger-km/PJ",
+          "unit_basis": "legacy implicit parameter units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 0.6483667012551553,
+          "absolute_difference": 0.6483667012551553,
+          "relative_percent": 120.12179650223217,
+          "status": "different",
+          "input_comm": "T_dsl",
+          "output_comm": "T_D_pkm_hdv_bt"
+        },
+        {
+          "label": "Transit bus, CNG (2020)",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_HDV_BT_CNG_EX",
+          "vintage": 2020,
+          "keys": {
+            "input_comm": "T_cng",
+            "output_comm": "T_D_pkm_hdv_bt",
+            "region": "ON",
+            "tech": "T_HDV_BT_CNG_EX",
+            "vintage": 2020
+          },
+          "candidate": 1.1881244472551553,
+          "legacy": 0.458794084,
+          "candidate_units": "bn passenger-km/PJ",
+          "legacy_units": "bn passenger-km/PJ",
+          "units": "bn passenger-km/PJ",
+          "unit_basis": "legacy implicit parameter units",
+          "comparison_grain": "exact parameter keys",
+          "delta": 0.7293303632551553,
+          "absolute_difference": 0.7293303632551553,
+          "relative_percent": 158.96681947083593,
+          "status": "different",
+          "input_comm": "T_cng",
+          "output_comm": "T_D_pkm_hdv_bt"
+        }
+      ]
+    },
+    {
+      "slide": 9,
+      "title": "Billion tonne-km / PJ",
+      "kind": "value",
+      "categories": [
+        "Marine freight, MDO (2025)",
+        "Marine freight, HFO (2025)"
+      ],
+      "series": [
+        {
+          "name": "Legacy",
+          "values": [
+            6.384609746,
+            6.667421446
+          ]
+        },
+        {
+          "name": "New backend",
+          "values": [
+            3.81354621,
+            3.735869847
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Marine freight, HFO (2025)",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_HDV_WTF_HFO_N",
+          "vintage": 2025,
+          "keys": {
+            "input_comm": "T_hfo",
+            "output_comm": "T_D_tkm_hdv_wt",
+            "region": "ON",
+            "tech": "T_HDV_WTF_HFO_N",
+            "vintage": 2025
+          },
+          "candidate": 3.7358698473783414,
+          "legacy": 6.667421446,
+          "candidate_units": "bn tonne-km/PJ",
+          "legacy_units": "bn tonne-km/PJ",
+          "units": "bn tonne-km/PJ",
+          "unit_basis": "legacy implicit parameter units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -2.9315515986216583,
+          "absolute_difference": 2.9315515986216583,
+          "relative_percent": -43.96829602515062,
+          "status": "different",
+          "input_comm": "T_hfo",
+          "output_comm": "T_D_tkm_hdv_wt"
+        },
+        {
+          "label": "Marine freight, MDO (2025)",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_HDV_WTF_MDO_N",
+          "vintage": 2025,
+          "keys": {
+            "input_comm": "T_mdo",
+            "output_comm": "T_D_tkm_hdv_wt",
+            "region": "ON",
+            "tech": "T_HDV_WTF_MDO_N",
+            "vintage": 2025
+          },
+          "candidate": 3.8135462101515656,
+          "legacy": 6.384609746,
+          "candidate_units": "bn tonne-km/PJ",
+          "legacy_units": "bn tonne-km/PJ",
+          "units": "bn tonne-km/PJ",
+          "unit_basis": "legacy implicit parameter units",
+          "comparison_grain": "exact parameter keys",
+          "delta": -2.571063535848434,
+          "absolute_difference": 2.571063535848434,
+          "relative_percent": -40.26970540304711,
+          "status": "different",
+          "input_comm": "T_mdo",
+          "output_comm": "T_D_tkm_hdv_wt"
+        }
+      ]
+    },
+    {
+      "slide": 10,
+      "title": "Billion passenger-km / PJ",
+      "kind": "value",
+      "categories": [
+        "Passenger light truck, PHEV",
+        "Car, PHEV",
+        "Passenger light truck, BEV",
+        "Car, BEV"
+      ],
+      "series": [
+        {
+          "name": "Legacy",
+          "values": [
+            1.378083008,
+            1.493019906,
+            1.910662653,
+            2.324932649
+          ]
+        },
+        {
+          "name": "New backend",
+          "values": [
+            1.161359143,
+            1.815040585,
+            2.201357889,
+            2.399457822
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Car, BEV",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_LDV_C_BEV_EX",
+          "vintage": 2020,
+          "keys": {
+            "input_comm": "T_elc_ldv_chrg",
+            "output_comm": "T_D_pkm_ldv_c",
+            "region": "ON",
+            "tech": "T_LDV_C_BEV_EX",
+            "vintage": 2020
+          },
+          "candidate": 2.3994578223460077,
+          "candidate_units": "bn passenger-km/PJ",
+          "units": "bn passenger-km/PJ",
+          "unit_basis": "declared units",
+          "comparison_grain": "One legacy fixed-range representative paired with new merged archetype; same class, powertrain and 2020 vintage",
+          "status": "explicit_representation_bridge",
+          "input_comm": "T_elc_ldv_chrg",
+          "output_comm": "T_D_pkm_ldv_c",
+          "legacy": 2.324932649,
+          "delta": 0.07452517334600772,
+          "relative_percent": 3.2054766566275594,
+          "legacy_tech": "T_LDV_C_BEV150_EX",
+          "legacy_keys": {
+            "region": "ON",
+            "input_comm": "T_elc_ldv_bev_chrg",
+            "tech": "T_LDV_C_BEV150_EX",
+            "vintage": 2020,
+            "output_comm": "T_annual_pkm_ldv_c"
+          },
+          "legacy_notes": "[bpkm/PJ] Vehicle class fuel efficiency aggregated from NRCan Fuel Economy Guide ratings by size class; BEV ratings were grouped into range classes, 150-mile range class values were used. Aggregation was done with Wards 2022 national size-class shares derived from vehicle sales by model in 2021. Values were harmonized using provincial load factors."
+        },
+        {
+          "label": "Passenger light truck, BEV",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_LDV_LTP_BEV_EX",
+          "vintage": 2020,
+          "keys": {
+            "input_comm": "T_elc_ldv_chrg",
+            "output_comm": "T_D_pkm_ldv_t",
+            "region": "ON",
+            "tech": "T_LDV_LTP_BEV_EX",
+            "vintage": 2020
+          },
+          "candidate": 2.201357889341348,
+          "candidate_units": "bn passenger-km/PJ",
+          "units": "bn passenger-km/PJ",
+          "unit_basis": "declared units",
+          "comparison_grain": "One legacy fixed-range representative paired with new merged archetype; same class, powertrain and 2020 vintage",
+          "status": "explicit_representation_bridge",
+          "input_comm": "T_elc_ldv_chrg",
+          "output_comm": "T_D_pkm_ldv_t",
+          "legacy": 1.910662653,
+          "delta": 0.290695236341348,
+          "relative_percent": 15.214367428227948,
+          "legacy_tech": "T_LDV_LTP_BEV300_EX",
+          "legacy_keys": {
+            "region": "ON",
+            "input_comm": "T_elc_ldv_bev_chrg",
+            "tech": "T_LDV_LTP_BEV300_EX",
+            "vintage": 2020,
+            "output_comm": "T_annual_pkm_ldv_t"
+          },
+          "legacy_notes": "[bpkm/PJ] Vehicle class fuel efficiency aggregated from NRCan Fuel Economy Guide ratings by size class; BEV ratings were grouped into range classes, 150-mile range class values were used. Aggregation was done with Wards 2022 national size-class shares derived from vehicle sales by model in 2021. Values were harmonized using provincial load factors."
+        },
+        {
+          "label": "Car, PHEV",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_LDV_C_GSL_PHEV_EX",
+          "vintage": 2020,
+          "keys": {
+            "input_comm": "T_gsl_elc_phev_c_ex",
+            "output_comm": "T_D_pkm_ldv_c",
+            "region": "ON",
+            "tech": "T_LDV_C_GSL_PHEV_EX",
+            "vintage": 2020
+          },
+          "candidate": 1.8150405851105467,
+          "candidate_units": "bn passenger-km/PJ",
+          "units": "bn passenger-km/PJ",
+          "unit_basis": "declared units",
+          "comparison_grain": "One legacy fixed-range representative paired with new merged archetype; same class, powertrain and 2020 vintage",
+          "status": "explicit_representation_bridge",
+          "input_comm": "T_gsl_elc_phev_c_ex",
+          "output_comm": "T_D_pkm_ldv_c",
+          "legacy": 1.493019906,
+          "delta": 0.32202067911054666,
+          "relative_percent": 21.568411634462613,
+          "legacy_tech": "T_LDV_C_GSL_PHEV35_EX",
+          "legacy_keys": {
+            "region": "ON",
+            "input_comm": "T_gsl_elc_phev35",
+            "tech": "T_LDV_C_GSL_PHEV35_EX",
+            "vintage": 2020,
+            "output_comm": "T_D_pkm_ldv_c"
+          },
+          "legacy_notes": "[bpkm/PJ] Vehicle class fuel efficiency aggregated from NRCan Fuel Economy Guide ratings by size class; only the charge-depletion mode efficiencies were used as the utility-weighted values where disproportionately high when compared to the utility weighted efficiency projections. Aggregation was done with Wards 2022 national size-class shares derived from vehicle sales by model in 2021. Values were harmonized using provincial load factors."
+        },
+        {
+          "label": "Passenger light truck, PHEV",
+          "table": "efficiency",
+          "region": "ON",
+          "tech": "T_LDV_LTP_GSL_PHEV_EX",
+          "vintage": 2020,
+          "keys": {
+            "input_comm": "T_gsl_elc_phev_ltp_ex",
+            "output_comm": "T_D_pkm_ldv_t",
+            "region": "ON",
+            "tech": "T_LDV_LTP_GSL_PHEV_EX",
+            "vintage": 2020
+          },
+          "candidate": 1.1613591430769286,
+          "candidate_units": "bn passenger-km/PJ",
+          "units": "bn passenger-km/PJ",
+          "unit_basis": "declared units",
+          "comparison_grain": "One legacy fixed-range representative paired with new merged archetype; same class, powertrain and 2020 vintage",
+          "status": "explicit_representation_bridge",
+          "input_comm": "T_gsl_elc_phev_ltp_ex",
+          "output_comm": "T_D_pkm_ldv_t",
+          "legacy": 1.378083008,
+          "delta": -0.21672386492307139,
+          "relative_percent": -15.726473925369767,
+          "legacy_tech": "T_LDV_LTP_GSL_PHEV35_EX",
+          "legacy_keys": {
+            "region": "ON",
+            "input_comm": "T_gsl_elc_phev35",
+            "tech": "T_LDV_LTP_GSL_PHEV35_EX",
+            "vintage": 2020,
+            "output_comm": "T_D_pkm_ldv_t"
+          },
+          "legacy_notes": "[bpkm/PJ] Vehicle class fuel efficiency aggregated from NRCan Fuel Economy Guide ratings by size class; only the charge-depletion mode efficiencies were used as the utility-weighted values where disproportionately high when compared to the utility weighted efficiency projections. Aggregation was done with Wards 2022 national size-class shares derived from vehicle sales by model in 2021. Values were harmonized using provincial load factors."
+        }
+      ]
+    },
+    {
+      "slide": 11,
+      "title": "Change from legacy",
+      "kind": "percent",
+      "categories": [
+        "Heavy trucks, all powertrains",
+        "Medium trucks, all powertrains",
+        "Passenger light trucks, all powertrains",
+        "Cars, all powertrains",
+        "Marine freight, MDO",
+        "Marine freight, HFO"
+      ],
+      "series": [
+        {
+          "name": "Change from legacy",
+          "values": [
+            0.06381201877,
+            0.1006035143,
+            0.1427702502,
+            -0.0551060849,
+            -0.8448395397,
+            -0.8406807461
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Marine freight, HFO",
+          "table": "existing_capacity",
+          "region": "ON",
+          "tech_pattern": "T_HDV_WTF_HFO_EX",
+          "candidate": 6.587017699388717,
+          "legacy": 41.34476869,
+          "units": "bn tonne-km",
+          "delta": -34.757750990611285,
+          "relative_percent": -84.06807461234652,
+          "candidate_constituent_rows": [
+            {
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2000,
+              "capacity": 1.0214032563537419,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2005,
+              "capacity": 0.34909267576826447,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2010,
+              "capacity": 0.8317720334237386,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2015,
+              "capacity": 2.042941285328911,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2020,
+              "capacity": 1.7123717437893662,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2023,
+              "capacity": 0.6294367047246946,
+              "units": "bn tonne-km"
+            }
+          ],
+          "legacy_constituent_rows": [
+            {
+              "region": "ON",
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2005,
+              "capacity": 2.131662058,
+              "units": "btkm"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2010,
+              "capacity": 8.653369733,
+              "units": "btkm"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2015,
+              "capacity": 22.398071163,
+              "units": "btkm"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_WTF_HFO_EX",
+              "vintage": 2020,
+              "capacity": 8.161665736,
+              "units": "btkm"
+            }
+          ],
+          "comparison_grain": "Sum all existing cohorts at each version baseline; aggregate class powertrains where label specifies; no survival adjustment",
+          "status": "explicit_inventory_bridge",
+          "baseline_year_legacy": 2021,
+          "baseline_year_candidate": 2023
+        },
+        {
+          "label": "Marine freight, MDO",
+          "table": "existing_capacity",
+          "region": "ON",
+          "tech_pattern": "T_HDV_WTF_MDO_EX",
+          "candidate": 1.1820209121490446,
+          "legacy": 7.618054945,
+          "units": "bn tonne-km",
+          "delta": -6.436034032850955,
+          "relative_percent": -84.48395396616499,
+          "candidate_constituent_rows": [
+            {
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2000,
+              "capacity": 0.18328780395706165,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2005,
+              "capacity": 0.06264365178105528,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2010,
+              "capacity": 0.14925903990493797,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2015,
+              "capacity": 0.36659979246382124,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2020,
+              "capacity": 0.30728006252662593,
+              "units": "bn tonne-km"
+            },
+            {
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2023,
+              "capacity": 0.11295056151554247,
+              "units": "bn tonne-km"
+            }
+          ],
+          "legacy_constituent_rows": [
+            {
+              "region": "ON",
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2005,
+              "capacity": 1.702811321,
+              "units": "btkm"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2010,
+              "capacity": 1.779041743,
+              "units": "btkm"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2015,
+              "capacity": 2.876054141,
+              "units": "btkm"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_WTF_MDO_EX",
+              "vintage": 2020,
+              "capacity": 1.26014774,
+              "units": "btkm"
+            }
+          ],
+          "comparison_grain": "Sum all existing cohorts at each version baseline; aggregate class powertrains where label specifies; no survival adjustment",
+          "status": "explicit_inventory_bridge",
+          "baseline_year_legacy": 2021,
+          "baseline_year_candidate": 2023
+        },
+        {
+          "label": "Cars, all powertrains",
+          "table": "existing_capacity",
+          "region": "ON",
+          "tech_pattern": "T_LDV_C_%",
+          "candidate": 3605.2670000000003,
+          "legacy": 3815.525682179,
+          "units": "k vehicles",
+          "delta": -210.2586821789996,
+          "relative_percent": -5.510608489966273,
+          "candidate_constituent_rows": [
+            {
+              "tech": "T_LDV_C_BEV_EX",
+              "vintage": 2015,
+              "capacity": 2.674683469899783,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_BEV_EX",
+              "vintage": 2020,
+              "capacity": 19.52738470420391,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_BEV_EX",
+              "vintage": 2023,
+              "capacity": 45.982086155749144,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2000,
+              "capacity": 0.7089840682683646,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2005,
+              "capacity": 8.158799630025849,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2010,
+              "capacity": 16.69728627212287,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2015,
+              "capacity": 30.335333581273563,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2020,
+              "capacity": 2.4620661398394668,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2023,
+              "capacity": 0.0014101418345185356,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2000,
+              "capacity": 25.68706314079679,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2005,
+              "capacity": 295.5998740020417,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2010,
+              "capacity": 604.9561138934238,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2015,
+              "capacity": 1020.4527312692699,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2020,
+              "capacity": 977.3758872162092,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2023,
+              "capacity": 447.7894134429091,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_HEV_EX",
+              "vintage": 2015,
+              "capacity": 23.506684337953555,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_HEV_EX",
+              "vintage": 2020,
+              "capacity": 26.442117188035546,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_HEV_EX",
+              "vintage": 2023,
+              "capacity": 37.85033676139163,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_PHEV_EX",
+              "vintage": 2015,
+              "capacity": 2.012131779031724,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_PHEV_EX",
+              "vintage": 2020,
+              "capacity": 12.987087213784934,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_C_GSL_PHEV_EX",
+              "vintage": 2023,
+              "capacity": 4.059525591935191,
+              "units": "k vehicles"
+            }
+          ],
+          "legacy_constituent_rows": [
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_BEV150_EX",
+              "vintage": 2015,
+              "capacity": 3.636121987,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_BEV150_EX",
+              "vintage": 2020,
+              "capacity": 37.180792833,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2010,
+              "capacity": 18.353157575,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2015,
+              "capacity": 40.14663236,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_DSL_EX",
+              "vintage": 2020,
+              "capacity": 3.81484961,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2010,
+              "capacity": 593.418761607,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2015,
+              "capacity": 1357.132043612,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_GSL_EX",
+              "vintage": 2020,
+              "capacity": 1658.203203455,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_GSL_HEV_EX",
+              "vintage": 2015,
+              "capacity": 30.611956268,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_GSL_HEV_EX",
+              "vintage": 2020,
+              "capacity": 47.605437559,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_GSL_PHEV35_EX",
+              "vintage": 2015,
+              "capacity": 2.680419337,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_C_GSL_PHEV35_EX",
+              "vintage": 2020,
+              "capacity": 22.742305976,
+              "units": "k units"
+            }
+          ],
+          "comparison_grain": "Sum all existing cohorts at each version baseline; aggregate class powertrains where label specifies; no survival adjustment",
+          "status": "explicit_inventory_bridge",
+          "baseline_year_legacy": 2021,
+          "baseline_year_candidate": 2023
+        },
+        {
+          "label": "Passenger light trucks, all powertrains",
+          "table": "existing_capacity",
+          "region": "ON",
+          "tech_pattern": "T_LDV_LTP_%",
+          "candidate": 4355.4580000000005,
+          "legacy": 3811.315528404,
+          "units": "k vehicles",
+          "delta": 544.1424715960006,
+          "relative_percent": 14.277025020383505,
+          "candidate_constituent_rows": [
+            {
+              "tech": "T_LDV_LTP_BEV_EX",
+              "vintage": 2015,
+              "capacity": 0.06986625974411856,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_BEV_EX",
+              "vintage": 2020,
+              "capacity": 3.6232945990152805,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_BEV_EX",
+              "vintage": 2023,
+              "capacity": 35.617003366213716,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2000,
+              "capacity": 0.42757932874010374,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2005,
+              "capacity": 5.6681780057529085,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2010,
+              "capacity": 18.248362131254495,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2015,
+              "capacity": 53.0845403220947,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2020,
+              "capacity": 48.87883776105934,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2023,
+              "capacity": 39.01080503868643,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2000,
+              "capacity": 13.471559930484917,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2005,
+              "capacity": 178.58487201931672,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2010,
+              "capacity": 574.9433790654834,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2015,
+              "capacity": 1187.1348069338435,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2020,
+              "capacity": 1309.1857462543965,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2023,
+              "capacity": 789.0053799756374,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_HEV_EX",
+              "vintage": 2015,
+              "capacity": 3.0194909149354006,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_HEV_EX",
+              "vintage": 2020,
+              "capacity": 14.798811008240282,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_HEV_EX",
+              "vintage": 2023,
+              "capacity": 65.1340683704586,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_PHEV_EX",
+              "vintage": 2015,
+              "capacity": 0.08367493022246078,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_PHEV_EX",
+              "vintage": 2020,
+              "capacity": 3.427231696864431,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_LDV_LTP_GSL_PHEV_EX",
+              "vintage": 2023,
+              "capacity": 12.040512087555708,
+              "units": "k vehicles"
+            }
+          ],
+          "legacy_constituent_rows": [
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_BEV300_EX",
+              "vintage": 2015,
+              "capacity": 0.07185589,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_BEV300_EX",
+              "vintage": 2020,
+              "capacity": 4.376519583,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2010,
+              "capacity": 24.959817936,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2015,
+              "capacity": 56.380804259,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_DSL_EX",
+              "vintage": 2020,
+              "capacity": 58.095394415,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2010,
+              "capacity": 790.394234638,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2015,
+              "capacity": 1281.35795142,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_GSL_EX",
+              "vintage": 2020,
+              "capacity": 1570.01071173,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_GSL_HEV_EX",
+              "vintage": 2015,
+              "capacity": 3.293447957,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_GSL_HEV_EX",
+              "vintage": 2020,
+              "capacity": 17.865808047,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_GSL_PHEV35_EX",
+              "vintage": 2015,
+              "capacity": 0.081861184,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_LTP_GSL_PHEV35_EX",
+              "vintage": 2020,
+              "capacity": 4.427121345,
+              "units": "k units"
+            }
+          ],
+          "comparison_grain": "Sum all existing cohorts at each version baseline; aggregate class powertrains where label specifies; no survival adjustment",
+          "status": "explicit_inventory_bridge",
+          "baseline_year_legacy": 2021,
+          "baseline_year_candidate": 2023
+        },
+        {
+          "label": "Medium trucks, all powertrains",
+          "table": "existing_capacity",
+          "region": "ON",
+          "tech_pattern": "T_MDV_T_%",
+          "candidate": 421.755,
+          "legacy": 383.203392067,
+          "units": "k vehicles",
+          "delta": 38.551607933000014,
+          "relative_percent": 10.060351429837965,
+          "candidate_constituent_rows": [
+            {
+              "tech": "T_MDV_T_BEV_EX",
+              "vintage": 2023,
+              "capacity": 2.8884338877093185,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2000,
+              "capacity": 2.1207985447577116,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2005,
+              "capacity": 22.314117579570503,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2010,
+              "capacity": 39.59979835677203,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2015,
+              "capacity": 66.19286990385817,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2020,
+              "capacity": 92.13810574459319,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2023,
+              "capacity": 58.727693525301454,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2000,
+              "capacity": 0.9962799441234763,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2005,
+              "capacity": 10.482423175124797,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2010,
+              "capacity": 18.60265558541911,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2015,
+              "capacity": 31.09518765570558,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2020,
+              "capacity": 45.03747680977485,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2023,
+              "capacity": 31.559159287289816,
+              "units": "k vehicles"
+            }
+          ],
+          "legacy_constituent_rows": [
+            {
+              "region": "ON",
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2005,
+              "capacity": 12.076213323,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2010,
+              "capacity": 46.70432986,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2015,
+              "capacity": 62.239785979,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_MDV_T_DSL_EX",
+              "vintage": 2020,
+              "capacity": 112.52878599,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2005,
+              "capacity": 8.050808882,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2010,
+              "capacity": 31.136219907,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2015,
+              "capacity": 41.493190653,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_MDV_T_GSL_EX",
+              "vintage": 2020,
+              "capacity": 68.974057473,
+              "units": "k units"
+            }
+          ],
+          "comparison_grain": "Sum all existing cohorts at each version baseline; aggregate class powertrains where label specifies; no survival adjustment",
+          "status": "explicit_inventory_bridge",
+          "baseline_year_legacy": 2021,
+          "baseline_year_candidate": 2023
+        },
+        {
+          "label": "Heavy trucks, all powertrains",
+          "table": "existing_capacity",
+          "region": "ON",
+          "tech_pattern": "T_HDV_T_%",
+          "candidate": 143.136,
+          "legacy": 134.550087303,
+          "units": "k vehicles",
+          "delta": 8.585912696999998,
+          "relative_percent": 6.381201877383358,
+          "candidate_constituent_rows": [
+            {
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2000,
+              "capacity": 1.0578799221929738,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2005,
+              "capacity": 11.130551285613842,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2010,
+              "capacity": 19.752857577194035,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2015,
+              "capacity": 33.01780276901451,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2020,
+              "capacity": 46.554905536394415,
+              "units": "k vehicles"
+            },
+            {
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2023,
+              "capacity": 31.622002909590226,
+              "units": "k vehicles"
+            }
+          ],
+          "legacy_constituent_rows": [
+            {
+              "region": "ON",
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2005,
+              "capacity": 9.730347327,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2010,
+              "capacity": 26.759889658,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2015,
+              "capacity": 35.661143412,
+              "units": "k units"
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_T_DSL_EX",
+              "vintage": 2020,
+              "capacity": 62.398706906,
+              "units": "k units"
+            }
+          ],
+          "comparison_grain": "Sum all existing cohorts at each version baseline; aggregate class powertrains where label specifies; no survival adjustment",
+          "status": "explicit_inventory_bridge",
+          "baseline_year_legacy": 2021,
+          "baseline_year_candidate": 2023
+        }
+      ]
+    },
+    {
+      "slide": 12,
+      "title": "Installed charger capacity (GW)",
+      "kind": "value",
+      "categories": [
+        "MHDV chargers",
+        "LDV chargers"
+      ],
+      "series": [
+        {
+          "name": "Legacy inventory",
+          "values": [
+            0.244281279,
+            0.253270711
+          ]
+        },
+        {
+          "name": "New 2023 inventory",
+          "values": [
+            0.2118184851,
+            0.8870326014
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "LDV chargers",
+          "table": "existing_capacity",
+          "region": "ON",
+          "tech": "T_LDV_CHRG_EX",
+          "vintage": 2023,
+          "keys": {
+            "region": "ON",
+            "tech": "T_LDV_CHRG_EX",
+            "vintage": 2023
+          },
+          "candidate": 0.8870326014006562,
+          "candidate_units": "GW",
+          "units": "GW",
+          "unit_basis": "declared units",
+          "comparison_grain": "Sum all existing legacy charger cohorts by demand class; compare with new combined 2023 stock. No retirement adjustment applied.",
+          "status": "explicit_inventory_bridge",
+          "legacy": 0.253270711,
+          "delta": 0.6337618904006562,
+          "relative_percent": 250.23102272597808,
+          "legacy_constituent_rows": [
+            {
+              "region": "ON",
+              "tech": "T_LDV_BEV_CHRG",
+              "vintage": 2015,
+              "capacity": 0.007375338,
+              "units": "GW",
+              "notes": "Existing capacity of EV chargers estimated from energy consumption of BEV classes."
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_BEV_CHRG",
+              "vintage": 2020,
+              "capacity": 0.085452114,
+              "units": "GW",
+              "notes": "Existing capacity of EV chargers estimated from energy consumption of BEV classes."
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_PHEV_CHRG",
+              "vintage": 2015,
+              "capacity": 0.011714196,
+              "units": "GW",
+              "notes": "Existing capacity of EV chargers estimated from energy consumption of PHEV classes."
+            },
+            {
+              "region": "ON",
+              "tech": "T_LDV_PHEV_CHRG",
+              "vintage": 2020,
+              "capacity": 0.148729063,
+              "units": "GW",
+              "notes": "Existing capacity of EV chargers estimated from energy consumption of PHEV classes."
+            }
+          ]
+        },
+        {
+          "label": "MHDV chargers",
+          "table": "existing_capacity",
+          "region": "ON",
+          "tech": "T_MHDV_CHRG_EX",
+          "vintage": 2023,
+          "keys": {
+            "region": "ON",
+            "tech": "T_MHDV_CHRG_EX",
+            "vintage": 2023
+          },
+          "candidate": 0.2118184850986834,
+          "candidate_units": "GW",
+          "units": "GW",
+          "unit_basis": "declared units",
+          "comparison_grain": "Sum all existing legacy charger cohorts by demand class; compare with new combined 2023 stock. No retirement adjustment applied.",
+          "status": "explicit_inventory_bridge",
+          "legacy": 0.24428127900000002,
+          "delta": -0.03246279390131662,
+          "relative_percent": -13.289104279381403,
+          "legacy_constituent_rows": [
+            {
+              "region": "ON",
+              "tech": "T_HDV_CHRG",
+              "vintage": 2010,
+              "capacity": 0.024583233,
+              "units": "GW",
+              "notes": "Existing capacity of EV chargers estimated from energy consumption of BEV classes."
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_CHRG",
+              "vintage": 2015,
+              "capacity": 0.086878136,
+              "units": "GW",
+              "notes": "Existing capacity of EV chargers estimated from energy consumption of BEV classes."
+            },
+            {
+              "region": "ON",
+              "tech": "T_HDV_CHRG",
+              "vintage": 2020,
+              "capacity": 0.13281991,
+              "units": "GW",
+              "notes": "Existing capacity of EV chargers estimated from energy consumption of BEV classes."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slide": 13,
+      "title": "Annual capacity factor (%)",
+      "kind": "value",
+      "categories": [
+        "Intercity buses",
+        "Heavy trucks",
+        "Medium trucks",
+        "Cars"
+      ],
+      "series": [
+        {
+          "name": "Legacy upper limit",
+          "values": [
+            4.1296921,
+            20.7244942,
+            2.6242254,
+            1.8861811
+          ]
+        },
+        {
+          "name": "New fixed value",
+          "values": [
+            5.263352194,
+            23.6626966,
+            2.895375424,
+            2.075689111
+          ]
+        }
+      ],
+      "records": [
+        {
+          "label": "Cars",
+          "table": "limit_annual_capacity_factor",
+          "region": "ON",
+          "vintage": 2025,
+          "keys": {
+            "operator": "e",
+            "output_comm": "T_D_pkm_ldv_c",
+            "region": "ON",
+            "tech_or_group": "T_LDV_C_GSL_N",
+            "vintage": 2025
+          },
+          "candidate": 0.020756891109511903,
+          "legacy": 0.018861811,
+          "candidate_units": "fraction",
+          "legacy_units": "fraction",
+          "units": "fraction",
+          "unit_basis": "declared units",
+          "comparison_grain": "new-cohort value at installation period; distance outside legacy [minimum, maximum]",
+          "delta": 0.0018950801095119034,
+          "absolute_difference": 0.0018950801095119034,
+          "relative_percent": 10.047180037547315,
+          "comparison_period": 2025,
+          "legacy_lower": 0.018842949189,
+          "legacy_upper": 0.018861811,
+          "status": "different",
+          "output_comm": "T_D_pkm_ldv_c",
+          "tech_or_group": "T_LDV_C_GSL_N",
+          "operator": "e",
+          "legacy_bar_lower": 0.018842949189,
+          "legacy_bar_upper": 0.018861811,
+          "new_equality": 0.020756891109511903,
+          "chart_scale_factor": 100,
+          "display_units": "% of potential annual activity",
+          "point_change_vs_upper": 0.18950801095119035
+        },
+        {
+          "label": "Medium trucks",
+          "table": "limit_annual_capacity_factor",
+          "region": "ON",
+          "vintage": 2025,
+          "keys": {
+            "operator": "e",
+            "output_comm": "T_D_tkm_mdv_t",
+            "region": "ON",
+            "tech_or_group": "T_MDV_T_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 0.028953754237791396,
+          "legacy": 0.026242254,
+          "candidate_units": "fraction",
+          "legacy_units": "fraction",
+          "units": "fraction",
+          "unit_basis": "declared units",
+          "comparison_grain": "new-cohort value at installation period; distance outside legacy [minimum, maximum]",
+          "delta": 0.0027115002377913963,
+          "absolute_difference": 0.0027115002377913963,
+          "relative_percent": 10.332573710289507,
+          "comparison_period": 2025,
+          "legacy_lower": 0.026216011746,
+          "legacy_upper": 0.026242254,
+          "status": "different",
+          "output_comm": "T_D_tkm_mdv_t",
+          "tech_or_group": "T_MDV_T_DSL_N",
+          "operator": "e",
+          "legacy_bar_lower": 0.026216011746,
+          "legacy_bar_upper": 0.026242254,
+          "new_equality": 0.028953754237791396,
+          "chart_scale_factor": 100,
+          "display_units": "% of potential annual activity",
+          "point_change_vs_upper": 0.27115002377913966
+        },
+        {
+          "label": "Heavy trucks",
+          "table": "limit_annual_capacity_factor",
+          "region": "ON",
+          "vintage": 2025,
+          "keys": {
+            "operator": "e",
+            "output_comm": "T_D_tkm_hdv_t",
+            "region": "ON",
+            "tech_or_group": "T_HDV_T_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 0.2366269659840278,
+          "legacy": 0.207244942,
+          "candidate_units": "fraction",
+          "legacy_units": "fraction",
+          "units": "fraction",
+          "unit_basis": "declared units",
+          "comparison_grain": "new-cohort value at installation period; distance outside legacy [minimum, maximum]",
+          "delta": 0.02938202398402781,
+          "absolute_difference": 0.02938202398402781,
+          "relative_percent": 14.177438397520849,
+          "comparison_period": 2025,
+          "legacy_lower": 0.207037697058,
+          "legacy_upper": 0.207244942,
+          "status": "different",
+          "output_comm": "T_D_tkm_hdv_t",
+          "tech_or_group": "T_HDV_T_DSL_N",
+          "operator": "e",
+          "legacy_bar_lower": 0.207037697058,
+          "legacy_bar_upper": 0.207244942,
+          "new_equality": 0.2366269659840278,
+          "chart_scale_factor": 100,
+          "display_units": "% of potential annual activity",
+          "point_change_vs_upper": 2.938202398402781
+        },
+        {
+          "label": "Intercity buses",
+          "table": "limit_annual_capacity_factor",
+          "region": "ON",
+          "vintage": 2025,
+          "keys": {
+            "operator": "e",
+            "output_comm": "T_D_pkm_hdv_bic",
+            "region": "ON",
+            "tech_or_group": "T_HDV_BIC_DSL_N",
+            "vintage": 2025
+          },
+          "candidate": 0.052633521939548886,
+          "legacy": 0.041296921,
+          "candidate_units": "fraction",
+          "legacy_units": "fraction",
+          "units": "fraction",
+          "unit_basis": "declared units",
+          "comparison_grain": "new-cohort value at installation period; distance outside legacy [minimum, maximum]",
+          "delta": 0.011336600939548885,
+          "absolute_difference": 0.011336600939548885,
+          "relative_percent": 27.451443509672032,
+          "comparison_period": 2025,
+          "legacy_lower": 0.041255624079,
+          "legacy_upper": 0.041296921,
+          "status": "different",
+          "output_comm": "T_D_pkm_hdv_bic",
+          "tech_or_group": "T_HDV_BIC_DSL_N",
+          "operator": "e",
+          "legacy_bar_lower": 0.041255624079,
+          "legacy_bar_upper": 0.041296921,
+          "new_equality": 0.052633521939548886,
+          "chart_scale_factor": 100,
+          "display_units": "% of potential annual activity",
+          "point_change_vs_upper": 1.1336600939548886
+        }
+      ]
+    }
+  ]
+}

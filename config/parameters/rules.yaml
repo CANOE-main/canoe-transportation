@@ -667,6 +667,7 @@ fetching:
       output_file: eia_nems_truck_scrappage_rates.csv
       workbook: trnhdvx.xlsx
       worksheet: trnhdv
+      # Historical national conditional rates; this table is marked unused upstream.
       source_range: "A86:D120"
       age_header: "SCRAP(IAGE,ICLS)"
       class_columns:
@@ -1261,10 +1262,11 @@ parameterization:
           - 2b/3 Trucks
           curve_source_class: 2b/3 Trucks
         heavy_trucks:
-          # Manual fixed lifetime; the NEMS curve is used only in survival mode.
-          kind: manual
-          category: heavy_trucks
+          # Use the same NEMS Class 7–8 schedule for the curve and fixed median.
+          kind: source_median_equal
           source_id: eia_nems_hd_truck_scrappage
+          source_classes:
+          - Cls 7-8
           curve_source_class: Cls 7-8
         motorcycles: {kind: manual, category: motorcycles}
       region_output_map: {NL: NLLAB, PE: PEI}
@@ -1815,8 +1817,10 @@ parameterization:
       equal_incumbent_powertrains: [spk]
 
   costs:
-    transformation_version: '2'
-    nlr_road_retail_price_equivalent_markup: 1.5
+    transformation_version: '3'
+    # ATB 2024 definitions: MSRP / RPE estimates manufacturing cost by family.
+    # Conservative uses AEO MSRP; this reversal retains an estimated price basis.
+    nlr_road_retail_price_equivalent_markup: {ldv: 1.5, mhdv: 1.2}
     aircraft_operating_days_per_year: 365
     ldv_repair_price_exponent_per_usd: 0.00002
     ldv_repair_max_age: 14

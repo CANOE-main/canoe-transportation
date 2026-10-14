@@ -31,6 +31,8 @@ def test_every_manual_csv_and_cited_row_is_registered() -> None:
     frames: dict[str, pd.DataFrame] = {}
 
     for source in bundle.sources.sources.values():
+        if source.status != "active":
+            continue
         for component in source.components.values():
             adapter = component.adapter
             filename = adapter.get("manual_parameter_path")
@@ -93,9 +95,11 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
     )
 
     assert registry["manual_file"].nunique() == 7
-    assert len(registry) == 19
-    assert len(resolution) == 34
-    assert resolution["tech"].nunique() == 34
+    assert len(registry) == 18
+    assert "epa_moves4_population_activity_2023" not in set(registry["source_id"])
+    assert bundle.sources.sources["epa_moves4_population_activity_2023"].status == "inactive"
+    assert len(resolution) == 27
+    assert resolution["tech"].nunique() == 27
     assert not resolution.duplicated(
         ["manual_file", "manual_row", "tech", "selector_year"]
     ).any()
@@ -114,7 +118,6 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
         "freight_marine": 5,
         "freight_rail": 4,
         "h2_refuel": 2,
-        "heavy_trucks": 7,
         "motorcycles": 3,
         "passenger_air": 3,
         "passenger_rail": 3,

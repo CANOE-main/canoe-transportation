@@ -274,6 +274,224 @@ def _(diagnostic, mo, ranking, table_panel):
 
 @app.cell
 def _(diagnostic, mo):
+    road_review = diagnostic.road_investment_review
+    mo.md(f"""
+    ## Road investment costs: what drives the gap?
+
+    This investigation reconstructs **{len(road_review.attribution):,} matched ON
+    ATB-backed investment rows**, checks their legacy worksheet values against the
+    supplied SQLite, and tests the same prices with different aggregation weights.
+
+    Manufacturing-cost estimates use the source-family retail markups in the
+    production rules: **LDV {road_review.metadata['applied_rpe_by_family']['ldv']:g}**
+    and **MHDV {road_review.metadata['applied_rpe_by_family']['mhdv']:g}**. The
+    [2024 ATB definitions]({road_review.metadata['primary_sources']['ATB 2024 definitions']})
+    document these factors for Autonomie-derived prices. The source MSRP remains
+    unchanged for retail-based repair calculations. This study checks the actual
+    audit factor and rejects stale purchase prices.
+
+    Cars and light trucks need a separate diagnosis: ordinary incumbent gaps are
+    smaller, while later PHEVs and early FCEVs can have large **source-vehicle**
+    differences. School buses also have a substantial legacy weighting issue.
+
+    Costs below are **million 2020 CAD per thousand vehicles**. A native-price
+    residual also contains the difference between 2022- and 2023-dollar amounts;
+    it must not be read as an isolated engineering-price effect. Reload reruns this
+    study and rejects audit/source values that no longer reproduce the compiled rows.
+    """)
+    return (road_review,)
+
+
+@app.cell
+def _(mo, road_review):
+    road_modes = {
+        "All ATB road groups": "all", "Cars": "cars",
+        "Passenger light trucks": "passenger_light_trucks",
+        "Freight light trucks": "freight_light_trucks", "Medium trucks": "medium_trucks",
+        "Heavy trucks": "heavy_trucks", "School buses": "school_buses",
+        "Urban transit buses (single-class control)": "urban_transit",
+    }
+    road_mode = mo.ui.dropdown(
+        options=road_modes, value="Urban transit buses (single-class control)",
+        label="Road cost group",
+    )
+    road_year = mo.ui.dropdown(
+        options={str(int(year)): int(year) for year in sorted(road_review.attribution.vintage.unique())},
+        value=str(int(road_review.attribution.vintage.min())), label="Investment vintage",
+    )
+    mo.hstack([road_mode, road_year], wrap=True)
+    return road_mode, road_year
+
+
+@app.cell
+def _(mo, road_mode, road_review, road_year):
+    road_slice = road_review.attribution.loc[road_review.attribution.vintage.eq(road_year.value)]
+    if road_mode.value != "all":
+        road_slice = road_slice.loc[road_slice["mode"].eq(road_mode.value)]
+    road_choices = {row.tech: row.tech for row in road_slice.itertuples(index=False)}
+    road_tech = mo.ui.dropdown(
+        options=road_choices,
+        value="T_HDV_BT_DSL_N" if "T_HDV_BT_DSL_N" in road_choices else next(iter(road_choices)),
+        label="Explain investment row", searchable=True,
+    )
+    labels = {
+        "tech": "Technology", "legacy_cost": "Legacy", "current_cost": "Refactored",
+        "gap_percent": "Observed change (%)", "legacy_weight_effect_percent": "Old weights alone (%)",
+        "cost_with_legacy_weights": "Cost with old weights",
+        "gap_with_legacy_weights_percent": "Gap with old weights (%)",
+    }
+    mo.vstack([
+        mo.md("### Controlled comparisons\n\nOld weights alone holds current class prices, powertrain, vintage, family markup and currency fixed. These effects are not additive percentage contributions."),
+        mo.ui.table(
+            road_slice[list(labels)].rename(columns=labels).reset_index(drop=True),
+            selection=None, page_size=15, show_data_types=False, show_column_summaries=False,
+            format_mapping={value: "{:.4g}" for key, value in labels.items() if key != "tech"},
+        ),
+        road_tech,
+        mo.download(
+            road_review.attribution.to_csv(index=False).encode("utf-8"),
+            filename="road_cost_attribution.csv", mimetype="text/csv",
+            label="Download all road cost factors and counterfactuals",
+        ),
+    ])
+    return road_slice, road_tech
+
+
+@app.cell
+def _(alt, mo, pd, road_slice, road_tech):
+    cost_record = road_slice.loc[road_slice.tech.eq(road_tech.value)].iloc[0]
+    factor_table = pd.DataFrame([
+        {"Factor": "Currency and dollar-year conversion", "Ratio": cost_record.currency_factor,
+         "Meaning": f"Current conversion {cost_record.current_conversion:.9f} / legacy {cost_record.legacy_conversion:.9f}; current dollars {int(cost_record.current_dollar_year)}, legacy declared dollars {int(cost_record.legacy_declared_dollar_year)}."},
+        {"Factor": "Class aggregation", "Ratio": cost_record.weight_factor,
+         "Meaning": "Current-weighted / legacy-weighted price on the SAME current price schedule. " + cost_record.legacy_weight_basis},
+        {"Factor": "Remaining native source basis", "Ratio": cost_record.native_basis_factor,
+         "Meaning": "Current source manufacturing inference with legacy weights / legacy native manufacturing amount. Contains dollar-year re-expression, vehicle architecture, proxies and remaining within-class/source differences."},
+    ])
+    factor_table["Change if applied alone (%)"] = 100 * (factor_table.Ratio - 1)
+    cost_chart = alt.Chart(alt.Data(values=[
+        {"Basis": "Legacy", "Cost": float(cost_record.legacy_cost)},
+        {"Basis": "Refactored", "Cost": float(cost_record.current_cost)},
+    ])).mark_bar().encode(
+        x=alt.X("Basis:N", sort=["Legacy", "Refactored"], axis=alt.Axis(labelAngle=0)),
+        y=alt.Y("Cost:Q", title="Million 2020 CAD / thousand vehicles"),
+        color=alt.Color("Basis:N", legend=None), tooltip=["Basis:N", alt.Tooltip("Cost:Q", format=".6g")],
+    ).properties(width=680, height=230)
+    mo.vstack([
+        mo.md(f"### {cost_record.tech}, {int(cost_record.vintage)}\n\n"
+              f"Legacy **{cost_record.legacy_cost:.6g}** → refactored **{cost_record.current_cost:.6g}** "
+              f"(**{cost_record.gap_percent:+.2f}%**). "
+              f"Purchase evidence year: **{int(cost_record.purchase_evidence_year)}**. "
+              f"Legacy output: `{cost_record.legacy_output_cell}`."),
+        mo.ui.altair_chart(cost_chart, chart_selection=False, legend_selection=False),
+        mo.md("**Exact multiplicative identity:** current / legacy = currency × class aggregation × native source basis. Multiply these ratios; do not add their percentages."),
+        mo.ui.table(
+            factor_table, selection=None, pagination=False, show_search=False,
+            show_data_types=False, show_column_summaries=False, wrapped_columns=["Meaning"],
+            format_mapping={"Ratio": "{:.8f}", "Change if applied alone (%)": "{:+.4f}"},
+            column_widths={"Factor": 240, "Ratio": 130, "Meaning": 620, "Change if applied alone (%)": 190},
+        ).style({"max-width": "1220px"}),
+    ])
+    return
+
+
+@app.cell
+def _(mo, road_review):
+    weight_effects = road_review.attribution.groupby("mode").agg(
+        observations=("tech", "size"),
+        minimum_old_weight_effect_percent=("legacy_weight_effect_percent", "min"),
+        maximum_old_weight_effect_percent=("legacy_weight_effect_percent", "max"),
+        minimum_observed_gap_percent=("gap_percent", "min"),
+        maximum_observed_gap_percent=("gap_percent", "max"),
+    ).reset_index()
+    mo.vstack([
+        mo.md("### How much can weights explain?\n\nThe ranges cover all study vintages and powertrains. Medium-truck tests change old/new GVWR shares while retaining current vocations; the legacy Class 3 Box difference remains in the native-source residual. School-bus legacy weights are the actual workbook formula, not an endorsed fleet assumption."),
+        mo.ui.table(
+            weight_effects, selection=None, pagination=False, show_search=False,
+            show_data_types=False, show_column_summaries=False,
+            format_mapping={column: "{:+.3f}" for column in weight_effects if column.endswith("percent")},
+        ),
+        mo.accordion({"Actual class weights and source basis": mo.ui.table(
+            road_review.weights, selection=None, page_size=15, show_data_types=False,
+            show_column_summaries=False, wrapped_columns=["legacy_basis"],
+            format_mapping={"legacy_weight": "{:.6f}", "current_weight": "{:.6f}", "change_percentage_points": "{:+.4f}"},
+        )}),
+    ])
+    return
+
+
+@app.cell
+def _(diagnostic, mo):
+    ldv_test = mo.ui.dropdown(
+        options={key: key for key in diagnostic.config.road_investment_review.legacy_ldv_powertrains},
+        value="phev_35_miles", label="LDV source/architecture test", searchable=True,
+    )
+    mo.vstack([
+        mo.md("### Why some LDVs still differ by about 20%\n\nThis test compares manufacturing-cost estimates by class before aggregation. Parallel→EREV holds the original ANL case, class, year and dollar basis fixed. ATB→same architecture still contains dollar-year re-expression and other source assumptions. FCEVs have no supported alternative-range test."),
+        ldv_test,
+    ])
+    return (ldv_test,)
+
+
+@app.cell
+def _(diagnostic, ldv_test, mo, road_review):
+    ldv_price_rows = road_review.ldv_architecture.loc[
+        road_review.ldv_architecture.legacy_powertrain.eq(
+            diagnostic.config.road_investment_review.legacy_ldv_powertrains[ldv_test.value]
+        )
+    ].drop_duplicates(["vehicle_class", "vintage"]).copy()
+    for field in ("architecture_factor", "atb_vs_same_architecture_factor", "native_total_factor"):
+        ldv_price_rows[field.replace("factor", "change_percent")] = 100 * (ldv_price_rows[field] - 1)
+    architecture_labels = {
+        "vehicle_class": "Class", "vintage": "Vintage", "legacy_powertrain": "Legacy variant",
+        "same_source_alternative": "Same-source comparison variant",
+        "architecture_change_percent": "Architecture alone (%)",
+        "atb_vs_same_architecture_change_percent": "ATB / same architecture (%)",
+        "native_total_change_percent": "Total native-basis change (%)",
+    }
+    mo.vstack([
+        mo.ui.table(
+            ldv_price_rows[list(architecture_labels)].rename(columns=architecture_labels),
+            selection=None, page_size=15, show_data_types=False, show_column_summaries=False,
+            format_mapping={label: "{:+.3f}" for field, label in architecture_labels.items() if field.endswith("percent")},
+        ),
+        mo.accordion({"Fuel-cell and hydrogen-storage source inputs": mo.vstack([
+            mo.md("The registered ATB archive contains changed component coefficients; official ATB documentation also describes production-volume adjustments. These values support a source-input mechanism, but do not quantify its full-vehicle contribution. The old stack-cost column has conflicting dollar-year labels, and the storage columns have different denominators. No range mismatch is inferred from FCEV400 names."),
+            mo.ui.table(
+                road_review.hydrogen_inputs, selection=None, page_size=10,
+                show_data_types=False, show_column_summaries=False,
+                wrapped_columns=["legacy_component_basis"],
+                format_mapping={column: "{:.6g}" for column in road_review.hydrogen_inputs
+                                if column not in {"vehicle_class", "legacy_component_basis"}},
+            ),
+        ])}),
+    ])
+    return
+
+
+@app.cell
+def _(mo, road_review):
+    mo.vstack([
+        mo.md("### All mechanisms checked and remaining review questions\n\nNumeric evidence refreshes from the current audit and registered sources. Revisit these curated interpretations when changing assumptions. Status distinguishes measured effects, source-input changes, legacy formulas and unsupported explanations. The native-basis residual is exposed rather than assigned to a single cause."),
+        mo.ui.table(
+            road_review.findings, selection=None, pagination=False, show_search=False,
+            show_data_types=False, show_column_summaries=False,
+            wrapped_columns=["status", "driver", "scope", "interpretation", "evidence"],
+        ),
+        mo.md(
+            "**Source documentation:** " + " · ".join(
+                f"[{title}]({url})" for title, url in road_review.metadata["primary_sources"].items()
+            ) + "\n\n**Numerical checks:** maximum factor-identity error "
+            f"{road_review.metadata['maximum_reconciliation_error']:.3g}; maximum legacy worksheet/SQLite "
+            f"difference {road_review.metadata['maximum_workbook_error']:.3g}. "
+            "The explicit report command above also exports all five road-study CSVs with hashes."
+        ),
+    ])
+    return
+
+
+@app.cell
+def _(diagnostic, mo):
     table_picker = mo.ui.dropdown(
         options=diagnostic.summary["table"].drop_duplicates().tolist(),
         value="cost_invest", label="Inspect parameter", searchable=True,

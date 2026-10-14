@@ -33,9 +33,10 @@ def test_reviewed_manual_lifetimes_resolve_actual_template_owners() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=ROOT)
     rows, contexts, resolution = prepare_reviewed_manual_lifetimes(bundle)
 
-    assert len(contexts) == 5
+    assert len(contexts) == 4
     assert len(rows) == len(bundle.scenario.geography.regions) * resolution.tech.nunique()
-    assert len({row.tech for row in rows}) == 34
+    assert len({row.tech for row in rows}) == 27
+    assert not any(row.tech.startswith("T_HDV_T_") for row in rows)
     assert {row.units for row in rows} == {"years"}
     assert {(row.region, row.tech) for row in rows} == {
         (region, tech)
@@ -60,26 +61,33 @@ def test_fixed_road_medians_use_existing_class_contract() -> None:
     rows, contexts = prepare_fixed_road_lifetimes(
         bundle, medians=medians, manual=manual, technology=technology
     )
-    assert len(contexts) == 4
-    assert len(rows) == 10 * 58
+    assert len(contexts) == 5
+    assert len(rows) == 10 * 65
     ontario = {row.tech: row for row in rows if row.region == "ON"}
     assert ontario["T_LDV_C_GSL_EX"].lifetime == 14
     assert ontario["T_LDV_LTP_GSL_EX"].lifetime == 16
     assert ontario["T_LDV_LTF_GSL_EX"].lifetime == 16
     assert ontario["T_MDV_T_DSL_EX"].lifetime == 18
+    assert ontario["T_HDV_T_DSL_EX"].lifetime == 25
     medium_owners = set(technology.loc[technology.category.eq("medium_trucks"), "tech"])
     medium_rows = [row for row in rows if row.tech in medium_owners]
     assert {row.lifetime for row in medium_rows} == {18}
     medium_context = next(context for context in contexts if context.data_id == medium_rows[0].data_id)
     assert {item.source_key for item in medium_context.contributors} == {"nhtsa_cafe_2024_ldv_survival"}
+    heavy_owners = set(technology.loc[technology.category.eq("heavy_trucks"), "tech"])
+    heavy_rows = [row for row in rows if row.tech in heavy_owners]
+    assert {row.lifetime for row in heavy_rows} == {25}
+    heavy_context = next(context for context in contexts if context.data_id == heavy_rows[0].data_id)
+    assert {item.source_key for item in heavy_context.contributors} == {"eia_nems_hd_truck_scrappage"}
     assert {row.units for row in rows} == {"years"}
-    with pytest.raises(ValueError, match="Incomplete source median classes"):
-        prepare_fixed_road_lifetimes(
-            bundle,
-            medians=medians.loc[~medians.target_class.eq("2b/3 Trucks")],
-            manual=manual,
-            technology=technology,
-        )
+    for source_class in ("2b/3 Trucks", "Cls 7-8"):
+        with pytest.raises(ValueError, match="Incomplete source median classes"):
+            prepare_fixed_road_lifetimes(
+                bundle,
+                medians=medians.loc[~medians.target_class.eq(source_class)],
+                manual=manual,
+                technology=technology,
+            )
 
 
 def test_established_fixed_rows_insert_with_full_provenance() -> None:
@@ -198,14 +206,15 @@ def test_survival_period_blocks_and_representation_switch() -> None:
     fixed = prepare_lifetime_rows(fixed_bundle)
     assert len(fixed.fixed_rows) == 1220
     assert fixed.curve_rows == []
-    manual = pd.read_csv(ROOT / "inputs/0_manual_params/lifetime_process.csv")
-    heavy_lifetime = float(manual.loc[
-        manual.category.eq("heavy_trucks") & manual.sub_category.eq("all"), "lifetime"
-    ].iloc[0])
-    assert heavy_lifetime == 19
+    heavy_schedule = transformed.loc[
+        transformed.source_id.eq("eia_nems_hd_truck_scrappage")
+        & transformed.source_class.eq("Cls 7-8")
+    ]
+    assert heavy_schedule.loc[heavy_schedule.age.eq(24), "survival_probability"].item() > 0.5
+    assert heavy_schedule.loc[heavy_schedule.age.eq(25), "survival_probability"].item() <= 0.5
     for category, lifetime, source_id in (
         ("medium_trucks", 18, "nhtsa_cafe_2024_ldv_survival"),
-        ("heavy_trucks", heavy_lifetime, "epa_moves4_population_activity_2023"),
+        ("heavy_trucks", 25, "eia_nems_hd_truck_scrappage"),
     ):
         owners = set(technology.loc[technology.category.eq(category), "tech"])
         selected = [row for row in fixed.fixed_rows if row.tech in owners]
@@ -217,3 +226,4 @@ def test_survival_period_blocks_and_representation_switch() -> None:
             for item in context.contributors
         } == {source_id}
     assert fixed.audit["road_lifetime_sources"]["medium_trucks"]["curve_source_class"] == "2b/3 Trucks"
+    assert fixed.audit["road_lifetime_sources"]["heavy_trucks"]["curve_source_class"] == "Cls 7-8"

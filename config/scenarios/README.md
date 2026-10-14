@@ -33,7 +33,7 @@ it does not create missing caches, mappings, or template periods.
 
 | Section and field | Selections and behavior |
 | --- | --- |
-| `lifetimes.survival_curves` | `true` uses accepted road survival curves; `false` uses configured fixed lifetimes, including source-derived medians for LDVs/medium trucks and the manual heavy-truck lifetime. Other technologies retain their configured fixed lifetime pathway. |
+| `lifetimes.survival_curves` | `true` uses accepted road survival curves; `false` uses configured fixed lifetimes, including source-derived medians for LDVs and medium/heavy trucks. Other technologies retain their configured fixed lifetime pathway. |
 | `lifetimes.survival_curve_max_age` | Maximum supported age for road survival curves and existing-stock cohorts when curves are enabled. The prospective template uses 29 to cover ages 25–29 for vintage 2000 in the first model period; every required source age must exist. Fixed-lifetime cohorts use their class lifetime. |
 | `existing_capacity.vehicle_population_year` | MTO age-evidence year for LDVs, trucks, motorcycles, and buses. It must match the reviewed LDV aggregation artifact and the available Report 5 edition. |
 | `existing_capacity.cleanup_tolerance` | Retain positive road/bus/off-road capacity at or above this threshold in each row's native capacity unit. This is a capacity cutoff, independent of comparison tolerances; it does not trim costs or round parameters. Charger capacities have their own preparation. |
@@ -182,9 +182,9 @@ emissions; there are no parameter-specific aggregation-source selectors.
 
 Medium-truck lifetime products use the single NHTSA CAFE 2b/3 Trucks survival curve for
 every GVWR class in every region. Aggregating identical curves with Report 4 or Wards
-weights leaves their lifetime values unchanged. Heavy trucks use the fixed lifetime in
-`inputs/0_manual_params/lifetime_process.csv` when survival curves are off, and the
-NEMS Classes 7–8 scrappage-derived curve when they are on. Native class maps, weight basis,
+weights leaves their lifetime values unchanged. Heavy trucks use the NEMS Classes 7–8
+scrappage-derived curve when survival curves are on, and its median lifetime when
+they are off. Native class maps, weight basis,
 Wards year and vocation exclusions belong in `rules.yaml` under `road_aggregation`.
 The population year remains a scenario selection and must match the Report A/4/5
 editions consumed by that scenario.

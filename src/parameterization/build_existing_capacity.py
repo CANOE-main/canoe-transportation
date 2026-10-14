@@ -232,7 +232,6 @@ def build_existing_capacity_artifacts(
     lifetime_sources = {
         "nhtsa_cafe_2024_ldv_survival",
         "eia_nems_hd_truck_scrappage",
-        "epa_moves4_population_activity_2023",
         "canada_energy_policy_simulator_3_4_7",
         "emrg_sfu_cims_model",
     }
@@ -336,11 +335,6 @@ def build_existing_capacity_artifacts(
     for frame in (lifetime_frames["medians"], lifetime_frames["transformed_curves"]):
         input_digest.update(frame.to_csv(index=False).encode("utf-8"))
     for category, source_key, component_key in (
-        (
-            "heavy_trucks",
-            "epa_moves4_population_activity_2023",
-            "heavy_duty_truck_lifetimes",
-        ),
         ("motorcycles", "canada_energy_policy_simulator_3_4_7", "motorcycle_lifetimes"),
     ):
         expected_source = (
@@ -454,20 +448,11 @@ def build_existing_capacity_artifacts(
             components.append(survival_source_component(
                 assorted_rules, str(assorted_rules["nhtsa_cafe"]["source_id"]),
             ))
-        elif road_class == "medium_trucks":
+        elif road_class in {"medium_trucks", "heavy_trucks"}:
             components.append(survival_source_component(
                 assorted_rules,
                 str(road_rules["fixed_lifetime_sources"][road_class]["source_id"]),
             ))
-        elif road_class == "heavy_trucks":
-            components.append(
-                survival_source_component(
-                    assorted_rules,
-                    str(road_rules["fixed_lifetime_sources"][road_class]["source_id"]),
-                )
-                if scenario.lifetimes.survival_curves else
-                ("epa_moves4_population_activity_2023", "heavy_duty_truck_lifetimes")
-            )
         elif road_class == "motorcycles":
             components.append(
                 ("canada_energy_policy_simulator_3_4_7", "motorcycle_lifetimes")
