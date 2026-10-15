@@ -39,6 +39,7 @@ from utils import (
 )
 from validation.insertion import (
     cleanup_transport_parameter_batches,
+    compact_parameter_notes,
     validate_parameter_rows,
 )
 from validation.provenance import (
@@ -231,9 +232,9 @@ def build_existing_capacity_artifacts(
             "Selected regional stock-age source has no implemented adapter"
         )
     lifetime_sources = {
-        "nhtsa_cafe_2024_ldv_survival",
+        "nhtsa_cafe_ldv_survival",
         bundle.scenario.lifetimes.heavy_truck_survival_source,
-        "canada_energy_policy_simulator_3_4_7",
+        "canada_energy_policy_simulator",
         "emrg_sfu_cims_model",
     }
     inactive_lifetimes = sorted(lifetime_sources - available_sources)
@@ -336,7 +337,7 @@ def build_existing_capacity_artifacts(
     for frame in (lifetime_frames["medians"], lifetime_frames["transformed_curves"]):
         input_digest.update(frame.to_csv(index=False).encode("utf-8"))
     for category, source_key, component_key in (
-        ("motorcycles", "canada_energy_policy_simulator_3_4_7", "motorcycle_lifetimes"),
+        ("motorcycles", "canada_energy_policy_simulator", "motorcycle_lifetimes"),
     ):
         expected_source = (
             bundle.sources.sources[source_key]
@@ -419,6 +420,12 @@ def build_existing_capacity_artifacts(
     rows: list[ExistingCapacity] = []
     contexts: list[ResolvedProvenance] = []
     input_regions = {road_rules["region_output_map"].get(r, r): r for r in regions}
+    mapping_rules = load_harmonization_rules(bundle, "road_aggregation")
+    mapped_stock = pd.read_csv(
+        resolve_artifact_path(bundle, "road_aggregation")
+        / mapping_rules["mapped_current_stock_file"], low_memory=False,
+    )
+    accepted_mapping = mapped_stock.loc[mapped_stock["mapping_accepted"]]
     for (road_class, vintage, region), group in road_capacity.groupby(
         ["road_class", "vintage", "region"], sort=True
     ):
@@ -431,11 +438,18 @@ def build_existing_capacity_artifacts(
             (selected_sources[input_regions[region]], mto_component),
         ]
         if road_class in road_rules["statcan_ldv_source_types"]:
-            mapping_sources = (
+            mapping_candidates = (
                 "nrcan_fuel_consumption_ratings",
                 "fueleconomy_gov_vehicle_data",
-                "reviewed_mto_make_model_evidence",
             )
+            target_class = road_rules["fixed_lifetime_sources"][road_class]["target_class"]
+            evidence = accepted_mapping.loc[
+                accepted_mapping.nrcan_ceud_class.eq(target_class), "evidence_source",
+            ].fillna("")
+            mapping_sources = [
+                source for source in mapping_candidates
+                if evidence.str.contains(source, regex=False).any()
+            ]
             inactive = sorted(set(mapping_sources) - available_sources)
             if inactive:
                 raise ValueError(
@@ -445,6 +459,7 @@ def build_existing_capacity_artifacts(
                 (source_key, component_key)
                 for source_key in mapping_sources
                 for component_key in bundle.sources.sources[source_key].components
+                if source_key != "fueleconomy_gov_vehicle_data" or component_key == "vehicles"
             )
             components.append(survival_source_component(
                 assorted_rules, str(assorted_rules["nhtsa_cafe"]["source_id"]),
@@ -456,11 +471,12 @@ def build_existing_capacity_artifacts(
             ))
         elif road_class == "motorcycles":
             components.append(
-                ("canada_energy_policy_simulator_3_4_7", "motorcycle_lifetimes")
+                ("canada_energy_policy_simulator", "motorcycle_lifetimes")
             )
         shares = road_shares.loc[
             road_shares["road_class"].eq(road_class)
             & road_shares["vintage"].eq(vintage)
+            & road_shares["region"].eq(region)
         ]
         table_ids = sorted(
             {
@@ -494,11 +510,10 @@ def build_existing_capacity_artifacts(
                         "vintage": int(record.vintage),
                         "capacity": float(record.capacity),
                         "units": record.units,
-                        "notes": f"CEUD {base_year} stock; MTO {scenario.existing_capacity.vehicle_population_year} age; {road_class}",
                     }
                     for record in group.itertuples(index=False)
                 ],
-                context,
+                context, bundle=bundle, compact_notes=False,
             )
         )
     for (road_class, region), group in bus_capacity.groupby(["road_class", "region"], sort=True):
@@ -508,12 +523,20 @@ def build_existing_capacity_artifacts(
             ("nrcan_ceud_transport_provincial", bus_spec["energy_table"]),
             (selected_sources[input_regions[region]], 5),
             ("statcan_transport_tables", str(bus_lifetime_rules["statcan_table_id"])),
-            ("nlr_atb_transportation_2024", "vehicles"),
-            ("nlr_atb_transportation_2024", "phev_vehicle_inputs"),
+            ("nlr_atb_transportation", "vehicles"),
         ]
+        if bus_efficiency.loc[
+            bus_efficiency.road_class.eq(road_class) & bus_efficiency.region.eq(region),
+            "powertrain",
+        ].str.startswith("phev").any():
+            components.extend([
+                ("nlr_atb_transportation", "phev_vehicle_inputs"),
+                ("nlr_atb_transportation", "phev_utility_factor_mdhd"),
+                ("argonne_rd_greet", "fuel_heating_values"),
+            ])
         if road_class == "inter_city_buses":
             components.append(
-                ("epri_us_regen_2025_transportation", "intercity_bus_charts")
+                ("epri_us_regen_transportation", "intercity_bus_charts")
             )
         context = _context(
             bundle, name=f"bus.{road_class}.{region}", components=components, variant=variants
@@ -529,14 +552,10 @@ def build_existing_capacity_artifacts(
                         "vintage": int(record.vintage),
                         "capacity": float(record.capacity),
                         "units": record.units,
-                        "notes": (
-                            f"CEUD {base_year} bus stock; annual fuel activity shares; "
-                            f"MTO {scenario.existing_capacity.vehicle_population_year} BUS ages; {road_class}"
-                        ),
                     }
                     for record in group.itertuples(index=False)
                 ],
-                context,
+                context, bundle=bundle, compact_notes=False,
             )
         )
     for mode, group in offroad_capacity.groupby("mode", sort=True):
@@ -568,11 +587,10 @@ def build_existing_capacity_artifacts(
                         "vintage": int(record.vintage),
                         "capacity": float(record.capacity),
                         "units": record.units,
-                        "notes": f"CEUD same-year energy/intensity; linear cohort retirement; {mode}",
                     }
                     for record in group.itertuples(index=False)
                 ],
-                context,
+                context, bundle=bundle, compact_notes=False,
             )
         )
     cleaned, removed = cleanup_transport_parameter_batches(
@@ -581,7 +599,12 @@ def build_existing_capacity_artifacts(
         first_model_period=min(scenario.periods.model),
         epsilon=scenario.existing_capacity.cleanup_tolerance,
     )
-    rows = cleaned["existing_capacity"]
+    # Place sparse notes after pruning, so a discarded vintage cannot carry
+    # the only copy of a source treatment's annotation.
+    rows = compact_parameter_notes(
+        cleaned["existing_capacity"],
+        bundle.sources.defaults.database_note_keys.get("existing_capacity", ()),
+    )
     removed_capacity = pd.DataFrame(
         [item for item in removed if item["table"] == "existing_capacity"],
         columns=["units", "value"],

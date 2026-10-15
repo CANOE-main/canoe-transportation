@@ -640,7 +640,7 @@ fetching:
         type_output_file: transport_canada_public_ld_chargers_by_type_2026.csv
         source_regions: [Newfoundland and Labrador, Prince Edward Island, Nova Scotia, New Brunswick, Quebec, Ontario, Manitoba, Saskatchewan, Alberta, British Columbia, Yukon, Northwest Territories, Nunavut]
     nhtsa_cafe:
-      source_id: nhtsa_cafe_2024_ldv_survival
+      source_id: nhtsa_cafe_ldv_survival
       component_id: ldv_survival_rates
       output_file: nhtsa_cafe_ldv_survival_rates.csv
       workbook_member: parameters_ref.xlsx
@@ -678,7 +678,7 @@ fetching:
       value_bounds: {minimum: 0.0, maximum: 1.0}
       unit: annual scrappage-rate fraction
     epa_moves5:
-      source_id: epa_moves5_heavy_truck_survival
+      source_id: epa_moves_heavy_truck_survival
       component_id: heavy_truck_survival_rates
       output_file: epa_moves5_heavy_truck_survival_rates.csv
       document_title: Population and Activity of Onroad Vehicles in MOVES5
@@ -714,7 +714,7 @@ fetching:
       expected_years: [2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070, 2075, 2080, 2085, 2090, 2095, 2100]
       duplicate_key: [UCD_technology, UCD_fuel, variable, source_year]
     epri_us_regen:
-      source_id: epri_us_regen_2025_transportation
+      source_id: epri_us_regen_transportation
       component_id: intercity_bus_charts
       page_title: "Transportation | US-REGEN Documentation"
       payload_asset:
@@ -759,7 +759,7 @@ fetching:
           currency: null
           currency_year: null
     faa:
-      source_id: faa_economic_values_2024
+      source_id: faa_economic_values
       minimum_extracted_text_characters: 1000
       capacity_component_id: section_3_capacity
       costs_component_id: section_4_operating_costs
@@ -1274,7 +1274,7 @@ parameterization:
         medium_trucks:
           # One NHTSA CAFE 2b/3 curve for every GVWR class, including Class 2/2b.
           kind: source_median_equal
-          source_id: nhtsa_cafe_2024_ldv_survival
+          source_id: nhtsa_cafe_ldv_survival
           source_classes:
           - 2b/3 Trucks
           curve_source_class: 2b/3 Trucks
@@ -1285,7 +1285,7 @@ parameterization:
             eia_nems_hd_truck_scrappage:
               source_classes: [Cls 7-8]
               curve_source_class: Cls 7-8
-            epa_moves5_heavy_truck_survival:
+            epa_moves_heavy_truck_survival:
               source_classes: ['Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)']
               curve_source_class: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
         motorcycles: {kind: manual, category: motorcycles}

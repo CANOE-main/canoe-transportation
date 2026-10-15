@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from dataclasses import replace
+from pathlib import Path
 import socket
 import sqlite3
 from types import SimpleNamespace
@@ -29,6 +30,7 @@ from parameterization.road_efficiencies import (
 )
 from utils import (
     file_sha256,
+    load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
     resolve_input_path,
@@ -735,3 +737,100 @@ def test_legacy_efficiency_comparison_does_not_invent_network_aliases(tmp_path):
         candidate, reference, absolute_tolerance=1e-9, relative_tolerance=1e-6
     )
     assert result["shared_keys"] == 0
+
+
+def test_efficiency_metadata_uses_the_designated_component_dq():
+    from validation.config_models import DataQuality
+
+    bundle = load_config_bundle(
+        "config/scenarios/default.yaml", repo_root=Path(__file__).resolve().parents[1],
+    )
+    sources = bundle.sources.model_copy(deep=True)
+    primary = DataQuality(dq_cred=2, dq_geog=1, dq_struc=3, dq_tech=2, dq_time=1)
+    secondary = DataQuality(dq_cred=4, dq_geog=3, dq_struc=2, dq_tech=4, dq_time=3)
+    sources.sources[layer.CEUD].components[21].data_quality = primary
+    sources.sources[layer.CEUD].components[20].data_quality = secondary
+    sources.sources[layer.ATB].components["vehicles"].data_quality = secondary
+    context = layer.efficiency_context(
+        replace(bundle, sources=sources),
+        [(layer.CEUD, 21), (layer.CEUD, 20), (layer.ATB, "vehicles")],
+        "fixture", {}, {"transformation_version": "1"},
+    )
+    assert context.data_quality == primary
+    assert len(context.contributors) == 2
+
+
+def test_efficiency_metadata_selects_only_used_manual_rows():
+    manual = pd.DataFrame([
+        {"registered_source_id": "epri_us_regen_transportation", "registered_component_id": "nonroad_efficiency_multipliers"},
+        {"registered_source_id": "argonne_rd_greet", "registered_component_id": "marine_hfo_energy_intensity"},
+    ])
+    base = [("nrcan_ceud_transport_national", 33)]
+    args = dict(
+        bundle=None, mode="freight_marine", rules={"road_classes": {}}, road={},
+        offroad={"energy_intensity_series": {"freight_marine": {"national_table": 33}}},
+        region="ON", powertrain="hfo", year=2020, manual=manual,
+        rating_inputs=None, baseline_inputs=None,
+    )
+    assert layer.efficiency_components(**args, result={"manual_rows": ""}) == base
+    assert layer.efficiency_components(**args, result={"manual_rows": "1"}) == [
+        *base, ("argonne_rd_greet", "marine_hfo_energy_intensity"),
+    ]
+    assert layer.efficiency_components(**args, result={"manual_rows": "0|1"}) == [
+        *base, *map(tuple, manual.to_numpy()),
+    ]
+
+
+def test_efficiency_metadata_narrows_road_family_powertrain_and_time():
+    rules = {
+        "road_classes": {
+            "school_buses": {"pathway": "bus", "stock_table": 31, "intensity_table": 28},
+            "inter_city_buses": {"pathway": "intercity", "stock_table": 31, "intensity_table": 30},
+            "motorcycles": {"pathway": "motorcycle", "intensity_table": 32},
+        },
+        "atb": {"fuel_equivalent_hhv_powertrains": ["diesel", "hev"]},
+    }
+    bundle = SimpleNamespace(scenario=SimpleNamespace(periods=SimpleNamespace(base_year=2023)))
+
+    def components(mode, powertrain, year):
+        return layer.efficiency_components(
+            bundle, mode, rules, {"activity_series": {mode: {"table_id": 27}}}, {},
+            region="ON", powertrain=powertrain, year=year, result={},
+            manual=pd.DataFrame(), rating_inputs=None, baseline_inputs=None,
+        )
+
+    assert components("motorcycles", "gasoline", 2020) == [(layer.CEUD, 32)]
+    assert components("motorcycles", "gasoline", 2030)[-1] == (
+        "jgcri_gcam_motorcycle_inputs", "canada_motorcycle_inputs",
+    )
+    bev = components("school_buses", "bev", 2030)
+    assert bev == [(layer.CEUD, 27), (layer.CEUD, 31), (layer.ATB, "vehicles")]
+    phev = components("school_buses", "phev", 2020)
+    assert (layer.ATB, "phev_utility_factor_mdhd") in phev
+    assert (layer.ATB, "phev_utility_factor_ldv") not in phev
+    assert (layer.ATB, "vehicles") not in phev
+    assert (layer.CEUD, 28) in phev
+    regen = ("epri_us_regen_transportation", "intercity_bus_charts")
+    assert regen in components("inter_city_buses", "bev", 2030)
+    assert regen not in components("inter_city_buses", "hev", 2030)
+
+
+def test_efficiency_metadata_rating_editions_follow_interpolation_endpoints():
+    classified = pd.DataFrame([
+        {"year": year, "powertrain": "gasoline", "rating_class": "Compact", "included": True,
+         "component": component, "classification_method": "source_fuel", "native_unit": "L/100 km"}
+        for year, component in ((2014, "historical"), (2023, "current"), (2026, "future"))
+    ])
+    audit = classified[["year", "powertrain", "rating_class"]].assign(ceud_class="Car")
+    rules = {"road_classes": {"cars": {"weights": "Car"}}, "ratings": {"evidence_source": "epa"}}
+    rating_inputs, _ = layer.ldv_rating_input_resolvers(
+        SimpleNamespace(base_year=2023), classified, audit, rules=rules,
+    )
+    assert rating_inputs("cars", "gasoline", 2014, "native") == (
+        ("nrcan_fuel_consumption_ratings", "historical"),
+    )
+    assert set(rating_inputs("cars", "gasoline", 2018, "mj")) == {
+        ("nrcan_fuel_consumption_ratings", "historical"),
+        ("nrcan_fuel_consumption_ratings", "current"),
+        ("argonne_rd_greet", "fuel_heating_values"),
+    }

@@ -46,7 +46,7 @@ from validation.schema_contract import create_v4_schema
 
 @pytest.fixture
 def bundle():
-    b = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    b = load_config_bundle("config/scenarios/default.yaml")
     payload = b.scenario.model_dump()
     payload["geography"]["regions"] = ["ON"]
     payload["charging_profiles"]["travel_behavior_source"] = "none"
@@ -368,7 +368,7 @@ def test_compact_registered_extract_matches_legacy_notebook_and_market(bundle):
     assert identity["sales_by_powertrain"] == {"BEV": 669951, "PHEV": 185606}
     assert build_request(bundle).expected_bytes == 13977
     assert bundle.sources.sources["epa_omega_baseline"].status == "active"
-    assert bundle.sources.sources["epa_automotive_trends"].status == "inactive"
+    assert "epa_automotive_trends" not in bundle.sources.sources
     assert required_inputs(bundle) == [build_request(bundle).extract_path]
     assert required_inputs(with_mode(bundle, "new_capacity_shares")) == [
         build_request(bundle).extract_path
@@ -651,6 +651,44 @@ def representative_prerequisites(bundle, evidence):
         internal_datasets=(internal,),
         publish=False,
     )
+
+
+@pytest.mark.parametrize("table,component", [
+    ("cost_invest", "vehicles"),
+    ("limit_tech_input_split", "phev_vehicle_inputs"),
+])
+def test_representative_preserves_native_dq_when_omega_support_differs(
+    representative_prerequisites, table, component,
+):
+    bundle, kwargs = representative_prerequisites
+    native = resolve_provenance(
+        bundle.sources, source_key="nlr_atb_transportation",
+        component_key=component, transformation="native_parameter_fixture",
+        transformation_version="1",
+    )
+    assert native.data_quality != kwargs["provenance_contexts"][0].data_quality
+    kwargs["provenance_contexts"].append(native)
+    kwargs["batches"][table] = [
+        type(row).model_validate({**row.model_dump(), **native.parameter_fields()})
+        for row in kwargs["batches"][table]
+    ]
+    result = prepare_representative_parameters(bundle, **kwargs)
+    contexts = {context.data_id: context for context in result.provenance_contexts}
+    representative = [row for row in result.batches[table] if "_REP" in row.tech]
+    assert representative
+    for row in representative:
+        assert row.data_source == native.governing_source_id
+        assert contexts[row.data_id].data_quality == native.data_quality
+        assert {item.source_id for item in contexts[row.data_id].contributors} == {"T06", "T33"}
+        for contributor in contexts[row.data_id].contributors:
+            assert row.notes.count(
+                f"{contributor.source_key}: {contributor.database_note}"
+            ) == 1
+            for component in contributor.components:
+                if component.database_note:
+                    assert row.notes.count(
+                        f"  - {component.component_key}: {component.database_note}"
+                    ) == 1
 
 
 def test_representative_rules_conserve_parameters_and_preserve_stock_and_mhdv(

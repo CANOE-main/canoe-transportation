@@ -73,7 +73,7 @@ def test_truck_stock_eligibility_traces_selected_lifetime_source(
     assert all(row.vintage + 17 > scenario.periods.model[0] for row in motorcycles)
     by_id = {context.data_id: context for context in contexts}
     for prefix, required, absent in (
-        ("T_MDV_T_", "nhtsa_cafe_2024_ldv_survival", "eia_nems_hd_truck_scrappage"),
+        ("T_MDV_T_", "nhtsa_cafe_ldv_survival", "eia_nems_hd_truck_scrappage"),
         (
             "T_HDV_T_",
             "eia_nems_hd_truck_scrappage",

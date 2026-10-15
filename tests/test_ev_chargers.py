@@ -52,6 +52,25 @@ def test_charger_port_capacity_and_provenance(prepared) -> None:
     assert audit["tc_as_of"] == "March 2026"
     assert audit["bev_stock_year"] == 2023
     assert sum(audit["tc_type_counts"].values()) == 39220
+    contexts = {context.data_id: context for context in result.provenance_contexts}
+    assert len({row.data_id for row in result.capacity_rows}) == len(result.capacity_rows)
+    for row in result.capacity_rows:
+        category = "mhdv" if "MHDV" in row.tech else "ldv"
+        context = contexts[row.data_id]
+        assert context.component_key == f"ev_chargers.existing_capacity.{row.region}.{category}"
+        contributors = {item.source_key for item in context.contributors}
+        if category == "mhdv":
+            assert "pollution_probe_ev_charging_survey" not in contributors
+            assert "public ports" not in (row.notes or "")
+            expected = bundle.sources.resolved_data_quality(
+                "dunsky_ev_charging_infrastructure", "charger_shares_and_utilization",
+            )
+        else:
+            assert "pollution_probe_ev_charging_survey" in contributors
+            expected = bundle.sources.resolved_data_quality(
+                "transport_canada_ev_dashboard", "public_light_duty_chargers",
+            )
+        assert context.data_quality == expected
 
 
 def test_charger_costs_utilization_and_efficiency(prepared) -> None:

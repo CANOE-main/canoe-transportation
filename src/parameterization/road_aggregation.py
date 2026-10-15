@@ -26,7 +26,7 @@ ONTARIO_RULE_KEY = "ontario_vehicle_population"
 ROAD_RULE_KEY = "road_aggregation"
 RATINGS_RULE_KEY = "nrcan_fuel_consumption_ratings"
 FUELECONOMY_RULE_KEY = "fueleconomy_vehicle_data"
-WARDS_SOURCE_ID = "wards_intelligence_2022_sales_shares"
+WARDS_SOURCE_ID = "wards_intelligence_sales_shares"
 
 
 def module_rules(bundle: ConfigBundle) -> dict[str, Any]:

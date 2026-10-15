@@ -1,0 +1,2459 @@
+{
+  "task": "Compact source-owned notes, scoped precedence and stable source identities",
+  "date": "2026-10-15",
+  "validation_passed": true,
+  "database": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_baseline.sqlite",
+  "published": true,
+  "source_count": 34,
+  "renames": {
+    "nlr_atb_transportation_2024": "nlr_atb_transportation",
+    "anl_autonomie_bean_2022": "anl_autonomie_bean",
+    "nhtsa_cafe_2024_ldv_survival": "nhtsa_cafe_ldv_survival",
+    "epri_us_regen_2025_transportation": "epri_us_regen_transportation",
+    "faa_economic_values_2024": "faa_economic_values",
+    "wards_intelligence_2022_sales_shares": "wards_intelligence_sales_shares",
+    "open_energy_outlook_2022": "open_energy_outlook",
+    "argonne_rd_greet_2025_rev1": "argonne_rd_greet",
+    "canada_energy_policy_simulator_3_4_7": "canada_energy_policy_simulator",
+    "argonne_hdsam_4_5": "argonne_hdsam",
+    "dunsky_ev_charging_infrastructure_2024": "dunsky_ev_charging_infrastructure",
+    "pollution_probe_ev_charging_survey_2024": "pollution_probe_ev_charging_survey",
+    "nlr_alternative_fueling_infrastructure_2024": "nlr_alternative_fueling_infrastructure",
+    "icct_ev_charge_2024": "icct_ev_charge",
+    "icct_hdv_charge_2024": "icct_hdv_charge",
+    "iea_future_of_hydrogen_2019": "iea_future_of_hydrogen",
+    "epa_moves5_heavy_truck_survival": "epa_moves_heavy_truck_survival"
+  },
+  "retired_source_ids": [
+    "T18",
+    "T22",
+    "T32",
+    "T37",
+    "T38"
+  ],
+  "before_sha256": "774bfa50b35bf49c2b68dc50e5c2801008e7e61143ac3dd3161a2858b531a14b",
+  "after_sha256": "53d7b1c5c5f58e0e7e4e8021811c4ab43d1e5a16a7eb76674049cf7c90fe1c05",
+  "before_database_bytes": 133627904,
+  "database_bytes": 73220096,
+  "model_comparison": {
+    "enabled": true,
+    "mode": "scenario",
+    "reference": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\.tmp_metadata_compaction\\before.sqlite",
+    "absolute_tolerance": 0,
+    "relative_tolerance": 0,
+    "include_provenance": false,
+    "equivalent": true,
+    "changed_tables": [],
+    "tables": {
+      "capacity_credit": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage",
+          "credit"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "capacity_factor_process": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "season",
+          "tod",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "season",
+          "tod",
+          "tech",
+          "vintage",
+          "factor"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "capacity_factor_tech": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "season",
+          "tod",
+          "tech"
+        ],
+        "compared_columns": [
+          "region",
+          "season",
+          "tod",
+          "tech",
+          "factor"
+        ],
+        "candidate_rows": 175200,
+        "reference_rows": 175200,
+        "shared_keys": 175200,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "capacity_to_activity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "c2a",
+          "units"
+        ],
+        "candidate_rows": 980,
+        "reference_rows": 980,
+        "shared_keys": 980,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "commodity": {
+        "comparable": true,
+        "key_columns": [
+          "name"
+        ],
+        "compared_columns": [
+          "name",
+          "flag",
+          "description",
+          "units"
+        ],
+        "candidate_rows": 44,
+        "reference_rows": 44,
+        "shared_keys": 44,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "commodity_label": {
+        "comparable": true,
+        "key_columns": [
+          "commodity"
+        ],
+        "compared_columns": [
+          "commodity"
+        ],
+        "candidate_rows": 44,
+        "reference_rows": 44,
+        "shared_keys": 44,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "commodity_type": {
+        "comparable": true,
+        "key_columns": [
+          "label"
+        ],
+        "compared_columns": [
+          "label",
+          "description"
+        ],
+        "candidate_rows": 8,
+        "reference_rows": 8,
+        "shared_keys": 8,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "construction_input": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "input_comm",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "input_comm",
+          "tech",
+          "vintage",
+          "value",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "cost_emission": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "emis_comm"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "emis_comm",
+          "cost",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "cost_fixed": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage",
+          "cost",
+          "units"
+        ],
+        "candidate_rows": 390,
+        "reference_rows": 390,
+        "shared_keys": 390,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "cost_invest": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "cost",
+          "units"
+        ],
+        "candidate_rows": 4150,
+        "reference_rows": 4150,
+        "shared_keys": 4150,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "cost_variable": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage",
+          "cost",
+          "units"
+        ],
+        "candidate_rows": 14868,
+        "reference_rows": 14868,
+        "shared_keys": 14868,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "data_quality_credibility": {
+        "comparable": true,
+        "key_columns": [
+          "dq_cred"
+        ],
+        "compared_columns": [
+          "dq_cred",
+          "description"
+        ],
+        "candidate_rows": 5,
+        "reference_rows": 5,
+        "shared_keys": 5,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "data_quality_geography": {
+        "comparable": true,
+        "key_columns": [
+          "dq_geog"
+        ],
+        "compared_columns": [
+          "dq_geog",
+          "description"
+        ],
+        "candidate_rows": 5,
+        "reference_rows": 5,
+        "shared_keys": 5,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "data_quality_structure": {
+        "comparable": true,
+        "key_columns": [
+          "dq_struc"
+        ],
+        "compared_columns": [
+          "dq_struc",
+          "description"
+        ],
+        "candidate_rows": 5,
+        "reference_rows": 5,
+        "shared_keys": 5,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "data_quality_technology": {
+        "comparable": true,
+        "key_columns": [
+          "dq_tech"
+        ],
+        "compared_columns": [
+          "dq_tech",
+          "description"
+        ],
+        "candidate_rows": 5,
+        "reference_rows": 5,
+        "shared_keys": 5,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "data_quality_time": {
+        "comparable": true,
+        "key_columns": [
+          "dq_time"
+        ],
+        "compared_columns": [
+          "dq_time",
+          "description"
+        ],
+        "candidate_rows": 5,
+        "reference_rows": 5,
+        "shared_keys": 5,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "demand": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "commodity"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "commodity",
+          "demand",
+          "units"
+        ],
+        "candidate_rows": 700,
+        "reference_rows": 700,
+        "shared_keys": 700,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "demand_specific_distribution": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "season",
+          "tod",
+          "demand_name"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "season",
+          "tod",
+          "demand_name",
+          "dsd"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "efficiency": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "region",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "efficiency",
+          "units"
+        ],
+        "candidate_rows": 6018,
+        "reference_rows": 6018,
+        "shared_keys": 6018,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "efficiency_variable": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "season",
+          "tod",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "region",
+          "season",
+          "tod",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "efficiency"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "emission_activity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "emis_comm",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "region",
+          "emis_comm",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "activity",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "emission_embodied": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "emis_comm",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "emis_comm",
+          "tech",
+          "vintage",
+          "value",
+          "units"
+        ],
+        "candidate_rows": 6900,
+        "reference_rows": 6900,
+        "shared_keys": 6900,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "emission_end_of_life": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "emis_comm",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "emis_comm",
+          "tech",
+          "vintage",
+          "value",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "end_of_life_output": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "output_comm",
+          "value",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "existing_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "capacity",
+          "units"
+        ],
+        "candidate_rows": 1118,
+        "reference_rows": 1118,
+        "shared_keys": 1118,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "lifetime_process": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "lifetime",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "lifetime_survival_curve": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage",
+          "fraction"
+        ],
+        "candidate_rows": 9750,
+        "reference_rows": 9750,
+        "shared_keys": 9750,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "lifetime_tech": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "lifetime",
+          "units"
+        ],
+        "candidate_rows": 570,
+        "reference_rows": 570,
+        "shared_keys": 570,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_activity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech_or_group",
+          "operator",
+          "activity",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_activity_share": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "sub_group",
+          "super_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "sub_group",
+          "super_group",
+          "operator",
+          "share"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_annual_capacity_factor": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "vintage",
+          "output_comm",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "vintage",
+          "output_comm",
+          "operator",
+          "factor"
+        ],
+        "candidate_rows": 5018,
+        "reference_rows": 5018,
+        "shared_keys": 5018,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech_or_group",
+          "operator",
+          "capacity",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_capacity_share": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "sub_group",
+          "super_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "sub_group",
+          "super_group",
+          "operator",
+          "share"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_degrowth_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "operator",
+          "rate",
+          "seed",
+          "seed_units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_degrowth_new_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "operator",
+          "rate",
+          "seed",
+          "seed_units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_degrowth_new_capacity_delta": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "operator",
+          "rate",
+          "seed",
+          "seed_units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_emission": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "emis_comm",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "emis_comm",
+          "operator",
+          "value",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_growth_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "operator",
+          "rate",
+          "seed",
+          "seed_units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_growth_new_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "operator",
+          "rate",
+          "seed",
+          "seed_units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_growth_new_capacity_delta": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "operator",
+          "rate",
+          "seed",
+          "seed_units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_new_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "vintage",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "vintage",
+          "operator",
+          "new_cap",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_new_capacity_share": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "sub_group",
+          "super_group",
+          "vintage",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "sub_group",
+          "super_group",
+          "vintage",
+          "operator",
+          "share"
+        ],
+        "candidate_rows": 900,
+        "reference_rows": 900,
+        "shared_keys": 900,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_resource": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "tech_or_group",
+          "operator",
+          "cum_act",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_seasonal_capacity_factor": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "season",
+          "tech_or_group",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "season",
+          "tech_or_group",
+          "operator",
+          "factor"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_storage_level_fraction": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "season",
+          "tod",
+          "tech",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "season",
+          "tod",
+          "tech",
+          "operator",
+          "fraction"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_tech_input_split": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "input_comm",
+          "tech",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "input_comm",
+          "tech",
+          "operator",
+          "proportion"
+        ],
+        "candidate_rows": 700,
+        "reference_rows": 700,
+        "shared_keys": 700,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_tech_input_split_annual": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "input_comm",
+          "tech",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "input_comm",
+          "tech",
+          "operator",
+          "proportion"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_tech_output_split": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech",
+          "output_comm",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech",
+          "output_comm",
+          "operator",
+          "proportion"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "limit_tech_output_split_annual": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech",
+          "output_comm",
+          "operator"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech",
+          "output_comm",
+          "operator",
+          "proportion"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "linked_tech": {
+        "comparable": true,
+        "key_columns": [
+          "primary_region",
+          "primary_tech",
+          "emis_comm"
+        ],
+        "compared_columns": [
+          "primary_region",
+          "primary_tech",
+          "emis_comm",
+          "driven_tech"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "loan_lifetime_process": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "lifetime",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "loan_rate": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "rate"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "metadata": {
+        "comparable": true,
+        "key_columns": [
+          "element"
+        ],
+        "compared_columns": [
+          "element",
+          "value"
+        ],
+        "candidate_rows": 2,
+        "reference_rows": 2,
+        "shared_keys": 2,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "metadata_real": {
+        "comparable": true,
+        "key_columns": [
+          "element"
+        ],
+        "compared_columns": [
+          "element",
+          "value"
+        ],
+        "candidate_rows": 2,
+        "reference_rows": 2,
+        "shared_keys": 2,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "myopic_efficiency": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "base_year",
+          "region",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "efficiency",
+          "lifetime"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "operator": {
+        "comparable": true,
+        "key_columns": [
+          "operator"
+        ],
+        "compared_columns": [
+          "operator"
+        ],
+        "candidate_rows": 3,
+        "reference_rows": 3,
+        "shared_keys": 3,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_built_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "scenario",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "tech",
+          "vintage",
+          "capacity",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_cost": {
+        "comparable": true,
+        "key_columns": [
+          "scenario",
+          "region",
+          "period",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "tech",
+          "vintage",
+          "d_invest",
+          "d_fixed",
+          "d_var",
+          "d_emiss",
+          "invest",
+          "fixed",
+          "var",
+          "emiss",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_curtailment": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "scenario",
+          "period",
+          "season",
+          "tod",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "season",
+          "tod",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "curtailment",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_dual_variable": {
+        "comparable": true,
+        "key_columns": [
+          "constraint_name",
+          "scenario"
+        ],
+        "compared_columns": [
+          "scenario",
+          "constraint_name",
+          "dual"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_emission": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "scenario",
+          "period",
+          "emis_comm",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "emis_comm",
+          "tech",
+          "vintage",
+          "emission",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_flow_in": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "scenario",
+          "period",
+          "season",
+          "tod",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "season",
+          "tod",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "flow",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_flow_out": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "scenario",
+          "period",
+          "season",
+          "tod",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "season",
+          "tod",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "flow",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_flow_out_summary": {
+        "comparable": true,
+        "key_columns": [
+          "scenario",
+          "region",
+          "period",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "flow"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_net_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "scenario",
+          "period",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "tech",
+          "vintage",
+          "capacity",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_objective": {
+        "comparable": true,
+        "comparison_grain": "unkeyed exact row multiset",
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "candidate_only_rows": 0,
+        "reference_only_rows": 0
+      },
+      "output_retired_capacity": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "scenario",
+          "period",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "tech",
+          "vintage",
+          "cap_eol",
+          "cap_early",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "output_storage_level": {
+        "comparable": true,
+        "key_columns": [
+          "scenario",
+          "region",
+          "period",
+          "season",
+          "tod",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "scenario",
+          "region",
+          "sector",
+          "period",
+          "season",
+          "tod",
+          "tech",
+          "vintage",
+          "level",
+          "units"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "planning_reserve_margin": {
+        "comparable": true,
+        "key_columns": [
+          "region"
+        ],
+        "compared_columns": [
+          "region",
+          "margin"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "ramp_down_hourly": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "rate"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "ramp_up_hourly": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "rate"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "region": {
+        "comparable": true,
+        "key_columns": [
+          "region"
+        ],
+        "compared_columns": [
+          "region"
+        ],
+        "candidate_rows": 10,
+        "reference_rows": 10,
+        "shared_keys": 10,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "reserve_capacity_derate": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "season",
+          "tech",
+          "vintage"
+        ],
+        "compared_columns": [
+          "region",
+          "season",
+          "tech",
+          "vintage",
+          "factor"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "rps_requirement": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "period",
+          "tech_group"
+        ],
+        "compared_columns": [
+          "region",
+          "period",
+          "tech_group",
+          "requirement"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "sector_label": {
+        "comparable": true,
+        "key_columns": [
+          "sector"
+        ],
+        "compared_columns": [
+          "sector"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "storage_duration": {
+        "comparable": true,
+        "key_columns": [
+          "region",
+          "tech"
+        ],
+        "compared_columns": [
+          "region",
+          "tech",
+          "duration"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "tech_group": {
+        "comparable": true,
+        "key_columns": [
+          "group_name"
+        ],
+        "compared_columns": [
+          "group_name"
+        ],
+        "candidate_rows": 24,
+        "reference_rows": 24,
+        "shared_keys": 24,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "tech_group_label": {
+        "comparable": true,
+        "key_columns": [
+          "group_name"
+        ],
+        "compared_columns": [
+          "group_name"
+        ],
+        "candidate_rows": 24,
+        "reference_rows": 24,
+        "shared_keys": 24,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "tech_group_member": {
+        "comparable": true,
+        "key_columns": [
+          "group_name",
+          "tech"
+        ],
+        "compared_columns": [
+          "group_name",
+          "tech"
+        ],
+        "candidate_rows": 36,
+        "reference_rows": 36,
+        "shared_keys": 36,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "technology": {
+        "comparable": true,
+        "key_columns": [
+          "tech"
+        ],
+        "compared_columns": [
+          "tech",
+          "flag",
+          "sector",
+          "category",
+          "sub_category",
+          "unlim_cap",
+          "annual",
+          "reserve",
+          "curtail",
+          "retire",
+          "flex",
+          "exchange",
+          "seas_stor",
+          "description"
+        ],
+        "candidate_rows": 138,
+        "reference_rows": 138,
+        "shared_keys": 138,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "technology_label": {
+        "comparable": true,
+        "key_columns": [
+          "tech"
+        ],
+        "compared_columns": [
+          "tech"
+        ],
+        "candidate_rows": 138,
+        "reference_rows": 138,
+        "shared_keys": 138,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "technology_type": {
+        "comparable": true,
+        "key_columns": [
+          "label"
+        ],
+        "compared_columns": [
+          "label",
+          "description"
+        ],
+        "candidate_rows": 3,
+        "reference_rows": 3,
+        "shared_keys": 3,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "time_of_day": {
+        "comparable": true,
+        "key_columns": [
+          "tod"
+        ],
+        "compared_columns": [
+          "sequence",
+          "tod",
+          "hours"
+        ],
+        "candidate_rows": 24,
+        "reference_rows": 24,
+        "shared_keys": 24,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "time_period": {
+        "comparable": true,
+        "key_columns": [
+          "period"
+        ],
+        "compared_columns": [
+          "sequence",
+          "period",
+          "flag"
+        ],
+        "candidate_rows": 11,
+        "reference_rows": 11,
+        "shared_keys": 11,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "time_period_type": {
+        "comparable": true,
+        "key_columns": [
+          "label"
+        ],
+        "compared_columns": [
+          "label",
+          "description"
+        ],
+        "candidate_rows": 2,
+        "reference_rows": 2,
+        "shared_keys": 2,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "time_season": {
+        "comparable": true,
+        "key_columns": [
+          "season"
+        ],
+        "compared_columns": [
+          "sequence",
+          "season",
+          "segment_fraction"
+        ],
+        "candidate_rows": 365,
+        "reference_rows": 365,
+        "shared_keys": 365,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      },
+      "time_season_sequential": {
+        "comparable": true,
+        "key_columns": [
+          "seas_seq"
+        ],
+        "compared_columns": [
+          "sequence",
+          "seas_seq",
+          "season",
+          "segment_fraction"
+        ],
+        "candidate_rows": 0,
+        "reference_rows": 0,
+        "shared_keys": 0,
+        "candidate_only_keys": 0,
+        "reference_only_keys": 0,
+        "value_differences": 0,
+        "difference_examples": []
+      }
+    },
+    "status": "diagnostic; scenario differences do not imply failed integrity or feasibility"
+  },
+  "note_totals": {
+    "external_rows": 225532,
+    "before_annotated_rows": 226282,
+    "annotated_rows": 1233,
+    "before_note_bytes": 54774729,
+    "note_bytes": 895914,
+    "source_changes": 7346,
+    "dq_changes": 7346
+  },
+  "tables": {
+    "capacity_factor_tech": {
+      "rows": 175200,
+      "external_rows": 175200,
+      "before_annotated_rows": 175200,
+      "annotated_rows": 365,
+      "before_note_bytes": 28740100,
+      "note_bytes": 136510,
+      "placement_keys": [
+        "season"
+      ],
+      "source_row_counts": {
+        "T31": 175200
+      },
+      "source_changes": 0,
+      "dq_changes": 0
+    },
+    "cost_invest": {
+      "rows": 4150,
+      "external_rows": 4150,
+      "before_annotated_rows": 4150,
+      "annotated_rows": 90,
+      "before_note_bytes": 2167550,
+      "note_bytes": 83478,
+      "placement_keys": [
+        "tech"
+      ],
+      "source_row_counts": {
+        "T15": 600,
+        "T12": 250,
+        "T06": 3100,
+        "T11": 100,
+        "T24": 100
+      },
+      "source_changes": 0,
+      "dq_changes": 0
+    },
+    "cost_fixed": {
+      "rows": 390,
+      "external_rows": 390,
+      "before_annotated_rows": 390,
+      "annotated_rows": 4,
+      "before_note_bytes": 222190,
+      "note_bytes": 3584,
+      "placement_keys": [
+        "tech"
+      ],
+      "source_row_counts": {
+        "T16": 390
+      },
+      "source_changes": 390,
+      "dq_changes": 390
+    },
+    "cost_variable": {
+      "rows": 14868,
+      "external_rows": 14868,
+      "before_annotated_rows": 14868,
+      "annotated_rows": 126,
+      "before_note_bytes": 10289690,
+      "note_bytes": 154353,
+      "placement_keys": [
+        "tech"
+      ],
+      "source_row_counts": {
+        "T13": 884,
+        "T07": 5285,
+        "T16": 1576,
+        "T06": 6783,
+        "T11": 340
+      },
+      "source_changes": 1576,
+      "dq_changes": 1576
+    },
+    "demand": {
+      "rows": 700,
+      "external_rows": 700,
+      "before_annotated_rows": 700,
+      "annotated_rows": 14,
+      "before_note_bytes": 255900,
+      "note_bytes": 9398,
+      "placement_keys": [
+        "commodity"
+      ],
+      "source_row_counts": {
+        "T01": 450,
+        "T02": 250
+      },
+      "source_changes": 250,
+      "dq_changes": 250
+    },
+    "efficiency": {
+      "rows": 6018,
+      "external_rows": 5268,
+      "before_annotated_rows": 6018,
+      "annotated_rows": 137,
+      "before_note_bytes": 3727584,
+      "note_bytes": 176272,
+      "placement_keys": [
+        "tech"
+      ],
+      "source_row_counts": {
+        "T02": 224,
+        "T12": 842,
+        "T06": 3427,
+        "T08": 527,
+        "T11": 100,
+        "T01": 30,
+        "T28": 60,
+        "T29": 58
+      },
+      "source_changes": 4896,
+      "dq_changes": 4896
+    },
+    "existing_capacity": {
+      "rows": 1118,
+      "external_rows": 1118,
+      "before_annotated_rows": 1118,
+      "annotated_rows": 70,
+      "before_note_bytes": 986573,
+      "note_bytes": 117787,
+      "placement_keys": [
+        "tech"
+      ],
+      "source_row_counts": {
+        "T01": 876,
+        "T02": 224,
+        "T24": 18
+      },
+      "source_changes": 234,
+      "dq_changes": 234
+    },
+    "lifetime_tech": {
+      "rows": 570,
+      "external_rows": 570,
+      "before_annotated_rows": 570,
+      "annotated_rows": 75,
+      "before_note_bytes": 140276,
+      "note_bytes": 25468,
+      "placement_keys": [
+        "tech"
+      ],
+      "source_row_counts": {
+        "T20": 20,
+        "T15": 180,
+        "T04": 300,
+        "T16": 40,
+        "T19": 30
+      },
+      "source_changes": 0,
+      "dq_changes": 0
+    },
+    "lifetime_survival_curve": {
+      "rows": 9750,
+      "external_rows": 9750,
+      "before_annotated_rows": 9750,
+      "annotated_rows": 65,
+      "before_note_bytes": 3021340,
+      "note_bytes": 27074,
+      "placement_keys": [
+        "tech"
+      ],
+      "source_row_counts": {
+        "T39": 1050,
+        "T09": 8700
+      },
+      "source_changes": 0,
+      "dq_changes": 0
+    },
+    "limit_annual_capacity_factor": {
+      "rows": 5018,
+      "external_rows": 5018,
+      "before_annotated_rows": 5018,
+      "annotated_rows": 102,
+      "before_note_bytes": 1377176,
+      "note_bytes": 41717,
+      "placement_keys": [
+        "tech_or_group"
+      ],
+      "source_row_counts": {
+        "T01": 4900,
+        "T24": 118
+      },
+      "source_changes": 0,
+      "dq_changes": 0
+    },
+    "limit_tech_input_split": {
+      "rows": 700,
+      "external_rows": 700,
+      "before_annotated_rows": 700,
+      "annotated_rows": 8,
+      "before_note_bytes": 521900,
+      "note_bytes": 10146,
+      "placement_keys": [
+        "tech"
+      ],
+      "source_row_counts": {
+        "T06": 700
+      },
+      "source_changes": 0,
+      "dq_changes": 0
+    },
+    "limit_new_capacity_share": {
+      "rows": 900,
+      "external_rows": 900,
+      "before_annotated_rows": 900,
+      "annotated_rows": 18,
+      "before_note_bytes": 284400,
+      "note_bytes": 6228,
+      "placement_keys": [
+        "sub_group"
+      ],
+      "source_row_counts": {
+        "T33": 900
+      },
+      "source_changes": 0,
+      "dq_changes": 0
+    },
+    "emission_embodied": {
+      "rows": 6900,
+      "external_rows": 6900,
+      "before_annotated_rows": 6900,
+      "annotated_rows": 159,
+      "before_note_bytes": 3040050,
+      "note_bytes": 103899,
+      "placement_keys": [
+        "tech",
+        "emis_comm"
+      ],
+      "source_row_counts": {
+        "T17": 6900
+      },
+      "source_changes": 0,
+      "dq_changes": 0
+    }
+  },
+  "examples": {
+    "capacity_factor_tech": {
+      "region": "AB",
+      "season": "D001",
+      "tod": "H01",
+      "tech": "T_LDV_CHRG_EX",
+      "notes": "legacy_charging_profiles: Frozen Ontario RAMP-mobility charging simulations using 2018 weather and embedded fleet, range and charger composition; normalized load shapes, not measured charger utilization.\n  - nhts: Ontario charging simulation with NHTS 2022 travel inputs and 2018 weather; inherited BEV fleet and charger mix also proxy other regions and shared LDV charging.",
+      "data_source": "T31",
+      "dq_cred": 3,
+      "dq_geog": 2,
+      "dq_struc": 3,
+      "dq_tech": 3,
+      "dq_time": 3
+    },
+    "cost_invest": {
+      "region": "AB",
+      "tech": "T_HDV_AJF_JFL_N",
+      "vintage": 2025,
+      "notes": "cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.\n  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.\nfaa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.\n  - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.\nemrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.\n  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",
+      "data_source": "T15",
+      "dq_cred": 3,
+      "dq_geog": 2,
+      "dq_struc": 3,
+      "dq_tech": 2,
+      "dq_time": 2
+    },
+    "cost_fixed": {
+      "region": "AB",
+      "period": 2025,
+      "tech": "T_LDV_CHRG_EX",
+      "vintage": 2020,
+      "notes": "cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.\n  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.\nopen_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios and charging-infrastructure fixed costs and lifetime.\n  - charger_fixed_cost_ratio: Annual charger fixed operating cost assumed proportional to investment cost; the reviewed ratio is common to charger classes.\ndunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.\nnlr_alternative_fueling_infrastructure: U.S. residential L1 port cost estimate, represented by the reviewed cost midpoint and normalized to rated charging power in 2021 USD.",
+      "data_source": "T16",
+      "dq_cred": 3,
+      "dq_geog": 3,
+      "dq_struc": 3,
+      "dq_tech": 3,
+      "dq_time": 3
+    },
+    "cost_variable": {
+      "region": "AB",
+      "period": 2025,
+      "tech": "T_HDV_AJF_JFL_EX",
+      "vintage": 2000,
+      "notes": "cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.\n  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.\nfaa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.\n  - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.\n  - section_4_operating_costs: Passenger and freight All Aircraft maintenance expense per block hour in reviewed 2023 USD; underlying carrier data end in June 2023.",
+      "data_source": "T13",
+      "dq_cred": 1,
+      "dq_geog": 3,
+      "dq_struc": 2,
+      "dq_tech": 2,
+      "dq_time": 2
+    },
+    "demand": {
+      "region": "AB",
+      "period": 2025,
+      "commodity": "T_D_pkm_ldv_c",
+      "notes": "nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.\n  - 20: Provincial passenger-car service activity in passenger-kilometres.\ncer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.\n  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",
+      "data_source": "T01",
+      "dq_cred": 2,
+      "dq_geog": 1,
+      "dq_struc": 2,
+      "dq_tech": 2,
+      "dq_time": 1
+    },
+    "efficiency": {
+      "region": "AB",
+      "input_comm": "T_jtf",
+      "tech": "T_HDV_AJF_JFL_EX",
+      "vintage": 2000,
+      "output_comm": "T_D_tkm_hdv_aj",
+      "notes": "nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.",
+      "data_source": "T02",
+      "dq_cred": 2,
+      "dq_geog": 2,
+      "dq_struc": 3,
+      "dq_tech": 2,
+      "dq_time": 1
+    },
+    "existing_capacity": {
+      "region": "AB",
+      "tech": "T_LDV_C_DSL_EX",
+      "vintage": 2000,
+      "notes": "nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.\n  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.\nontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.\n  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.\nstatcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.\n  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.\nnrcan_fuel_consumption_ratings: Canadian vehicle-model test ratings and electric ranges; fleet aggregation and historical indexing are applied separately, and rated consumption does not measure in-use fleet performance.\n  - plug_in_hybrid_2012_2026: Canadian PHEV ratings with charge-sustaining fuel consumption, electric range and charge-depleting rating fields; their distinct energy and operating-mode meanings are retained.\nnhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.\nfueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class records used to corroborate Canadian vehicle classification; model names and classes require harmonization.",
+      "data_source": "T01",
+      "dq_cred": 2,
+      "dq_geog": 1,
+      "dq_struc": 2,
+      "dq_tech": 2,
+      "dq_time": 1
+    },
+    "lifetime_tech": {
+      "region": "AB",
+      "tech": "T_H2_LDV_REFUEL",
+      "notes": "argonne_hdsam: Gaseous-hydrogen refueling dispenser lifetime from HDSAM v4.5 economic assumptions, applied to the hydrogen-refueling technology category.",
+      "data_source": "T20",
+      "dq_cred": 2,
+      "dq_geog": 3,
+      "dq_struc": 1,
+      "dq_tech": 1,
+      "dq_time": 1
+    },
+    "lifetime_survival_curve": {
+      "region": "AB",
+      "period": 2025,
+      "tech": "T_HDV_T_BEV_N",
+      "vintage": 2025,
+      "notes": "epa_moves_heavy_truck_survival: Conditional annual survival for a pooled U.S. heavy-duty class, based on model-year-1980 evidence extended to age 40; a proxy for current Canadian trucks.",
+      "data_source": "T39",
+      "dq_cred": 2,
+      "dq_geog": 3,
+      "dq_struc": 3,
+      "dq_tech": 3,
+      "dq_time": 4
+    },
+    "limit_annual_capacity_factor": {
+      "region": "AB",
+      "tech_or_group": "T_LDV_C_BEV150_N",
+      "vintage": 2025,
+      "output_comm": "T_D_pkm_ldv_c",
+      "operator": "e",
+      "notes": "nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.\n  - 20: Provincial passenger-car service activity in passenger-kilometres.\n  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.",
+      "data_source": "T01",
+      "dq_cred": 2,
+      "dq_geog": 1,
+      "dq_struc": 2,
+      "dq_tech": 2,
+      "dq_time": 1
+    },
+    "limit_tech_input_split": {
+      "region": "AB",
+      "period": 2025,
+      "input_comm": "T_dsl",
+      "tech": "T_BLND_DSL_ELC_HDV",
+      "operator": "e",
+      "notes": "statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.\n  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.\nnlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.\n  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.\n  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.\nargonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.\n  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",
+      "data_source": "T06",
+      "dq_cred": 2,
+      "dq_geog": 3,
+      "dq_struc": 2,
+      "dq_tech": 2,
+      "dq_time": 2
+    },
+    "limit_new_capacity_share": {
+      "region": "AB",
+      "sub_group": "canoe_transport_range:cars:bev:bev_150_miles",
+      "super_group": "canoe_transport_range:cars:bev",
+      "vintage": 2025,
+      "operator": "ge",
+      "notes": "epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.\n  - baseline_sales_ranges.range_share_floor: Range shares constrain new within-class/powertrain capacity; they do not specify adoption or historical stock.",
+      "data_source": "T33",
+      "dq_cred": 2,
+      "dq_geog": 3,
+      "dq_struc": 3,
+      "dq_tech": 2,
+      "dq_time": 3
+    },
+    "emission_embodied": {
+      "region": "AB",
+      "emis_comm": "ch4",
+      "tech": "T_HDV_T_BEV_N",
+      "vintage": 2025,
+      "notes": "statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.\n  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.\nargonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.\n  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",
+      "data_source": "T17",
+      "dq_cred": 2,
+      "dq_geog": 3,
+      "dq_struc": 3,
+      "dq_tech": 3,
+      "dq_time": 3
+    }
+  },
+  "integrity": "ok",
+  "foreign_key_violations": 0,
+  "special_note_counts": {
+    "phev_hev_proxy": 9,
+    "canada_fallback": 18
+  },
+  "statcan_canada_fallback_parameter_rows": 116,
+  "ordinary_build_seconds": 983.31,
+  "git_diff_check": "passed",
+  "network_denied": true,
+  "annotation_workbook_reads_denied": true,
+  "registered_input_writes_denied": true,
+  "focused_validation": {
+    "core_command": "uv run --offline --no-sync pytest tests/test_sparse_metadata.py tests/test_database_precedence.py tests/test_parameter_validation.py tests/test_provenance.py tests/test_transport_parameter_support.py -q",
+    "core_tests_passed": 56,
+    "additional_config_tests_passed": 70,
+    "additional_parameterization_tests_passed": 47,
+    "additional_source_identity_tests_passed": 21,
+    "ruff": "passed on changed runtime and tests",
+    "stock_cleanup_regression": "1100 rows with unchanged values; 67 notes retain all source treatments after pruning 392 negligible rows"
+  },
+  "remaining_evidence_judgments": [
+    "GCAM 2005-dollar motorcycle costs: USD interpretation remains provisional; current registry annotation and harmonization retain the existing assumption.",
+    "BEAN and NHTSA underlying empirical observation years remain unspecified; existing qualified temporal assessments are retained.",
+    "Inactive growth research remains unscored for future transport use; no research scores are presented as reviewed production assessments."
+  ],
+  "note_authority": "config/sources.yaml source/component notes and named conditional variants",
+  "precedence_policy": "Unique scoped actual contributor; existing DQ resolution; reject ambiguity; native governor if no matching declaration"
+}

@@ -29,7 +29,7 @@ from validation.schema_contract import create_v4_schema
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = "config/scenarios/legacy_reproduction.yaml"
 NEMS = "eia_nems_hd_truck_scrappage"
-MOVES = "epa_moves5_heavy_truck_survival"
+MOVES = "epa_moves_heavy_truck_survival"
 
 
 def selected_bundle(bundle, source, curves):

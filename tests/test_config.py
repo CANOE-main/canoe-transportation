@@ -21,7 +21,7 @@ from validation.config_smoke import run_smoke_validation
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 def test_config_bundle_loads_typed_contracts() -> None:
@@ -29,7 +29,7 @@ def test_config_bundle_loads_typed_contracts() -> None:
 
     assert bundle.paths.inputs.template == "inputs/0_canoe_template"
     assert bundle.paths.inputs.validation == "inputs/validation"
-    assert bundle.scenario.scenario.name == "legacy_reproduction"
+    assert bundle.scenario.scenario.name == "baseline"
     assert bundle.scenario.geography.regions == ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
     assert bundle.scenario.periods.period_mode == "prospective"
     assert bundle.scenario.periods.existing == [2000, 2005, 2010, 2015, 2020]
@@ -60,7 +60,7 @@ def test_config_bundle_loads_typed_contracts() -> None:
     assert bundle.scenario.sources.selections["transport_canada_ev_dashboard"].year == 2026
     assert bundle.scenario.aggregation_sources.source_for("stock_age", "QC") == "ontario_ministry_transport_vehicle_population"
     assert bundle.scenario.existing_capacity.cleanup_tolerance == 0.001
-    assert bundle.scenario.aggregation_sources.source_for("medium_trucks", "QC") == "wards_intelligence_2022_sales_shares"
+    assert bundle.scenario.aggregation_sources.source_for("medium_trucks", "QC") == "wards_intelligence_sales_shares"
     assert bundle.scenario.ev_chargers.ld_evs_per_port == 1.0
     assert bundle.scenario.ev_chargers.mhd_evs_per_port == 1.5
     assert bundle.scenario.economics.global_discount_rate == 0.03
@@ -78,7 +78,7 @@ def test_registry_owns_source_availability_and_template_is_not_a_source() -> Non
     assert "active" not in type(bundle.scenario.sources).model_fields
     assert bundle.sources.sources["cer_canadas_energy_future"].status == "active"
     assert (
-        bundle.sources.sources["wards_intelligence_2022_sales_shares"].status
+        bundle.sources.sources["wards_intelligence_sales_shares"].status
         == "active"
     )
     assert "canoe_transport_template" not in bundle.sources.sources
@@ -145,13 +145,13 @@ def test_source_components_follow_road_and_offroad_owners() -> None:
     assert provincial.component("14").parameter_modules == [
         "offroad_stocks_and_demands"
     ]
-    assert sources["nhtsa_cafe_2024_ldv_survival"].component(
+    assert sources["nhtsa_cafe_ldv_survival"].component(
         "ldv_survival_rates"
     ).parameter_modules == ["road_lifetimes_survival"]
     assert sources["emrg_sfu_cims_model"].component(
         "transport_process_lifetimes"
     ).parameter_modules == ["offroad_lifetimes"]
-    assert sources["dunsky_ev_charging_infrastructure_2024"].component(
+    assert sources["dunsky_ev_charging_infrastructure"].component(
         "charger_shares_and_utilization"
     ).parameter_modules == ["ev_chargers"]
 
@@ -160,16 +160,16 @@ def test_absolute_and_relative_component_roles_are_distinct() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     sources = bundle.sources.sources
 
-    assert sources["epri_us_regen_2025_transportation"].component(
+    assert sources["epri_us_regen_transportation"].component(
         "nonroad_cost_invest_multipliers"
     ).produces == ["cost_invest_multiplier"]
-    assert sources["epri_us_regen_2025_transportation"].component(
+    assert sources["epri_us_regen_transportation"].component(
         "nonroad_efficiency_multipliers"
     ).produces == ["efficiency_multiplier"]
-    assert sources["open_energy_outlook_2022"].component(
+    assert sources["open_energy_outlook"].component(
         "transport_variable_cost_multipliers"
     ).produces == ["cost_variable_multiplier"]
-    assert sources["argonne_rd_greet_2025_rev1"].component(
+    assert sources["argonne_rd_greet"].component(
         "marine_hfo_energy_intensity"
     ).produces == ["efficiency_multiplier"]
 
@@ -184,11 +184,11 @@ def test_absolute_and_relative_component_roles_are_distinct() -> None:
 def test_inactive_registry_source_cannot_be_selected(tmp_path: Path) -> None:
     _, sources_path, scenario = _write_config_copy(tmp_path)
     source_payload = yaml.safe_load(sources_path.read_text(encoding="utf-8"))
-    source_payload["sources"]["wards_intelligence_2022_sales_shares"]["status"] = "inactive"
+    source_payload["sources"]["wards_intelligence_sales_shares"]["status"] = "inactive"
     sources_path.write_text(yaml.safe_dump(source_payload, sort_keys=False), encoding="utf-8")
     payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
     payload["aggregation_sources"]["medium_trucks"]["other"] = "ontario_ministry_transport_vehicle_population"
-    payload["sources"]["selections"]["wards_intelligence_2022_sales_shares"] = {
+    payload["sources"]["selections"]["wards_intelligence_sales_shares"] = {
         "year": 2022
     }
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
@@ -267,7 +267,7 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     status = run_smoke_validation(SCENARIO)
 
     assert status["ok"] is True
-    assert status["scenario"] == "legacy_reproduction"
+    assert status["scenario"] == "baseline"
     assert status["periods"] == {
         "period_mode": "prospective",
         "base_year": 2023,
@@ -278,13 +278,13 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert status["packaged_schema"]["package_commit"].startswith("1e68c377")
     assert status["reference_sqlite_exists"] is True
     assert "cer_canadas_energy_future" in status["active_sources"]
-    assert "wards_intelligence_2022_sales_shares" in status["active_sources"]
+    assert "wards_intelligence_sales_shares" in status["active_sources"]
     assert status["parameter_options"]["lifetimes"] == {
         "survival_curves": True,
         "survival_curve_max_age": 29,
-        "heavy_truck_survival_source": "eia_nems_hd_truck_scrappage",
+        "heavy_truck_survival_source": "epa_moves_heavy_truck_survival",
     }
-    assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_2022_sales_shares"
+    assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_sales_shares"
     assert status["parameter_options"]["charging_profiles"]["travel_behavior_source"] == "nhts"
     assert status["parameter_options"]["BEV_PHEV_range_representation"]["mode"] == "new_capacity_shares"
 
@@ -348,7 +348,7 @@ def test_heavy_truck_survival_source_is_checked_before_io(tmp_path: Path, select
     _, sources, scenario = _write_config_copy(tmp_path)
     payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
     source_payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
-    selected = "epa_moves5_heavy_truck_survival"
+    selected = "epa_moves_heavy_truck_survival"
     if selection == "unknown":
         selected = "unregistered_survival"
     else:
@@ -371,7 +371,7 @@ def test_scenario_aggregation_sources_are_checked_against_registry_before_io(
         selected = "unregistered_qc"
         message = "unknown or inactive"
     elif selection == "inactive":
-        selected = "wards_intelligence_2022_sales_shares"
+        selected = "wards_intelligence_sales_shares"
         source_payload["sources"][selected]["status"] = "inactive"
         message = "unknown or inactive"
     else:
@@ -507,7 +507,7 @@ def test_data_quality_outside_v4_enum_is_rejected(tmp_path: Path) -> None:
 def test_source_data_quality_placeholders_are_registry_owned() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     quality = bundle.sources.sources[
-        "nrcan_ceud_transport_provincial"
+        "hatch_original_growth_evidence"
     ].data_quality
 
     assert set(quality.missing_fields()) == {"dq_cred", "dq_geog", "dq_struc", "dq_tech", "dq_time"}
@@ -604,7 +604,7 @@ def test_demand_and_currency_cer_choices_are_independent(tmp_path: Path) -> None
     assert selected.scenario.economics.cer_scenario == "Lower Scenario"
 
 
-def test_rules_modules_have_one_owner_and_source_placeholders_are_explicit() -> None:
+def test_rules_modules_have_one_owner_and_source_annotations_are_explicit() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     payload = load_parameter_yaml(bundle, "rules.yaml")
     assert not (payload["fetching"].keys() & payload["parameterization"].keys())
@@ -613,7 +613,8 @@ def test_rules_modules_have_one_owner_and_source_placeholders_are_explicit() -> 
             assert load_harmonization_rules(bundle, name) == rules
     raw_sources = load_yaml(bundle.sources_path)["sources"]
     for source in raw_sources.values():
-        assert source["database_note"] == ""
-        assert source["data_quality"] == dict.fromkeys(
-            ("dq_cred", "dq_geog", "dq_struc", "dq_tech", "dq_time"), None,
-        )
+        assert isinstance(source["database_note"], str) and source["database_note"].strip()
+        assert set(source["data_quality"]) == {
+            "dq_cred", "dq_geog", "dq_struc", "dq_tech", "dq_time",
+        }
+        assert all(value is None or 1 <= value <= 5 for value in source["data_quality"].values())

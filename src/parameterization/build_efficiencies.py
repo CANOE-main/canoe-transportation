@@ -9,6 +9,7 @@ import logging
 import re
 import zipfile
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 
 import numpy as np
@@ -47,12 +48,11 @@ from validation.provenance import (
     ResolvedProvenance,
     resolve_composite_provenance,
     resolve_provenance,
-    source_id_mapping,
 )
 
 
 LOGGER = logging.getLogger(__name__)
-ATB = "nlr_atb_transportation_2024"
+ATB = "nlr_atb_transportation"
 CEUD = "nrcan_ceud_transport_provincial"
 
 
@@ -614,6 +614,21 @@ def prepare_efficiency_rows(
         base_year=scenario.periods.base_year,
         rules=rules,
     )
+    rating_inputs, baseline_inputs = ldv_rating_input_resolvers(
+        evidence, classified, rating_audit, rules=rules,
+    )
+    component_cache = {}
+
+    def components_for(region, mode, powertrain, year, result):
+        key = region, mode, powertrain, year
+        if key not in component_cache:
+            component_cache[key] = efficiency_components(
+                bundle, mode, rules, road_rules, offroad_rules, region=region,
+                powertrain=powertrain, year=year, result=result, manual=manual,
+                rating_inputs=rating_inputs, baseline_inputs=baseline_inputs,
+            )
+        return component_cache[key]
+
     annual_records, payloads = [], []
     offroad_values = {}
     for edge in relationships.itertuples(index=False):
@@ -659,6 +674,7 @@ def prepare_efficiency_rows(
                     years = [source_year]
                 values = []
                 component_values = {}
+                source_components = []
                 range_mix = historical_weights.get((edge.mode, edge.powertrain), {}) if edge.tech.endswith(rules["existing_suffix"]) else {}
                 for year in years:
                     if edge.kind == "unit":
@@ -673,6 +689,9 @@ def prepare_efficiency_rows(
                                 for bucket in range_mix
                             }
                             for bucket, component in components.items():
+                                source_components.extend(components_for(
+                                    source_region, edge.mode, bucket, year, component,
+                                ))
                                 component_values.setdefault(bucket, []).append(component["efficiency"])
                                 annual_records.append({
                                     **edge._asdict(), "powertrain": bucket,
@@ -688,6 +707,9 @@ def prepare_efficiency_rows(
                             result = evidence.derive(
                                 source_region, edge.mode, edge.powertrain, year
                             )
+                            source_components.extend(components_for(
+                                source_region, edge.mode, edge.powertrain, year, result,
+                            ))
                     else:
                         key = (edge.mode, edge.powertrain, year)
                         if key not in offroad_values:
@@ -702,6 +724,9 @@ def prepare_efficiency_rows(
                                 rules=rules["offroad"],
                             )
                         result = offroad_values[key]
+                        source_components.extend(components_for(
+                            source_region, edge.mode, edge.powertrain, year, result,
+                        ))
                     values.append(result["efficiency"])
                     annual_records.append(
                         {
@@ -714,6 +739,14 @@ def prepare_efficiency_rows(
                             **result,
                         }
                     )
+                if range_mix:
+                    source_components.append((OMEGA, OMEGA_COMPONENT))
+                components = list(dict.fromkeys(
+                    (source, str(component)) for source, component in source_components
+                ))
+                component_signature = (
+                    (components[0], *sorted(components[1:])) if components else ()
+                )
                 payloads.append(
                     {
                         "region": region,
@@ -725,10 +758,10 @@ def prepare_efficiency_rows(
                             share / float(np.mean(component_values[bucket])) for bucket, share in range_mix.items()
                         ) if range_mix else float(np.mean(values)),
                         "units": edge.units,
-                        "notes": f"{edge.mode}/{edge.powertrain}; {trajectory}; source years {years[0]}..{years[-1]}",
                         "mode": edge.mode,
                         "kind": edge.kind,
                         "range_aggregated": bool(range_mix),
+                        "components": component_signature,
                     }
                 )
     endpoints = [scenario.periods.projection_year(p, legacy_at_end=True) for p in scenario.periods.model]
@@ -769,24 +802,20 @@ def prepare_efficiency_rows(
         description="Backend-owned template edges and intentional unit efficiencies; not an external source.",
     )
     contexts, rows = [], []
-    input_regions = {rules["region_output_map"].get(r, r): r for r in scenario.geography.regions}
-    for (mode, region, range_aggregated), group in pd.DataFrame(payloads).groupby(["mode", "region", "range_aggregated"], sort=True):
+    for (mode, region, range_aggregated, components), group in pd.DataFrame(payloads).groupby(
+        ["mode", "region", "range_aggregated", "components"], sort=True,
+    ):
         kind = group.kind.iloc[0]
-        records = group.drop(columns=["mode", "kind", "range_aggregated"]).to_dict("records")
+        records = group.drop(columns=["mode", "kind", "range_aggregated", "components"]).to_dict("records")
         if kind == "unit":
             rows.extend(
                 Efficiency.model_validate({**record, "data_id": assumption.data_id})
                 for record in records
             )
             continue
-        components = efficiency_components(
-            bundle, mode, rules, road_rules, offroad_rules, region=input_regions[region],
-        )
-        if range_aggregated:
-            components.append((OMEGA, OMEGA_COMPONENT))
         context = efficiency_context(bundle, components, mode, {**variant, "region": region, "historical_range_aggregation": bool(range_aggregated)}, rules)
         contexts.append(context)
-        rows.extend(validate_parameter_rows(Efficiency, records, context))
+        rows.extend(validate_parameter_rows(Efficiency, records, context, bundle=bundle))
     splits = []
     for blend, spec in phev_blend_relationships(rules).items():
         for region in scenario.geography.regions:
@@ -794,7 +823,7 @@ def prepare_efficiency_rows(
             electricity = float(selected.groupby("year").electricity_share.first().mean())
             components = [(ATB, "phev_vehicle_inputs"),
                           (ATB, "phev_utility_factor_ldv" if spec["aggregation_role"] == "ldv" else "phev_utility_factor_mdhd"),
-                          ("argonne_rd_greet_2025_rev1", "fuel_heating_values"),
+                          ("argonne_rd_greet", "fuel_heating_values"),
                           aggregation_component(bundle, spec["aggregation_role"], region)]
             if spec.get("existing_representative"):
                 components.append((OMEGA, OMEGA_COMPONENT))
@@ -816,10 +845,9 @@ def prepare_efficiency_rows(
                             "input_comm": input_comm,
                             "operator": rules["phev_split_operator"],
                             "proportion": proportion,
-                            "notes": f"{trajectory}; regional fleet-weighted component consumption; mean endpoint energy share; fixed horizon",
                         }
                     )
-            splits.extend(validate_parameter_rows(LimitTechInputSplit, regional_records, split_context))
+            splits.extend(validate_parameter_rows(LimitTechInputSplit, regional_records, split_context, bundle=bundle))
     rows.sort(key=lambda r: (r.region, r.tech, r.vintage, r.input_comm, r.output_comm))
     splits.sort(key=lambda r: (r.region, r.period, r.tech, r.input_comm))
     regions = {rules["region_output_map"].get(r, r) for r in scenario.geography.regions}
@@ -909,57 +937,135 @@ def prepare_efficiency_rows(
     return EfficiencyPreparation(rows, splits, assumption, contexts, audit)
 
 
-def efficiency_components(
-    bundle: ConfigBundle, mode: str, rules: dict, road: dict, offroad: dict, *, region: str,
-) -> list[tuple]:
-    if mode not in rules["road_classes"]:
-        result = [
-            (
-                "nrcan_ceud_transport_national",
-                offroad["energy_intensity_series"][mode]["national_table"],
-            ),
-            ("epri_us_regen_2025_transportation", "nonroad_efficiency_multipliers"),
+def atb_efficiency_components(powertrain: str, pathway: str, rules: dict) -> list[tuple]:
+    """Identify the ATB table and energy basis consumed by one archetype."""
+    if powertrain.startswith("phev"):
+        components = [(ATB, "phev_vehicle_inputs"), (
+            ATB, "phev_utility_factor_ldv" if pathway == "ldv" else "phev_utility_factor_mdhd",
+        )]
+    else:
+        components = [(ATB, "vehicles")]
+    if powertrain.startswith("phev") or powertrain in rules["atb"]["fuel_equivalent_hhv_powertrains"]:
+        components.append(("argonne_rd_greet", "fuel_heating_values"))
+    return components
+
+
+def ldv_rating_input_resolvers(evidence, classified, rating_audit, *, rules: dict):
+    """Trace accepted rating interpolation and baseline inputs without changing values."""
+    @cache
+    def rating_inputs(mode, powertrain, year, column):
+        ceud_class = rules["road_classes"][mode]["weights"]
+        annual = rating_audit.loc[
+            rating_audit.ceud_class.eq(ceud_class)
+            & rating_audit.powertrain.eq(powertrain)
+            & rating_audit.year.le(evidence.base_year)
         ]
-        if mode == "freight_marine":
-            result.append(("argonne_rd_greet_2025_rev1", "marine_hfo_energy_intensity"))
-        return result
-    spec = rules["road_classes"][mode]
-    result = [
-        (CEUD, road["activity_series"][mode]["table_id"]),
-        (CEUD, spec["stock_table"]),
-    ]
-    if "intensity_table" in spec:
-        result.append((CEUD, spec["intensity_table"]))
-    if spec["pathway"] == "motorcycle":
-        return result + [("jgcri_gcam_motorcycle_inputs", "canada_motorcycle_inputs")]
-    result.extend(
-        (ATB, component)
-        for component in (
-            "vehicles",
-            "phev_vehicle_inputs",
-            "phev_utility_factor_ldv",
-            "phev_utility_factor_mdhd",
+        years = sorted(annual.year.unique())
+        selected_years = {max(value for value in years if value <= year),
+                          min(value for value in years if value >= year)}
+        keys = annual.loc[annual.year.isin(selected_years), ["year", "rating_class"]]
+        selected = classified.loc[classified.included & classified.powertrain.eq(powertrain)].merge(
+            keys, on=["year", "rating_class"], validate="many_to_one",
         )
-    )
-    result.append(("argonne_rd_greet_2025_rev1", "fuel_heating_values"))
-    if spec["pathway"] == "ldv":
-        result.append(aggregation_component(bundle, "ldv", region))
-        for source in (
-            "nrcan_fuel_consumption_ratings",
-            "fueleconomy_gov_vehicle_data",
-            "reviewed_mto_make_model_evidence",
-        ):
-            result.extend(
-                (source, component)
-                for component in bundle.sources.sources[source].components
-            )
-    if mode == "medium_trucks":
-        result.append(aggregation_component(bundle, "medium_trucks", region))
-    if mode == "heavy_trucks":
-        result.append(aggregation_component(bundle, "heavy_truck_haul", region))
-    if spec["pathway"] == "intercity":
-        result.append(("epri_us_regen_2025_transportation", "intercity_bus_charts"))
-    return result
+        components = {
+            ("nrcan_fuel_consumption_ratings", str(component))
+            for component in selected.component.unique()
+        }
+        if powertrain in {"gasoline", "hev"}:
+            classifications = classified.loc[
+                classified.included & classified.classification_method.eq("exact_epa_hybrid")
+            ].merge(keys, on=["year", "rating_class"], validate="many_to_one")
+            if not classifications.empty:
+                components.add((rules["ratings"]["evidence_source"], "vehicles"))
+        if column == "mj" and selected.native_unit.eq("L/100 km").any():
+            components.add(("argonne_rd_greet", "fuel_heating_values"))
+        return tuple(sorted(components))
+
+    @cache
+    def baseline_inputs(mode, powertrain, seen=()):
+        if powertrain in seen:
+            raise ValueError(f"Cyclic/missing LDV rating lineage: {mode}/{powertrain}")
+        base = evidence.base_year
+        if evidence.rating(mode, powertrain, base, "mj") is not None:
+            return rating_inputs(mode, powertrain, base, "mj")
+        observed = evidence.ratings.loc[
+            evidence.ratings.ceud_class.eq(rules["road_classes"][mode]["weights"])
+            & evidence.ratings.powertrain.eq(powertrain) & evidence.ratings.mj.notna()
+        ]
+        if not observed.empty:
+            latest = int(observed.year.max())
+            _, analogue = evidence.historical_rating_ratio(mode, powertrain, base, latest)
+            return tuple(sorted(set(
+                rating_inputs(mode, powertrain, latest, "mj")
+                + rating_inputs(mode, analogue, base, "native")
+                + rating_inputs(mode, analogue, latest, "native")
+            )))
+        analogue = rules["ldv_archetypes"][powertrain]["analogue"]
+        if analogue in (*seen, powertrain):
+            analogue = rules["ldv_incumbent_fallback"]
+        return tuple(sorted(set(
+            baseline_inputs(mode, analogue, (*seen, powertrain))
+            + tuple(atb_efficiency_components(powertrain, "ldv", rules))
+            + tuple(atb_efficiency_components(analogue, "ldv", rules))
+        )))
+
+    return rating_inputs, baseline_inputs
+
+
+def efficiency_components(
+    bundle: ConfigBundle, mode: str, rules: dict, road: dict, offroad: dict, *,
+    region: str, powertrain: str, year: int, result: dict, manual: pd.DataFrame,
+    rating_inputs, baseline_inputs,
+) -> list[tuple]:
+    """Keep lineage specific to the annual pathway that produced the parameter."""
+    if mode not in rules["road_classes"]:
+        components = [(
+            "nrcan_ceud_transport_national",
+            offroad["energy_intensity_series"][mode]["national_table"],
+        )]
+        indices = [int(index) for index in result["manual_rows"].split("|") if index]
+        components.extend(manual.loc[
+            indices, ["registered_source_id", "registered_component_id"]
+        ].drop_duplicates().itertuples(index=False, name=None))
+        return components
+    spec = rules["road_classes"][mode]
+    pathway = spec["pathway"]
+    base = bundle.scenario.periods.base_year
+    if pathway == "motorcycle":
+        components = [(CEUD, spec["intensity_table"])]
+        if year > base:
+            components.append(("jgcri_gcam_motorcycle_inputs", "canada_motorcycle_inputs"))
+        return components
+    components = [(CEUD, road["activity_series"][mode]["table_id"]), (CEUD, spec["stock_table"])]
+    if "intensity_table" in spec and year <= base:
+        components.append((CEUD, spec["intensity_table"]))
+    if pathway == "ldv":
+        components.append(aggregation_component(bundle, "ldv", region))
+        treatment = result["treatment"]
+        if treatment == "NRCan_observed_class_weighted":
+            components.extend(rating_inputs(mode, powertrain, year, "mj"))
+        elif powertrain.startswith("phev"):
+            components.extend(atb_efficiency_components(powertrain, pathway, rules))
+            if year <= base:
+                components.extend(rating_inputs(mode, result["analogue"], year, "native"))
+                components.extend(rating_inputs(mode, result["analogue"], base, "native"))
+        else:
+            components.extend(baseline_inputs(mode, powertrain))
+            if year > base:
+                components.extend(atb_efficiency_components(powertrain, pathway, rules))
+            else:
+                components.extend(rating_inputs(mode, result["analogue"], year, "native"))
+                components.extend(rating_inputs(mode, result["analogue"], base, "native"))
+    else:
+        atb_powertrain = "diesel" if pathway == "intercity" and powertrain != "hev" else powertrain
+        components.extend(atb_efficiency_components(atb_powertrain, pathway, rules))
+        if mode == "medium_trucks":
+            components.append(aggregation_component(bundle, "medium_trucks", region))
+        if mode == "heavy_trucks":
+            components.append(aggregation_component(bundle, "heavy_truck_haul", region))
+        if pathway == "intercity" and powertrain != "hev":
+            components.append(("epri_us_regen_transportation", "intercity_bus_charts"))
+    return components
 
 
 def efficiency_context(
@@ -979,13 +1085,18 @@ def efficiency_context(
             set(components), key=lambda pair: (pair[0], str(pair[1]))
         )
     ]
-    governing = source_id_mapping(bundle.sources)[components[0][0]]
+    governing_component = next(
+        item for item in inputs
+        if (item.source_key, item.component_key) == (components[0][0], str(components[0][1]))
+    )
+    governing = governing_component.governing_source_id
     return resolve_composite_provenance(
         inputs=inputs,
         dataset_key="efficiency." + mode,
         transformation="Configured transport service efficiency and energy-input split",
         transformation_version=rules["transformation_version"],
         governing_source_id=governing,
+        data_quality=governing_component.data_quality,
         value_variant=variant,
     )
 

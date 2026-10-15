@@ -24,6 +24,8 @@ from fetching.technology_growth_evidence import (
     acquire_evidence,
     asset_path,
     extract_paper_pages,
+    MethodologyReference,
+    methodology_references,
     normalize_eafo,
     normalize_hatch,
     registered_assets,
@@ -140,6 +142,7 @@ class GrowthDiagnosticConfig(ResearchModel):
     norway_powertrains: dict[str, str]
     target_classes: dict[str, TargetClass]
     analogue_rationale: dict[str, str]
+    methodology_references: dict[str, MethodologyReference]
 
     @model_validator(mode="after")
     def contracts(self):
@@ -1677,7 +1680,7 @@ def build_diagnostic(bundle: ConfigBundle) -> dict[str, pd.DataFrame]:
         inventory.groupby("release").ID.size().to_dict()
     )
     summary["input_hashes"] = input_hashes
-    summary["temoa_version"] = bundle.sources.sources["temoa_growth_reference"].version
+    summary["temoa_version"] = methodology_references(bundle)["temoa_growth_reference"].version
     summary["eafo_snapshot"] = bundle.sources.sources[
         "eafo_norway_growth_evidence"
     ].version

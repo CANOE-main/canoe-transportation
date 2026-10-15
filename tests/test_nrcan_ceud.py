@@ -219,7 +219,7 @@ def test_nrcan_rules_load_paths_and_extraction_parameters_from_config() -> None:
     assert "legacy_wards_market_shares" not in rating_config
 
     market_source = bundle.sources.sources[
-        "wards_intelligence_2022_sales_shares"
+        "wards_intelligence_sales_shares"
     ]
     market_component = market_source.component("vehicle_class_market_shares")
     market_path = resolve_input_path(

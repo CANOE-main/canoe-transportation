@@ -547,7 +547,7 @@ def test_raw_transition_estimator_rejects_proxy_input() -> None:
 def test_eia_scrappage_rates_convert_to_cumulative_survival() -> None:
     nhtsa = pd.DataFrame(
         {
-            "source_id": ["nhtsa_cafe_2024_ldv_survival"] * 2,
+            "source_id": ["nhtsa_cafe_ldv_survival"] * 2,
             "source_vehicle_class_label": ["Cars", "Cars"],
             "vehicle_age": [0, 1],
             "survival_rate": [1.0, 0.9],
@@ -593,8 +593,8 @@ def test_retention_comparison_keeps_mto_nhtsa_and_eia_meanings() -> None:
     source = pd.DataFrame(
         {
             "source_id": [
-                "nhtsa_cafe_2024_ldv_survival",
-                "nhtsa_cafe_2024_ldv_survival",
+                "nhtsa_cafe_ldv_survival",
+                "nhtsa_cafe_ldv_survival",
                 "eia_nems_hd_truck_scrappage",
             ],
             "source_class": ["Pickups", "Pickups", "Cls 3"],
@@ -619,7 +619,7 @@ def test_retention_comparison_keeps_mto_nhtsa_and_eia_meanings() -> None:
     )
     assert set(comparison["series_family"]) == {
         "eia_nems_hd_truck_scrappage",
-        "nhtsa_cafe_2024_ldv_survival",
+        "nhtsa_cafe_ldv_survival",
         "ontario_report_a",
     }
 
@@ -628,7 +628,7 @@ def test_retention_comparison_keeps_mto_nhtsa_and_eia_meanings() -> None:
 def test_legacy_light_truck_curve_uses_latest_wards_weights(weight_year, suv_share) -> None:
     transformed = pd.DataFrame(
         {
-            "source_id": ["nhtsa_cafe_2024_ldv_survival"] * 6,
+            "source_id": ["nhtsa_cafe_ldv_survival"] * 6,
             "source_class": ["Cars", "Cars", "Vans/SUVs", "Vans/SUVs", "Pickups", "Pickups"],
             "age": [0, 1, 0, 1, 0, 1],
             "source_measure": ["survival_probability"] * 6,

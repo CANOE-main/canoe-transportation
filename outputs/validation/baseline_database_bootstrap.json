@@ -18,40 +18,35 @@
     "ontario_ministry_transport_vehicle_population": "T03",
     "statcan_transport_tables": "T04",
     "cer_canadas_energy_future": "T05",
-    "nlr_atb_transportation_2024": "T06",
-    "anl_autonomie_bean_2022": "T07",
+    "nlr_atb_transportation": "T06",
+    "anl_autonomie_bean": "T07",
     "nrcan_fuel_consumption_ratings": "T08",
-    "nhtsa_cafe_2024_ldv_survival": "T09",
+    "nhtsa_cafe_ldv_survival": "T09",
     "eia_nems_hd_truck_scrappage": "T10",
     "jgcri_gcam_motorcycle_inputs": "T11",
-    "epri_us_regen_2025_transportation": "T12",
-    "faa_economic_values_2024": "T13",
-    "wards_intelligence_2022_sales_shares": "T14",
+    "epri_us_regen_transportation": "T12",
+    "faa_economic_values": "T13",
+    "wards_intelligence_sales_shares": "T14",
     "emrg_sfu_cims_model": "T15",
-    "open_energy_outlook_2022": "T16",
-    "argonne_rd_greet_2025_rev1": "T17",
-    "epa_moves4_population_activity_2023": "T18",
-    "canada_energy_policy_simulator_3_4_7": "T19",
-    "argonne_hdsam_4_5": "T20",
+    "open_energy_outlook": "T16",
+    "argonne_rd_greet": "T17",
+    "canada_energy_policy_simulator": "T19",
+    "argonne_hdsam": "T20",
     "fueleconomy_gov_vehicle_data": "T21",
-    "reviewed_mto_make_model_evidence": "T22",
     "nhtsa_vpic_vehicle_models": "T23",
-    "dunsky_ev_charging_infrastructure_2024": "T24",
+    "dunsky_ev_charging_infrastructure": "T24",
     "transport_canada_ev_dashboard": "T25",
-    "pollution_probe_ev_charging_survey_2024": "T26",
-    "nlr_alternative_fueling_infrastructure_2024": "T27",
-    "icct_ev_charge_2024": "T28",
-    "icct_hdv_charge_2024": "T29",
-    "iea_future_of_hydrogen_2019": "T30",
+    "pollution_probe_ev_charging_survey": "T26",
+    "nlr_alternative_fueling_infrastructure": "T27",
+    "icct_ev_charge": "T28",
+    "icct_hdv_charge": "T29",
+    "iea_future_of_hydrogen": "T30",
     "legacy_charging_profiles": "T31",
-    "epa_automotive_trends": "T32",
     "epa_omega_baseline": "T33",
     "hatch_original_growth_evidence": "T34",
     "hatch_extended_growth_evidence": "T35",
     "eafo_norway_growth_evidence": "T36",
-    "technology_growth_literature": "T37",
-    "temoa_growth_reference": "T38",
-    "epa_moves5_heavy_truck_survival": "T39"
+    "epa_moves_heavy_truck_survival": "T39"
   },
   "template": {
     "kind": "backend_internal_reference",
@@ -3731,7 +3726,7 @@
       "bn tonne-km": 34.9885767109859
     },
     "excluded_air_gasoline_rows": 480,
-    "input_content_digest": "7cc3dc952094ce1e7f30554d80d78002bc43e4b70bdffc9f87c6bcdab160618b",
+    "input_content_digest": "8a152418599b72716497800861e495a2b807ad46f9f6b0911ff265483ce39f3f",
     "max_excluded_fuel_source_share": [
       {
         "road_class": "cars",
@@ -4078,7 +4073,7 @@
       },
       "medium_trucks": {
         "ON": "ontario_ministry_transport_vehicle_population",
-        "other": "wards_intelligence_2022_sales_shares"
+        "other": "wards_intelligence_sales_shares"
       },
       "heavy_truck_haul": {
         "ON": "statcan_transport_tables",
@@ -4100,7 +4095,7 @@
       },
       "medium_trucks": {
         "kind": "source_median_equal",
-        "source_id": "nhtsa_cafe_2024_ldv_survival",
+        "source_id": "nhtsa_cafe_ldv_survival",
         "source_classes": [
           "2b/3 Trucks"
         ],
@@ -4112,7 +4107,7 @@
           "Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)"
         ],
         "curve_source_class": "Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",
-        "source_id": "epa_moves5_heavy_truck_survival"
+        "source_id": "epa_moves_heavy_truck_survival"
       },
       "motorcycles": {
         "kind": "manual",
@@ -4138,7 +4133,7 @@
     ],
     "technologies": 124,
     "split_max_sum_error": 0.0,
-    "input_digest": "62869287f0ccdc2504b3213fa1954601add5e3feb5b3b05dad77975676c23268",
+    "input_digest": "4aafaeab24c7a8b4ab3a93b8c62c760cd518aac2f342a582d4154c68adf0aafc",
     "aggregation_sources": {
       "stock_age": {
         "ON": "ontario_ministry_transport_vehicle_population",
@@ -4150,7 +4145,7 @@
       },
       "medium_trucks": {
         "ON": "ontario_ministry_transport_vehicle_population",
-        "other": "wards_intelligence_2022_sales_shares"
+        "other": "wards_intelligence_sales_shares"
       },
       "heavy_truck_haul": {
         "ON": "statcan_transport_tables",
@@ -4420,7 +4415,7 @@
       },
       "end_of_horizon": 2050
     },
-    "input_digest": "52ddb1e6157f1fa8400eec5aef9ecd69c4421037329a622fbdb45a6f2679166f",
+    "input_digest": "917a36088019b03a09bc4249ecce4169a58951c8d9c81a00dc0ab9b2342913b2",
     "atb_scenario": "Mid",
     "aggregation_sources": {
       "stock_age": {
@@ -4433,7 +4428,7 @@
       },
       "medium_trucks": {
         "ON": "ontario_ministry_transport_vehicle_population",
-        "other": "wards_intelligence_2022_sales_shares"
+        "other": "wards_intelligence_sales_shares"
       },
       "heavy_truck_haul": {
         "ON": "statcan_transport_tables",
@@ -4458,6 +4453,10 @@
       ],
       [
         "USD",
+        2019
+      ],
+      [
+        "USD",
         2020
       ],
       [
@@ -4467,10 +4466,6 @@
       [
         "USD",
         2023
-      ],
-      [
-        "USD",
-        2025
       ]
     ],
     "currency_conversion_groups": [
@@ -4506,10 +4501,20 @@
       },
       {
         "source_currency": "USD",
+        "source_dollar_year": 2019,
+        "target_currency": "CAD",
+        "target_dollar_year": 2020,
+        "rows": 3525,
+        "cad_per_usd": 1.33,
+        "source_year_deflator": 103.2,
+        "target_year_deflator": 104.3
+      },
+      {
+        "source_currency": "USD",
         "source_dollar_year": 2020,
         "target_currency": "CAD",
         "target_dollar_year": 2020,
-        "rows": 10308,
+        "rows": 6783,
         "cad_per_usd": 1.34,
         "source_year_deflator": 104.3,
         "target_year_deflator": 104.3
@@ -4529,92 +4534,73 @@
         "source_dollar_year": 2023,
         "target_currency": "CAD",
         "target_dollar_year": 2020,
-        "rows": 884,
+        "rows": 1134,
         "cad_per_usd": 1.35,
         "source_year_deflator": 123.0,
-        "target_year_deflator": 104.3
-      },
-      {
-        "source_currency": "USD",
-        "source_dollar_year": 2025,
-        "target_currency": "CAD",
-        "target_dollar_year": 2020,
-        "rows": 250,
-        "cad_per_usd": 1.41,
-        "source_year_deflator": 130.3,
         "target_year_deflator": 104.3
       }
     ],
     "historical_msrp_proxy_rows": 1551,
     "variable_period_vintage_pairs_excluded_by_lifetime": 2782,
     "source_metadata_provisional": {
-      "anl_autonomie_bean_2022": "provisional_review",
-      "jgcri_gcam_motorcycle_inputs": "provisional_review",
-      "epri_us_regen_2025_transportation": "provisional_review",
-      "faa_economic_values_2024": "provisional_review"
+      "jgcri_gcam_motorcycle_inputs": "provisional_review"
     },
     "source_cost_metadata": [
       {
-        "source": "anl_autonomie_bean_2022",
+        "source": "anl_autonomie_bean",
         "component": "mhdv_maintenance_coefficients",
         "currency": "USD",
-        "dollar_year": 2020,
-        "status": "provisional_review",
-        "notes": "The workbook coefficient cells omit a currency year; 2020 USD is a provisional Burnham-era basis for review."
+        "dollar_year": 2019,
+        "status": "reviewed"
       },
       {
-        "source": "epri_us_regen_2025_transportation",
+        "source": "epri_us_regen_transportation",
         "component": "intercity_bus_charts",
         "currency": "USD",
-        "dollar_year": 2025,
-        "status": "provisional_review",
-        "notes": "Chart 3 labels purchase cost only as $; USD and the v2025 publication year are provisional for review."
+        "dollar_year": 2023,
+        "status": "reviewed"
       },
       {
-        "source": "faa_economic_values_2024",
+        "source": "faa_economic_values",
         "component": "section_4_operating_costs",
         "currency": "USD",
         "dollar_year": 2023,
-        "status": "provisional_review",
-        "notes": "Maintenance costs are USD from YE June 2023 carrier data; a 2023 price basis is provisional because the table does not explicitly define its dollar year."
+        "status": "reviewed"
       },
       {
         "source": "jgcri_gcam_motorcycle_inputs",
         "component": "canada_motorcycle_inputs",
         "currency": "USD",
         "dollar_year": 2005,
-        "status": "provisional_review",
-        "notes": "GCAM labels costs as 2005$ without a currency code; USD is provisional for review."
+        "status": "provisional_review"
       },
       {
-        "source": "nlr_atb_transportation_2024",
+        "source": "nlr_atb_transportation",
         "component": "maintenance_ldv",
         "currency": "USD",
         "dollar_year": 2020,
-        "status": "source_documented",
-        "notes": ""
+        "status": "source_documented"
       },
       {
-        "source": "nlr_atb_transportation_2024",
+        "source": "nlr_atb_transportation",
         "component": "vehicles",
         "currency": "USD",
         "dollar_year": 2022,
-        "status": "source_documented",
-        "notes": ""
+        "status": "source_documented"
       }
     ],
     "source_components": [
-      "anl_autonomie_bean_2022/mhdv_maintenance_coefficients",
+      "anl_autonomie_bean/mhdv_maintenance_coefficients",
       "cer_canadas_energy_future/macro-indicators",
       "emrg_sfu_cims_model/transport_service_output_and_capex",
       "epa_omega_baseline/baseline_sales_ranges",
-      "epri_us_regen_2025_transportation/intercity_bus_charts",
-      "epri_us_regen_2025_transportation/nonroad_cost_invest_multipliers",
-      "faa_economic_values_2024/section_3_capacity",
-      "faa_economic_values_2024/section_4_operating_costs",
+      "epri_us_regen_transportation/intercity_bus_charts",
+      "epri_us_regen_transportation/nonroad_cost_invest_multipliers",
+      "faa_economic_values/section_3_capacity",
+      "faa_economic_values/section_4_operating_costs",
       "jgcri_gcam_motorcycle_inputs/canada_motorcycle_inputs",
-      "nlr_atb_transportation_2024/maintenance_ldv",
-      "nlr_atb_transportation_2024/vehicles",
+      "nlr_atb_transportation/maintenance_ldv",
+      "nlr_atb_transportation/vehicles",
       "nrcan_ceud_transport_provincial/20",
       "nrcan_ceud_transport_provincial/28",
       "nrcan_ceud_transport_provincial/29",
@@ -4625,9 +4611,9 @@
       "nrcan_ceud_transport_provincial/36",
       "ontario_ministry_transport_vehicle_population/4",
       "ontario_ministry_transport_vehicle_population/A",
-      "open_energy_outlook_2022/transport_variable_cost_multipliers",
+      "open_energy_outlook/transport_variable_cost_multipliers",
       "statcan_transport_tables/23-10-0142-01",
-      "wards_intelligence_2022_sales_shares/vehicle_class_market_shares"
+      "wards_intelligence_sales_shares/vehicle_class_market_shares"
     ],
     "efficiency_supported_tech_vintages": 5150
   },
@@ -4715,9 +4701,9 @@
     "utilization_time_basis": "vintage_input_year",
     "historical_utilization": "earliest_reviewed_value",
     "utilization_provenance": {
-      "data_id": "ev-chargers-utilization:composite:2:e83d980855b60a22",
+      "data_id": "ev-chargers-utilization:composite:2:96a16af4023840ad",
       "contributors": [
-        "dunsky_ev_charging_infrastructure_2024"
+        "dunsky_ev_charging_infrastructure"
       ]
     },
     "tc_public_ports": 39220,
@@ -5467,7 +5453,7 @@
       "charger_parameters.csv": "587fc5e9d20ab39d10f97f4e2c1c3829a212b74187203643b0864238a69bf617",
       "transport_canada_public_ld_chargers_by_province_2026.csv": "bedab0a1130bc1340a73302ce55dc6c382caefca0bb3450c13b6d1769fe2b832",
       "transport_canada_public_ld_chargers_by_type_2026.csv": "ba3b8056806b59d4df540e3b85cda8c8c2302145d18eacc80091710a47409e6c",
-      "existing_capacity.csv": "0ecf30e2d42a143827eaf8721fdf2cbf64a0e7dbfb051bc77c8e233a237a840f",
+      "existing_capacity.csv": "fecb344142cf4bcca450c4f3fdead3c7a233739faed62f96d0354c2dd7c0459b",
       "cer_macro_indicators.csv": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
     }
   },
@@ -5896,9 +5882,9 @@
       },
       "xlwings_version": "0.37.5",
       "atb_replay": {
-        "current_sha256": "4371694524147993ab068a1deeb1190d3e0263c437b7a2ca9867d4c46e97c652",
+        "current_sha256": "e180cf6d15960f32892a0a6e28da4ac06e8308090a7d8c77f88c4d509285a6d2",
         "retained_sha256": "74c65688790e3796c601e98e3de6d7a29784af49c50baca738f622896ad859c4",
-        "default_trajectory_marker_only": true,
+        "source_identity_or_trajectory_marker_only": true,
         "all_other_bytes_match": true
       },
       "lightweight_glider_input_audit": [
@@ -6478,7 +6464,7 @@
       },
       "medium_trucks": {
         "ON": "ontario_ministry_transport_vehicle_population",
-        "other": "wards_intelligence_2022_sales_shares"
+        "other": "wards_intelligence_sales_shares"
       },
       "heavy_truck_haul": {
         "ON": "statcan_transport_tables",
@@ -6982,7 +6968,7 @@
   "touched_table_row_counts": {
     "region": 10,
     "time_period": 11,
-    "data_set": 692,
+    "data_set": 1203,
     "technology_label": 138,
     "commodity_label": 44,
     "time_season": 365,
@@ -6992,8 +6978,8 @@
     "tech_group_member": 36,
     "technology": 138,
     "commodity": 44,
-    "data_source_label": 29,
-    "data_source": 2996,
+    "data_source_label": 28,
+    "data_source": 4880,
     "existing_capacity": 1118,
     "demand": 700,
     "limit_annual_capacity_factor": 5018,
@@ -7029,7 +7015,7 @@
         "primary_keys_match": true
       },
       "data_set": {
-        "row_count": 692,
+        "row_count": 1203,
         "primary_key_columns": [
           "data_id"
         ],
@@ -7104,14 +7090,14 @@
         "primary_keys_match": true
       },
       "data_source_label": {
-        "row_count": 29,
+        "row_count": 28,
         "primary_key_columns": [
           "source_id"
         ],
         "primary_keys_match": true
       },
       "data_source": {
-        "row_count": 2996,
+        "row_count": 4880,
         "primary_key_columns": [
           "source_id",
           "data_id"
@@ -7284,7 +7270,7 @@
         "unregistered_source_pair": 0
       },
       "data_set": {
-        "row_count": 692,
+        "row_count": 1203,
         "null_data_id": 0,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
@@ -7344,13 +7330,13 @@
         "unregistered_source_pair": 0
       },
       "data_source_label": {
-        "row_count": 29,
+        "row_count": 28,
         "null_data_id": 0,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
       },
       "data_source": {
-        "row_count": 2996,
+        "row_count": 4880,
         "null_data_id": 0,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
@@ -7446,8 +7432,8 @@
     "foreign_key_violations": 0,
     "foreign_keys_enabled": true
   },
-  "database_sha256": "c748bf5f96c8af95c5c6b7d32ae5eb5951e4d23568a4c8990aab3da65e57b14a",
-  "timestamp_utc": "2026-10-15T03:32:16.147351+00:00",
+  "database_sha256": "53d7b1c5c5f58e0e7e4e8021811c4ab43d1e5a16a7eb76674049cf7c90fe1c05",
+  "timestamp_utc": "2026-10-15T20:27:21.625908+00:00",
   "scenario": "baseline",
   "orchestration": {
     "prerequisites": "replayed",
@@ -7456,7 +7442,7 @@
   "config": {
     "scenario": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\default.yaml",
-      "sha256": "d9a8c34b45bd7dd698e502eb59afad8c2417d551c2c96769374aec69418fce52"
+      "sha256": "d81ce4cdd4638eced0ea43b0de99bb6944a903b735e18dbe971b610c69d6a553"
     },
     "paths": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
@@ -7464,16 +7450,16 @@
     },
     "sources": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\sources.yaml",
-      "sha256": "b87d6130ca0ef13a1324162dcb033d36b9e12dbeaa4f8e445872fe8ec1337843"
+      "sha256": "e7c78becb2d0f02d370f60f671802137111bda3b381c472176a910b25e68423b"
     },
     "parameters": [
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\rules.yaml",
-        "sha256": "d10f5086345edde0070553fc95545bbbc96d3a9c2cd4cbc28aac91d066db797f"
+        "sha256": "9859d303f24c772796233536aa6e78768fb366146edba4c6fa5124c3b25c8a3d"
       },
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\conversion.yaml",
-        "sha256": "fd08d27d999dd5bce33e298a3df161b0ce6cde3e8aa9bee367e8c84ce420981f"
+        "sha256": "6400be364e8509c89856803c8575d83ca2bfcc2bde29e61bb8f59bb80f5c57a2"
       },
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\vehicle_size_class_map.csv",

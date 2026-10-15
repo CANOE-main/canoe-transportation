@@ -1275,7 +1275,7 @@ def retention_source_comparison(
         }
     )
     nhtsa = source_curves.loc[
-        source_curves["source_id"].eq("nhtsa_cafe_2024_ldv_survival")
+        source_curves["source_id"].eq("nhtsa_cafe_ldv_survival")
         & source_curves["source_class"].isin(["Cars", "Vans/SUVs", "Pickups"])
         & source_curves["source_measure"].eq("survival_probability")
     ].copy()
@@ -1285,7 +1285,7 @@ def retention_source_comparison(
     nhtsa["one_year_retention"] = nhtsa["next_survival"] / nhtsa["source_value"]
     nhtsa_frame = pd.DataFrame(
         {
-            "series_family": "nhtsa_cafe_2024_ldv_survival",
+            "series_family": "nhtsa_cafe_ldv_survival",
             "series_class": nhtsa["source_class"],
             "age": nhtsa["age"],
             "one_year_retention": nhtsa["one_year_retention"],
@@ -1332,7 +1332,7 @@ def legacy_wards_survival_curves(
     if "vehicle_scope" in wards:
         wards = wards.loc[wards["vehicle_scope"].eq("ldv")].copy()
     nhtsa = transformed.loc[
-        transformed["source_id"].eq("nhtsa_cafe_2024_ldv_survival")
+        transformed["source_id"].eq("nhtsa_cafe_ldv_survival")
     ].copy()
     car = nhtsa.loc[
         nhtsa["source_class"].eq(str(legacy_rules["car_source_class"]))
@@ -1415,7 +1415,7 @@ def nlr_source_survival_curves(
         ["source_class", "target_class", "nrcan_ceud_class"],
     ]
     nhtsa = transformed.loc[
-        transformed["source_id"].eq("nhtsa_cafe_2024_ldv_survival")
+        transformed["source_id"].eq("nhtsa_cafe_ldv_survival")
     ].copy()
     anchored = source_map.merge(nhtsa, on="source_class", how="inner", validate="many_to_many")
     anchored["source_id"] = "nlr_atb_source_anchor"
@@ -1453,7 +1453,7 @@ def survival_class_mappings(rules: dict[str, Any]) -> pd.DataFrame:
         for nlr_class in nlr_classes:
             rows.append(
                 {
-                    "source_family": "nhtsa_cafe_2024_ldv_survival",
+                    "source_family": "nhtsa_cafe_ldv_survival",
                     "source_class": source_class,
                     "target_system": "NLR ATB",
                     "target_class": nlr_class,
@@ -1464,7 +1464,7 @@ def survival_class_mappings(rules: dict[str, Any]) -> pd.DataFrame:
     for source_class in rules["nhtsa_comparison_classes"]:
         rows.append(
             {
-                "source_family": "nhtsa_cafe_2024_ldv_survival",
+                "source_family": "nhtsa_cafe_ldv_survival",
                 "source_class": source_class,
                 "target_system": "comparison",
                 "target_class": "medium-duty comparison",
@@ -1508,7 +1508,7 @@ def aggregate_ceud_survival_curves(
     if weights.source_class.isna().any():
         raise ValueError("Report A LDV weights lack NHTSA survival-class coverage")
     nhtsa = transformed.loc[
-        transformed["source_id"].eq("nhtsa_cafe_2024_ldv_survival")
+        transformed["source_id"].eq("nhtsa_cafe_ldv_survival")
     ].copy()
     weighted = weights.merge(
         nhtsa[["source_class", "age", "survival_probability"]],
@@ -1737,6 +1737,7 @@ def prepare_fixed_road_lifetimes(
             transformation="First accepted cumulative-survival age at or below one half",
             transformation_version="1",
             governing_source_id=source_ids[source_key],
+            data_quality=source_context.data_quality,
             value_variant={
                 "road_class": road_class,
                 "selector": selector,
@@ -1751,12 +1752,11 @@ def prepare_fixed_road_lifetimes(
                 "tech": str(tech),
                 "lifetime": values[road_class],
                 "units": "years",
-                "notes": f"Accepted source median-equivalent lifetime for {road_class}.",
             }
             for region in sorted({output_map.get(region, region) for region in bundle.scenario.geography.regions})
             for tech in sorted(owners)
         ]
-        rows.extend(validate_parameter_rows(LifetimeTech, records, context))
+        rows.extend(validate_parameter_rows(LifetimeTech, records, context, bundle=bundle))
         contexts.append(context)
     native_keys = {(row.region, row.tech) for row in rows}
     expected_keys = {
@@ -1826,10 +1826,11 @@ def prepare_road_survival_curve_rows(
                 or annual.diff().dropna().gt(1e-10).any()):
             raise ValueError(f"Accepted survival schedule violates age-zero, bounds or monotonicity: {road_class}")
         _, component_key = survival_source_component(assorted, source_key)
-        inputs = [resolve_provenance(
+        source_context = resolve_provenance(
             bundle.sources, source_key=source_key, component_key=component_key,
             transformation="accepted_annual_survival_input", transformation_version="1",
-        )]
+        )
+        inputs = [source_context]
         if selector["kind"] == "ceud_median":
             weight_source, weight_component = aggregation_component(
                 bundle, "ldv", scenario.geography.regions[0],
@@ -1844,6 +1845,7 @@ def prepare_road_survival_curve_rows(
             inputs=inputs, dataset_key=f"lifetime_survival_curve.road.{road_class}",
             transformation="Mean cumulative survival over full model-period age blocks",
             transformation_version="1", governing_source_id=source_ids[source_key],
+            data_quality=source_context.data_quality,
             value_variant={"road_class": road_class, "source_class": source_class,
                            "annual_sha256": digest, "max_age": max_age,
                            "periods": scenario.periods.model_dump(), "step": step,
@@ -1874,11 +1876,10 @@ def prepare_road_survival_curve_rows(
                             "region": model_region, "tech": str(tech),
                             "period": int(period), "vintage": int(vintage),
                             "fraction": fraction,
-                            "notes": f"Accepted {source_class} cumulative survival averaged over ages {start_age}-{end_age}.",
                         })
         records_by_context.append((context, records))
     rows = [row for context, records in records_by_context
-            for row in validate_parameter_rows(LifetimeSurvivalCurve, records, context)]
+            for row in validate_parameter_rows(LifetimeSurvivalCurve, records, context, bundle=bundle)]
     if len(rows) != len({(row.region, row.tech, row.period, row.vintage) for row in rows}):
         raise ValueError("Accepted road survival rows have conflicting keys")
     expected_owners = set(technology.loc[technology["category"].isin(curve_classes), "tech"])

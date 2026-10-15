@@ -187,7 +187,10 @@ def validate_charging_preparation(
         raise ValueError(
             "Charging rows disagree with the preserved hourly profile/projection"
         )
-    contexts = {c.data_id: c.parameter_fields() for c in result.provenance_contexts}
+    contexts = {
+        c.data_id: c.parameter_fields("capacity_factor_tech")
+        for c in result.provenance_contexts
+    }
     for row in result.rows:
         fields = contexts.get(row.data_id)
         if fields is None or any(
@@ -276,7 +279,6 @@ def prepare_charging_profile_rows(
                 season=f"D{i + 1:03d}",
                 sequence=i + 1,
                 segment_fraction=1 / days,
-                notes="Elapsed 24 physical hours from Toronto-year start",
             )
             for i in range(days)
         ]
@@ -324,15 +326,12 @@ def prepare_charging_profile_rows(
             "season": r.season,
             "tod": r.tod,
             "factor": r.factor,
-            "notes": f"{selection.travel_behavior_source}; legacy BEV shape proxy for shared LDV chargers; Ontario shape; inherited range composition"
-            if r.tod == "H01"
-            else None,
         }
         for region in regions
         for tech in targets.tech
         for r in projected.itertuples(index=False)
     ]
-    rows = validate_parameter_rows(CapacityFactorTech, records, context)
+    rows = validate_parameter_rows(CapacityFactorTech, records, context, bundle=bundle)
     expected = {
         (region, tech, r.season, r.tod)
         for region in regions

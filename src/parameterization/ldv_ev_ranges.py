@@ -41,6 +41,7 @@ from utils import (
     write_text_atomic,
 )
 from validation.insertion import validate_parameter_rows
+from validation.config_models import DataQuality
 from validation.provenance import (
     ResolvedProvenance,
     make_data_id,
@@ -232,7 +233,7 @@ def validate_range_preparation(result: RangePreparation) -> None:
         raise ValueError(
             "Range group structure contains missing/duplicate logical references"
         )
-    contexts = {c.data_id: c.parameter_fields() for c in result.provenance_contexts}
+    contexts = {c.data_id: c for c in result.provenance_contexts}
     for row in result.share_rows:
         LimitNewCapacityShare.model_validate(row.model_dump())
         if (
@@ -250,7 +251,8 @@ def validate_range_preparation(result: RangePreparation) -> None:
             raise ValueError(
                 "Range numerator must be one variant inside its new-build family"
             )
-        fields = contexts.get(row.data_id)
+        context = contexts.get(row.data_id)
+        fields = context.parameter_fields("limit_new_capacity_share") if context else None
         if fields is None or any(
             getattr(row, key) != value for key, value in fields.items()
         ):
@@ -663,7 +665,6 @@ def prepare_range_rows(
                     TechGroup(
                         group_name=super_group,
                         data_id=data_id,
-                        notes="Denominator: new-build class/powertrain capacity only",
                     )
                 )
                 for row in targets.itertuples(index=False):
@@ -672,7 +673,6 @@ def prepare_range_rows(
                         TechGroup(
                             group_name=sub_group,
                             data_id=data_id,
-                            notes="Numerator: one investable range variant",
                         )
                     )
                     members.extend(
@@ -699,12 +699,12 @@ def prepare_range_rows(
                             "vintage": vintage,
                             "operator": rules.constraint_operator,
                             "share": share,
-                            "notes": "Minimum within-class/powertrain share of new capacity; Legacy OMEGA US MY2022 baseline proxy held across model vintages; not adoption/stock share",
+                            "database_note_variants": ("range_share_floor",),
                         }
                         for region in regions
                         for vintage in bundle.scenario.periods.model
                     )
-        rows = validate_parameter_rows(LimitNewCapacityShare, records, context)
+        rows = validate_parameter_rows(LimitNewCapacityShare, records, context, bundle=bundle)
         result = RangePreparation(
             rows,
             groups,
@@ -797,12 +797,20 @@ def validate_representative_preparation(result: RepresentativePreparation) -> No
     for rows in result.batches.values():
         for row in rows:
             type(row).model_validate(row.model_dump())
-    contexts = {c.data_id: c.parameter_fields() for c in result.provenance_contexts}
+    contexts = {c.data_id: c for c in result.provenance_contexts}
+    technology = {row.tech: row for row in result.batches["technology"]}
     for table, rows in result.batches.items():
         if table in {"technology", "commodity"}:
             continue
         for row in rows:
-            fields = contexts.get(row.data_id)
+            context = contexts.get(row.data_id)
+            tech = getattr(row, "tech", getattr(row, "tech_or_group", None))
+            owner = technology.get(tech)
+            fields = context.parameter_fields(
+                table, tech=tech,
+                category=owner.category if owner else None,
+                sub_category=owner.sub_category if owner else None,
+            ) if context else None
             if fields and any(getattr(row, k) != v for k, v in fields.items()):
                 raise ValueError(
                     "Representative parameter source/DQ fields disagree with lineage"
@@ -886,17 +894,31 @@ def prepare_representative_parameters(
         ):
             raise ValueError(f"Missing prerequisite lineage for representative {table}")
         inputs = {**native, **{c.data_id: c for c in evidence.provenance_contexts}}
-        governing = (
-            next(iter(native.values())).governing_source_id
-            if native
-            else evidence.provenance_contexts[0].governing_source_id
-        )
+        # Preserve target-parameter DQ; OMEGA and other parameter tables support it.
+        governing_rows = [
+            r for r in rows
+            if type(r).table_name() == table and r.data_id in contexts
+        ]
+        governing_metadata = {
+            (row.data_source, DataQuality(**{
+                key: getattr(row, key) for key in DataQuality.model_fields
+            })) for row in governing_rows
+        } if governing_rows else {
+            (item.governing_source_id, item.data_quality)
+            for item in evidence.provenance_contexts
+        }
+        if len(governing_metadata) != 1:
+            raise RangeRepresentationBlocked(
+                f"Representative {table} prerequisites have conflicting source/DQ"
+            )
+        governing, quality = next(iter(governing_metadata))
         context = resolve_composite_provenance(
             inputs=list(inputs.values()),
             dataset_key=f"ldv_ev_representative_{table}",
             transformation=f"LDV representative {table} aggregation",
             transformation_version="1",
             governing_source_id=governing,
+            data_quality=quality,
             value_variant={
                 "aggregation": spec.model_dump(),
                 "internal_inputs": sorted(
@@ -965,7 +987,9 @@ def prepare_representative_parameters(
                     "tech": representative,
                     "sub_category": powertrain.lower(),
                     "description": f"Sales-weighted representative new {category} {powertrain}",
-                    "notes": "OMEGA MY2022 range mix; historical stock retained on original EX technologies",
+                    "notes": evidence.provenance_contexts[0].parameter_notes(
+                        note_variants=("historical_stock",),
+                    ),
                     "data_id": dataset.data_id,
                 }
             )
@@ -1023,7 +1047,11 @@ def prepare_representative_parameters(
                     if context is not None:
                         if any(
                             getattr(row, k) != v
-                            for k, v in context.parameter_fields().items()
+                            for k, v in context.parameter_fields(
+                                table, tech=getattr(row, tech_field),
+                                category=category,
+                                sub_category=technology[getattr(row, tech_field)].sub_category,
+                            ).items()
                         ):
                             raise ValueError(
                                 "Representative prerequisite source/DQ fields disagree with lineage"
@@ -1123,10 +1151,16 @@ def prepare_representative_parameters(
                             raise RangeRepresentationBlocked(
                                 f"Identical {table} prerequisites have conflicting lineage"
                             )
+                        row_context = contexts.get(payload["data_id"])
                     else:
-                        payload.update(context_for(group, table).parameter_fields())
+                        row_context = context_for(group, table)
+                        payload.update(row_context.parameter_fields(
+                            table, category=category,
+                            sub_category=powertrain.lower(), tech=representative,
+                        ))
                     payload["notes"] = (
-                        f"{spec.efficiency if method == 'harmonic' else method}; OMEGA MY2022 {category}/{powertrain}; original data IDs in conservation audit"
+                        row_context.parameter_notes()
+                        if row_context is not None else None
                     )
                     if table == "efficiency" and powertrain == "PHEV":
                         payload["input_comm"] = family_spec.phev_commodity
@@ -1369,7 +1403,7 @@ def _prepare_representative_blend(
                 "tech": family.phev_blend,
                 "description": f"Representative gasoline/electricity blend for {category}",
                 "data_id": dataset.data_id,
-                "notes": "Period-indexed horizon mean energy split; all vehicle vintages share this blend",
+                "notes": None,
             }
         )
     )
@@ -1403,8 +1437,10 @@ def _prepare_representative_blend(
                         input_comm=input_comm,
                         operator="e",
                         proportion=proportion,
-                        notes="Mean of vintage consumption-weighted OMEGA range-mixture energy shares; fixed horizon; component approximation audited",
-                        **context.parameter_fields(),
+                        notes=context.parameter_notes(note_variants=("energy_blend",)),
+                        **context.parameter_fields(
+                            "limit_tech_input_split", category=category, tech=family.phev_blend,
+                        ),
                     )
                 )
         for vintage, fraction, total in values:
@@ -1419,7 +1455,7 @@ def _prepare_representative_blend(
                         efficiency=1,
                         units="PJ/PJ",
                         data_id=dataset.data_id,
-                        notes="Unlimited unit-energy supporting blend; no vehicle stock or investment capacity",
+                        notes=None,
                     )
                 )
             audit.append(

@@ -15,7 +15,7 @@ def test_selected_atb_prices_keep_msrp_and_recover_manufacturing_cost(trajectory
     vehicles = pd.read_csv(
         "inputs/1_interim/fetched_nlr_atb_autonomie/atb_vehicles.csv"
     )
-    price_source = bundle.sources.sources["nlr_atb_transportation_2024"].component(
+    price_source = bundle.sources.sources["nlr_atb_transportation"].component(
         "vehicles"
     )
     selected = select_nlr_purchase_prices(
@@ -45,7 +45,7 @@ def test_selected_atb_prices_keep_msrp_and_recover_manufacturing_cost(trajectory
                             right_on=["year", "vehicle_class", "vehicle_detail"], validate="one_to_one")
     assert len(joined) == len(selected)
     assert joined.vehicle_price_usd_2022_per_vehicle.equals(joined.value)
-    assert selected["source_id"].eq("nlr_atb_transportation_2024").all()
+    assert selected["source_id"].eq("nlr_atb_transportation").all()
 
 
 def test_rejects_unreviewed_markup_and_duplicate_price_details() -> None:
@@ -56,7 +56,7 @@ def test_rejects_unreviewed_markup_and_duplicate_price_details() -> None:
             "vehicle_detail": "Gasoline ICE Vehicle (spark ignition)",
             "metric_key": "modeled_vehicle_price", "value": 30000.0,
             "unit": "2022 USD/vehicle", "trajectory": "Mid",
-            "source_id": "nlr_atb_transportation_2024",
+            "source_id": "nlr_atb_transportation",
         }]
     )
     rules = {

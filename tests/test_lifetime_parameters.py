@@ -73,7 +73,7 @@ def test_fixed_road_medians_use_existing_class_contract() -> None:
     medium_rows = [row for row in rows if row.tech in medium_owners]
     assert {row.lifetime for row in medium_rows} == {18}
     medium_context = next(context for context in contexts if context.data_id == medium_rows[0].data_id)
-    assert {item.source_key for item in medium_context.contributors} == {"nhtsa_cafe_2024_ldv_survival"}
+    assert {item.source_key for item in medium_context.contributors} == {"nhtsa_cafe_ldv_survival"}
     heavy_owners = set(technology.loc[technology.category.eq("heavy_trucks"), "tech"])
     heavy_rows = [row for row in rows if row.tech in heavy_owners]
     assert {row.lifetime for row in heavy_rows} == {25}
@@ -163,7 +163,7 @@ def test_survival_period_blocks_and_representation_switch() -> None:
     expected = car.loc[car.age.isin(range(5)), "survival_probability"].mean()
     assert next(row.fraction for row in curves if row.region == "ON" and row.tech == "T_LDV_C_GSL_N" and row.vintage == 2025 and row.period == 2025) == pytest.approx(expected)
     for tech, source_id, source_class in (
-        ("T_MDV_T_BEV_N", "nhtsa_cafe_2024_ldv_survival", "2b/3 Trucks"),
+        ("T_MDV_T_BEV_N", "nhtsa_cafe_ldv_survival", "2b/3 Trucks"),
         ("T_HDV_T_BEV_N", "eia_nems_hd_truck_scrappage", "Cls 7-8"),
     ):
         source = transformed.loc[
@@ -213,7 +213,7 @@ def test_survival_period_blocks_and_representation_switch() -> None:
     assert heavy_schedule.loc[heavy_schedule.age.eq(24), "survival_probability"].item() > 0.5
     assert heavy_schedule.loc[heavy_schedule.age.eq(25), "survival_probability"].item() <= 0.5
     for category, lifetime, source_id in (
-        ("medium_trucks", 18, "nhtsa_cafe_2024_ldv_survival"),
+        ("medium_trucks", 18, "nhtsa_cafe_ldv_survival"),
         ("heavy_trucks", 25, "eia_nems_hd_truck_scrappage"),
     ):
         owners = set(technology.loc[technology.category.eq(category), "tech"])

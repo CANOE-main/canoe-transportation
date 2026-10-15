@@ -221,7 +221,7 @@ def test_moves5_offline_scenario_replays_both_lifetime_modes_and_rejects_missing
     scenario_path = tmp_path / SCENARIO
     payload = yaml.safe_load(scenario_path.read_text(encoding="utf-8"))
     payload["geography"]["regions"] = ["ON"]
-    payload["lifetimes"]["heavy_truck_survival_source"] = "epa_moves5_heavy_truck_survival"
+    payload["lifetimes"]["heavy_truck_survival_source"] = "epa_moves_heavy_truck_survival"
     payload["comparison"]["mode"] = "none"
     for curves in (True, False):
         payload["lifetimes"]["survival_curves"] = curves
@@ -280,7 +280,7 @@ def test_moves5_offline_scenario_replays_both_lifetime_modes_and_rejects_missing
     # A selected missing raw PDF cannot be hidden by the already normalized CSV.
     report_path = tmp_path / bundle.scenario.outputs.validation_report
     previous = file_sha256(database), file_sha256(report_path)
-    cache = resolve_input_path(bundle, "cache", bundle.sources.sources["epa_moves5_heavy_truck_survival"].adapter["cache_path"])
+    cache = resolve_input_path(bundle, "cache", bundle.sources.sources["epa_moves_heavy_truck_survival"].adapter["cache_path"])
     assert cache.is_relative_to(tmp_path)
     cache.unlink()
     with pytest.raises(FileNotFoundError, match="MOVES5|moves5|P101CUN7"):

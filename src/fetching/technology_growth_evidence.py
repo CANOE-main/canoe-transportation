@@ -29,7 +29,9 @@ from utils import (
     ConfigBundle,
     file_sha256,
     load_config_bundle,
+    load_yaml,
     resolve_artifact_path,
+    resolve_parameter_path,
     resolve_repo_path,
     write_dataframe_atomic,
     write_text_atomic,
@@ -40,8 +42,6 @@ SOURCE_KEYS = (
     "hatch_original_growth_evidence",
     "hatch_extended_growth_evidence",
     "eafo_norway_growth_evidence",
-    "technology_growth_literature",
-    "temoa_growth_reference",
 )
 
 
@@ -86,12 +86,32 @@ class GrowthSourceRequest(BaseModel):
         return self
 
 
+class MethodologyReference(GrowthSourceRequest):
+    """Pinned diagnostic context, with no database-source or DQ identity."""
+
+    title: str
+    version: str
+    citation: str
+
+
+def methodology_references(bundle: ConfigBundle) -> dict[str, MethodologyReference]:
+    payload = load_yaml(
+        resolve_parameter_path(bundle, "technology_growth_diagnostic.yaml")
+    )
+    return {
+        key: MethodologyReference.model_validate(value)
+        for key, value in payload["methodology_references"].items()
+    }
+
+
 def registered_assets(bundle: ConfigBundle) -> list[tuple[str, EvidenceAsset]]:
     assets = []
     for key in SOURCE_KEYS:
         source = bundle.sources.sources[key]
         request = GrowthSourceRequest.model_validate(source.adapter)
         assets.extend((key, asset) for asset in request.assets)
+    for key, reference in methodology_references(bundle).items():
+        assets.extend((key, asset) for asset in reference.assets)
     if len({asset.key for _, asset in assets}) != len(assets) or len(
         {asset.cache_path for _, asset in assets}
     ) != len(assets):
@@ -162,6 +182,7 @@ def acquire_evidence(
     cache = resolve_artifact_path(bundle, "technology_growth_cache").resolve()
     # Validate every adapter before allowing any I/O.
     assets = registered_assets(bundle)
+    references = methodology_references(bundle)
     with requests.Session() as session:
         for key, asset in assets:
             path = (cache / asset.cache_path).resolve()
@@ -191,7 +212,7 @@ def acquire_evidence(
                 with path.open("xb") as handle:
                     handle.write(content)
             validate_asset(content, asset)
-            source = bundle.sources.sources[key]
+            source = bundle.sources.sources.get(key) or references[key]
             rows.append(
                 {
                     "source_key": key,

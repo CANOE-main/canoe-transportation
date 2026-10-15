@@ -74,7 +74,7 @@ def prepare_age_profiles(
         atb_rules["components"]["vmt"]["output_file"],
     )
     mileage = pd.read_csv(mileage_file)
-    if set(mileage.source_id) != {"nlr_atb_transportation_2024"}:
+    if set(mileage.source_id) != {"nlr_atb_transportation"}:
         raise ValueError("ATB mileage artifact source identity differs from registry")
     mileage = mileage.loc[mileage.year_index.le(ceiling)].copy()
     conversion = float(load_conversion_factors(bundle)["length"]["mile_to_km"])
@@ -200,7 +200,7 @@ def build_age_factor_artifact(
             components: list[tuple[str, str | int]] = [
                 (CEUD, activity[road_class]["table_id"]),
                 (CEUD, stock[road_class]["table_id"]),
-                ("nlr_atb_transportation_2024", atb_component),
+                ("nlr_atb_transportation", atb_component),
             ]
             if profile_class in {"Car", "Light Truck"}:
                 components.append(aggregation_component(bundle, "ldv", ceud_region))
@@ -217,6 +217,9 @@ def build_age_factor_artifact(
                 transformation="CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages",
                 transformation_version="1",
                 governing_source_id=source_ids[CEUD],
+                data_quality=bundle.sources.resolved_data_quality(
+                    CEUD, activity[road_class]["table_id"],
+                ),
                 value_variant={"age_input_digest": age_digest, "road_class": road_class,
                                "region": region, "max_age": max_age,
                                "mean_window": "period_plus_1_through_period_plus_step"},
@@ -471,6 +474,9 @@ def prepare_road_utilization(
             dataset_key=f"road_utilization.flat.{road_class}",
             transformation="Mean CEUD annual activity-to-stock ratio divided by manual capacity-to-activity",
             transformation_version="1", governing_source_id=source_id,
+            data_quality=bundle.sources.resolved_data_quality(
+                CEUD, activity[road_class]["table_id"],
+            ),
             value_variant={"input_digest": input_digest,
                            "manual_assumption_data_id": assumption_dataset.data_id,
                            "vkt_schedules": scenario.road_utilization.vkt_schedules},
@@ -482,7 +488,7 @@ def prepare_road_utilization(
                 expanded.category.eq(road_class), "tech"
             ])
         ]
-        flat_rows.extend(validate_parameter_rows(LimitAnnualCapacityFactor, selected, context))
+        flat_rows.extend(validate_parameter_rows(LimitAnnualCapacityFactor, selected, context, bundle=bundle))
     age_rows: pd.DataFrame | None = None
     age_profiles: pd.DataFrame | None = None
     age_audit: dict[str, Any] = {}

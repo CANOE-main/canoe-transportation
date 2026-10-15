@@ -17,7 +17,7 @@ from validation.provenance import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 @pytest.fixture
@@ -25,47 +25,42 @@ def bundle():
     return load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
 
 
-def test_yaml_order_pins_current_source_mapping(bundle) -> None:
+def test_explicit_source_ids_preserve_retired_gaps(bundle) -> None:
     assert source_id_mapping(bundle.sources) == {
         "nrcan_ceud_transport_provincial": "T01",
         "nrcan_ceud_transport_national": "T02",
         "ontario_ministry_transport_vehicle_population": "T03",
         "statcan_transport_tables": "T04",
         "cer_canadas_energy_future": "T05",
-        "nlr_atb_transportation_2024": "T06",
-        "anl_autonomie_bean_2022": "T07",
+        "nlr_atb_transportation": "T06",
+        "anl_autonomie_bean": "T07",
         "nrcan_fuel_consumption_ratings": "T08",
-        "nhtsa_cafe_2024_ldv_survival": "T09",
+        "nhtsa_cafe_ldv_survival": "T09",
         "eia_nems_hd_truck_scrappage": "T10",
         "jgcri_gcam_motorcycle_inputs": "T11",
-        "epri_us_regen_2025_transportation": "T12",
-        "faa_economic_values_2024": "T13",
-        "wards_intelligence_2022_sales_shares": "T14",
+        "epri_us_regen_transportation": "T12",
+        "faa_economic_values": "T13",
+        "wards_intelligence_sales_shares": "T14",
         "emrg_sfu_cims_model": "T15",
-        "open_energy_outlook_2022": "T16",
-        "argonne_rd_greet_2025_rev1": "T17",
-        "epa_moves4_population_activity_2023": "T18",
-        "canada_energy_policy_simulator_3_4_7": "T19",
-        "argonne_hdsam_4_5": "T20",
+        "open_energy_outlook": "T16",
+        "argonne_rd_greet": "T17",
+        "canada_energy_policy_simulator": "T19",
+        "argonne_hdsam": "T20",
         "fueleconomy_gov_vehicle_data": "T21",
-        "reviewed_mto_make_model_evidence": "T22",
         "nhtsa_vpic_vehicle_models": "T23",
-        "dunsky_ev_charging_infrastructure_2024": "T24",
+        "dunsky_ev_charging_infrastructure": "T24",
         "transport_canada_ev_dashboard": "T25",
-        "pollution_probe_ev_charging_survey_2024": "T26",
-        "nlr_alternative_fueling_infrastructure_2024": "T27",
-        "icct_ev_charge_2024": "T28",
-        "icct_hdv_charge_2024": "T29",
-        "iea_future_of_hydrogen_2019": "T30",
+        "pollution_probe_ev_charging_survey": "T26",
+        "nlr_alternative_fueling_infrastructure": "T27",
+        "icct_ev_charge": "T28",
+        "icct_hdv_charge": "T29",
+        "iea_future_of_hydrogen": "T30",
         "legacy_charging_profiles": "T31",
-        "epa_automotive_trends": "T32",
         "epa_omega_baseline": "T33",
         "hatch_original_growth_evidence": "T34",
         "hatch_extended_growth_evidence": "T35",
         "eafo_norway_growth_evidence": "T36",
-        "technology_growth_literature": "T37",
-        "temoa_growth_reference": "T38",
-        "epa_moves5_heavy_truck_survival": "T39",
+        "epa_moves_heavy_truck_survival": "T39",
     }
 
 
@@ -115,11 +110,9 @@ def test_single_source_inherits_component_or_family_dq(bundle) -> None:
     assert resolved.parameter_fields() == {
         "data_source": "T01",
         "data_id": resolved.data_id,
-        "dq_cred": 5,
-        "dq_geog": 5,
-        "dq_struc": 5,
-        "dq_tech": 5,
-        "dq_time": 5,
+        **bundle.sources.resolved_data_quality(
+            "nrcan_ceud_transport_provincial", 20,
+        ).row_fields(),
     }
     labels, datasets, sources = registry_rows([resolved])
     assert labels[0].source_id == "T01"
@@ -127,7 +120,9 @@ def test_single_source_inherits_component_or_family_dq(bundle) -> None:
     assert sources[0].source == bundle.sources.sources[
         "nrcan_ceud_transport_provincial"
     ].citation
-    assert sources[0].notes == ""
+    assert sources[0].notes == resolved.parameter_notes()
+    assert bundle.sources.sources["nrcan_ceud_transport_provincial"].database_note in sources[0].notes
+    assert "  - 20: " in sources[0].notes
 
 
 def test_partial_annotations_resolve_per_indicator_and_notes_are_inherited(bundle) -> None:
@@ -136,6 +131,7 @@ def test_partial_annotations_resolve_per_indicator_and_notes_are_inherited(bundl
     source["data_quality"] = {"dq_cred": 2, "dq_struc": 3}
     source["database_note"] = "Reviewed family note"
     source["components"][20]["data_quality"] = {"dq_geog": 1, "dq_struc": 4}
+    source["components"][20]["database_note"] = None
     registry = SourcesConfig.model_validate(payload)
     context = resolve_provenance(
         registry, source_key="nrcan_ceud_transport_provincial", component_key=20,
@@ -144,20 +140,25 @@ def test_partial_annotations_resolve_per_indicator_and_notes_are_inherited(bundl
     assert context.data_quality.row_fields() == {
         "dq_cred": 2, "dq_geog": 1, "dq_struc": 4, "dq_tech": 5, "dq_time": 5,
     }
-    assert registry_rows([context])[2][0].notes == "Reviewed family note"
+    assert registry_rows([context])[2][0].notes == (
+        "nrcan_ceud_transport_provincial: Reviewed family note"
+    )
     source["components"][20]["database_note"] = "Reviewed component note"
     overridden = resolve_provenance(
         SourcesConfig.model_validate(payload), source_key="nrcan_ceud_transport_provincial",
         component_key=20, transformation="fixture", transformation_version="1",
     )
-    assert registry_rows([overridden])[2][0].notes == "Reviewed component note"
+    assert overridden.parameter_notes() == (
+        "nrcan_ceud_transport_provincial: Reviewed family note\n"
+        "  - 20: Reviewed component note"
+    )
     assert overridden.data_id == context.data_id
     source["components"][20]["database_note"] = ""
     cleared = resolve_provenance(
         SourcesConfig.model_validate(payload), source_key="nrcan_ceud_transport_provincial",
         component_key=20, transformation="fixture", transformation_version="1",
     )
-    assert registry_rows([cleared])[2][0].notes == ""
+    assert registry_rows([cleared])[2][0].notes == context.parameter_notes()
 
 
 def test_composite_preserves_distinct_component_database_notes(bundle) -> None:
@@ -177,7 +178,17 @@ def test_composite_preserves_distinct_component_database_notes(bundle) -> None:
         inputs=contexts, dataset_key="fixture", transformation="fixture",
         transformation_version="1", governing_source_id="T01",
     )
-    assert registry_rows([combined])[2][0].notes == "Car evidence\nLight truck evidence"
+    notes = combined.parameter_notes()
+    assert notes.count(source["database_note"]) == 1
+    assert "  - 20: Car evidence\n  - 21: Light truck evidence" in notes
+    nested = resolve_composite_provenance(
+        inputs=[combined, contexts[1], combined], dataset_key="nested_fixture",
+        transformation="nested", transformation_version="1",
+        governing_source_id="T01",
+    )
+    assert registry_rows([nested])[2][0].notes == notes
+    assert nested.data_quality == combined.data_quality
+    assert nested.parameter_notes() == notes
 
 
 def test_composite_requires_explicit_dq_when_contributors_disagree(bundle) -> None:
@@ -201,6 +212,7 @@ def test_composite_requires_explicit_dq_when_contributors_disagree(bundle) -> No
         transformation="combine",
         transformation_version="1",
         governing_source_id="T01",
+        data_quality=first.data_quality,
     )
     reversed_order = resolve_composite_provenance(
         inputs=[first, second],
@@ -208,6 +220,7 @@ def test_composite_requires_explicit_dq_when_contributors_disagree(bundle) -> No
         transformation="combine",
         transformation_version="1",
         governing_source_id="T01",
+        data_quality=first.data_quality,
     )
     assert composite.data_id == reversed_order.data_id
     assert [item.source_id for item in composite.contributors] == ["T01", "T04"]
@@ -283,6 +296,7 @@ def test_composite_preserves_multiple_component_citations_from_one_source(bundle
         transformation="disaggregate",
         transformation_version="1",
         governing_source_id="T01",
+        data_quality=ceud.data_quality,
     )
 
     statcan = next(item for item in combined.contributors if item.source_id == "T04")

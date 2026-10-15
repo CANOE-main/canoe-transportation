@@ -12,11 +12,21 @@ from canoe_schema import CanoeBaseModel
 from canoe_schema.v4_0 import DataSet, DataSource, DataSourceLabel
 from pydantic import BaseModel, ConfigDict
 
-from validation.config_models import DataQuality, SourceComponent, SourcesConfig
+from validation.config_models import DatabasePrecedence, DataQuality, SourceComponent, SourcesConfig
 
 
 class ProvenanceError(ValueError):
     """Raised when provenance cannot be resolved without ambiguity."""
+
+
+class ComponentContribution(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    component_key: str
+    database_note: str | None = None
+    database_note_variants: dict[str, str] = {}
+    data_quality: DataQuality
+    database_precedence: tuple[DatabasePrecedence, ...] = ()
 
 
 class Contributor(BaseModel):
@@ -28,6 +38,21 @@ class Contributor(BaseModel):
     citation: str
     database_note: str
     data_id: str
+    components: tuple[ComponentContribution, ...] = ()
+
+    def notes(self, note_variants: Sequence[str] = ()) -> str | None:
+        lines = [f"{self.source_key}: {self.database_note}".rstrip()]
+        seen = {self.database_note}
+        for component in self.components:
+            if component.database_note and component.database_note not in seen:
+                lines.append(f"  - {component.component_key}: {component.database_note}")
+                seen.add(component.database_note)
+            for key in note_variants:
+                text = component.database_note_variants.get(key)
+                if text and text not in seen:
+                    lines.append(f"  - {component.component_key}.{key}: {text}")
+                    seen.add(text)
+        return "\n".join(lines) if self.database_note or len(lines) > 1 else None
 
 
 class ResolvedProvenance(BaseModel):
@@ -45,13 +70,56 @@ class ResolvedProvenance(BaseModel):
     data_quality: DataQuality
     governing_source_id: str
     contributors: tuple[Contributor, ...]
+    database_note_keys: dict[str, list[str]] = {}
 
-    def parameter_fields(self) -> dict[str, Any]:
+    def parameter_fields(
+        self, table: str | None = None, *, category: str | None = None,
+        sub_category: str | None = None, tech: str | None = None,
+    ) -> dict[str, Any]:
+        source_id, quality = self.governing_source_id, self.data_quality
+        if table is not None:
+            preferred: dict[str, list[ComponentContribution]] = {}
+            for contributor in self.contributors:
+                for component in contributor.components:
+                    if any(rule.matches(
+                        table, component=component.component_key,
+                        category=category, sub_category=sub_category, tech=tech,
+                    ) for rule in component.database_precedence):
+                        preferred.setdefault(contributor.source_id, []).append(component)
+            if len(preferred) > 1:
+                raise ProvenanceError(
+                    f"Ambiguous database_precedence for {table}/{tech or category}: {sorted(preferred)}"
+                )
+            if preferred:
+                source_id, components = next(iter(preferred.items()))
+                qualities = {item.data_quality for item in components}
+                if source_id == self.governing_source_id and quality in qualities:
+                    pass  # Retain the already explicit native component assessment.
+                elif len(qualities) == 1:
+                    quality = next(iter(qualities))
+                else:
+                    raise ProvenanceError(
+                        f"Preferred source {source_id} has different component DQ for {table}/{tech}: "
+                        f"{[item.component_key for item in components]}; narrow its rule"
+                    )
         return {
-            "data_source": self.governing_source_id,
+            "data_source": source_id,
             "data_id": self.data_id,
-            **self.data_quality.row_fields(),
+            **quality.row_fields(),
         }
+
+    def parameter_notes(self, *, note_variants: Sequence[str] = ()) -> str | None:
+        """Render only registry-authored notes for actual source/component inputs."""
+        for key in note_variants:
+            owners = [
+                (source.source_key, component.component_key)
+                for source in self.contributors for component in source.components
+                if key in component.database_note_variants
+            ]
+            if len(owners) != 1:
+                raise ProvenanceError(f"Unknown or ambiguous database_note_variant {key!r}: {owners}")
+        blocks = [source.notes(note_variants) for source in self.contributors]
+        return "\n".join(block for block in blocks if block) or None
 
     def registry_rows(self) -> tuple[CanoeBaseModel, ...]:
         self.data_quality.row_fields()
@@ -72,7 +140,7 @@ class ResolvedProvenance(BaseModel):
             DataSource(
                 source_id=item.source_id,
                 source=item.citation,
-                notes=item.database_note,
+                notes=item.notes(),
                 data_id=self.data_id,
             )
             for item in self.contributors
@@ -81,13 +149,8 @@ class ResolvedProvenance(BaseModel):
 
 
 def source_id_mapping(sources: SourcesConfig) -> dict[str, str]:
-    """Map YAML source order to stable two-digit source labels."""
-    if len(sources.sources) > 99:
-        raise ProvenanceError("At most 99 sources can be mapped to Txx labels")
-    return {
-        source_key: f"T{index:02d}"
-        for index, source_key in enumerate(sources.sources, start=1)
-    }
+    """Use explicit source labels, preserving retired IDs across registry edits."""
+    return {key: source.source_id for key, source in sources.sources.items()}
 
 
 def _canonical_digest(payload: Mapping[str, Any]) -> str:
@@ -175,11 +238,17 @@ def resolve_provenance(
         source_id=source_id,
         title=source.title,
         citation=component.citation or source.citation,
-        database_note=(
-            source.database_note
-            if component.database_note is None else component.database_note
-        ),
+        database_note=source.database_note,
         data_id=data_id,
+        components=(ComponentContribution(
+            component_key=str(component_key), database_note=component.database_note,
+            database_note_variants=component.database_note_variants,
+            data_quality=quality,
+            database_precedence=tuple(
+                source.database_precedence if component.database_precedence is None
+                else component.database_precedence
+            ),
+        ),),
     )
     description = (
         f"{transformation} v{transformation_version}; produces "
@@ -196,6 +265,7 @@ def resolve_provenance(
         data_quality=quality,
         governing_source_id=source_id,
         contributors=(contributor,),
+        database_note_keys=sources.defaults.database_note_keys,
     )
 
 
@@ -212,29 +282,33 @@ def resolve_composite_provenance(
     """Resolve one derived dataset with explicit governing source and DQ policy."""
     if not inputs:
         raise ProvenanceError("Composite provenance requires at least one contributor")
-    metadata_by_source: dict[str, tuple[str, str, str, str]] = {}
+    metadata_by_source: dict[str, Contributor] = {}
     for item in inputs:
         item.data_quality.row_fields()
         for contributor in item.contributors:
-            metadata = (
-                contributor.source_key,
-                contributor.title,
-                contributor.citation,
-                contributor.database_note,
-            )
             existing = metadata_by_source.get(contributor.source_id)
             if existing is not None:
-                if existing[:2] != metadata[:2]:
+                if (existing.source_key, existing.title, existing.database_note) != (
+                    contributor.source_key, contributor.title, contributor.database_note,
+                ):
                     raise ProvenanceError(
                         f"Conflicting contributor definition for {contributor.source_id}"
                     )
-                citations = sorted(set(existing[2].split("\n") + metadata[2].split("\n")))
-                notes = sorted(set(filter(None, [existing[3], metadata[3]])))
-                metadata_by_source[contributor.source_id] = (
-                    existing[0], existing[1], "\n".join(citations), "\n".join(notes)
-                )
+                citations = sorted(set(existing.citation.splitlines() + contributor.citation.splitlines()))
+                components = {item.component_key: item for item in existing.components}
+                for component in contributor.components:
+                    previous = components.get(component.component_key)
+                    if previous is not None and previous != component:
+                        raise ProvenanceError(
+                            f"Conflicting component metadata for {contributor.source_key}.{component.component_key}"
+                        )
+                    components[component.component_key] = component
+                metadata_by_source[contributor.source_id] = existing.model_copy(update={
+                    "citation": "\n".join(citations),
+                    "components": tuple(components[key] for key in sorted(components)),
+                })
             else:
-                metadata_by_source[contributor.source_id] = metadata
+                metadata_by_source[contributor.source_id] = contributor
     if governing_source_id not in metadata_by_source:
         raise ProvenanceError(
             f"Governing source {governing_source_id!r} is not a contributor"
@@ -258,16 +332,8 @@ def resolve_composite_provenance(
         contributors=input_ids,
     )
     sorted_contributors = tuple(
-        Contributor(
-            source_key=source_key,
-            source_id=source_id,
-            title=title,
-            citation=citation,
-            database_note=database_note,
-            data_id=data_id,
-        )
-        for source_id, (source_key, title, citation, database_note)
-        in sorted(metadata_by_source.items())
+        contributor.model_copy(update={"data_id": data_id})
+        for _, contributor in sorted(metadata_by_source.items())
     )
     return ResolvedProvenance(
         source_key="composite",
@@ -280,6 +346,7 @@ def resolve_composite_provenance(
         data_quality=resolved_quality,
         governing_source_id=governing_source_id,
         contributors=sorted_contributors,
+        database_note_keys=inputs[0].database_note_keys,
     )
 
 

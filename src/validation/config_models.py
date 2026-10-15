@@ -337,7 +337,7 @@ class ScenarioLifetimes(MappingModel):
     survival_curves: bool
     survival_curve_max_age: int = Field(gt=0)
     heavy_truck_survival_source: Literal[
-        "eia_nems_hd_truck_scrappage", "epa_moves5_heavy_truck_survival"
+        "eia_nems_hd_truck_scrappage", "epa_moves_heavy_truck_survival"
     ]
 
 
@@ -419,6 +419,43 @@ class ScenarioConfig(MappingModel):
         return self
 
 
+ParameterTable = Literal[
+    "existing_capacity", "demand", "efficiency", "cost_invest", "cost_fixed",
+    "cost_variable", "emission_embodied", "lifetime_tech", "lifetime_survival_curve",
+    "limit_annual_capacity_factor", "capacity_factor_tech", "limit_tech_input_split",
+    "limit_new_capacity_share",
+]
+
+
+class DatabasePrecedence(MappingModel):
+    """Select an actual contributor for one parameter table and optional scope."""
+
+    table: ParameterTable
+    categories: list[str] | None = Field(default=None, min_length=1)
+    sub_categories: list[str] | None = Field(default=None, min_length=1)
+    technology_suffixes: list[str] | None = Field(default=None, min_length=1)
+    components: list[str] | None = Field(default=None, min_length=1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def table_shorthand(cls, value: Any) -> Any:
+        return {"table": value} if isinstance(value, str) else value
+
+    def matches(
+        self, table: str, *, component: str, category: str | None = None,
+        sub_category: str | None = None, tech: str | None = None,
+    ) -> bool:
+        return (
+            self.table == table
+            and (self.components is None or component in self.components)
+            and (self.categories is None or category in self.categories)
+            and (self.sub_categories is None or sub_category in self.sub_categories)
+            and (self.technology_suffixes is None or (
+                tech is not None and any(tech.endswith(s) for s in self.technology_suffixes)
+            ))
+        )
+
+
 class SourceComponent(MappingModel):
     """Shared component contract; ``adapter`` owns source-native extensions."""
 
@@ -436,6 +473,8 @@ class SourceComponent(MappingModel):
     units: str | None = None
     notes: str | None = None
     database_note: str | None = None
+    database_note_variants: dict[str, str] = Field(default_factory=dict)
+    database_precedence: list[DatabasePrecedence] | None = None
     data_quality: DataQuality | None = None
     adapter: dict[str, Any] = Field(default_factory=dict)
 
@@ -443,6 +482,7 @@ class SourceComponent(MappingModel):
 class SourceSpec(MappingModel):
     """Small shared source contract plus an adapter-owned extension mapping."""
 
+    source_id: Annotated[str, StringConstraints(pattern=r"^T(?:0[1-9]|[1-9][0-9])$")]
     title: str
     status: Literal["active", "inactive"]
     source_type: str
@@ -452,6 +492,7 @@ class SourceSpec(MappingModel):
     validation_rule: str
     refresh_notes: str
     database_note: str
+    database_precedence: list[DatabasePrecedence] = Field(default_factory=list)
     units: str | None = None
     required: bool
     data_quality: DataQuality
@@ -473,10 +514,19 @@ class SourceDefaults(MappingModel):
     required: bool
     component_required: bool
     data_quality: DataQuality
+    database_note_keys: dict[ParameterTable, list[str]] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_complete_fallback(self) -> Self:
         self.data_quality.row_fields()
+        if any(not keys or len(keys) != len(set(keys)) for keys in self.database_note_keys.values()):
+            raise ValueError("database_note_keys require distinct non-empty column lists")
+        from canoe_schema import v4_0
+
+        for table, keys in self.database_note_keys.items():
+            model = getattr(v4_0, "".join(part.capitalize() for part in table.split("_")))
+            if invalid := set(keys) - model.model_fields.keys():
+                raise ValueError(f"Invalid database_note_keys for {table}: {sorted(invalid)}")
         return self
 
 
@@ -533,4 +583,17 @@ class SourcesConfig(MappingModel):
             raise ValueError("sources.yaml must define at least one source")
         if len(self.sources) > 99:
             raise ValueError("sources.yaml supports at most 99 stable Txx source IDs")
+        ids = [source.source_id for source in self.sources.values()]
+        if len(ids) != len(set(ids)):
+            raise ValueError("source_id values must be unique")
+        for key, source in self.sources.items():
+            component_keys = {str(component) for component in source.components}
+            rules = [*source.database_precedence, *(
+                rule for component in source.components.values()
+                for rule in (component.database_precedence or [])
+            )]
+            for rule in rules:
+                unknown = set(rule.components or []) - component_keys
+                if unknown:
+                    raise ValueError(f"{key} database_precedence has unknown components: {sorted(unknown)}")
         return self
