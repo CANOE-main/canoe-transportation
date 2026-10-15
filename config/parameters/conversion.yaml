@@ -57,7 +57,7 @@ provenance:
     keys: [joule_to_mj, wh_to_mj, kwh_to_mj]
     url: https://www.bipm.org/en/publications/si-brochure
   fuel_hhv:
-    source_id: argonne_rd_greet_2025_rev1
+    source_id: argonne_rd_greet
     component: fuel_heating_values
     source: R&D GREET1_2025_Rev1.xlsm Fuel_Specs D16 (gasoline), D23 (diesel)
     formula: Btu_IT/US_gallon * btu_it_to_joule * joule_to_mj / us_gallon_to_litre

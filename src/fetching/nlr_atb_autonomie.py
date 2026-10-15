@@ -31,8 +31,8 @@ from utils import (
 from validation.config_models import SourceSpec
 
 
-ATB_SOURCE_ID = "nlr_atb_transportation_2024"
-ANL_SOURCE_ID = "anl_autonomie_bean_2022"
+ATB_SOURCE_ID = "nlr_atb_transportation"
+ANL_SOURCE_ID = "anl_autonomie_bean"
 
 
 class NlrAtbAutonomieError(ValueError):

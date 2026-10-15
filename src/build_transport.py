@@ -780,6 +780,18 @@ def insert_transport_contribution(
             contexts = {c.data_id: c for c in contribution.provenance_contexts}
             if any(contexts.get(c.data_id) != c for c in ranges.representative.provenance_contexts):
                 raise ValueError("Contribution lost representative provenance/DQ lineage")
+    # Compact across the complete prepared table, including independently prepared regions.
+    # Keep preparation fingerprints intact; insertion receives compact validated copies.
+    note_keys = next((context.database_note_keys for context in contribution.provenance_contexts), {})
+
+    def insert_parameter_batch(rows):
+        from validation.insertion import compact_parameter_notes
+
+        table = rows[0].table_name()
+        compact = compact_parameter_notes(rows, note_keys.get(table, ()))
+        insert_models(connection, compact, conflict=conflict)
+        inserted[table] = compact
+
     # Narrow replacement of this slice's owned rows permits profile/mode switches;
     # shared axes, unrelated rows and transaction control remain caller-owned.
     replacement = dict(ranges=ranges, batches=_representative_batches(contribution),
@@ -846,42 +858,30 @@ def insert_transport_contribution(
                 insert_models(connection, registry_batch, conflict=conflict)
                 inserted.setdefault(registry_batch[0].table_name(), []).extend(registry_batch)
         if contribution.parameter_rows:
-            insert_models(connection, contribution.parameter_rows, conflict=conflict)
-            inserted["existing_capacity"] = list(contribution.parameter_rows)
+            insert_parameter_batch(contribution.parameter_rows)
         if contribution.demand_rows:
-            insert_models(connection, contribution.demand_rows, conflict=conflict)
-            inserted["demand"] = list(contribution.demand_rows)
+            insert_parameter_batch(contribution.demand_rows)
         if contribution.flat_road_factor_rows:
-            insert_models(connection, contribution.flat_road_factor_rows, conflict=conflict)
-            inserted["limit_annual_capacity_factor"] = list(contribution.flat_road_factor_rows)
+            insert_parameter_batch(contribution.flat_road_factor_rows)
         if contribution.lifetime_tech_rows:
-            insert_models(connection, contribution.lifetime_tech_rows, conflict=conflict)
-            inserted["lifetime_tech"] = list(contribution.lifetime_tech_rows)
+            insert_parameter_batch(contribution.lifetime_tech_rows)
         if contribution.lifetime_survival_curve_rows:
-            insert_models(connection, contribution.lifetime_survival_curve_rows, conflict=conflict)
-            inserted["lifetime_survival_curve"] = list(contribution.lifetime_survival_curve_rows)
+            insert_parameter_batch(contribution.lifetime_survival_curve_rows)
         if contribution.efficiency_rows:
-            insert_models(connection, contribution.efficiency_rows, conflict=conflict)
-            inserted["efficiency"] = list(contribution.efficiency_rows)
+            insert_parameter_batch(contribution.efficiency_rows)
         if contribution.cost_invest_rows:
-            insert_models(connection, contribution.cost_invest_rows, conflict=conflict)
-            inserted["cost_invest"] = list(contribution.cost_invest_rows)
+            insert_parameter_batch(contribution.cost_invest_rows)
         if contribution.cost_fixed_rows:
-            insert_models(connection, contribution.cost_fixed_rows, conflict=conflict)
-            inserted["cost_fixed"] = list(contribution.cost_fixed_rows)
+            insert_parameter_batch(contribution.cost_fixed_rows)
         if contribution.cost_variable_rows:
-            insert_models(connection, contribution.cost_variable_rows, conflict=conflict)
-            inserted["cost_variable"] = list(contribution.cost_variable_rows)
+            insert_parameter_batch(contribution.cost_variable_rows)
         if contribution.input_split_rows:
-            insert_models(connection, contribution.input_split_rows, conflict=conflict)
-            inserted["limit_tech_input_split"] = list(contribution.input_split_rows)
+            insert_parameter_batch(contribution.input_split_rows)
         if embodied_rows:
-            insert_models(connection, embodied_rows, conflict=conflict)
-            inserted["emission_embodied"] = embodied_rows
+            insert_parameter_batch(embodied_rows)
         for batch in (profile_rows,share_rows):
             if batch:
-                insert_models(connection,batch,conflict=conflict)
-                inserted[batch[0].table_name()] = batch
+                insert_parameter_batch(batch)
     if contribution.capacity_to_activity_rows:
         insert_models(connection, contribution.capacity_to_activity_rows, conflict=conflict)
         inserted["capacity_to_activity"] = list(contribution.capacity_to_activity_rows)

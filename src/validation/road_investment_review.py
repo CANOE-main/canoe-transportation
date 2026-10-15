@@ -29,7 +29,7 @@ from utils import (
 from validation.config_models import MappingModel
 
 
-ATB = "nlr_atb_transportation_2024"
+ATB = "nlr_atb_transportation"
 
 
 class CostReviewFinding(MappingModel):

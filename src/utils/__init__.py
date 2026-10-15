@@ -206,7 +206,7 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
             supplied = {key for key, value in selection.model_dump().items() if value is not None}
             if supplied != {selectors[source_name]}:
                 errors.append(f"sources.selections.{source_name} supports only {selectors[source_name]}")
-    atb = registered.get("nlr_atb_transportation_2024")
+    atb = registered.get("nlr_atb_transportation")
     if atb is not None:
         for section in ("efficiencies", "costs"):
             trajectory = getattr(bundle.scenario, section).atb_trajectory
@@ -228,7 +228,7 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
         "stock_age": {"ontario_ministry_transport_vehicle_population"},
         "ldv": {"ontario_ministry_transport_vehicle_population"},
         "medium_trucks": {
-            "ontario_ministry_transport_vehicle_population", "wards_intelligence_2022_sales_shares",
+            "ontario_ministry_transport_vehicle_population", "wards_intelligence_sales_shares",
         },
         "heavy_truck_haul": {"statcan_transport_tables"},
     }

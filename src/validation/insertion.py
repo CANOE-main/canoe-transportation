@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import sqlite3
 import logging
+import csv
 from collections.abc import Mapping, Sequence
+from functools import lru_cache
 from math import isfinite
+from pathlib import Path
 from typing import Any, Literal, TypeVar, TYPE_CHECKING
 
 from canoe_schema import CanoeBaseModel
@@ -20,6 +23,38 @@ ConflictPolicy = Literal["error", "ignore_identical"]
 if TYPE_CHECKING:
     from parameterization.ldv_charging_profiles import ChargingPreparation
     from parameterization.ldv_ev_ranges import RangePreparation
+    from utils import ConfigBundle
+
+
+@lru_cache(maxsize=8)
+def _technology_metadata(path: str, modified_ns: int) -> dict[str, dict[str, str]]:
+    """Read the configured taxonomy once per template revision."""
+    with Path(path).open(encoding="utf-8-sig", newline="") as handle:
+        return {row["tech"]: row for row in csv.DictReader(handle)}
+
+
+def compact_parameter_notes(
+    rows: Sequence[ModelT], note_keys: Sequence[str],
+) -> list[ModelT]:
+    """Keep one deterministic note per configured identity and distinct treatment."""
+    if not rows or not note_keys:
+        return list(rows)
+    if any(key not in type(rows[0]).model_fields for key in note_keys):
+        raise ValueError(f"Invalid database_note_keys for {rows[0].table_name()}: {list(note_keys)}")
+    result = list(rows)
+    seen: set[tuple[Any, ...]] = set()
+    for index in sorted(range(len(rows)), key=lambda i: tuple(
+        str(getattr(rows[i], key)) for key in rows[i].__primary_key__
+    )):
+        row = rows[index]
+        if row.notes is None:
+            continue
+        signature = (*(getattr(row, key) for key in note_keys), row.notes)
+        if signature in seen:
+            result[index] = row.model_copy(update={"notes": None})
+        else:
+            seen.add(signature)
+    return result
 
 
 def replace_owned_ldv_rows(
@@ -515,9 +550,21 @@ def validate_parameter_rows(
     model: type[ModelT],
     records: Sequence[Mapping[str, Any]],
     provenance: ResolvedProvenance,
+    *,
+    bundle: ConfigBundle | None = None,
+    compact_notes: bool = True,
 ) -> list[ModelT]:
-    """Attach one resolved provenance context and construct package row models."""
+    """Attach resolved provenance, including source notes, to package row models."""
     protected = set(provenance.parameter_fields())
+    table = model.table_name()
+    taxonomy = {}
+    if bundle is not None:
+        from utils import resolve_input_path
+
+        path = resolve_input_path(bundle, "template", "technology.csv")
+        taxonomy = _technology_metadata(str(path), path.stat().st_mtime_ns)
+    note_cache: dict[tuple[str, ...], str | None] = {}
+    field_cache: dict[tuple[str | None, ...], dict[str, Any]] = {}
     payloads: list[dict[str, Any]] = []
     for index, record in enumerate(records):
         conflicting = protected.intersection(record)
@@ -526,7 +573,21 @@ def validate_parameter_rows(
                 f"Parameter record {index} restates provenance fields: "
                 f"{sorted(conflicting)}"
             )
-        payloads.append({**record, **provenance.parameter_fields()})
+        clean = dict(record)
+        variants = tuple(clean.pop("database_note_variants", ()))
+        tech = record.get("tech", record.get("tech_or_group"))
+        classification = taxonomy.get(tech, {})
+        scope = (classification.get("category"), classification.get("sub_category"), tech)
+        if scope not in field_cache:
+            field_cache[scope] = provenance.parameter_fields(
+                table, category=scope[0], sub_category=scope[1], tech=tech,
+            )
+        payload = {**clean, **field_cache[scope]}
+        if "notes" in model.model_fields:
+            if variants not in note_cache:
+                note_cache[variants] = provenance.parameter_notes(note_variants=variants)
+            payload["notes"] = note_cache[variants]
+        payloads.append(payload)
     rows = TypeAdapter(list[model]).validate_python(payloads)
     seen: set[tuple[Any, ...]] = set()
     for index, row in enumerate(rows):
@@ -537,6 +598,8 @@ def validate_parameter_rows(
                 f"Duplicate {row.table_name()} key in batch at row {index}: {key}"
             )
         seen.add(key)
+    if compact_notes:
+        return compact_parameter_notes(rows, provenance.database_note_keys.get(table, ()))
     return rows
 
 

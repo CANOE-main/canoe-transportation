@@ -21,7 +21,10 @@ from utils import (
 
 
 LOGGER = logging.getLogger(__name__)
-SOURCE = "argonne_rd_greet_2025_rev1"
+SOURCE = "argonne_rd_greet"
+_RETAINED_SOURCE_KEY = "argonne_rd_greet_2025_rev1"
+_RETAINED_ATB_SOURCE_KEY = "nlr_atb_transportation_2024"
+_ATB_SOURCE_KEY = "nlr_atb_transportation"
 COMPONENT = "road_vehicle_cycle_emissions"
 Cell = Annotated[str, Field(pattern=r"^[A-Z]+[1-9][0-9]*$")]
 
@@ -165,10 +168,10 @@ def required_inputs(bundle: ConfigBundle) -> list[Path]:
 
 
 def _atb_replay_digest(path: Path, expected: str | None, trajectories: list[str]) -> str:
-    """Match retained bytes, allowing only a valid run-selection marker to differ.
+    """Match retained bytes after the exact source rename and run-selection marker.
 
     All physical vehicle values, labels, rows and formatting must reproduce the
-    registered digest exactly. The Boolean marker is not consumed by GREET.
+    registered digest exactly. Neither metadata field changes GREET inputs.
     No source or external-model file is rewritten.
     """
     raw = path.read_bytes()
@@ -186,18 +189,31 @@ def _atb_replay_digest(path: Path, expected: str | None, trajectories: list[str]
         for selection in trajectories
     ):
         raise ValueError("Invalid ATB default-trajectory marker in GREET evidence")
+    source_column = header.index("source_id") if "source_id" in header else None
+    source_keys = [None]
+    if source_column is not None and {row[source_column] for row in records} == {_ATB_SOURCE_KEY}:
+        # Authenticate the old registered bytes without rewriting protected evidence.
+        source_keys.append(_RETAINED_ATB_SOURCE_KEY)
     for selection in trajectories:
-        restored = io.StringIO(newline="")
-        writer = csv.writer(restored, lineterminator="\r\n" if b"\r\n" in raw else "\n")
-        writer.writerow(header)
-        for row in records:
-            fields = row.copy()
-            fields[marker] = str(row[trajectory] == selection)
-            writer.writerow(fields)
-        if hashlib.sha256(restored.getvalue().encode("utf-8")).hexdigest() == expected:
-            LOGGER.info("GREET ATB replay matches retained SHA-256 after restoring only the %s default-trajectory marker", selection)
-            return expected
-    raise ValueError("Stale GREET ATB evidence: differences exceed the default-trajectory marker; explicitly regenerate")
+        for source_key in source_keys:
+            restored = io.StringIO(newline="")
+            writer = csv.writer(restored, lineterminator="\r\n" if b"\r\n" in raw else "\n")
+            writer.writerow(header)
+            for row in records:
+                fields = row.copy()
+                fields[marker] = str(row[trajectory] == selection)
+                if source_key is not None:
+                    fields[source_column] = source_key
+                writer.writerow(fields)
+            if hashlib.sha256(restored.getvalue().encode("utf-8")).hexdigest() == expected:
+                LOGGER.info("GREET ATB replay matches retained SHA-256 after restoring source identity and the %s default-trajectory marker", selection)
+                return expected
+    raise ValueError("Stale GREET ATB evidence: differences exceed the source rename/default-trajectory marker; explicitly regenerate")
+
+
+def _canonical_source_key(value: str | None) -> str | None:
+    """Read the one frozen pre-rename identity while retaining its original hashes."""
+    return SOURCE if value == _RETAINED_SOURCE_KEY else value
 
 
 def generation_profile(bundle: ConfigBundle, *, atb_reference_sha256: str | None = None) -> str:
@@ -208,7 +224,7 @@ def generation_profile(bundle: ConfigBundle, *, atb_reference_sha256: str | None
     ranges, atb = probe_archetypes(bundle)
     atb_digest = _atb_replay_digest(
         atb, atb_reference_sha256,
-        list(bundle.sources.sources["nlr_atb_transportation_2024"].adapter["expected_trajectories"]),
+        list(bundle.sources.sources["nlr_atb_transportation"].adapter["expected_trajectories"]),
     )
     payload = {"registration": registration.model_dump(),
                "extraction": load_harmonization_rules(bundle, "greet_vehicle_cycle"),
@@ -279,7 +295,7 @@ def validate_generation_evidence(bundle, raw, exclusions, cases, report) -> dict
     expected_cases = probe_cases(rules, probe_archetypes(bundle)[0])
     if not report.get("ok") or not report.get("source_hashes_unchanged"):
         raise ValueError("GREET generation report has not passed source-preservation validation")
-    if report.get("source_id") != SOURCE or report.get("component") != COMPONENT:
+    if _canonical_source_key(report.get("source_id")) != SOURCE or report.get("component") != COMPONENT:
         raise ValueError("Unexpected GREET generation source/component")
     if report.get("profile_sha256") != generation_profile(
         bundle, atb_reference_sha256=report.get("atb_evidence", {}).get("sha256"),
@@ -323,7 +339,8 @@ def validate_generation_evidence(bundle, raw, exclusions, cases, report) -> dict
             invariants[f"greet{number}_file"] = path.relative_to(bundle.repo_root).as_posix()
             invariants[f"greet{number}_sha256"] = hashes[path.relative_to(bundle.repo_root).as_posix()]
         for key, row in zip(actual, frame.to_dict("records"), strict=True):
-            if any(row.get(col) != value for col, value in {**expected[key], **invariants}.items()):
+            metadata = {**row, "source_id": _canonical_source_key(row.get("source_id"))}
+            if any(metadata.get(col) != value for col, value in {**expected[key], **invariants}.items()):
                 raise ValueError(f"Unexpected GREET retained control/anchor/source metadata: {key}")
         if frame is exclusions and not frame.reason.eq("combined_CO2_measure_excluded").all():
             raise ValueError("Unexpected GREET combined-CO2 exclusion reason")
@@ -349,12 +366,15 @@ def normalize_generated_results(bundle: ConfigBundle) -> GreetEvidence:
     report = json.loads(bank["report"].read_text(encoding="utf-8"))
     # Authenticate the retained report before using its ATB evidence digest.
     profile = generation_profile(bundle, atb_reference_sha256=report.get("atb_evidence", {}).get("sha256"))
-    if (manifest.source_id, manifest.component, manifest.profile_sha256) != (SOURCE, COMPONENT, profile):
+    if (_canonical_source_key(manifest.source_id), manifest.component, manifest.profile_sha256) != (SOURCE, COMPONENT, profile):
         raise ValueError("Stale GREET result-bank identity/profile; explicitly regenerate")
     raw = pd.read_csv(bank["results"], float_precision="round_trip")
     exclusions = pd.read_csv(bank["exclusions"], float_precision="round_trip")
     cases = pd.read_csv(bank["cases"], float_precision="round_trip")
     validate_generation_evidence(bundle, raw, exclusions, cases, report)
+    # Canonicalize only authenticated in-memory identities; registered bytes stay intact.
+    for frame in (raw, exclusions):
+        frame["source_id"] = frame["source_id"].map(_canonical_source_key)
     atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
     current_atb_sha256 = file_sha256(resolve_input_path(
         bundle, "interim", atb_rules["interim_subdir"], atb_rules["components"]["vehicles"]["output_file"],
@@ -363,7 +383,7 @@ def normalize_generated_results(bundle: ConfigBundle) -> GreetEvidence:
     report["atb_replay"] = {
         "current_sha256": current_atb_sha256,
         "retained_sha256": retained_atb_sha256,
-        "default_trajectory_marker_only": current_atb_sha256 != retained_atb_sha256,
+        "source_identity_or_trajectory_marker_only": current_atb_sha256 != retained_atb_sha256,
         "all_other_bytes_match": True,
     }
     from fetching.greet_automation import inspect_lightweight_glider_formulas

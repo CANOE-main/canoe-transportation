@@ -105,9 +105,8 @@ def prepare_reviewed_manual_lifetimes(
                     "tech": str(fields["tech"]),
                     "lifetime": lifetime,
                     "units": "years",
-                    "notes": f"{notes} Source data year: {year}.",
                 })
-        rows.extend(validate_parameter_rows(LifetimeTech, records, context))
+        rows.extend(validate_parameter_rows(LifetimeTech, records, context, bundle=bundle))
         contexts.append(context)
     native_keys = {(row.region, row.tech) for row in rows}
     expected_keys = {
@@ -192,15 +191,14 @@ def prepare_statcan_bus_lifetimes(
             records.append({
                 "region": model_region, "tech": str(owner.tech), "lifetime": lifetime,
                 "units": "years",
-                "notes": f"StatCan {selected['scenario_region']} {int(selected['reference_period'])} "
-                         f"{member}; {'Canada fallback' if fallback else 'latest provincial value'}.",
+                **({"database_note_variants": ("canada_fallback",)} if fallback else {}),
             })
             audit.append({
                 "region": model_region, "tech": str(owner.tech), "source_region": selected["scenario_region"],
                 "source_year": int(selected["reference_period"]), "source_member": member,
                 "canada_fallback": fallback, "lifetime_years": lifetime,
             })
-    rows = validate_parameter_rows(LifetimeTech, records, context)
+    rows = validate_parameter_rows(LifetimeTech, records, context, bundle=bundle)
     expected = {(output_map.get(region, region), tech) for region in bundle.scenario.geography.regions for tech in owners.tech}
     if len(rows) != len(expected) or {(row.region, row.tech) for row in rows} != expected:
         raise ValueError("StatCan bus lifetime owner coverage is incomplete")

@@ -16,15 +16,15 @@ from pydantic import ValidationError
 from utils import load_config_bundle
 from validation.database_bootstrap import validate_database
 from validation.insertion import insert_models, validate_parameter_rows
-from validation.provenance import registry_rows, resolve_provenance
+from validation.provenance import registry_rows, resolve_composite_provenance, resolve_provenance
 from validation.schema_contract import TransportationTechnology, create_v4_schema
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
-def prepared_connection() -> tuple[sqlite3.Connection, object]:
+def prepared_connection(*, composite: bool = False) -> tuple[sqlite3.Connection, object]:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     provenance = resolve_provenance(
         bundle.sources,
@@ -33,6 +33,18 @@ def prepared_connection() -> tuple[sqlite3.Connection, object]:
         transformation="parameter_fixture",
         transformation_version="1",
     )
+    if composite:
+        fuel = resolve_provenance(
+            bundle.sources, source_key="statcan_transport_tables",
+            component_key="20-10-0025-01", transformation="fuel_fixture",
+            transformation_version="1",
+        )
+        provenance = resolve_composite_provenance(
+            inputs=[provenance, fuel], dataset_key="capacity_fixture",
+            transformation="disaggregate", transformation_version="1",
+            governing_source_id=provenance.source_id,
+            data_quality=provenance.data_quality,
+        )
     connection = sqlite3.connect(":memory:")
     create_v4_schema(connection)
     labels, datasets, sources = registry_rows([provenance])
@@ -49,8 +61,9 @@ def prepared_connection() -> tuple[sqlite3.Connection, object]:
     return connection, provenance
 
 
-def test_parameter_rows_inherit_provenance_and_insert_with_plain_sql() -> None:
-    connection, provenance = prepared_connection()
+@pytest.mark.parametrize("composite", [False, True])
+def test_parameter_rows_inherit_provenance_and_insert_with_plain_sql(composite) -> None:
+    connection, provenance = prepared_connection(composite=composite)
     try:
         rows = validate_parameter_rows(
             ExistingCapacity,
@@ -61,13 +74,26 @@ def test_parameter_rows_inherit_provenance_and_insert_with_plain_sql() -> None:
                     "vintage": 2020,
                     "capacity": 1.5,
                     "units": "PJ",
+                    "notes": "Parameter-specific allocation",
                 }
             ],
             provenance,
         )
         assert rows[0].data_source == provenance.source_id
-        assert rows[0].dq_cred == 5
+        assert rows[0].dq_cred == provenance.data_quality.dq_cred
         assert insert_models(connection, rows) == 1
+        assert connection.execute("SELECT notes FROM existing_capacity").fetchone() == (
+            provenance.parameter_notes(),
+        )
+        assert "Parameter-specific allocation" not in rows[0].notes
+        for contributor in provenance.contributors:
+            assert rows[0].notes.count(contributor.source_key + ":") == 1
+        assert dict(connection.execute(
+            "SELECT s.source_id, s.notes FROM data_source s "
+            "JOIN existing_capacity p ON p.data_id = s.data_id"
+        )) == {item.source_id: item.notes() for item in provenance.contributors}
+        assert len(provenance.contributors) == (2 if composite else 1)
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
         with pytest.raises(sqlite3.IntegrityError):
             insert_models(connection, rows)
     finally:

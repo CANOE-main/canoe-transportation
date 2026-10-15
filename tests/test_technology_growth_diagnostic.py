@@ -43,7 +43,7 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.fixture(scope="module")
 def bundle():
     return load_config_bundle(
-        "config/scenarios/legacy_reproduction.yaml", repo_root=ROOT
+        "config/scenarios/default.yaml", repo_root=ROOT
     )
 
 
@@ -491,6 +491,19 @@ def test_registered_research_sources_do_not_enroll_production(bundle):
         bundle.paths.artifacts["technology_growth_notebook"].path
         == "docs/insights/growth_constraint_diagnosis.py"
     )
+
+
+def test_methodology_context_retains_pinned_assets_without_database_source_identity(bundle):
+    references = acquisition.methodology_references(bundle)
+    assert set(references) == {"technology_growth_literature", "temoa_growth_reference"}
+    assert set(references).isdisjoint(bundle.sources.sources)
+    assert references["temoa_growth_reference"].version.startswith("main a2b0bf24")
+    assert references["technology_growth_literature"].assets[0].sha256 == (
+        "37a61b826d095fcfcc220e7b7d95d454e8c582d4fc5cbe557fcaaba86587c44b"
+    )
+    assets = acquisition.registered_assets(bundle)
+    assert len({asset.key for _, asset in assets}) == len(assets)
+    assert any(key == "technology_growth_literature" for key, _ in assets)
 
 
 def test_canadian_truck_stock_cannot_be_relabelled_as_new_registrations(

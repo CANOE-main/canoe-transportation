@@ -208,7 +208,7 @@ def prepare_ev_charger_rows(
         raise ValueError("TC public chargers were lost during regional harmonization")
 
     stock_class_map = rules["stock_classes"]
-    stock_data_ids: set[str] = set()
+    stock_data_ids: dict[tuple[str, str], set[str]] = {}
     stock_by_region: dict[tuple[str, str], float] = {}
     excluded_rows = sum(row.region not in model_regions for row in existing_capacity_rows)
     if excluded_rows:
@@ -227,7 +227,7 @@ def prepare_ev_charger_rows(
             raise ValueError(f"BEV stock has invalid units or capacity: {row.tech}")
         key = (row.region, matched[0])
         stock_by_region[key] = stock_by_region.get(key, 0.0) + row.capacity * 1000
-        stock_data_ids.add(row.data_id)
+        stock_data_ids.setdefault(key, set()).add(row.data_id)
     expected_stock = {(region, category) for region in model_regions for category in stock_class_map}
     missing_stock = sorted(expected_stock - set(stock_by_region))
     for key in missing_stock:
@@ -235,7 +235,7 @@ def prepare_ev_charger_rows(
     if missing_stock:
         LOGGER.info("Zero BEV stock, omitting historical charger rows: %s", missing_stock)
     vehicle_contexts = {item.data_id: item for item in existing_capacity_contexts}
-    if not stock_data_ids <= set(vehicle_contexts):
+    if any(ids - set(vehicle_contexts) for ids in stock_data_ids.values()):
         raise ValueError("BEV stock provenance contexts are missing")
     paths = [manual_path, province_path, type_path, vehicle_path]
     digest = hashlib.sha256(json.dumps(
@@ -244,15 +244,12 @@ def prepare_ev_charger_rows(
          "rules": rules, "stock": sorted((key, value) for key, value in stock_by_region.items())},
         sort_keys=True,
     ).encode()).hexdigest()
-    dunsky = ("dunsky_ev_charging_infrastructure_2024", "charger_shares_and_utilization")
+    dunsky = ("dunsky_ev_charging_infrastructure", "charger_shares_and_utilization")
     tc = ("transport_canada_ev_dashboard", "public_light_duty_chargers")
-    probe = ("pollution_probe_ev_charging_survey_2024", "private_charger_shares")
-    capacity_context = _context(
-        bundle, [tc, dunsky, probe], name="existing_capacity", digest=digest,
-        governing=tc[0], additional=[vehicle_contexts[key] for key in sorted(stock_data_ids)],
-    )
+    probe = ("pollution_probe_ev_charging_survey", "private_charger_shares")
+    capacity_contexts = []
     port_records = []
-    capacity_records = []
+    capacity_rows = []
     for region in sorted(model_regions):
         for category in ("ldv", "mhdv"):
             evs = stock_by_region[region, category]
@@ -304,12 +301,19 @@ def prepare_ev_charger_rows(
                 "public_charger_as_of": charger_source["as_of"],
             })
             if gw > 0:
-                capacity_records.append({
+                context = _context(
+                    bundle, [tc, dunsky, probe] if category == "ldv" else [dunsky],
+                    name=f"existing_capacity.{region}.{category}", digest=digest,
+                    additional=[vehicle_contexts[key] for key in sorted(
+                        stock_data_ids[region, category]
+                    )],
+                )
+                capacity_contexts.append(context)
+                capacity_rows.extend(validate_parameter_rows(ExistingCapacity, [{
                     "region": region, "tech": rules["technology"][category]["existing"],
                     "vintage": bundle.scenario.periods.latest_observed_vintage, "capacity": gw,
-                    "units": "GW", "notes": f"{category} BEV stock and {charger_source['as_of']} public ports; EV/port {ratio:g}",
-                })
-    capacity_rows = validate_parameter_rows(ExistingCapacity, capacity_records, capacity_context)
+                    "units": "GW",
+                }], context, bundle=bundle))
 
     cer = load_harmonization_rules(bundle, "cer_enerfuture")
     edition = bundle.scenario.sources.selections["cer_canadas_energy_future"].edition
@@ -322,8 +326,8 @@ def prepare_ev_charger_rows(
         target_year=bundle.scenario.economics.cost_reference_year,
     )
     cost_digest = hashlib.sha256((digest + file_sha256(macro_path)).encode()).hexdigest()
-    nlr = ("nlr_alternative_fueling_infrastructure_2024", "residential_l1_cost")
-    oeo = ("open_energy_outlook_2022", "charger_fixed_cost_ratio")
+    nlr = ("nlr_alternative_fueling_infrastructure", "residential_l1_cost")
+    oeo = ("open_energy_outlook", "charger_fixed_cost_ratio")
     cer_macro = ("cer_canadas_energy_future", "macro-indicators")
     invest_contexts = {
         "ldv": _context(bundle, [dunsky, nlr, cer_macro], name="ldv_cost_invest", digest=cost_digest),
@@ -377,23 +381,21 @@ def prepare_ev_charger_rows(
                 base_record = {
                     "region": region, "tech": tech, "vintage": vintage,
                     "units": "$M 2020CAD / GW",
-                    "notes": f"Reviewed charger type count shares; {source_year} cost assumptions",
                 }
                 if vintage != existing_vintage:
                     invest_rows.extend(validate_parameter_rows(CostInvest, [
                         {**base_record, "cost": weighted}
-                    ], invest_contexts[category]))
+                    ], invest_contexts[category], bundle=bundle))
                 periods = [period for period in bundle.scenario.periods.model if period >= vintage]
                 fixed_rows.extend(validate_parameter_rows(CostFixed, [
-                    {**base_record, "period": period, "cost": weighted * fixed_ratio,
-                     "notes": f"Annual fixed charger cost = {fixed_ratio:g} × investment cost"}
+                    {**base_record, "period": period, "cost": weighted * fixed_ratio}
                     for period in periods
-                ], fixed_contexts[category]))
+                ], fixed_contexts[category], bundle=bundle))
 
     efficiency_contexts = {
-        "ldv": _context(bundle, [("icct_ev_charge_2024", "ld_charger_efficiency")],
+        "ldv": _context(bundle, [("icct_ev_charge", "ld_charger_efficiency")],
                         name="ldv_efficiency", digest=digest),
-        "mhdv": _context(bundle, [("icct_hdv_charge_2024", "mhd_charger_efficiency")],
+        "mhdv": _context(bundle, [("icct_hdv_charge", "mhd_charger_efficiency")],
                          name="mhdv_efficiency", digest=digest),
     }
     efficiency_rows = []
@@ -413,10 +415,9 @@ def prepare_ev_charger_rows(
                 efficiency_rows.extend(validate_parameter_rows(Efficiency, [
                     {"region": region, "tech": tech, "vintage": vintage,
                      "input_comm": rules["input_commodity"], "output_comm": mapping["output"],
-                     "efficiency": efficiency, "units": "PJ/PJ",
-                     "notes": f"Reviewed {category} charging efficiency"}
+                     "efficiency": efficiency, "units": "PJ/PJ"}
                     for vintage in vintages
-                ], efficiency_contexts[category]))
+                ], efficiency_contexts[category], bundle=bundle))
                 for vintage in vintages:
                     reviewed = manual.loc[
                         manual.category.eq("charger") & manual.sub_category.eq(category)
@@ -436,12 +437,11 @@ def prepare_ev_charger_rows(
                         "region": region, "vintage": vintage, "source_year": source_year, "tech_or_group": tech,
                         "output_comm": mapping["output"], "operator": rules["utilization_operator"],
                         "factor": factor, "units": "fraction",
-                        "notes": f"Reviewed {category} annual charging utilization; {source_year} input year; constant over cohort lifetime",
                     })
     utilization_rows = validate_parameter_rows(
         LimitAnnualCapacityFactor,
         [{key: value for key, value in record.items() if key not in {"source_year", "units"}}
-         for record in utilization_records], utilization_context,
+         for record in utilization_records], utilization_context, bundle=bundle,
     )
     utilization_records = [
         {**row.model_dump(), "source_year": record["source_year"], "units": record["units"]}
@@ -453,7 +453,7 @@ def prepare_ev_charger_rows(
     if utilization.duplicated(["region", "vintage", "tech_or_group", "output_comm", "operator"]).any():
         raise ValueError("Duplicate charger utilization keys")
 
-    contexts = [capacity_context, *invest_contexts.values(), *fixed_contexts.values(),
+    contexts = [*capacity_contexts, *invest_contexts.values(), *fixed_contexts.values(),
                 *efficiency_contexts.values(), utilization_context]
     output_dir = resolve_artifact_path(bundle, "ev_chargers_processed")
     output_dir.mkdir(parents=True, exist_ok=True)

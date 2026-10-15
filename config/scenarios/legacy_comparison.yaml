@@ -39,7 +39,7 @@ aggregation_sources:
     other: ontario_ministry_transport_vehicle_population
   medium_trucks:  # Medium-truck class and vocation weights.
     "ON": ontario_ministry_transport_vehicle_population
-    other: wards_intelligence_2022_sales_shares
+    other: wards_intelligence_sales_shares
   heavy_truck_haul:  # Heavy-truck day/sleeper-cab weights.
     "ON": statcan_transport_tables
     other: statcan_transport_tables
@@ -68,7 +68,7 @@ comparison:
 lifetimes:
   survival_curves: true  # true: road curves; false: road median lifetimes.
   # NEMS or MOVES5; controls heavy-truck medians and curves.
-  heavy_truck_survival_source: eia_nems_hd_truck_scrappage  # eia_nems_hd_truck_scrappage | epa_moves5_heavy_truck_survival
+  heavy_truck_survival_source: eia_nems_hd_truck_scrappage  # eia_nems_hd_truck_scrappage | epa_moves_heavy_truck_survival
   survival_curve_max_age: 25  # Curve mode: maximum road survival/stock age.
 
 existing_capacity:

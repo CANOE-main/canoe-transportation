@@ -15,7 +15,7 @@ from validation.config_models import AggregationRole
 
 
 MTO = "ontario_ministry_transport_vehicle_population"
-WARDS = "wards_intelligence_2022_sales_shares"
+WARDS = "wards_intelligence_sales_shares"
 STATCAN = "statcan_transport_tables"
 
 

@@ -122,3 +122,119 @@ analogue_rationale:
   historical_cars: 'HATCH passenger cars: durable manufactured products, adoption and infrastructure; historical incumbent-market expansion differs from powertrain substitution. Extended cumulative sums require audit.'
   manufactured_hardware: 'Bicycles, appliances and batteries: repeatable manufacture and individual adoption; capital, lifetime, infrastructure and supply-chain differences preclude treating their rates as vehicle estimates.'
   infrastructure: 'Wind, solar and gas pipelines: policy-dependent system coordination, permitting and enabling infrastructure; not direct vehicle additions. Useful sensitivity context for FCEV and commercial fleets.'
+
+# Context-only publications and implementation references; never database sources.
+methodology_references:
+  technology_growth_literature:
+    title: Odenweller 2022; Nemet 2023 and SI; Edwards 2024 and SI; Greene and Nemet 2026 and SI
+    version: Supplied PDFs / extended research 2026-10-07
+    citation: https://doi.org/10.1038/s41560-022-01097-4; https://doi.org/10.1038/s43247-023-01056-1;
+      https://doi.org/10.1073/pnas.2215679121; https://doi.org/10.1038/s41467-026-73563-6
+    assets:
+    - key: odenweller_feasibility-space-green-h2-scaling_2022
+      cache_path: papers/odenweller_feasibility-space-green-h2-scaling_2022.pdf
+      sha256: 37a61b826d095fcfcc220e7b7d95d454e8c582d4fc5cbe557fcaaba86587c44b
+      bytes: 8442974
+      format: pdf
+      supplied_name: odenweller_feasibility-space-green-h2-scaling_2022.pdf
+    - key: nemet_dataset-adoption-historical-technologies-growth-rates_2023
+      cache_path: papers/nemet_dataset-adoption-historical-technologies-growth-rates_2023.pdf
+      sha256: b734dfc8ea610d0ded7be279863b8947b90f835dbe10903eb7bb40cfb9dcf9b9
+      bytes: 1366813
+      format: pdf
+      supplied_name: nemet_dataset-adoption-historical-technologies-growth-rates_2023.pdf
+    - key: nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI
+      cache_path: papers/nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI.pdf
+      sha256: 8029a0c9807e2dadf3425a67f85da1ad8d24e84e421ac78f359a66462ce193d1
+      bytes: 889386
+      format: pdf
+      supplied_name: nemet_dataset-adoption-historical-technologies-growth-rates_2023_SI.pdf
+    - key: edwards_modeling-DACCS-historical-analogs_2024
+      cache_path: papers/edwards_modeling-DACCS-historical-analogs_2024.pdf
+      sha256: 244b1c0784c401579a7334e1c9281748346058a3984d3b51629b2b5b1ece8240
+      bytes: 934967
+      format: pdf
+      supplied_name: edwards_modeling-DACCS-historical-analogs_2024.pdf
+    - key: edwards_modeling-DACCS-historical-analogs_2024_SI
+      cache_path: papers/edwards_modeling-DACCS-historical-analogs_2024_SI.pdf
+      sha256: db7b9f77f401ba538cb94e1f4ddaba2e9210d8037b64bc461063c872160e1cd8
+      bytes: 7866158
+      format: pdf
+      supplied_name: edwards_modeling-DACCS-historical-analogs_2024_SI.pdf
+    - key: extended_research
+      cache_path: extended_research.html
+      sha256: 2ebae077011413e431852093697293ad7e38223dbdcb903a6bb360437a301206
+      bytes: 431504
+      format: html
+      url: https://www.nature.com/articles/s41467-026-73563-6
+    - key: extended_research_SI
+      cache_path: extended_research_SI.pdf
+      sha256: 43b5b50f5cb8777d318cefee5295b66bdd0744b472a53197d13e2f2048e1d5b4
+      bytes: 3544268
+      format: pdf
+      url: https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41467-026-73563-6/MediaObjects/41467_2026_73563_MOESM1_ESM.pdf
+  temoa_growth_reference:
+    title: Temoa growth equations and pinned implementation
+    version: main a2b0bf24cc0dd2a99570ae48772316341e79c0b5 / documentation 4.0.0a2 2026-10-07
+    citation: https://docs.temoaproject.org/en/latest/extensions/growth_rates.html; https://github.com/TemoaProject/temoa/tree/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates
+    assets:
+    - key: temoa_documentation
+      cache_path: growth_rates.html
+      sha256: 3ab128e785a1e7686d57c94cf9eb102881f16c20803b6ca719899e1181187f3e
+      bytes: 43644
+      format: html
+      url: https://docs.temoaproject.org/en/latest/extensions/growth_rates.html
+    - key: temoa:temoa/extensions/growth_rates/__init__.py
+      cache_path: temoa_source/temoa__extensions__growth_rates____init__.py
+      sha256: 5401c659d80579f2b7b9bf56f3c358d7e2053ea0178106ca7193925121846ae4
+      bytes: 113
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/__init__.py
+    - key: temoa:temoa/extensions/growth_rates/components/__init__.py
+      cache_path: temoa_source/temoa__extensions__growth_rates__components____init__.py
+      sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      bytes: 0
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/components/__init__.py
+    - key: temoa:temoa/extensions/growth_rates/components/growth_capacity.py
+      cache_path: temoa_source/temoa__extensions__growth_rates__components__growth_capacity.py
+      sha256: c7d884065eff5e1666f5208c982ea16c8c979e7f8642982e2867e0cdec721b97
+      bytes: 4355
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/components/growth_capacity.py
+    - key: temoa:temoa/extensions/growth_rates/components/growth_new_capacity.py
+      cache_path: temoa_source/temoa__extensions__growth_rates__components__growth_new_capacity.py
+      sha256: 5dbd732f3b0d446dd8c26fc9129ba08985c92b29081e906377ad198de6330b27
+      bytes: 4314
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/components/growth_new_capacity.py
+    - key: temoa:temoa/extensions/growth_rates/components/growth_new_capacity_delta.py
+      cache_path: temoa_source/temoa__extensions__growth_rates__components__growth_new_capacity_delta.py
+      sha256: 8d18eede0f76b73bd65a9cecf3c73d621b15afe8bc90594799ec26448110895b
+      bytes: 5868
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/components/growth_new_capacity_delta.py
+    - key: temoa:temoa/extensions/growth_rates/core/__init__.py
+      cache_path: temoa_source/temoa__extensions__growth_rates__core____init__.py
+      sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      bytes: 0
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/core/__init__.py
+    - key: temoa:temoa/extensions/growth_rates/core/model.py
+      cache_path: temoa_source/temoa__extensions__growth_rates__core__model.py
+      sha256: 7cd3c9fb118a4302e7d63a5b38b9bd8a0fa6fca04220f9fff53806928e76ba2f
+      bytes: 4636
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/core/model.py
+    - key: temoa:temoa/extensions/growth_rates/data_manifest.py
+      cache_path: temoa_source/temoa__extensions__growth_rates__data_manifest.py
+      sha256: 19b72df205d65a30f20282bfda738be5d4f11b661bd2306018997b7ffde920b4
+      bytes: 2760
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/data_manifest.py
+    - key: temoa:temoa/extensions/growth_rates/extension.py
+      cache_path: temoa_source/temoa__extensions__growth_rates__extension.py
+      sha256: e2c3fd9aa48a909b5d4160a848787c8bd89e0d632d1d89458c54bdaee4ccb121
+      bytes: 1099
+      format: python
+      url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/extension.py

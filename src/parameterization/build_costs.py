@@ -57,13 +57,13 @@ from validation.provenance import (
 
 
 LOGGER = logging.getLogger(__name__)
-ATB = "nlr_atb_transportation_2024"
-BEAN = "anl_autonomie_bean_2022"
-REGEN = "epri_us_regen_2025_transportation"
+ATB = "nlr_atb_transportation"
+BEAN = "anl_autonomie_bean"
+REGEN = "epri_us_regen_transportation"
 GCAM = "jgcri_gcam_motorcycle_inputs"
-FAA = "faa_economic_values_2024"
+FAA = "faa_economic_values"
 CIMS = "emrg_sfu_cims_model"
-OEO = "open_energy_outlook_2022"
+OEO = "open_energy_outlook"
 CER = "cer_canadas_energy_future"
 CEUD = "nrcan_ceud_transport_provincial"
 
@@ -128,6 +128,7 @@ def _region_weights(
 def _context(
     bundle: ConfigBundle, *, key: str, components: list[tuple[str, str]],
     governing: str, digest: str, version: str,
+    governing_component: str | int | None = None,
 ) -> ResolvedProvenance:
     inputs = [
         resolve_provenance(
@@ -137,10 +138,20 @@ def _context(
         for source, component in sorted(set(components))
     ]
     governing_id = source_id_mapping(bundle.sources)[governing]
+    governing_inputs = [
+        item for item in inputs
+        if item.source_id == governing_id and (
+            governing_component is None
+            or item.component_key == str(governing_component)
+        )
+    ]
+    if len(governing_inputs) != 1:
+        raise ValueError(f"Cost DQ requires one native cost component for {key}")
     return resolve_composite_provenance(
         inputs=inputs, dataset_key="transport_cost." + key,
         transformation="Transport cost normalization and currency harmonization",
         transformation_version=version, governing_source_id=governing_id,
+        data_quality=governing_inputs[0].data_quality,
         value_variant={"input_digest": digest, "periods": bundle.scenario.periods.model_dump()},
     )
 
@@ -335,7 +346,6 @@ def prepare_cost_rows(
             "family": family, "region": region, "tech": tech, "vintage": vintage,
             "period": period, "mode": mode, "cost": final,
             "units": units_vehicle if family == "invest" and mode in efficiency["road_classes"] else service_unit(mode),
-            "notes": f"{treatment}; {trajectory}; CER {scenario.economics.cer_scenario}",
             "source_value": source_value, "source_unit": source_unit,
             **conversion.__dict__, "normalization_divisor": divisor,
             "components": components + [(CER, "macro-indicators")],
@@ -782,21 +792,29 @@ def prepare_cost_rows(
     invest_rows: list[CostInvest] = []
     variable_rows: list[CostVariable] = []
     for (family, mode, governing, components), group in sorted(grouped.items()):
+        # Cost evidence governs DQ; supporting prices or service denominators do not.
+        if governing == ATB:
+            governing_component = "vehicles" if family == "invest" else "maintenance_ldv"
+        elif governing == FAA:
+            governing_component = "section_4_operating_costs"
+        else:
+            governing_component = None
         context = _context(
             bundle, key=f"{family}.{mode}.{hashlib.sha256(repr(components).encode()).hexdigest()[:8]}",
             components=list(components), governing=governing, digest=digest,
             version=rules["transformation_version"],
+            governing_component=governing_component,
         )
         contexts.append(context)
         records = [{
             "region": entry["region"], "tech": entry["tech"],
             "vintage": entry["vintage"], "cost": entry["cost"],
-            "units": entry["units"], "notes": entry["notes"],
+            "units": entry["units"],
             **({"period": entry["period"]} if family == "variable" else {}),
         } for entry in group]
         rows = validate_parameter_rows(
             CostInvest if family == "invest" else CostVariable,
-            records, context,
+            records, context, bundle=bundle,
         )
         (invest_rows if family == "invest" else variable_rows).extend(rows)
     invest_rows.sort(key=lambda r: (r.region, r.tech, r.vintage))
@@ -881,6 +899,9 @@ def prepare_cost_rows(
                 (REGEN, "intercity_bus_charts"),
                 (FAA, "section_4_operating_costs"),
             )
+            if bundle.sources.sources[source].components[component].adapter.get(
+                "cost_metadata_status"
+            ) == "provisional_review"
         },
         "source_cost_metadata": [
             {
@@ -888,7 +909,6 @@ def prepare_cost_rows(
                 "currency": registration.adapter["native_cost_currency"],
                 "dollar_year": registration.adapter["native_cost_dollar_year"],
                 "status": registration.adapter.get("cost_metadata_status", "source_documented"),
-                "notes": registration.adapter.get("cost_metadata_note", ""),
             }
             for source, source_registration in sorted(bundle.sources.sources.items())
             for component, registration in sorted(source_registration.components.items(), key=lambda item: str(item[0]))

@@ -97,7 +97,7 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
     assert registry["manual_file"].nunique() == 7
     assert len(registry) == 18
     assert "epa_moves4_population_activity_2023" not in set(registry["source_id"])
-    assert bundle.sources.sources["epa_moves4_population_activity_2023"].status == "inactive"
+    assert "epa_moves4_population_activity_2023" not in bundle.sources.sources
     assert len(resolution) == 27
     assert resolution["tech"].nunique() == 27
     assert not resolution.duplicated(

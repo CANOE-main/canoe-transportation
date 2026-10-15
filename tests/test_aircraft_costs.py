@@ -11,7 +11,7 @@ from utils import load_config_bundle, load_conversion_factors, load_harmonizatio
 
 
 def test_faa_aggregate_passenger_and_cargo_dimensions() -> None:
-    bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    bundle = load_config_bundle("config/scenarios/default.yaml")
     conversions = load_conversion_factors(bundle)
     rules = load_harmonization_rules(bundle, "costs")
     capacity = pd.read_csv(

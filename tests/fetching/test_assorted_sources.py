@@ -493,8 +493,8 @@ def test_artifact_request_and_invalid_download_are_rejected(tmp_path: Path) -> N
 
 @pytest.mark.parametrize(
     ("source_id", "component_id", "file_type", "expected_headers"),
-    [("nhtsa_cafe_2024_ldv_survival", "ldv_survival_rates", "zip", {}),
-     ("epa_moves5_heavy_truck_survival", "heavy_truck_survival_rates", "pdf",
+    [("nhtsa_cafe_ldv_survival", "ldv_survival_rates", "zip", {}),
+     ("epa_moves_heavy_truck_survival", "heavy_truck_survival_rates", "pdf",
       {"User-Agent": "Mozilla/5.0"})],
 )
 def test_configured_request_headers_reach_download_without_changing_empty_calls(
@@ -719,7 +719,7 @@ def test_regen_page_discovers_exact_configured_payload(
         _request(
             page,
             "html",
-            source_id="epri_us_regen_2025_transportation",
+            source_id="epri_us_regen_transportation",
             component_id=source_rules["component_id"],
             url="https://us-regen-docs.epri.com/v2025/assumptions/transportation.html",
         ),
@@ -738,7 +738,7 @@ def test_regen_page_discovers_exact_configured_payload(
 def test_regen_nonroad_cost_invest_manual_table_matches_tables_4_and_6(
     bundle,
 ) -> None:
-    source = bundle.sources.sources["epri_us_regen_2025_transportation"]
+    source = bundle.sources.sources["epri_us_regen_transportation"]
     component = source.component("nonroad_cost_invest_multipliers")
     path = resolve_input_path(
         bundle,
@@ -852,7 +852,7 @@ def _faa_request(tmp_path: Path, component_id: str) -> ArtifactRequest:
     return _request(
         path,
         "pdf",
-        source_id="faa_economic_values_2024",
+        source_id="faa_economic_values",
         component_id=component_id,
     )
 

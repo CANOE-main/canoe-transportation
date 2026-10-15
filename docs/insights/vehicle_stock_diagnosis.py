@@ -3028,7 +3028,7 @@ def heavy_truck_survival_comparison_chart(
     def _build_view():
         source_labels = {
             "eia_nems_hd_truck_scrappage": "NEMS Class 7–8",
-            "epa_moves5_heavy_truck_survival": "EPA MOVES5 heavy truck",
+            "epa_moves_heavy_truck_survival": "EPA MOVES5 heavy truck",
         }
         curve_rows = heavy_truck_survival.copy()
         curve_rows["evidence_source"] = curve_rows["source_id"].map(source_labels)

@@ -211,6 +211,9 @@ def prepare_demand_rows(
                 inputs=[*inputs, cer_context], dataset_key=f"demand.{family}.{service}",
                 transformation=transformation,
                 transformation_version="1", governing_source_id=source_ids[CEUD_PROVINCIAL],
+                data_quality=bundle.sources.resolved_data_quality(
+                    CEUD_PROVINCIAL, components[0][1],
+                ),
                 value_variant=service_variant,
             )
             contexts.append(context)
@@ -225,15 +228,11 @@ def prepare_demand_rows(
                      float(item.baseline_demand) * indices[period]
                  ),
                  "units": item.units,
-                 "notes": (
-                     f"CEUD {base_year} {service}; 2013–{base_year} car CAGR; "
-                     f"CER {edition} {selected_scenario} passenger LDV total {period + step}"
-                     if reallocates_passenger_ldv else
-                     f"CEUD {base_year} {service}; CER {edition} {selected_scenario} GDP {period + step}"
-                 )}
+                 **({"database_note_variants": ("car_extrapolation",)}
+                    if reallocates_passenger_ldv else {})}
                 for item in service_rows.itertuples(index=False) for period in periods
             ]
-            rows.extend(validate_parameter_rows(Demand, records, context))
+            rows.extend(validate_parameter_rows(Demand, records, context, bundle=bundle))
     audit = validate_demand_outputs(rows, regions=expected_regions,
                                     commodities=expected_commodities, periods=periods,
                                     template_units=template_units)

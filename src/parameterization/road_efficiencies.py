@@ -830,8 +830,8 @@ def prepare_bus_annual_efficiency_evidence(
     phev_path = atb_dir / atb_rules["components"]["phev_efficiency"]["output_file"]
     vehicles, phev = pd.read_csv(vehicle_path), pd.read_csv(phev_path)
     if (
-        set(vehicles["source_id"]) != {"nlr_atb_transportation_2024"}
-        or set(phev["source_id"]) != {"nlr_atb_transportation_2024"}
+        set(vehicles["source_id"]) != {"nlr_atb_transportation"}
+        or set(phev["source_id"]) != {"nlr_atb_transportation"}
     ):
         raise ValueError("Bus ATB evidence has an unexpected source identity")
     aliases = atb_rules["components"]["phev_efficiency"]["reconciliation"][

@@ -247,7 +247,6 @@ def flat_road_capacity_factor_records(
             "output_comm": commodity_by_class[row.road_class],
             "operator": "e",
             "factor": float(row.utilization),
-            "notes": f"CEUD road {row.road_class} annual utilization; flat trajectory",
         }
         for row in expanded.sort_values(
             ["region", "road_class", "tech"], kind="stable"

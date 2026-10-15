@@ -217,7 +217,8 @@ def prepare_emission_embodied_rows(bundle: ConfigBundle) -> EmbodiedEmissionPrep
                 inputs=inputs, dataset_key=f"road_embodied_emissions.{mode}.{region}",
                 transformation="Configured GREET lifetime-gas mass scaling and regional road aggregation",
                 transformation_version=rules["transformation_version"],
-                governing_source_id=input_context.governing_source_id, value_variant=variant,
+                governing_source_id=input_context.governing_source_id,
+                data_quality=input_context.data_quality, value_variant=variant,
             )
             context = context.model_copy(update={"dataset_description": context.dataset_description
                 + "; vehicle-cycle evidence: " + json.dumps(selected[[
@@ -256,9 +257,10 @@ def prepare_emission_embodied_rows(bundle: ConfigBundle) -> EmbodiedEmissionPrep
                         records.append({
                             "region": output_region, "tech": tech.tech, "emis_comm": emis_comm,
                             "vintage": vintage, "value": value, "units": units[emis_comm],
-                            "notes": f"GREET simulation {source.rows.solved_simulation_year.iloc[0]}; {materials}; range {distance} miles (0=not range-specific); vehicle-cycle lifetime total, no EOL credits; constant through {rules['constant_through_year']}",
+                            **({"database_note_variants": ("phev_hev_proxy",)}
+                               if tech.sub_category == "phev" and powertrain == "hev" else {}),
                         })
-            rows.extend(validate_parameter_rows(EmissionEmbodied, records, context))
+            rows.extend(validate_parameter_rows(EmissionEmbodied, records, context, bundle=bundle))
     rows.sort(key=lambda r: (r.region, r.tech, r.emis_comm, r.vintage))
     audit = validate_embodied_outputs(
         rows, expected_keys=expected, technologies=set(technology.tech),
