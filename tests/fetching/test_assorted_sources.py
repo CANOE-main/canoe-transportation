@@ -9,6 +9,8 @@ import pandas as pd
 import pytest
 from openpyxl import Workbook
 from pydantic import ValidationError
+from pypdf import PdfWriter
+from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 import fetching.assorted_sources as adapter
 from fetching.assorted_sources import (
@@ -19,10 +21,12 @@ from fetching.assorted_sources import (
     normalize_gcam,
     normalize_nems,
     normalize_nhtsa,
+    normalize_moves5_survival,
     normalize_regen,
     normalize_tc_ev_dashboard_table,
     normalize_tc_public_chargers,
     parse_faa_table_text,
+    parse_moves5_survival_table_text,
 )
 from utils import load_config_bundle, resolve_input_path
 
@@ -196,6 +200,54 @@ def _nems_workbook(
                 1.2 if bad_value and offset == 90 and column == "B" else value
             )
     workbook.save(path)
+
+
+def _moves5_table_text(rules: dict[str, object]) -> str:
+    rows = [
+        f"{age} 0.940 0.750 0.870 {1 - age / 100:.3f}"
+        for age in range(
+            int(rules["expected_ages"]["start"]),
+            int(rules["expected_ages"]["end"]) + 1,
+        )
+    ]
+    return "\n".join(
+        [str(rules["table_title"]), *rules["class_header_fragments"],
+         *rows, str(rules["source_page"])]
+    )
+
+
+def _moves5_pdf(
+    path: Path, rules: dict[str, object], *, table_text: str | None = None,
+    document_id: str | None = None, page_count: int | None = None,
+) -> None:
+    writer = PdfWriter()
+    count = page_count if page_count is not None else int(rules["pdf_page"])
+    font = DictionaryObject(
+        {NameObject("/Type"): NameObject("/Font"),
+         NameObject("/Subtype"): NameObject("/Type1"),
+         NameObject("/BaseFont"): NameObject("/Helvetica")}
+    )
+    for index in range(count):
+        page = writer.add_blank_page(width=612, height=792)
+        text = ""
+        if index == 0:
+            text = f"{rules['document_title']}\n{document_id or rules['document_id']}"
+        if index == int(rules["pdf_page"]) - 1:
+            text = table_text if table_text is not None else _moves5_table_text(rules)
+        if not text:
+            continue
+        page[NameObject("/Resources")] = DictionaryObject(
+            {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})}
+        )
+        content = DecodedStreamObject()
+        escaped = [line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+                   for line in text.splitlines()]
+        commands = ["BT /F1 7 Tf 10 TL 35 760 Td"]
+        commands.extend(f"({line}) Tj T*" for line in escaped)
+        content.set_data(("\n".join(commands) + "\nET").encode("ascii"))
+        page[NameObject("/Contents")] = writer._add_object(content)
+    with path.open("wb") as stream:
+        writer.write(stream)
 
 
 def _gcam_csv(
@@ -437,6 +489,50 @@ def test_artifact_request_and_invalid_download_are_rejected(tmp_path: Path) -> N
         fetch_to_cache(request, session=Session())
     assert not target.exists()
     assert not target.with_suffix(".csv.part").exists()
+
+
+@pytest.mark.parametrize(
+    ("source_id", "component_id", "file_type", "expected_headers"),
+    [("nhtsa_cafe_2024_ldv_survival", "ldv_survival_rates", "zip", {}),
+     ("epa_moves5_heavy_truck_survival", "heavy_truck_survival_rates", "pdf",
+      {"User-Agent": "Mozilla/5.0"})],
+)
+def test_configured_request_headers_reach_download_without_changing_empty_calls(
+    bundle, tmp_path: Path, source_id: str, component_id: str,
+    file_type: str, expected_headers: dict[str, str],
+) -> None:
+    request = adapter._top_level_request(
+        bundle, source_id=source_id, component_id=component_id, file_type=file_type,
+    )
+    assert request.request_headers == expected_headers
+    content = b"%PDF-fixture" if file_type == "pdf" else b"PKfixture"
+    path = tmp_path / f"download.{file_type}"
+    request = request.model_copy(
+        update={"cache_path": path.resolve(), "expected_bytes": len(content),
+                "expected_sha256": sha256(content).hexdigest()}
+    )
+    calls = []
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, chunk_size: int):
+            assert chunk_size > 0
+            yield content
+
+    class Session:
+        def get(self, url: str, **options):
+            calls.append((url, options))
+            return Response()
+
+    assert fetch_to_cache(request, session=Session()) == "downloaded"
+    assert path.read_bytes() == content
+    options = {"stream": True, "timeout": 120}
+    if expected_headers:
+        options["headers"] = expected_headers
+    assert calls == [(request.url, options)]
+    assert not path.with_suffix(path.suffix + ".part").exists()
 
 
 def test_nhtsa_fixture_normalizes_complete_long_form(
@@ -877,10 +973,22 @@ def test_faa_category_compatibility_failure(
         adapter.normalize_faa(request_3, request_4, source_rules)
 
 
+@pytest.mark.parametrize("moves5_selected", [False, True])
 def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_outputs(
-    bundle, rules, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    bundle, rules, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, moves5_selected: bool,
 ) -> None:
-    local_bundle = replace(bundle, repo_root=tmp_path)
+    choice = (
+        rules["epa_moves5"]["source_id"] if moves5_selected
+        else rules["eia_nems"]["source_id"]
+    )
+    local_bundle = replace(
+        bundle, repo_root=tmp_path,
+        scenario=bundle.scenario.model_copy(
+            update={"lifetimes": bundle.scenario.lifetimes.model_copy(
+                update={"heavy_truck_survival_source": choice}
+            )}
+        ),
+    )
     cache = tmp_path / "inputs" / "0_cache" / "fixtures"
     cache.mkdir(parents=True)
     nhtsa_path = cache / "nhtsa.zip"
@@ -890,6 +998,12 @@ def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_output
     payload_path = cache / "regen.js"
     faa_3_path = cache / "faa3.pdf"
     faa_4_path = cache / "faa4.pdf"
+    moves5_path = cache / "moves5.pdf"
+    _moves5_pdf(moves5_path, rules["epa_moves5"])
+    moves5_request = _request(
+        moves5_path, "pdf", source_id=rules["epa_moves5"]["source_id"],
+        component_id=rules["epa_moves5"]["component_id"],
+    )
     _nhtsa_zip(nhtsa_path, rules["nhtsa_cafe"])
     _nems_workbook(nems_path, rules["eia_nems"])
     _gcam_csv(gcam_path, rules["jgcri_gcam"])
@@ -961,11 +1075,25 @@ def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_output
         return text, checksum or request.expected_sha256
 
     monkeypatch.setattr(adapter, "extract_pdf_text", fake_extract)
+    moves5_requests = []
+
+    def moves5_only_request(*_args, **kwargs):
+        assert kwargs["source_id"] == rules["epa_moves5"]["source_id"]
+        moves5_requests.append(kwargs["source_id"])
+        return moves5_request
+
+    monkeypatch.setattr(adapter, "_top_level_request", moves5_only_request)
 
     class NoNetwork:
         def get(self, *_args, **_kwargs):
             raise AssertionError("offline smoke attempted network access")
 
+    if not moves5_selected:
+        adapter.fetch_and_normalize_moves5_survival(
+            "ignored.yaml", download=False, session=NoNetwork()
+        )
+        moves5_requests.clear()
+        moves5_path.unlink()
     output_dir = adapter.fetch_and_normalize(
         "ignored.yaml", download=False, session=NoNetwork()
     )
@@ -985,7 +1113,10 @@ def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_output
         .read_text(encoding="utf-8")
         .splitlines()
     ]
-    assert len(manifest) == 7
+    assert len(manifest) == 8
+    assert moves5_requests == (
+        [rules["epa_moves5"]["source_id"]] * 2 if moves5_selected else []
+    )
     assert set(manifest["cache_status"]) == {"cached"}
     assert set(manifest["status"]) == {"ok", "ok_with_warnings"}
     assert {
@@ -999,3 +1130,154 @@ def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_output
     assert len(pd.read_csv(output_dir / rules["epri_us_regen"]["output_file"])) == 76
     assert len(pd.read_csv(output_dir / rules["faa"]["capacity_output_file"])) == 8
     assert len(pd.read_csv(output_dir / rules["faa"]["maintenance_output_file"])) == 2
+    assert len(pd.read_csv(output_dir / rules["epa_moves5"]["output_file"])) == 41
+    if moves5_selected:
+        moves5_path.unlink()
+        with pytest.raises(FileNotFoundError, match="Offline cache missing"):
+            adapter.fetch_and_normalize("ignored.yaml", download=False, session=NoNetwork())
+
+
+def test_moves5_pdf_normalizes_only_annual_heavy_rates_with_source_locators(
+    rules, tmp_path: Path,
+) -> None:
+    source_rules = rules["epa_moves5"]
+    path = tmp_path / "moves5.pdf"
+    _moves5_pdf(path, source_rules)
+    request = _request(path, "pdf")
+
+    frame = normalize_moves5_survival(request, source_rules)
+
+    assert len(frame) == 41
+    assert frame.vehicle_age.tolist() == list(range(41))
+    assert frame.annual_survival_rate.tolist() == pytest.approx(
+        [1 - age / 100 for age in range(41)]
+    )
+    assert set(frame.source_vehicle_class_label) == {
+        source_rules["source_vehicle_class_label"]
+    }
+    assert set(frame.unit) == {"annual survival-rate fraction"}
+    assert "survival_rate" not in frame.columns
+    assert set(frame.source_pdf_page) == {192}
+    assert set(frame.source_page) == {190}
+    assert set(frame.source_table) == {"Table C-1"}
+    assert set(frame.cache_sha256) == {request.expected_sha256}
+    assert frame.loc[1, "raw_value"] == "0.990"
+    assert frame.equals(normalize_moves5_survival(request, source_rules))
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("title", "table title"),
+        ("class", "header changed"),
+        ("missing_age", "age coverage"),
+        ("duplicate_age", "age coverage"),
+        ("missing_column", "age coverage"),
+        ("rate_bounds", "above 1"),
+        ("page", "page number changed"),
+    ],
+)
+def test_moves5_table_contract_rejects_drift(
+    rules, tmp_path: Path, mutation: str, message: str,
+) -> None:
+    source_rules = rules["epa_moves5"]
+    path = tmp_path / "moves5.pdf"
+    path.write_bytes(b"%PDF-fixture")
+    request = _request(path, "pdf")
+    text = _moves5_table_text(source_rules)
+    if mutation == "title":
+        text = text.replace(str(source_rules["table_title"]), "Unrelated table")
+    elif mutation == "class":
+        text = text.replace("Heavy-duty Vehicles", "Other Vehicles")
+    elif mutation == "missing_age":
+        text = text.replace("2 0.940 0.750 0.870 0.980\n", "")
+    elif mutation == "duplicate_age":
+        text = text.replace("2 0.940", "1 0.940")
+    elif mutation == "missing_column":
+        text = text.replace("2 0.940 0.750 0.870 0.980", "2 0.940 0.750 0.980")
+    elif mutation == "rate_bounds":
+        text = text.replace("2 0.940 0.750 0.870 0.980", "2 0.940 0.750 0.870 1.010")
+    else:
+        text = text.removesuffix(str(source_rules["source_page"])) + "191"
+    with pytest.raises(AssortedSourcesError, match=message):
+        parse_moves5_survival_table_text(
+            text, request=request, rules=source_rules, checksum=request.expected_sha256
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [("identity", "document identity"), ("page", "missing configured page"),
+     ("unreadable", "not readable"), ("hash", "SHA-256 changed")],
+)
+def test_moves5_physical_pdf_and_document_identity_failures(
+    rules, tmp_path: Path, mutation: str, message: str,
+) -> None:
+    source_rules = rules["epa_moves5"]
+    path = tmp_path / "moves5.pdf"
+    _moves5_pdf(
+        path, source_rules,
+        document_id="unrelated" if mutation == "identity" else None,
+        page_count=2 if mutation == "page" else None,
+    )
+    if mutation == "unreadable":
+        path.write_bytes(b"%PDF-unreadable")
+    request = _request(path, "pdf")
+    if mutation == "hash":
+        path.write_bytes(path.read_bytes().replace(b"0.980", b"0.981", 1))
+    with pytest.raises(AssortedSourcesError, match=message):
+        normalize_moves5_survival(request, source_rules)
+
+
+def test_moves5_explicit_offline_preparation_preserves_other_source_evidence(
+    bundle, rules, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    local_bundle = replace(bundle, repo_root=tmp_path)
+    source_rules = rules["epa_moves5"]
+    path = tmp_path / "moves5.pdf"
+    _moves5_pdf(path, source_rules)
+    request = _request(
+        path, "pdf", source_id=source_rules["source_id"],
+        component_id=source_rules["component_id"],
+    )
+    monkeypatch.setattr(adapter, "load_config_bundle", lambda _: local_bundle)
+    monkeypatch.setattr(adapter, "module_rules", lambda _: rules)
+    monkeypatch.setattr(adapter, "_top_level_request", lambda *_args, **_kwargs: request)
+    output_dir = adapter.resolve_input_path(
+        local_bundle, "interim", str(rules["interim_subdir"])
+    )
+    existing = adapter._manifest_row(
+        request.model_copy(update={"source_id": "other_source"}),
+        checksum=request.expected_sha256, cache_status="cached",
+        stats=adapter.SelectionStats(1, 1, 0), selection="other evidence",
+        output_files=["other.csv"], warning_count=1,
+    )
+    warning = {"source_id": "other_source", "component_id": request.component_id,
+               "code": "retained_warning"}
+    adapter.write_outputs(
+        outputs={"other.csv": pd.DataFrame({"value": [42]})},
+        manifest_rows=[existing], warnings=[warning], output_dir=output_dir, rules=rules,
+    )
+
+    class NoNetwork:
+        def get(self, *_args, **_kwargs):
+            raise AssertionError("MOVES5 offline preparation attempted network access")
+
+    adapter.fetch_and_normalize_moves5_survival(
+        "ignored.yaml", download=False, session=NoNetwork()
+    )
+    before = {p.name: p.read_bytes() for p in output_dir.iterdir() if p.is_file()}
+    adapter.fetch_and_normalize_moves5_survival(
+        "ignored.yaml", download=False, session=NoNetwork()
+    )
+    assert before == {p.name: p.read_bytes() for p in output_dir.iterdir() if p.is_file()}
+    manifest = pd.read_csv(output_dir / rules["manifest_file"])
+    assert set(manifest.source_id) == {"other_source", source_rules["source_id"]}
+    assert (manifest.selected_records == [1, 41]).all()
+    assert json.loads((output_dir / rules["warnings_file"]).read_text()) == warning
+    path.unlink()
+    with pytest.raises(FileNotFoundError, match="Offline cache missing"):
+        adapter.fetch_and_normalize_moves5_survival(
+            "ignored.yaml", download=False, session=NoNetwork()
+        )
+    assert before == {p.name: p.read_bytes() for p in output_dir.iterdir() if p.is_file()}

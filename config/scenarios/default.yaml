@@ -1,0 +1,111 @@
+# Field details: config/scenarios/README.md.
+# Run builds serially; intermediate artifacts are shared.
+
+version: 3
+
+scenario:
+  name: baseline  # Run label, independent of the YAML filename.
+  description: "Transportation baseline testing"
+  purpose: default_template
+
+geography:
+  # Keep ON quoted.
+  regions: ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
+
+periods:
+  # prospective: interval-end inputs; legacy: prior timing and vintage bins.
+  period_mode: prospective
+  base_year: 2023  # Latest observed stock/demand year.
+  # Existing-capacity vintages; legacy mode must include base_year.
+  existing: [2000, 2005, 2010, 2015, 2020]
+  model: [2025, 2030, 2035, 2040, 2045]
+  step: 5  # Years per model period.
+
+outputs:
+  # Use distinct database, report and log names per scenario.
+  sqlite_name: canoe_transport_baseline.sqlite
+  validation_report: outputs/validation/baseline_database_bootstrap.json
+  setup_log: outputs/logs/setup_smoke_baseline.json
+
+comparison:
+  # Optional comparison; integrity checks always run.
+  mode: none  # none | legacy | scenario
+  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+  absolute_tolerance: 1.0e-9
+  relative_tolerance: 1.0e-6
+  include_provenance: false  # Scenario mode: also compare source IDs, DQ and notes.
+
+sources:
+  # Registered source years/editions to replay.
+  selections:
+    nrcan_ceud_transport_provincial: {year: 2023}
+    nrcan_ceud_transport_national: {year: 2023}
+    transport_canada_ev_dashboard: {year: 2026}
+    cer_canadas_energy_future: {edition: 2026}
+
+aggregation_sources:
+  # Regional overrides; other is the fallback.
+  stock_age:  # Existing-stock vintage shares.
+    "ON": ontario_ministry_transport_vehicle_population
+    other: ontario_ministry_transport_vehicle_population
+  ldv:  # LDV class weights shared across parameters.
+    "ON": ontario_ministry_transport_vehicle_population
+    other: ontario_ministry_transport_vehicle_population
+  medium_trucks:  # Medium-truck class and vocation weights.
+    "ON": ontario_ministry_transport_vehicle_population
+    other: wards_intelligence_2022_sales_shares
+  heavy_truck_haul:  # Heavy-truck day/sleeper-cab weights.
+    "ON": statcan_transport_tables
+    other: statcan_transport_tables
+
+economics:
+  cer_scenario: Current Measures  # Currency conversion; independent of demand.cer_scenario.
+  global_discount_rate: 0.03
+  default_loan_rate: 0.03
+  cost_reference_currency: CAD
+  cost_reference_year: 2020
+
+lifetimes:
+  survival_curves: true  # true: road curves; false: road median lifetimes.
+  # NEMS or MOVES5; controls heavy-truck medians and curves.
+  heavy_truck_survival_source: epa_moves5_heavy_truck_survival  # eia_nems_hd_truck_scrappage | epa_moves5_heavy_truck_survival
+  survival_curve_max_age: 29  # Curve mode: maximum road survival/stock age.
+
+existing_capacity:
+  vehicle_population_year: 2025  # MTO evidence year.
+  cleanup_tolerance: 0.001  # Minimum retained capacity in each row's native unit.
+
+demand:
+  cer_scenario: Current Measures  # Demand trajectory.
+  future_car_demand: GDP-indexed  # GDP-indexed | extrapolated (historical growth)
+
+road_utilization:
+  # Age-dependent VKT is audit-only until the SQLite schema supports it.
+  vkt_schedules: false
+  vkt_max_age: 25  # Age limit when VKT schedules are enabled.
+
+efficiencies:
+  atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
+
+costs:
+  atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
+
+ev_chargers:
+  # Vehicles per charger port when estimating existing capacity.
+  ld_evs_per_port: 1.0
+  mhd_evs_per_port: 1.5
+
+charging_profiles:
+  travel_behavior_source: nhts  # none: disable; nhts | tts: Ontario LDV charging shape.
+  time_mapping: null  # null: hourly slices; otherwise: hour-to-slice CSV path.
+
+BEV_PHEV_range_representation:
+  # New LDVs: retain variants, constrain minimum range shares, or aggregate by class.
+  mode: new_capacity_shares  # none | new_capacity_shares | representative_archetype
+
+# Road vehicle-cycle emissions.
+embodied_emissions: true
+embodied_materials: conventional  # conventional | lightweight; LDVs only.
+
+row_note_overrides:
+  technology: {}  # Replace notes by technology ID; {} keeps template notes.

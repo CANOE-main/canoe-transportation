@@ -9,7 +9,9 @@ import socket
 import sqlite3
 import sys
 
+import pandas as pd
 import pytest
+import yaml
 
 import build_transport
 from fetching.vehicle_population import registered_requests, validate_source
@@ -201,5 +203,86 @@ def test_real_offline_scenario_clean_replay_freshness_and_failure(tmp_path, monk
     request.cache_path.unlink()
     previous = (file_sha256(database), file_sha256(report_path))
     with pytest.raises(FileNotFoundError):
+        build_transport.build_from_scenario(SCENARIO, overwrite=True)
+    assert previous == (file_sha256(database), file_sha256(report_path))
+
+
+@pytest.mark.skipif(os.environ.get("CANOE_OFFLINE_INTEGRATION") != "1", reason="Set CANOE_OFFLINE_INTEGRATION=1 with registered caches/external inputs available")
+def test_moves5_offline_scenario_replays_both_lifetime_modes_and_rejects_missing_cache(tmp_path, monkeypatch):
+    """Run the native lifecycle serially from raw inputs, with no network or shared writes."""
+    isolated_repository(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    def no_network(*args, **kwargs):
+        pytest.fail("network access during offline MOVES5 scenario build")
+
+    monkeypatch.setattr(socket.socket, "connect", no_network)
+    monkeypatch.setattr(socket, "create_connection", no_network)
+    scenario_path = tmp_path / SCENARIO
+    payload = yaml.safe_load(scenario_path.read_text(encoding="utf-8"))
+    payload["geography"]["regions"] = ["ON"]
+    payload["lifetimes"]["heavy_truck_survival_source"] = "epa_moves5_heavy_truck_survival"
+    payload["comparison"]["mode"] = "none"
+    for curves in (True, False):
+        payload["lifetimes"]["survival_curves"] = curves
+        scenario_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+        report, _ = build_transport.build_from_scenario(SCENARIO, overwrite=True)
+        assert report["validation"]["foreign_key_violations"] == 0
+        assert report["orchestration"] == {"prerequisites": "replayed", "download_sources": False}
+        bundle = load_config_bundle(SCENARIO)
+        database = Path(report["database"])
+        with closing(sqlite3.connect(database)) as connection:
+            assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+            assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+            for prefix, required, absent in (("T_HDV_T_", "T39", "T10"), ("T_MDV_T_", "T09", "T39")):
+                data_ids = connection.execute(
+                    "SELECT DISTINCT data_id FROM existing_capacity WHERE substr(tech, 1, ?) = ?",
+                    (len(prefix), prefix),
+                ).fetchall()
+                assert data_ids
+                for (data_id,) in data_ids:
+                    contributors = {row[0] for row in connection.execute(
+                        "SELECT source_id FROM data_source WHERE data_id = ?", (data_id,),
+                    )}
+                    assert required in contributors and absent not in contributors
+            if curves:
+                result = connection.execute(
+                    "SELECT fraction, data_source, dq_cred, dq_geog, dq_struc, dq_tech, dq_time "
+                    "FROM lifetime_survival_curve WHERE tech = 'T_HDV_T_DSL_N' AND vintage = 2025 AND period = 2045"
+                ).fetchone()
+                assert result[1:] == ("T39", 5, 5, 5, 5, 5)
+                rules = load_harmonization_rules(bundle, "assorted_sources")
+                annual = pd.read_csv(resolve_input_path(bundle, "interim", rules["interim_subdir"], rules["epa_moves5"]["output_file"]))
+                survival = annual.sort_values("vehicle_age").annual_survival_rate.cumprod()
+                assert result[0] == pytest.approx(survival.iloc[20:25].mean())
+            else:
+                assert connection.execute(
+                    "SELECT lifetime, data_source FROM lifetime_tech WHERE tech = 'T_HDV_T_DSL_EX'"
+                ).fetchall() == [(19, "T39")]
+                assert connection.execute(
+                    "SELECT lifetime, data_source FROM lifetime_tech WHERE tech = 'T_MDV_T_DSL_EX'"
+                ).fetchall() == [(18, "T09")]
+                assert connection.execute("SELECT COUNT(*) FROM lifetime_survival_curve").fetchone()[0] == 0
+
+        stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
+        cohorts = pd.read_csv(resolve_artifact_path(bundle, "existing_capacity_interim") / stock_rules["age_cohorts_file"])
+        heavy = cohorts.loc[cohorts.road_class.eq("heavy_trucks")]
+        if curves:
+            expected = (bundle.scenario.periods.base_year - heavy.age).ge(min(bundle.scenario.periods.existing)) & (
+                bundle.scenario.periods.model[0] - bundle.scenario.periods.base_year + heavy.age
+            ).le(bundle.scenario.lifetimes.survival_curve_max_age)
+        else:
+            expected = (heavy.vintage_year + 19).gt(bundle.scenario.periods.model[0]) & (
+                heavy.vintage + 19
+            ).gt(bundle.scenario.periods.model[0])
+        assert heavy.eligible_first_model_period.tolist() == expected.tolist()
+
+    # A selected missing raw PDF cannot be hidden by the already normalized CSV.
+    report_path = tmp_path / bundle.scenario.outputs.validation_report
+    previous = file_sha256(database), file_sha256(report_path)
+    cache = resolve_input_path(bundle, "cache", bundle.sources.sources["epa_moves5_heavy_truck_survival"].adapter["cache_path"])
+    assert cache.is_relative_to(tmp_path)
+    cache.unlink()
+    with pytest.raises(FileNotFoundError, match="MOVES5|moves5|P101CUN7"):
         build_transport.build_from_scenario(SCENARIO, overwrite=True)
     assert previous == (file_sha256(database), file_sha256(report_path))

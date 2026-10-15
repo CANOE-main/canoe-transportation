@@ -14,6 +14,7 @@ from parameterization.build_existing_capacity import prepare_existing_capacity_r
 from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames,
     fixed_existing_lifetimes,
+    resolved_road_lifetime_rules,
 )
 from utils import load_config_bundle, load_harmonization_rules
 from validation.config_models import ScenarioPeriods
@@ -27,9 +28,7 @@ def test_fixed_lifetime_sources_resolve_nhtsa_and_nems_medians() -> None:
     bundle = load_config_bundle(
         "config/scenarios/legacy_reproduction.yaml", repo_root=ROOT
     )
-    rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
-        "existing_capacity"
-    ]
+    rules = resolved_road_lifetime_rules(bundle)
     lifetimes = fixed_existing_lifetimes(
         derive_accepted_lifetime_frames(
             bundle, rules=load_harmonization_rules(bundle, "road_lifetimes_survival"),

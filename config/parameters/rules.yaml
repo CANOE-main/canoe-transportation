@@ -677,6 +677,23 @@ fetching:
       expected_ages: {start: 1, end: 34}
       value_bounds: {minimum: 0.0, maximum: 1.0}
       unit: annual scrappage-rate fraction
+    epa_moves5:
+      source_id: epa_moves5_heavy_truck_survival
+      component_id: heavy_truck_survival_rates
+      output_file: epa_moves5_heavy_truck_survival_rates.csv
+      document_title: Population and Activity of Onroad Vehicles in MOVES5
+      document_id: EPA-420-R-24-019
+      pdf_page: 192
+      source_page: 190
+      source_table: Table C-1
+      table_title: Table C-1 Vehicle survival rate by age
+      source_vehicle_class_label: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+      class_header_fragments: [Heavy-duty Vehicles, '(Buses, Single Unit Trucks', 'and Combination Trucks)']
+      expected_rate_columns: 4
+      selected_rate_column: 4
+      expected_ages: {start: 0, end: 40}
+      value_bounds: {minimum: 0.0, maximum: 1.0}
+      unit: annual survival-rate fraction
     jgcri_gcam:
       source_id: jgcri_gcam_motorcycle_inputs
       component_id: canada_motorcycle_inputs
@@ -1262,12 +1279,15 @@ parameterization:
           - 2b/3 Trucks
           curve_source_class: 2b/3 Trucks
         heavy_trucks:
-          # Use the same NEMS Class 7–8 schedule for the curve and fixed median.
+          # The scenario selects one schedule for fixed medians, curves and stock cutoffs.
           kind: source_median_equal
-          source_id: eia_nems_hd_truck_scrappage
-          source_classes:
-          - Cls 7-8
-          curve_source_class: Cls 7-8
+          source_options:
+            eia_nems_hd_truck_scrappage:
+              source_classes: [Cls 7-8]
+              curve_source_class: Cls 7-8
+            epa_moves5_heavy_truck_survival:
+              source_classes: ['Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)']
+              curve_source_class: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
         motorcycles: {kind: manual, category: motorcycles}
       region_output_map: {NL: NLLAB, PE: PEI}
       share_region_proxy: {BCT: BC, AB: Canada, NL: Canada}

@@ -124,6 +124,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "eafo_norway_growth_evidence": "T36",
         "technology_growth_literature": "T37",
         "temoa_growth_reference": "T38",
+        "epa_moves5_heavy_truck_survival": "T39",
     }
     assert report["template"]["kind"] == "backend_internal_reference"
     assert report["template"]["data_id"].startswith("canoe-transport-template:")

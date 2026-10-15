@@ -282,6 +282,7 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert status["parameter_options"]["lifetimes"] == {
         "survival_curves": True,
         "survival_curve_max_age": 29,
+        "heavy_truck_survival_source": "eia_nems_hd_truck_scrappage",
     }
     assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_2022_sales_shares"
     assert status["parameter_options"]["charging_profiles"]["travel_behavior_source"] == "nhts"
@@ -339,6 +340,23 @@ def test_source_registry_rejects_obsolete_aggregation_selections(tmp_path: Path)
     payload["aggregation_sources"] = yaml.safe_load(scenario.read_text(encoding="utf-8"))["aggregation_sources"]
     sources.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     with pytest.raises(ValidationError, match="aggregation_sources"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+@pytest.mark.parametrize("selection", ["unknown", "inactive"])
+def test_heavy_truck_survival_source_is_checked_before_io(tmp_path: Path, selection: str) -> None:
+    _, sources, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    source_payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
+    selected = "epa_moves5_heavy_truck_survival"
+    if selection == "unknown":
+        selected = "unregistered_survival"
+    else:
+        source_payload["sources"][selected]["status"] = "inactive"
+    payload["lifetimes"]["heavy_truck_survival_source"] = selected
+    sources.write_text(yaml.safe_dump(source_payload, sort_keys=False), encoding="utf-8")
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises((ValueError, ValidationError), match="heavy_truck_survival_source"):
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
@@ -447,6 +465,7 @@ def test_invalid_scenario_choices_are_rejected(
         ("comparison", "include_provenance"),
         ("lifetimes", "survival_curves"),
         ("lifetimes", "survival_curve_max_age"),
+        ("lifetimes", "heavy_truck_survival_source"),
         ("existing_capacity", "vehicle_population_year"),
         ("existing_capacity", "cleanup_tolerance"),
         ("demand", "cer_scenario"),

@@ -316,7 +316,13 @@ def accepted_curve_ages(
     for road_class in rules["survival_curve_classes"]:
         selector = rules["fixed_lifetime_sources"][road_class]
         target_class = selector.get("target_class", selector.get("curve_source_class"))
-        selected = curves.loc[curves["source_class"].eq(target_class)]
+        source_id = (
+            "ontario_report_a_weighted_nhtsa_cafe" if selector["kind"] == "ceud_median"
+            else selector["source_id"]
+        )
+        selected = curves.loc[
+            curves["source_class"].eq(target_class) & curves["source_id"].eq(source_id)
+        ]
         if selected.empty or selected["age"].duplicated().any():
             raise ValueError(f"Missing or duplicate accepted curve for {road_class}")
         result[road_class] = set(

@@ -186,6 +186,9 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
             errors.append(f"source selection not defined in sources.yaml: {source_name}")
         elif registered[source_name].status != "active":
             errors.append(f"source selection is inactive in sources.yaml: {source_name}")
+    heavy_source = bundle.scenario.lifetimes.heavy_truck_survival_source
+    if heavy_source not in registered or registered[heavy_source].status != "active":
+        errors.append(f"lifetimes.heavy_truck_survival_source is unknown or inactive: {heavy_source}")
     selectors = {
         "nrcan_ceud_transport_provincial": "year",
         "nrcan_ceud_transport_national": "year",

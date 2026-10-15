@@ -18,6 +18,7 @@ from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames,
     prepare_fixed_road_lifetimes,
     prepare_road_survival_curve_rows,
+    resolved_road_lifetime_rules,
 )
 from utils import (
     ConfigBundle,
@@ -46,9 +47,7 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
     lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
     road_rules = load_harmonization_rules(bundle, "road_aggregation")
     assorted_rules = load_harmonization_rules(bundle, "assorted_sources")
-    stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
-        "existing_capacity"
-    ]
+    stock_rules = resolved_road_lifetime_rules(bundle)
     frames = derive_accepted_lifetime_frames(
         bundle, rules=lifetime_rules, road_rules=road_rules,
         assorted_rules=assorted_rules,

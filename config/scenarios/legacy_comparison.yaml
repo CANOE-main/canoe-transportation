@@ -1,33 +1,28 @@
-# Diagnostic build: same current source selections, with legacy temporal handling.
-# Run serially: production intermediates and audits are shared with other scenarios.
-# Source availability and provenance live in `sources.yaml`; run selections and
-# aggregation choices appear here. See `config/scenarios/README.md` for field behavior.
+# Field details: config/scenarios/README.md.
+# Run builds serially; intermediate artifacts are shared.
 
 version: 3
 
 scenario:
-  name: legacy_comparison
+  name: legacy_comparison  # Run label, independent of the YAML filename.
   description: "Transport-only legacy comparison with 2023 observed cohorts and legacy timing."
   purpose: baseline_reproduction
 
 geography:
-  # Quote ON because YAML 1.1 parsers otherwise interpret it as a boolean.
+  # Keep ON quoted.
   regions: ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
 
 periods:
-  # prospective: 2025 spans Dec 31, 2025 to Dec 31, 2030; future inputs use 2030.
-  # Existing 2020 represents 2021-2025 cohorts, using observed data through base_year.
-  # legacy: retain ceiling vintage bins and the previous mixed future-input timing;
-  # append base_year to existing when selecting legacy (e.g., [..., 2020, 2023]).
-  period_mode: legacy  # prospective | legacy
-  # Observation/calibration year, independently of economics.cost_reference_year.
-  base_year: 2023
-  # Legacy bins retain 2021-2023 observations in the 2023 cohort; never merge it into 2020.
+  # prospective: interval-end inputs; legacy: prior timing and vintage bins.
+  period_mode: legacy
+  base_year: 2023  # Latest observed stock/demand year.
+  # Existing-capacity vintages; legacy mode must include base_year.
   existing: [2000, 2005, 2010, 2015, 2020, 2023]
   model: [2025, 2030, 2035, 2040, 2045]
-  step: 5
+  step: 5  # Years per model period.
 
 sources:
+  # Registered source years/editions to replay.
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
     nrcan_ceud_transport_national: {year: 2023}
@@ -35,98 +30,82 @@ sources:
     cer_canadas_energy_future: {edition: 2026}
 
 aggregation_sources:
-  # Report A: LDV vintage shares. Report 5: truck, bus, motorcycle vintage shares.
-  stock_age:
+  # Regional overrides; other is the fallback.
+  stock_age:  # Existing-stock vintage shares.
     "ON": ontario_ministry_transport_vehicle_population
     other: ontario_ministry_transport_vehicle_population
-  # Report A class shares for all LDV products, including NHTSA survival aggregation.
-  ldv:
+  ldv:  # LDV class weights shared across parameters.
     "ON": ontario_ministry_transport_vehicle_population
     other: ontario_ministry_transport_vehicle_population
-  # Report 4 includes Class 2/2b in ON. Wards excludes Class 2/2b elsewhere.
-  # The single NHTSA CAFE 2b/3 survival curve applies to every medium-truck class.
-  medium_trucks:
+  medium_trucks:  # Medium-truck class and vocation weights.
     "ON": ontario_ministry_transport_vehicle_population
     other: wards_intelligence_2022_sales_shares
-  # Existing regional/long-haul tonne-km evidence, shared by truck adapters.
-  heavy_truck_haul:
+  heavy_truck_haul:  # Heavy-truck day/sleeper-cab weights.
     "ON": statcan_transport_tables
     other: statcan_transport_tables
 
 economics:
-  # Currency conversion uses CER independently of the demand trajectory below.
-  cer_scenario: Current Measures
+  cer_scenario: Current Measures  # Currency conversion; independent of demand.cer_scenario.
   global_discount_rate: 0.03
   default_loan_rate: 0.03
   cost_reference_currency: CAD
   cost_reference_year: 2020
 
 outputs:
+  # Use distinct database, report and log names per scenario.
   sqlite_name: legacy_reproduction.sqlite
   validation_report: outputs/validation/transport_comparison_build.json
   setup_log: outputs/logs/setup_smoke_legacy_comparison.json
 
 comparison:
-  # Integrity validation always runs; this selects an optional diagnostic comparison.
-  mode: legacy  # none | legacy | scenario (another database from this backend)
+  # Optional comparison; integrity checks always run.
+  mode: legacy  # none | legacy | scenario
   reference_sqlite: legacy_backend/canoe_transport_baseline.sqlite
   absolute_tolerance: 1.0e-9
   relative_tolerance: 1.0e-6
-  include_provenance: false  # Scenario comparisons can also include source IDs/DQ/notes.
+  include_provenance: false  # Scenario mode: also compare source IDs, DQ and notes.
 
 lifetimes:
-  # Use accepted road survival curves; remaining technologies use fixed lifetimes.
-  survival_curves: true
-  # The documented legacy horizon retains source-supported ages through 25.
-  survival_curve_max_age: 25
+  survival_curves: true  # true: road curves; false: road median lifetimes.
+  # NEMS or MOVES5; controls heavy-truck medians and curves.
+  heavy_truck_survival_source: eia_nems_hd_truck_scrappage  # eia_nems_hd_truck_scrappage | epa_moves5_heavy_truck_survival
+  survival_curve_max_age: 25  # Curve mode: maximum road survival/stock age.
 
 existing_capacity:
-  # Regional fleet-source precedence is shared under this scenario's aggregation_sources.
-  vehicle_population_year: 2025 # todo: rename this entry to mto_vehicle_population_year to match the source name
-  cleanup_tolerance: 0.001
+  vehicle_population_year: 2025  # MTO evidence year.
+  cleanup_tolerance: 0.001  # Minimum retained capacity in each row's native unit.
 
 demand:
-  cer_scenario: Current Measures
-  future_car_demand: GDP-indexed  # GDP-indexed | extrapolated
+  cer_scenario: Current Measures  # Demand trajectory.
+  future_car_demand: GDP-indexed  # GDP-indexed | extrapolated (historical growth)
 
 road_utilization:
-  # Age-dependent rows are retained as audit artifacts while v4 lacks vintage/period.
+  # Age-dependent VKT is audit-only until the SQLite schema supports it.
   vkt_schedules: false
-  vkt_max_age: 25
+  vkt_max_age: 25  # Age limit when VKT schedules are enabled.
 
 efficiencies:
-  # All normalized ATB trajectories are retained: Advanced, Conservative, Constant, Mid.
-  atb_trajectory: Mid
+  atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
 
 costs:
-  atb_trajectory: Mid
+  atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
 
 ev_chargers:
-  # EV-to-port ratios used to estimate existing charger capacity, in addition to public ports.
+  # Vehicles per charger port when estimating existing capacity.
   ld_evs_per_port: 1.0
   mhd_evs_per_port: 1.5
 
 charging_profiles:
-  # Ontario shape applies to shared LDV chargers in every selected region.
-  travel_behavior_source: nhts  # none | nhts | tts; legacy simulation, pending update
-  # Null selects elapsed-hour D001-D365/H01-H24 labels after Toronto-year hourly means.
-  # An hour_index,season,tod CSV projects hours onto inherited CANOE slices.
-  # This mapping does not select or change the profile's Toronto calendar/time zone.
-  time_mapping: null
+  travel_behavior_source: nhts  # none: disable; nhts | tts: Ontario LDV charging shape.
+  time_mapping: null  # null: hourly slices; otherwise: hour-to-slice CSV path.
 
 BEV_PHEV_range_representation:
+  # New LDVs: retain variants, constrain minimum range shares, or aggregate by class.
   mode: new_capacity_shares  # none | new_capacity_shares | representative_archetype
-  # US class/powertrain shares apply to Canadian categories across model vintages.
-  # none adds no new-vehicle range rules; EX representatives still use OMEGA weights.
-  # new_capacity_shares retains minimum semantics.
-  # representative_archetype keeps EX stock; one new BEV/PHEV per LDV category.
-  # PHEV category blends use the accepted horizon mean; vintage fuel differences are audited.
 
-# Road vehicle-cycle layer; materials apply only to LDVs.
+# Road vehicle-cycle emissions.
 embodied_emissions: true
-embodied_materials: conventional
+embodied_materials: conventional  # conventional | lightweight; LDVs only.
 
 row_note_overrides:
-  # Replace technology.notes by exact technology key for this scenario.
-  # Source notes remain in sources.yaml; {} keeps the structural template notes.
-  technology: {}
+  technology: {}  # Replace notes by technology ID; {} keeps template notes.
