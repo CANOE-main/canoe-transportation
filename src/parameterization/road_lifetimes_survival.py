@@ -47,6 +47,22 @@ def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
     return load_harmonization_rules(bundle, LIFETIME_RULE_KEY)
 
 
+def resolved_road_lifetime_rules(bundle: ConfigBundle) -> dict[str, Any]:
+    """Resolve the scenario's heavy-truck source once for every lifetime consumer."""
+    rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]
+    selectors = dict(rules["fixed_lifetime_sources"])
+    heavy = dict(selectors["heavy_trucks"])
+    options = heavy.pop("source_options")
+    source_key = bundle.scenario.lifetimes.heavy_truck_survival_source
+    if source_key not in options:
+        raise ValueError(f"No heavy-truck lifetime rules for selected source {source_key}")
+    heavy.update(options[source_key], source_id=source_key)
+    selectors["heavy_trucks"] = heavy
+    return {**rules, "fixed_lifetime_sources": selectors}
+
+
 def aggregate_report_a_snapshots(
     normalized_frames: list[pd.DataFrame],
     mapping: pd.DataFrame,
@@ -1038,8 +1054,9 @@ def transition_findings(
 def transform_source_survival_curves(
     nhtsa: pd.DataFrame,
     eia: pd.DataFrame,
+    moves5: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Preserve source curves and convert EIA scrappage rates cumulatively."""
+    """Preserve native values and compound conditional scrappage or survival rates."""
     nhtsa_source = nhtsa.rename(
         columns={
             "source_vehicle_class_label": "source_class",
@@ -1078,8 +1095,22 @@ def transform_source_survival_curves(
             "source_unit",
         ]
     ]
+    native_frames = [nhtsa_source, eia_source]
+    if moves5 is not None:
+        moves_source = moves5.rename(columns={
+            "source_vehicle_class_label": "source_class",
+            "vehicle_age": "age",
+            "annual_survival_rate": "source_value",
+        }).copy()
+        moves_source["source_measure"] = "annual_survival_rate"
+        moves_source["source_unit"] = moves_source["unit"]
+        moves_source = moves_source[[
+            "source_id", "source_class", "age", "source_measure",
+            "source_value", "source_unit",
+        ]]
+        native_frames.append(moves_source)
     source_curves = pd.concat(
-        [nhtsa_source, eia_source],
+        native_frames,
         ignore_index=True,
     ).sort_values(["source_id", "source_class", "age"], kind="stable")
 
@@ -1126,6 +1157,18 @@ def transform_source_survival_curves(
                 ],
             ]
         )
+    if moves5 is not None:
+        for _, rows in moves_source.groupby("source_class"):
+            ordered = rows.sort_values("age").copy()
+            ordered["survival_probability"] = pd.to_numeric(
+                ordered["source_value"], errors="raise"
+            ).cumprod()
+            ordered["source_unit"] = "dimensionless"
+            ordered["transformation"] = "cumulative_product_of_annual_survival_rate"
+            transformed_frames.append(ordered[[
+                "source_id", "source_class", "age", "source_measure",
+                "survival_probability", "source_unit", "transformation",
+            ]])
     transformed = pd.concat(transformed_frames, ignore_index=True)
     return (
         source_curves.reset_index(drop=True),
@@ -1141,12 +1184,19 @@ def validate_accepted_survival_inputs(
     eia: pd.DataFrame,
     *,
     assorted_rules: dict[str, Any],
+    moves5: pd.DataFrame | None = None,
 ) -> None:
     """Check normalized accepted schedules before lifetime harmonization."""
     specifications = (
         (nhtsa, assorted_rules["nhtsa_cafe"], "survival_rate"),
         (eia, assorted_rules["eia_nems"], "annual_scrappage_rate"),
     )
+    if moves5 is not None:
+        move_rules = assorted_rules["epa_moves5"]
+        specifications += ((moves5, {
+            **move_rules,
+            "class_columns": {"heavy": move_rules["source_vehicle_class_label"]},
+        }, "annual_survival_rate"),)
     for frame, rule, value_column in specifications:
         source_id = str(rule["source_id"])
         classes = set(map(str, rule["class_columns"].values()))
@@ -1176,6 +1226,8 @@ def validate_accepted_survival_inputs(
             if value_column == "survival_rate":
                 if ordered["_value"].iloc[0] != 1 or (ordered["_value"].diff().dropna() > 0).any():
                     raise ValueError(f"{source_id} {source_class} is not a cumulative survival curve")
+            elif value_column == "annual_survival_rate" and ordered["_value"].iloc[0] != 1:
+                raise ValueError(f"{source_id} {source_class} must start with survival one at age zero")
 
 
 def retention_source_comparison(
@@ -1568,7 +1620,7 @@ def survival_source_component(
     """Resolve a selected native survival source to its configured component."""
     requests = [
         assorted_rules[adapter]
-        for adapter in ("nhtsa_cafe", "eia_nems")
+        for adapter in ("nhtsa_cafe", "eia_nems", "epa_moves5")
         if assorted_rules[adapter]["source_id"] == source_key
     ]
     if len(requests) != 1:
@@ -1630,9 +1682,7 @@ def prepare_fixed_road_lifetimes(
     technology: pd.DataFrame,
 ) -> tuple[list[LifetimeTech], list[ResolvedProvenance]]:
     """Expand selected source median lifetimes to template technologies."""
-    stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
-        "existing_capacity"
-    ]
+    stock_rules = resolved_road_lifetime_rules(bundle)
     selectors = stock_rules["fixed_lifetime_sources"]
     ldv_medians = medians.loc[medians.target_system.eq("nrcan_ceud")]
     if set(ldv_medians.source_id) != {"ontario_report_a_weighted_nhtsa_cafe"}:
@@ -1727,7 +1777,7 @@ def prepare_road_survival_curve_rows(
     technology: pd.DataFrame,
 ) -> tuple[list[LifetimeSurvivalCurve], list[ResolvedProvenance]]:
     """Average accepted annual schedules over full model periods for each cohort."""
-    stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
+    stock_rules = resolved_road_lifetime_rules(bundle)
     selectors = stock_rules["fixed_lifetime_sources"]
     curve_classes = set(stock_rules["survival_curve_classes"])
     if curve_classes - set(selectors):
@@ -1869,9 +1919,10 @@ def accepted_lifetime_frames(
     report_a_weights: pd.DataFrame,
     *,
     rules: dict[str, Any],
+    moves5: pd.DataFrame | None = None,
 ) -> dict[str, pd.DataFrame]:
-    """Derive accepted Report A-weighted LDV and single-class NEMS truck products."""
-    source_curves, transformed = transform_source_survival_curves(nhtsa, eia)
+    """Derive Report A-weighted LDV and selected heavy-truck source products."""
+    source_curves, transformed = transform_source_survival_curves(nhtsa, eia, moves5)
     class_mappings = survival_class_mappings(rules)
     ceud_curves = aggregate_ceud_survival_curves(transformed, report_a_weights, class_mappings)
     nlr_curves = nlr_source_survival_curves(transformed, class_mappings)
@@ -1894,6 +1945,49 @@ def accepted_lifetime_frames(
     }
 
 
+def _load_survival_inputs(
+    bundle: ConfigBundle,
+    assorted_rules: dict[str, Any],
+    *,
+    include_moves5: bool,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame | None]:
+    """Load only requested normalized schedules and validate their native meaning."""
+    assorted_dir = resolve_input_path(bundle, "interim", assorted_rules["interim_subdir"])
+    nhtsa = pd.read_csv(assorted_dir / assorted_rules["nhtsa_cafe"]["output_file"])
+    eia = pd.read_csv(assorted_dir / assorted_rules["eia_nems"]["output_file"])
+    moves5 = None
+    if include_moves5:
+        path = assorted_dir / assorted_rules["epa_moves5"]["output_file"]
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"MOVES5 survival evidence is missing: {path}. Prepare it with "
+                "python -m fetching.assorted_sources --moves5-survival "
+                f"--scenario {bundle.scenario_path} --no-download"
+            )
+        moves5 = pd.read_csv(path)
+    validate_accepted_survival_inputs(
+        nhtsa, eia, assorted_rules=assorted_rules, moves5=moves5,
+    )
+    return nhtsa, eia, moves5
+
+
+def load_heavy_truck_survival_comparison(bundle: ConfigBundle) -> pd.DataFrame:
+    """Read both registered heavy-truck schedules for diagnostics without writing."""
+    assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
+    nhtsa, eia, moves5 = _load_survival_inputs(bundle, assorted, include_moves5=True)
+    _, transformed = transform_source_survival_curves(nhtsa, eia, moves5)
+    options = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]["fixed_lifetime_sources"]["heavy_trucks"]["source_options"]
+    pairs = {(key, option["curve_source_class"]) for key, option in options.items()}
+    selected = transformed.loc[
+        pd.MultiIndex.from_frame(transformed[["source_id", "source_class"]]).isin(pairs)
+    ].copy()
+    if set(zip(selected.source_id, selected.source_class, strict=True)) != pairs:
+        raise ValueError("Heavy-truck survival comparison lacks a registered source schedule")
+    return selected.reset_index(drop=True)
+
+
 def derive_accepted_lifetime_frames(
     bundle: ConfigBundle,
     *,
@@ -1906,20 +2000,15 @@ def derive_accepted_lifetime_frames(
     Report A class weights are accepted evidence; MTO retention history is diagnostic.
     This shared preparation interface does not write artifacts.
     """
-    assorted_dir = resolve_input_path(
-        bundle,
-        "interim",
-        assorted_rules["interim_subdir"],
+    # Resolving the selector before source I/O also rejects unsupported rule mappings.
+    resolved_road_lifetime_rules(bundle)
+    nhtsa, eia, moves5 = _load_survival_inputs(
+        bundle, assorted_rules,
+        include_moves5=(bundle.scenario.lifetimes.heavy_truck_survival_source
+                        == assorted_rules["epa_moves5"]["source_id"]),
     )
-    nhtsa = pd.read_csv(
-        assorted_dir / assorted_rules["nhtsa_cafe"]["output_file"]
-    )
-    eia = pd.read_csv(
-        assorted_dir / assorted_rules["eia_nems"]["output_file"]
-    )
-    validate_accepted_survival_inputs(nhtsa, eia, assorted_rules=assorted_rules)
     weights, _ = load_ldv_aggregation_weights(bundle, rules=road_rules)
-    return accepted_lifetime_frames(nhtsa, eia, weights, rules=rules)
+    return accepted_lifetime_frames(nhtsa, eia, weights, rules=rules, moves5=moves5)
 
 
 def _accepted_output_files(

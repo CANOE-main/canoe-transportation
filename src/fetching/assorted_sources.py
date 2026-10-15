@@ -21,7 +21,7 @@ from openpyxl.utils.cell import (
     column_index_from_string,
     range_boundaries,
 )
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
@@ -234,6 +234,7 @@ class ArtifactRequest(BaseModel):
     file_type: Literal["zip", "xlsx", "csv", "html", "javascript", "pdf"]
     expected_sha256: str
     expected_bytes: int
+    request_headers: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_request(self) -> "ArtifactRequest":
@@ -306,7 +307,7 @@ def _top_level_request(
     *,
     source_id: str,
     component_id: str,
-    file_type: Literal["zip", "xlsx", "csv", "html"],
+    file_type: Literal["zip", "xlsx", "csv", "html", "pdf"],
 ) -> ArtifactRequest:
     source = _source(bundle, source_id)
     adapter = source.adapter
@@ -320,6 +321,7 @@ def _top_level_request(
         file_type=file_type,
         expected_sha256=str(adapter.get("expected_sha256", "")),
         expected_bytes=int(adapter.get("expected_bytes", 0)),
+        request_headers=access.get("headers", {}),
     )
 
 
@@ -408,7 +410,10 @@ def fetch_to_cache(
     temporary = request.cache_path.with_suffix(request.cache_path.suffix + ".part")
     client = session or requests.Session()
     try:
-        response = client.get(request.url, stream=True, timeout=timeout)
+        request_options: dict[str, Any] = {"stream": True, "timeout": timeout}
+        if request.request_headers:
+            request_options["headers"] = request.request_headers
+        response = client.get(request.url, **request_options)
         response.raise_for_status()
         with temporary.open("wb") as handle:
             for chunk in response.iter_content(chunk_size=1024 * 1024):
@@ -1241,6 +1246,106 @@ def _normalize_whitespace(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+def parse_moves5_survival_table_text(
+    text: str,
+    *,
+    request: ArtifactRequest,
+    rules: dict[str, Any],
+    checksum: str,
+) -> pd.DataFrame:
+    """Extract the configured heavy-duty column as annual conditional survival."""
+    normalized = _normalize_whitespace(text)
+    title = _normalize_whitespace(str(rules["table_title"]))
+    if title not in normalized:
+        raise AssortedSourcesError(f"MOVES5 PDF missing table title {title!r}")
+    for fragment in rules["class_header_fragments"]:
+        if _normalize_whitespace(str(fragment)) not in normalized:
+            raise AssortedSourcesError(
+                f"MOVES5 heavy-duty table header changed: {fragment!r}"
+            )
+    if text.strip().splitlines()[-1].strip() != str(rules["source_page"]):
+        raise AssortedSourcesError("MOVES5 table printed page number changed")
+    rate_count = int(rules["expected_rate_columns"])
+    selected_column = int(rules["selected_rate_column"])
+    if not 1 <= selected_column <= rate_count:
+        raise AssortedSourcesError("MOVES5 selected rate column is outside the table")
+    number = r"[+-]?\d+(?:\.\d+)?"
+    row_pattern = re.compile(
+        rf"^\s*(\d+)\s+({number}(?:\s+{number}){{{rate_count - 1}}})\s*$",
+        re.MULTILINE,
+    )
+    matched = [(int(match[1]), match[2].split()) for match in row_pattern.finditer(text)]
+    expected_ages = list(
+        range(int(rules["expected_ages"]["start"]), int(rules["expected_ages"]["end"]) + 1)
+    )
+    actual_ages = [age for age, _ in matched]
+    if actual_ages != expected_ages:
+        raise AssortedSourcesError(
+            f"MOVES5 age coverage changed: expected {expected_ages}, got {actual_ages}"
+        )
+    bounds = rules["value_bounds"]
+    records = []
+    for age, raw_rates in matched:
+        raw = raw_rates[selected_column - 1]
+        rate = _numeric(
+            raw,
+            context=f"MOVES5 annual survival rate age {age}",
+            minimum=float(bounds["minimum"]),
+            maximum=float(bounds["maximum"]),
+        )
+        records.append(
+            {
+                **_provenance(request, checksum),
+                "source_vehicle_class_label": str(rules["source_vehicle_class_label"]),
+                "vehicle_age": age,
+                "annual_survival_rate": rate,
+                "unit": str(rules["unit"]),
+                "source_document_id": str(rules["document_id"]),
+                "source_pdf_page": int(rules["pdf_page"]),
+                "source_page": int(rules["source_page"]),
+                "source_table": str(rules["source_table"]),
+                "source_table_title": str(rules["table_title"]),
+                "raw_value": raw,
+            }
+        )
+    return pd.DataFrame(records)
+
+
+def normalize_moves5_survival(
+    request: ArtifactRequest,
+    rules: dict[str, Any],
+    *,
+    checksum: str | None = None,
+) -> pd.DataFrame:
+    """Validate the registered EPA PDF and normalize Table C-1 without compounding."""
+    digest = checksum or validate_cached_identity(request)
+    pdf_page = int(rules["pdf_page"])
+    if pdf_page < 1:
+        raise AssortedSourcesError("MOVES5 PDF page must use a positive one-based number")
+    try:
+        reader = PdfReader(request.cache_path)
+        if reader.is_encrypted and reader.decrypt("") == 0:
+            raise AssortedSourcesError(f"MOVES5 PDF is encrypted: {request.cache_path}")
+        if len(reader.pages) < pdf_page:
+            raise AssortedSourcesError(f"MOVES5 PDF missing configured page {pdf_page}")
+        frontmatter = _normalize_whitespace(
+            " ".join(page.extract_text() or "" for page in reader.pages[:2])
+        )
+        for label in (rules["document_title"], rules["document_id"]):
+            if _normalize_whitespace(str(label)) not in frontmatter:
+                raise AssortedSourcesError(f"MOVES5 PDF missing document identity {label!r}")
+        text = reader.pages[pdf_page - 1].extract_text(extraction_mode="layout") or ""
+    except (PdfReadError, OSError, ValueError) as exc:
+        if isinstance(exc, AssortedSourcesError):
+            raise
+        raise AssortedSourcesError(
+            f"MOVES5 PDF is not readable: {request.cache_path}"
+        ) from exc
+    return parse_moves5_survival_table_text(
+        text, request=request, rules=rules, checksum=digest
+    )
+
+
 def extract_pdf_text(
     request: ArtifactRequest,
     *,
@@ -1510,9 +1615,30 @@ def write_outputs(
     warnings: list[dict[str, Any]],
     output_dir: Path,
     rules: dict[str, Any],
+    preserve_unselected: bool = False,
 ) -> None:
     """Write deterministic source-native CSV, manifest, and JSON-lines warnings."""
     output_dir.mkdir(parents=True, exist_ok=True)
+    if preserve_unselected:
+        selected = {(row["source_id"], row["component_id"]) for row in manifest_rows}
+        manifest_path = output_dir / str(rules["manifest_file"])
+        if manifest_path.is_file():
+            previous = pd.read_csv(manifest_path, keep_default_na=False)
+            manifest_rows = [
+                row for row in previous.to_dict("records")
+                if (row["source_id"], row["component_id"]) not in selected
+            ] + manifest_rows
+        warnings_path = output_dir / str(rules["warnings_file"])
+        if warnings_path.is_file():
+            previous_warnings = [
+                json.loads(line)
+                for line in warnings_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            warnings = [
+                row for row in previous_warnings
+                if (row.get("source_id"), row.get("component_id")) not in selected
+            ] + warnings
     for filename in sorted(outputs):
         outputs[filename].to_csv(
             output_dir / filename, index=False, lineterminator="\n"
@@ -1530,6 +1656,54 @@ def write_outputs(
         encoding="utf-8",
         newline="\n",
     )
+
+
+def fetch_and_normalize_moves5_survival(
+    scenario_path: str | Path,
+    *,
+    download: bool = True,
+    session: requests.Session | None = None,
+) -> Path:
+    """Prepare optional MOVES5 heavy-truck annual rates, including for comparison."""
+    bundle = load_config_bundle(scenario_path)
+    all_rules = module_rules(bundle)
+    rules = all_rules["epa_moves5"]
+    request = _top_level_request(
+        bundle,
+        source_id=str(rules["source_id"]),
+        component_id=str(rules["component_id"]),
+        file_type="pdf",
+    )
+    cache_status = ensure_cached(request, download=download, session=session)
+    checksum = validate_cached_identity(request)
+    rates = normalize_moves5_survival(request, rules, checksum=checksum)
+    output_dir = resolve_input_path(bundle, "interim", str(all_rules["interim_subdir"]))
+    write_outputs(
+        outputs={str(rules["output_file"]): rates},
+        manifest_rows=[
+            _manifest_row(
+                request,
+                checksum=checksum,
+                cache_status=cache_status,
+                stats=SelectionStats(len(rates), len(rates), 0),
+                selection=(
+                    f"{rules['source_table']}; printed page {rules['source_page']}; "
+                    "heavy-duty annual conditional survival rates only"
+                ),
+                output_files=[str(rules["output_file"])],
+                warning_count=0,
+            )
+        ],
+        warnings=[],
+        output_dir=output_dir,
+        rules=all_rules,
+        preserve_unselected=True,
+    )
+    logging.info(
+        "MOVES5 heavy-truck survival: %s cache; normalized %s annual rate rows",
+        cache_status, len(rates),
+    )
+    return output_dir
 
 
 def fetch_and_normalize_tc_dashboard(
@@ -1791,7 +1965,17 @@ def fetch_and_normalize(
         warnings=warnings,
         output_dir=output_dir,
         rules=rules,
+        preserve_unselected=True,
     )
+    if (
+        bundle.scenario.lifetimes.heavy_truck_survival_source
+        == rules["epa_moves5"]["source_id"]
+    ):
+        fetch_and_normalize_moves5_survival(
+            scenario_path, download=download, session=session
+        )
+    else:
+        logging.info("Skipping unselected MOVES5 cache; preserving any prior comparison table")
     return output_dir
 
 
@@ -1808,6 +1992,10 @@ def parse_args() -> argparse.Namespace:
         help="Require and reuse every configured cache artifact without network access.",
     )
     parser.add_argument("--tc-dashboard-only", action="store_true")
+    parser.add_argument(
+        "--moves5-survival", action="store_true",
+        help="Prepare the optional EPA heavy-truck survival source for use or comparison.",
+    )
     return parser.parse_args()
 
 
@@ -1815,7 +2003,11 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
     try:
-        if args.tc_dashboard_only:
+        if args.moves5_survival:
+            output_dir = fetch_and_normalize_moves5_survival(
+                args.scenario, download=not args.no_download
+            )
+        elif args.tc_dashboard_only:
             output_dir = fetch_and_normalize_tc_dashboard(
                 args.scenario, download=not args.no_download
             )

@@ -2424,3 +2424,48 @@ sources:
         bytes: 1099
         format: python
         url: https://raw.githubusercontent.com/TemoaProject/temoa/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates/extension.py
+
+  epa_moves5_heavy_truck_survival:
+    title: Population and Activity of Onroad Vehicles in MOVES5
+    status: active
+    source_type: upstream_download
+    file_type: pdf
+    required: false
+    version: EPA-420-R-24-019, November 2024
+    units: Annual conditional survival-rate fractions by vehicle age.
+    citation: "U.S. Environmental Protection Agency. (2024). Population and Activity of Onroad Vehicles in MOVES5 (EPA-420-R-24-019), Appendix C, Table C-1, p. 190. https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf"
+    database_note: ""
+    data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
+    validation_rule: Preserve the registered PDF identity and all Table C-1 heavy-duty annual survival values for ages 0-40, with native class, table and page evidence.
+    refresh_notes: >
+      Table C-1 is printed page 190, PDF page 192. Appendix C describes these as
+      conditional year-to-year survival rates, not cumulative survival. The
+      heavy-duty schedule is TEDB40 Table 3.16 model-year-1980 evidence, extended
+      beyond age 30 to 40 and shared by buses, single-unit and combination trucks.
+      MOVES5 retains it for age-distribution development rather than runtime
+      scrappage. The backend applies it only to heavy trucks as an explicit
+      US-source proxy; other road classes keep their configured NHTSA schedules.
+      Reviewed DQ scores remain pending and resolve through registry fallbacks.
+      NEPIS requires the configured browser User-Agent to return the PDF; its
+      default Python-client response is a short redirect/error document. Review
+      bytes, page layout and underlying evidence before changing the registration.
+    adapter:
+      access:
+        method: checksum_pinned_https
+        discovery_url: https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf
+        url: https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf
+        headers: {User-Agent: Mozilla/5.0}
+      cache_path: assorted_sources/epa_moves5_P101CUN7.pdf
+      expected_sha256: 5335c657b4c0fa7604ff3d0122c04657929ba5b0e18820b65ab42ae2310be053
+      expected_bytes: 3846424
+    components:
+      heavy_truck_survival_rates:
+        label: MOVES5 Table C-1 heavy-duty annual survival rates
+        short_name: moves5_heavy_truck_survival
+        required: false
+        inputs: [vehicle_age, vehicle_class, annual_survival_rate]
+        applies_to: [heavy_trucks]
+        produces: [survival_rates, median_equivalent_lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: annual survival-rate fraction
+        validation_rule: Retain all 41 age rows and annual heavy-duty values without converting them to cumulative survival during normalization.

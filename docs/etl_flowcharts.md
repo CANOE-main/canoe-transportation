@@ -314,9 +314,11 @@ flowchart LR
   subgraph survival["`**Road vehicle fleet survival rates (US sources)**`"]
     direction LR
     s2[("`**NHTSA CAFE model**
-      LDV survival rates by vehicle size class`")]
+      Car, light- and medium-truck survival rates #to-review`")]
     s3[("`**EIA NEMS model**
-      MD/HD truck survival rates by weight class`")]
+      HD truck scrappage rates (Class 7–8) #to-review`")]
+    s7[("`**EPA MOVES5 model**
+      HD truck annual survival rates (Table C-1) #to-review`")]
   end
 
   subgraph population["`**Vehicle population evidence**`"]
@@ -335,7 +337,7 @@ flowchart LR
     • **eq. (i)** Estimate apparent retirement from make-model-vintage cohorts across Report A editions before mapping<br>
     • The MTO make-model mapping separates LDV stock exposure from unmapped and non-LDV; and aggregates evidence accordingly<br>
     • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
-    • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only the latter are promoted as parameters together with NEMS MHDV rates**`"]
+    • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only NHTSA CAFE and the selected heavy-truck source are promoted as parameters** #to-review`"]
 
   p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
     MTO make-model codes are difficult to map. This notebook visualizes:<br>
@@ -346,7 +348,13 @@ flowchart LR
     • MTO stock vs NRCan CEUD data
     • survival rates from mapped cohorts"}
   p0 -- vehicle_stock_diagnosis.py --> p0_2
-  survival -- "assorted_sources.py" --> p0
+  s2 -- "assorted_sources.py" --> p0
+  p4@{shape: hex, label: "**config/scenarios/**
+    *heavy_truck_survival_source:*
+    NEMS (default) or MOVES5 #to-review"}
+  s3 -- "NEMS<br>assorted_sources.py" --> p4
+  s7 -- "MOVES5<br>assorted_sources.py" --> p4
+  p4 -- "Selected HD schedule<br>road_lifetimes_survival.py" --> p0
   s0 -. "`vehicle_population.py
     *\*diagnostic-only*`" .-> p0
   s6 -- road_aggregation.py --> p0
@@ -382,6 +390,7 @@ flowchart LR
   click s1 "https://www.donneesquebec.ca/recherche/dataset/vehicules-en-circulation"
   click s2 "https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/"
   click s3 "https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx"
+  click s7 "https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf#page=192"
   click s4 "https://doi.org/10.25318/3410025401-eng"
   click s5 "https://github.com/EMRG-SFU/cims-models/tree/main/sources/sectors"
 ```

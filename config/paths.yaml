@@ -32,6 +32,18 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  assorted_sources_interim:
+    path: inputs/1_interim/fetched_assorted_sources
+    layer: interim
+    owner: fetching.assorted_sources
+    producers:
+      - fetching.assorted_sources.fetch_and_normalize
+      - fetching.assorted_sources.fetch_and_normalize_moves5_survival
+    consumers: [parameterization.road_lifetimes_survival, docs.insights.vehicle_stock_diagnosis]
+    validation_surfaces:
+      - fetching.assorted_sources.validate_cached_identity
+      - fetching.assorted_sources.normalize_moves5_survival
+      - parameterization.road_lifetimes_survival.validate_accepted_survival_inputs
   # Opt-in database review; no production prerequisite consumes these products.
   transport_comparison_notebook:
     path: docs/insights/transport_comparison_diagnosis.py

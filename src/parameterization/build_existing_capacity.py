@@ -15,6 +15,7 @@ from parameterization.road_efficiencies import prepare_bus_annual_efficiency_evi
 from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames,
     fixed_existing_lifetimes,
+    resolved_road_lifetime_rules,
     survival_source_component,
 )
 from parameterization.offroad_lifetimes import prepare_statcan_bus_lifetimes
@@ -231,7 +232,7 @@ def build_existing_capacity_artifacts(
         )
     lifetime_sources = {
         "nhtsa_cafe_2024_ldv_survival",
-        "eia_nems_hd_truck_scrappage",
+        bundle.scenario.lifetimes.heavy_truck_survival_source,
         "canada_energy_policy_simulator_3_4_7",
         "emrg_sfu_cims_model",
     }
@@ -243,7 +244,7 @@ def build_existing_capacity_artifacts(
     base_year = scenario.periods.base_year
     regions = list(scenario.geography.regions)
     road_family = load_harmonization_rules(bundle, "road_stocks_and_demands")
-    road_rules = road_family["existing_capacity"]
+    road_rules = resolved_road_lifetime_rules(bundle)
     bus_rules = road_family["bus_existing_capacity"]
     offroad_rules = load_harmonization_rules(bundle, "offroad_stocks_and_demands")[
         "existing_capacity"

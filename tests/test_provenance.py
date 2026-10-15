@@ -65,6 +65,7 @@ def test_yaml_order_pins_current_source_mapping(bundle) -> None:
         "eafo_norway_growth_evidence": "T36",
         "technology_growth_literature": "T37",
         "temoa_growth_reference": "T38",
+        "epa_moves5_heavy_truck_survival": "T39",
     }
 
 

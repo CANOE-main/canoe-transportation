@@ -336,6 +336,9 @@ class ScenarioComparison(MappingModel):
 class ScenarioLifetimes(MappingModel):
     survival_curves: bool
     survival_curve_max_age: int = Field(gt=0)
+    heavy_truck_survival_source: Literal[
+        "eia_nems_hd_truck_scrappage", "epa_moves5_heavy_truck_survival"
+    ]
 
 
 class ScenarioRowNoteOverrides(MappingModel):
