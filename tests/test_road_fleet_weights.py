@@ -21,7 +21,7 @@ from validation.config_models import AggregationSources, ScenarioConfig, Sources
 
 @pytest.fixture
 def bundle():
-    return load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    return load_config_bundle("config/scenarios/default.yaml")
 
 
 def test_regional_precedence_and_bc_model_alias(bundle):
@@ -127,8 +127,14 @@ def test_cost_utilization_and_efficiency_use_the_same_regional_fleet_evidence(bu
     assert costs["ON", "heavy_trucks"] != costs["QC", "heavy_trucks"]
     road = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
     offroad = load_harmonization_rules(bundle, "offroad_stocks_and_demands")["demand"]
+    component_inputs = dict(
+        powertrain="diesel", year=bundle.scenario.periods.base_year, result={},
+        manual=pd.DataFrame(), rating_inputs=None, baseline_inputs=None,
+    )
     for region, expected in (("ON", (MTO, 4)), ("QC", (WARDS, "vehicle_class_market_shares"))):
-        components = efficiency_components(bundle, "medium_trucks", efficiency, road, offroad, region=region)
+        components = efficiency_components(
+            bundle, "medium_trucks", efficiency, road, offroad, region=region, **component_inputs,
+        )
         assert expected in components
         assert ((MTO, 4) in components) == (region == "ON")
     profiles = prepare_age_profiles(
@@ -139,7 +145,9 @@ def test_cost_utilization_and_efficiency_use_the_same_regional_fleet_evidence(bu
     heavy_sources = profiles.loc[profiles.nrcan_ceud_class.eq("Heavy Trucks")].groupby("region").weight_source.first()
     assert heavy_sources.to_dict() == {"ON": "statcan_transport_tables", "QC": "statcan_transport_tables"}
     for region in ("ON", "QC"):
-        components = efficiency_components(bundle, "heavy_trucks", efficiency, road, offroad, region=region)
+        components = efficiency_components(
+            bundle, "heavy_trucks", efficiency, road, offroad, region=region, **component_inputs,
+        )
         assert ("statcan_transport_tables", "23-10-0142-01") in components
         heavy_weights = fleet.heavy_weights(region)
         selected = mileage.loc[mileage.vehicle_class.isin(heavy_weights) & mileage.year_index.le(25)].copy()
@@ -196,6 +204,48 @@ def test_two_scenarios_share_registry_with_independent_aggregation_choices(bundl
         actual = profiles.loc[profiles.nrcan_ceud_class.eq("Medium Trucks")]
         assert set(actual.weight_source) == {scenario.scenario.aggregation_sources.source_for("medium_trucks", "QC")}
     assert fleets[0].medium_weights("ON", classes) == fleets[1].medium_weights("ON", classes)
+
+
+def test_wards_component_registration_controls_the_file_and_shares(bundle, tmp_path):
+    from parameterization.road_aggregation import load_wards_legacy_comparison
+
+    original = load_fleet_aggregation_evidence(bundle)
+    payload = bundle.sources.model_dump()
+    component = payload["sources"][WARDS]["components"]["vehicle_class_market_shares"]
+    original_path = resolve_input_path(bundle, "manual", component["adapter"]["manual_parameter_path"])
+    relocated_path = tmp_path / "updated_wards_shares.csv"
+    relocated_path.write_bytes(original_path.read_bytes())
+    component["adapter"]["manual_parameter_path"] = relocated_path.name
+    inputs = bundle.paths.inputs.model_copy(update={"manual": str(tmp_path)})
+    changed = replace(
+        bundle, sources=SourcesConfig.model_validate(payload),
+        paths=bundle.paths.model_copy(update={"inputs": inputs}),
+    )
+
+    relocated = load_fleet_aggregation_evidence(changed)
+
+    assert relocated.medium_shares == original.medium_shares
+    assert relocated_path in relocated.paths
+    assert original_path not in relocated.paths
+
+    wards = pd.read_csv(relocated_path)
+    selected = wards.vehicle_scope.eq("mhdv") & wards.nrcan_ceud_class.eq("Medium Trucks")
+    wards.loc[selected, "market_share"] = 1 / selected.sum()
+    wards.to_csv(relocated_path, index=False)
+
+    updated = load_fleet_aggregation_evidence(changed)
+
+    assert updated.medium_shares[WARDS] == {gvwr: 0.2 for gvwr in range(3, 8)}
+    assert updated.medium_shares[WARDS] != original.medium_shares[WARDS]
+    classes = [f"Class {gvwr} Freight" for gvwr in range(2, 8)]
+    assert updated.medium_weights("QC", classes) == {
+        f"Class {gvwr} Freight": 0.2 for gvwr in range(3, 8)
+    }
+    assert updated.medium_weights("ON", classes) == original.medium_weights("ON", classes)
+    pd.testing.assert_frame_equal(
+        load_wards_legacy_comparison(changed).drop(columns=["region_scope", "weight_source"]),
+        wards,
+    )
 
 
 def test_wards_citation_is_validated_before_aggregation(bundle, tmp_path):

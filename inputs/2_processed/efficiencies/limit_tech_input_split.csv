@@ -5,14 +5,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2df0c656a23aebe1
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2df0c656a23aebe1
 AB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6281659711660109,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2df0c656a23aebe1
 AB,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8b8d028e17e77cce
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8b8d028e17e77cce
 AB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8b8d028e17e77cce
 AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -20,7 +20,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:e94a7227d6f3e0b5
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:e94a7227d6f3e0b5
 AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:e94a7227d6f3e0b5
 AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -28,7 +28,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:b0a10b856fb72c06
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:b0a10b856fb72c06
 AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:b0a10b856fb72c06
 AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -36,7 +36,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:4b0203bbfa32b6b3
 AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:4b0203bbfa32b6b3
 AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -45,7 +45,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:b2cc5ed044d431d0
 AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:b2cc5ed044d431d0
 AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -54,7 +54,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:156f4040defc5cfa
 AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:156f4040defc5cfa
 AB,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3718340288339891,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2df0c656a23aebe1
@@ -119,14 +119,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1658aacbdeff4555
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1658aacbdeff4555
 BCT,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6289974293487276,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1658aacbdeff4555
 BCT,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:10fa2ab90c3f1d61
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:10fa2ab90c3f1d61
 BCT,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:10fa2ab90c3f1d61
 BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -134,7 +134,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d659186ccbf254bd
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d659186ccbf254bd
 BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d659186ccbf254bd
 BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -142,7 +142,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:5f049539b80d47bc
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:5f049539b80d47bc
 BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:5f049539b80d47bc
 BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -150,7 +150,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2ce45681f18bdbfe
 BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2ce45681f18bdbfe
 BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -159,7 +159,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:4a5f3a88bee77daa
 BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:4a5f3a88bee77daa
 BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -168,7 +168,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:bae4b2fd1364c2ec
 BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:bae4b2fd1364c2ec
 BCT,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3710025706512724,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1658aacbdeff4555
@@ -233,14 +233,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:3aef3331c0fd7cac
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:3aef3331c0fd7cac
 MB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298328668972442,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:3aef3331c0fd7cac
 MB,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2ad357fe1d98b84d
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2ad357fe1d98b84d
 MB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:2ad357fe1d98b84d
 MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -248,7 +248,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1774bba2da845fb1
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1774bba2da845fb1
 MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1774bba2da845fb1
 MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -256,7 +256,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:f12443711ffcd674
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:f12443711ffcd674
 MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:f12443711ffcd674
 MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -264,7 +264,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:13a42836fe66074c
 MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:13a42836fe66074c
 MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -273,7 +273,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:b288783f4659ae74
 MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:b288783f4659ae74
 MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -282,7 +282,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:dc49daad1df82e4e
 MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:dc49daad1df82e4e
 MB,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37016713310275584,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:3aef3331c0fd7cac
@@ -347,14 +347,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8ac395e68b92458c
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8ac395e68b92458c
 NB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6291798819900203,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8ac395e68b92458c
 NB,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:7fcf64c3a6f1bb25
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:7fcf64c3a6f1bb25
 NB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:7fcf64c3a6f1bb25
 NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -362,7 +362,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:36a104743727ae2d
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:36a104743727ae2d
 NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:36a104743727ae2d
 NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -370,7 +370,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:52ef59918ff874df
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:52ef59918ff874df
 NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:52ef59918ff874df
 NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -378,7 +378,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:48a919a40f64700a
 NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:48a919a40f64700a
 NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -387,7 +387,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:488746070f57b1d2
 NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:488746070f57b1d2
 NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -396,7 +396,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8923fb501cd8ebce
 NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8923fb501cd8ebce
 NB,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3708201180099797,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8ac395e68b92458c
@@ -461,14 +461,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:abb96147c7063b4b
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:abb96147c7063b4b
 NLLAB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.630011129803326,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:abb96147c7063b4b
 NLLAB,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:70de61d0e417e05e
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:70de61d0e417e05e
 NLLAB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:70de61d0e417e05e
 NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -476,7 +476,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1eaf52097fb6957b
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1eaf52097fb6957b
 NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1eaf52097fb6957b
 NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -484,7 +484,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:dfc6a86a793953f5
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:dfc6a86a793953f5
 NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:dfc6a86a793953f5
 NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -492,7 +492,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:7f90b2ed65873e2e
 NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:7f90b2ed65873e2e
 NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -501,7 +501,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:0d80dba627c93561
 NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:0d80dba627c93561
 NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -510,7 +510,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d0d0747722315ff5
 NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d0d0747722315ff5
 NLLAB,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.36998887019667404,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:abb96147c7063b4b
@@ -575,14 +575,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:ac4819a9fc7bacd4
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:ac4819a9fc7bacd4
 NS,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6295930171662157,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:ac4819a9fc7bacd4
 NS,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:9e01386658cb2af2
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:9e01386658cb2af2
 NS,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:9e01386658cb2af2
 NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -590,7 +590,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:f6bcb97b37041fae
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:f6bcb97b37041fae
 NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:f6bcb97b37041fae
 NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -598,7 +598,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:fe1a17af5a27cf97
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:fe1a17af5a27cf97
 NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:fe1a17af5a27cf97
 NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -606,7 +606,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:23768b281d30aa78
 NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:23768b281d30aa78
 NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -615,7 +615,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:319fbc8d12d29ff2
 NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:319fbc8d12d29ff2
 NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -624,7 +624,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:326923380a1b1bce
 NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:326923380a1b1bce
 NS,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37040698283378426,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:ac4819a9fc7bacd4
@@ -689,7 +689,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:14b0ecaa1d47d5b2
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:14b0ecaa1d47d5b2
 ON,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6290438545938319,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:14b0ecaa1d47d5b2
 ON,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.6398135527769868,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
@@ -697,7 +697,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:91e94ce5c6a3caa9
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:91e94ce5c6a3caa9
 ON,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.36018644722301313,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:91e94ce5c6a3caa9
 ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -705,7 +705,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d64e9b32de51c70c
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d64e9b32de51c70c
 ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d64e9b32de51c70c
 ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -713,7 +713,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a7124f896a623ad0
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a7124f896a623ad0
 ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a7124f896a623ad0
 ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -721,7 +721,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1de2dc0ccff0e447
 ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1de2dc0ccff0e447
 ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -730,7 +730,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:e8c7d97b5728fa76
 ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:e8c7d97b5728fa76
 ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -739,7 +739,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8f320d76d6ca9bba
 ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8f320d76d6ca9bba
 ON,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37095614540616806,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:14b0ecaa1d47d5b2
@@ -804,14 +804,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:0a9729632f250be5
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:0a9729632f250be5
 PEI,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298983058176015,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:0a9729632f250be5
 PEI,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:3111e215f55eed98
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:3111e215f55eed98
 PEI,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:3111e215f55eed98
 PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -819,7 +819,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:c699f91874289816
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:c699f91874289816
 PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:c699f91874289816
 PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -827,7 +827,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a455207c5eabed46
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a455207c5eabed46
 PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a455207c5eabed46
 PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -835,7 +835,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:592f5a4205b493a1
 PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:592f5a4205b493a1
 PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -844,7 +844,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:f46109e886d20232
 PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:f46109e886d20232
 PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -853,7 +853,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d92b7109e50dee90
 PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d92b7109e50dee90
 PEI,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37010169418239847,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:0a9729632f250be5
@@ -918,14 +918,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:9be430a12f4f008d
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:9be430a12f4f008d
 QC,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6280533028027346,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:9be430a12f4f008d
 QC,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d8facdd8a05e8c41
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d8facdd8a05e8c41
 QC,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d8facdd8a05e8c41
 QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -933,7 +933,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:e4f97573c5db68b6
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:e4f97573c5db68b6
 QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:e4f97573c5db68b6
 QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -941,7 +941,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a4737f57867d3f12
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a4737f57867d3f12
 QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:a4737f57867d3f12
 QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -949,7 +949,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:29cbb24e2fc4cb3e
 QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:29cbb24e2fc4cb3e
 QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -958,7 +958,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:df4b3df9ac116722
 QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:df4b3df9ac116722
 QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -967,7 +967,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:94ebeb940abd4dc1
 QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:94ebeb940abd4dc1
 QC,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37194669719726536,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:9be430a12f4f008d
@@ -1032,14 +1032,14 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:da8ae0fa9baf71b1
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:da8ae0fa9baf71b1
 SK,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6278362860230816,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:da8ae0fa9baf71b1
 SK,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d52c061a82f24319
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d52c061a82f24319
 SK,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:d52c061a82f24319
 SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -1047,7 +1047,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8c2a7dac176f4c4e
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8c2a7dac176f4c4e
 SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:8c2a7dac176f4c4e
 SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -1055,7 +1055,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1e073de34c270522
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1e073de34c270522
 SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:1e073de34c270522
 SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
   - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
@@ -1063,7 +1063,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:68f90cc85d290464
 SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:68f90cc85d290464
 SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -1072,7 +1072,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:06606f8d18d9f9d6
 SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:06606f8d18d9f9d6
 SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -1081,7 +1081,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
   - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
 argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
-  - fuel_heating_values: Gasoline and diesel higher heating values from registered GREET fuel-property cells; source units are Btu per U.S. gallon.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
 epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:2:ec2f70e5d2790054
 SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:ec2f70e5d2790054
 SK,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3721637139769184,,T06,2,3,2,2,2,efficiency-phev-splits:composite:2:da8ae0fa9baf71b1

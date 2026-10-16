@@ -14,7 +14,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-ab-ldv:composite:2:3eebcfbdbab8fe66
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-ab-ldv:composite:2:f04c781091cb758f
 AB,T_MHDV_CHRG_EX,2020,0.0068673624961178275,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -24,7 +24,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
-  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-ab-mhdv:composite:2:bba9be0e8847e080
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-ab-mhdv:composite:2:8a018bf17b010f0d
 BCT,T_LDV_CHRG_EX,2020,0.945680099715837,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -39,7 +39,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-bct-ldv:composite:2:7464cdddbc40ae0c
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-bct-ldv:composite:2:f564e611c94da0e7
 BCT,T_MHDV_CHRG_EX,2020,0.16521869541413745,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -49,7 +49,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
-  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-bct-mhdv:composite:2:5296eed4e4c360cb
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-bct-mhdv:composite:2:e245e9f4867e7e2d
 MB,T_LDV_CHRG_EX,2020,0.027559878132774693,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -65,7 +65,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-mb-ldv:composite:2:68918a342bfb8f69
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-mb-ldv:composite:2:e694747581f0a304
 MB,T_MHDV_CHRG_EX,2020,0.011742487554846717,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -75,7 +75,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
-  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-mb-mhdv:composite:2:73b70e9a79283f15
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-mb-mhdv:composite:2:6c1d0ef82d5f6438
 NB,T_LDV_CHRG_EX,2020,0.021440208653846052,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -91,7 +91,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-nb-ldv:composite:2:1c9f0fdd4f6f482a
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-nb-ldv:composite:2:e4590bc82f19594f
 NLLAB,T_LDV_CHRG_EX,2020,0.04317201449055339,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -107,7 +107,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-nllab-ldv:composite:2:f5fa8dfb67d3aa01
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-nllab-ldv:composite:2:55c779c2a60f4de0
 NLLAB,T_MHDV_CHRG_EX,2020,0.0040118869732088894,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -117,7 +117,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
-  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-nllab-mhdv:composite:2:29f152740ca76849
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-nllab-mhdv:composite:2:03df9f83b3d0ad18
 NS,T_LDV_CHRG_EX,2020,0.028455917382142554,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -132,7 +132,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-ns-ldv:composite:2:7ca445d7f6c22c4f
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-ns-ldv:composite:2:69091cb9290c72aa
 NS,T_MHDV_CHRG_EX,2020,0.0025969561052589813,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -142,7 +142,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
-  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-ns-mhdv:composite:2:940e42544bfcce0d
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-ns-mhdv:composite:2:17fa539ea0f5ffe7
 ON,T_LDV_CHRG_EX,2020,0.8870326014006561,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -158,7 +158,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-ldv:composite:2:a4093e52e14510d3
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-ldv:composite:2:c01b84961add52fe
 ON,T_MHDV_CHRG_EX,2020,0.2118184850986834,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -168,7 +168,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
-  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-mhdv:composite:2:510104773470ee56
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-mhdv:composite:2:f6d0a333d4e89df3
 PEI,T_LDV_CHRG_EX,2020,0.010005098647639227,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -184,7 +184,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-pei-ldv:composite:2:546a0d36a1a5b3a0
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-pei-ldv:composite:2:e1be3dca24733f38
 QC,T_LDV_CHRG_EX,2020,1.16933221928772,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -200,7 +200,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-qc-ldv:composite:2:ed63f5a1462fa7a4
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-qc-ldv:composite:2:1381491d68ca0eb1
 QC,T_MHDV_CHRG_EX,2020,0.24226924380258472,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -210,7 +210,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
-  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-qc-mhdv:composite:2:5104478e2c2a84b1
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-qc-mhdv:composite:2:8c50facc3815ed87
 SK,T_LDV_CHRG_EX,2020,0.02349785705815025,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
@@ -226,7 +226,7 @@ fueleconomy_gov_vehicle_data: U.S. model-year make/model and vehicle-class recor
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
-pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-sk-ldv:composite:2:e4561679bfc9cc05
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.",T24,2,2,3,2,2,ev-chargers-existing-capacity-sk-ldv:composite:2:4b28c782a53af890
 SK,T_MHDV_CHRG_EX,2020,0.009907237844287894,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -236,4 +236,4 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nhtsa_cafe_ldv_survival: U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
-  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-sk-mhdv:composite:2:df91f9415aa25f31
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.",T24,2,2,3,2,2,ev-chargers-existing-capacity-sk-mhdv:composite:2:fefacf0c5ebb690c

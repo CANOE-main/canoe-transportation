@@ -28,7 +28,7 @@ from validation.config_models import SourceComponent
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 def nrcan_rules() -> dict[str, object]:
@@ -228,10 +228,10 @@ def test_nrcan_rules_load_paths_and_extraction_parameters_from_config() -> None:
         market_component.adapter["manual_parameter_path"],
     )
     shares = pd.read_csv(market_path)
-    assert list(shares.columns) == market_source.adapter["expected_columns"]
+    assert list(shares.columns) == market_component.adapter["expected_columns"]
     assert len(shares) == 32
     assert not shares.duplicated(
-        market_source.adapter["unique_key"]
+        market_component.adapter["unique_key"]
     ).any()
     assert shares["market_share"].between(0, 1).all()
     assert set(shares["year"]) == {2018, 2020, 2021}
