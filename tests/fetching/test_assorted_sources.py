@@ -32,7 +32,7 @@ from utils import load_config_bundle, resolve_input_path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 def test_tc_dashboard_parser_selects_identified_table_and_rejects_drift() -> None:

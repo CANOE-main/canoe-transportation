@@ -20,7 +20,7 @@ from utils import load_config_bundle
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = REPO_ROOT / "config" / "scenarios" / "legacy_reproduction.yaml"
+SCENARIO = REPO_ROOT / "config" / "scenarios" / "default.yaml"
 
 
 def configured_request() -> FuelEconomyVehicleRequest:

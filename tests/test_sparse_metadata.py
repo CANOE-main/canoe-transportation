@@ -46,8 +46,8 @@ def test_notes_are_sparse_order_independent_and_dq_remains_on_every_row():
         identity(row): row.notes for row in reversed_rows
     }
     annotated = [row for row in rows if row.notes]
-    assert {(row.region, row.period) for row in annotated} == {("AB", 2025)}
-    assert len(annotated) == 2
+    assert {(row.region, row.period) for row in annotated} == {("AB", 2025), ("ON", 2025)}
+    assert len(annotated) == 4
     for row in rows:
         assert row.data_source == provenance.source_id
         assert row.demand == 2.0
@@ -60,12 +60,12 @@ def test_special_period_treatment_retains_source_owned_caveat():
     payload[0]["database_note_variants"] = ("car_extrapolation",)
     payload[1]["notes"] = "Unregistered artifact prose must not be promoted"
     rows = validate_parameter_rows(Demand, payload, provenance)
-    assert len([row for row in rows if row.notes]) == 3
+    assert len([row for row in rows if row.notes]) == 5
     special = next(row for row in rows if row.region == "ON" and row.period == 2030
                    and row.commodity == "car_service")
     assert "20.car_extrapolation:" in special.notes
     assert all("Unregistered artifact prose" not in (row.notes or "") for row in rows)
-    assert compact_parameter_notes(rows, ["commodity"]) == rows
+    assert compact_parameter_notes(rows, ["commodity", "region"]) == rows
 
 
 def test_unknown_note_variant_fails_before_row_construction():

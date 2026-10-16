@@ -23,6 +23,7 @@
     "nrcan_fuel_consumption_ratings": "T08",
     "nhtsa_cafe_ldv_survival": "T09",
     "eia_nems_hd_truck_scrappage": "T10",
+    "epa_moves_heavy_truck_survival": "T39",
     "jgcri_gcam_motorcycle_inputs": "T11",
     "epri_us_regen_transportation": "T12",
     "faa_economic_values": "T13",
@@ -45,8 +46,7 @@
     "epa_omega_baseline": "T33",
     "hatch_original_growth_evidence": "T34",
     "hatch_extended_growth_evidence": "T35",
-    "eafo_norway_growth_evidence": "T36",
-    "epa_moves_heavy_truck_survival": "T39"
+    "eafo_norway_growth_evidence": "T36"
   },
   "template": {
     "kind": "backend_internal_reference",
@@ -4415,7 +4415,7 @@
       },
       "end_of_horizon": 2050
     },
-    "input_digest": "917a36088019b03a09bc4249ecce4169a58951c8d9c81a00dc0ab9b2342913b2",
+    "input_digest": "19dfe91c3a046478bb1a1e98af503edf52a220bb6ff7e4a62d4527fc6068c6b2",
     "atb_scenario": "Mid",
     "aggregation_sources": {
       "stock_age": {
@@ -4450,10 +4450,6 @@
       [
         "USD",
         2005
-      ],
-      [
-        "USD",
-        2019
       ],
       [
         "USD",
@@ -4501,20 +4497,10 @@
       },
       {
         "source_currency": "USD",
-        "source_dollar_year": 2019,
-        "target_currency": "CAD",
-        "target_dollar_year": 2020,
-        "rows": 3525,
-        "cad_per_usd": 1.33,
-        "source_year_deflator": 103.2,
-        "target_year_deflator": 104.3
-      },
-      {
-        "source_currency": "USD",
         "source_dollar_year": 2020,
         "target_currency": "CAD",
         "target_dollar_year": 2020,
-        "rows": 6783,
+        "rows": 10308,
         "cad_per_usd": 1.34,
         "source_year_deflator": 104.3,
         "target_year_deflator": 104.3
@@ -4542,15 +4528,13 @@
     ],
     "historical_msrp_proxy_rows": 1551,
     "variable_period_vintage_pairs_excluded_by_lifetime": 2782,
-    "source_metadata_provisional": {
-      "jgcri_gcam_motorcycle_inputs": "provisional_review"
-    },
+    "source_metadata_provisional": {},
     "source_cost_metadata": [
       {
         "source": "anl_autonomie_bean",
         "component": "mhdv_maintenance_coefficients",
         "currency": "USD",
-        "dollar_year": 2019,
+        "dollar_year": 2020,
         "status": "reviewed"
       },
       {
@@ -4572,7 +4556,7 @@
         "component": "canada_motorcycle_inputs",
         "currency": "USD",
         "dollar_year": 2005,
-        "status": "provisional_review"
+        "status": "reviewed"
       },
       {
         "source": "nlr_atb_transportation",
@@ -4701,7 +4685,7 @@
     "utilization_time_basis": "vintage_input_year",
     "historical_utilization": "earliest_reviewed_value",
     "utilization_provenance": {
-      "data_id": "ev-chargers-utilization:composite:2:96a16af4023840ad",
+      "data_id": "ev-chargers-utilization:composite:2:1de4e419142625cf",
       "contributors": [
         "dunsky_ev_charging_infrastructure"
       ]
@@ -5453,7 +5437,7 @@
       "charger_parameters.csv": "587fc5e9d20ab39d10f97f4e2c1c3829a212b74187203643b0864238a69bf617",
       "transport_canada_public_ld_chargers_by_province_2026.csv": "bedab0a1130bc1340a73302ce55dc6c382caefca0bb3450c13b6d1769fe2b832",
       "transport_canada_public_ld_chargers_by_type_2026.csv": "ba3b8056806b59d4df540e3b85cda8c8c2302145d18eacc80091710a47409e6c",
-      "existing_capacity.csv": "fecb344142cf4bcca450c4f3fdead3c7a233739faed62f96d0354c2dd7c0459b",
+      "existing_capacity.csv": "10910bd03484405089f84c39dbeec35f51e059645921bc2c820f7e13e0c2ba49",
       "cer_macro_indicators.csv": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
     }
   },
@@ -7432,8 +7416,8 @@
     "foreign_key_violations": 0,
     "foreign_keys_enabled": true
   },
-  "database_sha256": "53d7b1c5c5f58e0e7e4e8021811c4ab43d1e5a16a7eb76674049cf7c90fe1c05",
-  "timestamp_utc": "2026-10-15T20:27:21.625908+00:00",
+  "database_sha256": "81e67c39ca20df2d9f4b3a9ec1383215bb341fc2024431e9c8ee724b2d87c537",
+  "timestamp_utc": "2026-10-16T00:56:57.068546+00:00",
   "scenario": "baseline",
   "orchestration": {
     "prerequisites": "replayed",
@@ -7450,7 +7434,7 @@
     },
     "sources": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\sources.yaml",
-      "sha256": "e7c78becb2d0f02d370f60f671802137111bda3b381c472176a910b25e68423b"
+      "sha256": "85ef437fb59ee39f59b691ce3c2f0d760e03317ee7c0213792d54d63adcab7fe"
     },
     "parameters": [
       {

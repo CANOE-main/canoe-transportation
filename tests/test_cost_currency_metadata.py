@@ -32,7 +32,7 @@ def harmonized_costs(tmp_path_factory):
     bundle = replace(bundle, scenario=type(bundle.scenario).model_validate(scenario))
     old_sources = bundle.sources.model_dump(mode="python")
     for source, component, year in (
-        (layer.BEAN, "mhdv_maintenance_coefficients", 2020),
+        (layer.BEAN, "mhdv_maintenance_coefficients", 2019),
         (layer.REGEN, "intercity_bus_charts", 2025),
     ):
         adapter = old_sources["sources"][source]["components"][component]["adapter"]
@@ -122,9 +122,9 @@ def harmonized_costs(tmp_path_factory):
     ("family", "tech", "changed_years"),
     [
         ("invest_rows", "T_HDV_BIC_DSL_N", [(2023, 2025)]),
-        ("variable_rows", "T_MDV_T_DSL_N", [(2019, 2020)]),
-        ("variable_rows", "T_HDV_BS_DSL_N", [(2019, 2020)]),
-        ("variable_rows", "T_HDV_BIC_DSL_N", [(2019, 2020), (2023, 2025)]),
+        ("variable_rows", "T_MDV_T_DSL_N", [(2020, 2019)]),
+        ("variable_rows", "T_HDV_BS_DSL_N", [(2020, 2019)]),
+        ("variable_rows", "T_HDV_BIC_DSL_N", [(2020, 2019), (2023, 2025)]),
         ("invest_rows", "T_LDV_C_GSL_N", []),
         ("variable_rows", "T_HDV_AJP_JFL_N", []),
         ("variable_rows", "T_LDV_M_GSL_N", []),
@@ -159,7 +159,7 @@ def test_native_year_review_keeps_cost_coverage_and_audit_basis(harmonized_costs
         assert len(reviewed) == len(TECHNOLOGIES)
     current = evidence["reviewed"]
     for family, tech, year in (
-        ("variable", "T_MDV_T_DSL_N", 2019),
+        ("variable", "T_MDV_T_DSL_N", 2020),
         ("invest", "T_HDV_BIC_DSL_N", 2023),
         ("variable", "T_HDV_AJP_JFL_N", 2023),
         ("variable", "T_LDV_M_GSL_N", 2005),
@@ -174,12 +174,10 @@ def test_native_year_review_keeps_cost_coverage_and_audit_basis(harmonized_costs
         (layer.BEAN, "mhdv_maintenance_coefficients"),
         (layer.REGEN, "intercity_bus_charts"),
         (layer.FAA, "section_4_operating_costs"),
+        (layer.GCAM, "canada_motorcycle_inputs"),
     ):
         assert registrations[source, component]["status"] == "reviewed"
-    assert registrations[layer.GCAM, "canada_motorcycle_inputs"]["status"] == "provisional_review"
-    assert results["reviewed"].audit["source_metadata_provisional"] == {
-        layer.GCAM: "provisional_review",
-    }
+    assert results["reviewed"].audit["source_metadata_provisional"] == {}
     assert set(results["previous"].audit["source_metadata_provisional"]) == {
-        layer.BEAN, layer.REGEN, layer.GCAM,
+        layer.BEAN, layer.REGEN,
     }

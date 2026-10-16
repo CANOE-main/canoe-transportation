@@ -187,8 +187,9 @@ def load_fleet_aggregation_evidence(bundle: ConfigBundle) -> FleetAggregationEvi
             from parameterization.manual_parameters import validate_manual_registry
 
             manual_rules = load_harmonization_rules(bundle, "manual_parameters")
+            wards_component = bundle.sources.sources[WARDS].component("vehicle_class_market_shares")
             wards_path = resolve_input_path(
-                bundle, "manual", bundle.sources.sources[WARDS].adapter["manual_parameter_path"],
+                bundle, "manual", wards_component.adapter["manual_parameter_path"],
             )
             validate_manual_registry(
                 bundle, source_column=manual_rules["source_column"],

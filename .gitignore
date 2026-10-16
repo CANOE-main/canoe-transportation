@@ -16,5 +16,5 @@ inputs/validation/*
 inputs/playground/
 # outputs/
 .agents/skills/*
-.agents/plans/
+.agents/plans/*
 tmp/
