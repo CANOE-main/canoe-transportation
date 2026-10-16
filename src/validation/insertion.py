@@ -139,7 +139,7 @@ def replace_owned_ldv_rows(
                         (region, data_id, scope_value),
                     ).rowcount
         logging.getLogger(__name__).info(
-            "Scoped %s replacement removed %s owned rows in %s", table, removed, regions
+            "Scoped %s replacement removed %s owned rows across %s regions", table, removed, len(regions)
         )
     if ranges is None:
         return
@@ -315,6 +315,7 @@ def replace_owned_ldv_representation(
                     )
     if check_only:
         return
+    replacement_counts = {}
     for table in tables:
         column = "tech_or_group" if table == "limit_annual_capacity_factor" else "tech"
         removed = 0
@@ -329,9 +330,16 @@ def replace_owned_ldv_representation(
                             f'DELETE FROM "{table}" WHERE region=? AND "{column}"=? AND data_id=?',
                             (region, tech, data_id),
                         ).rowcount
-        logging.getLogger(__name__).info(
-            "LDV representation replacement removed %s owned %s rows", removed, table
-        )
+        replacement_counts[table] = removed
+        if removed:
+            logging.getLogger(__name__).info(
+                "LDV representation replacement removed %s owned %s rows", removed, table
+            )
+    logging.getLogger(__name__).info(
+        "LDV representation replacement removed %s owned rows across %s parameter tables",
+        sum(replacement_counts.values()), len(replacement_counts),
+    )
+    logging.getLogger(__name__).debug("LDV replacement counts: %s", replacement_counts)
     # Structural rows may be shared across regions. Remove them only when no other
     # FK/logical reference remains, then let the incoming contribution insert its rows.
     database_tables = [

@@ -75,6 +75,7 @@ def _context(
     name: str,
     components: list[tuple[str, str | int]],
     variant: dict[str, Any],
+    transformation_version: str = "2",
 ) -> ResolvedProvenance:
     inputs = [_component(bundle, source, component) for source, component in components]
     governing_id = source_id_mapping(bundle.sources)["nrcan_ceud_transport_provincial"]
@@ -85,7 +86,7 @@ def _context(
         inputs=inputs,
         dataset_key=f"existing_capacity.{name}",
         transformation="CEUD stock or energy with reviewed age, fuel, and lifetime evidence",
-        transformation_version="2",
+        transformation_version=transformation_version,
         governing_source_id=governing_id,
         data_quality=governing_quality,
         value_variant=variant,
@@ -475,9 +476,10 @@ def build_existing_capacity_artifacts(
             )
         shares = road_shares.loc[
             road_shares["road_class"].eq(road_class)
-            & road_shares["vintage"].eq(vintage)
             & road_shares["region"].eq(region)
         ]
+        # Retired cohorts contribute to the technology total redistributed into
+        # this vintage, so its lineage includes the full reference composition.
         table_ids = sorted(
             {
                 table_id
@@ -489,7 +491,7 @@ def build_existing_capacity_artifacts(
         components.extend(
             ("statcan_transport_tables", table_id) for table_id in table_ids
         )
-        if road_class == "medium_trucks" and vintage == scenario.periods.latest_observed_vintage:
+        if road_class == "medium_trucks" and shares["dashboard_override"].any():
             components.append(
                 ("transport_canada_ev_dashboard", "medium_heavy_ev_market_share")
             )
@@ -498,6 +500,7 @@ def build_existing_capacity_artifacts(
             name=f"road.{road_class}.{vintage}.{region}",
             components=components,
             variant=variants,
+            transformation_version="3",
         )
         contexts.append(context)
         rows.extend(
@@ -669,6 +672,19 @@ def build_existing_capacity_artifacts(
             "raw_cohort_k_vehicles",
         ].sum()
     )
+    road_totals = road_shares.groupby(["region", "road_class", "tech"])[
+        ["raw_capacity", "capacity"]
+    ].sum()
+    retired = road_shares.loc[~road_shares["eligible_first_model_period"], "raw_capacity"]
+    audit["road_technology_redistribution"] = {
+        "composition_basis": "configured_historical_vintage_coverage",
+        "redistribution_scope": "same_region_and_technology",
+        "checked_technology_totals": len(road_totals),
+        "redistributed_stock_k_vehicles": float(retired.sum()),
+        "max_conservation_error_k_vehicles": float(
+            (road_totals["capacity"] - road_totals["raw_capacity"]).abs().max()
+        ),
+    }
     audit["offroad_ineligible_raw_capacity_by_unit"] = {
         str(units): float(value)
         for units, value in offroad_cohorts.loc[
@@ -769,6 +785,8 @@ def build_existing_capacity_artifacts(
         scenario.existing_capacity.cleanup_tolerance,
         len(road_exclusions),
     )
+    LOGGER.info("Redistributed %.3f thousand road vehicles within the same technology; bus transfers=%s (%.3f thousand vehicles)",
+                float(retired.sum()), audit["bus_technology_transfers"], audit["bus_transferred_stock_k_vehicles"])
     return rows, contexts, audit
 
 

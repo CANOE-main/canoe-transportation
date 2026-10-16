@@ -19,7 +19,7 @@ from canoe_schema.v4_0 import DataSet, Efficiency, LimitTechInputSplit
 from fetching.fueleconomy_vehicles import build_request, validate_cache
 from fetching.nlr_atb_autonomie import configured_trajectory
 from parameterization.manual_parameters import validate_manual_registry
-from parameterization.ldv_ev_ranges import existing_range_weights, module_rules as range_module_rules
+from parameterization.ldv_ev_ranges import RangeEvidence, existing_range_weights, module_rules as range_module_rules
 from fetching.epa_omega_baseline import SOURCE as OMEGA, COMPONENT as OMEGA_COMPONENT, build_request as omega_request
 from parameterization.offroad_efficiencies import derive_offroad_efficiency
 from parameterization.road_efficiencies import (
@@ -365,7 +365,8 @@ def validate_efficiency_outputs(
 
 
 def prepare_efficiency_rows(
-    bundle: ConfigBundle, *, existing_capacity_rows: list | None = None
+    bundle: ConfigBundle, *, existing_capacity_rows: list | None = None,
+    range_evidence: RangeEvidence | None = None,
 ) -> EfficiencyPreparation:
     """Offline source-to-schema preparation; no connection or transaction is required."""
     rules = load_harmonization_rules(bundle, "efficiencies")
@@ -420,7 +421,7 @@ def prepare_efficiency_rows(
 
     technology = read(resolve_input_path(bundle, "template", "technology.csv"))
     range_rules = range_module_rules(bundle)
-    historical_weights, range_evidence = existing_range_weights(bundle)
+    historical_weights, range_evidence = existing_range_weights(bundle, evidence=range_evidence)
     paths.append(omega_request(bundle).extract_path)
     commodity = read(resolve_input_path(bundle, "template", "commodity.csv"))
     region_template = read(resolve_input_path(bundle, "template", "region.csv"))
@@ -933,7 +934,14 @@ def prepare_efficiency_rows(
     (validation / rules["files"]["integrity"]).write_text(
         json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    LOGGER.info("Prepared efficiencies: %s", audit)
+    LOGGER.info("Prepared efficiency=%s and limit_tech_input_split=%s rows (%s technologies)",
+                len(rows), len(splits), audit["technologies"])
+    LOGGER.info(
+        "Efficiency data handling: rating fallbacks=%s, omitted rows=%s, ambiguous EPA rows=%s, renormalized cells=%s",
+        audit["rating_index_fallbacks"], audit["omitted_rating_rows"],
+        audit["ambiguous_epa_rows"], audit["renormalized_rating_cells"],
+    )
+    LOGGER.debug("Efficiency audit: %s", audit)
     return EfficiencyPreparation(rows, splits, assumption, contexts, audit)
 
 

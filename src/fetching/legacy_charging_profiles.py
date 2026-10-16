@@ -214,7 +214,7 @@ def normalize_profile(bundle: ConfigBundle, profile: str) -> ProfileEvidence:
         directory / rules["manifest_file"].format(profile=profile),
     )
     LOGGER.info(
-        "Normalized %s charging: %s minute rows -> %s hours; peak=%s integral=%s; excluded=%s (nulls=%s)",
+        "Normalized %s charging: %s minute rows -> %s hours; peak=%.2f integral=%.2f; excluded=%s (nulls=%s)",
         profile,
         len(raw),
         len(evidence.hourly),

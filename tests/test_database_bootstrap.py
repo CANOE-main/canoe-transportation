@@ -21,7 +21,7 @@ from validation.schema_contract import create_v4_schema, packaged_ddl
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/legacy_comparison.yaml"
 TEMPLATES = REPO_ROOT / "inputs" / "0_canoe_template"
 
 

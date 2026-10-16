@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 import yaml
@@ -38,7 +41,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
-class UniqueKeyLoader(yaml.SafeLoader):
+class UniqueKeyLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):
     """Reject overwritten YAML keys while retaining safe loading and anchors."""
 
     def construct_mapping(self, node, deep=False):
@@ -53,6 +56,20 @@ class UniqueKeyLoader(yaml.SafeLoader):
                 )
             keys.add(key)
         return super().construct_mapping(node, deep=deep)
+
+
+@contextmanager
+def log_duration(logger: logging.Logger, label: str) -> Iterator[None]:
+    """Time a routine with a monotonic clock; log completion only on success."""
+    started = perf_counter()
+    logger.debug("Starting %s", label)
+    try:
+        yield
+    except BaseException:
+        logger.error("%s failed after %.2f s", label, perf_counter() - started)
+        raise
+    else:
+        logger.info("%s completed in %.2f s", label, perf_counter() - started)
 
 
 def find_repo_root(start: Path | None = None) -> Path:
@@ -163,12 +180,12 @@ def load_config_bundle(
     errors = validate_config_bundle(bundle)
     if errors:
         raise ValueError(f"Invalid configuration: {errors}")
-    logging.getLogger(__name__).info(
+    logging.getLogger(__name__).debug(
         "Unannotated source/component DQ indicators use registry defaults: %s",
         bundle.sources.defaults.data_quality.row_fields(),
     )
     period_mapping = bundle.scenario.periods.audit()
-    logging.getLogger(__name__).info("Scenario period mapping: %s", period_mapping)
+    logging.getLogger(__name__).debug("Scenario period mapping: %s", period_mapping)
     if period_mapping["empty_observation_vintages"]:
         logging.getLogger(__name__).warning(
             "Existing labels have no observed years through %s: %s",

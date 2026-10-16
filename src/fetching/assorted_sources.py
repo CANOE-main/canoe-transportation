@@ -1700,7 +1700,7 @@ def fetch_and_normalize_moves5_survival(
         preserve_unselected=True,
     )
     logging.info(
-        "MOVES5 heavy-truck survival: %s cache; normalized %s annual rate rows",
+        "MOVES5 heavy-truck survival: cache=%s; normalized %s annual rate rows",
         cache_status, len(rates),
     )
     return output_dir

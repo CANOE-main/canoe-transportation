@@ -206,7 +206,7 @@ def _atb_replay_digest(path: Path, expected: str | None, trajectories: list[str]
                     fields[source_column] = source_key
                 writer.writerow(fields)
             if hashlib.sha256(restored.getvalue().encode("utf-8")).hexdigest() == expected:
-                LOGGER.info("GREET ATB replay matches retained SHA-256 after restoring source identity and the %s default-trajectory marker", selection)
+                LOGGER.debug("GREET ATB replay matches retained SHA-256 after restoring source identity and the %s default-trajectory marker", selection)
                 return expected
     raise ValueError("Stale GREET ATB evidence: differences exceed the source rename/default-trajectory marker; explicitly regenerate")
 

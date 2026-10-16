@@ -163,7 +163,7 @@ def normalize_baseline(
         "valid",
         "invalid_cd_range",
     )
-    LOGGER.info(
+    LOGGER.debug(
         "OMEGA baseline: %s source records, %s MY%s sales, %s invalid CD ranges",
         len(result),
         int(result.sales.sum()),

@@ -23,7 +23,7 @@ periods:
 
 outputs:
   # Use distinct database, report and log names per scenario.
-  sqlite_name: canoe_transport_baseline.sqlite
+  sqlite_name: canoe_transport_baseline_no-survival_range-archetype.sqlite
   validation_report: outputs/validation/baseline_database_bootstrap.json
   setup_log: outputs/logs/setup_smoke_baseline.json
 
@@ -66,7 +66,7 @@ economics:
   cost_reference_year: 2020
 
 lifetimes:
-  survival_curves: true  # true: road curves; false: road median lifetimes.
+  survival_curves: false  # true: road curves; false: road median lifetimes.
   # NEMS or MOVES5; controls heavy-truck medians and curves.
   heavy_truck_survival_source: epa_moves_heavy_truck_survival  # eia_nems_hd_truck_scrappage | epa_moves_heavy_truck_survival
   survival_curve_max_age: 29  # Curve mode: maximum road survival/stock age.
@@ -100,8 +100,8 @@ charging_profiles:
   time_mapping: null  # null: hourly slices; otherwise: hour-to-slice CSV path.
 
 BEV_PHEV_range_representation:
-  # New LDVs: retain variants, constrain minimum range shares, or aggregate by class.
-  mode: new_capacity_shares  # none | new_capacity_shares | representative_archetype
+  # New PEVs: constrain minimum range shares or aggregate by range subclass.
+  mode: representative_archetype  # none | new_capacity_shares | representative_archetype
 
 # Road vehicle-cycle emissions.
 embodied_emissions: true

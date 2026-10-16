@@ -1,119 +1,119 @@
 region,input_comm,tech,vintage,output_comm,efficiency,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
-AB,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-AB,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-AB,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-AB,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-AB,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-AB,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-BCT,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-BCT,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-BCT,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-BCT,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-BCT,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-BCT,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-MB,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-MB,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-MB,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-MB,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-MB,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-MB,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NB,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NB,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NB,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NB,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NB,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NB,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NLLAB,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NLLAB,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NLLAB,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NLLAB,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NLLAB,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NLLAB,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NS,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NS,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NS,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NS,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NS,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-NS,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-ON,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-ON,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-ON,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-ON,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-ON,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-ON,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-PEI,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-PEI,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-PEI,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-PEI,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-PEI,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-PEI,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-QC,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-QC,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-QC,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-QC,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-QC,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-QC,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-SK,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-SK,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-SK,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-SK,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-SK,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-SK,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:c664e0e8573cf540
-AB,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-AB,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-AB,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-AB,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-AB,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-AB,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-BCT,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-BCT,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-BCT,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-BCT,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-BCT,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-BCT,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-MB,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-MB,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-MB,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-MB,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-MB,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-MB,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NB,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NB,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NB,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NB,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NB,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NLLAB,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NLLAB,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NLLAB,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NLLAB,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NLLAB,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NLLAB,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NS,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NS,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NS,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NS,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NS,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-NS,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-ON,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-ON,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-ON,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-ON,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-ON,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-ON,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-PEI,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-PEI,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-PEI,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-PEI,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-PEI,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-QC,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-QC,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-QC,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-QC,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-QC,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-QC,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-SK,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-SK,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-SK,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-SK,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-SK,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
-SK,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:6f4a9c6528799d48
+AB,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+AB,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+AB,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+AB,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+AB,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+AB,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+BCT,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+BCT,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+BCT,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+BCT,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+BCT,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+BCT,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+MB,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+MB,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+MB,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+MB,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+MB,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+MB,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NB,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NB,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NB,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NB,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NB,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NB,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NLLAB,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NLLAB,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NLLAB,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NLLAB,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NLLAB,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NLLAB,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NS,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NS,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NS,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NS,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NS,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+NS,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+ON,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+ON,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+ON,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+ON,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+ON,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+ON,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+PEI,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+PEI,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+PEI,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+PEI,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+PEI,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+PEI,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+QC,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+QC,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+QC,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+QC,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+QC,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+QC,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+SK,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+SK,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+SK,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+SK,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+SK,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+SK,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2,3,3,3,2,ev-chargers-ldv-efficiency:composite:2:f90f68464239537b
+AB,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+AB,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+AB,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+AB,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+AB,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+AB,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+BCT,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+BCT,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+BCT,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+BCT,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+BCT,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+BCT,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+MB,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+MB,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+MB,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+MB,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+MB,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+MB,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NB,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NB,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NB,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NB,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NB,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NLLAB,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NLLAB,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NLLAB,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NLLAB,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NLLAB,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NLLAB,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NS,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NS,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NS,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NS,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NS,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+NS,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+ON,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+ON,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+ON,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+ON,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+ON,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+ON,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+PEI,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+PEI,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+PEI,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+PEI,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+PEI,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+QC,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+QC,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+QC,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+QC,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+QC,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+QC,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+SK,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+SK,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+SK,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+SK,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+SK,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0
+SK,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2,3,3,3,2,ev-chargers-mhdv-efficiency:composite:2:b394466480e69da0

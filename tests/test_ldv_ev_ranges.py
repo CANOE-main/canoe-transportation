@@ -808,8 +808,16 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
     )
     from parameterization.ldv_charging_profiles import prepare_charging_profile_rows
 
-    bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    bundle = load_config_bundle("config/scenarios/default.yaml")
     payload = bundle.scenario.model_dump()
+    # This acceptance case exercises interval-end charger inputs and the full
+    # oldest-vintage curve block, independently of edits to the default scenario.
+    payload["periods"].update(
+        period_mode="prospective", base_year=2023,
+        existing=[2000, 2005, 2010, 2015, 2020],
+        model=[2025, 2030, 2035, 2040, 2045], step=5,
+    )
+    payload["lifetimes"].update(survival_curves=True, survival_curve_max_age=29)
     payload["charging_profiles"]["travel_behavior_source"] = "nhts"
     # Use the complete configured vehicle-cycle layer as well as actual range evidence.
     payload["embodied_emissions"] = True

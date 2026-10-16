@@ -340,8 +340,9 @@ def derive_ldv_age_distributions(
     maximum_age: int,
     median_lifetimes: dict[str, float],
     historical_review_minimum_model_year: int,
+    period_config: ScenarioPeriods | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Apply the scenario-owned cutoff and report all excluded stock."""
+    """Bound production age evidence by history; retain diagnostic lifetime cutoffs."""
     required = {
         "report_year",
         "MODEL_YEAR",
@@ -371,7 +372,12 @@ def derive_ldv_age_distributions(
         historical_review_minimum_model_year
     )
     accepted["negative_age"] = accepted["age"].lt(0)
-    if survival_curves:
+    if period_config is not None:
+        accepted["cutoff_age"] = float(
+            period_config.base_year - period_config.existing[0]
+        )
+        accepted["cutoff_basis"] = "configured_historical_vintage_coverage"
+    elif survival_curves:
         accepted["cutoff_age"] = float(maximum_age)
         accepted["cutoff_basis"] = "scenario_survival_curve_max_age"
     else:
@@ -473,7 +479,7 @@ def build_existing_stock_age_artifacts(
     *,
     lifetime_frames: dict[str, pd.DataFrame] | None = None,
 ) -> Path:
-    """Publish scenario-dependent Ontario LDV existing-stock age cohorts."""
+    """Publish Ontario LDV ages within the configured historical vintage window."""
     bundle = (
         scenario_path
         if isinstance(scenario_path, ConfigBundle)
@@ -504,6 +510,7 @@ def build_existing_stock_age_artifacts(
         historical_review_minimum_model_year=int(
             rules["historical_review_minimum_model_year"]
         ),
+        period_config=bundle.scenario.periods,
     )
     write_dataframe_atomic(
         age_distribution,
@@ -611,34 +618,42 @@ def distribute_existing_road_capacity(
             stock = float(source.iloc[0]["value"])
             if not isfinite(stock) or stock < 0:
                 raise ValueError(f"Invalid CEUD road stock: {(region, name)}")
-            eligible_age_rows: list[tuple[int, int, float, bool]] = []
+            eligible_age_rows: list[tuple[int, int, float, bool, bool]] = []
             for age_row in age_map[name].itertuples(index=False):
                 actual_year = base_year - int(age_row.age)
                 year = max(periods[0], actual_year)
+                within_history = actual_year >= periods[0]
                 if survival_curves and name in curve_classes:
                     first_period_age = first_model_period - actual_year
+                    model_age = first_model_period - period_config.existing_vintage(year)
                     eligible = (
-                        actual_year >= periods[0]
+                        within_history
                         and first_period_age <= survival_curve_max_age
                         and first_period_age in curve_ages_by_class[name]
+                        and model_age + period_config.step - 1 <= survival_curve_max_age
+                        and model_age in curve_ages_by_class[name]
                     )
                 else:
                     eligible = (
-                        actual_year + float(fixed_lifetimes_by_class[name])
+                        within_history
+                        and actual_year + float(fixed_lifetimes_by_class[name])
                         > first_model_period
                         and period_config.existing_vintage(year)
                         + float(fixed_lifetimes_by_class[name]) > first_model_period
                     )
                 eligible_age_rows.append(
-                    (int(age_row.age), year, float(age_row.age_share), eligible)
+                    (
+                        int(age_row.age), year, float(age_row.age_share),
+                        within_history, eligible,
+                    )
                 )
-            eligible_share = sum(
-                share for _, _, share, eligible in eligible_age_rows if eligible
+            history_share = sum(
+                share for _, _, share, within_history, _ in eligible_age_rows
+                if within_history
             )
-            if stock > 0 and eligible_share <= 0:
-                raise ValueError(f"No eligible MTO age cohorts for {(region, name)}")
-            factor = 1.0 / eligible_share if eligible_share > 0 else 0.0
-            for age, year, age_share, eligible in eligible_age_rows:
+            if history_share <= 0:
+                raise ValueError(f"No MTO age evidence in historical coverage for {(region, name)}")
+            for age, year, age_share, within_history, eligible in eligible_age_rows:
                 vintage = period_config.existing_vintage(year)
                 stock_rows.append(
                     {
@@ -649,12 +664,12 @@ def distribute_existing_road_capacity(
                         "vintage_year": year,
                         "vintage": vintage,
                         "age_share": age_share,
+                        "within_historical_coverage": within_history,
                         "eligible_first_model_period": eligible,
-                        "redistribution_factor": factor if eligible else 0.0,
                         "stock_k_vehicles": stock,
                         "raw_cohort_k_vehicles": stock * age_share,
-                        "cohort_k_vehicles": stock * age_share * factor
-                        if eligible
+                        "reference_cohort_k_vehicles": stock * age_share / history_share
+                        if within_history
                         else 0.0,
                         "age_source": "MTO Report A mapped"
                         if name in rules["statcan_ldv_source_types"]
@@ -662,14 +677,14 @@ def distribute_existing_road_capacity(
                     }
                 )
     cohorts = pd.DataFrame(stock_rows)
-    active_cohorts = cohorts.loc[cohorts["cohort_k_vehicles"].gt(0)]
+    reference_cohorts = cohorts.loc[cohorts["within_historical_coverage"]]
     share_rows: list[dict[str, Any]] = []
     excluded_rows: list[dict[str, Any]] = []
     fuel_technologies = rules["fuel_technology"]
     share_proxy = rules["share_region_proxy"]
     dashboard_by_region = dashboard.set_index("source_region")["ytd_market_share"]
 
-    for (region, name, vintage_year, vintage), group in active_cohorts.groupby(
+    for (region, name, vintage_year, vintage), group in reference_cohorts.groupby(
         ["ceud_region", "road_class", "vintage_year", "vintage"], sort=True
     ):
         if name in rules["statcan_ldv_source_types"]:
@@ -836,14 +851,67 @@ def distribute_existing_road_capacity(
                     "dashboard_override": name == "medium_trucks"
                     and vintage == period_config.latest_observed_vintage,
                     "historical_combustion_backfill": historical_backfill,
-                    "cohort_k_vehicles": group["cohort_k_vehicles"].sum(),
-                    "capacity": group["cohort_k_vehicles"].sum() * share,
+                    "eligible_first_model_period": bool(
+                        group["eligible_first_model_period"].iloc[0]
+                    ),
+                    "reference_cohort_k_vehicles": group[
+                        "reference_cohort_k_vehicles"
+                    ].sum(),
+                    "raw_capacity": group["reference_cohort_k_vehicles"].sum() * share,
                 }
             )
     shares_frame = pd.DataFrame(share_rows)
+    # Estimate the technology mix before retirement. Lifetime choices may move
+    # stock between its supported vintages, but cannot change its powertrain.
+    technology_keys = ["region", "road_class", "tech"]
+    target = shares_frame.groupby(technology_keys)["raw_capacity"].transform("sum")
+    eligible = shares_frame["raw_capacity"].where(
+        shares_frame["eligible_first_model_period"], 0.0
+    )
+    supported = eligible.groupby(
+        [shares_frame[column] for column in technology_keys]
+    ).transform("sum")
+    unsupported = target.gt(0) & supported.le(0)
+    if unsupported.any():
+        examples = shares_frame.loc[unsupported, technology_keys].drop_duplicates()
+        raise ValueError(
+            "Positive road technology stock has no eligible same-technology cohort: "
+            + str(examples.to_dict("records"))
+        )
+    shares_frame["target_technology_stock_k_vehicles"] = target
+    shares_frame["eligible_technology_stock_k_vehicles"] = supported
+    shares_frame["redistribution_factor"] = target.div(
+        supported.where(supported.gt(0), 1.0)
+    ).where(shares_frame["eligible_first_model_period"], 0.0)
+    shares_frame["capacity"] = eligible * shares_frame["redistribution_factor"]
+    cohort_keys = ["region", "road_class", "vintage_year", "vintage"]
+    allocated_cohorts = shares_frame.groupby(cohort_keys)["capacity"].sum()
+    cohorts["cohort_k_vehicles"] = pd.MultiIndex.from_frame(
+        cohorts[cohort_keys]
+    ).map(allocated_cohorts).fillna(0.0)
+    cohorts["cohort_k_vehicles"] = cohorts["cohort_k_vehicles"].where(
+        cohorts["eligible_first_model_period"], 0.0
+    )
+    cohorts["redistribution_factor"] = cohorts["cohort_k_vehicles"].div(
+        cohorts["reference_cohort_k_vehicles"].where(
+            cohorts["reference_cohort_k_vehicles"].gt(0), 1.0
+        )
+    )
+    shares_frame["cohort_k_vehicles"] = pd.MultiIndex.from_frame(
+        shares_frame[cohort_keys]
+    ).map(allocated_cohorts)
+    shares_frame["allocated_fuel_share"] = shares_frame["capacity"].div(
+        shares_frame["cohort_k_vehicles"].where(
+            shares_frame["cohort_k_vehicles"].gt(0), 1.0
+        )
+    )
+    allocated_totals = shares_frame.groupby(technology_keys)["capacity"].transform("sum")
+    if not (allocated_totals - target).abs().le(1e-7).all():
+        raise ValueError("Road allocation does not conserve each technology's stock")
     capacity = shares_frame.groupby(
         ["region", "road_class", "tech", "vintage"], as_index=False
     )["capacity"].sum()
+    capacity = capacity.loc[capacity["capacity"].gt(0)].reset_index(drop=True)
     capacity["units"] = "k vehicles"
     return cohorts, shares_frame, pd.DataFrame(excluded_rows), capacity
 

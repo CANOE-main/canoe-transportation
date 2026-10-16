@@ -18,7 +18,7 @@ from canoe_schema.v4_0 import CostInvest, CostVariable
 
 from fetching.nlr_atb_autonomie import configured_trajectory
 from fetching.epa_omega_baseline import SOURCE as OMEGA, COMPONENT as OMEGA_COMPONENT, build_request as omega_request
-from parameterization.ldv_ev_ranges import existing_range_weights, module_rules as range_module_rules
+from parameterization.ldv_ev_ranges import RangeEvidence, existing_range_weights, module_rules as range_module_rules
 from parameterization.currency import CerCurrencyConverter
 from parameterization.offroad_capex_opex import (
     aircraft_cost_per_billion_service,
@@ -205,13 +205,14 @@ def prepare_cost_rows(
     bundle: ConfigBundle, *, existing_capacity_rows: list | None = None,
     fixed_lifetime_rows: list | None = None,
     survival_curve_rows: list | None = None,
+    range_evidence: RangeEvidence | None = None,
 ) -> CostPreparation:
     """Build and validate both cost parameters without opening a SQLite connection."""
     rules = load_harmonization_rules(bundle, "costs")
     efficiency = load_harmonization_rules(bundle, "efficiencies")
     conversions = load_conversion_factors(bundle)
     scenario = bundle.scenario
-    historical_weights, range_evidence = existing_range_weights(bundle)
+    historical_weights, range_evidence = existing_range_weights(bundle, evidence=range_evidence)
     if scenario.economics.cost_reference_currency != "CAD":
         raise ValueError("Transport costs require a configured CAD reference currency")
     reference_year = scenario.economics.cost_reference_year
@@ -862,7 +863,7 @@ def prepare_cost_rows(
             **{field: levels[0] for field, levels in factors.items()},
         }
         conversion_groups.append(summary)
-        LOGGER.info("CER transport cost conversion: %s", summary)
+        LOGGER.debug("CER transport cost conversion: %s", summary)
     audit.update({
         "period_mapping": scenario.periods.audit(),
         "input_digest": digest, "atb_scenario": trajectory,
@@ -977,7 +978,11 @@ def prepare_cost_rows(
     (validation / rules["files"]["integrity"]).write_text(
         json.dumps(audit, sort_keys=True, indent=2) + "\n", encoding="utf-8",
     )
-    LOGGER.info("Prepared transport costs: %s", audit)
+    LOGGER.info("Prepared cost_invest=%s and cost_variable=%s rows; converted %s currency/year groups to %s CAD",
+                len(invest_rows), len(variable_rows), len(conversion_groups), reference_year)
+    LOGGER.info("Cost data handling: excluded %s expired period/vintage pairs; historical MSRP proxy rows=%s",
+                audit["variable_period_vintage_pairs_excluded_by_lifetime"], audit["historical_msrp_proxy_rows"])
+    LOGGER.debug("Transport cost audit: %s", audit)
     return CostPreparation(invest_rows, variable_rows, contexts, audit)
 
 
