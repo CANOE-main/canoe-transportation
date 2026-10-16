@@ -314,11 +314,11 @@ flowchart LR
   subgraph survival["`**Road vehicle fleet survival rates (US sources)**`"]
     direction LR
     s2[("`**NHTSA CAFE model**
-      Car, light- and medium-truck survival rates #to-review`")]
+      Car, light- and medium-truck survival rates`")]
     s3[("`**EIA NEMS model**
-      HD truck scrappage rates (Class 7–8) #to-review`")]
+      HD truck scrappage rates (Class 7–8)`")]
     s7[("`**EPA MOVES5 model**
-      HD truck annual survival rates (Table C-1) #to-review`")]
+      HD truck annual survival rates (Table C-1)`")]
   end
 
   subgraph population["`**Vehicle population evidence**`"]
@@ -337,7 +337,7 @@ flowchart LR
     • **eq. (i)** Estimate apparent retirement from make-model-vintage cohorts across Report A editions before mapping<br>
     • The MTO make-model mapping separates LDV stock exposure from unmapped and non-LDV; and aggregates evidence accordingly<br>
     • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
-    • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only NHTSA CAFE and the selected heavy-truck source are promoted as parameters** #to-review`"]
+    • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only NHTSA CAFE and selected heavy-truck sources are promoted as parameters**`"]
 
   p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
     MTO make-model codes are difficult to map. This notebook visualizes:<br>
@@ -351,9 +351,9 @@ flowchart LR
   s2 -- "assorted_sources.py" --> p0
   p4@{shape: hex, label: "**config/scenarios/**
     *heavy_truck_survival_source:*
-    NEMS (default) or MOVES5 #to-review"}
-  s3 -- "NEMS<br>assorted_sources.py" --> p4
-  s7 -- "MOVES5<br>assorted_sources.py" --> p4
+    EIA NEMS or EPA MOVES5 rates"}
+  s3 -- "assorted_sources.py" --> p4
+  s7 -- "assorted_sources.py" --> p4
   p4 -- "Selected HD schedule<br>road_lifetimes_survival.py" --> p0
   s0 -. "`vehicle_population.py
     *\*diagnostic-only*`" .-> p0
@@ -944,9 +944,7 @@ flowchart LR
 | Existing charging capacity | LDV and MHDV chargers | - Fetch total public LD charger counts from TC EV dashboard<br>- Use EV-to-port ratios from Dunsky's assessment to determine remaining private port counts<br>- Distribute L1/L2 shares using Pollution Probe's survey estimates |
 | Charger efficiency | LDV and MHDV chargers | Use charger efficiencies from ICCT EV CHARGE and HDV CHARGE model assumptions |
 
-### `limit_new_capacity_share` for LDV PEV range composition #to-review
-
-The chart follows `new_capacity_shares` in the legacy reproduction scenario. Shares describe range composition within each class and powertrain. Source preparation uses [epa_omega_baseline.py](../src/fetching/epa_omega_baseline.py); parameter preparation uses [ldv_ev_ranges.py](../src/parameterization/ldv_ev_ranges.py). #to-review
+### `limit_new_capacity_share` for LD-PEV range composition
 
 ```mermaid
 ---
@@ -958,18 +956,15 @@ config:
     wrappingWidth: 250
 ---
 flowchart LR
-  %% #to-review
   %% ############ Sources ###########
   s1@{shape: win-pane, label: "**EPA OMEGA v2.5 LDV central baseline**
     Registered MY2022 BEV/PHEV extract:<br>
-    • Modeled sales and on-road charge-depleting ranges<br>
+    • Baseline PEV sales and charge-depleting ranges<br>
     • US car and light-truck market classes"}
   s2@{shape: docs, label: "**Backend-owned technology template**
     New BEV/PHEV range variants for cars, passenger light trucks, and freight light trucks"}
 
   %% ############ Processes ###########
-  p1["`**Validate and normalize the registered snapshot**
-    Verify pinned bytes, SHA256, row identity, year, and sales totals; retain native ranges and sales weights`"]
   p2["`**Range buckets and within-group shares**
     • Assign configured CD-range buckets<br>
     • Sum sales by market class, powertrain, and bucket<br>
@@ -982,8 +977,7 @@ flowchart LR
     • Group each range variant within its new-build class/powertrain family<br>
     • Repeat shares across configured regions and model vintages`"]
 
-  s1 -- epa_omega_baseline.py --> p1
-  p1 -- inputs/1_interim/ldv_range_evidence/ --> p2
+  s1 -- epa_omega_baseline.py --> p2
   p2 -- ldv_ev_ranges.py --> p3
   p0 --> p3
   s2 -- technology.csv --> p3

@@ -199,7 +199,7 @@ def prepare_ev_charger_rows(
     model_regions = {output_region_map.get(region, region) for region in bundle.scenario.geography.regions}
     if model_regions - template_regions:
         raise ValueError(f"Charger scenario regions are absent from template: {sorted(model_regions - template_regions)}")
-    LOGGER.info("Preparing charger parameters for selected regions: %s", sorted(model_regions))
+    LOGGER.debug("Preparing charger parameters for selected regions: %s", sorted(model_regions))
     public_by_region = {
         region: int(provincial.loc[provincial.source_region.isin(labels), "public_chargers"].sum())
         for region, labels in region_map.items()

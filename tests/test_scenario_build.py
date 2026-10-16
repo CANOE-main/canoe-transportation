@@ -20,7 +20,7 @@ from validation.sqlite_compare import compare_scenario_databases
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/legacy_comparison.yaml"
 
 
 def small_database(path, value):
@@ -223,6 +223,7 @@ def test_moves5_offline_scenario_replays_both_lifetime_modes_and_rejects_missing
     payload["geography"]["regions"] = ["ON"]
     payload["lifetimes"]["heavy_truck_survival_source"] = "epa_moves_heavy_truck_survival"
     payload["comparison"]["mode"] = "none"
+    road_technology_totals = None
     for curves in (True, False):
         payload["lifetimes"]["survival_curves"] = curves
         scenario_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
@@ -271,11 +272,21 @@ def test_moves5_offline_scenario_replays_both_lifetime_modes_and_rejects_missing
             expected = (bundle.scenario.periods.base_year - heavy.age).ge(min(bundle.scenario.periods.existing)) & (
                 bundle.scenario.periods.model[0] - bundle.scenario.periods.base_year + heavy.age
             ).le(bundle.scenario.lifetimes.survival_curve_max_age)
+            expected &= (
+                bundle.scenario.periods.model[0] - heavy.vintage + bundle.scenario.periods.step - 1
+            ).le(bundle.scenario.lifetimes.survival_curve_max_age)
         else:
             expected = (heavy.vintage_year + 19).gt(bundle.scenario.periods.model[0]) & (
                 heavy.vintage + 19
             ).gt(bundle.scenario.periods.model[0])
         assert heavy.eligible_first_model_period.tolist() == expected.tolist()
+        fuel_shares = pd.read_csv(
+            resolve_artifact_path(bundle, "existing_capacity_interim") / stock_rules["fuel_shares_file"]
+        )
+        totals = fuel_shares.groupby(["region", "road_class", "tech"]).capacity.sum().to_dict()
+        if road_technology_totals is not None:
+            assert totals == pytest.approx(road_technology_totals, abs=1e-9)
+        road_technology_totals = totals
 
     # A selected missing raw PDF cannot be hidden by the already normalized CSV.
     report_path = tmp_path / bundle.scenario.outputs.validation_report

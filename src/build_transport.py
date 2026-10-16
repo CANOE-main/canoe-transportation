@@ -54,6 +54,7 @@ from utils import (
     file_sha256,
     load_config_bundle,
     load_harmonization_rules,
+    log_duration,
     resolve_configured_path,
     resolve_input_path,
     resolve_parameter_path,
@@ -467,10 +468,18 @@ def prepare_transport_contribution(
 
     # Gate representation before preparing other parameter families or touching SQLite.
     import pandas as pd
-    from parameterization.ldv_ev_ranges import prepare_range_rows
+    from parameterization.ldv_ev_ranges import build_range_evidence, prepare_range_rows
 
     technologies = pd.DataFrame([row.model_dump() for row in table_rows["technology"]])
-    range_preparation = prepare_range_rows(bundle, evidence=range_evidence, technologies=technologies)
+    # One fresh, validated read per contribution; standalone family builders retain
+    # their own fallback. This handoff does not reuse artifacts across builds.
+    if range_evidence is None and (
+        bundle.scenario.BEV_PHEV_range_representation.mode != "none"
+        or include_efficiencies is not False or include_costs is not False
+    ):
+        range_evidence = build_range_evidence(bundle)
+    with log_duration(LOGGER, "LDV range selection"):
+        range_preparation = prepare_range_rows(bundle, evidence=range_evidence, technologies=technologies)
     if include_charging_profiles is not False and charging_profiles is None:
         from parameterization.ldv_charging_profiles import prepare_charging_profile_rows
 
@@ -478,9 +487,10 @@ def prepare_transport_contribution(
                    for row in connection.execute("SELECT sequence, season, segment_fraction, notes FROM time_season")]
         times = [TimeOfDay(**dict(zip(["sequence", "tod", "hours", "notes"], row)))
                  for row in connection.execute("SELECT sequence, tod, hours, notes FROM time_of_day")]
-        charging_profiles = prepare_charging_profile_rows(
-            bundle, technologies=technologies, seasons=seasons, times_of_day=times,
-        )
+        with log_duration(LOGGER, "Charging profiles (capacity_factor_tech)"):
+            charging_profiles = prepare_charging_profile_rows(
+                bundle, technologies=technologies, seasons=seasons, times_of_day=times,
+            )
 
     selected_capacity = True if include_existing_capacity is None else include_existing_capacity
     parameter_rows: list[ExistingCapacity] = []
@@ -491,7 +501,8 @@ def prepare_transport_contribution(
     if selected_capacity:
         from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
-        parameter_rows, capacity_contexts, parameter_audit = prepare_existing_capacity_rows(bundle)
+        with log_duration(LOGGER, "Existing capacity"):
+            parameter_rows, capacity_contexts, parameter_audit = prepare_existing_capacity_rows(bundle)
         contexts.extend(capacity_contexts)
     selected_demand = True if include_demand is None else include_demand
     demand_rows: list[Demand] = []
@@ -499,7 +510,8 @@ def prepare_transport_contribution(
     if selected_demand:
         from parameterization.build_demand import prepare_demand_rows
 
-        demand_rows, demand_contexts, demand_audit = prepare_demand_rows(bundle)
+        with log_duration(LOGGER, "Demand"):
+            demand_rows, demand_contexts, demand_audit = prepare_demand_rows(bundle)
         contexts.extend(demand_contexts)
     selected_road_utilization = (
         True if include_road_utilization is None else include_road_utilization
@@ -511,7 +523,8 @@ def prepare_transport_contribution(
     if selected_road_utilization:
         from parameterization.road_utilization import prepare_road_utilization
 
-        road = prepare_road_utilization(bundle)
+        with log_duration(LOGGER, "Road utilization (capacity_to_activity, limit_annual_capacity_factor)"):
+            road = prepare_road_utilization(bundle)
         road_assumption_dataset = road.assumption_dataset
         c2a_rows = road.capacity_to_activity_rows
         flat_factor_rows = road.flat_factor_rows
@@ -523,7 +536,8 @@ def prepare_transport_contribution(
     if include_lifetimes is not False:
         from parameterization.build_lifetime_parameters import prepare_lifetime_rows
 
-        lifetimes = prepare_lifetime_rows(bundle)
+        with log_duration(LOGGER, "Lifetimes (lifetime_tech, lifetime_survival_curve)"):
+            lifetimes = prepare_lifetime_rows(bundle)
         lifetime_tech_rows = lifetimes.fixed_rows
         lifetime_curve_rows = lifetimes.curve_rows
         contexts.extend(lifetimes.provenance_contexts)
@@ -535,9 +549,11 @@ def prepare_transport_contribution(
     if include_efficiencies is not False:
         from parameterization.build_efficiencies import prepare_efficiency_rows
 
-        efficiencies = prepare_efficiency_rows(
-            bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
-        )
+        with log_duration(LOGGER, "Efficiencies (efficiency, limit_tech_input_split)"):
+            efficiencies = prepare_efficiency_rows(
+                bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
+                range_evidence=range_evidence,
+            )
         efficiency_rows = efficiencies.efficiency_rows
         split_rows = efficiencies.split_rows
         efficiency_dataset = efficiencies.assumption_dataset
@@ -550,11 +566,13 @@ def prepare_transport_contribution(
     if include_costs is not False:
         from parameterization.build_costs import prepare_cost_rows
 
-        costs = prepare_cost_rows(
-            bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
-            fixed_lifetime_rows=lifetime_tech_rows if include_lifetimes is not False else None,
-            survival_curve_rows=lifetime_curve_rows if include_lifetimes is not False else None,
-        )
+        with log_duration(LOGGER, "Transport costs (cost_invest, cost_variable)"):
+            costs = prepare_cost_rows(
+                bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
+                fixed_lifetime_rows=lifetime_tech_rows if include_lifetimes is not False else None,
+                survival_curve_rows=lifetime_curve_rows if include_lifetimes is not False else None,
+                range_evidence=range_evidence,
+            )
         cost_invest_rows = costs.invest_rows
         cost_variable_rows = costs.variable_rows
         cost_audit = costs.audit
@@ -575,10 +593,11 @@ def prepare_transport_contribution(
     if selected_capacity and include_ev_chargers is not False:
         from parameterization.ev_chargers import prepare_ev_charger_rows
 
-        chargers = prepare_ev_charger_rows(
-            bundle, existing_capacity_rows=parameter_rows,
-            existing_capacity_contexts=contexts,
-        )
+        with log_duration(LOGGER, "EV chargers"):
+            chargers = prepare_ev_charger_rows(
+                bundle, existing_capacity_rows=parameter_rows,
+                existing_capacity_contexts=contexts,
+            )
         parameter_rows.extend(chargers.capacity_rows)
         flat_factor_rows.extend(chargers.utilization_rows)
         if include_efficiencies is not False:
@@ -592,7 +611,8 @@ def prepare_transport_contribution(
     if include_emission_embodied is not False:
         from parameterization.road_embodied_emissions import prepare_emission_embodied_rows
 
-        embodied = prepare_emission_embodied_rows(bundle)
+        with log_duration(LOGGER, "Vehicle-cycle emissions (emission_embodied)"):
+            embodied = prepare_emission_embodied_rows(bundle)
         contexts.extend(embodied.provenance_contexts)
     support_tables = []
     if selected_capacity:
@@ -642,7 +662,9 @@ def prepare_transport_contribution(
             if not row.tech.endswith(existing_suffix)
         ),
     )
-    contribution = _apply_ldv_range_representation(bundle, contribution)
+    if range_preparation.audit["mode"] == "representative_archetype":
+        with log_duration(LOGGER, "Representative LDV parameter tables"):
+            contribution = _apply_ldv_range_representation(bundle, contribution)
     contribution.support_audit.update(_require_transport_parameter_support(contribution))
     return contribution
 
@@ -733,10 +755,11 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
     if not audit["ok"]:
         LOGGER.error("Transport parameter support failed: %s", audit["errors"])
         raise ValueError(f"Transport parameter support failed: {audit['errors']}")
-    LOGGER.info("Transport cross-table parameter support: %s", audit["checks"])
+    LOGGER.debug("Transport cross-table parameter support: %s", audit["checks"])
     return audit
 
 
+@log_duration(LOGGER, "SQLite transport insertion")
 def insert_transport_contribution(
     connection: sqlite3.Connection,
     contribution: TransportContribution,
@@ -885,9 +908,13 @@ def insert_transport_contribution(
     if contribution.capacity_to_activity_rows:
         insert_models(connection, contribution.capacity_to_activity_rows, conflict=conflict)
         inserted["capacity_to_activity"] = list(contribution.capacity_to_activity_rows)
+    LOGGER.info("Inserted transport contribution: %s rows across %s tables; %s cross-table support checks passed",
+                sum(len(rows) for rows in inserted.values()), len(inserted),
+                len(contribution.support_audit["checks"]))
     return inserted
 
 
+@log_duration(LOGGER, "SQLite assembly")
 def bootstrap_database(
     *,
     bundle: ConfigBundle,
@@ -920,10 +947,11 @@ def bootstrap_database(
     connection: sqlite3.Connection | None = None
     try:
         connection = sqlite3.connect(temporary_path, isolation_level=None)
-        preflight = create_v4_schema(connection)
-        connection.execute("BEGIN IMMEDIATE")
-        preflight["packaged_rates"] = preflight.pop("rates")
-        preflight["configured_rates"] = apply_scenario_economics(connection, bundle)
+        with log_duration(LOGGER, "SQLite schema and scenario economics"):
+            preflight = create_v4_schema(connection)
+            connection.execute("BEGIN IMMEDIATE")
+            preflight["packaged_rates"] = preflight.pop("rates")
+            preflight["configured_rates"] = apply_scenario_economics(connection, bundle)
 
         contribution = prepare_transport_contribution(
             connection,
@@ -956,22 +984,25 @@ def bootstrap_database(
             table: _expected_keys(rows) for table, rows in inserted.items()
         }
         touched_tables = list(inserted)
-        validation = validate_database(
-            connection,
-            expected_primary_keys=expected_primary_keys,
-            touched_tables=touched_tables,
-        )
-        if not validation["ok"]:
-            raise TemplateLoadError(
-                f"Database validation failed before publish: {validation['errors']}"
+        with log_duration(LOGGER, "Database integrity, keys and provenance validation"):
+            validation = validate_database(
+                connection,
+                expected_primary_keys=expected_primary_keys,
+                touched_tables=touched_tables,
             )
+            if not validation["ok"]:
+                raise TemplateLoadError(
+                    f"Database validation failed before publish: {validation['errors']}"
+                )
+        LOGGER.info("Database validation passed: integrity ok; foreign-key violations=%s",
+                    validation["foreign_key_violations"])
         connection.commit()
         connection.close()
         connection = None
-        comparison_report = (
-            compare_transport_database(bundle, temporary_path, comparison_reference)
-            if comparison_reference is not None else {"enabled": False, "mode": "none"}
-        )
+        comparison_report = {"enabled": False, "mode": "none"}
+        if comparison_reference is not None:
+            with log_duration(LOGGER, f"Database comparison ({bundle.scenario.comparison.mode})"):
+                comparison_report = compare_transport_database(bundle, temporary_path, comparison_reference)
         os.replace(temporary_path, database_path)
     except Exception:
         if connection is not None:
@@ -1094,22 +1125,22 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
         assorted_sources.fetch_and_normalize,
         assorted_sources.fetch_and_normalize_tc_dashboard,
     ):
-        LOGGER.info("Rebuilding prerequisite: %s.%s", prepare.__module__, prepare.__name__)
-        prepare(scenario, download=download)
+        with log_duration(LOGGER, f"Prerequisite {prepare.__module__}.{prepare.__name__}"):
+            prepare(scenario, download=download)
     # Only the scenario's Report A/4/5 edition is a production prerequisite.
     # Historical MTO diagnostics and mapping bootstrap remain explicit operations.
-    LOGGER.info("Rebuilding Ontario vehicle evidence for %s", bundle.scenario.existing_capacity.vehicle_population_year)
-    vehicle_population.fetch_and_normalize(
-        scenario, year=bundle.scenario.existing_capacity.vehicle_population_year,
-        download=download, registered_only=True,
-    )
-    request = fueleconomy_vehicles.build_request(bundle)
-    if download:
-        fueleconomy_vehicles.fetch_to_cache(request)
-    fueleconomy_vehicles.validate_cache(request)
-    LOGGER.info("Validated FuelEconomy class evidence: %s", request.cache_path)
-    LOGGER.info("Rebuilding road aggregation from reviewed mappings")
-    build_road_aggregation_artifacts(scenario)
+    with log_duration(LOGGER, f"Ontario vehicle evidence ({bundle.scenario.existing_capacity.vehicle_population_year})"):
+        vehicle_population.fetch_and_normalize(
+            scenario, year=bundle.scenario.existing_capacity.vehicle_population_year,
+            download=download, registered_only=True,
+        )
+    with log_duration(LOGGER, "FuelEconomy class evidence validation"):
+        request = fueleconomy_vehicles.build_request(bundle)
+        if download:
+            fueleconomy_vehicles.fetch_to_cache(request)
+        fueleconomy_vehicles.validate_cache(request)
+    with log_duration(LOGGER, "Road aggregation from reviewed mappings"):
+        build_road_aggregation_artifacts(scenario)
 
 
 def _publish_scenario(
@@ -1139,6 +1170,7 @@ def _publish_scenario(
             raise
 
 
+@log_duration(LOGGER, "Total scenario build")
 def build_from_scenario(
     scenario_path: str | Path,
     *,
@@ -1147,6 +1179,27 @@ def build_from_scenario(
 ) -> tuple[dict[str, Any], Path]:
     """Prepare sources, assemble validated rows and publish one complete scenario."""
     bundle = load_config_bundle(scenario_path)
+    scenario = bundle.scenario
+    periods = scenario.periods
+    LOGGER.info(
+        "Scenario %s: period_mode=%s, base_year=%s; %s regions, %s existing vintages, %s model periods (%s-%s, step=%s)",
+        scenario.scenario.name, periods.period_mode, periods.base_year,
+        len(scenario.geography.regions), len(periods.existing), len(periods.model),
+        periods.model[0], periods.end_of_horizon, periods.step,
+    )
+    LOGGER.info(
+        "Selections: road lifetimes=%s; heavy-truck survival=%s; charging=%s; LDV ranges=%s; embodied emissions=%s",
+        "survival curves" if scenario.lifetimes.survival_curves else "fixed medians",
+        scenario.lifetimes.heavy_truck_survival_source,
+        scenario.charging_profiles.travel_behavior_source,
+        scenario.BEV_PHEV_range_representation.mode, scenario.embodied_emissions,
+    )
+    LOGGER.info(
+        "Trajectories: demand=%s; efficiency=%s; costs=%s; cost basis=%s %s",
+        scenario.demand.cer_scenario, scenario.efficiencies.atb_trajectory,
+        scenario.costs.atb_trajectory, scenario.economics.cost_reference_year,
+        scenario.economics.cost_reference_currency,
+    )
     database_path = resolve_configured_path(
         bundle,
         "outputs",
@@ -1173,7 +1226,8 @@ def build_from_scenario(
             validate_scenario_comparison_reference(reference)
         if validation_path.resolve() == reference.resolve():
             raise ValueError("Validation report must differ from the comparison reference")
-    prepare_scenario_inputs(bundle, download=download_sources)
+    with log_duration(LOGGER, "Scenario prerequisites"):
+        prepare_scenario_inputs(bundle, download=download_sources)
     database_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=f".{database_path.name}.", dir=database_path.parent) as directory:
         candidate = Path(directory) / database_path.name
@@ -1218,7 +1272,9 @@ def build_from_scenario(
                 },
             }
         )
-        _publish_scenario(candidate, database_path, report, validation_path)
+        with log_duration(LOGGER, "Database and validation report publication"):
+            _publish_scenario(candidate, database_path, report, validation_path)
+    LOGGER.info("Created %s; validation report: %s", database_path, validation_path)
     return report, validation_path
 
 
@@ -1226,7 +1282,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--scenario",
-        default="config/scenarios/legacy_reproduction.yaml",
+        default="config/scenarios/default.yaml",
         help="Path to the scenario YAML file.",
     )
     parser.add_argument(
@@ -1238,14 +1294,21 @@ def parse_args() -> argparse.Namespace:
         "--download-sources", action="store_true",
         help="Permit source adapters to acquire missing caches; default is offline replay.",
     )
+    parser.add_argument(
+        "--debug", action="store_true",
+        help="Include configuration mappings, detailed audits and routine start events.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(levelname)s %(message)s",
+    )
     try:
-        report, validation_path = build_from_scenario(
+        build_from_scenario(
             args.scenario,
             overwrite=args.overwrite,
             download_sources=args.download_sources,
@@ -1258,12 +1321,6 @@ def main() -> None:
         sqlite3.Error,
     ) as exc:
         raise SystemExit(f"Database build failed: {exc}") from exc
-    LOGGER.info(
-        "Created %s and loaded %s template tables; validation: %s",
-        report["database"],
-        len(report["templates"]),
-        validation_path,
-    )
 
 
 if __name__ == "__main__":

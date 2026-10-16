@@ -279,14 +279,11 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert status["reference_sqlite_exists"] is True
     assert "cer_canadas_energy_future" in status["active_sources"]
     assert "wards_intelligence_sales_shares" in status["active_sources"]
-    assert status["parameter_options"]["lifetimes"] == {
-        "survival_curves": True,
-        "survival_curve_max_age": 29,
-        "heavy_truck_survival_source": "epa_moves_heavy_truck_survival",
-    }
+    selected = load_config_bundle(SCENARIO).scenario
+    assert status["parameter_options"]["lifetimes"] == selected.lifetimes.model_dump()
     assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_sales_shares"
     assert status["parameter_options"]["charging_profiles"]["travel_behavior_source"] == "nhts"
-    assert status["parameter_options"]["BEV_PHEV_range_representation"]["mode"] == "new_capacity_shares"
+    assert status["parameter_options"]["BEV_PHEV_range_representation"]["mode"] == selected.BEV_PHEV_range_representation.mode
 
 
 def _write_config_copy(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -576,6 +573,8 @@ def test_parameter_selectors_are_checked_before_io(
     payload[section][field] = value
     if section == "road_utilization":
         payload[section]["vkt_schedules"] = True
+    if section == "lifetimes":
+        payload[section]["survival_curves"] = True
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     with pytest.raises((ValueError, ValidationError), match=message):
         load_config_bundle(scenario, repo_root=tmp_path)

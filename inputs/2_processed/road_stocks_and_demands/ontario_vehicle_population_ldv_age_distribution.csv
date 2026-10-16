@@ -1,151 +1,121 @@
 report_year,nrcan_ceud_class,nlr_atb_class,model_year,age,cutoff_basis,cutoff_age,fit_active_stock,age_distribution
-2025,Car,Compact,2025,0,scenario_survival_curve_max_age,29.0,43671,0.059040475665795566
-2025,Car,Compact,2024,1,scenario_survival_curve_max_age,29.0,38330,0.05181977587575151
-2025,Car,Compact,2023,2,scenario_survival_curve_max_age,29.0,36456,0.049286244438465875
-2025,Car,Compact,2022,3,scenario_survival_curve_max_age,29.0,38912,0.0526066036753781
-2025,Car,Compact,2021,4,scenario_survival_curve_max_age,29.0,24470,0.033081917967118166
-2025,Car,Compact,2020,5,scenario_survival_curve_max_age,29.0,19489,0.026347915785090558
-2025,Car,Compact,2019,6,scenario_survival_curve_max_age,29.0,23072,0.031191908922654287
-2025,Car,Compact,2018,7,scenario_survival_curve_max_age,29.0,44201,0.05975700269981979
-2025,Car,Compact,2017,8,scenario_survival_curve_max_age,29.0,24479,0.03309408540731858
-2025,Car,Compact,2016,9,scenario_survival_curve_max_age,29.0,33658,0.04550352247393802
-2025,Car,Compact,2015,10,scenario_survival_curve_max_age,29.0,64445,0.08712563152394484
-2025,Car,Compact,2014,11,scenario_survival_curve_max_age,29.0,45537,0.061563191600680835
-2025,Car,Compact,2013,12,scenario_survival_curve_max_age,29.0,36371,0.04917132972546199
-2025,Car,Compact,2012,13,scenario_survival_curve_max_age,29.0,61162,0.08268721972639483
-2025,Car,Compact,2011,14,scenario_survival_curve_max_age,29.0,25102,0.03393634265674705
-2025,Car,Compact,2010,15,scenario_survival_curve_max_age,29.0,28289,0.03824496842549268
-2025,Car,Compact,2009,16,scenario_survival_curve_max_age,29.0,26713,0.036114314452620665
-2025,Car,Compact,2008,17,scenario_survival_curve_max_age,29.0,26732,0.03614000127082153
-2025,Car,Compact,2007,18,scenario_survival_curve_max_age,29.0,20437,0.02762955281953388
-2025,Car,Compact,2006,19,scenario_survival_curve_max_age,29.0,21005,0.028397453489959833
-2025,Car,Compact,2005,20,scenario_survival_curve_max_age,29.0,13450,0.018183563410614605
-2025,Car,Compact,2004,21,scenario_survival_curve_max_age,29.0,9995,0.013512618311456727
-2025,Car,Compact,2003,22,scenario_survival_curve_max_age,29.0,9109,0.01231480142061624
-2025,Car,Compact,2002,23,scenario_survival_curve_max_age,29.0,5528,0.007473512158652605
-2025,Car,Compact,2001,24,scenario_survival_curve_max_age,29.0,5646,0.0076330408190579966
-2025,Car,Compact,2000,25,scenario_survival_curve_max_age,29.0,5098,0.006892178904632956
-2025,Car,Compact,1999,26,scenario_survival_curve_max_age,29.0,3195,0.004319441271145997
-2025,Car,Compact,1998,27,scenario_survival_curve_max_age,29.0,2058,0.0027822879924940414
-2025,Car,Compact,1997,28,scenario_survival_curve_max_age,29.0,1775,0.0023996895950811094
-2025,Car,Compact,1996,29,scenario_survival_curve_max_age,29.0,1294,0.00174940751325913
-2025,Car,Midsize,2025,0,scenario_survival_curve_max_age,29.0,32868,0.04254063414899317
-2025,Car,Midsize,2024,1,scenario_survival_curve_max_age,29.0,30767,0.03982133658458297
-2025,Car,Midsize,2023,2,scenario_survival_curve_max_age,29.0,38342,0.04962556269139273
-2025,Car,Midsize,2022,3,scenario_survival_curve_max_age,29.0,29169,0.03775306551941043
-2025,Car,Midsize,2021,4,scenario_survival_curve_max_age,29.0,38146,0.04937188238552676
-2025,Car,Midsize,2020,5,scenario_survival_curve_max_age,29.0,61121,0.07910813252466264
-2025,Car,Midsize,2019,6,scenario_survival_curve_max_age,29.0,74519,0.09644899343278637
-2025,Car,Midsize,2018,7,scenario_survival_curve_max_age,29.0,74366,0.09625096747973794
-2025,Car,Midsize,2017,8,scenario_survival_curve_max_age,29.0,73558,0.09520518336167823
-2025,Car,Midsize,2016,9,scenario_survival_curve_max_age,29.0,51995,0.06729646685459718
-2025,Car,Midsize,2015,10,scenario_survival_curve_max_age,29.0,46239,0.059846549300696585
-2025,Car,Midsize,2014,11,scenario_survival_curve_max_age,29.0,44119,0.057102660278064675
-2025,Car,Midsize,2013,12,scenario_survival_curve_max_age,29.0,23601,0.03054647397317719
-2025,Car,Midsize,2012,13,scenario_survival_curve_max_age,29.0,21137,0.027357350128005012
-2025,Car,Midsize,2011,14,scenario_survival_curve_max_age,29.0,13564,0.017555712595744902
-2025,Car,Midsize,2010,15,scenario_survival_curve_max_age,29.0,20109,0.026026822809483503
-2025,Car,Midsize,2009,16,scenario_survival_curve_max_age,29.0,15953,0.020647764895305103
-2025,Car,Midsize,2008,17,scenario_survival_curve_max_age,29.0,17050,0.022067598035789632
-2025,Car,Midsize,2007,18,scenario_survival_curve_max_age,29.0,16153,0.020906622350270375
-2025,Car,Midsize,2006,19,scenario_survival_curve_max_age,29.0,11368,0.01471345774022619
-2025,Car,Midsize,2005,20,scenario_survival_curve_max_age,29.0,10050,0.013007587112005033
-2025,Car,Midsize,2004,21,scenario_survival_curve_max_age,29.0,6375,0.008251081377018117
-2025,Car,Midsize,2003,22,scenario_survival_curve_max_age,29.0,7055,0.00913119672390005
-2025,Car,Midsize,2002,23,scenario_survival_curve_max_age,29.0,5334,0.006903728323923865
-2025,Car,Midsize,2001,24,scenario_survival_curve_max_age,29.0,2966,0.0038388560571350175
-2025,Car,Midsize,2000,25,scenario_survival_curve_max_age,29.0,2308,0.002987215030299265
-2025,Car,Midsize,1999,26,scenario_survival_curve_max_age,29.0,1859,0.0024060800439022244
-2025,Car,Midsize,1998,27,scenario_survival_curve_max_age,29.0,1424,0.0018430650793527527
-2025,Car,Midsize,1997,28,scenario_survival_curve_max_age,29.0,660,0.0008542296013854051
-2025,Car,Midsize,1996,29,scenario_survival_curve_max_age,29.0,451,0.0005837235609466935
-2025,Light Truck,Midsize SUV,2025,0,scenario_survival_curve_max_age,29.0,82137,0.09148482826754999
-2025,Light Truck,Midsize SUV,2024,1,scenario_survival_curve_max_age,29.0,68121,0.07587369865485437
-2025,Light Truck,Midsize SUV,2023,2,scenario_survival_curve_max_age,29.0,53276,0.05933922240624802
-2025,Light Truck,Midsize SUV,2022,3,scenario_survival_curve_max_age,29.0,38904,0.04333157722975961
-2025,Light Truck,Midsize SUV,2021,4,scenario_survival_curve_max_age,29.0,43440,0.0483838092448272
-2025,Light Truck,Midsize SUV,2020,5,scenario_survival_curve_max_age,29.0,59483,0.06625262719406207
-2025,Light Truck,Midsize SUV,2019,6,scenario_survival_curve_max_age,29.0,75328,0.08390091120613129
-2025,Light Truck,Midsize SUV,2018,7,scenario_survival_curve_max_age,29.0,64013,0.07129817636254888
-2025,Light Truck,Midsize SUV,2017,8,scenario_survival_curve_max_age,29.0,72839,0.0811286436828722
-2025,Light Truck,Midsize SUV,2016,9,scenario_survival_curve_max_age,29.0,52167,0.05810400959656769
-2025,Light Truck,Midsize SUV,2015,10,scenario_survival_curve_max_age,29.0,44228,0.04926148976243594
-2025,Light Truck,Midsize SUV,2014,11,scenario_survival_curve_max_age,29.0,42099,0.04689019303402349
-2025,Light Truck,Midsize SUV,2013,12,scenario_survival_curve_max_age,29.0,33213,0.0369928972478924
-2025,Light Truck,Midsize SUV,2012,13,scenario_survival_curve_max_age,29.0,32415,0.03610407865264902
-2025,Light Truck,Midsize SUV,2011,14,scenario_survival_curve_max_age,29.0,32391,0.036077347266325915
-2025,Light Truck,Midsize SUV,2010,15,scenario_survival_curve_max_age,29.0,26794,0.029843365214224215
-2025,Light Truck,Midsize SUV,2009,16,scenario_survival_curve_max_age,29.0,13052,0.014537418928717417
-2025,Light Truck,Midsize SUV,2008,17,scenario_survival_curve_max_age,29.0,14609,0.01627161761642911
-2025,Light Truck,Midsize SUV,2007,18,scenario_survival_curve_max_age,29.0,12673,0.014115285786364989
-2025,Light Truck,Midsize SUV,2006,19,scenario_survival_curve_max_age,29.0,10678,0.011893239298256556
-2025,Light Truck,Midsize SUV,2005,20,scenario_survival_curve_max_age,29.0,8694,0.009683444695546217
-2025,Light Truck,Midsize SUV,2004,21,scenario_survival_curve_max_age,29.0,5673,0.006318631442124878
-2025,Light Truck,Midsize SUV,2003,22,scenario_survival_curve_max_age,29.0,3228,0.003595371460458154
-2025,Light Truck,Midsize SUV,2002,23,scenario_survival_curve_max_age,29.0,2043,0.0022755092607546494
-2025,Light Truck,Midsize SUV,2001,24,scenario_survival_curve_max_age,29.0,1464,0.0016306145657096459
-2025,Light Truck,Midsize SUV,2000,25,scenario_survival_curve_max_age,29.0,1837,0.0020460648614812975
-2025,Light Truck,Midsize SUV,1999,26,scenario_survival_curve_max_age,29.0,1037,0.0011550186507109992
-2025,Light Truck,Midsize SUV,1998,27,scenario_survival_curve_max_age,29.0,852,0.0009489642144703677
-2025,Light Truck,Midsize SUV,1997,28,scenario_survival_curve_max_age,29.0,822,0.0009155499815664815
-2025,Light Truck,Midsize SUV,1996,29,scenario_survival_curve_max_age,29.0,311,0.00034639421443695347
-2025,Light Truck,Pickup,2025,0,scenario_survival_curve_max_age,29.0,73350,0.0698110011097427
-2025,Light Truck,Pickup,2024,1,scenario_survival_curve_max_age,29.0,75639,0.07198956118527373
-2025,Light Truck,Pickup,2023,2,scenario_survival_curve_max_age,29.0,56297,0.05358077613463102
-2025,Light Truck,Pickup,2022,3,scenario_survival_curve_max_age,29.0,58048,0.05524729369350163
-2025,Light Truck,Pickup,2021,4,scenario_survival_curve_max_age,29.0,54275,0.051656333813650784
-2025,Light Truck,Pickup,2020,5,scenario_survival_curve_max_age,29.0,44623,0.042470024574233795
-2025,Light Truck,Pickup,2019,6,scenario_survival_curve_max_age,29.0,62351,0.05934268207489526
-2025,Light Truck,Pickup,2018,7,scenario_survival_curve_max_age,29.0,70363,0.06696811821519871
-2025,Light Truck,Pickup,2017,8,scenario_survival_curve_max_age,29.0,78922,0.07511416263916992
-2025,Light Truck,Pickup,2016,9,scenario_survival_curve_max_age,29.0,55198,0.052534800807847004
-2025,Light Truck,Pickup,2015,10,scenario_survival_curve_max_age,29.0,50291,0.04786455428507253
-2025,Light Truck,Pickup,2014,11,scenario_survival_curve_max_age,29.0,41581,0.03957479532575612
-2025,Light Truck,Pickup,2013,12,scenario_survival_curve_max_age,29.0,32330,0.03077013859411018
-2025,Light Truck,Pickup,2012,13,scenario_survival_curve_max_age,29.0,33317,0.03170951770924741
-2025,Light Truck,Pickup,2011,14,scenario_survival_curve_max_age,29.0,43305,0.04121561558360474
-2025,Light Truck,Pickup,2010,15,scenario_survival_curve_max_age,29.0,36048,0.03430875212002733
-2025,Light Truck,Pickup,2009,16,scenario_survival_curve_max_age,29.0,26260,0.02499300462361068
-2025,Light Truck,Pickup,2008,17,scenario_survival_curve_max_age,29.0,30663,0.02918356819397465
-2025,Light Truck,Pickup,2007,18,scenario_survival_curve_max_age,29.0,26310,0.025040592218095847
-2025,Light Truck,Pickup,2006,19,scenario_survival_curve_max_age,29.0,19325,0.01839260526851776
-2025,Light Truck,Pickup,2005,20,scenario_survival_curve_max_age,29.0,17567,0.016719425446419224
-2025,Light Truck,Pickup,2004,21,scenario_survival_curve_max_age,29.0,15045,0.014319107180587307
-2025,Light Truck,Pickup,2003,22,scenario_survival_curve_max_age,29.0,13802,0.01313607958168601
-2025,Light Truck,Pickup,2002,23,scenario_survival_curve_max_age,29.0,9486,0.009028318425726234
-2025,Light Truck,Pickup,2001,24,scenario_survival_curve_max_age,29.0,7518,0.0071552707067899885
-2025,Light Truck,Pickup,2000,25,scenario_survival_curve_max_age,29.0,5804,0.0055239679678384
-2025,Light Truck,Pickup,1999,26,scenario_survival_curve_max_age,29.0,4586,0.004364734166179687
-2025,Light Truck,Pickup,1998,27,scenario_survival_curve_max_age,29.0,3832,0.0036471132413433407
-2025,Light Truck,Pickup,1997,28,scenario_survival_curve_max_age,29.0,2667,0.0025383222898389063
-2025,Light Truck,Pickup,1996,29,scenario_survival_curve_max_age,29.0,1891,0.0017997628234290859
-2025,Light Truck,Small SUV,2025,0,scenario_survival_curve_max_age,29.0,183348,0.07460509932535259
-2025,Light Truck,Small SUV,2024,1,scenario_survival_curve_max_age,29.0,206151,0.0838837392882429
-2025,Light Truck,Small SUV,2023,2,scenario_survival_curve_max_age,29.0,145593,0.059242425475467736
-2025,Light Truck,Small SUV,2022,3,scenario_survival_curve_max_age,29.0,140510,0.05717413064884968
-2025,Light Truck,Small SUV,2021,4,scenario_survival_curve_max_age,29.0,147862,0.06016569145256716
-2025,Light Truck,Small SUV,2020,5,scenario_survival_curve_max_age,29.0,148374,0.060374026481335295
-2025,Light Truck,Small SUV,2019,6,scenario_survival_curve_max_age,29.0,188114,0.07654440547204974
-2025,Light Truck,Small SUV,2018,7,scenario_survival_curve_max_age,29.0,188779,0.07681499686683649
-2025,Light Truck,Small SUV,2017,8,scenario_survival_curve_max_age,29.0,181395,0.073810415123821
-2025,Light Truck,Small SUV,2016,9,scenario_survival_curve_max_age,29.0,172262,0.07009415766729872
-2025,Light Truck,Small SUV,2015,10,scenario_survival_curve_max_age,29.0,154729,0.06295990364504919
-2025,Light Truck,Small SUV,2014,11,scenario_survival_curve_max_age,29.0,125586,0.051101490083740916
-2025,Light Truck,Small SUV,2013,12,scenario_survival_curve_max_age,29.0,110655,0.04502600118816071
-2025,Light Truck,Small SUV,2012,13,scenario_survival_curve_max_age,29.0,76627,0.031179859862140804
-2025,Light Truck,Small SUV,2011,14,scenario_survival_curve_max_age,29.0,80788,0.03287298887523499
-2025,Light Truck,Small SUV,2010,15,scenario_survival_curve_max_age,29.0,71879,0.029247877993798778
-2025,Light Truck,Small SUV,2009,16,scenario_survival_curve_max_age,29.0,42041,0.017106665907111875
-2025,Light Truck,Small SUV,2008,17,scenario_survival_curve_max_age,29.0,34960,0.014225376183074406
-2025,Light Truck,Small SUV,2007,18,scenario_survival_curve_max_age,29.0,23374,0.009510982348489164
-2025,Light Truck,Small SUV,2006,19,scenario_survival_curve_max_age,29.0,12567,0.005113567004939819
-2025,Light Truck,Small SUV,2005,20,scenario_survival_curve_max_age,29.0,7817,0.003180771327891666
-2025,Light Truck,Small SUV,2004,21,scenario_survival_curve_max_age,29.0,4368,0.0017773582141781753
-2025,Light Truck,Small SUV,2003,22,scenario_survival_curve_max_age,29.0,3740,0.0015218222804547564
-2025,Light Truck,Small SUV,2002,23,scenario_survival_curve_max_age,29.0,2416,0.0009830809169996501
-2025,Light Truck,Small SUV,2001,24,scenario_survival_curve_max_age,29.0,1231,0.0005008992586202687
-2025,Light Truck,Small SUV,2000,25,scenario_survival_curve_max_age,29.0,864,0.0003515653610462325
-2025,Light Truck,Small SUV,1999,26,scenario_survival_curve_max_age,29.0,609,0.00024780475101522637
-2025,Light Truck,Small SUV,1998,27,scenario_survival_curve_max_age,29.0,470,0.00019124504593950146
-2025,Light Truck,Small SUV,1997,28,scenario_survival_curve_max_age,29.0,357,0.00014526485404340857
-2025,Light Truck,Small SUV,1996,29,scenario_survival_curve_max_age,29.0,114,4.6387096249155674e-05
+2025,Car,Compact,2025,0,configured_historical_vintage_coverage,23.0,43671,0.06060257031166521
+2025,Car,Compact,2024,1,configured_historical_vintage_coverage,23.0,38330,0.0531908250336866
+2025,Car,Compact,2023,2,configured_historical_vintage_coverage,23.0,36456,0.05059026134693657
+2025,Car,Compact,2022,3,configured_historical_vintage_coverage,23.0,38912,0.05399847074643394
+2025,Car,Compact,2021,4,configured_historical_vintage_coverage,23.0,24470,0.033957200328054035
+2025,Car,Compact,2020,5,configured_historical_vintage_coverage,23.0,19489,0.02704502971775419
+2025,Car,Compact,2019,6,configured_historical_vintage_coverage,23.0,23072,0.03201718536856815
+2025,Car,Compact,2018,7,configured_historical_vintage_coverage,23.0,44201,0.061338055239081174
+2025,Car,Compact,2017,8,configured_historical_vintage_coverage,23.0,24479,0.033969689694746
+2025,Car,Compact,2016,9,configured_historical_vintage_coverage,23.0,33658,0.04670745601314436
+2025,Car,Compact,2015,10,configured_historical_vintage_coverage,23.0,64445,0.08943080405155056
+2025,Car,Compact,2014,11,configured_historical_vintage_coverage,23.0,45537,0.0631920323391335
+2025,Car,Compact,2013,12,configured_historical_vintage_coverage,23.0,36371,0.05047230621706797
+2025,Car,Compact,2012,13,configured_historical_vintage_coverage,23.0,61162,0.08487496062380223
+2025,Car,Compact,2011,14,configured_historical_vintage_coverage,23.0,25102,0.03483423141131231
+2025,Car,Compact,2010,15,configured_historical_vintage_coverage,23.0,28289,0.03925685492767963
+2025,Car,Compact,2009,16,configured_historical_vintage_coverage,23.0,26713,0.0370698280491748
+2025,Car,Compact,2008,17,configured_historical_vintage_coverage,23.0,26732,0.03709619448996896
+2025,Car,Compact,2007,18,configured_historical_vintage_coverage,23.0,20437,0.02836057634264161
+2025,Car,Compact,2006,19,configured_historical_vintage_coverage,23.0,21005,0.02914879415164589
+2025,Car,Compact,2005,20,configured_historical_vintage_coverage,23.0,13450,0.01866466466744286
+2025,Car,Compact,2004,21,configured_historical_vintage_coverage,23.0,9995,0.013870135565136905
+2025,Car,Compact,2003,22,configured_historical_vintage_coverage,23.0,9109,0.012640626799683048
+2025,Car,Compact,2002,23,configured_historical_vintage_coverage,23.0,5528,0.007671246563689525
+2025,Car,Midsize,2025,0,configured_historical_vintage_coverage,23.0,32868,0.04307969770288797
+2025,Car,Midsize,2024,1,configured_historical_vintage_coverage,23.0,30767,0.04032594192603001
+2025,Car,Midsize,2023,2,configured_historical_vintage_coverage,23.0,38342,0.05025440456748602
+2025,Car,Midsize,2022,3,configured_historical_vintage_coverage,23.0,29169,0.03823146228232747
+2025,Car,Midsize,2021,4,configured_historical_vintage_coverage,23.0,38146,0.04999750969253878
+2025,Car,Midsize,2020,5,configured_historical_vintage_coverage,23.0,61121,0.08011056965127832
+2025,Car,Midsize,2019,6,configured_historical_vintage_coverage,23.0,74519,0.09767116931731498
+2025,Car,Midsize,2018,7,configured_historical_vintage_coverage,23.0,74366,0.09747063403227962
+2025,Car,Midsize,2017,8,configured_historical_vintage_coverage,23.0,73558,0.09641159801719099
+2025,Car,Midsize,2016,9,configured_historical_vintage_coverage,23.0,51995,0.0681492297085816
+2025,Car,Midsize,2015,10,configured_historical_vintage_coverage,23.0,46239,0.060604908789212514
+2025,Car,Midsize,2014,11,configured_historical_vintage_coverage,23.0,44119,0.05782624993774231
+2025,Car,Midsize,2013,12,configured_historical_vintage_coverage,23.0,23601,0.030933550732805737
+2025,Car,Midsize,2012,13,configured_historical_vintage_coverage,23.0,21137,0.027704015162040376
+2025,Car,Midsize,2011,14,configured_historical_vintage_coverage,23.0,13564,0.017778173896859328
+2025,Car,Midsize,2010,15,configured_historical_vintage_coverage,23.0,20109,0.026356627756704824
+2025,Car,Midsize,2009,16,configured_historical_vintage_coverage,23.0,15953,0.020909407857313246
+2025,Car,Midsize,2008,17,configured_historical_vintage_coverage,23.0,17050,0.022347232744135324
+2025,Car,Midsize,2007,18,configured_historical_vintage_coverage,23.0,16153,0.021171545484810435
+2025,Car,Midsize,2006,19,configured_historical_vintage_coverage,23.0,11368,0.014899902746940199
+2025,Car,Midsize,2005,20,configured_historical_vintage_coverage,23.0,10050,0.013172415781733726
+2025,Car,Midsize,2004,21,configured_historical_vintage_coverage,23.0,6375,0.008355636876472885
+2025,Car,Midsize,2003,22,configured_historical_vintage_coverage,23.0,7055,0.009246904809963328
+2025,Car,Midsize,2002,23,configured_historical_vintage_coverage,23.0,5334,0.006991210525350019
+2025,Light Truck,Midsize SUV,2025,0,configured_historical_vintage_coverage,23.0,82137,0.09213368958763789
+2025,Light Truck,Midsize SUV,2024,1,configured_historical_vintage_coverage,23.0,68121,0.07641183715499081
+2025,Light Truck,Midsize SUV,2023,2,configured_historical_vintage_coverage,23.0,53276,0.059760089198181036
+2025,Light Truck,Midsize SUV,2022,3,configured_historical_vintage_coverage,23.0,38904,0.04363890889267278
+2025,Light Truck,Midsize SUV,2021,4,configured_historical_vintage_coverage,23.0,43440,0.04872697414912877
+2025,Light Truck,Midsize SUV,2020,5,configured_historical_vintage_coverage,23.0,59483,0.06672252770056691
+2025,Light Truck,Midsize SUV,2019,6,configured_historical_vintage_coverage,23.0,75328,0.08449598316541372
+2025,Light Truck,Midsize SUV,2018,7,configured_historical_vintage_coverage,23.0,64013,0.07180386271197467
+2025,Light Truck,Midsize SUV,2017,8,configured_historical_vintage_coverage,23.0,72839,0.08170405317790955
+2025,Light Truck,Midsize SUV,2016,9,configured_historical_vintage_coverage,23.0,52167,0.05851611557176797
+2025,Light Truck,Midsize SUV,2015,10,configured_historical_vintage_coverage,23.0,44228,0.04961087966546195
+2025,Light Truck,Midsize SUV,2014,11,configured_historical_vintage_coverage,23.0,42099,0.04722276438085111
+2025,Light Truck,Midsize SUV,2013,12,configured_historical_vintage_coverage,23.0,33213,0.03725527146443402
+2025,Light Truck,Midsize SUV,2012,13,configured_historical_vintage_coverage,23.0,32415,0.03636014887302046
+2025,Light Truck,Midsize SUV,2011,14,configured_historical_vintage_coverage,23.0,32391,0.03633322789282758
+2025,Light Truck,Midsize SUV,2010,15,configured_historical_vintage_coverage,23.0,26794,0.030055030970344298
+2025,Light Truck,Midsize SUV,2009,16,configured_historical_vintage_coverage,23.0,13052,0.014640526394899371
+2025,Light Truck,Midsize SUV,2008,17,configured_historical_vintage_coverage,23.0,14609,0.016387024984913033
+2025,Light Truck,Midsize SUV,2007,18,configured_historical_vintage_coverage,23.0,12673,0.014215399249353335
+2025,Light Truck,Midsize SUV,2006,19,configured_historical_vintage_coverage,23.0,10678,0.011977592770819452
+2025,Light Truck,Midsize SUV,2005,20,configured_historical_vintage_coverage,23.0,8694,0.009752125074873975
+2025,Light Truck,Midsize SUV,2004,21,configured_historical_vintage_coverage,23.0,5673,0.006363446693094095
+2025,Light Truck,Midsize SUV,2003,22,configured_historical_vintage_coverage,23.0,3228,0.0036208718359435465
+2025,Light Truck,Midsize SUV,2002,23,configured_historical_vintage_coverage,23.0,2043,0.002291648438919661
+2025,Light Truck,Pickup,2025,0,configured_historical_vintage_coverage,23.0,73350,0.07160316908695466
+2025,Light Truck,Pickup,2024,1,configured_historical_vintage_coverage,23.0,75639,0.0738376565312633
+2025,Light Truck,Pickup,2023,2,configured_historical_vintage_coverage,23.0,56297,0.054956286436104784
+2025,Light Truck,Pickup,2022,3,configured_historical_vintage_coverage,23.0,58048,0.05666558635527667
+2025,Light Truck,Pickup,2021,4,configured_historical_vintage_coverage,23.0,54275,0.0529824403843826
+2025,Light Truck,Pickup,2020,5,configured_historical_vintage_coverage,23.0,44623,0.043560302851631594
+2025,Light Truck,Pickup,2019,6,configured_historical_vintage_coverage,23.0,62351,0.06086611037137982
+2025,Light Truck,Pickup,2018,7,configured_historical_vintage_coverage,23.0,70363,0.06868730451895556
+2025,Light Truck,Pickup,2017,8,configured_historical_vintage_coverage,23.0,78922,0.0770424718565867
+2025,Light Truck,Pickup,2016,9,configured_historical_vintage_coverage,23.0,55198,0.05388345913103917
+2025,Light Truck,Pickup,2015,10,configured_historical_vintage_coverage,23.0,50291,0.049093319380395864
+2025,Light Truck,Pickup,2014,11,configured_historical_vintage_coverage,23.0,41581,0.04059074810912967
+2025,Light Truck,Pickup,2013,12,configured_historical_vintage_coverage,23.0,32330,0.03156006075775384
+2025,Light Truck,Pickup,2012,13,configured_historical_vintage_coverage,23.0,33317,0.032523555343831875
+2025,Light Truck,Pickup,2011,14,configured_historical_vintage_coverage,23.0,43305,0.04227369103354562
+2025,Light Truck,Pickup,2010,15,configured_historical_vintage_coverage,23.0,36048,0.035189516554145074
+2025,Light Truck,Pickup,2009,16,configured_historical_vintage_coverage,23.0,26260,0.02563461786262344
+2025,Light Truck,Pickup,2008,17,configured_historical_vintage_coverage,23.0,30663,0.02993276037782264
+2025,Light Truck,Pickup,2007,18,configured_historical_vintage_coverage,23.0,26310,0.025683427112171465
+2025,Light Truck,Pickup,2006,19,configured_historical_vintage_coverage,23.0,19325,0.018864774950312184
+2025,Light Truck,Pickup,2005,20,configured_historical_vintage_coverage,23.0,17567,0.017148641736203576
+2025,Light Truck,Pickup,2004,21,configured_historical_vintage_coverage,23.0,15045,0.014686703189001128
+2025,Light Truck,Pickup,2003,22,configured_historical_vintage_coverage,23.0,13802,0.013473305245237193
+2025,Light Truck,Pickup,2002,23,configured_historical_vintage_coverage,23.0,9486,0.00926009082425156
+2025,Light Truck,Small SUV,2025,0,configured_historical_vintage_coverage,23.0,183348,0.0747159154582334
+2025,Light Truck,Small SUV,2024,1,configured_historical_vintage_coverage,23.0,206151,0.0840083376291548
+2025,Light Truck,Small SUV,2023,2,configured_historical_vintage_coverage,23.0,145593,0.059330422362450515
+2025,Light Truck,Small SUV,2022,3,configured_historical_vintage_coverage,23.0,140510,0.05725905535395192
+2025,Light Truck,Small SUV,2021,4,configured_historical_vintage_coverage,23.0,147862,0.06025505973059596
+2025,Light Truck,Small SUV,2020,5,configured_historical_vintage_coverage,23.0,148374,0.060463704213844296
+2025,Light Truck,Small SUV,2019,6,configured_historical_vintage_coverage,23.0,188114,0.07665810219097083
+2025,Light Truck,Small SUV,2018,7,configured_historical_vintage_coverage,23.0,188779,0.07692909551393985
+2025,Light Truck,Small SUV,2017,8,configured_historical_vintage_coverage,23.0,181395,0.07392005085709279
+2025,Light Truck,Small SUV,2016,9,configured_historical_vintage_coverage,23.0,172262,0.07019827338539937
+2025,Light Truck,Small SUV,2015,10,configured_historical_vintage_coverage,23.0,154729,0.06305342236041298
+2025,Light Truck,Small SUV,2014,11,configured_historical_vintage_coverage,23.0,125586,0.051177394674268066
+2025,Light Truck,Small SUV,2013,12,configured_historical_vintage_coverage,23.0,110655,0.0450928814332898
+2025,Light Truck,Small SUV,2012,13,configured_historical_vintage_coverage,23.0,76627,0.031226173472402488
+2025,Light Truck,Small SUV,2011,14,configured_historical_vintage_coverage,23.0,80788,0.03292181740755155
+2025,Light Truck,Small SUV,2010,15,configured_historical_vintage_coverage,23.0,71879,0.029291321897279267
+2025,Light Truck,Small SUV,2009,16,configured_historical_vintage_coverage,23.0,42041,0.017132075625475
+2025,Light Truck,Small SUV,2008,17,configured_historical_vintage_coverage,23.0,34960,0.014246506121800293
+2025,Light Truck,Small SUV,2007,18,configured_historical_vintage_coverage,23.0,23374,0.00952510967079405
+2025,Light Truck,Small SUV,2006,19,configured_historical_vintage_coverage,23.0,12567,0.0051211625409800995
+2025,Light Truck,Small SUV,2005,20,configured_historical_vintage_coverage,23.0,7817,0.00318549594834419
+2025,Light Truck,Small SUV,2004,21,configured_historical_vintage_coverage,23.0,4368,0.0017799982477123477
+2025,Light Truck,Small SUV,2003,22,configured_historical_vintage_coverage,23.0,3740,0.0015240827487280632
+2025,Light Truck,Small SUV,2002,23,configured_historical_vintage_coverage,23.0,2416,0.000984541155328075

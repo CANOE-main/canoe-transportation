@@ -35,6 +35,7 @@ from utils import (
     ConfigBundle,
     load_config_bundle,
     load_harmonization_rules,
+    log_duration,
     resolve_artifact_path,
     resolve_input_path,
     write_dataframe_atomic,
@@ -311,6 +312,7 @@ def bucket_range_evidence(records: pd.DataFrame, *, rules: RangeRules) -> RangeE
     return RangeEvidence(records, totals, [], audit)
 
 
+@log_duration(LOGGER, "OMEGA sales/range evidence")
 def build_range_evidence(bundle: ConfigBundle) -> RangeEvidence:
     """Prepare auditable OMEGA bucket weights independently of scenario representation."""
     rules = module_rules(bundle)
@@ -559,7 +561,7 @@ def prepare_range_rows(
     }
     if selection.mode == "none":
         LOGGER.info(
-            "Range representation none: no share acquisition, constraints or technology changes"
+            "New LDV range representation disabled; no share constraints or technology changes"
         )
         result = RangePreparation(
             [],
@@ -1291,12 +1293,14 @@ def prepare_representative_parameters(
                 bundle, "ldv_range_validation", rules.files["decisions"]
             ),
         )
-    LOGGER.info(
+    LOGGER.debug(
         "Representative LDV parameters: %s; conservation error=%s; accepted PHEV component approximation max relative difference=%s",
         audit["generated_rows"],
         audit["max_conservation_error"],
         audit["max_phev_component_relative_difference"],
     )
+    LOGGER.info("Prepared representative LDV parameters; conservation checks passed; maximum PHEV component difference=%.4f%%",
+                100 * audit["max_phev_component_relative_difference"])
     return result
 
 

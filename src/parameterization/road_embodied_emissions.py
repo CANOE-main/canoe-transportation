@@ -288,10 +288,12 @@ def prepare_emission_embodied_rows(bundle: ConfigBundle) -> EmbodiedEmissionPrep
                                   (coverage, "coverage", validation)):
         path = directory / rules["files"][key]
         write_dataframe_atomic(frame, path)
-        LOGGER.info("Wrote embodied %s artifact: %s (%s rows)", key, path, len(frame))
+        LOGGER.debug("Wrote embodied %s artifact: %s (%s rows)", key, path, len(frame))
     write_text_atomic(json.dumps(audit, sort_keys=True, indent=2) + "\n", validation / rules["files"]["integrity"])
-    LOGGER.info("Prepared %s embodied rows; lifetime mass factors=%s, units=%s; coverage=%s",
-                len(rows), factors, units, audit["coverage_status_counts"])
+    LOGGER.info("Prepared emission_embodied=%s rows; excluded %s existing-vehicle manufacturing cases",
+                len(rows), audit["coverage_status_counts"].get("existing_vehicle_manufacturing_excluded", 0))
+    LOGGER.debug("Embodied conversions: lifetime mass factors=%s, units=%s; coverage=%s",
+                 factors, units, audit["coverage_status_counts"])
     return EmbodiedEmissionPreparation(rows, contexts, source, aggregation, coverage, audit, frozenset(expected))
 
 

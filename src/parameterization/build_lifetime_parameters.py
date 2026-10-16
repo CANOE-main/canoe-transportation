@@ -102,6 +102,9 @@ def prepare_lifetime_rows(bundle: ConfigBundle) -> LifetimePreparation:
         "road_lifetime_sources": stock_rules["fixed_lifetime_sources"],
         "statcan_canada_fallback_rows": int(bus_audit["canada_fallback"].sum()),
     }
+    LOGGER.info("Prepared lifetime_tech=%s and lifetime_survival_curve=%s rows; StatCan Canada fallback rows=%s",
+                len(fixed_rows), len(curve_rows), audit["statcan_canada_fallback_rows"])
+    LOGGER.debug("Lifetime audit: %s", audit)
     return LifetimePreparation(fixed_rows, curve_rows, contexts, audit)
 
 
@@ -119,7 +122,7 @@ def build_lifetime_parameter_artifacts(scenario_path: str | Path) -> Path:
             model = LifetimeTech if filename == "lifetime_tech.csv" else LifetimeSurvivalCurve
             frame = pd.DataFrame(columns=list(model.model_fields))
         write_dataframe_atomic(frame, output / filename)
-    LOGGER.info("Published lifetime parameter rows: %s", prepared.audit)
+    LOGGER.info("Published lifetime parameter tables: %s", output)
     return output
 
 

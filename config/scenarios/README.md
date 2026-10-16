@@ -33,7 +33,7 @@ it does not create missing caches, mappings, or template periods.
 
 | Section and field | Selections and behavior |
 | --- | --- |
-| `lifetimes.survival_curves` | `true` uses accepted road survival curves; `false` uses configured fixed lifetimes, including source-derived medians for LDVs and medium/heavy trucks. Other technologies retain their configured fixed lifetime pathway. |
+| `lifetimes.survival_curves` | `true` uses accepted road survival curves; `false` uses configured fixed lifetimes, including source-derived medians for LDVs and medium/heavy trucks. Road technology totals are derived over the same configured historical coverage before lifetime eligibility; this switch reallocates their vintages, preserving totals before capacity cleanup. Other technologies retain their configured fixed lifetime pathway. |
 | `lifetimes.heavy_truck_survival_source` | `eia_nems_hd_truck_scrappage` or `epa_moves5_heavy_truck_survival`, for heavy trucks only. The selected cumulative schedule supplies both the fixed median and survival curves; LDVs and medium trucks retain NHTSA. NEMS is the default in the supplied scenarios. |
 | `lifetimes.survival_curve_max_age` | Maximum supported age for road survival curves and existing-stock cohorts when curves are enabled. The prospective template uses 29 to cover ages 25–29 for vintage 2000 in the first model period; every required source age must exist. Fixed-lifetime cohorts use their class lifetime. |
 | `existing_capacity.vehicle_population_year` | MTO age-evidence year for LDVs, trucks, motorcycles, and buses. It must match the reviewed LDV aggregation artifact and the available Report 5 edition. |
