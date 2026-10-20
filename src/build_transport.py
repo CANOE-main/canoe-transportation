@@ -1127,8 +1127,12 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
     ):
         with log_duration(LOGGER, f"Prerequisite {prepare.__module__}.{prepare.__name__}"):
             prepare(scenario, download=download)
+    if "vehicle_stock" in bundle.scenario.notebook_diagnostics:
+        # Historical replay publishes a latest-edition handoff. Restore the selected
+        # production edition afterwards, before class weights and review products.
+        with log_duration(LOGGER, "Notebook complete Ontario history"):
+            vehicle_population.fetch_and_normalize(scenario, download=download)
     # Only the scenario's Report A/4/5 edition is a production prerequisite.
-    # Historical MTO diagnostics and mapping bootstrap remain explicit operations.
     with log_duration(LOGGER, f"Ontario vehicle evidence ({bundle.scenario.existing_capacity.vehicle_population_year})"):
         vehicle_population.fetch_and_normalize(
             scenario, year=bundle.scenario.existing_capacity.vehicle_population_year,
@@ -1141,15 +1145,30 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
         fueleconomy_vehicles.validate_cache(request)
     with log_duration(LOGGER, "Road aggregation from reviewed mappings"):
         build_road_aggregation_artifacts(scenario)
+    if bundle.scenario.notebook_diagnostics:
+        # Explicit preset work remains outside ordinary production prerequisites.
+        with log_duration(LOGGER, "Notebook FuelEconomy model evidence"):
+            fueleconomy_vehicles.fetch_and_normalize(scenario, download=download)
+    if "vehicle_stock" in bundle.scenario.notebook_diagnostics:
+        from parameterization.road_aggregation import build_mapping_diagnostic_artifacts
+        from parameterization.road_lifetimes_survival import build_mto_survival_diagnostic_artifacts
+
+        with log_duration(LOGGER, "Notebook reviewed-mapping diagnostics"):
+            build_mapping_diagnostic_artifacts(scenario)
+        with log_duration(LOGGER, "Notebook MOVES5 comparison evidence"):
+            assorted_sources.fetch_and_normalize_moves5_survival(scenario, download=download)
+        with log_duration(LOGGER, "Notebook MTO retention diagnostics"):
+            build_mto_survival_diagnostic_artifacts(scenario)
 
 
 def _publish_scenario(
     candidate: Path, database: Path, report: dict[str, Any], validation: Path,
+    *, notebook_publication=None,
 ) -> None:
-    """Stage both outputs; restore the previous report if SQLite replacement fails.
+    """Stage outputs and restore previous publications on ordinary I/O failure.
 
-    SQLite replacement is atomic. Two separate files cannot be crash-atomic as a
-    pair; ordinary build/I/O exceptions leave the prior publication intact.
+    Individual replacements are atomic; database, report and optional notebook
+    index cannot be crash-atomic as a set across power loss or process termination.
     """
     validation.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=f".{validation.name}.", dir=validation.parent) as directory:
@@ -1159,10 +1178,29 @@ def _publish_scenario(
             shutil.copyfile(validation, previous)
         prepared = stage / "prepared.json"
         write_validation_report(report, prepared)
+        prepared_index = None
+        if notebook_publication is not None:
+            from validation.notebook_evidence import notebook_index_text
+            prepared_index = stage / "notebook_index.json"
+            # Parse/serialize the existing index before any published file changes.
+            write_text_atomic(notebook_index_text(notebook_publication), prepared_index)
+            if database.exists():
+                shutil.copyfile(database, stage / "previous.sqlite")
         os.replace(prepared, validation)
+        database_replaced = False
         try:
             os.replace(candidate, database)
+            database_replaced = True
+            if prepared_index is not None:
+                # Publish from the index's own shared parent, rather than carrying
+                # a private staging-directory DACL into the notebook's entry point.
+                write_text_atomic(prepared_index.read_text(encoding="utf-8"), notebook_publication.index_path)
         except BaseException:
+            if database_replaced:
+                if (stage / "previous.sqlite").exists():
+                    os.replace(stage / "previous.sqlite", database)
+                else:
+                    database.unlink()
             if previous.exists():
                 os.replace(previous, validation)
             else:
@@ -1181,6 +1219,15 @@ def build_from_scenario(
     bundle = load_config_bundle(scenario_path)
     scenario = bundle.scenario
     periods = scenario.periods
+    notebook_controls = {
+        path: file_sha256(path)
+        for path in (
+            bundle.scenario_path, bundle.paths_path, bundle.sources_path,
+            resolve_parameter_path(bundle, "rules.yaml"),
+            resolve_parameter_path(bundle, "conversion.yaml"),
+            resolve_parameter_path(bundle, "vehicle_size_class_map.csv"),
+        )
+    } if scenario.notebook_diagnostics else {}
     LOGGER.info(
         "Scenario %s: period_mode=%s, base_year=%s; %s regions, %s existing vintages, %s model periods (%s-%s, step=%s)",
         scenario.scenario.name, periods.period_mode, periods.base_year,
@@ -1272,8 +1319,37 @@ def build_from_scenario(
                 },
             }
         )
+        notebook_publication = None
+        if scenario.notebook_diagnostics:
+            changed_controls = [str(path) for path, checksum in notebook_controls.items()
+                                if file_sha256(path) != checksum]
+            if changed_controls:
+                raise ValueError("Notebook build configuration changed during preparation; rerun before publication: "
+                                 + "; ".join(changed_controls))
+            from validation.notebook_evidence import stage_notebook_evidence
+            if "efficiency" in scenario.notebook_diagnostics:
+                from validation.rating_stock_benchmark import build_rating_stock_benchmark
+                with log_duration(LOGGER, "Diagnostic-only MTO rating benchmark"):
+                    build_rating_stock_benchmark(bundle)
+            with log_duration(LOGGER, "Recorded notebook evidence"):
+                notebook_publication = stage_notebook_evidence(bundle, report)
+            report["notebook_evidence"] = notebook_publication.bundles
+        if notebook_publication is not None:
+            changed_controls = [str(path) for path, checksum in notebook_controls.items()
+                                if file_sha256(path) != checksum]
+            if changed_controls:
+                raise ValueError("Notebook build configuration changed while recording evidence: "
+                                 + "; ".join(changed_controls))
         with log_duration(LOGGER, "Database and validation report publication"):
-            _publish_scenario(candidate, database_path, report, validation_path)
+            _publish_scenario(candidate, database_path, report, validation_path,
+                              notebook_publication=notebook_publication)
+        if notebook_publication is not None:
+            from validation.notebook_evidence import prune_notebook_evidence
+            try:
+                removed = prune_notebook_evidence(notebook_publication)
+                LOGGER.info("Removed %s superseded notebook evidence directories", len(removed))
+            except (OSError, ValueError) as exc:
+                LOGGER.warning("Published notebook evidence; obsolete snapshot cleanup failed: %s", exc)
     LOGGER.info("Created %s; validation report: %s", database_path, validation_path)
     return report, validation_path
 

@@ -405,9 +405,13 @@ class ScenarioConfig(MappingModel):
     embodied_emissions: bool
     embodied_materials: Literal["conventional", "lightweight"]
     row_note_overrides: ScenarioRowNoteOverrides
+    # Explicit review preparation; ordinary production runs have no notebook work.
+    notebook_diagnostics: list[Literal["vehicle_stock", "efficiency"]] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_parameter_horizons(self) -> Self:
+        if len(set(self.notebook_diagnostics)) != len(self.notebook_diagnostics):
+            raise ValueError("notebook_diagnostics cannot repeat a notebook")
         if self.lifetimes.survival_curves and (
             self.lifetimes.survival_curve_max_age < self.periods.step - 1
         ):

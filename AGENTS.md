@@ -59,6 +59,11 @@ workflows distinct. Do not silently mutate cached downloads, registered external
 outputs, `legacy_backend/`, reviewed mappings or evidence, or user-controlled
 representations unless the task explicitly places them in scope.
 
+Maintain evidence only when a supported ETL or notebook command regenerates it from
+registered/reviewed inputs. Agent conclusions and task-local comparisons are development
+work, not source evidence: use ignored `tmp/` and remove them when the task ends.
+Keep reproducible notebook outputs local and exclude build snapshots from Git.
+
 ## Context retrieval and presentation
 
 Do not discover or retrieve Markdown trees by default. Normal documentation is limited

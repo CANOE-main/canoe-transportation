@@ -23,6 +23,7 @@ RUNTIME_GLOBS = (
     ".pytest-tmp*",
     ".ruff_cache",
     ".tmp_*",
+    "tmp",
 )
 GENERATED_PATHS = (
     "inputs/1_interim",
@@ -136,7 +137,11 @@ def build_cleanup_plan(
 def remove_target(path: Path) -> None:
     """Remove one file, symlink, or directory."""
     if path.is_dir() and not path.is_symlink():
-        shutil.rmtree(path)
+        failures = []
+        # Remove accessible siblings even when Windows protects an old test child.
+        shutil.rmtree(path, onexc=lambda function, child, error: failures.append(error))
+        if failures:
+            raise failures[0]
     else:
         path.unlink()
 

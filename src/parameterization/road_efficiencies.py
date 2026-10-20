@@ -121,6 +121,15 @@ def derive_load_factors(
     return pd.concat(records, ignore_index=True).sort_values(["region", "mode", "year"])
 
 
+def phev_historical_index_mode(rules: dict) -> str:
+    """Retain recorded CS builds while new builds select the reviewed CD index."""
+    policy = rules["ratings"]["phev_historical_index"]
+    modes = {"combined_cs_consumption": "CS", "combined_cd_consumption": "CD"}
+    if policy not in modes:
+        raise ValueError(f"Unsupported ratings.phev_historical_index: {policy!r}")
+    return modes[policy]
+
+
 def classify_ratings(
     frames: list[pd.DataFrame],
     epa: pd.DataFrame,
@@ -139,12 +148,12 @@ def classify_ratings(
     supported = {
         "evidence_join": "exact_normalized_year_make_model",
         "ambiguous_evidence": "retain_name_rule_and_report",
-        "phev_historical_index": "combined_cs_consumption",
         "phev_baseline": "nlr_atb",
     }
     for key, expected in supported.items():
         if spec[key] != expected:
             raise ValueError(f"Unsupported ratings.{key}: {spec[key]!r}")
+    phev_index_mode = phev_historical_index_mode(rules)
 
     def norm(values):
         return (
@@ -206,13 +215,12 @@ def classify_ratings(
             frame["powertrain"] = frame.range_km.map(
                 lambda value: range_bucket("PHEV", value / conversions["length"]["mile_to_km"], range_rules)
             )
-            frame["native_consumption"] = pd.to_numeric(
+            cs = pd.to_numeric(
                 frame[fields["consumption"]], errors="raise"
             )
-            frame["native_unit"] = "L/100 km (CS; index only)"
-            frame[phev_contract["combined_cs_output_numeric_field"]] = (
-                frame.native_consumption
-            )
+            if cs.isna().any() or not np.isfinite(cs).all() or cs.le(0).any():
+                raise ValueError("NRCan PHEV CS consumption is missing or invalid")
+            frame[phev_contract["combined_cs_output_numeric_field"]] = cs
             raw = frame[phev_contract["combined_cd_raw_column"]].astype(str)
             frame[phev_contract["combined_cd_output_raw_field"]] = raw
             frame[phev_contract["combined_cd_output_numeric_field"]] = pd.to_numeric(
@@ -224,8 +232,10 @@ def classify_ratings(
             cd = frame[phev_contract["combined_cd_output_numeric_field"]]
             if cd.isna().any() or not np.isfinite(cd).all() or cd.lt(0).any():
                 raise ValueError("NRCan PHEV CD leading value is missing or invalid")
+            frame["native_consumption"] = cd if phev_index_mode == "CD" else cs
+            frame["native_unit"] = "Le/100 km (CD; index only)" if phev_index_mode == "CD" else "L/100 km (CS; index only)"
             frame["consumption_mj_per_vkm"] = np.nan
-            frame["classification_method"] = "omega_range_bucket_cs_index_only"
+            frame["classification_method"] = f"omega_range_bucket_{phev_index_mode.lower()}_index_only"
         else:
             frame["powertrain"] = frame[fields["fuel"]].map(spec["fuel_codes"])
             frame["make_key"], frame["model_key"] = (
@@ -288,14 +298,18 @@ def aggregate_ratings(
     if weights.duplicated(["nrcan_ceud_class", "nrcan_vehicle_class"]).any():
         raise ValueError("Duplicate NRCan aggregation weights")
     suv = rules["historical_suv"]
+    observed = classified.loc[classified.included].copy()
+    if "range_km" not in observed:
+        observed["range_km"] = np.nan
     annual = (
-        classified.loc[classified.included]
+        observed
         .groupby(["year", "powertrain", "rating_class"], sort=True)
         .agg(
             native_consumption=("native_consumption", "mean"),
             consumption_mj_per_vkm=("consumption_mj_per_vkm", "mean"),
             observations=("source_row", "size"),
             native_unit=("native_unit", "first"),
+            range_km=("range_km", "mean"),
         )
         .reset_index()
     )
@@ -341,6 +355,10 @@ def aggregate_ratings(
                         "original_weight": item.raw_weight,
                         "observed_weight_sum": total,
                         "weight": item.raw_weight / total,
+                        "range_class_mean_km": item.range_km,
+                        "aggregation_method": "catalogue_class_weighted",
+                        "matched_stock": 0.0,
+                        "cohort_matched_stock": 0.0,
                     }
                 )
     return pd.DataFrame(records)
@@ -656,7 +674,7 @@ class RoadEfficiencyEvidence:
                     consumption = baseline * index
                 else:
                     consumption = self.atb_value(region, mode, powertrain, year)
-                treatment = "ATB_PHEV_level_NRCan_CS_or_analogue_history"
+                treatment = f"ATB_PHEV_level_NRCan_{phev_historical_index_mode(self.rules)}_or_analogue_history"
             elif (
                 year <= base
                 and (observed := self.rating(mode, powertrain, year, "mj")) is not None
