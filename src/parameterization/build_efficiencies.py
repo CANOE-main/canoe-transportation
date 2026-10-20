@@ -771,14 +771,20 @@ def prepare_efficiency_rows(
         atb_audit, endpoints=endpoints, rules=rules, range_weights=historical_weights,
         regions=scenario.geography.regions,
     )], ignore_index=True)
+    input_evidence = [
+        {"path": str(path.relative_to(bundle.repo_root) if path.is_relative_to(bundle.repo_root) else path),
+         "sha256": file_sha256(path)}
+        for path in sorted(set(paths))
+    ]
     digest = hashlib.sha256(
         json.dumps(
             {
-                "files": sorted((p.name, file_sha256(p)) for p in set(paths)),
+                "files": input_evidence,
                 "rules": rules,
                 "road_outputs": road_rules,
                 "offroad_outputs": offroad_rules,
                 "fleet_rules": fleet.rules,
+                "rating_source_rules": rating_rules,
                 "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
                 "conversions": conversions,
                 "trajectory": trajectory,
@@ -862,6 +868,8 @@ def prepare_efficiency_rows(
         rules=rules,
     )
     audit.update(variant)
+    audit["input_evidence"] = input_evidence
+    audit["periods"] = scenario.periods.model_dump(mode="json")
     audit["excluded_technologies"] = sorted(
         set(technology.tech) - set(relationships.tech)
     )
@@ -869,6 +877,7 @@ def prepare_efficiency_rows(
         classified.classification_method.value_counts().to_dict()
     )
     audit["rating_index_fallbacks"] = len(evidence.findings)
+    audit["rating_aggregation"] = "catalogue_class_weighted"
     audit["historical_source_backed_rows_without_capacity"] = len(
         existing_keys - capacity_keys
     )
@@ -1112,7 +1121,7 @@ def efficiency_context(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--scenario", default="config/scenarios/legacy_reproduction.yaml"
+        "--scenario", default="config/scenarios/default.yaml"
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")

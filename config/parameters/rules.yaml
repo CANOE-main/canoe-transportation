@@ -578,8 +578,8 @@ fetching:
           combined_cd_parse: leading_numeric_only
           combined_cd_leading_numeric_pattern: '^\s*([0-9]+(?:\.[0-9]+)?)'
           combined_cs_output_numeric_field: combined_cs_consumption_L_100_km
-          # Retain bracketed CD detail only in the raw field. CS consumption is
-          # selected by efficiencies.ratings.fields.consumption; ATB supplies the UF.
+          # Retain bracketed CD detail only in the raw field and preserve CS separately.
+          # The historical index selector below does not apply an ATB UF to NRCan rows.
       maintenance_ldv:
         outputs:
           class_multipliers: atb_maintenance_ldv_class_multipliers.csv
@@ -1564,8 +1564,52 @@ parameterization:
       Car: Car
       Light Truck: Light Truck
 
+  notebook_diagnostics:
+    prepare_scenario: config/scenarios/notebook_diagnostics.yaml
+    latest_file: latest.json
+  rating_stock_benchmark:
+    files:
+      matches: rating_stock_match_audit.csv
+      allocations: stock_weighted_rating_evidence.csv
+      weighted: stock_weighted_rating_consumption.csv
+    stock_weighting:
+      method: resolved_mto_model_year_stock
+      unresolved_stock: exclude_and_report
+      uncovered_cohort: catalogue_class_weighted
+      variant_allocation: equal_distinct_variants
+      weight_sum_tolerance: 1.0e-9
+      rating_variant_identity_columns:
+        - Model
+        - Engine size (L)
+        - Cylinders
+        - Transmission
+        - Motor (kW)
+        - Fuel type
+        - Fuel type 1
+        - Fuel type 2
+        - native_consumption
+        - native_unit
+        - range_km
+        - combined_cd_consumption_Le_100_km
+        - combined_cs_consumption_L_100_km
+  ldv_efficiency_diagnostic:
+    region: 'ON'
+    minimum_model_year: 1995
+    bridge_years: [2010, 2030]
+    anchor_powertrains:
+      bev: bev_300_miles
+      phev: phev_35_miles
+    files:
+      raw_sources: raw_source_trajectories.csv
+      rating_distribution: rating_distribution.csv
+      rating_summary: rating_aggregation_summary.csv
+      bridge: efficiency_bridge.csv
+      anchor_comparison: pev_anchor_comparison.csv
+      omega_shares: omega_range_shares.csv
+      mto_benchmark: mto_weighting_benchmark.csv
+      summary: summary.json
   efficiencies:
-    transformation_version: '2'
+    transformation_version: '5'
     files:
       efficiency: efficiency.csv
       splits: limit_tech_input_split.csv
@@ -1625,7 +1669,7 @@ parameterization:
       bev_range_labels: [bev_150_miles, bev_300_miles, bev_long_range]
       phev_range_edges_km: [0, 55, 210]
       phev_range_labels: [phev_35_miles, phev_50_miles]
-      phev_historical_index: combined_cs_consumption
+      phev_historical_index: combined_cd_consumption
       phev_baseline: nlr_atb
       ignored_classes: [Special purpose vehicle]
     existing_phev_blends:
@@ -1908,7 +1952,7 @@ parameterization:
   ldv_ev_ranges:
     range_units: miles
     share_units: fraction
-    # Recovered from LDV_AER_market_shares.ipynb, not efficiency-rating bins.
+    # Recovered from LDV_AER_market_shares.ipynb; also used for NRCan ratings.
     buckets:
       BEV:
         - {sub_category: bev_150_miles, upper: 150, upper_inclusive: true}

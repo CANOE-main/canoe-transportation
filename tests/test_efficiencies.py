@@ -35,6 +35,7 @@ from utils import (
     load_harmonization_rules,
     resolve_input_path,
 )
+from validation.rating_stock_benchmark import aggregate_stock_weighted_ratings
 
 
 @pytest.fixture
@@ -294,7 +295,9 @@ def test_hybrid_evidence_requires_unambiguous_exact_key(rules, bundle):
     assert result.loc["Unmatched", "powertrain"] == "gasoline"
 
 
-def test_phev_rating_keeps_raw_cd_and_only_parses_leading_number(rules, bundle):
+@pytest.mark.parametrize("index_mode,expected,unit", [("CD", 1.8, "Le/100 km (CD; index only)"), ("CS", 5.5, "L/100 km (CS; index only)")])
+def test_phev_rating_keeps_both_components_and_selects_recorded_index(rules, bundle, index_mode, expected, unit):
+    rules["ratings"]["phev_historical_index"] = f"combined_{index_mode.lower()}_consumption"
     source = pd.DataFrame(
         [
             {
@@ -323,6 +326,50 @@ def test_phev_rating_keeps_raw_cd_and_only_parses_leading_number(rules, bundle):
     assert result.combined_cs_consumption_L_100_km == 5.5
     assert "15.8 kWh" in result.combined_cd_consumption_Le_100_km_raw
     assert pd.isna(result.consumption_mj_per_vkm)
+    assert result.native_consumption == expected
+    assert result.native_unit == unit
+    assert result.classification_method == f"omega_range_bucket_{index_mode.lower()}_index_only"
+
+
+def test_phev_cd_switch_changes_only_historical_index_preserving_atb_level_and_gaps(rules, bundle):
+    source = pd.DataFrame([
+        {"source_row": row, "component": "phev", "Model year": year, "Vehicle class": "Compact",
+         "Range 1 (km)": 50, "Combined (L/100 km)": cs, "Combined Le/100 km": cd}
+        for row, year, cs, cd in [(2, 2015, 8, "1.0 ([8.0 kWh + 0.1 L]/100 km)"),
+                                  (3, 2023, 4, "2.0 (17.8 kWh/100 km)"), (4, 2026, 100, "100.0")]
+    ])
+    weights = pd.DataFrame([{"report_year": 2025, "weight_basis": "all_vintages", "nrcan_ceud_class": "Car",
+                             "nrcan_vehicle_class": "Compact", "aggregation_weight": 1}])
+    atb = pd.DataFrame([{"region": "ON", "mode": "cars", "powertrain": "phev_35_miles", "year": year,
+                         "weighted_consumption": value} for year, value in [(2023, 2), (2030, 1.5)]])
+    loads = pd.DataFrame([{"region": "ON", "mode": "cars", "year": year, "load_factor": 2} for year in [2000, 2023]])
+    values = {}
+    for index_mode in ["CD", "CS"]:
+        selected_rules = deepcopy(rules)
+        selected_rules["ratings"]["phev_historical_index"] = f"combined_{index_mode.lower()}_consumption"
+        classified = classify_ratings([source], pd.DataFrame(columns=rules["ratings"]["evidence_columns"]),
+            rules=selected_rules, conversions=load_conversion_factors(bundle), range_rules=range_module_rules(bundle),
+            phev_contract=load_harmonization_rules(bundle, "nlr_atb_autonomie")["components"]["phev_efficiency"]["future_nrcan_phev_contract"])
+        analogue = pd.DataFrame([{"source_row": year, "year": year, "powertrain": "hev", "rating_class": "Compact",
+                                  "native_consumption": value, "native_unit": "L/100 km", "consumption_mj_per_vkm": value,
+                                  "included": True} for year, value in [(2000, 12), (2023, 6)]])
+        audit = aggregate_ratings(pd.concat([classified, analogue], ignore_index=True), weights,
+                                  rules=selected_rules, weight_basis="all_vintages")
+        evidence = RoadEfficiencyEvidence(ceud=pd.DataFrame(), loads=loads, rating_audit=audit, atb_audit=atb,
+            gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=2023, rules=selected_rules)
+        values[index_mode] = {year: evidence.derive("ON", "cars", "phev_35_miles", year) for year in [2000, 2015, 2019, 2023, 2030]}
+        assert evidence.ratings.year.max() == 2023
+        assert values[index_mode][2000]["native_intensity"] == 4
+        assert values[index_mode][2000]["analogue"] == "hev"
+        assert values[index_mode][2023]["native_intensity"] == 2
+        assert values[index_mode][2030]["native_intensity"] == 1.5
+        assert values[index_mode][2015]["treatment"] == f"ATB_PHEV_level_NRCan_{index_mode}_or_analogue_history"
+    assert values["CD"][2015]["native_intensity"] == 1
+    assert values["CS"][2015]["native_intensity"] == 4
+    assert values["CD"][2019]["native_intensity"] == 1.5
+    assert values["CS"][2019]["native_intensity"] == 3
+    assert values["CD"][2015]["efficiency"] == 2
+    assert values["CS"][2015]["efficiency"] == .5
 
 
 def test_nrcan_bev_range_mapping_keeps_all_four_omega_buckets(rules, bundle):
@@ -378,6 +425,74 @@ def test_unsplit_suv_sums_weights_and_renormalizes_observed(rules):
     assert result.original_weight.iloc[0] == pytest.approx(0.7)
     assert result.weight.iloc[0] == 1
     assert result.native_class_mean.iloc[0] == 12
+
+
+def test_rating_stock_weights_replace_pooled_class_shares_and_expose_whole_cohort_fallback(bundle):
+    rules = load_harmonization_rules(bundle, "rating_stock_benchmark")
+    catalogue = pd.DataFrame([
+        {
+            "ceud_class": "Car", "year": year, "powertrain": powertrain,
+            "rating_class": rating_class, "native_class_mean": value,
+            "class_mean_mj_per_vkm": value * 0.036, "native_unit": "kWh/100 km",
+            "observations": 1, "original_weight": share, "observed_weight_sum": 1,
+            "weight": share, "range_class_mean_km": 300, "matched_stock": 0,
+            "cohort_matched_stock": 0, "aggregation_method": "catalogue_class_weighted",
+        }
+        for year, powertrain in [(2023, "bev_200_miles"), (2022, "bev_200_miles")]
+        for rating_class, value, share in [("Compact", 10, 0.2), ("Mid-size", 20, 0.8)]
+    ])
+    allocations = pd.DataFrame([
+        {
+            "year": 2023, "powertrain": "bev_200_miles", "rating_class": size,
+            "native_consumption": value, "consumption_mj_per_vkm": value * 0.036,
+            "native_unit": "kWh/100 km", "range_km": range_km,
+            "allocated_fit_active_stock": stock, "mto_model_year": 2023,
+            "mto_report_year": 2025, "mto_nrcan_ceud_class": "Car",
+            "rating_variant_id": size, "mto_stock_row_id": index,
+        }
+        for index, (size, value, stock, range_km) in enumerate([
+            ("Compact", 10, 90, 280), ("Mid-size", 20, 10, 380),
+        ])
+    ])
+    result = aggregate_stock_weighted_ratings(allocations, catalogue, rules=rules)
+    weighted = result.loc[result.year.eq(2023)]
+    assert (weighted.native_class_mean * weighted.weight).sum() == pytest.approx(11)
+    assert (weighted.range_class_mean_km * weighted.weight).sum() == pytest.approx(290)
+    assert weighted.matched_stock.sum() == 100
+    assert set(weighted.cohort_matched_stock) == {100}
+    assert set(weighted.aggregation_method) == {"mto_stock_weighted"}
+    fallback = result.loc[result.year.eq(2022)]
+    assert (fallback.native_class_mean * fallback.weight).sum() == pytest.approx(18)
+    assert set(fallback.aggregation_method) == {"catalogue_fallback_no_resolved_stock"}
+    # A resolved class does not acquire a catalogue proxy count for absent classes.
+    partial = aggregate_stock_weighted_ratings(allocations.iloc[:1], catalogue, rules=rules)
+    assert partial.loc[partial.year.eq(2023), "rating_class"].tolist() == ["Compact"]
+    assert partial.loc[partial.year.eq(2023), "weight"].item() == 1
+    allocations.loc[0, "allocated_fit_active_stock"] = -1
+    with pytest.raises(ValueError, match="Invalid allocated"):
+        aggregate_stock_weighted_ratings(allocations, catalogue, rules=rules)
+
+
+def test_catalogue_rating_lineage_includes_all_observed_rows_without_mto_powertrain_catalogue(rules):
+    classified = pd.DataFrame([
+        {
+            "year": 2023, "powertrain": "bev_200_miles", "rating_class": "Compact",
+            "included": True, "component": component, "source_row": row,
+            "native_unit": "kWh/100 km", "classification_method": "omega_range_bucket",
+        }
+        for row, component in [(1, "battery_electric_first"), (2, "battery_electric_second")]
+    ])
+    annual = pd.DataFrame([{
+        "ceud_class": "Car", "year": 2023, "powertrain": "bev_200_miles",
+        "rating_class": "Compact", "aggregation_method": "catalogue_class_weighted",
+    }])
+    resolver, _ = layer.ldv_rating_input_resolvers(
+        SimpleNamespace(base_year=2023), classified, annual, rules=rules,
+    )
+    assert set(resolver("cars", "bev_200_miles", 2023, "mj")) == {
+        ("nrcan_fuel_consumption_ratings", "battery_electric_first"),
+        ("nrcan_fuel_consumption_ratings", "battery_electric_second"),
+    }
 
 
 def test_vocational_consumption_average_is_harmonic_fuel_economy(bundle):
@@ -568,6 +683,7 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     from validation.insertion import insert_models
     from validation.schema_contract import create_v4_schema
     from canoe_schema.v4_0 import Region, TimePeriod
+    from parameterization import ldv_ev_ranges, road_aggregation
 
     payload = bundle.scenario.model_dump()
     payload["geography"]["regions"] = ["ON"]
@@ -575,11 +691,17 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     original_path = layer.resolve_artifact_path
 
     def output_path(b, family, *parts):
-        if family.startswith("efficiencies_"):
-            return tmp_path / family / (str(parts[0]) if parts else "")
+        if family.startswith(("efficiencies_", "ldv_range_")):
+            return tmp_path / family / Path(*parts)
         return original_path(b, family, *parts)
 
     monkeypatch.setattr(layer, "resolve_artifact_path", output_path)
+    monkeypatch.setattr(ldv_ev_ranges, "resolve_artifact_path", output_path)
+
+    def no_powertrain_catalogue(*_args, **_kwargs):
+        raise AssertionError("Production efficiency preparation requested diagnostic model-family evidence")
+
+    monkeypatch.setattr(road_aggregation, "load_rating_evidence", no_powertrain_catalogue)
 
     def no_network(*args, **kwargs):
         raise AssertionError("Offline preparation attempted a network connection")
@@ -609,6 +731,26 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         str(p.relative_to(tmp_path)): file_sha256(p) for p in tmp_path.rglob("*.csv")
     }
     assert first.audit == second.audit
+    assert first.audit["rating_aggregation"] == "catalogue_class_weighted"
+    assert "rating_stock_weighting" not in first.audit
+    aggregation_rules = load_harmonization_rules(configured, "road_aggregation")
+    evidence_names = {Path(item["path"]).name for item in first.audit["input_evidence"]}
+    assert aggregation_rules["mapped_current_stock_file"] not in evidence_names
+    assert aggregation_rules["fueleconomy_evidence_file"] not in evidence_names
+    assert not (tmp_path / "efficiencies_interim/rating_stock_match_audit.csv").exists()
+    assert not (tmp_path / "efficiencies_interim/stock_weighted_rating_evidence.csv").exists()
+    # Registered-input reference before the diagnostic model-stock experiment.
+    expected_ltp_bev = {
+        "T_LDV_LTP_BEV150_N": 2.3827052850879324,
+        "T_LDV_LTP_BEV200_N": 2.077557141984629,
+        "T_LDV_LTP_BEV300_N": 2.1851978965230563,
+        "T_LDV_LTP_BEV400_N": 1.9536350082012415,
+    }
+    assert {
+        row.tech: row.efficiency
+        for row in first.efficiency_rows
+        if row.vintage == 2025 and row.tech in expected_ltp_bev
+    } == pytest.approx(expected_ltp_bev, rel=1e-12)
     assert {r.vintage for r in first.efficiency_rows if r.tech == "T_MDV_T_BEV_EX"} == {
         2023
     }
@@ -691,6 +833,7 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
             include_efficiencies=False,
             include_costs=False,
             include_emission_embodied=False,
+            include_charging_profiles=False,
         )
         contribution = replace(
             structural,

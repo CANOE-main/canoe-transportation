@@ -163,11 +163,16 @@ def test_real_offline_scenario_clean_replay_freshness_and_failure(tmp_path, monk
     normalize_fueleconomy(SCENARIO, download=False)
     build_mapping_diagnostic_artifacts(SCENARIO)
     build_mto_survival_diagnostic_artifacts(SCENARIO)
-    # The actual notebook loader must work without obsolete processed copies.
-    import runpy
-    notebook = runpy.run_path(str(ROOT / "docs/insights/vehicle_stock_diagnosis.py"))
-    _, definitions = notebook["load_evidence"].run()
-    evidence = definitions["load_evidence"](tmp_path / SCENARIO)
+    # Capture the complete opt-in evidence, then exercise the actual recorded loader.
+    from fetching.assorted_sources import fetch_and_normalize_moves5_survival
+    from validation.notebook_evidence import publish_notebook_evidence, stage_notebook_evidence
+    from validation.vehicle_stock_diagnostic import load_stock_diagnostic
+    fetch_and_normalize_moves5_survival(SCENARIO, download=False)
+    diagnostic_scenario = bundle.scenario.model_copy(deep=True)
+    diagnostic_scenario.notebook_diagnostics = ["vehicle_stock"]
+    diagnostic_bundle = replace(bundle, scenario=diagnostic_scenario)
+    publish_notebook_evidence(stage_notebook_evidence(diagnostic_bundle, first))
+    evidence = load_stock_diagnostic(repo_root=tmp_path)
     years = set(evidence["source_manifest"].year)
     assert len(years) == 11 and set(evidence["status_long"].report_year) == years
     assert set(evidence["passenger_cohorts"].report_year) == years

@@ -66,6 +66,42 @@ artifacts:
     producers: [build_transport.build_from_scenario]
     consumers: [validation.transport_comparison]
     validation_surfaces: [validation.transport_comparison.load_diagnostic]
+  ldv_efficiency_notebook:
+    path: docs/insights/ldv_efficiency_diagnosis.py
+    layer: documentation
+    owner: validation.ldv_efficiency_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  ldv_efficiency_report:
+    path: outputs/validation/ldv_efficiency_diagnostic
+    layer: output_validation
+    owner: validation.ldv_efficiency_diagnostic
+    producers: [validation.ldv_efficiency_diagnostic, marimo.export]
+    consumers: [docs.insights.ldv_efficiency_diagnosis, reviewers]
+    validation_surfaces: [validation.ldv_efficiency_diagnostic.load_diagnostic]
+  # Local reproducible notebook handoff; excludes temporary development conclusions.
+  notebook_evidence:
+    path: outputs/validation/notebook_evidence
+    layer: output_validation
+    owner: validation.notebook_evidence
+    producers: [build_transport.build_from_scenario]
+    consumers: [validation.vehicle_stock_diagnostic, validation.ldv_efficiency_diagnostic, reviewers]
+    validation_surfaces: [validation.notebook_evidence.load_notebook_evidence]
+  vehicle_stock_notebook:
+    path: docs/insights/vehicle_stock_diagnosis.py
+    layer: documentation
+    owner: validation.vehicle_stock_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  rating_stock_benchmark:
+    path: inputs/validation/rating_stock_benchmark
+    layer: input_validation
+    owner: validation.rating_stock_benchmark
+    producers: [validation.rating_stock_benchmark.build_rating_stock_benchmark]
+    consumers: [validation.ldv_efficiency_diagnostic, validation.notebook_evidence, reviewers]
+    validation_surfaces: [validation.rating_stock_benchmark.aggregate_stock_weighted_ratings]
   # Opt-in growth research: these are evidence/review products, not production inputs.
   technology_growth_cache:
     path: inputs/0_cache/technology_growth
@@ -213,7 +249,7 @@ artifacts:
       - parameterization.road_fleet_weights
       - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
       - parameterization.vehicle_mapping_bootstrap
-      - docs.insights.vehicle_stock_diagnosis
+      - validation.vehicle_stock_diagnostic
     validation_surfaces: [fetching.vehicle_population.registered_requests, fetching.vehicle_population.validate_source, fetching.vehicle_population.load_history_manifest]
   vehicle_survival_interim:
     path: inputs/1_interim/vehicle_survival
@@ -222,7 +258,7 @@ artifacts:
     producers:
       - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
       - parameterization.road_lifetimes_survival.build_lifetime_artifacts
-    consumers: [reviewers]
+    consumers: [validation.vehicle_stock_diagnostic, reviewers]
     validation_surfaces: [parameterization.road_lifetimes_survival.transition_findings]
   road_aggregation:
     path: inputs/2_processed/road_aggregation
@@ -239,6 +275,9 @@ artifacts:
       - parameterization.build_efficiencies
       - parameterization.build_costs
       - parameterization.road_embodied_emissions
+      - validation.ldv_efficiency_diagnostic
+      - validation.vehicle_stock_diagnostic
+      - validation.rating_stock_benchmark
     validation_surfaces:
       - parameterization.road_aggregation.validate_vehicle_mapping
       - parameterization.road_aggregation.mapping_coverage
@@ -320,21 +359,21 @@ artifacts:
     layer: interim
     owner: parameterization.build_efficiencies
     producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
-    consumers: [parameterization.build_efficiencies, reviewers]
+    consumers: [parameterization.build_efficiencies, validation.ldv_efficiency_diagnostic, reviewers]
     validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
   efficiencies_processed:
     path: inputs/2_processed/efficiencies
     layer: processed
     owner: parameterization.build_efficiencies
     producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
-    consumers: [build_transport, reviewers]
+    consumers: [build_transport, validation.ldv_efficiency_diagnostic, reviewers]
     validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
   efficiencies_validation:
     path: inputs/validation/efficiencies
     layer: input_validation
     owner: parameterization.build_efficiencies
     producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
-    consumers: [reviewers]
+    consumers: [validation.ldv_efficiency_diagnostic, reviewers]
     validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
   costs_interim:
     path: inputs/1_interim/transport_costs
@@ -378,7 +417,7 @@ artifacts:
     producers:
       - parameterization.road_aggregation.build_mapping_diagnostic_artifacts
       - parameterization.vehicle_mapping_bootstrap.main
-    consumers: [fetching.vpic_vehicle_types, fetching.vpic_model_years, reviewers]
+    consumers: [fetching.vpic_vehicle_types, fetching.vpic_model_years, validation.vehicle_stock_diagnostic, reviewers]
     validation_surfaces:
       - parameterization.road_aggregation.mapping_coverage
       - parameterization.vehicle_mapping_bootstrap.bootstrap_coverage
@@ -390,7 +429,7 @@ artifacts:
       - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
       - parameterization.road_lifetimes_survival.build_lifetime_artifacts
       - parameterization.road_stocks_and_demands.build_existing_stock_age_artifacts
-    consumers: [reviewers]
+    consumers: [validation.vehicle_stock_diagnostic, reviewers]
     validation_surfaces:
       - parameterization.road_lifetimes_survival.evaluate_mto_survival_decision
       - parameterization.road_lifetimes_survival.transition_findings

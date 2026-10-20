@@ -463,7 +463,7 @@ flowchart LR
 
     p0["`**Road aggregation mapping**
       • *LDVs:* map vehicle size classes and derive efficiency aggregation weights
-      *MTO Report A is mapped into NRCan and NLR classes via MTO make-model similarity*<br>
+      *MTO Report A is mapped into NRCan and ATB classes via MTO make-model similarity*<br>
       • *MD/HD trucks:* map truck weight classes and derive efficiency aggregation weights
       *Report 4 distributes medium truck gross weight class cohorts*<br>
       • *HD trucks:* derive regional- and long-haul activity weights`"]
@@ -961,35 +961,50 @@ flowchart LR
     Registered MY2022 BEV/PHEV extract:<br>
     • Baseline PEV sales and charge-depleting ranges<br>
     • US car and light-truck market classes"}
-  s2@{shape: docs, label: "**Backend-owned technology template**
-    New BEV/PHEV range variants for cars, passenger light trucks, and freight light trucks"}
+  s2@{shape: processes, label: "**Road aggregation maps**
+    Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
   %% ############ Processes ###########
-  p2["`**Range buckets and within-group shares**
-    • Assign configured CD-range buckets<br>
-    • Sum sales by market class, powertrain, and bucket<br>
+  p2["`**PEV range buckets and market shares**
+    • Assign configured charge-depletion range buckets<br>
+    • Sum sales by vehicle class, powertrain, and CD range<br>
     • Reject unresolved sales; retain the full denominator`"]
+  s1 -- epa_omega_baseline.py --> p2
+  s2 -- road_aggregation.py --> p2
+
   p0@{shape: hex, label: "**config/scenarios/**
-    *BEV_PHEV_range_representation.mode:*
-    new_capacity_shares"}
+    *BEV_PHEV_range_representation:*
+    new_capacity_shares or representative_archetype"}
+  p2 -- "ldv_ev_ranges.py" --> p0
+
   p3["`**Minimum new-capacity shares**
     • Map US class shares to Canadian LDV categories<br>
     • Group each range variant within its new-build class/powertrain family<br>
     • Repeat shares across configured regions and model vintages`"]
+  p0 -. new_capacity_shares .-> p3
 
-  s1 -- epa_omega_baseline.py --> p2
-  p2 -- ldv_ev_ranges.py --> p3
-  p0 --> p3
-  s2 -- technology.csv --> p3
-  p2 --> a1@{shape: docs, label: "**Range review and integrity evidence**
-    Source records, bucket totals, unresolved sales, and source/DQ lineage
-    *inputs/validation/ldv_range_representation/*"}
-  p3 -- ldv_ev_ranges.py --> o1[/"`***limit_new_capacity_share***
-    [fraction]
-    *Operator: ≥*
-    New capacity only`"/]
-  p3 -- ldv_ev_ranges.py --> o2[/"`***tech_group, tech_group_member***
+  p3 -. "ldv_ev_ranges.py" .-> o1[/"`***limit_new_capacity_share***
+    [-]
+    *Operator: ≥*`"/]
+  p3 -. "ldv_ev_ranges.py" .-> o2[/"`***tech_group, tech_group_member***
     Backend-owned numerator and denominator membership`"/]
+
+  oi2[/"`LD-PEV range family params, e.g.: 
+    ***efficiency***
+    ***cost_invest***
+    ***cost_variable***`"/]
+  p4["`**Replace LD-PEV range variants with market-share aggregates**
+    • Use PEV range market shares<br>
+    • Derive representative parameter aggregates<br>
+    • Replace LD-PEV range archetypes and parameters with aggregate ones`"]
+  oi2 -- ldv_ev_ranges.py --> p4
+  p0 -. representative_archetype .-> p4
+
+  o3[/"`Representative LD-PEV params, e.g.:
+    ***efficiency***
+    ***cost_invest***
+    ***cost_variable***`"/]
+  p4 -. "ldv_ev_ranges.py" .-> o3
 
   %% --- Hyperlinks ---
   click s1 "https://www.epa.gov/regulations-emissions-vehicles-and-engines/optimization-model-reducing-emissions-greenhouse-gases"
@@ -997,15 +1012,11 @@ flowchart LR
 
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
-| Registered source snapshot | LDV BEVs and PHEVs | Read the registered OMEGA MY2022 compact extract; verify pinned bytes/SHA256, 78 records, and BEV/PHEV sales totals. Routine replay reads neither the parent archive nor the legacy notebook and does not rerun OMEGA. Source identity and pins belong to [sources.yaml](../config/sources.yaml). #to-review |
-| Native row and weight basis | LDV BEVs and PHEVs | Retain original source-row identity, on-road charge-depleting miles, and modeled sales. Map regulatory `truck` to `light_truck`; use sales weights rather than catalogue-row counts or joins to vehicle-rating data. #to-review |
-| Range buckets | LDV BEVs and PHEVs | Use [rules.yaml](../config/parameters/rules.yaml) boundaries: BEV ≤150, (150, 250], (250, 350], and >350 miles; PHEV <35 and ≥35 miles. These legacy composition bins differ from efficiency-rating bins. #to-review |
-| Complete within-group shares | US cars and light trucks, separately by powertrain | Divide bucket sales by all sales in the same market class/powertrain; retain zero-sales buckets and unresolved sales in the denominator. Any unresolved positive sales, nonpositive group total, or share sum outside the configured tolerance blocks share preparation; do not renormalize incomplete evidence. #to-review |
-| Geographic and temporal proxy | Cars; passenger and freight light trucks | Apply US car shares to Canadian cars and US light-truck shares to both light-truck categories, unchanged across configured regions and model vintages. These are range shares within a powertrain, not BEV/PHEV adoption shares. #to-review |
-| Minimum new-capacity shares | New LDV BEVs and PHEVs | Numerator: one range variant. Denominator: all new-build variants in the same category/powertrain. Validate complete, unambiguous template membership; emit `ge` (≥) shares for every configured region/model vintage, excluding existing stock. #to-review |
-| Scenario alternatives | New LDV BEVs and PHEVs | `none` adds no new-vehicle range constraints. `representative_archetype` replaces new range families with six representatives using supplied, validated parameter batches, without share constraints; require complete coverage, matching units, and identical capacity-to-activity, utilization, fixed lifetimes, and range survival curves. Its PHEV horizon-mean energy split conserves total energy; component-fuel differences are audited. #to-review |
-| Existing stock and charging composition | Existing LDV BEVs/PHEVs; LDV charging profiles | Existing representatives reuse OMEGA weights for range-specific parameters independently of the new-vehicle mode, preserving stock totals and cohort ages. Frozen charging profiles already contain fleet/range composition; do not multiply them by these shares again. #to-review |
-| Provenance and output boundary | Share rows and group structure | Carry registered OMEGA source/transformation and all five DQ fields on share rows; register groups under an internal structural `data_set`. Review evidence belongs in `inputs/validation/ldv_range_representation/`; typed share/group rows in `inputs/2_processed/ldv_range_representation/` pass through the shared validated-insertion contract. #to-review |
+| PEV range buckets | Light-duty BEVs and PHEVs | Get EPA OMEGA baseline vehicle classes, charge-depleting (CD) miles, and modeled sales. Map regulatory `truck` to `light_truck`; use sales weights and CD-range buckets: BEV ≤150, (150, 250], (250, 350], and >350 miles; PHEV <35 and ≥35 miles. NRCan efficiency ratings use these same buckets. |
+| Scenario range representation | Light-duty BEVs and PHEVs | `none` adds no new-vehicle range constraints; `representative_archetype` replaces new range families with representative aggregates; `new_capacity_shares` enforces fixed market-share constraint on PEV range compositions by class.  |
+| Minimum new-capacity shares | Light-duty BEVs and PHEVs | Numerator: one range variant. Denominator: all range variants in the same category/powertrain. Validate complete, unambiguous template membership; emit `ge` (≥) shares for every configured region/model vintage, excluding existing stock. |
+| Representative aggregates | Light-duty BEVs and PHEVs | Use supplied, validated parameter batches, without share constraints; require complete coverage, matching units, and identical utilization, fixed lifetimes, and range survival curves. Its PHEV horizon-mean energy split conserves total energy; component-fuel differences are audited. |
+| Existing stock and charging composition | Existing LD BEVs/PHEVs | Existing representatives reuse OMEGA weights for range-specific parameters independently of the new-vehicle mode, preserving stock totals and cohort ages. Frozen charging profiles already contain fleet/range composition; do not multiply them by these shares again. |
 
 ### `capacity_factor_tech` for BEV charging profiles; pending refactor
 

@@ -15,6 +15,14 @@ inputs/1_interim/*
 inputs/validation/*
 inputs/playground/
 # outputs/
+# Local rebuilds and notebook state; maintain their producers, not build snapshots.
+/outputs/logs/
+/outputs/validation/notebook_evidence/
+/outputs/validation/ldv_efficiency_diagnostic/
+/outputs/validation/notebook_diagnostics_build.json
+/outputs/sqlite/canoe_transport_notebook_diagnostics.sqlite
+**/__marimo__/
+/debug.log
 .agents/skills/*
 .agents/plans/*
 tmp/

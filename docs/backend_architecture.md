@@ -190,7 +190,18 @@ Full-history preparation is explicit through `fetching.vehicle_population --no-d
 without `--year`. Historical consumers validate registered edition coverage and normalized
 file hashes before reading it. The vehicle notebook also needs mapping and MTO diagnostics;
 the growth notebook needs `parameterization.road_adoption_constraints` after its fingerprinted inputs
-change. Both notebooks read persisted artifacts without running ETL.
+change. The stock and efficiency notebooks use the opt-in `notebook_diagnostics.yaml`
+preset with the same native builder. It prepares historical/mapping/retention review
+evidence and the diagnostic-only MTO rating benchmark, then snapshots their exact
+data in compressed CSVs and their configuration through `validation.notebook_evidence`. A latest-successful
+index advances only after database publication. Readers load these recorded bundles,
+including their build identity and database hash, without selecting a scenario or
+running ETL. Ordinary builds preserve these snapshots and do not require notebook
+evidence. Only bundles referenced by the latest index are retained after successful
+publication; these local generated files are excluded from Git. Supported commands
+regenerate notebook evidence from registered/reviewed inputs. Agent judgments,
+acceptance captures, screenshots and probes are disposable development work in
+ignored `tmp/`, not inputs to that handoff or source provenance. #to-review
 
 For a change, follow the affected `config/paths.yaml` artifact family to its owner,
 producers, consumers, and validation surfaces, then verify the current code and focused

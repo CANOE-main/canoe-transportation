@@ -27,7 +27,7 @@ from utils import load_config_bundle, load_conversion_factors
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 @pytest.fixture

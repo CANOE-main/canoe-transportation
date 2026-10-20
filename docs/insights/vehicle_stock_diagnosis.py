@@ -8,20 +8,12 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
-    from pathlib import Path
-
     import altair as alt
     import marimo as mo
     import pandas as pd
 
-    from fetching.vehicle_population import load_history_manifest
-    from utils import (
-        load_config_bundle,
-        load_harmonization_rules,
-        resolve_artifact_path,
-        resolve_input_path,
-        resolve_parameter_path,
-    )
+    from validation.notebook_evidence import prepare_command
+    from validation.vehicle_stock_diagnostic import load_stock_diagnostic
 
     NLR_ORDER = ["Compact", "Midsize", "Small SUV", "Midsize SUV", "Pickup"]
     NRCAN_CLASS_ORDER = {
@@ -78,24 +70,19 @@ def _():
     return (
         NLR_ORDER,
         NRCAN_CLASS_ORDER,
-        Path,
         STATUS_COLORS,
         STATUS_ORDER,
         alt,
         chart_ui,
-        load_config_bundle,
-        load_harmonization_rules,
-        load_history_manifest,
+        load_stock_diagnostic,
         mo,
         pd,
-        resolve_artifact_path,
-        resolve_input_path,
-        resolve_parameter_path,
+        prepare_command,
     )
 
 
 @app.cell
-def introduction(mo):
+def introduction(mo, prepare_command):
     mo.vstack(
         [
             mo.md("""
@@ -115,19 +102,12 @@ def introduction(mo):
             """),
             mo.md("""
             ### Reading boundary
-            This is an artifact-backed diagnostic over
-            version-controlled configuration. It does not fetch sources, repeat ETL,
-            modify configuration, promote diagnostic evidence, or create notebook
-            exports. Open it after preparing the production build and the explicit
-            historical, mapping, and MTO diagnostic artifacts listed below.
-
-            The selector only points the notebook to the configuration and artifact routes
-            used by that completed build; it is not a scenario-comparison control. The MTO
-            mapping and diagnostic evidence is expected to remain the same across modelling
-            scenarios unless their source configuration or artifact routes differ. Select
-            the scenario that was built rather than cycling through scenarios to reinterpret
-            the evidence. `PASSENGER` and `COMMERCIAL` pass through the same mapping and
-            cohort logic but remain visible as distinct MTO source categories.
+            This notebook reads the evidence captured by the latest successful diagnostic
+            build, including its recorded configuration and file hashes. Reload after a
+            new build to inspect its updated evidence. Opening the notebook never fetches
+            sources, repeats ETL, changes mappings, or promotes diagnostic results.
+            `PASSENGER` and `COMMERCIAL` use the same mapping and cohort logic while
+            remaining distinct MTO source categories.
             """),
             mo.md("""
             ### Working assumptions, owners, and interpretation boundaries
@@ -144,57 +124,19 @@ def introduction(mo):
             | Accepted lifetime inputs | `parameterization.road_lifetimes_survival` | NHTSA CAFE supplies car, light-truck, and medium-truck survival evidence. `heavy_truck_survival_source` selects NEMS or EPA MOVES5 for heavy trucks. The selected source supplies both fixed median-equivalent lifetimes and survival curves, according to `survival_curves`. |
             | MTO apparent-retention diagnostics | `parameterization.road_lifetimes_survival --mto-diagnostics` | A rate compares the same source category, make code, model code, and vintage in consecutive editions. Starting ages 0–35 are eligible, transition coverage sums starting exposure, and rates above 100% retention remain visible. These independently derived diagnostics do not become accepted parameters; future SAAQ evidence can reopen the source decision. |
             """),
-            mo.md("""
-            ### Preparing the artifact-backed notebook
+            mo.md(f"""
+            ### Prepare once, then reload after updated builds
 
-            The native scenario build prepares production source and parameter products.
-            This research notebook additionally reads historical and mapping diagnostics;
-            prepare those offline with their owning entrypoints, in this order:
+            Run the offline preset before using either diagnostic notebook:
 
             ```text
-            uv run python src/build_transport.py --scenario config/scenarios/legacy_reproduction.yaml --overwrite
-            uv run python -m fetching.vehicle_population --scenario config/scenarios/legacy_reproduction.yaml --no-download
-            uv run python -m fetching.fueleconomy_vehicles --scenario config/scenarios/legacy_reproduction.yaml --no-download
-            uv run python -m parameterization.road_aggregation --scenario config/scenarios/legacy_reproduction.yaml --mapping-diagnostics
-            uv run python -m parameterization.road_lifetimes_survival --scenario config/scenarios/legacy_reproduction.yaml --mto-diagnostics
+            {prepare_command()}
             ```
 
-            A production build refreshes its selected edition without replacing full
-            history. Historical preparation uses every registered usable edition; 2015
-            remains excluded by configuration. Missing or incomplete history fails fast
-            and is not generated by opening the notebook. Use the same scenario path for
-            every command and the selector below. Repeat diagnostics when their inputs change.
-
-            The heavy-truck comparison also requires both normalized source schedules,
-            even when the selected production scenario uses only NEMS. Prepare the EPA
-            alternative explicitly from its registered PDF cache before comparing:
-
-            ```text
-            uv run python -m fetching.assorted_sources --scenario config/scenarios/legacy_reproduction.yaml --moves5-survival --no-download
-            ```
-
-            The notebook reads these artifacts without fetching or rebuilding them.
-
-            The reviewed `config/parameters/vehicle_size_class_map.csv` is included in a
-            blank checkout. A normal scenario build applies its accepted ranges through
-            `road_aggregation`. The separate `--mapping-diagnostics` operation calculates
-            ranked similarity scores and unresolved-key evidence; neither reconstructs
-            the reviewed map.
-
-            `parameterization.vehicle_mapping_bootstrap` is the separate, computationally
-            expensive maintainer operation. It rereads every usable Report A edition,
-            evaluates historical make/model/model-year support, incorporates the scored
-            candidate evidence, and collapses accepted years into reviewed vintage ranges.
-            The notebook does not load its `vehicle_size_class_map_bootstrap.csv` evidence,
-            so the bootstrap is not a prerequisite for opening a fully built scenario.
-
-            Run the bootstrap once only when the all-edition mapping reconstruction must be
-            audited or repeated and that evidence is missing. Write the reconstructed map
-            to a separate review file so the audit does not replace the committed map:
-
-            ```text
-            uv run python -m parameterization.vehicle_mapping_bootstrap --scenario config/scenarios/legacy_reproduction.yaml --output inputs/validation/vehicle_mapping/vehicle_size_class_map_rebuilt.csv
-            ```
+            This build prepares production parameters, complete registered Ontario history,
+            mapping diagnostics, MTO retention evidence, and both heavy-truck survival
+            schedules, then records their inputs together. It reads the reviewed vehicle
+            map; the separate maintainer mapping bootstrap is not a prerequisite.
             """),
             mo.md("""
             ### Mapping bootstrap and promotion policy
@@ -226,123 +168,16 @@ def introduction(mo):
 
 
 @app.cell
-def _(Path, mo):
-    repo_root = Path(__file__).resolve().parents[2]
-    scenario_options = [
-        path.relative_to(repo_root).as_posix()
-        for path in sorted((repo_root / "config/scenarios").glob("*.yaml"))
-    ]
-    if not scenario_options:
-        raise FileNotFoundError("No scenario YAML files exist under config/scenarios")
-    default_scenario = (
-        "config/scenarios/legacy_reproduction.yaml"
-        if "config/scenarios/legacy_reproduction.yaml" in scenario_options
-        else scenario_options[0]
-    )
-    scenario_selector = mo.ui.dropdown(
-        options=scenario_options,
-        value=default_scenario,
-        label="Scenario configuration",
-        full_width=True,
-    )
-    scenario_selector
-    return repo_root, scenario_selector
+def _(mo):
+    reload_evidence = mo.ui.run_button(label="Reload latest completed build")
+    reload_evidence
+    return (reload_evidence,)
 
 
 @app.cell
-def load_evidence(
-    Path,
-    load_config_bundle,
-    load_harmonization_rules,
-    load_history_manifest,
-    pd,
-    resolve_artifact_path,
-    resolve_input_path,
-    resolve_parameter_path,
-):
-    def load_evidence(selected_scenario: str | Path) -> dict[str, pd.DataFrame]:
-        bundle = load_config_bundle(selected_scenario)
-        ontario_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
-        ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
-        road_rules = load_harmonization_rules(bundle, "road_aggregation")
-        lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
-        source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
-        ceud_dir = resolve_input_path(bundle, "interim", ceud_rules["interim_subdir"])
-        road_dir = resolve_artifact_path(bundle, "road_aggregation")
-        review_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
-        survival_interim_dir = resolve_artifact_path(bundle, "vehicle_survival_interim")
-        lifetime_validation_dir = resolve_artifact_path(bundle, "lifetime_validation")
-        source_manifest = load_history_manifest(bundle)
-        latest_source_year = int(
-            pd.to_numeric(source_manifest["year"], errors="raise").max()
-        )
-        report4_rules = ontario_rules["reports"][4]
-        report5_rules = ontario_rules["reports"][5]
-        artifact_paths = {
-            "coverage": review_dir / road_rules["coverage_file"],
-            "unresolved_reason_detail": review_dir / road_rules["unresolved_reason_detail_file"],
-            "unresolved_reason_summary": review_dir / road_rules["unresolved_reason_summary_file"],
-            "mapped_fleet": road_dir / road_rules["mapped_current_stock_file"],
-            "nrcan_ceud": ceud_dir
-            / ceud_rules["region_output_template"].format(region="on"),
-            "vehicle_class_evidence": review_dir / road_rules["vehicle_class_evidence_file"],
-            "wards_comparison": road_dir / road_rules["wards_comparison_file"],
-            "status_long": source_dir / ontario_rules["long_status_file"],
-            "report4_distribution": source_dir
-            / report4_rules["distribution_output_template"].format(
-                year=latest_source_year
-            ),
-            "report5_distribution": source_dir
-            / report5_rules["distribution_output_template"].format(
-                year=latest_source_year
-            ),
-            "passenger_cohorts": survival_interim_dir / lifetime_rules["cohort_snapshot_file"],
-            "commercial_cohorts": survival_interim_dir / lifetime_rules["commercial_snapshot_file"],
-            "raw_key_transitions": survival_interim_dir / lifetime_rules["raw_key_transition_file"],
-            "ceud_class_retention": lifetime_validation_dir / lifetime_rules["ceud_class_retention_file"],
-            "ceud_scope_comparison": lifetime_validation_dir / lifetime_rules["ceud_scope_comparison_file"],
-            "transition_mapping_coverage": lifetime_validation_dir / lifetime_rules["transition_mapping_coverage_file"],
-            "mto_survival_decision": lifetime_validation_dir / lifetime_rules["mto_survival_decision_file"],
-            "legacy_survival": lifetime_validation_dir / lifetime_rules["legacy_survival_curves_file"],
-        }
-        frames: dict[str, pd.DataFrame] = {}
-        for key, artifact_path in artifact_paths.items():
-            if not artifact_path.is_file():
-                raise FileNotFoundError(
-                    "Generate Ontario backend artifacts before opening the diagnostic: "
-                    f"{artifact_path}"
-                )
-            frames[key] = pd.read_csv(artifact_path, low_memory=False)
-        history_years = set(pd.to_numeric(source_manifest["year"], errors="raise"))
-        status_years = set(pd.to_numeric(frames["status_long"]["report_year"], errors="raise"))
-        if status_years != history_years:
-            raise ValueError(
-                "Incomplete Ontario registration-status history; rebuild explicitly with "
-                "uv run python -m fetching.vehicle_population --no-download "
-                f"--scenario {selected_scenario}"
-            )
-        mapping_path = resolve_parameter_path(bundle, road_rules["vehicle_size_class_map_file"])
-        frames["mapping_config"] = pd.read_csv(mapping_path, low_memory=False)
-        frames["source_manifest"] = source_manifest
-        frames["scenario_switches"] = pd.DataFrame(
-            [
-                {
-                    "scenario": str(selected_scenario),
-                    "switch": switch,
-                    "value": value,
-                }
-                for switch, value in {**bundle.scenario.lifetimes.model_dump(),
-                                      "vkt_schedules": bundle.scenario.road_utilization.vkt_schedules}.items()
-            ]
-        )
-        return frames
-
-    return (load_evidence,)
-
-
-@app.cell
-def _(load_evidence, repo_root, scenario_selector):
-    evidence = load_evidence(repo_root / scenario_selector.value)
+def _(load_stock_diagnostic, reload_evidence):
+    reload_evidence.value
+    evidence = load_stock_diagnostic()
     return (evidence,)
 
 
@@ -350,18 +185,18 @@ def _(load_evidence, repo_root, scenario_selector):
 def _(evidence, mo):
     mo.vstack(
         [
-            mo.md("""
-            The table records the switches used to resolve this notebook's current
-            artifacts and interpretation gates. Changing the selector reloads the routes
-            and switches; it does not regenerate artifacts, so scenario-dependent products
-            must already have been built for the selected configuration.
+            mo.md(f"""
+            **Evidence build:** `{evidence['build_metadata']['build_id']}` ·
+            completed {evidence['build_metadata']['built_at']}. These switches were
+            recorded with the captured evidence. The associated database is
+            `{evidence['build_metadata']['database']['path']}`.
             """),
             mo.ui.table(
                 evidence["scenario_switches"],
                 selection=None,
                 pagination=False,
                 page_size=10,
-                label="Selected scenario switches",
+                label="Recorded build switches",
             ),
         ]
     )
@@ -2993,25 +2828,11 @@ def heavy_truck_survival_heading(mo):
 
 
 @app.cell
-def heavy_truck_survival_comparison_data(
-    load_config_bundle, load_harmonization_rules, repo_root, scenario_selector,
-):
-    from parameterization.road_lifetimes_survival import (
-        load_heavy_truck_survival_comparison,
-        median_equivalent_lifetimes,
-    )
-
-    comparison_bundle = load_config_bundle(repo_root / scenario_selector.value)
-    heavy_truck_survival = load_heavy_truck_survival_comparison(comparison_bundle)
-    heavy_truck_median_interpolation = str(load_harmonization_rules(
-        comparison_bundle, "road_lifetimes_survival",
-    )["interpolation"])
-    heavy_truck_medians = median_equivalent_lifetimes(
-        heavy_truck_survival, interpolation=heavy_truck_median_interpolation,
-    )
-    heavy_truck_selected_source = (
-        comparison_bundle.scenario.lifetimes.heavy_truck_survival_source
-    )
+def heavy_truck_survival_comparison_data(evidence):
+    heavy_truck_survival = evidence["heavy_truck_survival"]
+    heavy_truck_medians = evidence["heavy_truck_medians"]
+    heavy_truck_median_interpolation = evidence["heavy_truck_median_interpolation"]
+    heavy_truck_selected_source = evidence["heavy_truck_selected_source"]
     return (
         heavy_truck_median_interpolation,
         heavy_truck_medians,
