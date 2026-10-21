@@ -362,6 +362,7 @@ class ScenarioRoadUtilization(MappingModel):
 
 class ScenarioEfficiencies(MappingModel):
     atb_trajectory: str = Field(min_length=1)
+    rating_statistic: Literal["mean", "median"]
 
 
 class ScenarioCosts(MappingModel):

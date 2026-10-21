@@ -86,6 +86,7 @@ road_utilization:
 
 efficiencies:
   atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
+  rating_statistic: mean  # mean | median of distinct make-models
 
 costs:
   atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid

@@ -1575,7 +1575,7 @@ parameterization:
     stock_weighting:
       method: resolved_mto_model_year_stock
       unresolved_stock: exclude_and_report
-      uncovered_cohort: catalogue_class_weighted
+      uncovered_cohort: distinct_model_class_weighted
       variant_allocation: equal_distinct_variants
       weight_sum_tolerance: 1.0e-9
       rating_variant_identity_columns:
@@ -1594,11 +1594,17 @@ parameterization:
         - combined_cs_consumption_L_100_km
   ldv_efficiency_diagnostic:
     region: 'ON'
-    minimum_model_year: 1995
+    minimum_model_year: 2005
     bridge_years: [2010, 2030]
-    anchor_powertrains:
-      bev: bev_300_miles
-      phev: phev_35_miles
+    period_interpolation: pchip
+    interpolation_step_years: 0.25
+    distribution_year_step: 5
+    distribution_consumption_domains:
+      Cars: [4, 20]
+      Light trucks: [4, 25]
+    distribution_cd_consumption_domains:
+      Cars: [0, 10]
+      Light trucks: [0, 10]
     files:
       raw_sources: raw_source_trajectories.csv
       rating_distribution: rating_distribution.csv
@@ -1609,11 +1615,15 @@ parameterization:
       mto_benchmark: mto_weighting_benchmark.csv
       summary: summary.json
   efficiencies:
-    transformation_version: '5'
+    transformation_version: '8'
+    pev_historical_anchors:
+      bev: bev_300_miles
+      phev: phev_35_miles
     files:
       efficiency: efficiency.csv
       splits: limit_tech_input_split.csv
       annual: annual_efficiency_evidence.csv
+      periods: period_consumption_evidence.csv
       loads: road_load_factors.csv
       ratings: classified_rating_evidence.csv
       atb: aggregated_atb_consumption.csv
@@ -1623,13 +1633,15 @@ parameterization:
       findings: findings.csv
       integrity: integrity.json
     future_year_rule: interval_end
-    historical_aggregation: mean_annual_service_efficiency
+    historical_aggregation: age_distribution_stock_weighted_consumption
+    historical_stock_weighted_modes: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
     historical_first_bin: available_source_years_only
-    historical_single_year_technologies: {T_MDV_T_BEV_EX: 2023}
+    historical_single_year_technologies: {}
     historical_classes_without_capacity: []
     future_load_factor: base_year
     missing_rating_classes: renormalize_observed
-    missing_annual_rating: configured_analogue_index
+    missing_annual_rating: observed_years_with_explicit_period_fallback
+    source_point_selection: previous_observation_clamped
     historical_rating_observations: through_base_year
     historical_rating_baseline: latest_own_observation_indexed_to_base_year
     unknown_powertrain: error
@@ -1710,7 +1722,7 @@ parameterization:
       equivalent_gallon_hhv_fuel: {gge: gasoline, dge: diesel}
       # Retain source-native PHEV energy; final fuel-equivalent energy uses GREET HHV.
       phev_energy_basis: greet_hhv_fuel_plus_electricity
-      interpolation: linear_consumption
+      interpolation: exact_source_points
       extrapolation: error
     historical_index_fuels:
       medium_trucks:
@@ -1865,7 +1877,7 @@ parameterization:
     offroad:
       manual_file: efficiency_multipliers.csv
       period_upper_year: {through_2035: 2035, through_2050: 2050}
-      period_method: linear_interpolation_between_endpoints
+      period_method: previous_endpoint_clamped
       annual_improvement: efficiency_compound_growth
       # Rail rows already invert REGEN Table 7 consumption ratios (0.24, 0.65/0.6).
       ratio_interpretation:

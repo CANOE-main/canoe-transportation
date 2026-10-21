@@ -75,6 +75,7 @@ road_utilization:
 
 efficiencies:
   atb_trajectory: Mid
+  rating_statistic: mean
 
 costs:
   atb_trajectory: Mid

@@ -437,6 +437,9 @@ The cumulative MTO survival is a product of those empirical rates with an explic
 *Note: Some technologies are not represented in this diagram; see
 `config/parameters/rules.yaml` for implemented harmonization entries.*
 
+The diagram's NRCan-baseline branch describes non-PEV LDVs; the PEV shared-anchor
+exception is specified in the harmonization rules below. #to-review
+
 ```mermaid
 ---
 config:
@@ -553,12 +556,14 @@ flowchart LR
 | Map size classes and derive aggregation weights | Cars and light trucks | - Map MTO make-model-vintage keys from normalized NRCan Ratings, FuelEconomy.gov, and NHTSA vPIC API evidence<br>- Derive latest-snapshot fleet composition weights by mapped vehicle class |
 | Map weight classes and derive aggregation weights | MD/HD trucks | Map truck weight-rating counts to classes that align with Autonomie truck projection classes |
 | Derive regional- and long-haul activity weights | Heavy-duty trucks | Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
-| Aggregate efficiency ratings using mappings | Cars and light trucks | Use size-class aggregation weights to convert model-level fuel consumption ratings into fleet-average efficiencies by powertrain |
+| Aggregate efficiency ratings using mappings | Cars and light trucks | Average rated variants within exact Make/Model, model-year, size-class, powertrain/range and native-unit cohorts. Take the distinct-model mean (or configured median), then apply MTO class weights. MTO keys provide class/vintage evidence, not powertrain or range weights. #to-review |
+| Backcast PEV ranges from common historical anchors | Cars and light trucks | Use exact BEV300/PHEV35 NRCan consumption ratios: `ATB_range(base) × NRCan_anchor(year) / NRCan_anchor(base)`. PHEVs use CD ratios; ATB provides utility-weighted total energy. At and after the base year use direct ATB source points. Aggregate available historical observations without interpolation; wholly empty bins may use an explicit configured analogue, with coverage and actual index source recorded. #to-review |
 | Use incumbent fleet fuel consumption | MD/HD trucks and off-road | Use NRCan incumbent fleet avg. fuel consumptions to backcast NLR ATB gasoline and diesel baselines; future values are used directly |
-| Index existing efficiencies to future multipliers | All | Apply alternative-powertrain and future-period multipliers to existing efficiencies (e.g., 2030 battery-electric and 2040 fuel-cell multipliers) |
+| Index Canadian rating baselines to future improvements | Non-PEV cars and light trucks | Apply the selected ATB powertrain's consumption ratio to its Canadian base-year consumption. PEVs use the separate shared historical-index rule above. #to-review |
 | Special handling of buses | Transit, school, intercity | Use reported Autonomie values for existing and future transit and school bus efficiencies; use EPRI REGEN inputs for intercity buses |
 | Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) efficiencies |
-| Convert to service-output efficiency units | All | Convert source efficiencies (e.g., L/100 km or mpg) into demand units (e.g., bn tonne-km/PJ) with NRCan CEUD load factors; using HHVs. |
+| Prepare period consumptions | All | Use the [existing-period year bins](#existing-period-handling) through `base_year`. Weight car/truck consumption per distance by annual cohort counts from the fleet age distribution before lifetime eligibility/redistribution, renormalizing over available observations and reporting covered stock. Average occupancy/payload with the same year weights. Existing PEV ranges share family cohort weights and combine consumption arithmetically with OMEGA shares. Buses, motorcycles and off-road use equal annual consumption/intensity weights. Future periods use exact interval-end source points. #to-review |
+| Convert to service-output efficiency units | All | As the final step, divide the aggregated occupancy/payload by aggregated energy per vehicle-km. For CEUD energy-per-service inputs, invert the aggregated intensity once. Source fuel-economy values and relative efficiency factors are converted to consumption before indexing or averaging; use configured HHVs and units. #to-review |
 
 **Note on light-duty PHEVs**: The CANOE-transportation legacy backend used to compile Islam et al. 2023 Autonomie results directly, opting for the parallel PHEV powertrain configuration, whereas the v2.0 backend compiles the same Autonomie results via the NLR ATB database, where only the EREV voltec PHEV powertrain configuration is listed. This will result in inconsistent PHEV parameters between both versions.
 

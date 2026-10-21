@@ -494,6 +494,7 @@ def prepare_transport_contribution(
 
     selected_capacity = True if include_existing_capacity is None else include_existing_capacity
     parameter_rows: list[ExistingCapacity] = []
+    capacity_contexts: list[ResolvedProvenance] = []
     contexts: list[ResolvedProvenance] = [*range_preparation.provenance_contexts]
     if charging_profiles is not None:
         contexts.extend(charging_profiles.provenance_contexts)
@@ -552,6 +553,8 @@ def prepare_transport_contribution(
         with log_duration(LOGGER, "Efficiencies (efficiency, limit_tech_input_split)"):
             efficiencies = prepare_efficiency_rows(
                 bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
+                existing_capacity_contexts=capacity_contexts if selected_capacity else None,
+                existing_capacity_audit=parameter_audit if selected_capacity else None,
                 range_evidence=range_evidence,
             )
         efficiency_rows = efficiencies.efficiency_rows
