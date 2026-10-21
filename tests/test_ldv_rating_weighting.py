@@ -191,7 +191,7 @@ def prepared_benchmark(tmp_path, monkeypatch):
     rules = {
         "stock_weighting": {
             **policy(), "method": "resolved_mto_model_year_stock",
-            "unresolved_stock": "exclude_and_report", "uncovered_cohort": "catalogue_class_weighted",
+            "unresolved_stock": "exclude_and_report", "uncovered_cohort": "distinct_model_class_weighted",
         },
         "files": {"matches": "matches.csv", "allocations": "allocations.csv", "weighted": "weighted.csv"},
     }
@@ -212,7 +212,7 @@ def prepared_benchmark(tmp_path, monkeypatch):
         "class_mean_mj_per_vkm": 0.108, "native_unit": "kWh/100 km",
         "observations": 2, "original_weight": 1, "observed_weight_sum": 1,
         "weight": 1, "range_class_mean_km": 450, "matched_stock": 0,
-        "cohort_matched_stock": 0, "aggregation_method": "catalogue_class_weighted",
+        "cohort_matched_stock": 0, "aggregation_method": "distinct_model_class_weighted", "rating_statistic": "mean",
     }])
     catalogue.to_csv(routes["efficiencies_interim"] / "catalogue.csv", index=False)
     pd.DataFrame([stock(count=90), stock(model="Mixed", count=10)]).to_csv(
@@ -222,7 +222,10 @@ def prepared_benchmark(tmp_path, monkeypatch):
     monkeypatch.setattr(benchmark, "load_harmonization_rules", lambda _bundle, key: modules[key])
     monkeypatch.setattr(benchmark, "resolve_artifact_path", lambda _bundle, key: routes[key])
     monkeypatch.setattr(benchmark, "load_rating_evidence", lambda _bundle, **_kwargs: canonical)
-    bundle = SimpleNamespace(scenario=SimpleNamespace(existing_capacity=SimpleNamespace(vehicle_population_year=2025)))
+    bundle = SimpleNamespace(scenario=SimpleNamespace(
+        existing_capacity=SimpleNamespace(vehicle_population_year=2025),
+        efficiencies=SimpleNamespace(rating_statistic="mean"),
+    ))
     return bundle, routes
 
 
@@ -245,11 +248,60 @@ def test_opt_in_benchmark_preserves_production_sources_and_reports_unresolved_st
     assert weighted.aggregation_method.item() == "mto_stock_weighted"
 
 
-def test_benchmark_rejects_stale_promoted_stock_weighting(prepared_benchmark):
+@pytest.mark.parametrize("method", ["mto_stock_weighted", "catalogue_class_weighted"])
+def test_benchmark_rejects_stale_production_aggregation(prepared_benchmark, method):
     bundle, routes = prepared_benchmark
     path = routes["efficiencies_interim"] / "catalogue.csv"
-    pd.read_csv(path).assign(aggregation_method="mto_stock_weighted").to_csv(path, index=False)
-    with pytest.raises(ValueError, match="production catalogue/class"):
+    pd.read_csv(path).assign(aggregation_method=method).to_csv(path, index=False)
+    with pytest.raises(ValueError, match="production distinct-model/class"):
+        benchmark.build_rating_stock_benchmark(bundle)
+    assert not list(routes["rating_stock_benchmark"].iterdir())
+
+
+@pytest.mark.parametrize("statistic", ["mean", "median"])
+def test_benchmark_preserves_matching_production_statistic_on_uncovered_cohorts(prepared_benchmark, statistic):
+    bundle, routes = prepared_benchmark
+    bundle.scenario.efficiencies.rating_statistic = statistic
+    path = routes["efficiencies_interim"] / "catalogue.csv"
+    production = pd.read_csv(path).assign(rating_statistic=statistic)
+    uncovered = production.assign(year=2022, native_class_mean=9.0, class_mean_mj_per_vkm=.324)
+    pd.concat([production, uncovered], ignore_index=True).to_csv(path, index=False)
+
+    paths = benchmark.build_rating_stock_benchmark(bundle)
+
+    result = pd.read_csv(paths["weighted"])
+    fallback = result.loc[result.year.eq(2022)]
+    assert fallback.native_class_mean.item() == 9
+    assert fallback.class_mean_mj_per_vkm.item() == pytest.approx(.324)
+    assert fallback.rating_statistic.item() == statistic
+    assert fallback.aggregation_method.item() == "distinct_model_fallback_no_resolved_stock"
+    assert result.loc[result.year.eq(2023), "aggregation_method"].item() == "mto_stock_weighted"
+    assert result.loc[result.year.eq(2023), "native_class_mean"].item() == 3
+
+
+@pytest.mark.parametrize(("prepared", "selected"), [("mean", "median"), ("median", "mean")])
+def test_benchmark_rejects_scenario_rating_statistic_mismatch(prepared_benchmark, prepared, selected):
+    bundle, routes = prepared_benchmark
+    bundle.scenario.efficiencies.rating_statistic = selected
+    path = routes["efficiencies_interim"] / "catalogue.csv"
+    pd.read_csv(path).assign(rating_statistic=prepared).to_csv(path, index=False)
+    with pytest.raises(ValueError, match="statistic differs from the selected scenario"):
+        benchmark.build_rating_stock_benchmark(bundle)
+    assert not list(routes["rating_stock_benchmark"].iterdir())
+
+
+@pytest.mark.parametrize("statistics", [None, ["mean", "median"], ["mean", None], ["mode"]])
+def test_benchmark_rejects_missing_mixed_or_unsupported_production_statistic(prepared_benchmark, statistics):
+    bundle, routes = prepared_benchmark
+    path = routes["efficiencies_interim"] / "catalogue.csv"
+    production = pd.read_csv(path)
+    if statistics is None:
+        production = production.drop(columns="rating_statistic")
+    else:
+        production = pd.concat([production] * len(statistics), ignore_index=True)
+        production["rating_statistic"] = statistics
+    production.to_csv(path, index=False)
+    with pytest.raises(ValueError, match="one mean or median rating statistic"):
         benchmark.build_rating_stock_benchmark(bundle)
     assert not list(routes["rating_stock_benchmark"].iterdir())
 

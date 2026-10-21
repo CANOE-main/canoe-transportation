@@ -317,8 +317,8 @@ artifacts:
     layer: interim
     owner: parameterization.build_existing_capacity
     producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
-    consumers: [parameterization.build_existing_capacity, reviewers]
-    validation_surfaces: [parameterization.build_existing_capacity.validate_capacity_inputs]
+    consumers: [parameterization.build_existing_capacity, parameterization.build_efficiencies, validation.ldv_efficiency_diagnostic, reviewers]
+    validation_surfaces: [parameterization.build_existing_capacity.validate_capacity_inputs, parameterization.build_efficiencies.historical_stock_evidence]
   existing_capacity_processed:
     path: inputs/2_processed/existing_capacity
     layer: processed
@@ -360,7 +360,7 @@ artifacts:
     owner: parameterization.build_efficiencies
     producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
     consumers: [parameterization.build_efficiencies, validation.ldv_efficiency_diagnostic, reviewers]
-    validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
+    validation_surfaces: [parameterization.build_efficiencies.aggregate_consumption_period, parameterization.build_efficiencies.validate_efficiency_outputs]
   efficiencies_processed:
     path: inputs/2_processed/efficiencies
     layer: processed

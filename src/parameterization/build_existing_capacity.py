@@ -773,6 +773,12 @@ def build_existing_capacity_artifacts(
         pd.DataFrame([row.model_dump(mode="python") for row in rows]),
         processed_output / "existing_capacity.csv",
     )
+    annual_stock_path = interim_output / road_rules["fuel_shares_file"]
+    audit["annual_stock_evidence"] = {
+        "path": str(annual_stock_path.relative_to(bundle.repo_root)
+                    if annual_stock_path.is_relative_to(bundle.repo_root) else annual_stock_path),
+        "sha256": file_sha256(annual_stock_path),
+    }
     validation_output.mkdir(parents=True, exist_ok=True)
     (validation_output / "integrity.json").write_text(
         json.dumps(audit, indent=2) + "\n", encoding="utf-8"

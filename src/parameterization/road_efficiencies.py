@@ -51,6 +51,51 @@ def interpolate(
     return float(np.interp(year, years, values))
 
 
+def observed_value(
+    frame: pd.DataFrame, year: int, value: str, *, year_col: str = "year", allow_zero: bool = False,
+) -> float | None:
+    """Read one exact source observation without filling absent model years."""
+    selected = frame.loc[frame[year_col].eq(year)]
+    if len(selected) > 1:
+        raise ValueError(f"Ambiguous {value} observation for {year}")
+    if selected.empty or pd.isna(selected.iloc[0][value]):
+        return None
+    if allow_zero:
+        observed = float(selected.iloc[0][value])
+        if not isfinite(observed) or observed < 0:
+            raise ValueError(f"{value} observation for {year} must be finite and non-negative: {observed}")
+        return observed
+    return positive(selected.iloc[0][value], f"{value} observation for {year}")
+
+
+def require_observed_value(
+    frame: pd.DataFrame, year: int, value: str, *, year_col: str = "year", allow_zero: bool = False,
+) -> float:
+    """Require the source year used by an annual calculation."""
+    observed = observed_value(frame, year, value, year_col=year_col, allow_zero=allow_zero)
+    if observed is None:
+        raise ValueError(f"Missing exact {value} observation for {year}")
+    return observed
+
+
+def source_point(
+    frame: pd.DataFrame, year: int, value: str, *, year_col: str = "year"
+) -> tuple[float, int]:
+    """Hold the previous source observation, clamping to the first before coverage."""
+    ordered = frame.copy()
+    ordered[year_col] = pd.to_numeric(ordered[year_col], errors="raise")
+    if ordered.empty or ordered[year_col].duplicated().any():
+        raise ValueError(f"Missing or ambiguous {value} source points")
+    ordered = ordered.sort_values(year_col)
+    years = ordered[year_col]
+    if not np.isfinite(years).all() or years.mod(1).ne(0).any():
+        raise ValueError(f"Invalid {year_col} source points")
+    available = ordered.loc[years.le(year)]
+    selected = available.iloc[-1] if not available.empty else ordered.iloc[0]
+    source_year = int(selected[year_col])
+    return positive(selected[value], f"{value} source point {source_year}"), source_year
+
+
 def ceud_series(
     frame: pd.DataFrame, table: int, series: str, unit: str
 ) -> pd.DataFrame:
@@ -122,12 +167,11 @@ def derive_load_factors(
 
 
 def phev_historical_index_mode(rules: dict) -> str:
-    """Retain recorded CS builds while new builds select the reviewed CD index."""
+    """Use the reviewed CD rate only as a historical relative-consumption index."""
     policy = rules["ratings"]["phev_historical_index"]
-    modes = {"combined_cs_consumption": "CS", "combined_cd_consumption": "CD"}
-    if policy not in modes:
+    if policy != "combined_cd_consumption":
         raise ValueError(f"Unsupported ratings.phev_historical_index: {policy!r}")
-    return modes[policy]
+    return "CD"
 
 
 def classify_ratings(
@@ -232,8 +276,8 @@ def classify_ratings(
             cd = frame[phev_contract["combined_cd_output_numeric_field"]]
             if cd.isna().any() or not np.isfinite(cd).all() or cd.lt(0).any():
                 raise ValueError("NRCan PHEV CD leading value is missing or invalid")
-            frame["native_consumption"] = cd if phev_index_mode == "CD" else cs
-            frame["native_unit"] = "Le/100 km (CD; index only)" if phev_index_mode == "CD" else "L/100 km (CS; index only)"
+            frame["native_consumption"] = cd
+            frame["native_unit"] = "Le/100 km (CD; index only)"
             frame["consumption_mj_per_vkm"] = np.nan
             frame["classification_method"] = f"omega_range_bucket_{phev_index_mode.lower()}_index_only"
         else:
@@ -288,31 +332,74 @@ def classify_ratings(
     )
 
 
+def distinct_rating_models(
+    classified: pd.DataFrame, *, rules: dict, value_columns: tuple[str, ...] = (),
+) -> pd.DataFrame:
+    """Average rated variants within each exact make/model and annual class cohort."""
+    fields = rules["ratings"]["fields"]
+    cohort = ["year", "powertrain", "rating_class", "native_unit"]
+    identities = [fields["make"], fields["model"]]
+    values = list(dict.fromkeys([
+        "native_consumption", "consumption_mj_per_vkm", "range_km", *value_columns,
+    ]))
+    required = {"included", *cohort, *identities, *values} - {"range_km"}
+    if missing := required - set(classified):
+        raise ValueError(f"Distinct-model rating evidence is missing columns: {sorted(missing)}")
+    observed = classified.loc[classified.included].copy()
+    missing_identity = observed[identities].isna().any(axis=1)
+    for field in identities:
+        missing_identity |= observed[field].astype(str).str.strip().eq("")
+    if missing_identity.any():
+        raise ValueError(
+            "Distinct-model ratings require nonblank make and model identities; "
+            f"missing in {int(missing_identity.sum())} included rows"
+        )
+    if observed[cohort].isna().any().any():
+        raise ValueError("Distinct-model ratings require complete annual class/powertrain/unit keys")
+    if observed.groupby(cohort[:-1]).native_unit.nunique().gt(1).any():
+        raise ValueError("Conflicting native units within an annual rating class/powertrain cohort")
+    if "range_km" not in observed:
+        observed["range_km"] = np.nan
+    return observed.groupby([*cohort, *identities], as_index=False, sort=True).agg(
+        **{field: (field, "mean") for field in values},
+        catalogue_rows=("native_consumption", "size"),
+    )
+
+
+def rating_class_statistics(
+    classified: pd.DataFrame, *, rules: dict, statistic: str,
+    value_columns: tuple[str, ...] = (),
+) -> pd.DataFrame:
+    """Apply the selected statistic equally across distinct models within each cohort."""
+    if statistic not in {"mean", "median"}:
+        raise ValueError(f"Unsupported distinct-model rating statistic: {statistic!r}")
+    models = distinct_rating_models(classified, rules=rules, value_columns=value_columns)
+    values = list(dict.fromkeys([
+        "native_consumption", "consumption_mj_per_vkm", "range_km", *value_columns,
+    ]))
+    annual = models.groupby(
+        ["year", "powertrain", "rating_class", "native_unit"], as_index=False, sort=True,
+    ).agg(
+        **{field: (field, statistic) for field in values},
+        observations=("catalogue_rows", "sum"),
+        distinct_models=("catalogue_rows", "size"),
+    )
+    annual["rating_statistic"] = statistic
+    return annual
+
+
 def aggregate_ratings(
     classified: pd.DataFrame, weights: pd.DataFrame, *, rules: dict, weight_basis: str,
+    statistic: str,
 ) -> pd.DataFrame:
-    """Average model ratings within classes, then reweight only observed classes."""
+    """Summarize distinct models within classes, then reweight observed classes."""
     weights = weights.loc[weights.weight_basis.eq(weight_basis)].copy()
     if weights.empty or weights.report_year.nunique() != 1:
         raise ValueError("Expected one reviewed NRCan class-weight edition")
     if weights.duplicated(["nrcan_ceud_class", "nrcan_vehicle_class"]).any():
         raise ValueError("Duplicate NRCan aggregation weights")
     suv = rules["historical_suv"]
-    observed = classified.loc[classified.included].copy()
-    if "range_km" not in observed:
-        observed["range_km"] = np.nan
-    annual = (
-        observed
-        .groupby(["year", "powertrain", "rating_class"], sort=True)
-        .agg(
-            native_consumption=("native_consumption", "mean"),
-            consumption_mj_per_vkm=("consumption_mj_per_vkm", "mean"),
-            observations=("source_row", "size"),
-            native_unit=("native_unit", "first"),
-            range_km=("range_km", "mean"),
-        )
-        .reset_index()
-    )
+    annual = rating_class_statistics(classified, rules=rules, statistic=statistic)
     records = []
     for ceud_class, class_weights in weights.groupby("nrcan_ceud_class", sort=True):
         weight_map = class_weights.set_index(
@@ -352,11 +439,13 @@ def aggregate_ratings(
                         "class_mean_mj_per_vkm": item.consumption_mj_per_vkm,
                         "native_unit": item.native_unit,
                         "observations": item.observations,
+                        "distinct_models": item.distinct_models,
+                        "rating_statistic": statistic,
                         "original_weight": item.raw_weight,
                         "observed_weight_sum": total,
                         "weight": item.raw_weight / total,
                         "range_class_mean_km": item.range_km,
-                        "aggregation_method": "catalogue_class_weighted",
+                        "aggregation_method": "distinct_model_class_weighted",
                         "matched_stock": 0.0,
                         "cohort_matched_stock": 0.0,
                     }
@@ -524,17 +613,6 @@ def aggregate_atb(
     return selected
 
 
-def backcast_efficiency(
-    anchor_efficiency: float, anchor_consumption: float, historic_consumption: float
-) -> float:
-    """Higher historical fuel consumption implies lower historical efficiency."""
-    return (
-        positive(anchor_efficiency, "anchor efficiency")
-        * positive(anchor_consumption, "anchor consumption")
-        / positive(historic_consumption, "historic consumption")
-    )
-
-
 class RoadEfficiencyEvidence:
     """Run-local numerical evidence, shared by existing and future vintages."""
 
@@ -552,6 +630,15 @@ class RoadEfficiencyEvidence:
     ):
         self.ceud, self.loads, self.rules = ceud, loads, rules
         self.base_year, self.gcam, self.regen = base_year, gcam, regen
+        self.pev_historical_anchors = rules["pev_historical_anchors"]
+        if rules["source_point_selection"] != "previous_observation_clamped":
+            raise ValueError("Unsupported efficiency source-point selection")
+        if set(self.pev_historical_anchors) != {"bev", "phev"} or any(
+            anchor not in rules["ldv_archetypes"] or not anchor.startswith(family + "_")
+            for family, anchor in self.pev_historical_anchors.items()
+        ):
+            raise ValueError("PEV historical anchors must name one configured range per family")
+        phev_historical_index_mode(rules)
         if rules["historical_rating_observations"] != "through_base_year":
             raise ValueError("Unsupported historical ratings observation window")
         if (
@@ -575,7 +662,7 @@ class RoadEfficiencyEvidence:
         # Instance-local caches cannot retain evidence from unrelated preparation runs.
         self.atb_value = cache(self.atb_value)
         self.rating = cache(self.rating)
-        self.derive = cache(self.derive)
+        self.derive_consumption = cache(self.derive_consumption)
 
     def atb_value(self, region: str, mode: str, powertrain: str, year: int) -> float:
         series = self.atb.loc[
@@ -583,7 +670,10 @@ class RoadEfficiencyEvidence:
             & self.atb["mode"].eq(mode)
             & self.atb.powertrain.eq(powertrain)
         ]
-        return interpolate(series, year, "weighted_consumption")
+        value = observed_value(series, year, "weighted_consumption")
+        if value is None:
+            raise ValueError(f"Missing exact ATB consumption: {region}/{mode}/{powertrain}/{year}")
+        return value
 
     def rating(
         self, mode: str, powertrain: str, year: int, column: str
@@ -592,15 +682,30 @@ class RoadEfficiencyEvidence:
         series = self.ratings.loc[
             self.ratings.ceud_class.eq(weights) & self.ratings.powertrain.eq(powertrain)
         ]
-        if series.empty or year < series.year.min() or year > series.year.max():
-            return None
-        if series[column].isna().any():
-            return None
-        return interpolate(series, year, column)
+        return observed_value(series, year, column)
+
+    def period_observations(
+        self, region: str, mode: str, powertrain: str, years: list[int], *,
+        allow_analogue_when_empty: bool = False,
+    ) -> dict[int, dict]:
+        """Use observed years; a wholly empty period may use its reviewed proxy."""
+        if not years or len(set(years)) != len(years):
+            raise ValueError("A consumption period requires distinct source years")
+        observed = {
+            year: result for year in years
+            if (result := self.derive_consumption(region, mode, powertrain, year)) is not None
+        }
+        if observed or not allow_analogue_when_empty:
+            return observed
+        return {
+            year: result
+            for year in years
+            if (result := self.derive_consumption(region, mode, powertrain, year, allow_analogue=True)) is not None
+        }
 
     def historical_rating_ratio(
-        self, mode: str, powertrain: str, year: int, anchor: int
-    ) -> tuple[float, str]:
+        self, mode: str, powertrain: str, year: int, anchor: int, *, missing_ok: bool = False,
+    ) -> tuple[float, str] | None:
         candidates, current = [], powertrain
         while current not in candidates:
             candidates.append(current)
@@ -615,6 +720,8 @@ class RoadEfficiencyEvidence:
             )
             if a is not None and b is not None:
                 return a / b, candidate
+        if missing_ok:
+            return None
         raise ValueError(
             f"No approved rating index: {mode}/{powertrain}/{year}/{anchor}"
         )
@@ -655,45 +762,68 @@ class RoadEfficiencyEvidence:
             region, mode, powertrain, self.base_year
         ) / self.atb_value(region, mode, analogue, self.base_year), evidence
 
-    def derive(self, region: str, mode: str, powertrain: str, year: int) -> dict:
+    def derive_consumption(
+        self, region: str, mode: str, powertrain: str, year: int, *,
+        allow_analogue: bool = False,
+    ) -> dict | None:
+        """Keep energy in the numerator until the caller's final service conversion."""
         spec, base = self.rules["road_classes"][mode], self.base_year
         pathway = spec["pathway"]
-        load = interpolate(
+        load = require_observed_value(
             self.loads.loc[self.loads.region.eq(region) & self.loads["mode"].eq(mode)],
             min(year, base),
             "load_factor",
         )
         native, native_unit, index, analogue = None, "MJ/vkm", 1.0, powertrain
+        historical_anchor, index_reference = None, powertrain
+        source_years = {}
         if pathway == "ldv":
-            if powertrain.startswith("phev"):
-                baseline = self.atb_value(region, mode, powertrain, base)
-                if year <= base:
-                    index, analogue = self.historical_rating_ratio(
-                        mode, powertrain, year, base
-                    )
-                    consumption = baseline * index
+            if powertrain.startswith(("bev", "phev")):
+                historical_anchor = self.pev_historical_anchors[powertrain.split("_", 1)[0]]
+                consumption = self.atb_value(region, mode, powertrain, max(year, base))
+                if year < base:
+                    index_reference = historical_anchor
+                    historic = self.rating(mode, historical_anchor, year, "native")
+                    reference = self.rating(mode, historical_anchor, base, "native")
+                    if historic is None or reference is None:
+                        if not allow_analogue:
+                            return None
+                        proxy = self.historical_rating_ratio(
+                            mode, historical_anchor, year, base, missing_ok=True,
+                        )
+                        if proxy is None:
+                            return None
+                        index, analogue = proxy
+                    else:
+                        index, analogue = historic / reference, historical_anchor
+                    consumption *= index
+                    treatment = "ATB_PEV_level_NRCan_shared_anchor_history"
                 else:
-                    consumption = self.atb_value(region, mode, powertrain, year)
-                treatment = f"ATB_PHEV_level_NRCan_{phev_historical_index_mode(self.rules)}_or_analogue_history"
+                    treatment = "ATB_PEV_direct_total_energy"
             elif (
                 year <= base
                 and (observed := self.rating(mode, powertrain, year, "mj")) is not None
             ):
                 consumption, treatment = observed, "NRCan_observed_class_weighted"
             else:
-                baseline, analogue = self.ldv_baseline(region, mode, powertrain)
+                if year <= base and not allow_analogue:
+                    return None
                 if year > base:
+                    baseline, analogue = self.ldv_baseline(region, mode, powertrain)
                     index = self.atb_value(
                         region, mode, powertrain, year
                     ) / self.atb_value(region, mode, powertrain, base)
                     treatment = "NRCan_baseline_ATB_consumption_ratio"
                 else:
-                    index, analogue = self.historical_rating_ratio(
-                        mode, powertrain, year, base
+                    proxy = self.historical_rating_ratio(
+                        mode, powertrain, year, base, missing_ok=True,
                     )
+                    if proxy is None:
+                        return None
+                    index, analogue = proxy
+                    baseline, _ = self.ldv_baseline(region, mode, powertrain)
                     treatment = "NRCan_missing_year_approved_analogue_index"
                 consumption = baseline * index
-            efficiency = load / consumption
             native = consumption
         elif pathway == "mhdv":
             anchor = self.atb_value(
@@ -707,12 +837,12 @@ class RoadEfficiencyEvidence:
                     spec["cs_prefix"] + "|" + self.rules["fuel_series"][fuel],
                     "L/100 km",
                 )
-                index = interpolate(series, year, "value") / interpolate(
+                index = require_observed_value(series, year, "value") / require_observed_value(
                     series, base, "value"
                 )
                 analogue = fuel
             consumption = anchor * index
-            efficiency, native = load / consumption, consumption
+            native = consumption
             treatment = "ATB_direct_or_CEUD_consumption_backcast"
         elif pathway in {"bus", "intercity"}:
             selected_mode = (
@@ -731,11 +861,19 @@ class RoadEfficiencyEvidence:
                     self.regen.source_technology_key.eq(keys[powertrain])
                     & self.regen.metric.eq("efficiency")
                 ]
-                index = interpolate(
-                    reference, source_year, "source_value", year_col="source_year"
-                ) / interpolate(
-                    target, source_year, "source_value", year_col="source_year"
+                # Fuel economy is converted to consumption before the relative
+                # comparison; gallon-equivalent cancels.
+                reference = reference.assign(consumption=1 / reference.source_value)
+                target = target.assign(consumption=1 / target.source_value)
+                target_consumption, target_year = source_point(
+                    target, source_year, "consumption", year_col="source_year"
                 )
+                reference_consumption, reference_year = source_point(
+                    reference, source_year, "consumption", year_col="source_year"
+                )
+                index = target_consumption / reference_consumption
+                source_years = {"relative_source_year": target_year,
+                                "relative_reference_year": reference_year}
                 consumption = (
                     self.atb_value(region, selected_mode, "diesel", source_year) * index
                 )
@@ -743,7 +881,6 @@ class RoadEfficiencyEvidence:
                 consumption = self.atb_value(
                     region, selected_mode, powertrain, source_year
                 )
-            efficiency = load / consumption
             if year <= base:
                 series = ceud_series(
                     self.ceud.loc[self.ceud.region.eq(region)],
@@ -752,20 +889,18 @@ class RoadEfficiencyEvidence:
                     "MJ/Pkm",
                 )
                 historic, reference = (
-                    interpolate(series, year, "value"),
-                    interpolate(series, base, "value"),
+                    require_observed_value(series, year, "value"),
+                    require_observed_value(series, base, "value"),
                 )
-                base_load = interpolate(
+                base_load = require_observed_value(
                     self.loads.loc[
                         self.loads.region.eq(region) & self.loads["mode"].eq(mode)
                     ],
                     base,
                     "load_factor",
                 )
-                efficiency = backcast_efficiency(
-                    base_load / consumption, reference, historic
-                )
                 index = historic / reference
+                consumption *= index * load / base_load
             native, treatment = (
                 consumption,
                 "ATB_bus_CEUD_service_intensity_backcast"
@@ -779,7 +914,7 @@ class RoadEfficiencyEvidence:
                 spec["intensity"],
                 "MJ/Pkm",
             )
-            intensity = interpolate(series, min(year, base), "value")
+            intensity = require_observed_value(series, min(year, base), "value")
             if year > base:
                 source = self.gcam.loc[self.gcam.source_variable.eq("intensity")]
                 if set(source.source_unit) != {"MJ/vkm"}:
@@ -792,18 +927,19 @@ class RoadEfficiencyEvidence:
                 target = source.loc[
                     source.source_technology.eq(self.rules["motorcycle"][powertrain])
                 ]
-                index = interpolate(
+                target_consumption, target_year = source_point(
                     target, year, "source_value", year_col="source_year"
-                ) / interpolate(incumbent, base, "source_value", year_col="source_year")
-            efficiency, native, native_unit = (
-                1 / (intensity * index),
-                intensity,
-                "MJ/Pkm",
-            )
+                )
+                reference_consumption, reference_year = source_point(
+                    incumbent, base, "source_value", year_col="source_year"
+                )
+                index = target_consumption / reference_consumption
+                source_years = {"index_source_year": target_year, "index_reference_year": reference_year}
+            native = intensity * index * load
             treatment = "CEUD_service_intensity_GCAM_vehicle_intensity_index"
         else:
             raise ValueError(f"Unsupported road pathway: {pathway}")
-        if analogue != powertrain:
+        if analogue != index_reference:
             self.findings.add(
                 (
                     region,
@@ -814,13 +950,15 @@ class RoadEfficiencyEvidence:
                 )
             )
         return {
-            "efficiency": positive(efficiency, "service efficiency"),
             "load_factor": load,
-            "native_intensity": native,
+            "native_intensity": positive(native, "energy consumption"),
             "native_unit": native_unit,
             "consumption_index": index,
             "analogue": analogue,
+            "historical_index_anchor": historical_anchor,
             "treatment": treatment,
+            **({"source_point_selection": self.rules["source_point_selection"], **source_years}
+               if source_years else {}),
         }
 
 
@@ -926,9 +1064,10 @@ def prepare_bus_annual_efficiency_evidence(
     for region in bundle.scenario.geography.regions:
         for owner in owners.itertuples(index=False):
             for year in years:
-                value = evidence.derive(
+                consumption = evidence.derive_consumption(
                     region, owner.category, owner.sub_category, year
-                )["efficiency"]
+                )
+                value = consumption["load_factor"] / consumption["native_intensity"]
                 if not np.isfinite(value) or value <= 0:
                     raise ValueError(
                         f"Invalid annual bus efficiency: {(region, owner.tech, year)}"

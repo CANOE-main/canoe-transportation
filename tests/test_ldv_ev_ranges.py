@@ -735,6 +735,42 @@ def test_representative_rules_conserve_parameters_and_preserve_stock_and_mhdv(
         validate_representative_preparation(result)
 
 
+@pytest.mark.parametrize("declared_unit,consumption_unit", [
+    ("bn passenger-km/PJ", "PJ/bn passenger-km"),
+    ("bn tonne-km/PJ", "PJ/bn tonne-km"),
+    ("service per energy", "1/(service per energy)"),
+    (None, None),
+])
+def test_representative_efficiency_audit_uses_reciprocal_units_without_changing_parameters(
+    representative_prerequisites, declared_unit, consumption_unit,
+):
+    bundle, kwargs = representative_prerequisites
+    baseline = prepare_representative_parameters(bundle, **kwargs)
+    kwargs["batches"]["efficiency"] = [
+        row.model_copy(update={"units": declared_unit}) if row.units == "bn service/PJ" else row
+        for row in kwargs["batches"]["efficiency"]
+    ]
+
+    result = prepare_representative_parameters(bundle, **kwargs)
+
+    expected = 0.8 / 2 + 0.2 / 3
+    audit_rows = [row for row in result.audit["conservation"] if row["table"] == "efficiency"]
+    assert audit_rows and all(row["units"] == consumption_unit for row in audit_rows)
+    first_phev = next(row for row in audit_rows if row["category"] == "cars" and row["powertrain"] == "PHEV")
+    assert first_phev["expected"] == pytest.approx(expected)
+    assert first_phev["actual"] == pytest.approx(expected)
+    assert [row for row in result.audit["conservation"] if row["table"] != "efficiency"] == [
+        row for row in baseline.audit["conservation"] if row["table"] != "efficiency"
+    ]
+    assert [row.model_dump(exclude={"units"}) for row in result.batches["efficiency"]] == [
+        row.model_dump(exclude={"units"}) for row in baseline.batches["efficiency"]
+    ]
+    representative = next(row for row in result.batches["efficiency"]
+                          if row.tech == "T_LDV_C_GSL_PHEV_REP_N" and row.vintage == 2025)
+    assert representative.units == declared_unit
+    assert representative.efficiency == pytest.approx(1 / expected)
+
+
 @pytest.mark.parametrize(
     "table,field,value,message",
     [

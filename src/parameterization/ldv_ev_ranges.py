@@ -1170,6 +1170,16 @@ def prepare_representative_parameters(
                     new_row = type(group[0]).model_validate(payload)
                     generated[table].append(new_row)
                     actual = 1 / value if method == "harmonic" else value
+                    audit_units = payload.get("units")
+                    if method == "harmonic" and audit_units:
+                        # Conservation compares consumption, the reciprocal of
+                        # the declared service/energy parameter, without rescaling.
+                        unit_terms = audit_units.split("/")
+                        audit_units = (
+                            f"{unit_terms[1].strip()}/{unit_terms[0].strip()}"
+                            if len(unit_terms) == 2 and all(term.strip() for term in unit_terms)
+                            else f"1/({audit_units})"
+                        )
                     conservation.append(
                         {
                             "table": table,
@@ -1179,7 +1189,7 @@ def prepare_representative_parameters(
                             "expected": weighted,
                             "actual": actual,
                             "absolute_error": abs(actual - weighted),
-                            "units": payload.get("units"),
+                            "units": audit_units,
                             "input_data_ids": sorted({r.data_id for r in group}),
                             "output_data_id": new_row.data_id,
                         }

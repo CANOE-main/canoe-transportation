@@ -1,30 +1,43 @@
-"""CEUD off-road service efficiencies and reviewed manual improvement factors."""
+"""CEUD off-road energy consumption and reviewed manual improvement factors."""
 
 from __future__ import annotations
 
 import pandas as pd
 
-from parameterization.road_efficiencies import ceud_series, interpolate, positive
+from parameterization.road_efficiencies import ceud_series, positive, require_observed_value, source_point
 
 
-def manual_ratio(rows: pd.DataFrame, year: int, *, rules: dict) -> float:
-    """Interpret reviewed ratios individually, without changing the manual input."""
+def _manual_source_rows(rows: pd.DataFrame, year: int, *, rules: dict) -> pd.DataFrame:
+    if rules["period_method"] != "previous_endpoint_clamped":
+        raise ValueError("Unsupported manual consumption source-point selection")
     if rows.empty:
         raise ValueError("Missing expected off-road multiplier")
     if rows.period.eq("all").any():
         if len(rows) != 1:
             raise ValueError("Overlapping all-years and period-specific multipliers")
-        return positive(rows.iloc[0].value, "manual multiplier")
-    selected = rows.copy()
-    selected["year"] = selected.period.map(rules["period_upper_year"])
+        return rows
+    selected = rows.assign(year=rows.period.map(rules["period_upper_year"]))
     if selected.year.isna().any() or selected.year.duplicated().any():
         raise ValueError("Unknown or ambiguous manual multiplier period")
-    # Endpoint values apply before/after the documented interval; interpolation is explicit.
-    bounded_year = max(int(selected.year.min()), min(year, int(selected.year.max())))
-    return interpolate(selected, bounded_year, "value")
+    _, source_year = source_point(selected, year, "value")
+    return selected.loc[selected.year.eq(source_year)]
 
 
-def derive_offroad_efficiency(
+def manual_ratio(
+    rows: pd.DataFrame, year: int, *, rules: dict,
+    interpretation: str = "consumption_ratio",
+) -> float:
+    """Convert the selected reviewed endpoint to a consumption ratio."""
+    if interpretation not in {"consumption_ratio", "efficiency_ratio"}:
+        raise ValueError(f"Unknown multiplier interpretation: {interpretation}")
+    selected = _manual_source_rows(rows, year, rules=rules)
+    ratio = positive(selected.iloc[0].value, "manual multiplier")
+    if interpretation == "efficiency_ratio":
+        ratio = 1 / ratio
+    return ratio
+
+
+def derive_offroad_consumption(
     national: pd.DataFrame,
     manual: pd.DataFrame,
     *,
@@ -41,10 +54,11 @@ def derive_offroad_efficiency(
         national, spec["national_table"], spec["intensity_series"], native_unit
     )
     source_year = min(year, base_year)
-    intensity = interpolate(history, source_year, "value")
+    intensity = require_observed_value(history, source_year, "value")
     rows = manual.loc[manual.category.eq(mode)]
     incumbent = rules["incumbent"][mode]
     ratio, interpretation = 1.0, "incumbent"
+    manual_source_year = None
     used = []
     if (
         powertrain != incumbent
@@ -54,13 +68,16 @@ def derive_offroad_efficiency(
             rows.sub_category.eq(powertrain)
             & rows.parameter.ne("annual_improvement_rate")
         ]
-        ratio = manual_ratio(relative, year, rules=rules)
         parameters = set(relative.parameter)
         if len(parameters) != 1:
             raise ValueError(f"Ambiguous relative multiplier: {mode}/{powertrain}")
         interpretation = rules["ratio_interpretation"][mode][parameters.pop()]
+        relative = _manual_source_rows(relative, year, rules=rules)
+        ratio = manual_ratio(relative, year, rules=rules, interpretation=interpretation)
+        if "year" in relative:
+            manual_source_year = int(relative.iloc[0].year)
         used.extend(relative.index.tolist())
-    growth = 1.0
+    development = 1.0
     rate = 0.0
     if year > base_year:
         rates = rows.loc[rows.parameter.eq("annual_improvement_rate")]
@@ -74,22 +91,18 @@ def derive_offroad_efficiency(
         rate = float(specific.iloc[0].value)
         if not 0 <= rate < 1:
             raise ValueError("Invalid annual efficiency improvement rate")
-        growth = (1 + rate) ** (year - base_year)
+        development = (1 + rate) ** -(year - base_year)
         used.extend(specific.index.tolist())
-    if interpretation == "consumption_ratio":
-        factor = 1 / ratio
-    elif interpretation in {"efficiency_ratio", "incumbent"}:
-        factor = ratio
-    else:
-        raise ValueError(f"Unknown multiplier interpretation: {interpretation}")
     return {
-        "efficiency": growth * factor / intensity,
-        "native_intensity": intensity,
+        "native_intensity": positive(intensity * ratio * development, "off-road energy consumption"),
         "native_unit": native_unit,
+        "load_factor": 1.0,
+        "ceud_native_intensity": intensity,
         "ceud_source_year": source_year,
-        "relative_multiplier": ratio,
-        "multiplier_interpretation": interpretation,
+        "relative_consumption_multiplier": ratio,
+        "source_multiplier_interpretation": interpretation,
+        "manual_source_year": manual_source_year,
         "annual_improvement_rate": rate,
-        "development_factor": growth,
+        "consumption_development_factor": development,
         "manual_rows": "|".join(map(str, sorted(set(used)))),
     }

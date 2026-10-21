@@ -75,6 +75,7 @@ Keep registered caches, external models, reviewed mappings and notebook source f
 | `road_utilization.vkt_schedules` | `false` uses flat CEUD utilization. `true` prepares age-dependent mileage artifacts for supported classes. |
 | `road_utilization.vkt_max_age` | Mileage-profile age limit, independent of the survival-curve age limit. Must cover a full model period when schedules are enabled. |
 | `efficiencies.atb_trajectory` | `Advanced`, `Conservative`, `Constant`, or `Mid`; selected from the pinned ATB release. |
+| `efficiencies.rating_statistic` | `mean` or `median` across distinct NRCan make-models within each model-year, size-class and powertrain/range cohort. First average a make-model's catalogue variants, then apply the selected statistic equally across models and combine size classes using MTO weights. The supplied scenarios select `mean`; consumption and range summaries use the same selection. |
 | `costs.atb_trajectory` | The same ATB choices, independently selectable from efficiencies. |
 | `ev_chargers.ld_evs_per_port` | Positive LDV electric vehicles per charger port. |
 | `ev_chargers.mhd_evs_per_port` | Positive medium/heavy-duty electric vehicles per charger port. |

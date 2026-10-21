@@ -209,14 +209,26 @@ def derive_rating_stock_weights(
     )
 
 
+def _production_rating_statistic(audit: pd.DataFrame) -> str:
+    """Reject stale or mixed production methods before using their fallback values."""
+    if (audit.empty or "aggregation_method" not in audit
+            or not audit.aggregation_method.eq("distinct_model_class_weighted").all()):
+        raise ValueError("Prepare production distinct-model/class rating aggregation before benchmarking")
+    if ("rating_statistic" not in audit or audit.rating_statistic.isna().any()
+            or audit.rating_statistic.nunique() != 1
+            or audit.rating_statistic.iloc[0] not in {"mean", "median"}):
+        raise ValueError("Production rating audit must record one mean or median rating statistic")
+    return str(audit.rating_statistic.iloc[0])
+
+
 def aggregate_stock_weighted_ratings(
-    allocations: pd.DataFrame, catalogue_audit: pd.DataFrame, *, rules: dict,
+    allocations: pd.DataFrame, production_audit: pd.DataFrame, *, rules: dict,
 ) -> pd.DataFrame:
     """Weight resolved model variants and size classes by the same MTO cohort.
 
     Each model-year stock count enters once. Size-class shares are conditional on
     the resolved powertrain/range cohort, rather than pooled across all fuels and
-    ages. A wholly uncovered cohort retains the configured catalogue fallback;
+    ages. A wholly uncovered cohort retains the production distinct-model fallback;
     partly covered cohorts use only resolved stock and expose their denominator.
     """
     policy = rules["stock_weighting"]
@@ -224,11 +236,12 @@ def aggregate_stock_weighted_ratings(
         raise ValueError("Unsupported rating stock-weighting method")
     if policy["unresolved_stock"] != "exclude_and_report":
         raise ValueError("Unsupported ambiguous rating stock allocation")
-    if policy["uncovered_cohort"] != "catalogue_class_weighted":
+    if policy["uncovered_cohort"] != "distinct_model_class_weighted":
         raise ValueError("Unsupported uncovered rating cohort policy")
+    _production_rating_statistic(production_audit)
     cohort = ["ceud_class", "year", "powertrain"]
-    fallback = catalogue_audit.copy()
-    fallback["aggregation_method"] = "catalogue_fallback_no_resolved_stock"
+    fallback = production_audit.copy()
+    fallback["aggregation_method"] = "distinct_model_fallback_no_resolved_stock"
     if allocations.empty:
         return fallback
     if (not np.isfinite(allocations.allocated_fit_active_stock).all()
@@ -296,7 +309,7 @@ def build_rating_stock_benchmark(bundle: ConfigBundle) -> dict[str, Path]:
     )
     source_paths = {
         "classified": production / efficiency_rules["files"]["ratings"],
-        "catalogue": production / efficiency_rules["files"]["rating_weights"],
+        "production_ratings": production / efficiency_rules["files"]["rating_weights"],
         "mapped": mapped_path,
     }
     missing = [str(path) for path in source_paths.values() if not path.is_file()]
@@ -305,13 +318,13 @@ def build_rating_stock_benchmark(bundle: ConfigBundle) -> dict[str, Path]:
             "Prepare the diagnostic scenario prerequisites before benchmarking ratings: "
             + ", ".join(missing)
         )
-    classified, catalogue, mapped = (
+    classified, production_audit, mapped = (
         pd.read_csv(source_paths[key], low_memory=False)
-        for key in ("classified", "catalogue", "mapped")
+        for key in ("classified", "production_ratings", "mapped")
     )
-    if ("aggregation_method" not in catalogue
-            or not catalogue.aggregation_method.eq("catalogue_class_weighted").all()):
-        raise ValueError("Prepare production catalogue/class rating aggregation before benchmarking")
+    statistic = _production_rating_statistic(production_audit)
+    if statistic != bundle.scenario.efficiencies.rating_statistic:
+        raise ValueError("Production rating audit statistic differs from the selected scenario rating_statistic")
     population_year = bundle.scenario.existing_capacity.vehicle_population_year
     if set(mapped.report_year) != {population_year}:
         raise ValueError("MTO benchmark stock edition differs from the prepared population selection")
@@ -319,7 +332,7 @@ def build_rating_stock_benchmark(bundle: ConfigBundle) -> dict[str, Path]:
     matches, allocations = derive_rating_stock_weights(
         classified, mapped, model_catalog=model_catalog, rules=rules["stock_weighting"],
     )
-    weighted = aggregate_stock_weighted_ratings(allocations, catalogue, rules=rules)
+    weighted = aggregate_stock_weighted_ratings(allocations, production_audit, rules=rules)
     output = resolve_artifact_path(bundle, "rating_stock_benchmark")
     paths = {key: output / filename for key, filename in rules["files"].items()}
     if set(paths) != {"matches", "allocations", "weighted"}:
