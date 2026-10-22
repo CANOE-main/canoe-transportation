@@ -21,7 +21,7 @@ Reusable conversions belong in `config/parameters/conversion.yaml`.
 | `aggregation_sources` | Regional fleet evidence shared across parameters: stock ages, LDV classes, medium-truck classes and heavy-truck haul activity. Every scenario declares the same four roles, with its own selections. |
 | `economics.cer_scenario` | CER trajectory used for currency harmonization, independently of demand. It must exist in the selected CER edition. |
 | Other `economics` fields | Discount and loan rates, CAD currency, and reference dollar year for costs. |
-| `outputs` | Database filename, validation report, and setup log. Artifact directories remain owned by `config/paths.yaml`. |
+| `outputs` | Database filename, validation report, and setup log. Artifact directories and the automatic build-log naming template remain owned by `config/paths.yaml`. |
 | `comparison` | Optional diagnostics: `mode: none`, `legacy`, or `scenario`, reference SQLite path, numerical tolerances, and provenance inclusion. Integrity validation always runs. |
 | `row_note_overrides.technology` | Replace `technology.notes` by exact technology key for this scenario. Keep `{}` to retain template notes; unknown keys fail. This does not change parameter values or source notes. |
 | `notebook_diagnostics` | Optional list containing `vehicle_stock` and/or `efficiency`; omitted means no notebook preparation. The supplied diagnostic preset selects both. These review artifacts never parameterize production rows. |
@@ -29,6 +29,17 @@ Reusable conversions belong in `config/parameters/conversion.yaml`.
 All registry sources marked `active` are available to implemented ETL layers. Scenarios
 do not maintain a second active-source list. A source year selects registered evidence;
 it does not create missing caches, mappings, or template periods.
+
+Every scenario build automatically writes timestamped INFO, WARNING and ERROR
+messages, stage timings and failure tracebacks to its log. The naming template
+`outputs.build_log` in `config/paths.yaml` combines `{scenario_name}` (the run label)
+and `{scenario_yaml}` (the YAML filename without its extension), followed by
+`{timestamp}` (UTC run start, `YYYY-MM-DD_HH-mm-ss-microsecondsZ`); for example,
+`outputs/logs/baseline_default_2026-10-22_17-30-00-123456Z.log`.
+Each run creates a separate file. Filename-unsafe characters become underscores.
+Each attempt records the exact YAML path and SHA-256, with start and outcome markers.
+`--debug` includes detailed audits; the validation report records the resolved log
+path and verbosity. Scenario YAMLs need no separate build-log filename.
 
 ## Road diagnostic preset
 

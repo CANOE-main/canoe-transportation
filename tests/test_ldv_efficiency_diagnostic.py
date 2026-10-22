@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from parameterization.road_efficiencies import select_atb_consumption
+from parameterization.road_efficiencies import ProjectionAnchorUnavailable, select_atb_consumption
 from utils import load_config_bundle, load_conversion_factors, load_harmonization_rules
 from validation import ldv_efficiency_diagnostic as diagnostic
 
@@ -46,28 +46,54 @@ def test_equal_catalogue_rows_expose_model_variant_influence(bundle):
     assert not rows.loc[rows.year.eq(2026), "calibration_observation"].any()
 
 
-def test_phev_cd_observations_remain_native_indices_without_total_energy(bundle):
-    source = ratings().iloc[[0]].assign(powertrain="phev_35_miles", native_unit="Le/100 km (CD; index only)", consumption_mj_per_vkm=np.nan)
+def test_phev_distribution_keeps_native_cd_separate_from_total_energy(bundle):
+    source = ratings().iloc[[0]].assign(powertrain="phev_35_miles", native_unit="Le/100 km (CD)", consumption_mj_per_vkm=1.8)
     rows, summary = diagnostic.rating_distributions(bundle, source)
-    assert rows.consumption_mj_per_vkm.isna().all()
-    assert summary.consumption_mj_per_vkm.isna().all()
+    assert rows.consumption_mj_per_vkm.tolist() == [1.8]
+    assert summary.consumption_mj_per_vkm.tolist() == [1.8]
     assert summary.equal_row_mean.iloc[0] == 10
+    assert summary.native_unit.iloc[0] == "Le/100 km (CD)"
 
 
-def phev_ratings_and_weights():
+def test_filter_evidence_compares_same_native_cohorts_before_and_after(bundle):
+    source = ratings().assign(included_before_filter=True, outlier_excluded=False,
+                             filter_reason="", outlier_status="within_fences")
+    source.loc[source.Model.eq("B"), ["included", "outlier_excluded", "filter_reason", "outlier_status"]] = [False, True, "Above upper fence", "above_upper_fence"]
+    original = source.copy(deep=True)
+    audit_rows, impact = diagnostic.rating_filter_evidence(bundle, source)
+    compact = impact.loc[impact.rating_class.eq("Compact")].iloc[0]
+    assert compact.before_distinct_models == 3 and compact.after_distinct_models == 2
+    assert compact.before_catalogue_rows == 4 and compact.after_catalogue_rows == 3
+    assert compact.before_distinct_model_mean == pytest.approx((15 + 100 + 40) / 3)
+    assert compact.after_distinct_model_mean == compact.after_distinct_model_median == pytest.approx(27.5)
+    assert audit_rows.loc[audit_rows.Model.eq("B"), "filter_reason"].tolist() == ["Above upper fence"]
+    pd.testing.assert_frame_equal(source, original)
+
+
+def phev_ratings_and_weights(bundle):
     rows, weights = [], []
+    conversions = load_conversion_factors(bundle)
+    gasoline_hhv = conversions["fuel_hhv"]["gasoline_mj_per_litre"]
     for year, multiplier in [(2020, 1.5), (2022, 1.2), (2023, 1), (2026, .5)]:
         for size, weight, cs, cd_values in [("Compact", .25, 4, [1, 3]), ("Subcompact", .75, 8, [6])]:
             cs_value = cs * (2 - multiplier)
-            weights.append({"year": year, "powertrain": "phev_35_miles", "rating_class": size,
-                "ceud_class": "Car", "weight": weight, "native_class_mean": np.mean(cd_values) * multiplier,
-                "class_mean_mj_per_vkm": np.nan})
+            annual_class = []
             for cd in cd_values:
+                electricity, liquid_fuel = cd * multiplier * 5, cd * multiplier / 10
+                cd_energy = (electricity * conversions["energy"]["kwh_to_mj"] + liquid_fuel * gasoline_hhv) / 100
+                # Synthetic annual UF is fixed; neither component panel applies it.
+                total_energy = .6 * cd_energy + .4 * cs_value * gasoline_hhv / 100
+                annual_class.append(total_energy)
                 rows.append({"included": True, "year": year, "rating_class": size, "powertrain": "phev_35_miles",
                     "Make": "Maker", "Model": size, "native_consumption": cd * multiplier,
-                    "native_unit": "Le/100 km (CD; index only)", "consumption_mj_per_vkm": np.nan,
+                    "native_unit": "Le/100 km (CD)", "consumption_mj_per_vkm": total_energy,
+                    "Fuel type 2": "X", "cd_electricity_kwh_per_100km": electricity,
+                    "cd_fuel_l_per_100km": liquid_fuel,
                     "combined_cs_consumption_L_100_km": cs_value,
                     "combined_cd_consumption_Le_100_km": cd * multiplier})
+            weights.append({"year": year, "powertrain": "phev_35_miles", "rating_class": size,
+                "ceud_class": "Car", "weight": weight, "native_class_mean": np.mean(cd_values) * multiplier,
+                "class_mean_mj_per_vkm": np.mean(annual_class)})
     rows.append({**rows[0], "included": False, "combined_cd_consumption_Le_100_km": 1000})
     return pd.DataFrame(rows), pd.DataFrame(weights)
 
@@ -84,7 +110,7 @@ def bridge_support(bundle, mode, powertrains, *, load=1):
 
 
 def test_phev_components_preserve_operating_basis_and_recorded_class_weights(bundle):
-    rows, weights = phev_ratings_and_weights()
+    rows, weights = phev_ratings_and_weights(bundle)
     original = rows.copy(deep=True)
     result = diagnostic.phev_rating_components(bundle, rows, weights)
     selected = result.loc[result.year.eq(2023)].set_index("component")
@@ -92,27 +118,43 @@ def test_phev_components_preserve_operating_basis_and_recorded_class_weights(bun
     assert selected.loc["CS", "native_value"] == pytest.approx(7)
     assert selected.loc["CD", "native_value"] == pytest.approx(5)
     assert selected.loc["CS", "value"] == pytest.approx(7 * conversions["fuel_hhv"]["gasoline_mj_per_litre"] / 100)
-    assert selected.loc["CD", "value"] == pytest.approx(5 * conversions["energy"]["nrcan_kwh_per_litre_gasoline_equivalent"] * conversions["energy"]["kwh_to_mj"] / 100)
+    assert selected.loc["CD", "value"] == pytest.approx((25 * conversions["energy"]["kwh_to_mj"] + .5 * conversions["fuel_hhv"]["gasoline_mj_per_litre"]) / 100)
     assert set(result.component) == {"CS", "CD"} and not result.utility_weighted.any()
-    assert "may include liquid fuel" in selected.loc["CD", "native_basis"]
+    assert "explicit liquid fuel" in selected.loc["CD", "native_basis"]
     assert selected.loc["CD", "energy_basis"] != selected.loc["CS", "energy_basis"]
     pd.testing.assert_frame_equal(rows, original)
-    assert rows.consumption_mj_per_vkm.isna().all()
+    assert rows.consumption_mj_per_vkm.notna().all()
 
 
 def test_phev_component_comparison_rejects_missing_cd_class_and_invalid_values(bundle):
-    rows, weights = phev_ratings_and_weights()
+    rows, weights = phev_ratings_and_weights(bundle)
     with pytest.raises(ValueError, match="missing a recorded rating class"):
         diagnostic.phev_rating_components(bundle, rows.loc[rows.rating_class.eq("Compact")], weights)
-    for invalid in [np.nan, np.inf, -1]:
-        bad = rows.copy()
-        bad.loc[0, "combined_cd_consumption_Le_100_km"] = invalid
-        with pytest.raises(ValueError, match="finite non-negative"):
-            diagnostic.phev_rating_components(bundle, bad, weights)
+    for field in ("combined_cs_consumption_L_100_km", "combined_cd_consumption_Le_100_km",
+                  "cd_electricity_kwh_per_100km", "cd_fuel_l_per_100km"):
+        for invalid in [np.nan, np.inf, -1]:
+            bad = rows.copy()
+            bad.loc[0, field] = invalid
+            with pytest.raises(ValueError, match="finite non-negative"):
+                diagnostic.phev_rating_components(bundle, bad, weights)
+
+
+def test_phev_components_use_each_records_liquid_fuel_hhv(bundle):
+    rows, weights = phev_ratings_and_weights(bundle)
+    rows.loc[rows.rating_class.eq("Subcompact"), "Fuel type 2"] = "D"
+    result = diagnostic.phev_rating_components(bundle, rows, weights)
+    selected = result.loc[result.year.eq(2023)].set_index("component")
+    factors = load_conversion_factors(bundle)["fuel_hhv"]
+    gasoline, diesel = factors["gasoline_mj_per_litre"], factors["diesel_mj_per_litre"]
+    assert selected.loc["CS", "value"] == pytest.approx((.25 * 4 * gasoline + .75 * 8 * diesel) / 100)
+    assert selected.loc["CD", "value"] == pytest.approx((25 * 3.6 + .25 * .2 * gasoline + .75 * .6 * diesel) / 100)
+    rows.loc[0, "Fuel type 2"] = "unsupported"
+    with pytest.raises(ValueError, match="supported liquid fuel"):
+        diagnostic.phev_rating_components(bundle, rows, weights)
 
 
 def test_native_phev_keeps_cs_and_cd_means_distinct(bundle, monkeypatch):
-    rows, _ = phev_ratings_and_weights()
+    rows, _ = phev_ratings_and_weights(bundle)
     distribution, _ = diagnostic.rating_distributions(bundle, rows)
     monkeypatch.setattr(diagnostic, "VIEW_MODES", {})
     monkeypatch.setattr(diagnostic, "select_atb_consumption", lambda *args, **kwargs: pd.DataFrame())
@@ -125,55 +167,105 @@ def test_native_phev_keeps_cs_and_cd_means_distinct(bundle, monkeypatch):
     assert set(selected.units) == {"L/100 km (CS)", "Le/100 km (CD)"}
 
 
-def test_bridge_places_phev_components_beside_atb_total_without_deprecated_alternatives(bundle, monkeypatch):
-    rows, weights = phev_ratings_and_weights()
+def phev_bridge_inputs(bundle):
+    rows, weights = phev_ratings_and_weights(bundle)
+    return {
+        "ratings": rows, "rating_weights": weights, "ceud": pd.DataFrame({"year": [2000]}),
+        "atb": pd.DataFrame([
+            {"region": "ON", "mode": "cars", "vehicle_class": "Compact", "year": year,
+             "powertrain": "phev_35_miles", "consumption_mj_per_vkm": value, "weighted_consumption": value}
+            for year, value in [(2020, 10), (2023, 8), (2025, 4), (2030, 3)]
+        ]),
+        "loads": pd.DataFrame([
+            {"region": "ON", "mode": "cars", "year": year, "load_factor": 3 if year == 2023 else 2}
+            for year in range(2000, 2024)
+        ]),
+        "omega_buckets": pd.DataFrame([
+            {"market_class": "car", "powertrain": family.upper(), "bucket": bucket, "share_of_all_sales": 1}
+            for family, bucket in [("phev", "phev_35_miles"), ("bev", "bev_300_miles")]
+        ]),
+        "relationships": pd.DataFrame([{"mode": "cars", "powertrain": "phev", "tech": "T_C_PHEV_EX"}]),
+        "annual_cohort_stock": pd.DataFrame([
+            {"region": "ON", "road_class": "cars", "tech": "T_C_PHEV_EX", "vintage": 2020,
+             "vintage_year": year, "raw_capacity": count}
+            for year, count in [(2021, 1), (2022, 3), (2023, 6)]
+        ]),
+        "final_efficiency": pd.DataFrame([{"region": "ON", "tech": "T_C_PHEV_EX", "vintage": 2020}]),
+    }
+
+
+def test_bridge_keeps_observed_phev_energy_and_projects_from_weighted_cohort(bundle, monkeypatch):
     monkeypatch.setattr(diagnostic, "VIEW_MODES", {"Cars": "cars"})
-    original_rules = diagnostic.load_harmonization_rules
-    def rules(config, module):
-        selected = original_rules(config, module)
-        if module == "efficiencies":
-            return {**selected, "pev_historical_anchors": {"phev": "phev_35_miles"}}
-        return selected
-    monkeypatch.setattr(diagnostic, "load_harmonization_rules", rules)
-    class Evidence:
-        def __init__(self, first_year):
-            self.first_year = first_year
-        def derive_consumption(self, region, mode, powertrain, year, *, allow_analogue=False):
-            if year < self.first_year:
-                return None
-            return {"native_intensity": 2, "native_unit": "MJ/vkm", "treatment": "ATB_PEV_level_NRCan_shared_anchor_history",
-                    "analogue": powertrain, "consumption_index": 1, "load_factor": 2,
-                    "historical_index_anchor": "phev_35_miles"}
-        def period_observations(self, region, mode, powertrain, years, *, allow_analogue_when_empty=False):
-            return {y: self.derive_consumption(region, mode, powertrain, y) for y in years if y >= self.first_year}
-        def atb_value(self, region, mode, powertrain, year):
-            return 2
-    monkeypatch.setattr(diagnostic, "_evidence", lambda config, inputs, mode, atb_class: Evidence(2020 if atb_class else 2000))
-    monkeypatch.setattr(diagnostic, "_cohort_counts", lambda config, inputs, mode, powertrain, vintage:
-                        pd.Series(1.0, index=bundle.scenario.periods.historical_years(vintage)))
-    inputs = {"ratings": rows, "rating_weights": weights, "ceud": pd.DataFrame({"year": [2000]}),
-        "atb": pd.DataFrame([{"region": "ON", "mode": "cars", "vehicle_class": "Compact", "year": 2023,
-                              "powertrain": "phev_35_miles", "consumption_mj_per_vkm": 2, "weighted_consumption": 2}]),
-        "loads": pd.DataFrame({"region": ["ON", "ON"], "mode": ["cars", "cars"], "year": [2020, 2023], "load_factor": [2, 2]}),
-        "omega_buckets": pd.DataFrame([{"market_class": "car", "powertrain": "PHEV", "bucket": "phev_35_miles", "share_of_all_sales": 1}]),
-        "annual": bridge_support(bundle, "cars", ["phev_35_miles"], load=2)}
+    inputs = phev_bridge_inputs(bundle)
     bridge, anchors = diagnostic._bridge_rows(bundle, inputs)
     harmonised = bridge.loc[bridge.stage.eq("Harmonised before indexing")]
-    assert set(harmonised.series) == {"NRCan CS fuel-only aggregate", "NRCan CD equivalent-energy aggregate", "ATB absolute total energy"}
+    assert set(harmonised.series) == {"NRCan size-class aggregate", "NRCan CS fuel-only aggregate",
+                                     "NRCan CD component-energy aggregate", "ATB absolute total energy"}
     assert not bridge.series.str.contains("backcast|Exploratory", case=False).any()
     assert not bridge.sample_kind.eq("curve").any()
-    production = bridge.loc[bridge.series.eq("Production method") & bridge.metric.eq("consumption")]
-    assert production.value.tolist() == pytest.approx([2] * len(production))
-    assert set(production.sample_kind) == {"period", "base_year_anchor"}
+    observed = diagnostic._rating_series(inputs["rating_weights"]).set_index("year").value
+    annual = bridge.loc[bridge.stage.eq("Annual calculation") & bridge.atb_class.eq(diagnostic.COHORT)].set_index("year")
+    assert annual.loc[2020, "value"] == pytest.approx(observed[2020])
+    assert annual.loc[2023, "value"] == pytest.approx(observed[2023])
+    assert annual.loc[2020, "treatment"] == "NRCan_observed_class_weighted"
+    assert 2021 not in annual.index and 2026 not in annual.index
+    weighted = (3 * observed[2022] + 6 * observed[2023]) / 9
+    assert annual.loc[2025, "value"] == pytest.approx(weighted)
+    assert annual.loc[2030, "value"] == pytest.approx(weighted * 3 / 4)
+    assert annual.loc[2030, "load_factor"] == pytest.approx(8 / 3)
+    assert annual.loc[2030, "treatment"] == "NRCan_cohort_anchor_ATB_relative_projection"
+    production = bridge.loc[bridge.series.eq("Production method") & bridge.metric.eq("consumption")
+                            & bridge.powertrain.eq("phev_35_miles") & bridge.atb_class.eq(diagnostic.COHORT)]
+    historical = production.loc[production.sample_kind.eq("period")].iloc[0]
+    assert historical.vintage == 2020 and historical.year == 2023
+    assert historical.weighted_source_year == pytest.approx((3 * 2022 + 6 * 2023) / 9)
+    assert historical.source_years == "2022 | 2023" and historical.cohort_stock_coverage == .9
+    anchor = production.loc[production.sample_kind.eq("base_year_anchor")].iloc[0]
+    assert anchor.year == 2025 and anchor.value == pytest.approx(weighted)
+    assert anchor.source_year_start == 2022 and anchor.source_year_end == 2023
+    assert set(anchors.anchor_powertrain) == {"phev_35_miles"}
+    assert set(anchors.atb_reference_year) == {2025}
+    assert anchors.parameter_reference_consumption_mj_per_vkm.tolist() == pytest.approx([weighted, weighted])
+
+
+@pytest.mark.parametrize("class_only", [True, False])
+def test_bridge_reports_only_diagnostic_class_anchor_absence(bundle, monkeypatch, class_only):
+    monkeypatch.setattr(diagnostic, "VIEW_MODES", {"Cars": "cars"})
+    original = diagnostic._evidence
+    def missing_anchor(*args):
+        raise ProjectionAnchorUnavailable("No observed or approved-proxy LDV projection anchor: synthetic")
+    def evidence(config, inputs, mode, atb_class):
+        result = original(config, inputs, mode, atb_class)
+        if atb_class is not None or not class_only:
+            result.projection_anchor = missing_anchor
+        return result
+    monkeypatch.setattr(diagnostic, "_evidence", evidence)
+    if not class_only:
+        with pytest.raises(ProjectionAnchorUnavailable):
+            diagnostic._bridge_rows(bundle, phev_bridge_inputs(bundle))
+        return
+    bridge, anchors = diagnostic._bridge_rows(bundle, phev_bridge_inputs(bundle))
     missing = bridge.loc[bridge.stage.eq("Missing class coverage")]
-    assert not missing.empty and missing.atb_class.ne(diagnostic.COHORT).all()
-    assert missing.value.isna().all()
-    assert missing.treatment.str.contains("no interpolated period marker").all()
-    detailed = production.loc[production.atb_class.ne(diagnostic.COHORT) & production.sample_kind.eq("period")]
-    assert detailed.year.min() >= 2020
-    annual = bridge.loc[bridge.stage.eq("Annual calculation")]
-    assert not annual.empty and set(annual.historical_index_anchor) == {"phev_35_miles"}
-    assert set(anchors.anchor) == {"phev_35_miles"}
+    assert missing.atb_class.tolist() == ["Compact"]
+    assert missing.value.isna().all() and missing.year.eq(2025).all()
+    assert set(anchors.atb_class) == {diagnostic.COHORT}
+    assert not ((bridge.atb_class.eq("Compact")) & bridge.year.gt(2023) & bridge.value.notna()
+                & bridge.stage.isin(["Annual calculation", "Indexed bridge"])).any()
+
+
+def test_bridge_does_not_hide_other_class_projection_failures(bundle, monkeypatch):
+    monkeypatch.setattr(diagnostic, "VIEW_MODES", {"Cars": "cars"})
+    original = diagnostic._evidence
+    def invalid_stock(*args):
+        raise ValueError("Invalid LDV projection cohort stock: synthetic")
+    def evidence(config, inputs, mode, atb_class):
+        result = original(config, inputs, mode, atb_class)
+        if atb_class is not None:
+            result.projection_anchor = invalid_stock
+        return result
+    monkeypatch.setattr(diagnostic, "_evidence", evidence)
+    with pytest.raises(ValueError, match="Invalid LDV projection cohort stock"):
+        diagnostic._bridge_rows(bundle, phev_bridge_inputs(bundle))
 
 
 def audit():
@@ -202,14 +294,29 @@ def test_post_base_ratings_never_calibrate_detailed_class_baseline(bundle):
     atb = pd.DataFrame([
         {"region": "ON", "mode": "cars", "vehicle_class": "Compact", "powertrain": powertrain,
          "year": year, "consumption_mj_per_vkm": value, "weighted_consumption": value * .2}
-        for powertrain in ("gasoline", "bev_300_miles") for year, value in ((2023, 1), (2030, .8))
+        for powertrain in ("gasoline", "bev_300_miles") for year, value in ((2023, 2), (2025, 1), (2030, .8))
     ])
     inputs = {"atb": atb, "rating_weights": audit(), "ceud": pd.DataFrame(),
-              "loads": pd.DataFrame({"region": ["ON", "ON"], "mode": ["cars", "cars"], "year": [2010, 2023], "load_factor": [2, 2]})}
+              "loads": pd.DataFrame([
+                  {"region": "ON", "mode": "cars", "year": year, "load_factor": 2}
+                  for year in (2010, 2021, 2022, 2023)
+              ]),
+              "relationships": pd.DataFrame([
+                  {"tech": tech, "powertrain": family}
+                  for tech, family in [("T_C_BEV_EX", "bev"), ("T_C_GSL_EX", "gasoline")]
+              ]),
+              "annual_cohort_stock": pd.DataFrame([
+                  {"region": "ON", "road_class": "cars", "tech": tech, "vintage_year": year, "raw_capacity": count}
+                  for tech in ("T_C_BEV_EX", "T_C_GSL_EX") for year, count in [(2021, 1), (2022, 3), (2023, 6)]
+              ])}
     evidence = diagnostic._evidence(bundle, inputs, "cars", "Compact")
     assert evidence.ratings.year.max() == 2023
     assert evidence.ldv_baseline("ON", "cars", "gasoline")[0] == pytest.approx(1.6)
-    assert evidence.derive_consumption("ON", "cars", "bev_300_miles", 2030)["native_intensity"] == pytest.approx(.8)
+    anchor = evidence.projection_anchor("ON", "cars", "bev_300_miles")
+    assert anchor["included_years"] == [2023] and anchor["cohort_stock_coverage"] == .6
+    assert anchor["stock_powertrain"] == "bev"
+    assert evidence.derive_consumption("ON", "cars", "bev_300_miles", 2025)["native_intensity"] == pytest.approx(1.6)
+    assert evidence.derive_consumption("ON", "cars", "bev_300_miles", 2030)["native_intensity"] == pytest.approx(1.6 * .8)
 
 
 def test_existing_representative_conserves_weighted_consumption():
@@ -267,7 +374,7 @@ def test_final_csv_uses_recorded_consumption_before_service_conversion(bundle):
     service = periods.loc[periods.metric.eq("service_efficiency")].set_index("tech")
     energy = periods.loc[periods.metric.eq("consumption")].set_index("tech")
     assert service.value.to_dict() == {"T_C_BEV_EX": 2, "T_C_BEV300_N": 3, "T_MDV_T_BEV_EX": .8}
-    assert service.loc["T_C_BEV_EX", ["vintage", "year", "source_year_start", "source_year_end"]].tolist() == pytest.approx([2020, 2022.6, 2021, 2023])
+    assert service.loc["T_C_BEV_EX", ["vintage", "year", "source_year_start", "source_year_end"]].tolist() == pytest.approx([2020, 2023, 2021, 2023])
     assert service.loc["T_C_BEV300_N", ["vintage", "year"]].tolist() == [2025, 2030]
     assert energy.loc["T_C_BEV_EX", "value"] == 2.35
     assert energy.loc["T_C_BEV300_N", "value"] == pytest.approx(2 / 3)
@@ -294,14 +401,12 @@ def test_final_csv_retains_partial_year_and_stock_coverage(bundle):
 def test_final_csv_labels_empty_period_analogue_from_annual_components(bundle):
     inputs = prepared_period_inputs()
     inputs["annual"] = inputs["final_efficiency"][["region", "tech", "vintage", "input_comm", "output_comm"]].assign(
-        included_in_period=True, treatment="ATB_PEV_level_NRCan_shared_anchor_history",
-        analogue="gasoline", historical_index_anchor="bev_300_miles")
+        included_in_period=True, treatment="NRCan_missing_year_approved_analogue_index", analogue="gasoline")
     periods = diagnostic._published_periods(bundle, inputs)
     assert periods.observation_basis.str.startswith("Configured analogue").all()
     assert set(periods.analogue) == {"gasoline"}
-    assert periods.source_treatments.str.contains("shared_anchor_history").all()
-    own = diagnostic._observation_summary([{"treatment": "ATB_PEV_level_NRCan_shared_anchor_history",
-        "analogue": "bev_300_miles", "historical_index_anchor": "bev_300_miles"}])
+    assert periods.source_treatments.str.contains("approved_analogue_index").all()
+    own = diagnostic._observation_summary([{"treatment": "NRCan_observed_class_weighted", "analogue": "bev_300_miles"}])
     assert own["observation_basis"].startswith("Available source")
 
 
@@ -331,80 +436,6 @@ def test_final_csv_requires_new_period_contract_and_exact_keys(bundle):
     inputs["periods"] = inputs["periods"].iloc[1:]
     with pytest.raises(ValueError, match="period consumption/load evidence"):
         diagnostic._published_periods(bundle, inputs)
-
-
-def period_markers():
-    context = {"vehicle_group": "Cars", "mode": "cars", "atb_class": diagnostic.COHORT,
-               "powertrain": "bev_300_miles", "resolution": "Actual production aggregation",
-               "stage": "Indexed bridge", "series": "Production method"}
-    records = []
-    for year, consumption, load in [(2013, 3, 1), (2018, 1.1, 2), (2023, 1.6, 2.4), (2030, .8, 2.4)]:
-        for metric, value, units in [("consumption", consumption, "MJ/vkm"),
-                                     ("service_efficiency", load / consumption, "bn passenger-km/PJ")]:
-            records.append({**context, "year": year, "value": value, "metric": metric, "units": units,
-                            "load_factor": load, "sample_kind": "base_year_anchor" if year == 2023 else "period"})
-    return pd.DataFrame(records)
-
-
-def test_pchip_uses_only_period_markers_preserves_knots_and_service_conversion(bundle):
-    markers = period_markers()
-    clean = diagnostic.interpolate_period_markers(bundle, markers)
-    spikes = markers.loc[markers.metric.eq("consumption")].iloc[:3].copy()
-    spikes["year"], spikes["value"] = [2000, 2015, 2040], [1000, .0001, 2000]
-    spikes["stage"], spikes["series"], spikes["sample_kind"] = "Annual calculation", "Annual production calculation", np.nan
-    original = pd.concat([markers, spikes], ignore_index=True)
-    fitted = diagnostic.interpolate_period_markers(bundle, original)
-    curves = fitted.loc[fitted.sample_kind.eq("curve")]
-    assert set(curves.stage) == {"Diagnostic interpolation"}
-    pd.testing.assert_frame_equal(curves.reset_index(drop=True), clean.loc[clean.sample_kind.eq("curve")].reset_index(drop=True), check_dtype=False)
-    pd.testing.assert_frame_equal(fitted.iloc[:len(original)][original.columns].reset_index(drop=True), original, check_dtype=False)
-    assert curves.year.min() == 2013 and curves.year.max() == 2030
-    for metric in ["consumption", "service_efficiency"]:
-        values = curves.loc[curves.metric.eq(metric)].set_index("year").value
-        knots = markers.loc[markers.metric.eq(metric)].set_index("year").value
-        assert values.loc[knots.index].tolist() == pytest.approx(knots.tolist(), rel=1e-12)
-    energy = curves.loc[curves.metric.eq("consumption")].set_index("year")
-    service = curves.loc[curves.metric.eq("service_efficiency")].set_index("year")
-    assert (energy.value * service.value).tolist() == pytest.approx(energy.load_factor.tolist())
-    knots = markers.loc[markers.metric.eq("consumption")].sort_values("year")
-    for left, right in zip(knots.itertuples(), knots.iloc[1:].itertuples(), strict=False):
-        interval = energy.loc[energy.index.to_series().between(left.year, right.year), "value"]
-        assert interval.min() >= min(left.value, right.value) - 1e-12
-        assert interval.max() <= max(left.value, right.value) + 1e-12
-
-
-def test_pchip_leaves_one_supported_year_as_markers_only(bundle):
-    markers = period_markers().loc[lambda frame: frame.year.eq(2023)]
-    result = diagnostic.interpolate_period_markers(bundle, markers)
-    assert not result.sample_kind.eq("curve").any()
-    pd.testing.assert_frame_equal(result.reset_index(drop=True), markers.reset_index(drop=True))
-
-
-def test_pchip_ignores_markers_beyond_the_comparison_horizon(bundle):
-    markers = period_markers()
-    expected = diagnostic.interpolate_period_markers(bundle, markers)
-    later = markers.loc[markers.year.eq(2030)].assign(year=2035, value=100)
-    result = diagnostic.interpolate_period_markers(bundle, pd.concat([markers, later], ignore_index=True))
-    pd.testing.assert_frame_equal(result.loc[result.sample_kind.eq("curve")].reset_index(drop=True),
-        expected.loc[expected.sample_kind.eq("curve")].reset_index(drop=True))
-    assert result.loc[result.year.eq(2035)].sample_kind.eq("period").all()
-
-
-@pytest.mark.parametrize("field", ["value", "load_factor"])
-def test_pchip_rejects_conflicting_knots(bundle, field):
-    markers = period_markers()
-    conflicting = markers.loc[markers.metric.eq("consumption") & markers.year.eq(2023)].copy()
-    conflicting[field] *= 2
-    with pytest.raises(ValueError, match="Conflicting period and base-year coordinates"):
-        diagnostic.interpolate_period_markers(bundle, pd.concat([markers, conflicting], ignore_index=True))
-
-
-@pytest.mark.parametrize("field,value", [("value", 0), ("value", np.inf), ("load_factor", -1), ("load_factor", np.nan)])
-def test_pchip_rejects_invalid_consumption_and_load_knots(bundle, field, value):
-    markers = period_markers()
-    markers.loc[markers.metric.eq("consumption") & markers.year.eq(2018), field] = value
-    with pytest.raises(ValueError, match="interpolation knots|Conflicting period and base-year coordinates"):
-        diagnostic.interpolate_period_markers(bundle, markers)
 
 
 @pytest.mark.parametrize("suffix", [".csv", ".csv.gz"])
@@ -452,6 +483,12 @@ def test_future_truck_powertrains_do_not_require_unobserved_historical_labels(bu
             return {y: self.derive_consumption(region, mode, powertrain, y) for y in years}
         def atb_value(self, region, mode, powertrain, year):
             return 2 if powertrain == "diesel" else .5
+        def projection_anchor(self, region, mode, powertrain):
+            return {"powertrain": powertrain, "included_years": [base], "candidate_years": [base],
+                    "atb_reference_year": bundle.scenario.periods.model[0], "stock_powertrain": "diesel",
+                    "stock_proxy": powertrain != "diesel", "cohort_stock_coverage": 1,
+                    "native_intensity": 2 if powertrain == "diesel" else .5, "load_factor": 1,
+                    "observations": {base: {"treatment": "CEUD fleet proxy", "analogue": "diesel"}}}
     monkeypatch.setattr(diagnostic, "_evidence", lambda *args: Evidence())
     monkeypatch.setattr(diagnostic, "harmonised_ceud_history", lambda *args: pd.DataFrame())
     monkeypatch.setattr(diagnostic, "_cohort_counts", lambda config, inputs, mode, powertrain, vintage:
@@ -468,11 +505,11 @@ def test_future_truck_powertrains_do_not_require_unobserved_historical_labels(bu
     support = support.loc[~(support.powertrain.eq("bev") & support.source_year.le(base))]
     bridge, _ = diagnostic._bridge_rows(bundle, {"atb": atb, "rating_weights": audit(), "ceud": pd.DataFrame({"year": [2000]}), "loads": loads, "annual": support})
     indexed = bridge.loc[bridge.stage.eq("Indexed bridge") & bridge.powertrain.eq("bev")]
-    assert not indexed.empty and indexed.year.min() == base
-    assert indexed.loc[indexed.year.eq(base), "sample_kind"].eq("base_year_anchor").all()
+    assert not indexed.empty and indexed.year.min() == bundle.scenario.periods.model[0]
+    assert indexed.loc[indexed.year.eq(bundle.scenario.periods.model[0]), "sample_kind"].eq("base_year_anchor").all()
     assert indexed.loc[indexed.sample_kind.eq("period"), "year"].gt(base).all()
     annual = bridge.loc[bridge.stage.eq("Annual calculation") & bridge.powertrain.eq("bev")]
-    assert not annual.empty and annual.year.min() == base + 7
+    assert not annual.empty and set(annual.year) == {bundle.scenario.periods.model[0], base + 7}
     assert set(indexed.atb_class) == {diagnostic.COHORT, "Sleeper"}
     assert indexed.loc[indexed.metric.eq("consumption"), "value"].eq(.5).all()
 

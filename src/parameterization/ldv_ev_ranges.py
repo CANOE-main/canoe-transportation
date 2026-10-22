@@ -96,7 +96,7 @@ class ExistingRepresentativeRules(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     weight_applicability: Literal["constant_historical_vintages_and_regions"]
     ratings_range_mapping: Literal["omega_bucket_boundaries"]
-    phev_baseline: Literal["accepted_atb_level_with_range_specific_nrcan_history"]
+    phev_baseline: Literal["observed_nrcan_cd_cs_atb_bucket_utility"]
     families: dict[str, RepresentativeFamily]
 
 

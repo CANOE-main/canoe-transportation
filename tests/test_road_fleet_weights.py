@@ -128,7 +128,7 @@ def test_cost_utilization_and_efficiency_use_the_same_regional_fleet_evidence(bu
     road = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
     offroad = load_harmonization_rules(bundle, "offroad_stocks_and_demands")["demand"]
     component_inputs = dict(
-        powertrain="diesel", year=bundle.scenario.periods.base_year, result={},
+        powertrain="diesel", year=bundle.scenario.periods.model[0], result={},
         manual=pd.DataFrame(), rating_inputs=None, baseline_inputs=None,
     )
     for region, expected in (("ON", (MTO, 4)), ("QC", (WARDS, "vehicle_class_market_shares"))):
@@ -137,6 +137,13 @@ def test_cost_utilization_and_efficiency_use_the_same_regional_fleet_evidence(bu
         )
         assert expected in components
         assert ((MTO, 4) in components) == (region == "ON")
+        historical = efficiency_components(
+            bundle, "medium_trucks", efficiency, road, offroad, region=region,
+            **(component_inputs | {"year": bundle.scenario.periods.base_year}),
+        )
+        assert expected not in historical
+        assert ("argonne_rd_greet", "fuel_heating_values") in historical
+        assert not any(source == "nlr_atb_transportation" for source, _ in historical)
     profiles = prepare_age_profiles(
         bundle, output_regions={"ON": "ON", "QC": "QC"}, fleet=fleet,
     )

@@ -52,12 +52,50 @@ def test_capture_does_not_publish_until_build_succeeds(prepared):
     assert pd.read_csv(loaded.paths["sample"]).to_dict("records") == [{"year": 2023, "value": 7}]
     assert loaded.metadata["database"]["sha256"] == report["database_sha256"]
     assert loaded.metadata["built_at"] == "2026-10-17T15:00:00Z"
+    assert loaded.metadata["build_id"] == "notebook_diagnostics-20261017T150000Z"
     # Configuration refers to this native CSV name; only data copies use .csv.gz.
     mapping = loaded.bundle.paths.config.parameters
     recorded_map = Path(mapping) / "vehicle_size_class_map.csv"
     source_map = bundle.repo_root / "config/parameters/vehicle_size_class_map.csv"
     assert recorded_map.read_bytes() == source_map.read_bytes()
     assert not pd.read_csv(recorded_map).empty
+
+
+def test_build_ids_are_utc_windows_safe_and_distinguish_same_second(prepared):
+    bundle, report, _ = prepared
+    bundle.scenario.scenario.name = "Ontario: diagnostic / run"
+    report["timestamp_utc"] = "2026-10-17T11:00:00-04:00"
+    first = layer.stage_notebook_evidence(bundle, report)
+    second = layer.stage_notebook_evidence(bundle, report)
+    assert first.bundles["vehicle_stock"].split("/")[1] == "Ontario-diagnostic-run-20261017T150000Z"
+    assert second.bundles["vehicle_stock"].split("/")[1] == "Ontario-diagnostic-run-20261017T150000Z-2"
+    layer.publish_notebook_evidence(second)
+    removed = layer.prune_notebook_evidence(second)
+    assert [path.name for path in removed] == ["Ontario-diagnostic-run-20261017T150000Z"]
+    third = layer.stage_notebook_evidence(bundle, report)
+    assert third.bundles["vehicle_stock"].split("/")[1] == "Ontario-diagnostic-run-20261017T150000Z-3"
+
+
+def test_historical_hex_capture_can_be_loaded_and_pruned(prepared):
+    bundle, report, _ = prepared
+    historical = layer.stage_notebook_evidence(bundle, report)
+    original = historical.index_path.parent / historical.bundles["vehicle_stock"]
+    legacy_id = "a" * 32
+    legacy_release = original.parents[1].with_name(legacy_id)
+    original.parents[1].rename(legacy_release)
+    manifest = legacy_release / "vehicle_stock/manifest.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["build_id"] = legacy_id
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    historical = layer.NotebookPublication(historical.index_path, {
+        "vehicle_stock": f"builds/{legacy_id}/vehicle_stock/manifest.json",
+    })
+    layer.publish_notebook_evidence(historical)
+    loaded = layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
+    assert loaded.metadata["build_id"] == legacy_id
+    current = layer.stage_notebook_evidence(bundle, report)
+    layer.publish_notebook_evidence(current)
+    assert legacy_release in layer.prune_notebook_evidence(current)
 
 
 def test_live_data_and_config_edits_do_not_reinterpret_recorded_build(prepared):

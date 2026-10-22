@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from canoe_schema.v4_0 import LimitAnnualCapacityFactor
 
 from parameterization import ev_chargers as layer
-from parameterization.ev_chargers import _validate_shares, prepare_ev_charger_rows
+from parameterization.ev_chargers import _validate_shares, prepare_charger_capacity_to_activity, prepare_ev_charger_rows
 from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 from utils import load_harmonization_rules, resolve_artifact_path
 from validation.config_models import ScenarioEvChargers
@@ -127,7 +127,57 @@ def test_charger_costs_utilization_and_efficiency(prepared) -> None:
     assert all((output / rules[key]).is_file() for key in (
         "capacity_output_file", "invest_output_file", "fixed_output_file",
         "efficiency_output_file", "utilization_output_file", "port_audit_file",
+        "capacity_to_activity_output_file",
     ))
+
+
+def test_charger_conversion_covers_existing_and_new_even_without_stock(legacy_bundle):
+    technology = pd.read_csv(ROOT / "inputs/0_canoe_template/technology.csv")
+    regions = set(pd.read_csv(ROOT / "inputs/0_canoe_template/region.csv").region)
+    chargers = set(technology.loc[technology.category.eq("charger"), "tech"])
+    dataset, rows = prepare_charger_capacity_to_activity(
+        legacy_bundle, technology=technology, regions=regions,
+    )
+    assert {(row.region, row.tech) for row in rows} == {
+        (region, tech) for region in regions for tech in chargers
+    }
+    assert len(rows) == len(regions) * 4
+    assert all(row.c2a == 31.536 and row.units == "PJ/GW"
+               and row.data_id == dataset.data_id
+               and row.data_source is None and row.dq_cred is None
+               for row in rows)
+
+
+@pytest.mark.parametrize("change, match", [
+    ("missing", "one reviewed"), ("duplicate", "one reviewed"),
+    ("units", "units"), ("zero", "finite and positive"),
+    ("negative", "finite and positive"), ("infinite", "finite and positive"),
+    ("subcategory", "one reviewed"), ("notes", "one reviewed"),
+])
+def test_charger_conversion_rejects_invalid_reviewed_input(legacy_bundle, tmp_path, monkeypatch, change, match):
+    manual = pd.read_csv(ROOT / "inputs/0_manual_params/capacity_to_activity.csv")
+    selected = manual.category.eq("charger")
+    if change == "missing":
+        manual = manual.loc[~selected]
+    elif change == "duplicate":
+        manual = pd.concat([manual, manual.loc[selected]])
+    elif change == "units":
+        manual.loc[selected, "units"] = "PJ/kW"
+    elif change == "subcategory":
+        manual.loc[selected, "sub_category"] = "ldv"
+    elif change == "notes":
+        manual.loc[selected, "notes"] = ""
+    else:
+        manual.loc[selected, "c2a"] = {"zero": 0, "negative": -1, "infinite": float("inf")}[change]
+    manual.to_csv(tmp_path / "capacity_to_activity.csv", index=False)
+    original = layer.resolve_input_path
+    monkeypatch.setattr(layer, "resolve_input_path", lambda bundle, key, *parts:
+                        tmp_path / parts[0] if key == "manual" else original(bundle, key, *parts))
+    with pytest.raises(ValueError, match=match):
+        prepare_charger_capacity_to_activity(
+            legacy_bundle, technology=pd.read_csv(ROOT / "inputs/0_canoe_template/technology.csv"),
+            regions={"ON"},
+        )
 
 
 def test_charger_share_contract_rejects_mismatch() -> None:
@@ -159,7 +209,7 @@ def test_selected_regions_keep_full_source_validation_and_equivalent_rows(prepar
 
     monkeypatch.setattr(layer, "resolve_artifact_path", output_path)
     subset = prepare_ev_charger_rows(selected, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
-    for name in ("capacity_rows", "invest_rows", "fixed_rows", "efficiency_rows", "utilization_rows"):
+    for name in ("capacity_rows", "invest_rows", "fixed_rows", "efficiency_rows", "utilization_rows", "capacity_to_activity_rows"):
         actual = [row.model_dump(exclude={"data_id"}) for row in getattr(subset, name)]
         baseline = [row.model_dump(exclude={"data_id"}) for row in getattr(full, name) if row.region in expected]
         assert actual == baseline

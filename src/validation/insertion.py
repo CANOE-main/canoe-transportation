@@ -14,7 +14,7 @@ from typing import Any, Literal, TypeVar, TYPE_CHECKING
 from canoe_schema import CanoeBaseModel
 from pydantic import TypeAdapter
 
-from validation.provenance import ResolvedProvenance
+from validation.provenance import ResolvedProvenance, published_content_identity
 
 
 ModelT = TypeVar("ModelT", bound=CanoeBaseModel)
@@ -204,6 +204,7 @@ def replace_owned_ldv_representation(
     batches: Mapping[str, Sequence[CanoeBaseModel]],
     contexts: Sequence[ResolvedProvenance],
     internal_datasets: Sequence[CanoeBaseModel],
+    published_data_ids: Mapping[str, str] | None = None,
     check_only: bool = False,
 ) -> None:
     """Switch investable LDV representations within selected regions and ownership.
@@ -219,6 +220,13 @@ def replace_owned_ldv_representation(
     replacing_variants = ranges.audit["mode"] == "representative_archetype"
     scope = representatives | (variants if replacing_variants else set())
     owned = {r.data_id for r in [*contexts, *internal_datasets]}
+    # Published IDs are readable aliases; their dataset metadata retains the
+    # immutable preparation identity used by these ownership checks.
+    owned.update(
+        data_id for data_id, notes in connection.execute("SELECT data_id, notes FROM data_set")
+        if published_content_identity(notes) in owned
+    )
+    owned.update((published_data_ids or {}).values())
     owned.update(
         r[0]
         for r in connection.execute(
@@ -498,6 +506,7 @@ def cleanup_transport_parameter_batches(
 def validate_transport_parameter_support(
     batches: Mapping[str, Sequence[CanoeBaseModel]], *, existing_vintages: Sequence[int],
     new_technologies: Sequence[str] = (),
+    capacity_to_activity_technologies: Sequence[str] = (),
 ) -> dict[str, Any]:
     """Check active transport keys that SQLite foreign keys cannot express.
 
@@ -508,7 +517,8 @@ def validate_transport_parameter_support(
     historical = set(existing_vintages)
     keys = {
         table: {(row.region, row.tech, row.vintage) for row in rows}
-        for table, rows in batches.items() if table != "limit_annual_capacity_factor"
+        for table, rows in batches.items()
+        if table not in {"limit_annual_capacity_factor", "capacity_to_activity"}
     }
     checks: dict[str, Any] = {}
     errors: list[str] = []
@@ -521,6 +531,26 @@ def validate_transport_parameter_support(
         }
         if missing:
             errors.append(f"{name}: {len(missing)} unsupported keys {sorted(missing)[:8]}")
+
+    if "capacity_to_activity" in batches:
+        required_techs = set(capacity_to_activity_technologies)
+        active = {(region, tech) for values in keys.values() for region, tech, _ in values
+                  if tech in required_techs}
+        active.update((row.region, row.tech_or_group)
+                      for row in batches.get("limit_annual_capacity_factor", [])
+                      if row.tech_or_group in required_techs)
+        conversions = batches["capacity_to_activity"]
+        conversion_keys = {(row.region, row.tech) for row in conversions}
+        record("capacity_to_activity_coverage", active, conversion_keys)
+        invalid = [(row.region, row.tech, row.c2a) for row in conversions
+                   if row.c2a is None or not isfinite(float(row.c2a)) or row.c2a <= 0]
+        duplicates = len(conversions) - len(conversion_keys)
+        checks["capacity_to_activity_values"] = {
+            "checked_rows": len(conversions), "invalid_rows": len(invalid),
+            "duplicate_keys": duplicates, "examples": invalid[:15],
+        }
+        if invalid or duplicates:
+            errors.append(f"capacity_to_activity_values: {len(invalid)} invalid rows, {duplicates} duplicate keys")
 
     if "existing_capacity" in keys:
         invalid = [

@@ -190,6 +190,8 @@ def _(evidence, mo):
             completed {evidence['build_metadata']['built_at']}. These switches were
             recorded with the captured evidence. The associated database is
             `{evidence['build_metadata']['database']['path']}`.
+            Charts read the captured ETL tables; the database identifies the successful
+            publication and is not queried by this notebook.
             """),
             mo.ui.table(
                 evidence["scenario_switches"],

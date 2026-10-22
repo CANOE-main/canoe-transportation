@@ -575,11 +575,11 @@ fetching:
           combined_cd_raw_column: "Combined Le/100 km"
           combined_cd_output_raw_field: combined_cd_consumption_Le_100_km_raw
           combined_cd_output_numeric_field: combined_cd_consumption_Le_100_km
-          combined_cd_parse: leading_numeric_only
+          combined_cd_parse: leading_and_explicit_components
           combined_cd_leading_numeric_pattern: '^\s*([0-9]+(?:\.[0-9]+)?)'
+          combined_cd_components_pattern: '\s*[0-9]+(?:\.[0-9]+)?\s*\((?P<cd_bracket>\[)?(?P<cd_electricity_kwh_per_100km>[0-9]+(?:\.[0-9]+)?)\s+kWh(?(cd_bracket)\s*\+\s*(?P<cd_fuel_l_per_100km>[0-9]+(?:\.[0-9]+)?)\s+L\])\s*/100\s+km\)\s*'
           combined_cs_output_numeric_field: combined_cs_consumption_L_100_km
-          # Retain bracketed CD detail only in the raw field and preserve CS separately.
-          # The historical index selector below does not apply an ATB UF to NRCan rows.
+          # Preserve the displayed CD equivalent, explicit CD components and CS fuel separately.
       maintenance_ldv:
         outputs:
           class_multipliers: atb_maintenance_ldv_class_multipliers.csv
@@ -1596,29 +1596,31 @@ parameterization:
     region: 'ON'
     minimum_model_year: 2005
     bridge_years: [2010, 2030]
-    period_interpolation: pchip
-    interpolation_step_years: 0.25
     distribution_year_step: 5
     distribution_consumption_domains:
-      Cars: [4, 20]
-      Light trucks: [4, 25]
-    distribution_cd_consumption_domains:
-      Cars: [0, 10]
-      Light trucks: [0, 10]
+      Cars: [4, 24]
+      Light trucks: [4, 24]
     files:
       raw_sources: raw_source_trajectories.csv
+      filtered_sources: filtered_source_trajectories.csv
       rating_distribution: rating_distribution.csv
       rating_summary: rating_aggregation_summary.csv
       bridge: efficiency_bridge.csv
-      anchor_comparison: pev_anchor_comparison.csv
+      projection_anchors: projection_anchors.csv
+      rating_filter_audit: rating_filter_audit.csv
+      rating_filter_impact: rating_filter_impact.csv
       omega_shares: omega_range_shares.csv
       mto_benchmark: mto_weighting_benchmark.csv
       summary: summary.json
   efficiencies:
-    transformation_version: '8'
-    pev_historical_anchors:
+    transformation_version: '10'
+    pev_projection_anchors:
       bev: bev_300_miles
       phev: phev_35_miles
+    ldv_projection_baseline: latest_observed_cohort
+    ldv_projection_reference: first_model_period
+    ldv_future_load_factor: anchor_cohort
+    projection_missing_stock: configured_analogue
     files:
       efficiency: efficiency.csv
       splits: limit_tech_input_split.csv
@@ -1666,6 +1668,7 @@ parameterization:
         electricity: Combined (kWh/100 km)
         bev_range: Range (km)
         phev_range: Range 1 (km)
+        phev_fuel: Fuel type 2
       fuel_codes: {X: gasoline, Z: gasoline, D: diesel, E: ethanol, N: cng}
       excluded_fuels: [ethanol]
       hybrid_pattern: '(?i)hybrid'
@@ -1681,9 +1684,23 @@ parameterization:
       bev_range_labels: [bev_150_miles, bev_300_miles, bev_long_range]
       phev_range_edges_km: [0, 55, 210]
       phev_range_labels: [phev_35_miles, phev_50_miles]
-      phev_historical_index: combined_cd_consumption
-      phev_baseline: nlr_atb
+      phev_baseline: nrcan_cd_cs_atb_bucket_uf
       ignored_classes: [Special purpose vehicle]
+      outlier_filter:
+        label: Tukey IQR make-model outlier filter
+        description: Symmetric consumption fences within annual class/range cohorts; sparse and zero-IQR cohorts retained.
+        method: tukey_iqr
+        metric: consumption_mj_per_vkm
+        cohort_fields: [year, rating_class, powertrain, native_unit]
+        variant_aggregation: mean
+        tails: both
+        iqr_multiplier: 1.5
+        quartile_interpolation: linear
+        minimum_models: 5
+        insufficient_support: retain
+        zero_iqr: retain
+        missing_energy_metric: retain_native_audit
+        unconverted_powertrains: [cng]
     existing_phev_blends:
       cars: {tech: T_BLND_GSL_ELC_PHEV_C_EX, output: T_gsl_elc_phev_c_ex}
       passenger_light_trucks: {tech: T_BLND_GSL_ELC_PHEV_LTP_EX, output: T_gsl_elc_phev_ltp_ex}
@@ -1724,13 +1741,16 @@ parameterization:
       phev_energy_basis: greet_hhv_fuel_plus_electricity
       interpolation: exact_source_points
       extrapolation: error
-    historical_index_fuels:
-      medium_trucks:
-        gasoline: gasoline
-        diesel: diesel
-        bev: diesel
-      heavy_trucks:
-        diesel: diesel
+    mhdv_fleet_baseline:
+      observed_fuels:
+        medium_trucks: [gasoline, diesel]
+        heavy_trucks: [diesel]
+      reference_fuel: diesel
+      emerging_ratio_year: first_model_period
+      future_baseline: latest_observed_cohort
+      future_load_factor: anchor_cohort
+      missing_stock: reference_fuel_cohort
+      projection_index_powertrains: {gasoline: diesel}
     phev_blend_by_category: {medium_trucks: mdv, heavy_trucks: hdv, school_buses: hdv, urban_transit: hdv}
     road_classes:
       cars:
@@ -1978,7 +1998,7 @@ parameterization:
     existing:
       weight_applicability: constant_historical_vintages_and_regions
       ratings_range_mapping: omega_bucket_boundaries
-      phev_baseline: accepted_atb_level_with_range_specific_nrcan_history
+      phev_baseline: observed_nrcan_cd_cs_atb_bucket_utility
       families:
         cars: {BEV: T_LDV_C_BEV_EX, PHEV: T_LDV_C_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_C_EX, phev_commodity: T_gsl_elc_phev_c_ex}
         passenger_light_trucks: {BEV: T_LDV_LTP_BEV_EX, PHEV: T_LDV_LTP_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_LTP_EX, phev_commodity: T_gsl_elc_phev_ltp_ex}
@@ -2023,6 +2043,9 @@ parameterization:
     historical_utilization: earliest_reviewed_value
     utilization_operator: le
     manual_file: charger_parameters.csv
+    capacity_to_activity_file: capacity_to_activity.csv
+    capacity_to_activity_units: PJ/GW
+    capacity_to_activity_output_file: charger_capacity_to_activity.csv
     capacity_output_file: charger_existing_capacity.csv
     port_audit_file: charger_port_reconciliation.csv
     invest_output_file: charger_cost_invest.csv

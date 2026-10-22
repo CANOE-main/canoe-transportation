@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pandas as pd
-from canoe_schema.v4_0 import CostFixed, CostInvest, Efficiency, ExistingCapacity, LimitAnnualCapacityFactor
+from canoe_schema.v4_0 import CapacityToActivity, CostFixed, CostInvest, DataSet, Efficiency, ExistingCapacity, LimitAnnualCapacityFactor
 
 from parameterization.currency import CerCurrencyConverter
 from parameterization.manual_parameters import validate_manual_registry
@@ -39,6 +39,57 @@ class ChargerPreparation:
     utilization: pd.DataFrame
     provenance_contexts: list[ResolvedProvenance]
     audit: dict[str, Any]
+    assumption_dataset: DataSet
+    capacity_to_activity_rows: list[CapacityToActivity]
+
+
+def prepare_charger_capacity_to_activity(
+    bundle: ConfigBundle, *, technology: pd.DataFrame, regions: set[str],
+) -> tuple[DataSet, list[CapacityToActivity]]:
+    """Expand the reviewed physical conversion without assigning external DQ."""
+    rules = load_harmonization_rules(bundle, "ev_chargers")
+    manual_path = resolve_input_path(bundle, "manual", rules["capacity_to_activity_file"])
+    template_path = resolve_input_path(bundle, "template", "technology.csv")
+    manual = pd.read_csv(manual_path)
+    required = {"category", "sub_category", "c2a", "units", "notes"}
+    if required - set(manual):
+        raise ValueError("Charger capacity-to-activity input lacks required columns")
+    selected = manual.loc[manual.category.eq("charger")]
+    if (len(selected) != 1 or not selected.sub_category.eq("all").all()
+            or selected[list(required)].isna().any().any()):
+        raise ValueError("Expected one reviewed charger/all capacity-to-activity value")
+    record = selected.iloc[0]
+    value = float(record.c2a)
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError("Charger capacity-to-activity must be finite and positive")
+    if record.units != rules["capacity_to_activity_units"]:
+        raise ValueError("Charger capacity-to-activity units differ from configured units")
+    if not str(record.notes).strip():
+        raise ValueError("Charger capacity-to-activity lacks reviewed notes")
+    owners = {
+        mapping[kind] for mapping in rules["technology"].values()
+        for kind in ("existing", "new")
+    }
+    template_owners = technology.loc[technology.category.eq("charger"), "tech"]
+    if template_owners.duplicated().any() or set(template_owners) != owners:
+        raise ValueError("Charger capacity-to-activity does not cover template technologies")
+    digest = hashlib.sha256()
+    for path in (manual_path, template_path):
+        digest.update(path.name.encode("utf-8") + b"\0" + path.read_bytes() + b"\0")
+    version = digest.hexdigest()[:16]
+    dataset = DataSet(
+        data_id=f"canoe-charger-capacity-to-activity:{version}", version=version,
+        label="CANOE reviewed charger capacity-to-activity conversion",
+        description="Version-controlled capacity_to_activity.csv physical energy/power conversion expanded through charger technology mappings; internal assumption.",
+    )
+    rows = [
+        CapacityToActivity(region=region, tech=tech, c2a=value, units=record.units,
+                           notes=record.notes, data_id=dataset.data_id)
+        for region in sorted(regions) for tech in sorted(owners)
+    ]
+    LOGGER.info("Prepared %d charger capacity_to_activity rows: %s %s per year",
+                len(rows), value, record.units)
+    return dataset, rows
 
 
 def _manual_value(manual: pd.DataFrame, category: str, parameter: str, period: str) -> float:
@@ -199,6 +250,9 @@ def prepare_ev_charger_rows(
     model_regions = {output_region_map.get(region, region) for region in bundle.scenario.geography.regions}
     if model_regions - template_regions:
         raise ValueError(f"Charger scenario regions are absent from template: {sorted(model_regions - template_regions)}")
+    assumption_dataset, c2a_rows = prepare_charger_capacity_to_activity(
+        bundle, technology=template, regions=model_regions,
+    )
     LOGGER.debug("Preparing charger parameters for selected regions: %s", sorted(model_regions))
     public_by_region = {
         region: int(provincial.loc[provincial.source_region.isin(labels), "public_chargers"].sum())
@@ -458,6 +512,7 @@ def prepare_ev_charger_rows(
     output_dir = resolve_artifact_path(bundle, "ev_chargers_processed")
     output_dir.mkdir(parents=True, exist_ok=True)
     frames_to_write = {
+        rules["capacity_to_activity_output_file"]: pd.DataFrame([row.model_dump() for row in c2a_rows]),
         rules["capacity_output_file"]: pd.DataFrame([row.model_dump() for row in capacity_rows]),
         rules["port_audit_file"]: pd.DataFrame(port_records),
         rules["invest_output_file"]: pd.DataFrame([row.model_dump() for row in invest_rows]),
@@ -469,6 +524,14 @@ def prepare_ev_charger_rows(
         write_dataframe_atomic(frame, output_dir / filename)
     audit = {
         "period_mapping": bundle.scenario.periods.audit(),
+        "capacity_to_activity_rows": len(c2a_rows),
+        "capacity_to_activity": {
+            "value": c2a_rows[0].c2a, "units": rules["capacity_to_activity_units"],
+            "technologies": sorted({row.tech for row in c2a_rows}),
+            "regions": sorted(model_regions),
+            "manual_assumption_data_id": assumption_dataset.data_id,
+            "input_sha256": file_sha256(resolve_input_path(bundle, "manual", rules["capacity_to_activity_file"])),
+        },
         "capacity_rows": len(capacity_rows), "invest_rows": len(invest_rows),
         "fixed_rows": len(fixed_rows), "efficiency_rows": len(efficiency_rows),
         "existing_investment_rows_excluded": len(capacity_rows),
@@ -497,7 +560,8 @@ def prepare_ev_charger_rows(
     )
     LOGGER.info("Excluded %d existing charger investment rows; retained their annual fixed-cost basis", len(capacity_rows))
     return ChargerPreparation(capacity_rows, invest_rows, fixed_rows, efficiency_rows,
-                              utilization_rows, utilization, contexts, audit)
+                              utilization_rows, utilization, contexts, audit,
+                              assumption_dataset, c2a_rows)
 
 
 def main() -> None:

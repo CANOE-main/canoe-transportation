@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import cache
+import logging
 from math import isfinite
 from pathlib import Path
 from typing import Any
@@ -166,12 +167,109 @@ def derive_load_factors(
     return pd.concat(records, ignore_index=True).sort_values(["region", "mode", "year"])
 
 
-def phev_historical_index_mode(rules: dict) -> str:
-    """Use the reviewed CD rate only as a historical relative-consumption index."""
-    policy = rules["ratings"]["phev_historical_index"]
-    if policy != "combined_cd_consumption":
-        raise ValueError(f"Unsupported ratings.phev_historical_index: {policy!r}")
-    return "CD"
+def parse_nrcan_phev_cd_components(raw: pd.Series, *, contract: dict) -> pd.DataFrame:
+    """Read explicit CD electricity and fuel rates without treating Le as electricity."""
+    pattern = contract["combined_cd_components_pattern"]
+    # Python's regex conditional enforces the paired brackets in the mixed-fuel form.
+    text = raw.astype("string[python]")
+    matched = text.str.fullmatch(pattern, na=False)
+    if not matched.all():
+        raise ValueError(
+            "Unsupported NRCan PHEV CD component text in "
+            f"{int((~matched).sum())} rows; indices={raw.index[~matched].tolist()[:10]}"
+        )
+    columns = ["cd_electricity_kwh_per_100km", "cd_fuel_l_per_100km"]
+    parsed = text.str.extract(pattern)
+    if missing := set(columns) - set(parsed.columns):
+        raise ValueError(f"NRCan PHEV CD component pattern is missing captures: {sorted(missing)}")
+    result = parsed[columns].copy()
+    # The configured pure-electric syntax explicitly contains no liquid-fuel term.
+    result["cd_fuel_l_per_100km"] = result.cd_fuel_l_per_100km.fillna("0")
+    result = result.astype(float)
+    values = result.to_numpy()
+    if not np.isfinite(values).all() or (values < 0).any():
+        raise ValueError("NRCan PHEV CD components must be finite and nonnegative")
+    return result
+
+
+def apply_rating_outlier_filter(frame: pd.DataFrame, *, rules: dict) -> pd.DataFrame:
+    """Screen equal-weight make/model means once; retain every native source row."""
+    spec = rules["ratings"]["outlier_filter"]
+    cohort = ["year", "rating_class", "powertrain", "native_unit"]
+    supported = {
+        "method": "tukey_iqr", "metric": "consumption_mj_per_vkm",
+        "cohort_fields": cohort, "variant_aggregation": "mean", "tails": "both",
+        "quartile_interpolation": "linear", "insufficient_support": "retain", "zero_iqr": "retain",
+        "missing_energy_metric": "retain_native_audit",
+    }
+    for key, expected in supported.items():
+        if spec.get(key) != expected:
+            raise ValueError(f"Unsupported NRCan outlier_filter.{key}: {spec.get(key)!r}")
+    minimum, multiplier = spec.get("minimum_models"), spec.get("iqr_multiplier")
+    if isinstance(minimum, bool) or not isinstance(minimum, int) or minimum < 1:
+        raise ValueError("NRCan outlier minimum_models must be a positive integer")
+    if (isinstance(multiplier, bool) or not isinstance(multiplier, (int, float))
+            or not np.isfinite(multiplier) or multiplier <= 0):
+        raise ValueError("NRCan outlier iqr_multiplier must be finite and positive")
+    unconverted = spec.get("unconverted_powertrains")
+    if (not isinstance(unconverted, list) or any(not isinstance(value, str) for value in unconverted)
+            or len(unconverted) != len(set(unconverted)) or set(unconverted) - set(rules["ldv_archetypes"])):
+        raise ValueError("NRCan outlier unconverted_powertrains must name distinct configured powertrains")
+    identities = [rules["ratings"]["fields"][name] for name in ("make", "model")]
+    keys, metric = [*cohort, *identities], spec["metric"]
+    if missing := {"included", metric, *keys} - set(frame):
+        raise ValueError(f"NRCan outlier filtering requires columns: {sorted(missing)}")
+    if not pd.api.types.is_bool_dtype(frame.included) or frame.included.isna().any():
+        raise ValueError("NRCan outlier filtering requires complete boolean inclusion flags")
+    result = frame.copy()
+    result["included_before_filter"] = result.included
+    observed = result.loc[result.included, [*keys, metric]].copy()
+    if observed[keys].isna().any().any():
+        raise ValueError("NRCan outlier filtering requires complete eligible cohort and identity keys")
+    for column in [*cohort[1:], *identities]:
+        if observed[column].astype("string[python]").str.strip().eq("").any():
+            raise ValueError(f"NRCan outlier filtering requires nonblank eligible {column}")
+    observed[metric] = pd.to_numeric(observed[metric], errors="raise")
+    unavailable = result.included_before_filter & result.powertrain.isin(unconverted) & result[metric].isna()
+    observed = observed.loc[~(observed.powertrain.isin(unconverted) & observed[metric].isna())]
+    if not np.isfinite(observed[metric]).all() or observed[metric].le(0).any():
+        raise ValueError("NRCan outlier filtering requires finite positive eligible total consumption")
+
+    mean = "outlier_model_mean_mj_per_vkm"
+    count = "outlier_cohort_model_count"
+    q1, q3 = "outlier_q1_mj_per_vkm", "outlier_q3_mj_per_vkm"
+    lower, upper = "outlier_lower_fence_mj_per_vkm", "outlier_upper_fence_mj_per_vkm"
+    models = observed.groupby(keys, sort=True)[metric].mean().rename(mean).to_frame()
+    grouped = models.groupby(level=cohort)[mean]
+    models[count] = grouped.transform("size").astype("Int64")
+    models[q1] = grouped.transform(lambda values: values.quantile(.25, interpolation=spec["quartile_interpolation"]))
+    models[q3] = grouped.transform(lambda values: values.quantile(.75, interpolation=spec["quartile_interpolation"]))
+    iqr = models[q3] - models[q1]
+    models[lower], models[upper] = models[q1] - multiplier * iqr, models[q3] + multiplier * iqr
+    models["outlier_status"] = "within_fences"
+    enough = models[count].ge(minimum)
+    models.loc[~enough, "outlier_status"] = "insufficient_models"
+    models.loc[enough & iqr.eq(0), "outlier_status"] = "zero_iqr"
+    supported_cohort = enough & iqr.gt(0)
+    models.loc[supported_cohort & models[mean].lt(models[lower]), "outlier_status"] = "below_lower_fence"
+    models.loc[supported_cohort & models[mean].gt(models[upper]), "outlier_status"] = "above_upper_fence"
+    result = result.join(models, on=keys, validate="many_to_one")
+    ineligible = ~result.included_before_filter
+    result.loc[ineligible | unavailable, [mean, count, q1, q3, lower, upper]] = pd.NA
+    result.loc[ineligible, "outlier_status"] = "not_eligible"
+    result.loc[unavailable, "outlier_status"] = "unavailable_energy_metric"
+    result["outlier_excluded"] = result.outlier_status.isin(["below_lower_fence", "above_upper_fence"])
+    result["filter_reason"] = result.outlier_status.where(result.outlier_excluded, "")
+    result["included"] = result.included_before_filter & ~result.outlier_excluded
+    cohort_audit = models.reset_index().drop_duplicates(cohort)
+    logging.getLogger(__name__).info(
+        "NRCan outlier filter: %s of %s eligible source rows excluded; %s sparse and %s zero-IQR cohorts retained; %s native-only rows retained without energy screening; all %s rows retained in audit",
+        int(result.outlier_excluded.sum()), int(result.included_before_filter.sum()),
+        int(cohort_audit[count].lt(minimum).sum()),
+        int((cohort_audit[count].ge(minimum) & cohort_audit[q1].eq(cohort_audit[q3])).sum()),
+        int(unavailable.sum()), len(result),
+    )
+    return result
 
 
 def classify_ratings(
@@ -181,6 +279,7 @@ def classify_ratings(
     rules: dict,
     conversions: dict,
     phev_contract: dict | None = None,
+    uf_by_powertrain: dict[str, float] | None = None,
     range_rules=None,
 ) -> pd.DataFrame:
     """Retain native rows; exact EPA hybrid evidence supplements the legacy name rule."""
@@ -192,12 +291,11 @@ def classify_ratings(
     supported = {
         "evidence_join": "exact_normalized_year_make_model",
         "ambiguous_evidence": "retain_name_rule_and_report",
-        "phev_baseline": "nlr_atb",
+        "phev_baseline": "nrcan_cd_cs_atb_bucket_uf",
     }
     for key, expected in supported.items():
         if spec[key] != expected:
             raise ValueError(f"Unsupported ratings.{key}: {spec[key]!r}")
-    phev_index_mode = phev_historical_index_mode(rules)
 
     def norm(values):
         return (
@@ -245,10 +343,10 @@ def classify_ratings(
         elif fields["phev_range"] in frame:
             if (
                 phev_contract is None
-                or phev_contract["combined_cd_parse"] != "leading_numeric_only"
+                or phev_contract["combined_cd_parse"] != "leading_and_explicit_components"
             ):
                 raise ValueError(
-                    "NRCan PHEV requires the configured leading-number audit contract"
+                    "NRCan PHEV requires the configured explicit-component audit contract"
                 )
             frame["legacy_range_label"] = pd.cut(
                 frame[fields["phev_range"]],
@@ -259,6 +357,14 @@ def classify_ratings(
             frame["powertrain"] = frame.range_km.map(
                 lambda value: range_bucket("PHEV", value / conversions["length"]["mile_to_km"], range_rules)
             )
+            if uf_by_powertrain is None or (missing := set(frame.powertrain) - set(uf_by_powertrain)):
+                raise ValueError(
+                    "NRCan PHEV requires explicit ATB utility factors for every range bucket"
+                    + (f": {sorted(missing)}" if uf_by_powertrain is not None else "")
+                )
+            uf = pd.to_numeric(frame.powertrain.map(uf_by_powertrain), errors="raise")
+            if not np.isfinite(uf).all() or not uf.between(0, 1).all():
+                raise ValueError("NRCan PHEV utility factors must be finite and lie in [0, 1]")
             cs = pd.to_numeric(
                 frame[fields["consumption"]], errors="raise"
             )
@@ -276,10 +382,31 @@ def classify_ratings(
             cd = frame[phev_contract["combined_cd_output_numeric_field"]]
             if cd.isna().any() or not np.isfinite(cd).all() or cd.lt(0).any():
                 raise ValueError("NRCan PHEV CD leading value is missing or invalid")
+            components = parse_nrcan_phev_cd_components(raw, contract=phev_contract)
+            frame[components.columns] = components
+            frame["cs_fuel_l_per_100km"] = cs
+            frame["fleet_utility_factor"] = uf
+            frame["utility_factor_basis"] = "ATB_range_bucket"
+            cs_fuel = frame[fields["phev_fuel"]].map(spec["fuel_codes"])
+            hhv = cs_fuel.map({
+                fuel: conversions["fuel_hhv"][fuel + "_mj_per_litre"]
+                for fuel in ("gasoline", "diesel")
+            })
+            if hhv.isna().any():
+                raise ValueError("NRCan PHEV requires a supported charge-sustaining liquid fuel")
+            per_km = conversions["service"]["per_100_km_to_per_km"]
+            frame["utility_weighted_electricity_mj_per_vkm"] = (
+                uf * frame.cd_electricity_kwh_per_100km * conversions["energy"]["kwh_to_mj"] * per_km
+            )
+            frame["utility_weighted_fuel_mj_per_vkm"] = (
+                uf * frame.cd_fuel_l_per_100km + (1 - uf) * cs
+            ) * hhv * per_km
             frame["native_consumption"] = cd
-            frame["native_unit"] = "Le/100 km (CD; index only)"
-            frame["consumption_mj_per_vkm"] = np.nan
-            frame["classification_method"] = f"omega_range_bucket_{phev_index_mode.lower()}_index_only"
+            frame["native_unit"] = "Le/100 km (CD)"
+            frame["consumption_mj_per_vkm"] = (
+                frame.utility_weighted_electricity_mj_per_vkm + frame.utility_weighted_fuel_mj_per_vkm
+            )
+            frame["classification_method"] = "omega_range_bucket_cd_cs_atb_uf"
         else:
             frame["powertrain"] = frame[fields["fuel"]].map(spec["fuel_codes"])
             frame["make_key"], frame["model_key"] = (
@@ -327,9 +454,8 @@ def classify_ratings(
         ).all():
             raise ValueError("Nonpositive/nonfinite source rating")
         results.append(frame)
-    return pd.concat(results, ignore_index=True).sort_values(
-        ["component", "source_row"]
-    )
+    classified = pd.concat(results, ignore_index=True).sort_values(["component", "source_row"])
+    return apply_rating_outlier_filter(classified, rules=rules)
 
 
 def distinct_rating_models(
@@ -613,6 +739,10 @@ def aggregate_atb(
     return selected
 
 
+class ProjectionAnchorUnavailable(ValueError):
+    """No observed or approved-proxy rating support for a projected LDV class."""
+
+
 class RoadEfficiencyEvidence:
     """Run-local numerical evidence, shared by existing and future vintages."""
 
@@ -627,18 +757,33 @@ class RoadEfficiencyEvidence:
         regen: pd.DataFrame,
         base_year: int,
         rules: dict,
+        projection_years: tuple[int, ...] = (),
+        projection_reference_year: int | None = None,
+        cohort_stock: pd.DataFrame | None = None,
+        conversions: dict | None = None,
     ):
         self.ceud, self.loads, self.rules = ceud, loads, rules
+        self.conversions = conversions
         self.base_year, self.gcam, self.regen = base_year, gcam, regen
-        self.pev_historical_anchors = rules["pev_historical_anchors"]
+        self.pev_projection_anchors = rules["pev_projection_anchors"]
+        self.projection_years = tuple(projection_years)
+        self.projection_reference_year = projection_reference_year
+        self.cohort_stock = None if cohort_stock is None else cohort_stock.copy(deep=True)
+        for key, expected in {
+            "ldv_projection_baseline": "latest_observed_cohort",
+            "ldv_projection_reference": "first_model_period",
+            "ldv_future_load_factor": "anchor_cohort",
+            "projection_missing_stock": "configured_analogue",
+        }.items():
+            if key in rules and rules[key] != expected:
+                raise ValueError(f"Unsupported efficiency {key}: {rules[key]}")
         if rules["source_point_selection"] != "previous_observation_clamped":
             raise ValueError("Unsupported efficiency source-point selection")
-        if set(self.pev_historical_anchors) != {"bev", "phev"} or any(
+        if set(self.pev_projection_anchors) != {"bev", "phev"} or any(
             anchor not in rules["ldv_archetypes"] or not anchor.startswith(family + "_")
-            for family, anchor in self.pev_historical_anchors.items()
+            for family, anchor in self.pev_projection_anchors.items()
         ):
-            raise ValueError("PEV historical anchors must name one configured range per family")
-        phev_historical_index_mode(rules)
+            raise ValueError("PEV projection anchors must name one configured range per family")
         if rules["historical_rating_observations"] != "through_base_year":
             raise ValueError("Unsupported historical ratings observation window")
         if (
@@ -662,6 +807,7 @@ class RoadEfficiencyEvidence:
         # Instance-local caches cannot retain evidence from unrelated preparation runs.
         self.atb_value = cache(self.atb_value)
         self.rating = cache(self.rating)
+        self.projection_anchor = cache(self.projection_anchor)
         self.derive_consumption = cache(self.derive_consumption)
 
     def atb_value(self, region: str, mode: str, powertrain: str, year: int) -> float:
@@ -762,6 +908,109 @@ class RoadEfficiencyEvidence:
             region, mode, powertrain, self.base_year
         ) / self.atb_value(region, mode, analogue, self.base_year), evidence
 
+    def projection_anchor(self, region: str, mode: str, powertrain: str) -> dict:
+        """Use observed annual consumption and raw cohort counts for projection.
+
+        PEV ranges share only the future anchor; their observed histories remain
+        independent. Missing annual ratings reduce coverage rather than becoming
+        synthetic observations. A wholly empty bin uses the explicit analogue policy.
+        """
+        pathway = self.rules["road_classes"][mode]["pathway"]
+        if pathway not in {"ldv", "mhdv"}:
+            raise ValueError(f"Cohort projection anchors apply only to LDV and MD/HD trucks: {mode}")
+        label = "LDV" if pathway == "ldv" else "MD/HD"
+        years = self.projection_years
+        if (not years or len(set(years)) != len(years)
+                or any(not isinstance(year, (int, np.integer)) or isinstance(year, bool)
+                       or year < 1 or year > self.base_year for year in years)):
+            raise ValueError(f"{label} projection requires distinct observed cohort years through base_year")
+        reference = self.projection_reference_year
+        if (not isinstance(reference, (int, np.integer)) or isinstance(reference, bool)
+                or reference <= self.base_year):
+            raise ValueError(f"{label} projection requires its first model period after base_year")
+        required = {"region", "road_class", "powertrain", "vintage_year", "raw_capacity"}
+        if self.cohort_stock is None or not required.issubset(self.cohort_stock):
+            raise ValueError(f"{label} projection requires registered raw cohort stock evidence")
+        family = powertrain.split("_", 1)[0]
+        anchor_powertrain = self.pev_projection_anchors.get(family, powertrain) if pathway == "ldv" else powertrain
+        if anchor_powertrain not in self.rules[pathway + "_archetypes"]:
+            raise ValueError(f"Unconfigured {label} projection powertrain: {anchor_powertrain}")
+        observations = self.period_observations(
+            region, mode, anchor_powertrain, sorted(years), allow_analogue_when_empty=(
+                self.rules["missing_annual_rating"] == "observed_years_with_explicit_period_fallback"),
+        )
+        if not observations:
+            raise ProjectionAnchorUnavailable(f"No observed or approved-proxy {label} projection anchor: {region}/{mode}/{anchor_powertrain}")
+
+        region_map = self.rules.get("region_output_map", {})
+        output_region = region_map.get(region, region)
+        stock = self.cohort_stock.loc[
+            self.cohort_stock.region.map(lambda value: region_map.get(value, value)).eq(output_region)
+            & self.cohort_stock.road_class.eq(mode)
+        ].copy()
+        for column in ("vintage_year", "raw_capacity"):
+            stock[column] = pd.to_numeric(stock[column], errors="raise")
+            if not np.isfinite(stock[column]).all():
+                raise ValueError(f"Non-finite {label} projection stock {column}: {region}/{mode}")
+        if stock.vintage_year.mod(1).ne(0).any() or stock.raw_capacity.lt(0).any():
+            raise ValueError(f"Invalid {label} projection cohort stock: {region}/{mode}")
+        stock = stock.loc[stock.vintage_year.isin(years)]
+        candidates, current = [], anchor_powertrain
+        if pathway == "ldv":
+            while current not in candidates:
+                candidates.append(current)
+                current = self.rules["ldv_archetypes"][current]["analogue"]
+            incumbent = self.rules["ldv_incumbent_fallback"]
+        else:
+            candidates.append(current)
+            incumbent = self.rules["mhdv_fleet_baseline"]["reference_fuel"]
+        if incumbent not in candidates:
+            candidates.append(incumbent)
+        stock_fuels = list(dict.fromkeys(
+            candidate.split("_", 1)[0] if candidate.startswith(("bev_", "phev_")) else candidate
+            for candidate in candidates
+        ))
+        stock_powertrain, cohort_counts = None, {}
+        for candidate in stock_fuels:
+            counts = stock.loc[stock.powertrain.eq(candidate)].groupby("vintage_year").raw_capacity.sum()
+            if float(counts.sum()) > 0:
+                stock_powertrain = candidate
+                cohort_counts = {int(year): float(counts.get(year, 0)) for year in sorted(years)}
+                break
+        if stock_powertrain is None:
+            raise ValueError(f"No positive own or configured-analogue cohort stock: {region}/{mode}/{anchor_powertrain}")
+        included = sorted(year for year in observations if cohort_counts[year] > 0)
+        included_stock = sum(cohort_counts[year] for year in included)
+        if included_stock <= 0:
+            raise ValueError(f"No overlap between observed ratings and positive cohort stock: {region}/{mode}/{anchor_powertrain}")
+        weights = {year: cohort_counts[year] / included_stock for year in included}
+        total_stock = sum(cohort_counts.values())
+        own_stock_powertrain = anchor_powertrain.split("_", 1)[0] if family in self.pev_projection_anchors else anchor_powertrain
+        stock_proxy = stock_powertrain != own_stock_powertrain
+        coverage = included_stock / total_stock
+        if stock_proxy:
+            self.findings.add((region, mode, anchor_powertrain, self.base_year,
+                               f"projection_cohort_stock_analogue={stock_powertrain}"))
+        if coverage < 1 - self.rules["tolerances"]["weight_sum"]:
+            self.findings.add((region, mode, anchor_powertrain, self.base_year,
+                               f"projection_cohort_stock_coverage={coverage:.12g}"))
+        return {
+            "powertrain": anchor_powertrain,
+            "native_intensity": positive(sum(weights[year] * observations[year]["native_intensity"]
+                                             for year in included), "projection anchor consumption"),
+            "load_factor": positive(sum(weights[year] * observations[year]["load_factor"]
+                                        for year in included), "projection anchor load factor"),
+            "candidate_years": [int(year) for year in sorted(years)],
+            "included_years": [int(year) for year in included],
+            "weights": weights,
+            "observations": {year: observations[year] for year in included},
+            "cohort_stock": cohort_counts,
+            "cohort_stock_coverage": coverage,
+            "stock_powertrain": stock_powertrain,
+            "stock_proxy": stock_proxy,
+            "atb_reference_year": int(reference),
+        }
+
     def derive_consumption(
         self, region: str, mode: str, powertrain: str, year: int, *,
         allow_analogue: bool = False,
@@ -769,52 +1018,22 @@ class RoadEfficiencyEvidence:
         """Keep energy in the numerator until the caller's final service conversion."""
         spec, base = self.rules["road_classes"][mode], self.base_year
         pathway = spec["pathway"]
-        load = require_observed_value(
+        load = None if pathway in {"ldv", "mhdv"} and year > base else require_observed_value(
             self.loads.loc[self.loads.region.eq(region) & self.loads["mode"].eq(mode)],
             min(year, base),
             "load_factor",
         )
         native, native_unit, index, analogue = None, "MJ/vkm", 1.0, powertrain
-        historical_anchor, index_reference = None, powertrain
-        source_years = {}
+        index_reference = powertrain
+        source_years, projection_details = {}, {}
         if pathway == "ldv":
-            if powertrain.startswith(("bev", "phev")):
-                historical_anchor = self.pev_historical_anchors[powertrain.split("_", 1)[0]]
-                consumption = self.atb_value(region, mode, powertrain, max(year, base))
-                if year < base:
-                    index_reference = historical_anchor
-                    historic = self.rating(mode, historical_anchor, year, "native")
-                    reference = self.rating(mode, historical_anchor, base, "native")
-                    if historic is None or reference is None:
-                        if not allow_analogue:
-                            return None
-                        proxy = self.historical_rating_ratio(
-                            mode, historical_anchor, year, base, missing_ok=True,
-                        )
-                        if proxy is None:
-                            return None
-                        index, analogue = proxy
-                    else:
-                        index, analogue = historic / reference, historical_anchor
-                    consumption *= index
-                    treatment = "ATB_PEV_level_NRCan_shared_anchor_history"
+            if year <= base:
+                observed = self.rating(mode, powertrain, year, "mj")
+                if observed is not None:
+                    consumption, treatment = observed, "NRCan_observed_class_weighted"
                 else:
-                    treatment = "ATB_PEV_direct_total_energy"
-            elif (
-                year <= base
-                and (observed := self.rating(mode, powertrain, year, "mj")) is not None
-            ):
-                consumption, treatment = observed, "NRCan_observed_class_weighted"
-            else:
-                if year <= base and not allow_analogue:
-                    return None
-                if year > base:
-                    baseline, analogue = self.ldv_baseline(region, mode, powertrain)
-                    index = self.atb_value(
-                        region, mode, powertrain, year
-                    ) / self.atb_value(region, mode, powertrain, base)
-                    treatment = "NRCan_baseline_ATB_consumption_ratio"
-                else:
+                    if not allow_analogue:
+                        return None
                     proxy = self.historical_rating_ratio(
                         mode, powertrain, year, base, missing_ok=True,
                     )
@@ -822,28 +1041,77 @@ class RoadEfficiencyEvidence:
                         return None
                     index, analogue = proxy
                     baseline, _ = self.ldv_baseline(region, mode, powertrain)
+                    consumption = baseline * index
                     treatment = "NRCan_missing_year_approved_analogue_index"
-                consumption = baseline * index
+            else:
+                anchor = self.projection_anchor(region, mode, powertrain)
+                analogue = index_reference = anchor["powertrain"]
+                index = self.atb_value(region, mode, powertrain, year) / self.atb_value(
+                    region, mode, anchor["powertrain"], anchor["atb_reference_year"],
+                )
+                consumption = anchor["native_intensity"] * index
+                load = anchor["load_factor"]
+                treatment = "NRCan_cohort_anchor_ATB_relative_projection"
+                projection_details = {
+                    "projection_anchor_powertrain": anchor["powertrain"],
+                    "projection_source_years": anchor["included_years"],
+                    "projection_reference_year": anchor["atb_reference_year"],
+                    "projection_stock_powertrain": anchor["stock_powertrain"],
+                    "projection_stock_coverage": anchor["cohort_stock_coverage"],
+                    "projection_stock_proxy": anchor["stock_proxy"],
+                }
             native = consumption
         elif pathway == "mhdv":
-            anchor = self.atb_value(
-                region, mode, powertrain, base if year <= base else year
-            )
+            truck = self.rules["mhdv_fleet_baseline"]
+            for key, expected in {
+                "emerging_ratio_year": "first_model_period",
+                "future_baseline": "latest_observed_cohort",
+                "future_load_factor": "anchor_cohort",
+                "missing_stock": "reference_fuel_cohort",
+            }.items():
+                if truck[key] != expected:
+                    raise ValueError(f"Unsupported MD/HD fleet baseline {key}: {truck[key]}")
+            reference = self.projection_reference_year
             if year <= base:
-                fuel = self.rules["historical_index_fuels"][mode][powertrain]
+                observed = powertrain in truck["observed_fuels"][mode]
+                fuel = powertrain if observed else truck["reference_fuel"]
                 series = ceud_series(
                     self.ceud.loc[self.ceud.region.eq(region)],
                     spec["stock_table"],
                     spec["cs_prefix"] + "|" + self.rules["fuel_series"][fuel],
                     "L/100 km",
                 )
-                index = require_observed_value(series, year, "value") / require_observed_value(
-                    series, base, "value"
-                )
+                if self.conversions is None:
+                    raise ValueError("MD/HD fleet consumption requires configured fuel heating values")
+                hhv = positive(self.conversions["fuel_hhv"][fuel + "_mj_per_litre"], "CEUD fuel HHV")
+                consumption = require_observed_value(series, year, "value") * hhv * self.conversions["service"]["per_100_km_to_per_km"]
+                if not observed:
+                    if not isinstance(reference, (int, np.integer)) or isinstance(reference, bool) or reference <= base:
+                        raise ValueError("MD/HD emerging history requires its first model period after base_year")
+                    index = self.atb_value(region, mode, powertrain, reference) / self.atb_value(region, mode, fuel, reference)
+                    consumption *= index
+                    projection_details["projection_reference_year"] = int(reference)
                 analogue = fuel
-            consumption = anchor * index
+                projection_details["source_fuel"] = fuel
+                treatment = "CEUD_observed_fleet_consumption" if observed else "CEUD_diesel_fleet_ATB_relative_powertrain"
+            else:
+                anchor = self.projection_anchor(region, mode, powertrain)
+                index_powertrain = truck["projection_index_powertrains"].get(powertrain, powertrain)
+                index = self.atb_value(region, mode, index_powertrain, year) / self.atb_value(region, mode, index_powertrain, anchor["atb_reference_year"])
+                consumption = anchor["native_intensity"] * index
+                load = anchor["load_factor"]
+                analogue = index_reference = index_powertrain
+                treatment = "CEUD_cohort_anchor_ATB_relative_projection"
+                projection_details = {
+                    "projection_anchor_powertrain": anchor["powertrain"],
+                    "projection_source_years": anchor["included_years"],
+                    "projection_reference_year": anchor["atb_reference_year"],
+                    "projection_stock_powertrain": anchor["stock_powertrain"],
+                    "projection_stock_coverage": anchor["cohort_stock_coverage"],
+                    "projection_stock_proxy": anchor["stock_proxy"],
+                    "projection_index_powertrain": index_powertrain,
+                }
             native = consumption
-            treatment = "ATB_direct_or_CEUD_consumption_backcast"
         elif pathway in {"bus", "intercity"}:
             selected_mode = (
                 self.rules["intercity"]["baseline_class"]
@@ -955,8 +1223,8 @@ class RoadEfficiencyEvidence:
             "native_unit": native_unit,
             "consumption_index": index,
             "analogue": analogue,
-            "historical_index_anchor": historical_anchor,
             "treatment": treatment,
+            **projection_details,
             **({"source_point_selection": self.rules["source_point_selection"], **source_years}
                if source_years else {}),
         }

@@ -152,7 +152,11 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         assert connection.execute("SELECT COUNT(*) FROM demand").fetchone()[0] == report["demand"]["parameter_rows"]
         assert connection.execute("SELECT COUNT(DISTINCT region) FROM demand").fetchone()[0] == len(bundle.scenario.geography.regions)
         assert connection.execute("SELECT COUNT(DISTINCT period) FROM demand").fetchone()[0] == len(bundle.scenario.periods.model)
-        assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity").fetchone()[0] == report["road_utilization"]["capacity_to_activity_rows"]
+        assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity").fetchone()[0] == report["road_utilization"]["capacity_to_activity_rows"] + report["ev_chargers"]["capacity_to_activity_rows"]
+        assert connection.execute(
+            "SELECT COUNT(*) FROM capacity_to_activity c JOIN technology t USING (tech) "
+            "WHERE t.category = 'charger' AND c.c2a = 31.536 AND c.units = 'PJ/GW'"
+        ).fetchone()[0] == 4 * regions
         assert connection.execute("SELECT COUNT(*) FROM limit_annual_capacity_factor").fetchone()[0] == report["road_utilization"]["flat_factor_rows"] + report["ev_chargers"]["utilization_rows"]
         assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity WHERE data_source IS NOT NULL OR dq_cred IS NOT NULL").fetchone()[0] == 0
         assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity WHERE data_id NOT IN (SELECT data_id FROM data_set)").fetchone()[0] == 0
@@ -194,7 +198,7 @@ def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Pat
     assert report["road_utilization"]["sqlite_insertion"] == "blocked_upstream_vintage_plus_period_schema_gap"
     assert report["road_utilization"]["age_factor_rows"] > 0
     with sqlite3.connect(database) as connection:
-        assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity").fetchone()[0] == report["road_utilization"]["capacity_to_activity_rows"]
+        assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity").fetchone()[0] == report["road_utilization"]["capacity_to_activity_rows"] + report["ev_chargers"]["capacity_to_activity_rows"]
         assert connection.execute("SELECT COUNT(*) FROM limit_annual_capacity_factor").fetchone()[0] == report["road_utilization"]["flat_factor_rows"] + report["ev_chargers"]["utilization_rows"]
         assert "period" not in {
             row[1] for row in connection.execute("PRAGMA table_info(limit_annual_capacity_factor)")
