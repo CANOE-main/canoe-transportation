@@ -381,3 +381,132 @@ def registry_rows(
         list(by_type[DataSet]),
         list(by_type[DataSource]),
     )
+
+
+def published_content_identity(notes: str | None) -> str | None:
+    """Recover a published dataset's unchanged preparation identity."""
+    if not notes:
+        return None
+    try:
+        metadata = json.loads(notes)
+    except (TypeError, ValueError):
+        return None
+    if (isinstance(metadata, dict) and metadata.get("kind") == "transport-data-id-v1"
+            and isinstance(metadata.get("content_identity"), str)):
+        return metadata["content_identity"]
+    return None
+
+
+def publish_data_ids(
+    rows: Sequence[CanoeBaseModel], identifiers: Mapping[str, str], *, scenario_name: str,
+) -> list[CanoeBaseModel]:
+    """Copy final rows with readable IDs; retain content identity in dataset metadata.
+
+    Preparation IDs still protect fingerprints and lineage. Their published aliases
+    are labels within a scenario, not content checksums. No input row is mutated.
+    """
+    result = []
+    for row in rows:
+        payload = row.model_dump(mode="python")
+        original = payload.get("data_id")
+        if original is not None:
+            if original not in identifiers:
+                raise ProvenanceError(f"Unregistered publication data_id: {original}")
+            payload["data_id"] = identifiers[original]
+        if payload.get("parent_id") in identifiers:
+            payload["parent_id"] = identifiers[payload["parent_id"]]
+        if isinstance(row, DataSet):
+            payload["notes"] = json.dumps({
+                "kind": "transport-data-id-v1",
+                "content_identity": original,
+                "scenario": scenario_name,
+                "notes": row.notes,
+            }, sort_keys=True, separators=(",", ":"))
+        result.append(type(row).model_validate(payload))
+    return result
+
+
+def readable_data_id_mapping(
+    *, datasets: Sequence[DataSet], contexts: Sequence[ResolvedProvenance],
+    batches: Mapping[str, Sequence[CanoeBaseModel]], scenario_name: str,
+    existing_datasets: Sequence[DataSet] = (),
+) -> dict[str, str]:
+    """Allocate scenario-scoped aliases at the complete insertion boundary.
+
+    Dataset namespaces describe the actual shared grain. Region/technology appear
+    only when all referenced rows have that one value; mixed dimensions are omitted.
+    Colliding labels get numeric ordinals in content-identity order. Existing caller
+    registries reserve their aliases, so adding transport never redefines a dataset.
+    """
+    def token(value: str) -> str:
+        return re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip("-_.")
+
+    scenario = token(scenario_name)
+    if not scenario:
+        raise ProvenanceError("Readable transport dataset IDs require a scenario name")
+    definitions = {}
+    for dataset in datasets:
+        if dataset.data_id in definitions and definitions[dataset.data_id] != dataset:
+            raise ProvenanceError(f"Conflicting publication dataset: {dataset.data_id}")
+        definitions[dataset.data_id] = dataset
+    referenced: dict[str, list[CanoeBaseModel]] = {key: [] for key in definitions}
+    for rows in batches.values():
+        for row in rows:
+            original = getattr(row, "data_id", None)
+            if original is None:
+                continue
+            if original not in referenced:
+                raise ProvenanceError(f"Unregistered publication data_id: {original}")
+            referenced[original].append(row)
+    governing = {}
+    for context in contexts:
+        previous = governing.setdefault(context.data_id, context.governing_source_id)
+        if previous != context.governing_source_id:
+            raise ProvenanceError(f"Conflicting governing sources for {context.data_id}")
+
+    bases = {}
+    for original, rows in referenced.items():
+        namespace = token(original.split(":", 1)[0])
+        if not namespace:
+            raise ProvenanceError(f"Dataset lacks a readable namespace: {original}")
+        parts = [namespace]
+        for dimension in ("region", "tech"):
+            values = {
+                getattr(row, dimension, getattr(row, "tech_or_group", None) if dimension == "tech" else None)
+                for row in rows
+            }
+            if len(values) == 1 and None not in values:
+                value = token(str(next(iter(values))))
+                if value.casefold() not in namespace.casefold().split("-"):
+                    parts.append(value)
+        parts.extend((governing.get(original, "internal"), scenario))
+        bases[original] = ":".join(parts)
+
+    existing = {dataset.data_id: dataset for dataset in existing_datasets}
+    reserved = set(existing)
+    identifiers = {}
+    for original in sorted(bases, key=lambda key: (bases[key], key)):
+        base = bases[original]
+        # Reuse only the same content identity and same truthful scope. A broader
+        # regional contribution must not inherit a label claiming one region.
+        reusable = sorted(
+            key for key, dataset in existing.items()
+            if (key == base or re.fullmatch(re.escape(base) + r":[1-9]\d*", key))
+            and published_content_identity(dataset.notes) == original
+        )
+        if reusable:
+            identifiers[original] = reusable[0]
+            continue
+        candidate, number = base, 1
+        while candidate in reserved:
+            number += 1
+            candidate = f"{base}:{number}"
+        identifiers[original] = candidate
+        reserved.add(candidate)
+    if len(set(identifiers.values())) != len(identifiers):
+        raise ProvenanceError("Readable transport dataset ID collision")
+    for row in publish_data_ids(list(definitions.values()), identifiers, scenario_name=scenario_name):
+        previous = existing.get(row.data_id)
+        if previous is not None and previous != row:
+            raise ProvenanceError(f"Conflicting published dataset definition: {row.data_id}")
+    return identifiers

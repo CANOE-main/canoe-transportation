@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 import gzip
 from pathlib import Path
 import re
@@ -30,6 +30,8 @@ from validation.config_models import PathsConfig, ScenarioIdentity
 
 Profile = Literal["vehicle_stock", "efficiency"]
 Digest = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
+# Accept historical captures while all new releases use an informative UTC name.
+BUILD_ID_PATTERN = r"(?:[A-Za-z0-9][A-Za-z0-9_.-]*-\d{8}T\d{6}Z(?:-[1-9]\d*)?|[0-9a-f]{32})"
 
 
 class EvidenceFile(BaseModel):
@@ -49,7 +51,7 @@ class NotebookManifest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     version: Literal[1] = 1
     profile: Profile
-    build_id: Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{32}$")]
+    build_id: Annotated[str, StringConstraints(pattern=rf"^{BUILD_ID_PATTERN}$")]
     built_at: datetime
     scenario: ScenarioIdentity
     database: EvidenceDatabase
@@ -143,9 +145,21 @@ def stage_notebook_evidence(bundle: ConfigBundle, report: dict) -> NotebookPubli
     root = resolve_artifact_path(bundle, "notebook_evidence").resolve()
     root.mkdir(parents=True, exist_ok=True)
     rules = load_harmonization_rules(bundle, "notebook_diagnostics")
-    build_id = uuid4().hex
-    release = root / "builds" / build_id
-    release.parent.mkdir(parents=True, exist_ok=True)
+    built_at = datetime.fromisoformat(str(report["timestamp_utc"]))
+    built_at = (built_at.replace(tzinfo=UTC) if built_at.tzinfo is None else built_at.astimezone(UTC))
+    scenario_name = re.sub(r"[^A-Za-z0-9_.-]+", "-", bundle.scenario.scenario.name).strip(".-_")
+    base_id = f"{scenario_name or 'scenario'}-{built_at:%Y%m%dT%H%M%SZ}"
+    builds = root / "builds"
+    builds.mkdir(parents=True, exist_ok=True)
+    # Scenario builds are serialized; repeated captures within one second remain
+    # immutable and inspectable without an opaque random suffix.
+    same_second = [
+        int(match[1] or 1) for path in builds.iterdir()
+        if (match := re.fullmatch(re.escape(base_id) + r"(?:-([1-9]\d*))?", path.name))
+    ]
+    sequence = max(same_second, default=0) + 1
+    build_id = base_id if sequence == 1 else f"{base_id}-{sequence}"
+    release = builds / build_id
     references = {}
     with _staging_directory(root) as staging:
         for profile in profiles:
@@ -245,7 +259,7 @@ def prune_notebook_evidence(publication: NotebookPublication) -> list[Path]:
     keep = set()
     for profile, reference in index.bundles.items():
         parts = reference.replace("\\", "/").split("/")
-        if (len(parts) != 4 or parts[0] != "builds" or not re.fullmatch(r"[0-9a-f]{32}", parts[1])
+        if (len(parts) != 4 or parts[0] != "builds" or not re.fullmatch(BUILD_ID_PATTERN, parts[1])
                 or parts[2:] != [profile, "manifest.json"]):
             raise ValueError(f"Invalid latest notebook evidence reference: {reference}")
         current = root
@@ -258,7 +272,7 @@ def prune_notebook_evidence(publication: NotebookPublication) -> list[Path]:
 
     stale = []
     for candidate in builds.iterdir():
-        if not re.fullmatch(r"[0-9a-f]{32}", candidate.name):
+        if not re.fullmatch(BUILD_ID_PATTERN, candidate.name):
             raise ValueError(f"Unexpected notebook evidence build path: {candidate}")
         if candidate.name not in keep:
             stale.append(candidate)

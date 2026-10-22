@@ -160,6 +160,36 @@ def test_service_intensity_period_is_averaged_before_single_reciprocal():
     assert "weighted_source_year" not in result
 
 
+def test_range_periods_keep_their_own_observed_support_before_sales_weighting():
+    def point(consumption, load):
+        return {"native_intensity": consumption, "native_unit": "MJ/vkm", "load_factor": load}
+
+    combined = layer.combine_range_observations(
+        {"short": {2021: point(2, 1)}, "long": {2023: point(8, 3)}},
+        {"short": .75, "long": .25}, {2021: .1, 2022: .2, 2023: .7},
+    )
+    years = sorted(combined["observations"])
+    result = layer.aggregate_consumption_period(
+        [combined["observations"][year] for year in years],
+        [combined["weights"][year] for year in years],
+    )
+    assert result["native_intensity"] == 3.5
+    assert result["load_factor"] == 1.5
+    assert result["efficiency"] == pytest.approx(1.5 / 3.5)
+    assert combined["range_coverage"] == {"short": .1, "long": .7}
+    assert combined["cohort_coverage"] == pytest.approx(.25)
+    assert combined["weights"] == {2021: .75, 2023: .25}
+    assert 2022 not in combined["observations"]
+
+
+def test_range_periods_reject_missing_range_instead_of_dropping_its_sales_share():
+    with pytest.raises(ValueError, match="Missing or out-of-period"):
+        layer.combine_range_observations(
+            {"short": {}, "long": {2023: {"native_intensity": 1, "native_unit": "MJ/vkm", "load_factor": 1}}},
+            {"short": .5, "long": .5}, {2023: 1},
+        )
+
+
 @pytest.mark.parametrize("observations,weights,message", [
     ([], [], "nonempty"),
     ([{"native_intensity": 1, "native_unit": "MJ/Tkm"}], [], "matching"),

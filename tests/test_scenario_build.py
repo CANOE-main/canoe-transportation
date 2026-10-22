@@ -29,6 +29,34 @@ def small_database(path, value):
         connection.execute("INSERT INTO example VALUES (?)", (value,))
 
 
+@pytest.mark.parametrize("debug", [False, True])
+def test_native_scenario_logs_missing_cache_failure_and_keeps_publication(tmp_path, monkeypatch, debug):
+    shutil.copytree(ROOT / "config", tmp_path / "config")
+    shutil.copyfile(ROOT / "pyproject.toml", tmp_path / "pyproject.toml")
+    monkeypatch.chdir(tmp_path)
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=tmp_path)
+    database = tmp_path / bundle.paths.outputs.sqlite / bundle.scenario.outputs.sqlite_name
+    report = tmp_path / bundle.scenario.outputs.validation_report
+    database.parent.mkdir(parents=True)
+    report.parent.mkdir(parents=True)
+    database.write_bytes(b"previous database")
+    report.write_bytes(b"previous report")
+    with pytest.raises(FileNotFoundError):
+        build_transport.build_from_scenario("config/scenarios/default.yaml", overwrite=True, debug=debug)
+    assert database.read_bytes() == b"previous database"
+    assert report.read_bytes() == b"previous report"
+    logs = list((tmp_path / "outputs/logs").glob("baseline_default_*.log"))
+    assert len(logs) == 1
+    content = logs[0].read_text(encoding="utf-8")
+    assert f"verbosity={'DEBUG' if debug else 'INFO'}" in content
+    assert "cache downloads disabled" in content
+    assert "Prerequisite fetching.nrcan_ceud.fetch_and_normalize failed" in content
+    assert "Total scenario build failed" in content
+    assert "Traceback (most recent call last):" in content
+    assert "FileNotFoundError" in content
+    assert "Scenario build completed:" not in content
+
+
 @pytest.mark.parametrize("existing_report", [True, False])
 def test_publication_preserves_previous_outputs_on_database_replace_failure(tmp_path, monkeypatch, existing_report):
     database, candidate, report = (tmp_path / name for name in ("final.sqlite", "candidate.sqlite", "report.json"))

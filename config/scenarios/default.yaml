@@ -102,7 +102,7 @@ charging_profiles:
 
 BEV_PHEV_range_representation:
   # New PEVs: constrain minimum range shares or aggregate by range subclass.
-  mode: new_capacity_shares  # none | new_capacity_shares | representative_archetype
+  mode: representative_archetype  # none | new_capacity_shares | representative_archetype
 
 # Road vehicle-cycle emissions.
 embodied_emissions: true

@@ -106,6 +106,46 @@ def aggregate_consumption_period(observations: list[dict], weights: list[float])
     return result
 
 
+def combine_range_observations(
+    observations: dict[str, dict[int, dict]], shares: dict[str, float],
+    cohort_weights: dict[int, float],
+) -> dict:
+    """Pool independently observed range periods without inventing common years.
+
+    Each range renormalizes the cohort weights over its own observed years. Its
+    sales share then weights its entire period, so a sparse range cannot acquire
+    extra influence merely by appearing in a year with no other rated ranges.
+    """
+    if (set(observations) != set(shares) or not shares
+            or any(not np.isfinite(v) or v < 0 for v in shares.values())
+            or not np.isclose(sum(shares.values()), 1, rtol=0, atol=1e-9)):
+        raise ValueError("Range observations require complete normalized shares")
+    if (not cohort_weights or any(not np.isfinite(v) or v < 0 for v in cohort_weights.values())
+            or not np.isclose(sum(cohort_weights.values()), 1, rtol=0, atol=1e-9)):
+        raise ValueError("Range observations require normalized cohort weights")
+    range_weights, coverage = {}, {}
+    for bucket, records in observations.items():
+        if not records or set(records) - set(cohort_weights):
+            raise ValueError(f"Missing or out-of-period range observations: {bucket}")
+        coverage[bucket] = sum(cohort_weights[year] for year in records)
+        if coverage[bucket] <= 0:
+            raise ValueError(f"No positive cohort support for range: {bucket}")
+        range_weights[bucket] = {year: cohort_weights[year] / coverage[bucket] for year in records}
+    combined, weights = {}, {}
+    for year in sorted(set().union(*(set(records) for records in observations.values()))):
+        parts = [(records[year], shares[bucket] * range_weights[bucket][year])
+                 for bucket, records in observations.items() if year in records]
+        weights[year] = sum(weight for _, weight in parts)
+        if weights[year] <= 0:
+            continue
+        result = aggregate_consumption_period([row for row, _ in parts], [weight for _, weight in parts])
+        result.pop("efficiency")  # Annual audit stays in consumption space.
+        combined[year] = {**result, "treatment": "OMEGA_independent_range_period_consumption"}
+    weights = {year: weight for year, weight in weights.items() if year in combined}
+    return {"observations": combined, "weights": weights, "range_weights": range_weights,
+            "range_coverage": coverage, "cohort_coverage": sum(shares[bucket] * value for bucket, value in coverage.items())}
+
+
 def phev_blend_relationships(rules: dict) -> dict:
     blends = {key: dict(spec) for key, spec in rules["phev_blends"].items()}
     for category, spec in rules["existing_phev_blends"].items():
@@ -640,6 +680,21 @@ def prepare_efficiency_rows(
             member, usecols=rules["ratings"]["evidence_columns"], low_memory=False
         )
     atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
+    atb_dir = resolve_input_path(bundle, "interim", atb_rules["interim_subdir"])
+    phev_source = read(
+        atb_dir / atb_rules["components"]["phev_efficiency"]["output_file"], ATB
+    )
+    utility_factors = {}
+    for powertrain, archetype in rules["ldv_archetypes"].items():
+        if not powertrain.startswith("phev"):
+            continue
+        factors = phev_source.loc[
+            phev_source.vehicle_weight_category.eq(rules["atb"]["weight_categories"]["ldv"])
+            & phev_source.electric_range_mi.eq(archetype["range_mi"]), "fleet_utility_factor"
+        ].drop_duplicates()
+        if len(factors) != 1 or not np.isfinite(factors.iloc[0]) or not 0 <= factors.iloc[0] <= 1:
+            raise ValueError(f"Missing or inconsistent ATB range utility factor: {powertrain}")
+        utility_factors[powertrain] = float(factors.iloc[0])
     classified = classify_ratings(
         ratings,
         epa,
@@ -649,6 +704,7 @@ def prepare_efficiency_rows(
             "future_nrcan_phev_contract"
         ],
         range_rules=range_rules,
+        uf_by_powertrain=utility_factors,
     )
     aggregation = load_harmonization_rules(bundle, "road_aggregation")
     weights_dir = resolve_artifact_path(bundle, "road_aggregation")
@@ -660,12 +716,8 @@ def prepare_efficiency_rows(
         classified, rating_weights, rules=rules, weight_basis=aggregation["ldv_weight_basis"],
         statistic=scenario.efficiencies.rating_statistic,
     )
-    atb_dir = resolve_input_path(bundle, "interim", atb_rules["interim_subdir"])
     vehicle_source = read(
         atb_dir / atb_rules["components"]["vehicles"]["output_file"], ATB
-    )
-    phev_source = read(
-        atb_dir / atb_rules["components"]["phev_efficiency"]["output_file"], ATB
     )
     trajectory = configured_trajectory(bundle)
     aliases = atb_rules["components"]["phev_efficiency"]["reconciliation"][
@@ -746,6 +798,13 @@ def prepare_efficiency_rows(
         regen=regen,
         base_year=scenario.periods.base_year,
         rules=rules,
+        conversions=conversions,
+        projection_years=tuple(scenario.periods.historical_years(scenario.periods.latest_observed_vintage)),
+        projection_reference_year=scenario.periods.model[0],
+        cohort_stock=annual_stock.merge(
+            relationships.loc[relationships.tech.isin(annual_stock.tech), ["tech", "powertrain"]].drop_duplicates(),
+            on="tech", validate="many_to_one"
+        ),
     )
     rating_inputs, baseline_inputs = ldv_rating_input_resolvers(
         evidence, classified, rating_audit, rules=rules,
@@ -760,6 +819,21 @@ def prepare_efficiency_rows(
                 powertrain=powertrain, year=year, result=result, manual=manual,
                 rating_inputs=rating_inputs, baseline_inputs=baseline_inputs,
             )
+            if year > scenario.periods.base_year and rules["road_classes"].get(mode, {}).get("pathway") in {"ldv", "mhdv"}:
+                anchor = evidence.projection_anchor(region, mode, powertrain)
+                for source_year, observation in anchor["observations"].items():
+                    component_cache[key].extend(components_for(region, mode, anchor["powertrain"], source_year, observation))
+                stock_region = rules["region_output_map"].get(region, region)
+                stock_edges = relationships.loc[
+                    relationships["mode"].eq(mode) & relationships.powertrain.eq(anchor["stock_powertrain"])
+                    & relationships.tech.str.endswith(rules["existing_suffix"]), "tech"
+                ]
+                for stock_tech in stock_edges:
+                    stock_key = (stock_region, stock_tech, scenario.periods.latest_observed_vintage)
+                    if stock_key in stock_components:
+                        component_cache[key].extend(stock_components[stock_key])
+                if not any((stock_region, tech, scenario.periods.latest_observed_vintage) in stock_components for tech in stock_edges):
+                    raise ValueError(f"Missing projection-anchor stock lineage: {region}/{mode}/{powertrain}")
         return component_cache[key]
 
     annual_records, period_records, payloads = [], [], []
@@ -809,6 +883,7 @@ def prepare_efficiency_rows(
                 first_source_year = int(provincial.year.min() if edge.kind == "road" else national.year.min())
                 supported_years = [year for year in years if not historical or year >= first_source_year]
                 range_observations = {}
+                range_combination = None
                 if not supported_years:
                     observations = {}
                 elif edge.kind == "unit":
@@ -822,21 +897,8 @@ def prepare_efficiency_rows(
                                 allow_analogue_when_empty=allow_analogue_when_empty,
                             ) for bucket in range_mix
                         }
-                        supports = [set(records) for records in range_observations.values()]
-                        if any(support != supports[0] for support in supports[1:]):
-                            raise ValueError(f"OMEGA ranges have inconsistent historical anchor support: {edge.tech}/{vintage}")
-                        observations = {}
-                        for year in sorted(supports[0]):
-                            components = {bucket: records[year] for bucket, records in range_observations.items()}
-                            loads_by_range = [record["load_factor"] for record in components.values()]
-                            if ({record["native_unit"] for record in components.values()} != {"MJ/vkm"}
-                                    or not np.allclose(loads_by_range, loads_by_range[0], rtol=0, atol=rules["tolerances"]["weight_sum"])):
-                                raise ValueError("OMEGA range components require common consumption units and load")
-                            observations[year] = {
-                                "native_intensity": sum(range_mix[bucket] * record["native_intensity"] for bucket, record in components.items()),
-                                "load_factor": loads_by_range[0], "native_unit": "MJ/vkm",
-                                "treatment": "OMEGA_range_weighted_consumption",
-                            }
+                        range_combination = combine_range_observations(range_observations, range_mix, candidate_weights)
+                        observations = range_combination["observations"]
                     else:
                         observations = evidence.period_observations(
                             source_region, edge.mode, edge.powertrain, supported_years,
@@ -856,8 +918,10 @@ def prepare_efficiency_rows(
                 if not observations:
                     raise ValueError(f"No supported annual consumption observations: {region}/{edge.tech}/{vintage}")
                 included_years = sorted(observations)
-                coverage = sum(candidate_weights[year] for year in included_years)
-                temporal_weights = {year: candidate_weights[year] / coverage for year in included_years}
+                coverage = (range_combination["cohort_coverage"] if range_combination is not None
+                            else sum(candidate_weights[year] for year in included_years))
+                temporal_weights = (range_combination["weights"] if range_combination is not None
+                                    else {year: candidate_weights[year] / coverage for year in included_years})
                 for year in years:
                     result = observations.get(year)
                     omission = "" if result is not None else (
@@ -872,7 +936,11 @@ def prepare_efficiency_rows(
                     for bucket, records in range_observations.items():
                         component = records.get(year)
                         annual_records.append({**common, "powertrain": bucket, "range_weight": range_mix[bucket],
-                                               "range_representative_component": True, **(component or {})})
+                                               "range_representative_component": True,
+                                               "temporal_weight": range_combination["range_weights"][bucket].get(year, 0.0),
+                                               "source_available": component is not None, "included_in_period": component is not None,
+                                               "omission_reason": "" if component is not None else "missing_own_or_proxy_observation",
+                                               **(component or {})})
                         if component is not None:
                             source_components.extend(components_for(source_region, edge.mode, bucket, year, component))
                     annual_records.append({**common, **(result or {})})
@@ -892,9 +960,11 @@ def prepare_efficiency_rows(
                     "candidate_year_count": len(years), "included_year_count": len(included_years),
                     "candidate_source_years": "|".join(map(str, years)), "included_source_years": "|".join(map(str, included_years)),
                     "candidate_cohort_stock_k_vehicles": float(cohort.sum()) if weighted_stock else None,
-                    "included_cohort_stock_k_vehicles": float(cohort.loc[included_years].sum()) if weighted_stock else None,
+                    "included_cohort_stock_k_vehicles": float(cohort.sum() * coverage) if weighted_stock else None,
                     "cohort_stock_coverage": coverage if weighted_stock else None,
                     "observation_coverage": coverage,
+                    "range_source_years": json.dumps({bucket: sorted(records) for bucket, records in range_observations.items()}, sort_keys=True),
+                    "range_stock_coverage": json.dumps(range_combination["range_coverage"] if range_combination is not None else {}, sort_keys=True),
                 })
                 if weighted_stock:
                     source_components.extend(stock_components[region, edge.tech, vintage])
@@ -1041,17 +1111,23 @@ def prepare_efficiency_rows(
                                            for finding in evidence.findings)
     audit["rating_aggregation"] = "distinct_model_class_weighted"
     audit["annual_stock_evidence"] = dict(existing_capacity_audit["annual_stock_evidence"])
-    audit["pev_historical_anchors"] = dict(evidence.pev_historical_anchors)
+    audit["pev_projection_anchors"] = dict(evidence.pev_projection_anchors)
+    audit["ldv_projection_reference_year"] = evidence.projection_reference_year
+    audit["rating_outlier_exclusions"] = int(classified.outlier_excluded.sum())
     audit["historical_source_backed_rows_without_capacity"] = len(
         existing_keys - capacity_keys
     )
     period_frame = pd.DataFrame(period_records)
-    incomplete = period_frame.loc[period_frame.included_year_count.lt(period_frame.candidate_year_count)]
+    incomplete = period_frame.loc[
+        period_frame.included_year_count.lt(period_frame.candidate_year_count)
+        | period_frame.observation_coverage.lt(1 - rules["tolerances"]["weight_sum"])
+    ]
     audit["omitted_annual_observations"] = int((period_frame.candidate_year_count - period_frame.included_year_count).sum())
     audit["periods_with_incomplete_observation_coverage"] = len(incomplete)
     audit["incomplete_observation_coverage"] = incomplete[[
         "region", "tech", "input_comm", "output_comm", "vintage", "candidate_source_years", "included_source_years",
         "candidate_cohort_stock_k_vehicles", "included_cohort_stock_k_vehicles", "cohort_stock_coverage", "observation_coverage",
+        "range_source_years", "range_stock_coverage",
     ]].replace({np.nan: None}).to_dict("records")
     audit["phev_energy_basis"] = rules["atb"]["phev_energy_basis"]
     audit["existing_ev_representatives"] = {
@@ -1170,6 +1246,9 @@ def ldv_rating_input_resolvers(evidence, classified, rating_audit, *, rules: dic
                 components.add((rules["ratings"]["evidence_source"], "vehicles"))
         if column == "mj" and selected.native_unit.eq("L/100 km").any():
             components.add(("argonne_rd_greet", "fuel_heating_values"))
+        if column == "mj" and powertrain.startswith("phev"):
+            components.add(("argonne_rd_greet", "fuel_heating_values"))
+            components.add((ATB, "phev_utility_factor_ldv"))
         return tuple(sorted(components))
 
     @cache
@@ -1235,11 +1314,12 @@ def efficiency_components(
         treatment = result["treatment"]
         if treatment == "NRCan_observed_class_weighted":
             components.extend(rating_inputs(mode, powertrain, year, "mj"))
-        elif powertrain.startswith(("bev", "phev")):
+        elif treatment == "NRCan_cohort_anchor_ATB_relative_projection":
             components.extend(atb_efficiency_components(powertrain, pathway, rules))
-            if year < base:
-                components.extend(rating_inputs(mode, result["analogue"], year, "native"))
-                components.extend(rating_inputs(mode, result["analogue"], base, "native"))
+            anchor = rules["pev_projection_anchors"].get(powertrain.split("_", 1)[0], powertrain)
+            if anchor != powertrain:
+                components.extend(atb_efficiency_components(anchor, pathway, rules))
+            # The caller adds each observed anchor year and its raw-stock lineage.
         else:
             components.extend(baseline_inputs(mode, powertrain))
             if year > base:
@@ -1247,6 +1327,17 @@ def efficiency_components(
             else:
                 components.extend(rating_inputs(mode, result["analogue"], year, "native"))
                 components.extend(rating_inputs(mode, result["analogue"], base, "native"))
+    elif pathway == "mhdv":
+        spec = rules["mhdv_fleet_baseline"]
+        observed = spec["observed_fuels"][mode]
+        components.append(("argonne_rd_greet", "fuel_heating_values"))
+        if year > base or powertrain not in observed:
+            index_powertrain = spec["projection_index_powertrains"].get(powertrain, powertrain)
+            components.extend(atb_efficiency_components(index_powertrain, pathway, rules))
+            if powertrain not in observed:
+                components.extend(atb_efficiency_components(spec["reference_fuel"], pathway, rules))
+            components.append(aggregation_component(
+                bundle, "medium_trucks" if mode == "medium_trucks" else "heavy_truck_haul", region))
     else:
         atb_powertrain = "diesel" if pathway == "intercity" and powertrain != "hev" else powertrain
         components.extend(atb_efficiency_components(atb_powertrain, pathway, rules))

@@ -2320,8 +2320,8 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-bct:composite:2:04d50fa1af39dbbd
-BCT,T_HDV_BIC_DSL_EX,2020,0.11648720103102785,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-bct:composite:2:04d50fa1af39dbbd
-BCT,T_HDV_BIC_GSL_EX,2015,0.01991446958007214,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+BCT,T_HDV_BIC_DSL_EX,2020,0.11648720103102783,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-bct:composite:2:04d50fa1af39dbbd
+BCT,T_HDV_BIC_GSL_EX,2015,0.019914469580072144,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 30: Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2332,8 +2332,8 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-bct:composite:2:04d50fa1af39dbbd
-BCT,T_HDV_BIC_GSL_EX,2020,0.015612135576827533,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-bct:composite:2:04d50fa1af39dbbd
-MB,T_HDV_BIC_DSL_EX,2010,0.07758439641370994,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+BCT,T_HDV_BIC_GSL_EX,2020,0.015612135576827536,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-bct:composite:2:04d50fa1af39dbbd
+MB,T_HDV_BIC_DSL_EX,2010,0.07758439641370996,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 30: Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2344,8 +2344,8 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
-MB,T_HDV_BIC_DSL_EX,2015,0.06101044321463049,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
-MB,T_HDV_BIC_DSL_EX,2020,0.028303641506291593,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
+MB,T_HDV_BIC_DSL_EX,2015,0.0610104432146305,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
+MB,T_HDV_BIC_DSL_EX,2020,0.028303641506291596,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
 MB,T_HDV_BIC_GSL_EX,2010,0.007887673386651976,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 30: Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2357,7 +2357,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
-MB,T_HDV_BIC_GSL_EX,2015,0.02370450173864117,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
+MB,T_HDV_BIC_GSL_EX,2015,0.023704501738641165,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
 MB,T_HDV_BIC_GSL_EX,2020,0.019509343740074528,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-mb:composite:2:9a4f05843f6f3fce
 NB,T_HDV_BIC_DSL_EX,2010,0.03705041483123253,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 30: Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
@@ -2433,7 +2433,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-ns:composite:2:f19971baeca88273
-ON,T_HDV_BIC_DSL_EX,2015,0.6988251126211575,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+ON,T_HDV_BIC_DSL_EX,2015,0.6988251126211577,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 30: Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2538,7 +2538,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-ab:composite:2:91a37857d7c273ad
 AB,T_HDV_BS_CNG_EX,2015,0.8571929488101937,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-ab:composite:2:91a37857d7c273ad
 AB,T_HDV_BS_CNG_EX,2020,0.802802299635637,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-ab:composite:2:91a37857d7c273ad
-AB,T_HDV_BS_DSL_EX,2015,3.7467998541867855,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+AB,T_HDV_BS_DSL_EX,2015,3.7467998541867864,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2547,8 +2547,8 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-ab:composite:2:91a37857d7c273ad
-AB,T_HDV_BS_DSL_EX,2020,1.3660206670658466,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-ab:composite:2:91a37857d7c273ad
-AB,T_HDV_BS_GSL_EX,2015,0.297738643081791,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+AB,T_HDV_BS_DSL_EX,2020,1.3660206670658468,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-ab:composite:2:91a37857d7c273ad
+AB,T_HDV_BS_GSL_EX,2015,0.29773864308179093,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2558,7 +2558,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-ab:composite:2:91a37857d7c273ad
 AB,T_HDV_BS_GSL_EX,2020,0.16192050075455794,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-ab:composite:2:91a37857d7c273ad
-BCT,T_HDV_BS_CNG_EX,2015,0.252773979633155,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+BCT,T_HDV_BS_CNG_EX,2015,0.25277397963315507,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2567,7 +2567,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-bct:composite:2:072f18c8f290a095
-BCT,T_HDV_BS_CNG_EX,2020,0.34633453131129677,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-bct:composite:2:072f18c8f290a095
+BCT,T_HDV_BS_CNG_EX,2020,0.3463345313112968,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-bct:composite:2:072f18c8f290a095
 BCT,T_HDV_BS_DSL_EX,2015,2.0277514727907846,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2578,7 +2578,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-bct:composite:2:072f18c8f290a095
 BCT,T_HDV_BS_DSL_EX,2020,0.734302684547832,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-bct:composite:2:072f18c8f290a095
-BCT,T_HDV_BS_GSL_EX,2015,0.1495933893419293,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+BCT,T_HDV_BS_GSL_EX,2015,0.14959338934192928,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2598,8 +2598,8 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-mb:composite:2:50f7218b56e3a344
 MB,T_HDV_BS_DSL_EX,2015,0.6429405768711821,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-mb:composite:2:50f7218b56e3a344
-MB,T_HDV_BS_DSL_EX,2020,0.3067815364740502,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-mb:composite:2:50f7218b56e3a344
-MB,T_HDV_BS_GSL_EX,2010,0.10084059111172612,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+MB,T_HDV_BS_DSL_EX,2020,0.30678153647405015,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-mb:composite:2:50f7218b56e3a344
+MB,T_HDV_BS_GSL_EX,2010,0.10084059111172611,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2610,7 +2610,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-mb:composite:2:50f7218b56e3a344
 MB,T_HDV_BS_GSL_EX,2015,0.19340708754128566,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-mb:composite:2:50f7218b56e3a344
 MB,T_HDV_BS_GSL_EX,2020,0.16683540053108692,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-mb:composite:2:50f7218b56e3a344
-NB,T_HDV_BS_CNG_EX,2020,0.0018695232017960264,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+NB,T_HDV_BS_CNG_EX,2020,0.0018695232017960266,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2629,7 +2629,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-nb:composite:2:95578d66ed71c560
 NB,T_HDV_BS_DSL_EX,2015,0.34218556661893995,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nb:composite:2:95578d66ed71c560
-NB,T_HDV_BS_DSL_EX,2020,0.18578710066584211,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nb:composite:2:95578d66ed71c560
+NB,T_HDV_BS_DSL_EX,2020,0.18578710066584214,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nb:composite:2:95578d66ed71c560
 NB,T_HDV_BS_GSL_EX,2010,0.015433683706717057,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2639,7 +2639,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-nb:composite:2:95578d66ed71c560
-NB,T_HDV_BS_GSL_EX,2015,0.034813558405712514,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nb:composite:2:95578d66ed71c560
+NB,T_HDV_BS_GSL_EX,2015,0.03481355840571252,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nb:composite:2:95578d66ed71c560
 NB,T_HDV_BS_GSL_EX,2020,0.028825444176534744,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nb:composite:2:95578d66ed71c560
 NLLAB,T_HDV_BS_DSL_EX,2005,0.06177586201632611,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
@@ -2653,7 +2653,7 @@ nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating 
 NLLAB,T_HDV_BS_DSL_EX,2010,0.1793554665372599,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nllab:composite:2:760e4f43a1e575e4
 NLLAB,T_HDV_BS_DSL_EX,2015,0.17717536717248308,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nllab:composite:2:760e4f43a1e575e4
 NLLAB,T_HDV_BS_DSL_EX,2020,0.09857939643723564,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-nllab:composite:2:760e4f43a1e575e4
-NLLAB,T_HDV_BS_GSL_EX,2005,0.0010331101301910498,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+NLLAB,T_HDV_BS_GSL_EX,2005,0.00103311013019105,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2711,8 +2711,8 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-on:composite:2:48bc5bcdf5385a44
-ON,T_HDV_BS_DSL_EX,2020,3.209248521710502,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-on:composite:2:48bc5bcdf5385a44
-ON,T_HDV_BS_GSL_EX,2015,0.698274011206387,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+ON,T_HDV_BS_DSL_EX,2020,3.2092485217105016,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-on:composite:2:48bc5bcdf5385a44
+ON,T_HDV_BS_GSL_EX,2015,0.6982740112063871,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2740,7 +2740,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-pei:composite:2:f8abfc4d97dfe841
-QC,T_HDV_BS_CNG_EX,2015,0.9375804862330831,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+QC,T_HDV_BS_CNG_EX,2015,0.937580486233083,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2749,7 +2749,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
-QC,T_HDV_BS_CNG_EX,2020,0.8651730465045181,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
+QC,T_HDV_BS_CNG_EX,2020,0.8651730465045182,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
 QC,T_HDV_BS_DSL_EX,2010,3.1895259198659627,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2760,7 +2760,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
 QC,T_HDV_BS_DSL_EX,2015,2.367168339378723,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
-QC,T_HDV_BS_DSL_EX,2020,0.9654753266820123,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
+QC,T_HDV_BS_DSL_EX,2020,0.9654753266820124,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
 QC,T_HDV_BS_GSL_EX,2010,0.22810770564464572,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2771,7 +2771,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
 QC,T_HDV_BS_GSL_EX,2015,0.2879844513545329,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
-QC,T_HDV_BS_GSL_EX,2020,0.19998472433651143,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
+QC,T_HDV_BS_GSL_EX,2020,0.19998472433651146,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-qc:composite:2:b8691202590e7cd5
 SK,T_HDV_BS_CNG_EX,2015,0.021027519366498118,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2781,7 +2781,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-sk:composite:2:0e2ce12d301538ba
-SK,T_HDV_BS_CNG_EX,2020,0.024650904744663967,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-sk:composite:2:0e2ce12d301538ba
+SK,T_HDV_BS_CNG_EX,2020,0.024650904744663964,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-sk:composite:2:0e2ce12d301538ba
 SK,T_HDV_BS_DSL_EX,2020,1.7925269666284476,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2809,8 +2809,8 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
-AB,T_HDV_BT_BEV_EX,2015,0.3056733914726911,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
-AB,T_HDV_BT_BEV_EX,2020,0.217330282857368,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
+AB,T_HDV_BT_BEV_EX,2015,0.30567339147269107,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
+AB,T_HDV_BT_BEV_EX,2020,0.21733028285736797,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
 AB,T_HDV_BT_CNG_EX,2010,0.07415810071399766,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2821,7 +2821,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
 AB,T_HDV_BT_CNG_EX,2015,0.14084851393799383,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
-AB,T_HDV_BT_CNG_EX,2020,0.05184479567466755,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
+AB,T_HDV_BT_CNG_EX,2020,0.05184479567466754,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ab:composite:2:66209cb04080f613
 AB,T_HDV_BT_DSL_EX,2015,1.9589048726802738,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
@@ -2872,7 +2872,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-bct:composite:2:6fcddb065122f982
 BCT,T_HDV_BT_DSL_EX,2020,0.37836969401167975,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-bct:composite:2:6fcddb065122f982
-BCT,T_HDV_BT_GSL_EX,2015,0.006904266701569678,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+BCT,T_HDV_BT_GSL_EX,2015,0.006904266701569679,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2966,7 +2966,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ns:composite:2:2d66ae283df95051
-NS,T_HDV_BT_GSL_EX,2020,0.009924579116648014,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+NS,T_HDV_BT_GSL_EX,2020,0.009924579116648012,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2975,7 +2975,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-ns:composite:2:2d66ae283df95051
-ON,T_HDV_BT_BEV_EX,2015,1.1506560650257915,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+ON,T_HDV_BT_BEV_EX,2015,1.1506560650257918,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -2984,8 +2984,8 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:composite:2:47dd9a9833cb7685
-ON,T_HDV_BT_BEV_EX,2020,0.8502820506193818,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:composite:2:47dd9a9833cb7685
-ON,T_HDV_BT_CNG_EX,2020,0.12315948347990972,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+ON,T_HDV_BT_BEV_EX,2020,0.8502820506193819,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:composite:2:47dd9a9833cb7685
+ON,T_HDV_BT_CNG_EX,2020,0.12315948347990971,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -3004,7 +3004,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:composite:2:47dd9a9833cb7685
 ON,T_HDV_BT_DSL_EX,2020,1.5304134887282852,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:composite:2:47dd9a9833cb7685
-ON,T_HDV_BT_GSL_EX,2015,0.03397736311575494,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+ON,T_HDV_BT_GSL_EX,2015,0.03397736311575493,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -3023,7 +3023,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-pei:composite:2:642ecb1723668558
-QC,T_HDV_BT_BEV_EX,2010,0.8260635586211778,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+QC,T_HDV_BT_BEV_EX,2010,0.8260635586211779,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -3064,9 +3064,9 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-qc:composite:2:78054ae8bd135909
-QC,T_HDV_BT_GSL_EX,2015,0.014483234304986282,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-qc:composite:2:78054ae8bd135909
-QC,T_HDV_BT_GSL_EX,2020,0.013260053423403327,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-qc:composite:2:78054ae8bd135909
-SK,T_HDV_BT_CNG_EX,2015,0.005492188928905084,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+QC,T_HDV_BT_GSL_EX,2015,0.014483234304986284,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-qc:composite:2:78054ae8bd135909
+QC,T_HDV_BT_GSL_EX,2020,0.013260053423403329,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-qc:composite:2:78054ae8bd135909
+SK,T_HDV_BT_CNG_EX,2015,0.005492188928905083,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
 ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
@@ -3075,7 +3075,7 @@ statcan_transport_tables: Canadian vehicle registrations, freight flows and repo
   - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
 nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
   - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-sk:composite:2:8ef477bc52c7760d
-SK,T_HDV_BT_CNG_EX,2020,0.0019094871082272337,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-sk:composite:2:8ef477bc52c7760d
+SK,T_HDV_BT_CNG_EX,2020,0.0019094871082272332,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-sk:composite:2:8ef477bc52c7760d
 SK,T_HDV_BT_DSL_EX,2020,1.1392546189432136,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
   - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.

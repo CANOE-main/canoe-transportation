@@ -20,6 +20,7 @@ outputs:
   sqlite: outputs/sqlite
   validation: outputs/validation
   logs: outputs/logs
+  build_log: "outputs/logs/{scenario_name}_{scenario_yaml}_{timestamp}.log"
 
 legacy:
   root: legacy_backend
@@ -339,7 +340,7 @@ artifacts:
     owner: parameterization.ev_chargers
     producers: [parameterization.ev_chargers.prepare_ev_charger_rows]
     consumers: [build_transport, reviewers]
-    validation_surfaces: [parameterization.ev_chargers.prepare_ev_charger_rows]
+    validation_surfaces: [parameterization.ev_chargers.prepare_ev_charger_rows, parameterization.ev_chargers.prepare_charger_capacity_to_activity]
   ev_chargers_validation:
     path: inputs/validation/ev_chargers
     layer: input_validation
@@ -454,3 +455,10 @@ artifacts:
       - validation.database_bootstrap.validate_database
       - validation.legacy_compare.compare_legacy_tables
       - validation.sqlite_compare.compare_scenario_databases
+  scenario_build_logs:
+    path: outputs/logs
+    layer: logs
+    owner: build_transport
+    producers: [build_transport.build_from_scenario]
+    consumers: [reviewers]
+    validation_surfaces: [utils.build_logging.scenario_build_log]

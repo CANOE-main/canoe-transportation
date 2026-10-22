@@ -1,7 +1,7 @@
 """Recorded road-efficiency sources, aggregation distributions and bridge review.
 
 Loading reads a successful build's evidence snapshot, without ETL or downloads.
-Detailed-class recalculations and interpolation between prepared periods are diagnostic.
+Detailed-class recalculations and optional statistic comparisons are diagnostic.
 """
 
 from __future__ import annotations
@@ -15,12 +15,11 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy.interpolate import PchipInterpolator
 
 from fetching.nlr_atb_autonomie import configured_trajectory
-from parameterization.build_efficiencies import aggregate_consumption_period
+from parameterization.build_efficiencies import aggregate_consumption_period, combine_range_observations
 from parameterization.road_aggregation import nrcan_to_nlr_map
-from parameterization.road_efficiencies import RoadEfficiencyEvidence, aggregate_ratings, ceud_series, observed_value, phev_historical_index_mode, positive, rating_class_statistics, select_atb_consumption
+from parameterization.road_efficiencies import ProjectionAnchorUnavailable, RoadEfficiencyEvidence, aggregate_ratings, ceud_series, observed_value, positive, rating_class_statistics, select_atb_consumption
 from utils import (ConfigBundle, file_sha256, load_conversion_factors, load_harmonization_rules,
                    resolve_artifact_path, resolve_input_path, write_dataframe_atomic, write_text_atomic)
 
@@ -116,6 +115,38 @@ def _class_rating_audit(bundle: ConfigBundle, audit: pd.DataFrame, atb_class: st
     return selected
 
 
+def rating_filter_evidence(bundle: ConfigBundle, classified: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Compare the same native cohorts before and after production outlier screening."""
+    required = {"included_before_filter", "outlier_excluded", "filter_reason", "outlier_status"}
+    if required - set(classified):
+        raise ValueError("Rebuild notebook evidence to capture NRCan statistical-filter decisions")
+    rules = load_harmonization_rules(bundle, "efficiencies")
+    keys = ["year", "rating_class", "powertrain", "native_unit"]
+    audit = classified.copy()
+    audit["powertrain_family"] = audit.powertrain.map(_family)
+    mapping = load_harmonization_rules(bundle, "nrcan_fuel_consumption_ratings")["vehicle_class_harmonization"]
+    audit["atb_class"] = audit.rating_class.map(nrcan_to_nlr_map(mapping))
+    audit["vehicle_group"] = audit.atb_class.map(mapping["target_to_ceud"]).map({"Car": "Cars", "Light Truck": "Light trucks"})
+    before = audit.assign(included=audit.included_before_filter)
+
+    def statistics(frame: pd.DataFrame, prefix: str) -> pd.DataFrame:
+        mean = rating_class_statistics(frame, rules=rules, statistic="mean")
+        median = rating_class_statistics(frame, rules=rules, statistic="median")
+        result = mean[keys + ["native_consumption", "consumption_mj_per_vkm", "distinct_models", "observations"]].rename(columns={
+            "native_consumption": prefix + "distinct_model_mean", "consumption_mj_per_vkm": prefix + "consumption_mj_per_vkm",
+            "distinct_models": prefix + "distinct_models", "observations": prefix + "catalogue_rows"})
+        return result.merge(median[keys + ["native_consumption"]].rename(columns={"native_consumption": prefix + "distinct_model_median"}),
+                            on=keys, validate="one_to_one")
+
+    baseline = statistics(before, "before_")
+    impact = baseline.merge(statistics(audit, "after_"), on=keys, how="left", validate="one_to_one")
+    impact[["after_distinct_models", "after_catalogue_rows"]] = impact[["after_distinct_models", "after_catalogue_rows"]].fillna(0)
+    impact["powertrain_family"] = impact.powertrain.map(_family)
+    impact["atb_class"] = impact.rating_class.map(nrcan_to_nlr_map(mapping))
+    impact["vehicle_group"] = impact.atb_class.map(mapping["target_to_ceud"]).map({"Car": "Cars", "Light Truck": "Light trucks"})
+    return audit, impact
+
+
 def representative_consumption(values: dict[str, float], shares: dict[str, float]) -> float:
     """The OMEGA archetype is an arithmetic mean of energy consumption."""
     if not shares or any(not np.isfinite(s) or s < 0 for s in shares.values()) or abs(sum(shares.values()) - 1) > 1e-9 or set(shares) - set(values):
@@ -143,7 +174,13 @@ def _evidence(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], mode: str, 
             ratings = _class_rating_audit(bundle, ratings, atb_class)
             rules["road_classes"][mode]["weights"] = atb_class
     return RoadEfficiencyEvidence(ceud=inputs["ceud"], loads=inputs["loads"], rating_audit=ratings,
-        atb_audit=atb, gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=bundle.scenario.periods.base_year, rules=rules)
+        conversions=load_conversion_factors(bundle),
+        atb_audit=atb, gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=bundle.scenario.periods.base_year, rules=rules,
+        projection_years=tuple(bundle.scenario.periods.historical_years(bundle.scenario.periods.latest_observed_vintage)),
+        projection_reference_year=bundle.scenario.periods.model[0],
+        cohort_stock=inputs["annual_cohort_stock"].merge(
+            inputs["relationships"].loc[inputs["relationships"].tech.isin(inputs["annual_cohort_stock"].tech),
+                                        ["tech", "powertrain"]].drop_duplicates(), on="tech", validate="many_to_one"))
 
 
 def _rating_series(audit: pd.DataFrame) -> pd.DataFrame:
@@ -162,31 +199,38 @@ def phev_rating_components(bundle: ConfigBundle, classified: pd.DataFrame, audit
     contract = load_harmonization_rules(bundle, "nlr_atb_autonomie")["components"]["phev_efficiency"]["future_nrcan_phev_contract"]
     cs_field, cd_field = contract["combined_cs_output_numeric_field"], contract["combined_cd_output_numeric_field"]
     rows = classified.loc[classified.included & classified.powertrain.str.startswith("phev")].copy()
-    for field in (cs_field, cd_field):
+    for field in (cs_field, cd_field, "cd_electricity_kwh_per_100km", "cd_fuel_l_per_100km"):
         if field not in rows or rows[field].isna().any() or not np.isfinite(rows[field]).all() or rows[field].lt(0).any():
             raise ValueError("PHEV component diagnostic requires finite non-negative explicit CS/CD ratings")
+    rules = load_harmonization_rules(bundle, "efficiencies")
+    conversions = load_conversion_factors(bundle)
+    per_km = conversions["service"]["per_100_km_to_per_km"]
+    fuel = rows[rules["ratings"]["fields"]["phev_fuel"]].map(rules["ratings"]["fuel_codes"])
+    hhv = fuel.map({name: conversions["fuel_hhv"][name + "_mj_per_litre"] for name in ("gasoline", "diesel")})
+    if hhv.isna().any():
+        raise ValueError("PHEV component diagnostic requires a supported liquid fuel")
+    rows["cs_mj_per_vkm"] = rows[cs_field] * hhv * per_km
+    rows["cd_mj_per_vkm"] = (rows.cd_electricity_kwh_per_100km * conversions["energy"]["kwh_to_mj"]
+                              + rows.cd_fuel_l_per_100km * hhv) * per_km
     keys = ["year", "rating_class", "powertrain"]
+    fields = (cs_field, cd_field, "cs_mj_per_vkm", "cd_mj_per_vkm")
     component_means = rating_class_statistics(
-        rows, rules=load_harmonization_rules(bundle, "efficiencies"),
+        rows, rules=rules,
         statistic=bundle.scenario.efficiencies.rating_statistic,
-        value_columns=(cs_field, cd_field),
-    )[keys + [cs_field, cd_field]]
+        value_columns=fields,
+    )[keys + list(fields)]
     weights = weights.merge(component_means, on=keys, how="left", validate="many_to_one")
     if weights[[cs_field, cd_field]].isna().any().any():
         raise ValueError("PHEV component diagnostic is missing a recorded rating class")
-    conversions = load_conversion_factors(bundle)
-    per_km = conversions["service"]["per_100_km_to_per_km"]
-    hhv_fuel = load_harmonization_rules(bundle, "efficiencies")["atb"]["equivalent_gallon_hhv_fuel"]["gge"]
     parts = []
-    for component, field, unit, factor, energy_basis, native_basis in (
-        ("CS", cs_field, "L/100 km (CS)", conversions["fuel_hhv"][hhv_fuel + "_mj_per_litre"] * per_km,
+    for component, field, energy_field, unit, energy_basis, native_basis in (
+        ("CS", cs_field, "cs_mj_per_vkm", "L/100 km (CS)",
          "GREET fuel HHV", "Fuel consumed per distance in charge-sustaining operation; no utility weighting"),
-        ("CD", cd_field, "Le/100 km (CD)", conversions["energy"]["nrcan_kwh_per_litre_gasoline_equivalent"] * conversions["energy"]["kwh_to_mj"] * per_km,
-         "NRCan gasoline-equivalent energy", "Combined equivalent energy per distance in charge-depleting operation; may include liquid fuel; no utility weighting"),
+        ("CD", cd_field, "cd_mj_per_vkm", "Le/100 km (CD)",
+         "Electricity plus GREET liquid-fuel HHV", "CD electricity plus explicit liquid fuel; native Le retained for source comparison; no utility weighting"),
     ):
-        values = weights.assign(weighted=weights.weight * weights[field])
-        grouped = values.groupby(["ceud_class", "powertrain", "year"], as_index=False).agg(native_value=("weighted", "sum"))
-        grouped["value"] = grouped.native_value * factor
+        values = weights.assign(weighted=weights.weight * weights[field], energy=weights.weight * weights[energy_field])
+        grouped = values.groupby(["ceud_class", "powertrain", "year"], as_index=False).agg(native_value=("weighted", "sum"), value=("energy", "sum"))
         grouped["component"], grouped["native_unit"] = component, unit
         grouped["energy_basis"], grouped["native_basis"] = energy_basis, native_basis
         grouped["utility_weighted"] = False
@@ -195,16 +239,16 @@ def phev_rating_components(bundle: ConfigBundle, classified: pd.DataFrame, audit
 
 
 def harmonised_ceud_history(bundle: ConfigBundle, ceud: pd.DataFrame, mode: str) -> pd.DataFrame:
-    """Convert parent-fleet fuel evidence; retain its role as an index context."""
+    """Convert observed parent-fleet fuel volumes with fuel-specific heating values."""
     rules = load_harmonization_rules(bundle, "efficiencies")
     road = rules["road_classes"][mode]
     factors = load_conversion_factors(bundle)["fuel_hhv"]
     parts = []
-    for powertrain, fuel in rules["historical_index_fuels"][mode].items():
+    for fuel in rules["mhdv_fleet_baseline"]["observed_fuels"][mode]:
         series = ceud_series(ceud, road["stock_table"], road["cs_prefix"] + "|" + rules["fuel_series"][fuel], "L/100 km")
         series["consumption_index"] = series.value / positive(observed_value(series, bundle.scenario.periods.base_year, "value"), "CEUD base-year consumption")
         series["value"] *= factors[fuel + "_mj_per_litre"] / 100
-        series["powertrain"], series["source_fuel"] = powertrain, fuel
+        series["powertrain"], series["source_fuel"] = fuel, fuel
         parts.append(series)
     return pd.concat(parts, ignore_index=True)
 
@@ -232,10 +276,14 @@ def _observation_summary(observations: list[dict]) -> dict[str, str]:
     """Keep explicit analogue use visible after annual observations are pooled."""
     treatments = sorted({str(r["treatment"]) for r in observations if pd.notna(r.get("treatment"))})
     analogues = sorted({str(r["analogue"]) for r in observations if pd.notna(r.get("analogue"))})
-    proxy = any(r.get("treatment") == "NRCan_missing_year_approved_analogue_index"
-                or (r.get("treatment") == "ATB_PEV_level_NRCan_shared_anchor_history"
-                    and r.get("analogue") != r.get("historical_index_anchor")) for r in observations)
-    return {"observation_basis": "Configured analogue for empty observed period" if proxy else "Available source observations / projection",
+    proxy = any(r.get("treatment") == "NRCan_missing_year_approved_analogue_index" for r in observations)
+    truck_proxy = any(r.get("treatment") == "CEUD_diesel_fleet_ATB_relative_powertrain" for r in observations)
+    fleet = any(r.get("treatment") == "CEUD_observed_fleet_consumption" for r in observations)
+    basis = ("Configured analogue for empty observed period" if proxy else
+             "Diesel fleet with relative ATB technology proxy" if truck_proxy else
+             "Observed CEUD fleet series used as a vintage proxy" if fleet else
+             "Available source observations / projection")
+    return {"observation_basis": basis,
             "source_treatments": " | ".join(treatments), "analogue": " | ".join(analogues)}
 
 
@@ -280,7 +328,7 @@ def _bridge_rows(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], *, recor
                 components = phev_rating_components(bundle, inputs["ratings"], selected_history)
                 for item in components.itertuples(index=False):
                     add(context | {"powertrain": item.powertrain}, "Harmonised before indexing",
-                        "NRCan CS fuel-only aggregate" if item.component == "CS" else "NRCan CD equivalent-energy aggregate",
+                        "NRCan CS fuel-only aggregate" if item.component == "CS" else "NRCan CD component-energy aggregate",
                         item.year, "consumption", item.value, "MJ/vkm", calibration_observation=item.year <= base,
                         component=item.component, utility_weighted=False, energy_basis=item.energy_basis,
                         native_value=item.native_value, native_unit=item.native_unit, native_basis=item.native_basis,
@@ -293,130 +341,172 @@ def _bridge_rows(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], *, recor
             if rules["road_classes"][mode]["pathway"] == "mhdv":
                 for item in harmonised_ceud_history(bundle, inputs["ceud"], mode).itertuples(index=False):
                     add(context | {"powertrain": item.powertrain}, "Harmonised before indexing",
-                        f"CEUD {item.source_fuel} coarse fleet (index context)", item.year,
+                        f"CEUD {item.source_fuel} observed fleet", item.year,
                         "consumption", item.value, "MJ/vkm", source_class="CEUD coarse vehicle group",
                         source_fuel=item.source_fuel, consumption_index=item.consumption_index,
                         calibration_observation=item.year <= base,
-                        treatment="Parent-fleet energy is normalised at base year; not an observed ATB-class/powertrain consumption level")
+                        treatment="Observed parent-fleet fuel volume converted with its fuel-specific HHV; fleet series proxies vintages")
             powertrains = sorted(atb_audit.powertrain.unique())
-            historical_powertrains = set(rules["historical_index_fuels"].get(mode, powertrains))
             ldv = rules["road_classes"][mode]["pathway"] == "ldv"
+            historical_powertrains = set(powertrains) if ldv else set(inputs["annual"].loc[
+                inputs["annual"]["mode"].eq(mode) & inputs["annual"].source_year.le(base), "powertrain"])
             historical_bins = {v: periods.historical_years(v) for v in periods.existing}
             historical_bins = {v: years for v, years in historical_bins.items() if years and max(years) >= start - periods.step}
             first_year = max(first_source_year, min(min(years) for years in historical_bins.values()))
             if ldv and atb_class is not None:
                 first_year = max(first_year, int(history.year.min()))
-            annual, base_values, period_values = {}, {}, {}
-            loads = inputs["loads"].loc[inputs["loads"].region.eq(region) & inputs["loads"]["mode"].eq(mode)]
-            base_load = positive(observed_value(loads, base, "load_factor"), "CEUD base-year load")
+            annual, period_values = {}, {}
             service_units = rules["service_units"][rules["road_classes"][mode]["service"]]
-            years_to_show = sorted(set(range(first_year, base + 1)) | set(int(y) for y in atb_audit.year if base < y <= end))
-            for year in years_to_show:
+            future_vintages = {periods.projection_year(v, legacy_at_end=True): v for v in periods.model}
+            reference_year = min(periods.model)
+
+            for year in range(first_year, base + 1):
                 for powertrain in powertrains:
-                    if not ldv and year <= base and powertrain not in historical_powertrains:
+                    if not ldv and powertrain not in historical_powertrains:
                         continue
                     result = evidence.derive_consumption(region, mode, powertrain, year, allow_analogue=False)
                     if result is None:
                         continue
                     annual[powertrain, year] = result
-                    add(context | {"powertrain": powertrain}, "Annual calculation", "Observed-year consumption calculation", year,
+                    derived = result["treatment"] == "CEUD_diesel_fleet_ATB_relative_powertrain"
+                    add(context | {"powertrain": powertrain}, "Annual calculation",
+                        "Diesel-fleet relative technology calculation" if derived else "Observed-year consumption calculation", year,
                         "consumption", result["native_intensity"], "MJ/vkm", treatment=result["treatment"],
-                        analogue=result["analogue"], consumption_index=result["consumption_index"], load_factor=result["load_factor"],
-                        historical_index_anchor=result.get("historical_index_anchor"), calibration_observation=year <= base)
+                        analogue=result.get("analogue"), consumption_index=result.get("consumption_index"),
+                        load_factor=result["load_factor"], historical_index_anchor=result.get("historical_index_anchor"),
+                        observation_basis=_observation_summary([result])["observation_basis"], calibration_observation=not derived)
 
             for powertrain in powertrains:
-                # A projected MHDV powertrain may have an ATB base level without any
-                # historical CEUD powertrain index. Do not invent its earlier history.
-                base_result = (evidence.derive_consumption(region, mode, powertrain, base, allow_analogue=True)
-                               if ldv or powertrain in historical_powertrains else None)
-                consumption = base_result["native_intensity"] if base_result is not None else evidence.atb_value(region, mode, powertrain, base)
-                base_values[powertrain] = consumption
-                marker(context, powertrain, consumption, base_load, base, service_units,
-                       sample_kind="base_year_anchor", marker_source="Base-year anchor",
-                       source_year_start=base, source_year_end=base,
-                       treatment="Exact production base-year level; PEV levels come directly from ATB")
-                bins = {**historical_bins, **{v: [periods.projection_year(v, legacy_at_end=True)] for v in periods.model
-                                             if periods.projection_year(v, legacy_at_end=True) <= end}}
-                for vintage, candidate_years in bins.items():
-                    historical = vintage in historical_bins
-                    if historical:
+                # Retain each range's own historical observations. A proxy may fill
+                # an entirely empty period only through the production policy.
+                if ldv or powertrain in historical_powertrains:
+                    for vintage, candidate_years in historical_bins.items():
                         cohort_key = (mode, _family(powertrain), vintage)
                         if cohort_key not in cohort_counts:
                             cohort_counts[cohort_key] = _cohort_counts(bundle, inputs, mode, powertrain, vintage)
                         counts = cohort_counts[cohort_key]
-                    else:
-                        counts = pd.Series(1.0, index=candidate_years)
-                    if counts.empty:
+                        if counts.empty:
+                            continue
+                        supported_years = [int(year) for year in counts.index if year >= first_source_year]
+                        observations = {year: annual[powertrain, year] for year in supported_years if (powertrain, year) in annual}
+                        if not observations and supported_years:
+                            observations = evidence.period_observations(region, mode, powertrain, supported_years,
+                                allow_analogue_when_empty=allow_fallback)
+                        if not observations:
+                            output.append({**context, "powertrain": powertrain, "stage": "Missing class coverage",
+                                "series": "No supported period observations", "year": float(max(counts.index)),
+                                "metric": "consumption", "value": np.nan, "units": "MJ/vkm", "vintage": vintage,
+                                "source_year_start": min(counts.index), "source_year_end": max(counts.index),
+                                "cohort_stock_coverage": 0.0,
+                                "treatment": "No exact observations or permitted proxy; no interpolated period marker"})
+                            continue
+                        years = sorted(observations)
+                        for year, observation in observations.items():
+                            if (powertrain, year) not in annual:
+                                annual[powertrain, year] = observation
+                                add(context | {"powertrain": powertrain}, "Annual calculation", "Configured analogue consumption calculation", year,
+                                    "consumption", observation["native_intensity"], "MJ/vkm", treatment=observation["treatment"],
+                                    analogue=observation.get("analogue"), historical_index_anchor=observation.get("historical_index_anchor"),
+                                    consumption_index=observation.get("consumption_index"), load_factor=observation["load_factor"],
+                                    observation_basis="Configured analogue for empty observed period", calibration_observation=False)
+                        used_counts = counts.loc[years]
+                        result = aggregate_consumption_period(
+                            [{**observations[year], "source_year": year} for year in years], used_counts.tolist())
+                        coverage = float(used_counts.sum() / counts.sum())
+                        observation_summary = _observation_summary(list(observations.values()))
+                        period_values[powertrain, vintage] = {**result, "years": years, "observations": observations,
+                            "cohort_stock_coverage": coverage, "candidate_year_count": len(counts),
+                            "included_year_count": len(years), **observation_summary}
+                        range_component = ldv and powertrain.startswith(("bev_", "phev_"))
+                        if atb_class is not None or range_component or not recorded_selection:
+                            marker(context, powertrain, result["native_intensity"], result["load_factor"], max(years), service_units,
+                                vintage=vintage, sample_kind="period", source_year_start=min(years), source_year_end=max(years),
+                                source_years=" | ".join(map(str, years)), weighted_source_year=result["weighted_source_year"],
+                                marker_source="ATB class recalculation" if atb_class is not None else "Production range component" if range_component and recorded_selection else "Recalculated period",
+                                cohort_stock_coverage=coverage, candidate_year_count=len(counts), included_year_count=len(years),
+                                **observation_summary, treatment="Cohort-stock-weighted observed consumption; service conversion last",
+                                time_basis="Last included source year; consumption uses cohort-stock weights")
+
+                try:
+                    anchor = evidence.projection_anchor(region, mode, powertrain)
+                except ProjectionAnchorUnavailable:
+                    if atb_class is None:
+                        raise
+                    output.append({**context, "powertrain": powertrain, "stage": "Missing class coverage",
+                        "series": "No supported projection anchor", "year": float(reference_year),
+                        "metric": "consumption", "value": np.nan, "units": "MJ/vkm", "cohort_stock_coverage": 0.0,
+                        "treatment": "No observed latest-period anchor or permitted proxy; no future trajectory"})
+                    continue
+                anchor_powertrain = anchor["powertrain"]
+                anchor_years = sorted(anchor["included_years"])
+                reference_year = int(anchor["atb_reference_year"])
+                atb_anchor = evidence.atb_value(region, mode, anchor_powertrain, reference_year)
+                ratio = evidence.atb_value(region, mode, powertrain, reference_year) / positive(atb_anchor, "ATB reference anchor") if ldv else 1.0
+                reference_consumption = anchor["native_intensity"] * ratio
+                anchor_basis = _observation_summary(list(anchor["observations"].values()))
+                anchors.append({**context, **anchor_basis, "powertrain": powertrain, "anchor_powertrain": anchor_powertrain,
+                    "source_year_start": min(anchor_years), "source_year_end": max(anchor_years),
+                    "source_years": " | ".join(map(str, anchor_years)), "stock_powertrain": anchor["stock_powertrain"],
+                    "stock_proxy": anchor["stock_proxy"],
+                    "cohort_stock_coverage": anchor["cohort_stock_coverage"], "anchor_consumption_mj_per_vkm": anchor["native_intensity"],
+                    "atb_reference_year": reference_year, "range_ratio_at_reference": ratio,
+                    "parameter_reference_consumption_mj_per_vkm": reference_consumption})
+                marker(context, powertrain, reference_consumption, anchor["load_factor"], reference_year, service_units,
+                    **anchor_basis, stock_powertrain=anchor["stock_powertrain"], stock_proxy=anchor["stock_proxy"],
+                    sample_kind="base_year_anchor", marker_source="NRCan-cohort projection anchor" if ldv else "CEUD-cohort projection anchor",
+                    source_year_start=min(anchor_years), source_year_end=max(anchor_years),
+                    source_years=" | ".join(map(str, anchor_years)), projection_anchor_powertrain=anchor_powertrain,
+                    cohort_stock_coverage=anchor["cohort_stock_coverage"], candidate_year_count=len(anchor["candidate_years"]),
+                    included_year_count=len(anchor_years),
+                    treatment="Latest historical cohort consumption; future ATB ratios start at the reference year",
+                    time_basis="ATB projection reference year; tooltip source bounds identify the historical anchor")
+
+                future_years = sorted(set(int(year) for year in atb_audit.year if reference_year <= year <= end) | {reference_year})
+                for year in future_years:
+                    result = evidence.derive_consumption(region, mode, powertrain, year, allow_analogue=False)
+                    if result is None:
                         continue
-                    supported_years = [int(year) for year in counts.index if not historical or year >= first_source_year]
-                    observations = {year: annual[powertrain, year] for year in supported_years
-                                    if (powertrain, year) in annual}
-                    if not observations and supported_years:
-                        observations = evidence.period_observations(region, mode, powertrain, supported_years,
-                            allow_analogue_when_empty=allow_fallback)
-                    if not observations:
-                        output.append({**context, "powertrain": powertrain, "stage": "Missing class coverage",
-                            "series": "No supported period observations", "year": float(np.average(counts.index, weights=counts)),
-                            "metric": "consumption", "value": np.nan, "units": "MJ/vkm", "vintage": vintage,
-                            "source_year_start": min(counts.index), "source_year_end": max(counts.index), "cohort_stock_coverage": 0.0,
-                            "treatment": "No exact observations or permitted proxy; no interpolated period marker"})
+                    add(context | {"powertrain": powertrain}, "Annual calculation", "ATB-relative projection", year,
+                        "consumption", result["native_intensity"], "MJ/vkm", treatment=result["treatment"],
+                        analogue=result.get("analogue"), consumption_index=result.get("consumption_index"),
+                        load_factor=result["load_factor"], calibration_observation=False)
+                    # The recorded production aggregate uses final prepared CSV
+                    # markers at model-supported source years. Keep the explicit
+                    # first ATB reference point even when it is not a model row.
+                    if year == reference_year:
                         continue
-                    years = sorted(observations)
-                    for year, observation in observations.items():
-                        if (powertrain, year) not in annual:
-                            annual[powertrain, year] = observation
-                            add(context | {"powertrain": powertrain}, "Annual calculation", "Configured analogue consumption calculation", year,
-                                "consumption", observation["native_intensity"], "MJ/vkm", treatment=observation["treatment"],
-                                analogue=observation.get("analogue"), historical_index_anchor=observation.get("historical_index_anchor"),
-                                consumption_index=observation.get("consumption_index"), load_factor=observation["load_factor"],
-                                observation_basis="Configured analogue for empty observed period", calibration_observation=False)
-                    used_counts = counts.loc[years]
-                    result = aggregate_consumption_period(
-                        [{**observations[y], "source_year": y} for y in years], used_counts.tolist())
-                    consumption, load, coordinate = result["native_intensity"], result["load_factor"], result["weighted_source_year"]
-                    coverage = float(used_counts.sum() / counts.sum()) if historical else np.nan
-                    observation_summary = _observation_summary(list(observations.values()))
-                    period_values[powertrain, vintage] = {**result, "years": years, "cohort_stock_coverage": coverage,
-                        "candidate_year_count": len(counts), "included_year_count": len(years), **observation_summary}
-                    # Actual aggregate periods are loaded from the prepared CSV below.
-                    # Historical LDV ranges are intermediate components of the OMEGA row.
-                    range_component = ldv and powertrain.startswith(("bev_", "phev_")) and vintage in historical_bins
-                    if atb_class is not None or range_component or not recorded_selection:
-                        marker(context, powertrain, consumption, load, coordinate, service_units,
-                               vintage=vintage, sample_kind="period", source_year_start=min(years), source_year_end=max(years),
-                               marker_source="ATB class recalculation" if atb_class is not None else "Production range component" if range_component and recorded_selection else "Recalculated period",
-                               cohort_stock_coverage=coverage, candidate_year_count=len(counts), included_year_count=len(years),
-                               **observation_summary,
-                               treatment="Age-distribution-weighted mean consumption; service conversion last" if historical else "Future interval-end projection",
-                               time_basis="Cohort-stock-weighted observed year; missing source years are excluded and coverage reported" if historical else "Future interval-end source year")
+                    if atb_class is not None or not recorded_selection or year == reference_year:
+                        marker(context, powertrain, result["native_intensity"], result["load_factor"], year, service_units,
+                            vintage=future_vintages.get(year), sample_kind="period", source_year_start=year, source_year_end=year,
+                            source_years=str(year), marker_source="ATB class recalculation" if atb_class is not None else "Recalculated period" if not recorded_selection else "ATB source projection",
+                            treatment=result["treatment"], time_basis="ATB source projection year")
+
             if not ldv:
                 continue
-            for family, anchor in rules["pev_historical_anchors"].items():
+            for family in rules["pev_projection_anchors"]:
                 shares = _range_shares(inputs, mode, family)
-                representative_base = representative_consumption(base_values, shares)
-                marker(context, family + "_existing_representative", representative_base, base_load, base, service_units,
-                       sample_kind="base_year_anchor", marker_source="Base-year anchor", source_year_start=base, source_year_end=base,
-                       treatment="OMEGA-weighted range consumption at the exact ATB base-year levels")
-                if atb_class is not None or not recorded_selection:
-                    for vintage in historical_bins:
-                        if any((bucket, vintage) not in period_values for bucket in shares):
-                            continue
-                        consumption = representative_consumption(
-                            {bucket: period_values[bucket, vintage]["native_intensity"] for bucket in shares}, shares)
-                        selected_period = period_values[anchor, vintage]
-                        load, years, coordinate = selected_period["load_factor"], selected_period["years"], selected_period["weighted_source_year"]
-                        marker(context, family + "_existing_representative", consumption, load, coordinate, service_units,
-                               vintage=vintage, sample_kind="period", marker_source="ATB class recalculation" if atb_class is not None else "Recalculated period",
-                               source_year_start=min(years), source_year_end=max(years),
-                               cohort_stock_coverage=selected_period["cohort_stock_coverage"],
-                               candidate_year_count=selected_period["candidate_year_count"], included_year_count=selected_period["included_year_count"],
-                               **{key: selected_period[key] for key in ("observation_basis", "source_treatments", "analogue")},
-                               treatment="OMEGA arithmetic mean of range period consumptions; service conversion last")
-                anchor_atb = evidence.atb_value(region, mode, anchor, base)
-                for powertrain in [p for p in powertrains if _family(p) == family]:
-                    anchors.append({**context, "powertrain": powertrain, "family": family, "anchor": anchor, "base_year": base,
-                        "atb_anchor_base_mj_per_vkm": anchor_atb, "production_base_mj_per_vkm": base_values[powertrain],
-                        "existing_representative_base_mj_per_vkm": representative_base, "omega_share": shares.get(powertrain, 0.0)})
+                if atb_class is None and recorded_selection:
+                    continue
+                for vintage in historical_bins:
+                    if any((bucket, vintage) not in period_values for bucket in shares):
+                        continue
+                    counts = cohort_counts[mode, family, vintage]
+                    candidate_weights = (counts / counts.sum()).to_dict()
+                    observed_ranges = {bucket: period_values[bucket, vintage]["observations"] for bucket in shares}
+                    combined = combine_range_observations(observed_ranges, shares, candidate_weights)
+                    observations, weights = combined["observations"], combined["weights"]
+                    years = sorted(observations)
+                    result = aggregate_consumption_period(
+                        [{**observations[year], "source_year": year} for year in years], [weights[year] for year in years])
+                    observation_summary = _observation_summary([row for records in observed_ranges.values() for row in records.values()])
+                    marker(context, family + "_existing_representative", result["native_intensity"], result["load_factor"], max(years), service_units,
+                        vintage=vintage, sample_kind="period", marker_source="ATB class recalculation" if atb_class is not None else "Recalculated period",
+                        source_year_start=min(years), source_year_end=max(years), source_years=" | ".join(map(str, years)),
+                        weighted_source_year=result["weighted_source_year"], cohort_stock_coverage=combined["cohort_coverage"],
+                        candidate_year_count=len(counts), included_year_count=len(years),
+                        range_coverage=json.dumps(combined["range_coverage"], sort_keys=True), **observation_summary,
+                        treatment="OMEGA-weighted independently observed range periods; service conversion last",
+                        time_basis="Last included source year; each range normalizes its own supported cohort years")
     return pd.DataFrame(output), pd.DataFrame(anchors)
 
 
@@ -472,12 +562,12 @@ def _raw_sources(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], distribu
                         "series": label, "native_basis": "Source combined cycle value before utility weighting / model HHV conversion"})
         if rules["road_classes"][mode]["pathway"] == "mhdv":
             road = rules["road_classes"][mode]
-            for fuel in set(rules["historical_index_fuels"][mode].values()):
+            for fuel in rules["mhdv_fleet_baseline"]["observed_fuels"][mode]:
                 source = ceud_series(inputs["ceud"], road["stock_table"], road["cs_prefix"] + "|" + rules["fuel_series"][fuel], "L/100 km")
                 for item in source.itertuples(index=False):
                     rows.append({"vehicle_group": group, "atb_class": COHORT, "source_class": "CEUD coarse vehicle group", "powertrain": fuel,
                         "year": item.year, "value": item.value, "units": "L/100 km", "series": "NRCan CEUD observed on-road consumption",
-                        "native_basis": "Coarse fleet fuel index; not ATB vocation observations"})
+                        "native_basis": "Observed parent-fleet fuel volume; not ATB vocation observations"})
     result = pd.DataFrame(rows)
     result["powertrain_family"] = result.powertrain.map(_family)
     return result
@@ -497,6 +587,7 @@ def _published_periods(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame]) ->
     periods = inputs["periods"]
     if set(keys + fields) - set(periods):
         raise ValueError("Rebuild notebook evidence with period consumption before service conversion")
+    fields += [field for field in ("range_source_years", "range_stock_coverage") if field in periods]
     selected = selected.merge(periods[keys + fields], on=keys, how="left", validate="one_to_one")
     if "annual" in inputs:
         annual = inputs["annual"]
@@ -508,7 +599,7 @@ def _published_periods(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame]) ->
             or selected.native_unit.isna().any() or selected.native_intensity.le(0).any() or selected.load_factor.le(0).any()
             or not np.allclose(selected.load_factor / selected.native_intensity, selected.efficiency, rtol=1e-10, atol=1e-12)):
         raise ValueError("Prepared service efficiency disagrees with period consumption/load evidence")
-    selected["year"] = selected.weighted_source_year
+    selected["year"] = selected.source_year_end
     selected["time_basis"] = np.where(selected.existing, "Cohort-stock-weighted observed consumption; service conversion after all aggregation",
                                      "Future interval-end source year; vintage retained separately")
     selected["vehicle_group"] = selected["mode"].map({mode: group for group, mode in VIEW_MODES.items()})
@@ -520,48 +611,6 @@ def _published_periods(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame]) ->
     selected["value"] = selected.efficiency
     energy = selected.assign(metric="consumption", units="MJ/vkm", value=selected.native_intensity)
     return pd.concat([selected, energy], ignore_index=True)
-
-
-def interpolate_period_markers(bundle: ConfigBundle, bridge: pd.DataFrame) -> pd.DataFrame:
-    """Connect period values and the exact base anchor without refitting annual data.
-
-    PCHIP preserves the shape and bounds between adjacent consumption knots. Service
-    efficiency uses the same curve and interpolated load, so both views are consistent.
-    These samples are a display aid; the prepared period values remain authoritative.
-    """
-    spec = load_harmonization_rules(bundle, "ldv_efficiency_diagnostic")
-    if spec["period_interpolation"] != "pchip":
-        raise ValueError("Unsupported efficiency period interpolation")
-    step = positive(spec["interpolation_step_years"], "interpolation step")
-    markers = bridge.loc[bridge.stage.eq("Indexed bridge") & bridge.metric.eq("consumption")
-                         & bridge.sample_kind.isin(["period", "base_year_anchor"])
-                         & bridge.year.le(spec["bridge_years"][1])]
-    output = []
-    keys = ["vehicle_group", "mode", "atb_class", "powertrain", "resolution"]
-    rules = load_harmonization_rules(bundle, "efficiencies")
-    for key, group in markers.groupby(keys, sort=True):
-        for _, duplicate in group.groupby("year"):
-            if any(not np.allclose(duplicate[field], duplicate[field].iloc[0], rtol=1e-10, atol=1e-12)
-                   for field in ("value", "load_factor")):
-                raise ValueError(f"Conflicting period and base-year coordinates: {key}")
-        knots = group.sort_values("year").drop_duplicates("year")
-        if len(knots) < 2:
-            continue
-        x, y = knots.year.to_numpy(dtype=float), knots.value.to_numpy(dtype=float)
-        loads = knots.load_factor.to_numpy(dtype=float)
-        if not np.isfinite(y).all() or (y <= 0).any() or not np.isfinite(loads).all() or (loads <= 0).any():
-            raise ValueError(f"Non-positive or non-finite interpolation knots: {key}")
-        samples = np.unique(np.concatenate([x, np.arange(x[0], x[-1], step)]))
-        consumption = PchipInterpolator(x, y, extrapolate=False)(samples)
-        load = np.interp(samples, x, loads)
-        context = dict(zip(keys, key, strict=True))
-        units = rules["service_units"][rules["road_classes"][context["mode"]]["service"]]
-        for metric, values, unit in (("consumption", consumption, "MJ/vkm"), ("service_efficiency", load / consumption, units)):
-            output.extend({**context, "stage": "Diagnostic interpolation", "series": "Diagnostic PCHIP", "sample_kind": "curve",
-                           "year": float(year), "metric": metric, "value": float(value), "units": unit, "load_factor": float(factor),
-                           "treatment": "PCHIP through period markers and exact base-year anchor; no annual fitting or extrapolation"}
-                          for year, value, factor in zip(samples, values, load, strict=True))
-    return pd.concat([bridge, pd.DataFrame(output)], ignore_index=True)
 
 
 def _benchmark(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -582,44 +631,49 @@ def build_diagnostic_frames(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame
     """Explain recorded production values and their source distributions."""
     rules = load_harmonization_rules(bundle, "ldv_efficiency_diagnostic")
     efficiency_rules = load_harmonization_rules(bundle, "efficiencies")
-    phev_index = phev_historical_index_mode(efficiency_rules)
-    distribution, distribution_summary = rating_distributions(bundle, inputs["ratings"])
+    filter_audit, filter_impact = rating_filter_evidence(bundle, inputs["ratings"])
+    filtered_distribution, _ = rating_distributions(bundle, inputs["ratings"])
+    distribution, distribution_summary = rating_distributions(
+        bundle, inputs["ratings"].assign(production_included=inputs["ratings"].included,
+                                        included=inputs["ratings"].included_before_filter))
     bridge, anchors = _bridge_rows(bundle, inputs, recorded_statistic=recorded_statistic)
     if recorded_statistic is None or recorded_statistic == bundle.scenario.efficiencies.rating_statistic:
         bridge = pd.concat([bridge, _published_periods(bundle, inputs)], ignore_index=True)
-    bridge = interpolate_period_markers(bundle, bridge)
     bridge["powertrain_family"] = bridge.powertrain.map(_family)
     coverage = inputs["benchmark_matches"].groupby("match_status").mto_fit_active_stock.sum()
-    frames = {"raw_sources": _raw_sources(bundle, inputs, distribution), "rating_distribution": distribution,
-        "rating_summary": distribution_summary, "bridge": bridge, "anchor_comparison": anchors,
+    frames = {"raw_sources": _raw_sources(bundle, inputs, distribution),
+        "filtered_sources": _raw_sources(bundle, inputs, filtered_distribution), "rating_distribution": distribution,
+        "rating_summary": distribution_summary, "bridge": bridge, "projection_anchors": anchors,
+        "rating_filter_audit": filter_audit, "rating_filter_impact": filter_impact,
         "omega_shares": inputs["omega_buckets"].copy(), "mto_benchmark": _benchmark(bundle, inputs)}
     summary = {
         "region": rules["region"], "base_year": bundle.scenario.periods.base_year, "bridge_years": rules["bridge_years"],
-        "anchor_powertrains": efficiency_rules["pev_historical_anchors"], "vehicle_groups": list(VIEW_MODES),
+        "anchor_powertrains": efficiency_rules["pev_projection_anchors"], "vehicle_groups": list(VIEW_MODES),
+        "atb_reference_year": bundle.scenario.periods.model[0],
+        "rating_filter_rules": efficiency_rules["ratings"]["outlier_filter"],
         "minimum_model_year": rules["minimum_model_year"], "distribution_year_step": rules["distribution_year_step"],
         "distribution_consumption_domains": rules["distribution_consumption_domains"],
-        "distribution_cd_consumption_domains": rules["distribution_cd_consumption_domains"],
-        "period_interpolation": rules["period_interpolation"],
         "population_year": bundle.scenario.existing_capacity.vehicle_population_year,
         "atb_trajectory": bundle.scenario.efficiencies.atb_trajectory,
         "rating_statistic": bundle.scenario.efficiencies.rating_statistic,
         "recorded_rating_statistic": recorded_statistic or bundle.scenario.efficiencies.rating_statistic,
-        "historical_index_fuels": load_harmonization_rules(bundle, "efficiencies")["historical_index_fuels"],
+        "mhdv_fleet_baseline": efficiency_rules["mhdv_fleet_baseline"],
         "available_rating_years": sorted(int(y) for y in distribution.year.unique()),
         "benchmark_stock_dispositions": {str(key): float(value) for key, value in coverage.items()},
         "omega_model_years": sorted(int(y) for y in inputs["omega_records"].model_year.unique()),
-        "phev_historical_index": phev_index,
+        "phev_consumption_method": "NRCan CD/CS components weighted by ATB range-bucket utility factors",
         "limitations": [
             "MTO make/model/year keys identify reviewed vehicle classes; powertrain and PEV range are unobserved. Exact-key weighting remains diagnostic only.",
             "Catalogue rows are rated variants, not equal registered stocks. Production first averages variants per exact make/model, then uses the configured distinct-model mean or median and MTO size-class weights.",
-            f"BEV300/PHEV35 supply shared historical indices; PHEV uses NRCan {phev_index}. Each range retains its own ATB total-energy level at and after the base year.",
-            "PHEV CS fuel HHV and CD gasoline-equivalent curves are operating-mode rates before utility weighting; neither is NRCan annual total energy or a measured electrical-input share.",
+            "Each historical PEV range uses its own observed NRCan total consumption before OMEGA aggregation; ranges can have different observed-year support. BEV300/PHEV35 anchor future levels only.",
+            "PHEV total energy combines explicit NRCan CD electricity/fuel and CS fuel with ATB's assigned range-bucket distance utility factor. The U.S. travel-share transfer is an assumption, not a Canadian charging observation or a correction for differing test procedures.",
+            "The latest existing cohort anchors LDV and MD/HD projection levels and loads. ATB's first model-year point is the ratio denominator; later NRCan observations remain visible but do not recalibrate this recorded build.",
+            "Symmetric Tukey fences screen distinct-model total energy within exact annual class/range cohorts with at least five models and positive IQR. Sparse/zero-spread cohorts are retained. Statistical exclusions do not establish measurement errors, sales rarity or a performance designation.",
             "Production averages consumption using raw annual cohort stock from the age distribution, before lifetime eligibility or redistribution. Occupancy/payload uses the same included-year weights; service conversion follows period and OMEGA consumption aggregation.",
-            "Graph 4 alone uses diagnostic PCHIP between markers. Production uses observed source points and the explicit recorded source/proxy policies, without fitting missing NRCan years.",
             "The bridge statistic selector recomputes consumption with the production helpers from recorded inputs. Recalculated period markers are comparisons; only the recorded statistic carries final prepared CSV markers.",
             "Detailed ATB-class trajectories inherit parent-mode loads, cohort counts and broad car/light-truck OMEGA range shares; they are not independently observed fleet cohorts.",
             "Partially observed periods use available annual values and expose cohort-stock coverage. Zero-observation periods use only a permitted explicit proxy or remain missing; no rating gaps are interpolated.",
-            "Medium/heavy history applies coarse CEUD fuel indices to ATB vocation levels; it does not observe fine-class cohort efficiencies.",
+            "Medium/heavy incumbents use fuel-specific CEUD fleet consumption as a vintage proxy. Emerging powertrains use diesel-relative ATB ratios. Future cohort anchors use ATB relative improvements; gasoline follows diesel rates. These are not observed fine-class model-year efficiencies.",
             "NRCan model years after the base year are source observations excluded from historical calibration, not a statistical holdout test.",
             "OMEGA shares describe US sales in the recorded model year, not Ontario survivors. Existing representatives retain sales-weighted consumption.",
             "Naive bootstrapping of unresolved survivor-stock matches cannot recover missing powertrains, population representation or systematic matching bias. No population-equivalent bootstrap is implemented.",

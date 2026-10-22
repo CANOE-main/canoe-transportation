@@ -408,7 +408,7 @@ def test_shared_contribution_preserves_full_preparation_and_caller_transaction(b
     keys = {table: [tuple(getattr(r, f) for f in r.__primary_key__) for r in rows] for table, rows in inserted.items()}
     assert validate_database(connection, expected_primary_keys=keys)["ok"]
     assert connection.execute("SELECT count(*) FROM emission_embodied WHERE dq_time IS NULL OR data_source IS NULL").fetchone()[0] == 0
-    ldv_data_id = next(r.data_id for r in contribution.emission_embodied_rows if r.tech.startswith("T_LDV_C"))
+    ldv_data_id = next(r.data_id for r in inserted["emission_embodied"] if r.tech.startswith("T_LDV_C"))
     assert "Vehi_Sum" in connection.execute(
         "SELECT description FROM data_set WHERE data_id = ?", (ldv_data_id,),
     ).fetchone()[0]

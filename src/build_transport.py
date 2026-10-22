@@ -66,6 +66,8 @@ from validation.insertion import ConflictPolicy, insert_models, validate_transpo
 from validation.legacy_compare import compare_legacy_costs, compare_legacy_demand, compare_legacy_efficiency, compare_legacy_existing_capacity, compare_legacy_lifetime_tech, compare_legacy_tables, compare_legacy_emission_embodied
 from validation.provenance import (
     ResolvedProvenance,
+    publish_data_ids,
+    readable_data_id_mapping,
     registry_rows,
     source_id_mapping,
 )
@@ -128,7 +130,9 @@ class TransportContribution:
     parameter_rows: list[ExistingCapacity] = dataclass_field(default_factory=list)
     demand_rows: list[Demand] = dataclass_field(default_factory=list)
     road_assumption_dataset: DataSet | None = None
+    charger_assumption_dataset: DataSet | None = None
     capacity_to_activity_rows: list[CapacityToActivity] = dataclass_field(default_factory=list)
+    capacity_to_activity_categories: tuple[str, ...] = ()
     flat_road_factor_rows: list[LimitAnnualCapacityFactor] = dataclass_field(default_factory=list)
     lifetime_tech_rows: list[LifetimeTech] = dataclass_field(default_factory=list)
     lifetime_survival_curve_rows: list[LifetimeSurvivalCurve] = dataclass_field(default_factory=list)
@@ -153,6 +157,7 @@ class TransportContribution:
     emission_embodied: EmbodiedEmissionPreparation | None = None
     charging_profiles: ChargingPreparation | None = None
     range_representation: RangePreparation | None = None
+    scenario_name: str = ""
 
     @property
     def emission_embodied_rows(self) -> list[EmissionEmbodied]:
@@ -593,6 +598,7 @@ def prepare_transport_contribution(
                 )
             cost_audit["efficiency_supported_tech_vintages"] = len(cost_keys)
     charger_audit: dict[str, Any] = {}
+    charger_assumption_dataset = None
     if selected_capacity and include_ev_chargers is not False:
         from parameterization.ev_chargers import prepare_ev_charger_rows
 
@@ -602,6 +608,8 @@ def prepare_transport_contribution(
                 existing_capacity_contexts=contexts,
             )
         parameter_rows.extend(chargers.capacity_rows)
+        c2a_rows.extend(chargers.capacity_to_activity_rows)
+        charger_assumption_dataset = chargers.assumption_dataset
         flat_factor_rows.extend(chargers.utilization_rows)
         if include_efficiencies is not False:
             efficiency_rows.extend(chargers.efficiency_rows)
@@ -626,18 +634,28 @@ def prepare_transport_contribution(
         support_tables.extend(("cost_invest", "cost_fixed", "cost_variable"))
     if selected_road_utilization:
         support_tables.append("limit_annual_capacity_factor")
+    c2a_categories = set()
+    if selected_road_utilization:
+        c2a_categories.update(load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]["activity_series"])
+    if charger_assumption_dataset is not None:
+        c2a_categories.add("charger")
+    if c2a_categories:
+        support_tables.append("capacity_to_activity")
     if embodied is not None and embodied.audit["enabled"]:
         support_tables.append("emission_embodied")
     existing_suffix = load_harmonization_rules(bundle, "efficiencies")["existing_suffix"]
     contribution = TransportContribution(
         dataset=template_dataset,
+        scenario_name=bundle.scenario.scenario.name,
         labels_by_table=table_labels,
         rows_by_table=table_rows,
         load_results=load_results,
         parameter_rows=parameter_rows,
         demand_rows=demand_rows,
         road_assumption_dataset=road_assumption_dataset,
+        charger_assumption_dataset=charger_assumption_dataset,
         capacity_to_activity_rows=c2a_rows,
+        capacity_to_activity_categories=tuple(sorted(c2a_categories)),
         flat_road_factor_rows=flat_factor_rows,
         lifetime_tech_rows=lifetime_tech_rows,
         lifetime_survival_curve_rows=lifetime_curve_rows,
@@ -700,7 +718,8 @@ def _apply_ldv_range_representation(bundle: ConfigBundle, contribution: Transpor
         bundle, range_preparation=ranges, batches=_representative_batches(contribution),
         provenance_contexts=contribution.provenance_contexts,
         internal_datasets=tuple(d for d in (contribution.dataset, contribution.road_assumption_dataset,
-                                           contribution.efficiency_assumption_dataset) if d is not None),
+                                           contribution.efficiency_assumption_dataset,
+                                           contribution.charger_assumption_dataset) if d is not None),
     )
     rows = result.batches
     ranges = replace(ranges, structural_dataset=result.structural_dataset, representative=result,
@@ -738,6 +757,7 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
         "cost_variable": contribution.cost_variable_rows,
         "limit_annual_capacity_factor": contribution.flat_road_factor_rows,
         "emission_embodied": contribution.emission_embodied_rows,
+        "capacity_to_activity": contribution.capacity_to_activity_rows,
     }
     if contribution.emission_embodied is not None and contribution.emission_embodied.audit["enabled"]:
         from parameterization.road_embodied_emissions import validate_embodied_outputs
@@ -754,6 +774,10 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
         {table: batches[table] for table in contribution.prepared_support_tables},
         existing_vintages=contribution.existing_vintages,
         new_technologies=contribution.new_technologies,
+        capacity_to_activity_technologies=[
+            row.tech for row in contribution.rows_by_table.get("technology", [])
+            if row.category in contribution.capacity_to_activity_categories
+        ],
     )
     if not audit["ok"]:
         LOGGER.error("Transport parameter support failed: %s", audit["errors"])
@@ -806,6 +830,40 @@ def insert_transport_contribution(
             contexts = {c.data_id: c for c in contribution.provenance_contexts}
             if any(contexts.get(c.data_id) != c for c in ranges.representative.provenance_contexts):
                 raise ValueError("Contribution lost representative provenance/DQ lineage")
+    # The immutable preparation IDs above remain part of validation fingerprints.
+    # Publish readable aliases only now, across every FK-linked contribution batch.
+    labels, datasets, sources = registry_rows(contribution.provenance_contexts)
+    internal_datasets = [dataset for dataset in (
+        contribution.dataset, contribution.road_assumption_dataset,
+        contribution.charger_assumption_dataset,
+        contribution.efficiency_assumption_dataset, ranges.structural_dataset if ranges else None,
+    ) if dataset is not None]
+    publication_batches = {
+        **_representative_batches(contribution),
+        "demand": contribution.demand_rows,
+        "capacity_factor_tech": profile_rows,
+        "limit_new_capacity_share": share_rows,
+        "tech_group": ranges.group_rows if ranges else [],
+        "tech_group_member": ranges.member_rows if ranges else [],
+    }
+    columns = [column[1] for column in connection.execute("PRAGMA table_info(data_set)")]
+    existing_datasets = [
+        DataSet.model_validate(dict(zip(columns, row, strict=True)))
+        for row in connection.execute("SELECT * FROM data_set")
+    ]
+    published_ids = readable_data_id_mapping(
+        datasets=[*internal_datasets, *datasets], contexts=contribution.provenance_contexts,
+        batches=publication_batches, scenario_name=contribution.scenario_name,
+        existing_datasets=existing_datasets,
+    )
+
+    def insert_published(rows, *, policy=conflict):
+        published = publish_data_ids(rows, published_ids, scenario_name=contribution.scenario_name)
+        insert_models(connection, published, conflict=policy)
+        return published
+
+    LOGGER.info("Publishing %s readable transport dataset IDs for scenario %s",
+                len(published_ids), contribution.scenario_name)
     # Compact across the complete prepared table, including independently prepared regions.
     # Keep preparation fingerprints intact; insertion receives compact validated copies.
     note_keys = next((context.database_note_keys for context in contribution.provenance_contexts), {})
@@ -815,74 +873,55 @@ def insert_transport_contribution(
 
         table = rows[0].table_name()
         compact = compact_parameter_notes(rows, note_keys.get(table, ()))
-        insert_models(connection, compact, conflict=conflict)
-        inserted[table] = compact
+        inserted[table] = insert_published(compact)
 
     # Narrow replacement of this slice's owned rows permits profile/mode switches;
     # shared axes, unrelated rows and transaction control remain caller-owned.
     replacement = dict(ranges=ranges, batches=_representative_batches(contribution),
         contexts=contribution.provenance_contexts,
+        published_data_ids=published_ids,
         internal_datasets=[d for d in (contribution.dataset, contribution.road_assumption_dataset,
-                                      contribution.efficiency_assumption_dataset) if d is not None])
+                                      contribution.efficiency_assumption_dataset,
+                                      contribution.charger_assumption_dataset) if d is not None])
     replace_owned_ldv_representation(connection, **replacement, check_only=True)
     replace_owned_ldv_rows(connection, charging=charging, ranges=ranges)
     replace_owned_ldv_representation(connection, **replacement)
-    insert_models(
-        connection,
-        [contribution.dataset],
-        conflict=conflict,
-    )
     inserted: dict[str, list[CanoeBaseModel]] = {
-        contribution.dataset.table_name(): [contribution.dataset]
+        contribution.dataset.table_name(): insert_published([contribution.dataset])
     }
     for rows in contribution.labels_by_table.values():
-        insert_models(
-            connection,
-            rows,
-            conflict=conflict,
-        )
-        inserted[rows[0].table_name()] = list(rows)
+        inserted[rows[0].table_name()] = insert_published(rows)
     if charging is not None:
         for axis_rows in profile_axes:
             if axis_rows:
-                insert_models(connection, axis_rows, conflict="ignore_identical")
-                inserted[axis_rows[0].table_name()] = list(axis_rows)
+                inserted[axis_rows[0].table_name()] = insert_published(axis_rows, policy="ignore_identical")
     if ranges is not None and ranges.structural_dataset is not None:
-        insert_models(connection, [ranges.structural_dataset], conflict="ignore_identical")
-        inserted.setdefault("data_set", []).append(ranges.structural_dataset)
+        inserted.setdefault("data_set", []).extend(
+            insert_published([ranges.structural_dataset], policy="ignore_identical"))
         group_labels = [TechGroupLabel(group_name=row.group_name) for row in ranges.group_rows]
         if group_labels:
-            insert_models(connection,group_labels,conflict="ignore_identical")
-            inserted["tech_group_label"] = group_labels
+            inserted["tech_group_label"] = insert_published(group_labels, policy="ignore_identical")
         for model, group_rows in ((TechGroup,ranges.group_rows),(TechGroupMember,ranges.member_rows)):
             if group_rows:
                 validated = [model.model_validate(row.model_dump()) for row in group_rows]
-                insert_models(connection, validated, conflict="ignore_identical")
-                inserted[model.table_name()] = validated
+                inserted[model.table_name()] = insert_published(validated, policy="ignore_identical")
     for rows in contribution.rows_by_table.values():
-        insert_models(
-            connection,
-            rows,
-            conflict=conflict,
-        )
-        inserted[rows[0].table_name()] = list(rows)
+        inserted[rows[0].table_name()] = insert_published(rows)
     if contribution.road_assumption_dataset is not None:
-        insert_models(connection, [contribution.road_assumption_dataset], conflict=conflict)
-        inserted.setdefault("data_set", []).append(contribution.road_assumption_dataset)
+        inserted.setdefault("data_set", []).extend(insert_published([contribution.road_assumption_dataset]))
+    if contribution.charger_assumption_dataset is not None:
+        inserted.setdefault("data_set", []).extend(insert_published([contribution.charger_assumption_dataset]))
     if contribution.efficiency_assumption_dataset is not None:
-        insert_models(connection, [contribution.efficiency_assumption_dataset], conflict=conflict)
-        inserted.setdefault("data_set", []).append(contribution.efficiency_assumption_dataset)
+        inserted.setdefault("data_set", []).extend(insert_published([contribution.efficiency_assumption_dataset]))
     if (contribution.parameter_rows or contribution.demand_rows
             or contribution.flat_road_factor_rows or contribution.lifetime_tech_rows
             or contribution.lifetime_survival_curve_rows or contribution.efficiency_rows
             or contribution.input_split_rows or contribution.cost_invest_rows
             or contribution.cost_fixed_rows
             or contribution.cost_variable_rows or embodied_rows or profile_rows or share_rows):
-        labels, datasets, sources = registry_rows(contribution.provenance_contexts)
         for registry_batch in (labels, datasets, sources):
             if registry_batch:
-                insert_models(connection, registry_batch, conflict=conflict)
-                inserted.setdefault(registry_batch[0].table_name(), []).extend(registry_batch)
+                inserted.setdefault(registry_batch[0].table_name(), []).extend(insert_published(registry_batch))
         if contribution.parameter_rows:
             insert_parameter_batch(contribution.parameter_rows)
         if contribution.demand_rows:
@@ -909,8 +948,7 @@ def insert_transport_contribution(
             if batch:
                 insert_parameter_batch(batch)
     if contribution.capacity_to_activity_rows:
-        insert_models(connection, contribution.capacity_to_activity_rows, conflict=conflict)
-        inserted["capacity_to_activity"] = list(contribution.capacity_to_activity_rows)
+        inserted["capacity_to_activity"] = insert_published(contribution.capacity_to_activity_rows)
     LOGGER.info("Inserted transport contribution: %s rows across %s tables; %s cross-table support checks passed",
                 sum(len(rows) for rows in inserted.values()), len(inserted),
                 len(contribution.support_audit["checks"]))
@@ -1022,7 +1060,7 @@ def bootstrap_database(
         "source_id_mapping": source_id_mapping(bundle.sources),
         "template": {
             "kind": "backend_internal_reference",
-            "data_id": contribution.dataset.data_id,
+            "data_id": inserted["data_set"][0].data_id,
             "content_version": contribution.dataset.version,
         },
         "existing_capacity": contribution.parameter_audit,
@@ -1211,15 +1249,29 @@ def _publish_scenario(
             raise
 
 
-@log_duration(LOGGER, "Total scenario build")
 def build_from_scenario(
     scenario_path: str | Path,
     *,
     overwrite: bool = False,
     download_sources: bool = False,
+    debug: bool = False,
 ) -> tuple[dict[str, Any], Path]:
     """Prepare sources, assemble validated rows and publish one complete scenario."""
+    from utils.build_logging import scenario_build_log
+
     bundle = load_config_bundle(scenario_path)
+    with scenario_build_log(bundle, debug=debug) as log_path:
+        with log_duration(LOGGER, "Total scenario build"):
+            return _build_scenario(
+                bundle, overwrite=overwrite, download_sources=download_sources,
+                log_path=log_path, debug=debug,
+            )
+
+
+def _build_scenario(
+    bundle: ConfigBundle, *, overwrite: bool, download_sources: bool,
+    log_path: Path, debug: bool,
+) -> tuple[dict[str, Any], Path]:
     scenario = bundle.scenario
     periods = scenario.periods
     notebook_controls = {
@@ -1294,6 +1346,7 @@ def build_from_scenario(
                 "timestamp_utc": datetime.now(UTC).isoformat(),
                 "scenario": bundle.scenario.scenario.name,
                 "orchestration": {"prerequisites": "replayed", "download_sources": download_sources},
+                "logging": {"path": str(log_path), "verbosity": "DEBUG" if debug else "INFO"},
                 "config": {
                     "scenario": {
                         "path": str(bundle.scenario_path),
@@ -1391,6 +1444,7 @@ def main() -> None:
             args.scenario,
             overwrite=args.overwrite,
             download_sources=args.download_sources,
+            debug=args.debug,
         )
     except (
         OSError,

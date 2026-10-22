@@ -5,6 +5,7 @@ from __future__ import annotations
 from bisect import bisect_left
 from collections.abc import Iterator, Mapping
 from copy import deepcopy
+from string import Formatter
 from typing import Annotated, Any, Literal, Self
 
 from canoe_schema.v4_0 import (
@@ -14,7 +15,7 @@ from canoe_schema.v4_0 import (
     DataQualityTechnologyLevel,
     DataQualityTimeLevel,
 )
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 
 class MappingModel(BaseModel, Mapping[str, Any]):
@@ -79,6 +80,17 @@ class OutputPaths(MappingModel):
     sqlite: str
     validation: str
     logs: str
+    build_log: str = Field(min_length=1)
+
+    @field_validator("build_log")
+    @classmethod
+    def validate_build_log_template(cls, value: str) -> str:
+        fields = [(name, spec, conversion) for _, name, spec, conversion in Formatter().parse(value)
+                  if name is not None]
+        if ({name for name, _, _ in fields} != {"scenario_name", "scenario_yaml", "timestamp"}
+                or any(spec or conversion for _, spec, conversion in fields)):
+            raise ValueError("Build log template must contain {scenario_name}, {scenario_yaml} and {timestamp} only")
+        return value
 
 
 class LegacyPaths(MappingModel):
@@ -103,6 +115,7 @@ class ArtifactRoute(MappingModel):
         "input_validation",
         "database",
         "output_validation",
+        "logs",
         "legacy",
     ]
     owner: str = Field(min_length=1)
@@ -138,6 +151,7 @@ class PathsConfig(MappingModel):
             "input_validation": self.inputs.validation,
             "database": self.outputs.sqlite,
             "output_validation": self.outputs.validation,
+            "logs": self.outputs.logs,
             "legacy": self.legacy.root,
         }
         duplicate_paths: dict[str, list[str]] = {}
