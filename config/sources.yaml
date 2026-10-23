@@ -79,7 +79,7 @@ sources:
       - table: existing_capacity
         categories: [cars, passenger_light_trucks, freight_light_trucks, motorcycles, medium_trucks, heavy_trucks, school_buses, urban_transit, inter_city_buses]
       - table: demand
-        components: ['20', '34', '35', '36', '32', '28', '29', '30']
+        components: ['20', '34', '35', '36', '32', '28', '29', '30', '7']
       - table: limit_annual_capacity_factor
         categories: [cars, passenger_light_trucks, freight_light_trucks, motorcycles, medium_trucks, heavy_trucks, school_buses, urban_transit, inter_city_buses]
     database_note: "Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies."
@@ -231,10 +231,10 @@ sources:
         produces: [stock_from_activity, fuel_type_disaggregation]
         parameter_modules: [offroad_stocks_and_demands]
       7:
-        database_note: "Provincial off-road energy use by fuel; these totals do not identify equipment counts or service activity."
+        database_note: "Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service."
         label: "Off-Road"
         short_name: off_road_fuel_use_by_source
-        inputs: [fuel_use_by_source]
+        inputs: [energy_use_by_mode, fuel_use_by_source]
         applies_to: [off_road]
         produces: [demand]
         parameter_modules: [offroad_stocks_and_demands]
@@ -1413,16 +1413,20 @@ sources:
     source_type: manual_parameter
     file_type: csv
     version: "2022 database assumptions"
-    units: "Dimensionless cost ratios and years."
+    units: "Dimensionless cost ratios, years, and hydrogen-station M USD2018 per PJ/year."
     citation: "DeCarolis, J. F., et al. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
-    database_note: "U.S. model assumptions for rail/marine operating-cost ratios and charging-infrastructure fixed costs and lifetime."
+    database_note: "U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs."
     database_precedence:
       - lifetime_tech
       - table: cost_variable
         categories: [passenger_rail, freight_rail, freight_marine]
-      - cost_fixed
+      - table: cost_fixed
+        components: [charger_fixed_cost_ratio, hydrogen_refueling_costs]
+      - table: cost_invest
+        categories: [h2_refuel]
+        components: [hydrogen_refueling_costs]
     data_quality: {dq_cred: 3, dq_geog: 3, dq_struc: 3, dq_tech: 2, dq_time: 3}
-    validation_rule: "Select only rows carrying the configured Open Energy Outlook citation from the manual variable-cost and lifetime tables."
+    validation_rule: "Select only rows carrying each component's exact reviewed Open Energy Outlook citation; validate complete manual-table coverage."
     refresh_notes: >
       Review the OEO database documentation and cited publication before changing
       the version-controlled values, years, or DQ evidence.
@@ -1482,6 +1486,23 @@ sources:
           unique_key: [category, sub_category, parameter, period]
           source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akin-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
           expected_rows: 1
+
+      hydrogen_refueling_costs:
+        database_note: "Separate LDV/MHDV hydrogen-station investment and annual fixed costs from OEO's IEA-derived assumptions; annual hydrogen throughput is the capacity basis."
+        label: "Hydrogen refueling investment and fixed costs"
+        short_name: oeo_hydrogen_refueling_costs
+        inputs: [category, sub_category, parameter, unit, currency_year, period, value]
+        applies_to: [h2_refuel]
+        produces: [cost_invest, cost_fixed]
+        parameter_modules: [ev_chargers]
+        units: "Investment: M USD2018 per PJ/year; fixed: M USD2018 per PJ/year annually."
+        validation_rule: "Select four reviewed H2 rows: independent LDV/MHDV investment and fixed annual cost rates."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akın-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
+          expected_rows: 4
 
   argonne_rd_greet:
     source_id: T17
@@ -2023,7 +2044,7 @@ sources:
     database_note: "Hydrogen-refueling efficiency assumption from the report's Distribution annex, representing a generic station-level loss factor."
     data_quality: {dq_cred: 2, dq_geog: 4, dq_struc: 3, dq_tech: 2, dq_time: 3}
     validation_rule: "Select the one existing hydrogen efficiency row in the compact manual table."
-    refresh_notes: "Preserve the reviewed hydrogen row; charger parameterization does not own it."
+    refresh_notes: "Review the station loss assumption together with its OEO costs and HDSAM lifetime; the shared infrastructure parameterization owns its expansion."
     adapter:
       access: {method: version_controlled_manual_parameter, url: "https://www.iea.org/reports/the-future-of-hydrogen"}
     components:
@@ -2033,7 +2054,7 @@ sources:
         inputs: [category, sub_category, parameter, value]
         applies_to: [h2_refuel]
         produces: [efficiency]
-        parameter_modules: [offroad_efficiencies]
+        parameter_modules: [ev_chargers]
         units: fraction
         validation_rule: "Require the one cited hydrogen efficiency row."
         adapter:

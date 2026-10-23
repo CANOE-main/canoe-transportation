@@ -602,10 +602,11 @@ def prepare_transport_contribution(
     if selected_capacity and include_ev_chargers is not False:
         from parameterization.ev_chargers import prepare_ev_charger_rows
 
-        with log_duration(LOGGER, "EV chargers"):
+        with log_duration(LOGGER, "EV chargers and H2 refueling"):
             chargers = prepare_ev_charger_rows(
                 bundle, existing_capacity_rows=parameter_rows,
                 existing_capacity_contexts=contexts,
+                fixed_lifetime_rows=lifetime_tech_rows if include_lifetimes is not False else None,
             )
         parameter_rows.extend(chargers.capacity_rows)
         c2a_rows.extend(chargers.capacity_to_activity_rows)

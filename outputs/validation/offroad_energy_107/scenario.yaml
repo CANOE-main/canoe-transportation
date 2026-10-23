@@ -1,0 +1,93 @@
+version: 3
+scenario:
+  name: offroad_validation
+  description: Transportation baseline testing
+  purpose: default_template
+geography:
+  regions:
+  - 'ON'
+periods:
+  period_mode: prospective
+  base_year: 2023
+  existing:
+  - 2000
+  - 2005
+  - 2010
+  - 2015
+  - 2020
+  model:
+  - 2025
+  - 2030
+  - 2035
+  - 2040
+  - 2045
+  step: 5
+outputs:
+  sqlite_name: offroad_validation.sqlite
+  validation_report: outputs/validation/offroad_validation.json
+  setup_log: outputs/logs/setup_smoke_baseline.json
+comparison:
+  mode: none
+  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+  absolute_tolerance: 1.0e-09
+  relative_tolerance: 1.0e-06
+  include_provenance: false
+sources:
+  selections:
+    nrcan_ceud_transport_provincial:
+      year: 2023
+    nrcan_ceud_transport_national:
+      year: 2023
+    transport_canada_ev_dashboard:
+      year: 2026
+    cer_canadas_energy_future:
+      edition: 2026
+aggregation_sources:
+  stock_age:
+    'ON': ontario_ministry_transport_vehicle_population
+    other: ontario_ministry_transport_vehicle_population
+  ldv:
+    'ON': ontario_ministry_transport_vehicle_population
+    other: ontario_ministry_transport_vehicle_population
+  medium_trucks:
+    'ON': ontario_ministry_transport_vehicle_population
+    other: wards_intelligence_sales_shares
+  heavy_truck_haul:
+    'ON': statcan_transport_tables
+    other: statcan_transport_tables
+economics:
+  cer_scenario: Current Measures
+  global_discount_rate: 0.03
+  default_loan_rate: 0.03
+  cost_reference_currency: CAD
+  cost_reference_year: 2020
+lifetimes:
+  survival_curves: false
+  heavy_truck_survival_source: epa_moves_heavy_truck_survival
+  survival_curve_max_age: 29
+existing_capacity:
+  vehicle_population_year: 2025
+  cleanup_tolerance: 0.001
+demand:
+  cer_scenario: Current Measures
+  future_car_demand: GDP-indexed
+road_utilization:
+  vkt_schedules: false
+  vkt_max_age: 25
+efficiencies:
+  atb_trajectory: Mid
+  rating_statistic: mean
+costs:
+  atb_trajectory: Mid
+ev_chargers:
+  ld_evs_per_port: 1.0
+  mhd_evs_per_port: 1.5
+charging_profiles:
+  travel_behavior_source: nhts
+  time_mapping: null
+BEV_PHEV_range_representation:
+  mode: representative_archetype
+embodied_emissions: true
+embodied_materials: conventional
+row_note_overrides:
+  technology: {}

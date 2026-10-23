@@ -1335,6 +1335,7 @@ def _prepare_representative_blend(
     vehicle_rows = []
     blend_prototype = None
     commodity_prototype = None
+    source_flags = set()
     for group, weights, efficiency in efficiency_groups:
         region, vintage = group[0].region, group[0].vintage
         total = 1 / efficiency
@@ -1365,10 +1366,15 @@ def _prepare_representative_blend(
                 not blend_prototype.unlim_cap
                 or not blend_prototype.annual
                 or commodity_prototype.units != "PJ"
-                or commodity_prototype.flag.value != "p"
+                or commodity_prototype.flag.value not in {"p", "a"}
             ):
                 raise RangeRepresentationBlocked(
                     "Representative PHEV source structure must be an unlimited annual PJ blend"
+                )
+            source_flags.add(commodity_prototype.flag.value)
+            if len(source_flags) != 1:
+                raise RangeRepresentationBlocked(
+                    "Representative PHEV source commodities must share the same balance flag"
                 )
             split = [
                 r

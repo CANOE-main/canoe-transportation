@@ -97,7 +97,7 @@ ev_chargers:
   mhd_evs_per_port: 1.5
 
 charging_profiles:
-  travel_behavior_source: nhts  # none: disable; nhts | tts: Ontario LDV charging shape.
+  travel_behavior_source: nhts  # none | nhts: US travel survey | tts: Ontario GGH travel survey
   time_mapping: null  # null: hourly slices; otherwise: hour-to-slice CSV path.
 
 BEV_PHEV_range_representation:

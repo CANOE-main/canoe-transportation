@@ -25,6 +25,8 @@ its actual selections are defined by YAML.
 
 ## Table of Contents
 
+- [Installation](#installation)
+- [Common commands](#common-commands)
 - [Backend at a glance](#backend-at-a-glance)
 - [Backend architecture](#backend-architecture)
   - [Application and operating model](#application-and-operating-model)
@@ -45,10 +47,74 @@ its actual selections are defined by YAML.
   - [Market share and technology adoption constraints](#market-share-and-technology-adoption-constraints-to-do)
   - [`capacity_factor_tech` for BEV charging profiles](#capacity_factor_tech-for-bev-charging-profiles-pending-refactor)
   - [Compact manual parameter selectors](#compact-manual-parameter-selectors)
-- [Installation](#installation)
-- [Common commands](#common-commands)
 - [Outputs and validation](#outputs-and-validation)
 - [Development approach](#development-approach)
+
+## Installation
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and use Python
+3.13 or later. From the repository root, create the environment from the lockfile:
+
+```powershell
+uv sync --frozen
+```
+
+A runnable scenario needs registered source caches, reviewed mappings/manual tables and
+the selected external-model evidence. Check [`config/sources.yaml`](config/sources.yaml)
+for source identities and [`config/paths.yaml`](config/paths.yaml) for locations. The
+scenario command regenerates derived production inputs; no prebuilt interim or processed
+tables are required. Installing packages alone does not provide registered raw inputs.
+
+The current template uses the registered GREET result bank and inherited charging
+profiles. Generating new GREET evidence requires Windows and desktop Excel; ordinary
+compilation validates and reads the existing bank without starting Excel. See
+[scenario guidance](config/scenarios/README.md#parameter-settings) for those prerequisites.
+
+To create another scenario, copy the complete
+[`legacy_reproduction.yaml` template](config/scenarios/legacy_reproduction.yaml),
+retain every field and switch, and change its selections. Give the scenario a distinct
+`scenario.name`, `outputs.sqlite_name`, and `outputs.validation_report`; keep the
+other output paths distinct as needed. Use `comparison.mode: scenario` to compare it
+with an existing backend database, or `none` to disable comparison. Keep the full
+comparison block in either case. Run scenarios serially while interim and processed
+artifacts share configured directories.
+
+## Common commands
+
+Select the scenario and check configuration, schema compatibility, reviewed manual
+inputs, and directory state. The doctor is a readiness check; it does not prove that
+all normalized evidence is present or current.
+
+```powershell
+$scenario = "config/scenarios/legacy_reproduction.yaml"
+uv run python scripts/doctor.py --scenario $scenario
+```
+
+Build the complete scenario from registered inputs, offline by default:
+
+```powershell
+uv run --offline python src/build_transport.py --scenario $scenario --overwrite
+```
+
+`uv --offline` also prevents package downloads. The build itself disables source downloads
+by default. To permit its source adapters to acquire missing caches, use:
+
+```powershell
+uv run python src/build_transport.py --scenario $scenario --overwrite --download-sources
+```
+
+Existing caches are reused; refreshing a source identity remains an explicit adapter and
+registry-review operation. Reviewed tables, mappings and external-model result banks must
+already be supplied. The build validates them without generating replacement evidence.
+
+`--overwrite` permits replacement of the configured database. Every invocation rebuilds
+derived production prerequisites and parameters through their existing Python owners.
+Changes to sources, YAML and code are therefore applied without timestamps, completion
+markers or force flags. There is no incremental job cache. Failed preparation or ordinary
+publication errors retain the previous database/report; rerunning regenerates intermediate
+artifacts. SQLite replacement is atomic, while the separate report is not crash-atomic
+with it across power loss or termination. Run scenarios serially when artifact paths are
+shared. Individual source/parameter commands remain useful for development.
 
 ## Backend at a glance
 
@@ -1372,72 +1438,6 @@ the same parameter, and a terminal year such as `_2035` is retained as
 `selector_year`. `parameterization.manual_parameters` never edits the manual
 tables: it publishes the row-to-technology expansion, reconciliation, registry,
 and unmatched-selector findings under `inputs/1_interim/`.
-
-## Installation
-
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and use Python
-3.13 or later. From the repository root, create the environment from the lockfile:
-
-```powershell
-uv sync --frozen
-```
-
-A runnable scenario needs registered source caches, reviewed mappings/manual tables and
-the selected external-model evidence. Check [`config/sources.yaml`](config/sources.yaml)
-for source identities and [`config/paths.yaml`](config/paths.yaml) for locations. The
-scenario command regenerates derived production inputs; no prebuilt interim or processed
-tables are required. Installing packages alone does not provide registered raw inputs.
-
-The current template uses the registered GREET result bank and inherited charging
-profiles. Generating new GREET evidence requires Windows and desktop Excel; ordinary
-compilation validates and reads the existing bank without starting Excel. See
-[scenario guidance](config/scenarios/README.md#parameter-settings) for those prerequisites.
-
-To create another scenario, copy the complete
-[`legacy_reproduction.yaml` template](config/scenarios/legacy_reproduction.yaml),
-retain every field and switch, and change its selections. Give the scenario a distinct
-`scenario.name`, `outputs.sqlite_name`, and `outputs.validation_report`; keep the
-other output paths distinct as needed. Use `comparison.mode: scenario` to compare it
-with an existing backend database, or `none` to disable comparison. Keep the full
-comparison block in either case. Run scenarios serially while interim and processed
-artifacts share configured directories.
-
-## Common commands
-
-Select the scenario and check configuration, schema compatibility, reviewed manual
-inputs, and directory state. The doctor is a readiness check; it does not prove that
-all normalized evidence is present or current.
-
-```powershell
-$scenario = "config/scenarios/legacy_reproduction.yaml"
-uv run python scripts/doctor.py --scenario $scenario
-```
-
-Build the complete scenario from registered inputs, offline by default:
-
-```powershell
-uv run --offline python src/build_transport.py --scenario $scenario --overwrite
-```
-
-`uv --offline` also prevents package downloads. The build itself disables source downloads
-by default. To permit its source adapters to acquire missing caches, use:
-
-```powershell
-uv run python src/build_transport.py --scenario $scenario --overwrite --download-sources
-```
-
-Existing caches are reused; refreshing a source identity remains an explicit adapter and
-registry-review operation. Reviewed tables, mappings and external-model result banks must
-already be supplied. The build validates them without generating replacement evidence.
-
-`--overwrite` permits replacement of the configured database. Every invocation rebuilds
-derived production prerequisites and parameters through their existing Python owners.
-Changes to sources, YAML and code are therefore applied without timestamps, completion
-markers or force flags. There is no incremental job cache. Failed preparation or ordinary
-publication errors retain the previous database/report; rerunning regenerates intermediate
-artifacts. SQLite replacement is atomic, while the separate report is not crash-atomic
-with it across power loss or termination. Run scenarios serially when artifact paths are
-shared. Individual source/parameter commands remain useful for development.
 
 ## Outputs and validation
 

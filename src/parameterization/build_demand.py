@@ -40,7 +40,7 @@ LOGGER = logging.getLogger(__name__)
 CEUD_PROVINCIAL = "nrcan_ceud_transport_provincial"
 CEUD_NATIONAL = "nrcan_ceud_transport_national"
 CER = "cer_canadas_energy_future"
-DEMAND_UNITS = {"bn passenger-km", "bn tonne-km"}
+DEMAND_UNITS = {"bn passenger-km", "bn tonne-km", "PJ"}
 
 
 def real_gdp_indices(
@@ -79,7 +79,7 @@ def validate_demand_outputs(
     if not commodities.issubset(template_units):
         raise ValueError(f"Demand references missing template commodities: {commodities - set(template_units)}")
     expected_template_units = {"bn passenger-km": "billion passenger-km",
-                               "bn tonne-km": "billion tonne-km"}
+                               "bn tonne-km": "billion tonne-km", "PJ": "PJ"}
     if any(template_units[row.commodity] != expected_template_units.get(row.units)
            for row in rows):
         raise ValueError("Demand units differ from template commodity units")
@@ -111,6 +111,7 @@ def prepare_demand_rows(
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
     road_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
     offroad_rules = load_harmonization_rules(bundle, "offroad_stocks_and_demands")["demand"]
+    energy_only = offroad_rules.get("energy_only_series", {})
     cer_rules = load_harmonization_rules(bundle, "cer_enerfuture")
     edition = configured_edition(bundle)
     selected_scenario = configured_scenario(bundle, cer_rules)
@@ -143,8 +144,10 @@ def prepare_demand_rows(
     expected_regions = {road_rules["region_output_map"].get(region, region) for region in regions}
     expected_commodities = {
         selector["commodity"] for selector in road_rules["activity_series"].values()
-    } | {selector["commodity"] for selector in offroad_rules["energy_intensity_series"].values()}
-    if (len(expected_commodities) != len(road_rules["activity_series"]) + len(offroad_rules["energy_intensity_series"])
+    } | {selector["commodity"] for selector in offroad_rules["energy_intensity_series"].values()} | {
+        selector["commodity"] for selector in energy_only.values()
+    }
+    if (len(expected_commodities) != len(road_rules["activity_series"]) + len(offroad_rules["energy_intensity_series"]) + len(energy_only)
             or baseline.duplicated(["region", "commodity"]).any()
             or set(baseline["region"]) != expected_regions
             or set(baseline["commodity"]) != expected_commodities
@@ -168,7 +171,8 @@ def prepare_demand_rows(
     }
     digest = hashlib.sha256(json.dumps({
         "inputs": [(path.name, file_sha256(path)) for path in [*ceud_files, national_file, macro_file]],
-        "road_rules": road_rules_for_gdp, "offroad_rules": offroad_rules,
+        "road_rules": road_rules_for_gdp,
+        "offroad_rules": {key: value for key, value in offroad_rules.items() if key != "energy_only_series"},
     }, sort_keys=True).encode()).hexdigest()
     variant = {"base_year": base_year, "periods": periods, "step": step,
                "cer_edition": edition, "cer_scenario": selected_scenario,
@@ -180,7 +184,8 @@ def prepare_demand_rows(
     rows: list[Demand] = []
     contexts: list[ResolvedProvenance] = []
     for family, selectors in (("road", road_rules["activity_series"]),
-                              ("offroad", offroad_rules["energy_intensity_series"])):
+                              ("offroad", offroad_rules["energy_intensity_series"]),
+                              ("offroad_energy", energy_only)):
         for service, selector in selectors.items():
             components = [(CEUD_PROVINCIAL, selector.get("table_id", selector.get("provincial_table")))]
             reallocates_passenger_ldv = (
@@ -202,9 +207,12 @@ def prepare_demand_rows(
                  "car_extrapolation_rules": road_rules["car_extrapolation"]}
                 if reallocates_passenger_ldv else variant
             )
+            if family == "offroad_energy":
+                service_variant = {**variant, "energy_only_selector": selector}
             transformation = (
                 "CEUD car CAGR and CER GDP-indexed passenger LDV total"
                 if reallocates_passenger_ldv else
+                "CEUD provincial energy demand indexed by CER real GDP" if family == "offroad_energy" else
                 "CEUD baseline service activity indexed by CER real GDP"
             )
             context = resolve_composite_provenance(
@@ -239,6 +247,10 @@ def prepare_demand_rows(
     audit.update({"cer_edition": edition, "cer_scenario": selected_scenario,
                   "future_car_demand": future_car_demand,
                   "gdp_index_by_period": indices, "input_content_digest": digest})
+    if energy_only:
+        audit["energy_only_baselines"] = baseline.loc[
+            baseline.service.isin(energy_only)
+        ].to_dict("records")
     if car_audit:
         audit["car_extrapolation"] = {
             "method": road_rules["car_extrapolation"]["method"],
@@ -254,7 +266,7 @@ def prepare_demand_rows(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", default="config/scenarios/legacy_reproduction.yaml")
+    parser.add_argument("--scenario", default="config/scenarios/default.yaml")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     prepare_demand_rows(load_config_bundle(args.scenario))

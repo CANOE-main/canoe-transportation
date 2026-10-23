@@ -1,4 +1,4 @@
-"""Prepare EV charging infrastructure rows from reviewed inputs, without SQLite I/O."""
+"""Prepare EV charging and H2 refueling rows from reviewed inputs, without SQLite I/O."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pandas as pd
-from canoe_schema.v4_0 import CapacityToActivity, CostFixed, CostInvest, DataSet, Efficiency, ExistingCapacity, LimitAnnualCapacityFactor
+from canoe_schema.v4_0 import CapacityToActivity, CostFixed, CostInvest, DataSet, Efficiency, ExistingCapacity, LifetimeTech, LimitAnnualCapacityFactor
 
 from parameterization.currency import CerCurrencyConverter
 from parameterization.manual_parameters import validate_manual_registry
@@ -92,22 +92,28 @@ def prepare_charger_capacity_to_activity(
     return dataset, rows
 
 
-def _manual_value(manual: pd.DataFrame, category: str, parameter: str, period: str) -> float:
+def _manual_value(
+    manual: pd.DataFrame, category: str, parameter: str, period: str, *,
+    infrastructure_category: str = "charger",
+) -> float:
     selected = manual.loc[
-        manual.category.eq("charger") & manual.sub_category.eq(category)
+        manual.category.eq(infrastructure_category) & manual.sub_category.eq(category)
         & manual.parameter.eq(parameter) & manual.period.eq(period)
     ]
     if len(selected) != 1:
-        raise ValueError(f"Expected one reviewed charger value: {category}/{parameter}/{period}")
+        raise ValueError(f"Expected one reviewed {infrastructure_category} value: {category}/{parameter}/{period}")
     value = float(selected.iloc[0].value)
     if not math.isfinite(value) or value < 0:
-        raise ValueError(f"Invalid reviewed charger value: {category}/{parameter}/{period}")
+        raise ValueError(f"Invalid reviewed {infrastructure_category} value: {category}/{parameter}/{period}")
     return value
 
 
-def _period_value(manual: pd.DataFrame, category: str, parameter: str, year: int) -> pd.Series:
+def _period_value(
+    manual: pd.DataFrame, category: str, parameter: str, year: int, *,
+    infrastructure_category: str = "charger",
+) -> pd.Series:
     selected = manual.loc[
-        manual.category.eq("charger") & manual.sub_category.eq(category)
+        manual.category.eq(infrastructure_category) & manual.sub_category.eq(category)
         & manual.parameter.eq(parameter)
     ]
     exact = selected.loc[selected.period.eq(str(year))]
@@ -146,7 +152,7 @@ def _context(
     quality = next(item.data_quality for item in inputs if item.source_id == governing_id)
     return resolve_composite_provenance(
         inputs=inputs, dataset_key=f"ev_chargers.{name}",
-        transformation="reviewed EV charger parameterization",
+        transformation="reviewed transport charging and refueling parameterization",
         transformation_version=load_harmonization_rules(bundle, "ev_chargers")["transformation_version"], governing_source_id=governing_id,
         data_quality=quality, value_variant={"input_digest": digest, "periods": bundle.scenario.periods.model_dump(),
                                            "charger_rules": load_harmonization_rules(bundle, "ev_chargers")},
@@ -166,7 +172,7 @@ def _validate_shares(manual: pd.DataFrame) -> None:
             if usage == "existing_private" else
             [f"existing_{kind}_share" for kind in types]
             if usage == "existing" else
-            [f"{kind}_cost_aggregation" for kind in types]
+            [f"{kind}_capex_aggregation" for kind in types]
         )
         values = [_manual_value(manual, category, name, period) for name in names]
         if any(value > 1 for value in values) or not math.isclose(sum(values), 1, abs_tol=1e-9):
@@ -251,11 +257,96 @@ def prepare_charger_utilization_targets(
     return targets, context
 
 
+def _prepare_hydrogen_refueling(
+    bundle: ConfigBundle, *, manual: pd.DataFrame, rules: dict,
+    technology: pd.DataFrame, commodities: set[str], regions: set[str],
+    converter: CerCurrencyConverter, fixed_lives: dict[tuple[str, str], float],
+    digest: str,
+) -> tuple[list[CostInvest], list[CostFixed], list[Efficiency], list[ResolvedProvenance], dict]:
+    """Expand the reviewed station rates; capacity is annual hydrogen throughput."""
+    hydrogen = rules["hydrogen_refueling"]
+    if (hydrogen["capacity_units"] != "PJ/year"
+            or hydrogen["cost_units"] != "$M 2020CAD / (PJ/year)"
+            or hydrogen["fixed_cost_units"] != "$M 2020CAD / (PJ/year) / year"):
+        raise ValueError("H2 refueling requires the reviewed PJ/year capacity and CAD2020 cost basis")
+    mappings = hydrogen["technology"]
+    declared = technology.loc[technology.category.eq("h2_refuel")]
+    if set(declared.index) != {mapping["tech"] for mapping in mappings.values()}:
+        raise ValueError("H2 refueling mappings do not cover template technologies")
+    if hydrogen["input_commodity"] not in commodities:
+        raise ValueError("Unknown H2 refueling input commodity")
+    efficiency = _manual_value(
+        manual, "all", "efficiency", "all", infrastructure_category="h2_refuel",
+    )
+    if not 0 < efficiency <= 1:
+        raise ValueError("H2 refueling efficiency must be in (0, 1]")
+    efficiency_context = _context(
+        bundle, [("iea_future_of_hydrogen", "hydrogen_refueling_efficiency")],
+        name="hydrogen_refueling.efficiency", digest=digest,
+    )
+    costs = [("open_energy_outlook", "hydrogen_refueling_costs"),
+             ("cer_canadas_energy_future", "macro-indicators")]
+    invest_context = _context(bundle, costs, name="hydrogen_refueling.cost_invest", digest=digest)
+    fixed_context = _context(
+        bundle, [*costs, ("argonne_hdsam", "hydrogen_dispenser_lifetimes")],
+        name="hydrogen_refueling.cost_fixed", digest=digest,
+    )
+    invest_rows, fixed_rows, efficiency_rows, conversions = [], [], [], []
+    excluded_pairs = 0
+    for category, mapping in mappings.items():
+        tech = mapping["tech"]
+        if technology.loc[tech, "sub_category"] != category or mapping["output"] not in commodities:
+            raise ValueError(f"H2 refueling template mapping changed: {category}")
+        if str(technology.loc[tech, "annual"]) != "1":
+            raise ValueError(f"H2 refueling technology must remain annual: {tech}")
+        for vintage in bundle.scenario.periods.model:
+            rates = {}
+            for parameter in ("capex_per_PJ_year", "fixed_cost_per_PJ_year"):
+                selected = _period_value(
+                    manual, category, parameter, vintage, infrastructure_category="h2_refuel",
+                )
+                if selected.unit not in {"M CAD", "M USD"} or not str(selected.currency_year).isdigit():
+                    raise ValueError(f"H2 refueling cost currency contract changed: {category}/{parameter}")
+                converted = converter.convert(
+                    float(selected.value), currency=selected.unit.split()[1],
+                    dollar_year=int(selected.currency_year),
+                )
+                rates[parameter] = converted.target_cad_value
+                conversions.append({"station_class": category, "vintage": vintage,
+                                    "parameter": parameter, **vars(converted)})
+            for region in sorted(regions):
+                base = {"region": region, "tech": tech, "vintage": vintage}
+                invest_rows.extend(validate_parameter_rows(CostInvest, [{
+                    **base, "cost": rates["capex_per_PJ_year"], "units": hydrogen["cost_units"],
+                }], invest_context, bundle=bundle))
+                candidates = [period for period in bundle.scenario.periods.model if period >= vintage]
+                periods = [period for period in candidates if period < vintage + fixed_lives[region, tech]]
+                excluded_pairs += len(candidates) - len(periods)
+                fixed_rows.extend(validate_parameter_rows(CostFixed, [{
+                    **base, "period": period, "cost": rates["fixed_cost_per_PJ_year"],
+                    "units": hydrogen["fixed_cost_units"],
+                } for period in periods], fixed_context, bundle=bundle))
+                efficiency_rows.extend(validate_parameter_rows(Efficiency, [{
+                    **base, "input_comm": hydrogen["input_commodity"],
+                    "output_comm": mapping["output"], "efficiency": efficiency, "units": "PJ/PJ",
+                }], efficiency_context, bundle=bundle))
+    audit = {
+        "capacity_units": hydrogen["capacity_units"], "capacity_to_activity": 1.0,
+        "capacity_basis": "effective annual hydrogen throughput; model default capacity_to_activity=1",
+        "existing_capacity_rows": 0,
+        "invest_rows": len(invest_rows), "fixed_rows": len(fixed_rows),
+        "efficiency_rows": len(efficiency_rows), "cost_conversion": conversions,
+        "fixed_period_vintage_pairs_excluded_by_lifetime": excluded_pairs,
+    }
+    return invest_rows, fixed_rows, efficiency_rows, [invest_context, fixed_context, efficiency_context], audit
+
+
 def prepare_ev_charger_rows(
     bundle: ConfigBundle, *, existing_capacity_rows: list[ExistingCapacity],
     existing_capacity_contexts: list[ResolvedProvenance],
+    fixed_lifetime_rows: list[LifetimeTech] | None = None,
 ) -> ChargerPreparation:
-    """Reuse prepared vehicle stock and return validated charger products."""
+    """Reuse prepared stock/lifetimes and return charger and H2 station products."""
     rules = load_harmonization_rules(bundle, "ev_chargers")
     manual_rules = load_harmonization_rules(bundle, "manual_parameters")
     _, frames = validate_manual_registry(
@@ -325,6 +416,22 @@ def prepare_ev_charger_rows(
     model_regions = {output_region_map.get(region, region) for region in bundle.scenario.geography.regions}
     if model_regions - template_regions:
         raise ValueError(f"Charger scenario regions are absent from template: {sorted(model_regions - template_regions)}")
+    if fixed_lifetime_rows is None:
+        from parameterization.offroad_lifetimes import prepare_reviewed_manual_lifetimes
+
+        fixed_lifetime_rows, _, _ = prepare_reviewed_manual_lifetimes(bundle)
+    infrastructure_techs = set(template.loc[template.category.isin(["charger", "h2_refuel"]), "tech"])
+    fixed_lives = {}
+    for row in fixed_lifetime_rows:
+        key = (row.region, row.tech)
+        if row.region not in model_regions or row.tech not in infrastructure_techs:
+            continue
+        if key in fixed_lives or not math.isfinite(row.lifetime) or row.lifetime <= 0:
+            raise ValueError(f"Invalid or duplicate infrastructure lifetime: {key}")
+        fixed_lives[key] = float(row.lifetime)
+    missing_lives = {(region, tech) for region in model_regions for tech in infrastructure_techs} - set(fixed_lives)
+    if missing_lives:
+        raise ValueError(f"Infrastructure technology has no fixed lifetime: {sorted(missing_lives)}")
     assumption_dataset, c2a_rows = prepare_charger_capacity_to_activity(
         bundle, technology=template, regions=model_regions,
     )
@@ -370,7 +477,8 @@ def prepare_ev_charger_rows(
     digest = hashlib.sha256(json.dumps(
         {"files": [(path.name, file_sha256(path)) for path in paths],
          "scenario": bundle.scenario.ev_chargers.model_dump(),
-         "rules": rules, "stock": sorted((key, value) for key, value in stock_by_region.items())},
+         "rules": rules, "stock": sorted((key, value) for key, value in stock_by_region.items()),
+         "fixed_lifetimes": sorted((key, value) for key, value in fixed_lives.items())},
         sort_keys=True,
     ).encode()).hexdigest()
     dunsky = ("dunsky_ev_charging_infrastructure", "charger_shares_and_utilization")
@@ -408,13 +516,13 @@ def prepare_ev_charger_rows(
             if not math.isclose(sum(port_counts.values()), required_ports, rel_tol=1e-12, abs_tol=1e-8):
                 raise ValueError(f"Charger port reconciliation failed: {region}/{category}")
             power_kw = {
-                kind: _manual_value(manual, category, f"existing_{kind}_power", "existing")
+                kind: _manual_value(manual, category, f"existing_{kind}_rated_power", "existing")
                 for kind in port_counts
             }
             for kind, count in port_counts.items():
                 selected = manual.loc[
                     manual.category.eq("charger") & manual.sub_category.eq(category)
-                    & manual.parameter.eq(f"existing_{kind}_power")
+                    & manual.parameter.eq(f"existing_{kind}_rated_power")
                 ]
                 if len(selected) != 1 or selected.iloc[0].unit != "kW":
                     raise ValueError(f"Charger power unit must be kW: {category}/{kind}")
@@ -463,7 +571,8 @@ def prepare_ev_charger_rows(
         "mhdv": _context(bundle, [dunsky, cer_macro], name="mhdv_cost_invest", digest=cost_digest),
     }
     fixed_contexts = {
-        category: _context(bundle, [dunsky, *([nlr] if category == "ldv" else []), oeo, cer_macro],
+        category: _context(bundle, [dunsky, *([nlr] if category == "ldv" else []), oeo, cer_macro,
+                                    ("open_energy_outlook", "transport_process_lifetimes")],
                            name=f"{category}_cost_fixed", digest=cost_digest)
         for category in stock_class_map
     }
@@ -472,6 +581,7 @@ def prepare_ev_charger_rows(
         raise ValueError("Charger cost units require the reviewed 2020 CAD scenario")
     cost_types = {"ldv": ("L1", "L2", "DCFC"), "mhdv": ("50kW", "350kW", "2MW")}
     invest_rows, fixed_rows, cost_audit = [], [], []
+    excluded_fixed_pairs = 0
     fixed_ratio = _manual_value(manual, "all", "fixed_to_capex_ratio", "all")
     if not 0 <= fixed_ratio <= 1:
         raise ValueError("Invalid reviewed charger fixed cost ratio")
@@ -484,8 +594,8 @@ def prepare_ev_charger_rows(
             )
             weighted = 0.0
             for kind in kinds:
-                share = _manual_value(manual, category, f"{kind}_cost_aggregation", "through_2050")
-                selected = _period_value(manual, category, f"{kind}_cost_per_GW", source_year)
+                share = _manual_value(manual, category, f"{kind}_capex_aggregation", "through_2050")
+                selected = _period_value(manual, category, f"{kind}_capex_per_GW", source_year)
                 if selected.unit not in {"M CAD", "M USD"} or not str(selected.currency_year).isdigit():
                     raise ValueError(f"Charger cost currency contract changed: {category}/{kind}")
                 converted = converter.convert(
@@ -515,7 +625,9 @@ def prepare_ev_charger_rows(
                     invest_rows.extend(validate_parameter_rows(CostInvest, [
                         {**base_record, "cost": weighted}
                     ], invest_contexts[category], bundle=bundle))
-                periods = [period for period in bundle.scenario.periods.model if period >= vintage]
+                candidates = [period for period in bundle.scenario.periods.model if period >= vintage]
+                periods = [period for period in candidates if period < vintage + fixed_lives[region, tech]]
+                excluded_fixed_pairs += len(candidates) - len(periods)
                 fixed_rows.extend(validate_parameter_rows(CostFixed, [
                     {**base_record, "period": period, "cost": weighted * fixed_ratio}
                     for period in periods
@@ -573,8 +685,16 @@ def prepare_ev_charger_rows(
     if utilization.duplicated(["region", "vintage", "tech_or_group", "output_comm", "operator"]).any():
         raise ValueError("Duplicate charger utilization keys")
 
+    h2_invest, h2_fixed, h2_efficiency, h2_contexts, h2_audit = _prepare_hydrogen_refueling(
+        bundle, manual=manual, rules=rules, technology=technology,
+        commodities=set(commodity.name), regions=model_regions, converter=converter,
+        fixed_lives=fixed_lives, digest=cost_digest,
+    )
+    invest_rows.extend(h2_invest)
+    fixed_rows.extend(h2_fixed)
+    efficiency_rows.extend(h2_efficiency)
     contexts = [*capacity_contexts, *invest_contexts.values(), *fixed_contexts.values(),
-                *efficiency_contexts.values(), utilization_context]
+                *efficiency_contexts.values(), utilization_context, *h2_contexts]
     output_dir = resolve_artifact_path(bundle, "ev_chargers_processed")
     output_dir.mkdir(parents=True, exist_ok=True)
     frames_to_write = {
@@ -613,6 +733,8 @@ def prepare_ev_charger_rows(
         "tc_as_of": charger_source["as_of"], "bev_stock_year": bundle.scenario.periods.base_year,
         "zero_bev_stock_skipped": [list(key) for key in missing_stock],
         "port_reconciliation": port_records, "cost_conversion": cost_audit,
+        "fixed_period_vintage_pairs_excluded_by_lifetime": excluded_fixed_pairs,
+        "hydrogen_refueling": h2_audit,
         "input_sha256": {path.name: file_sha256(path) for path in [*paths, macro_path]},
     }
     validation_dir = resolve_artifact_path(bundle, "ev_chargers_validation")
@@ -626,14 +748,18 @@ def prepare_ev_charger_rows(
         len(utilization), national,
     )
     LOGGER.info("Excluded %d existing charger investment rows; retained their annual fixed-cost basis", len(capacity_rows))
+    LOGGER.info("Excluded fixed-cost pairs at/after retirement: chargers=%d H2=%d",
+                excluded_fixed_pairs, h2_audit["fixed_period_vintage_pairs_excluded_by_lifetime"])
+    LOGGER.info("H2 refueling rows: invest=%d fixed=%d efficiency=%d; no existing station stock input",
+                len(h2_invest), len(h2_fixed), len(h2_efficiency))
     return ChargerPreparation(capacity_rows, invest_rows, fixed_rows, efficiency_rows,
                               utilization_rows, utilization, contexts, audit,
                               assumption_dataset, c2a_rows)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Prepare reviewed EV charger parameters")
-    parser.add_argument("--scenario", default="config/scenarios/legacy_reproduction.yaml")
+    parser = argparse.ArgumentParser(description="Prepare reviewed EV charger and H2 refueling parameters")
+    parser.add_argument("--scenario", default="config/scenarios/default.yaml")
     args = parser.parse_args()
     from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
