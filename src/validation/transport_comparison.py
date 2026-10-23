@@ -100,7 +100,7 @@ TABLES = (
     TableSpec("cost_invest", "CostInvest", ("region", "tech", "vintage"), "cost"),
     TableSpec("cost_fixed", "CostFixed", ("region", "tech", "vintage", "period"), "cost"),
     TableSpec("cost_variable", "CostVariable", ("region", "tech", "vintage", "period"), "cost"),
-    TableSpec("limit_tech_input_split", "TechInputSplit", ("region", "tech", "period", "input_comm"), "proportion", "min_proportion", "fraction"),
+    TableSpec("limit_tech_input_split_annual", "TechInputSplit", ("region", "tech", "period", "input_comm"), "proportion", "min_proportion", "fraction"),
     TableSpec("capacity_factor_tech", "CapacityFactorTech", ("region", "tech", "season", "tod"), "factor", units="fraction"),
     TableSpec("lifetime_survival_curve", "LifetimeSurvivalCurve", ("region", "tech", "vintage", "period"), "fraction", units="fraction"),
 )
@@ -216,7 +216,7 @@ def _record(
         result["status"] = "invalid_value"
     elif current_unit != previous_unit:
         result["status"] = "unit_mismatch"
-    elif spec.table == "limit_tech_input_split" and current.get("operator") not in {"ge", "e"}:
+    elif spec.table == "limit_tech_input_split_annual" and current.get("operator") not in {"ge", "e"}:
         result["status"] = "representation_only"
     else:
         equal = isclose(candidate, legacy, abs_tol=absolute_tolerance, rel_tol=relative_tolerance)
@@ -225,7 +225,7 @@ def _record(
             absolute_difference=abs(candidate - legacy),
             relative_percent=100 * (candidate - legacy) / abs(legacy) if legacy else None,
         )
-        if spec.table == "limit_tech_input_split":
+        if spec.table == "limit_tech_input_split_annual":
             result["comparison_grain"] = "input energy-share value; legacy minimum bound"
             result["candidate_operator"] = current.get("operator")
     return result

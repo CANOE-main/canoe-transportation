@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from canoe_schema.v4_0 import CapacityToActivity, DataSet, LimitAnnualCapacityFactor
+from canoe_schema.v4_0 import CapacityToActivity, DataSet, ExistingCapacity, LimitAnnualCapacityFactor
 
 from parameterization.road_fleet_weights import (
     FleetAggregationEvidence, aggregation_component, load_fleet_aggregation_evidence,
@@ -326,7 +326,7 @@ def validate_road_utilization(
     regions: set[str],
     road_classes: set[str],
     years: list[int],
-    periods: list[int],
+    vintages_by_region_tech: dict[tuple[str, str], list[int]],
     flat_classes: set[str],
     technology: pd.DataFrame,
 ) -> dict[str, Any]:
@@ -354,9 +354,11 @@ def validate_road_utilization(
     if len(c2a_rows) != len(expected_c2a) or actual_c2a != expected_c2a:
         raise ValueError("Capacity-to-activity row coverage is incomplete or duplicated")
     flat_techs = road_techs.loc[road_techs.category.isin(flat_classes)]
+    if set(vintages_by_region_tech) != {(region, tech) for region in regions for tech in flat_techs.tech}:
+        raise ValueError("Flat annual factor vintage ownership differs from its regions/technologies")
     expected_flat = {
-        (region, tech, period)
-        for region in regions for tech in flat_techs.tech for period in periods
+        (region, tech, vintage)
+        for (region, tech), vintages in vintages_by_region_tech.items() for vintage in vintages
     }
     actual_flat = {(row.region, row.tech_or_group, row.vintage) for row in flat_rows}
     if len(flat_rows) != len(expected_flat) or actual_flat != expected_flat:
@@ -369,12 +371,17 @@ def validate_road_utilization(
         "baseline_rows": len(baseline),
         "capacity_to_activity_rows": len(c2a_rows),
         "flat_factor_rows": len(flat_rows),
+        "flat_vintages_by_region_technology": [
+            {"region": region, "tech": tech, "vintages": vintages}
+            for (region, tech), vintages in sorted(vintages_by_region_tech.items())
+        ],
     }
 
 
 def prepare_road_utilization(
     bundle: ConfigBundle,
     *,
+    existing_capacity_rows: list[ExistingCapacity],
     technology: pd.DataFrame | None = None,
 ) -> RoadUtilizationPreparation:
     """Prepare deterministic road rows and audit artifacts from registered local inputs."""
@@ -442,10 +449,32 @@ def prepare_road_utilization(
         set(factor_rules["flat_only_classes"])
         if scenario.road_utilization.vkt_schedules else road_classes
     )
+    flat_technology = expanded.loc[expanded.category.isin(flat_classes)]
+    existing_suffix = load_harmonization_rules(bundle, "efficiencies")["existing_suffix"]
+    vintages_by_region_tech = {
+        (region, tech): [] if tech.endswith(existing_suffix) else list(scenario.periods.model)
+        for region in sorted(output_regions) for tech in flat_technology.tech
+    }
+    existing_techs = {tech for tech in flat_technology.tech if tech.endswith(existing_suffix)}
+    omitted_stock = 0
+    for row in existing_capacity_rows:
+        if row.region not in output_regions or row.tech not in existing_techs:
+            continue
+        if row.capacity is None or not isfinite(row.capacity) or row.capacity < 0:
+            raise ValueError(f"Invalid existing road capacity for utilization: {row.region}/{row.tech}/{row.vintage}")
+        if row.capacity == 0:
+            omitted_stock += 1
+            continue
+        if row.vintage not in scenario.periods.existing:
+            raise ValueError(f"Existing road utilization vintage is outside the scenario: {row.region}/{row.tech}/{row.vintage}")
+        vintages_by_region_tech[row.region, row.tech].append(row.vintage)
+    for vintages in vintages_by_region_tech.values():
+        vintages.sort()
+    LOGGER.info("Road utilization uses positive prepared stock cohorts; skipped %s zero-capacity rows", omitted_stock)
     flat_payloads = flat_road_capacity_factor_records(
         baseline.loc[baseline.road_class.isin(flat_classes)],
-        expanded.loc[expanded.category.isin(flat_classes)],
-        periods=list(scenario.periods.model),
+        flat_technology,
+        vintages_by_region_tech=vintages_by_region_tech,
         commodity_by_class={name: activity[name]["commodity"] for name in flat_classes},
     )
     input_digest = hashlib.sha256(json.dumps({
@@ -473,13 +502,18 @@ def prepare_road_utilization(
             inputs=inputs,
             dataset_key=f"road_utilization.flat.{road_class}",
             transformation="Mean CEUD annual activity-to-stock ratio divided by manual capacity-to-activity",
-            transformation_version="1", governing_source_id=source_id,
+            transformation_version="2", governing_source_id=source_id,
             data_quality=bundle.sources.resolved_data_quality(
                 CEUD, activity[road_class]["table_id"],
             ),
             value_variant={"input_digest": input_digest,
                            "manual_assumption_data_id": assumption_dataset.data_id,
-                           "vkt_schedules": scenario.road_utilization.vkt_schedules},
+                           "vkt_schedules": scenario.road_utilization.vkt_schedules,
+                           "vintages_by_region_technology": [
+                               {"region": region, "tech": tech, "vintages": vintages_by_region_tech[region, tech]}
+                               for region in sorted(output_regions)
+                               for tech in flat_technology.loc[flat_technology.category.eq(road_class), "tech"]
+                           ]},
         )
         contexts.append(context)
         selected = [
@@ -504,7 +538,7 @@ def prepare_road_utilization(
     audit = validate_road_utilization(
         annual, baseline, c2a_rows, flat_rows,
         regions=output_regions, road_classes=road_classes, years=years,
-        periods=list(scenario.periods.model), flat_classes=flat_classes,
+        vintages_by_region_tech=vintages_by_region_tech, flat_classes=flat_classes,
         technology=expanded,
     )
     audit.update({
@@ -555,11 +589,15 @@ def prepare_road_utilization(
 
 
 def main() -> None:
+    from parameterization.build_existing_capacity import prepare_existing_capacity_rows
+
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", default="config/scenarios/legacy_reproduction.yaml")
+    parser.add_argument("--scenario", default="config/scenarios/default.yaml")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    prepare_road_utilization(load_config_bundle(args.scenario))
+    bundle = load_config_bundle(args.scenario)
+    stock, _, _ = prepare_existing_capacity_rows(bundle)
+    prepare_road_utilization(bundle, existing_capacity_rows=stock)
 
 
 if __name__ == "__main__":

@@ -299,7 +299,7 @@ def test_duplicate_legacy_hour_is_not_silently_collapsed_by_profile_bridge(tmp_p
 
 
 def test_explicit_report_exports_portable_rows_and_content_manifest(tmp_path):
-    bundle = replace(load_config_bundle("config/scenarios/legacy_reproduction.yaml"), repo_root=tmp_path)
+    bundle = replace(load_config_bundle("config/scenarios/legacy_comparison.yaml"), repo_root=tmp_path)
     rows = pd.DataFrame([
         {"table": "demand", "band": "All", "status": "different", "units": "bn passenger-km",
          "candidate": 12, "legacy": 10, "identifier": "ON/2025/car",
@@ -351,7 +351,7 @@ def test_config_and_current_assumption_excerpts_are_reloaded(tmp_path):
 
 
 def test_snapshot_rejects_changed_recipe_or_database(tmp_path):
-    bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    bundle = load_config_bundle("config/scenarios/legacy_comparison.yaml")
     scenario = bundle.scenario.model_copy(update={"periods": PERIODS})
     bundle = replace(bundle, scenario=scenario)
     database = tmp_path / "candidate.sqlite"

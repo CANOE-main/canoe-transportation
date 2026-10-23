@@ -45,7 +45,7 @@ from validation.schema_contract import create_v4_schema
 
 
 @pytest.fixture
-def bundle():
+def bundle(tmp_path):
     b = load_config_bundle("config/scenarios/default.yaml")
     payload = b.scenario.model_dump()
     payload["geography"]["regions"] = ["ON"]
@@ -53,7 +53,12 @@ def bundle():
     payload["embodied_emissions"] = False
     # Active-mode cases opt in with with_mode(); the baseline exercises none.
     payload["BEV_PHEV_range_representation"]["mode"] = "none"
-    return replace(b, scenario=ScenarioConfig.model_validate(payload))
+    routes = dict(b.paths.artifacts)
+    for name in ("ldv_range_interim", "ldv_range_processed", "ldv_range_validation",
+                 "charging_profiles_processed", "charging_profiles_validation"):
+        routes[name] = routes[name].model_copy(update={"path": str(tmp_path / name)})
+    return replace(b, scenario=ScenarioConfig.model_validate(payload),
+                   paths=b.paths.model_copy(update={"artifacts": routes}))
 
 
 def with_mode(bundle, mode):
@@ -480,7 +485,7 @@ def representative_prerequisites(bundle, evidence):
                 "lifetime_tech",
                 "lifetime_survival_curve",
                 "efficiency",
-                "limit_tech_input_split",
+                "limit_tech_input_split_annual",
                 "cost_invest",
                 "cost_fixed",
                 "cost_variable",
@@ -603,8 +608,8 @@ def representative_prerequisites(bundle, evidence):
                         data_id=internal.data_id,
                     )
                 )
-                rows["limit_tech_input_split"].append(
-                    schema.LimitTechInputSplit(
+                rows["limit_tech_input_split_annual"].append(
+                    schema.LimitTechInputSplitAnnual(
                         region="ON",
                         period=vintage,
                         tech=f"T_BLND_GSL_ELC_PHEV{n}",
@@ -655,7 +660,7 @@ def representative_prerequisites(bundle, evidence):
 
 @pytest.mark.parametrize("table,component", [
     ("cost_invest", "vehicles"),
-    ("limit_tech_input_split", "phev_vehicle_inputs"),
+    ("limit_tech_input_split_annual", "phev_vehicle_inputs"),
 ])
 def test_representative_preserves_native_dq_when_omega_support_differs(
     representative_prerequisites, table, component,
@@ -716,7 +721,7 @@ def test_representative_rules_conserve_parameters_and_preserve_stock_and_mhdv(
     ]
     splits = [
         r
-        for r in result.batches["limit_tech_input_split"]
+        for r in result.batches["limit_tech_input_split_annual"]
         if r.tech == "T_BLND_GSL_ELC_PHEV_C_REP" and r.input_comm == "T_elc_ldv_chrg"
     ]
     assert len(splits) == 5 and all(
@@ -894,7 +899,7 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
         "lifetime_tech",
         "lifetime_survival_curve",
         "efficiency",
-        "limit_tech_input_split",
+        "limit_tech_input_split_annual",
         "cost_invest",
         "cost_fixed",
         "cost_variable",
@@ -915,11 +920,11 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
         assert standalone.execute(
             "SELECT DISTINCT vintage, factor FROM limit_annual_capacity_factor "
             "WHERE tech_or_group='T_LDV_CHRG_EX'"
-        ).fetchall() == [(2020, 0.15)]
+        ).fetchall() == [(2020, 0.15 * 0.98)]
         assert standalone.execute(
             "SELECT DISTINCT vintage, factor FROM limit_annual_capacity_factor "
             "WHERE tech_or_group='T_LDV_CHRG_N' AND vintage=2025"
-        ).fetchall() == [(2025, 0.2)]
+        ).fetchall() == [(2025, 0.2 * 0.98)]
         assert standalone.execute(
             "SELECT COUNT(*) FROM existing_capacity WHERE tech='T_LDV_LTF_BEV_EX'"
         ).fetchone()[0] > 0

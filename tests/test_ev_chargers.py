@@ -10,13 +10,13 @@ from pydantic import ValidationError
 from canoe_schema.v4_0 import LimitAnnualCapacityFactor
 
 from parameterization import ev_chargers as layer
-from parameterization.ev_chargers import _validate_shares, prepare_charger_capacity_to_activity, prepare_ev_charger_rows
+from parameterization.ev_chargers import _validate_shares, prepare_charger_capacity_to_activity, prepare_charger_utilization_targets, prepare_ev_charger_rows
 from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 from utils import load_harmonization_rules, resolve_artifact_path
 from validation.config_models import ScenarioEvChargers
+from validation.insertion import validate_parameter_rows
 
 
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -83,16 +83,18 @@ def test_charger_costs_utilization_and_efficiency(prepared) -> None:
     assert len(result.utilization) == len(result.utilization_rows) == 118
     assert "period" not in LimitAnnualCapacityFactor.model_fields
     assert result.audit["utilization_schema_supported"] is True
-    assert set(result.utilization.operator) == {"le"}
+    assert bundle.scenario.charging_profiles.travel_behavior_source == "none"
+    assert set(result.utilization.loc[result.utilization.tech_or_group.str.contains("LDV"), "operator"]) == {"e"}
+    assert set(result.utilization.loc[result.utilization.tech_or_group.str.contains("MHDV"), "operator"]) == {"e"}
     assert set(result.utilization.units) == {"fraction"}
-    assert set(result.utilization.loc[result.utilization.vintage.eq(2025) & result.utilization.tech_or_group.str.contains("LDV"), "factor"]) == {0.15}
+    assert set(result.utilization.loc[result.utilization.vintage.eq(2025) & result.utilization.tech_or_group.str.contains("LDV"), "factor"]) == {0.2}
     assert set(result.utilization.loc[result.utilization.vintage.eq(2030) & result.utilization.tech_or_group.str.contains("LDV"), "factor"]) == {0.2}
     assert set(result.utilization.loc[result.utilization.tech_or_group.str.contains("MHDV"), "factor"]) == {0.3}
     historical = result.utilization.loc[
         result.utilization.tech_or_group.eq("T_LDV_CHRG_EX")
     ]
     assert set(historical.vintage) == {bundle.scenario.periods.latest_observed_vintage}
-    assert set(historical.source_year) == {2025}
+    assert set(historical.source_period) == {"2025"}
     assert set(historical.factor) == {0.15}
     context_ids = {context.data_id for context in result.provenance_contexts}
     assert all(row.data_id in context_ids and row.data_source and row.dq_cred is not None
@@ -191,6 +193,80 @@ def test_charger_share_contract_rejects_mismatch() -> None:
 def test_ev_to_port_ratios_are_positive_scenario_values() -> None:
     with pytest.raises(ValidationError):
         ScenarioEvChargers(ld_evs_per_port=0, mhd_evs_per_port=1.5)
+
+
+@pytest.mark.parametrize("profile,operator,multiplier", [("nhts", "ge", 0.98), ("none", "e", 1.0)])
+def test_reviewed_utilization_targets_share_the_annual_basis(legacy_bundle, profile, operator, multiplier):
+    selected = replace(legacy_bundle, scenario=legacy_bundle.scenario.model_copy(update={
+        "charging_profiles": legacy_bundle.scenario.charging_profiles.model_copy(update={"travel_behavior_source": profile}),
+    }))
+    targets, context = prepare_charger_utilization_targets(selected)
+    ldv = targets.loc[targets.tech_or_group.str.startswith("T_LDV_")]
+    mhdv = targets.loc[targets.tech_or_group.str.startswith("T_MHDV_")]
+    assert set(ldv.operator) == {operator}
+    assert (ldv.factor / ldv.target_utilization).tolist() == pytest.approx([multiplier] * len(ldv))
+    assert set(mhdv.operator) == {"e"}
+    assert set(mhdv.factor) == set(mhdv.target_utilization) == {0.3}
+    assert set(targets.loc[targets.tech_or_group.eq("T_LDV_CHRG_EX"), "target_utilization"]) == {0.15}
+    new = targets.loc[targets.tech_or_group.eq("T_LDV_CHRG_N")]
+    assert set(new.target_utilization) == {0.2}
+    assert set(new.source_period) == {"remainder"}
+    assert context.data_quality.missing_fields() == []
+    assert {source.source_key for source in context.contributors} == {"dunsky_ev_charging_infrastructure"}
+    rows = validate_parameter_rows(
+        LimitAnnualCapacityFactor,
+        targets.drop(columns=["source_period", "units", "target_utilization", "floor_multiplier"]).to_dict("records"),
+        context, bundle=selected,
+    )
+    assert {(r.operator, r.factor) for r in rows if r.tech_or_group.startswith("T_MHDV_")} == {("e", 0.3)}
+    assert {(r.operator, r.factor) for r in rows if r.tech_or_group == "T_LDV_CHRG_EX"} == {(operator, 0.15 * multiplier)}
+    assert {(r.operator, r.factor) for r in rows if r.tech_or_group == "T_LDV_CHRG_N"} == {(operator, 0.2 * multiplier)}
+
+
+def test_annual_profile_mode_is_in_utilization_provenance(legacy_bundle):
+    profiled = replace(legacy_bundle, scenario=legacy_bundle.scenario.model_copy(update={
+        "charging_profiles": legacy_bundle.scenario.charging_profiles.model_copy(update={"travel_behavior_source": "nhts"}),
+    }))
+    plain_targets, plain_context = prepare_charger_utilization_targets(legacy_bundle)
+    profiled_targets, profiled_context = prepare_charger_utilization_targets(profiled)
+    assert plain_context.data_id != profiled_context.data_id
+    pd.testing.assert_series_equal(plain_targets.target_utilization, profiled_targets.target_utilization)
+
+
+@pytest.mark.parametrize("multiplier", [0, -0.1, 1.01, float("inf"), float("nan")])
+def test_invalid_floor_slack_fails_before_manual_io(legacy_bundle, monkeypatch, multiplier):
+    original = layer.load_harmonization_rules
+
+    def rules(bundle, owner):
+        result = original(bundle, owner)
+        if owner == "ev_chargers":
+            result["utilization"]["ldv"]["floor_multiplier"] = multiplier
+        return result
+
+    monkeypatch.setattr(layer, "load_harmonization_rules", rules)
+    with pytest.raises(ValueError, match="multiplier"):
+        prepare_charger_utilization_targets(legacy_bundle)
+
+
+def test_missing_reviewed_utilization_is_not_filled(legacy_bundle):
+    manual = pd.read_csv(ROOT / "inputs/0_manual_params/charger_parameters.csv", dtype=str, keep_default_na=False)
+    manual = manual.loc[~manual.parameter.eq("max_annual_utilization")]
+    with pytest.raises(ValueError, match="Expected one reviewed charger value"):
+        prepare_charger_utilization_targets(legacy_bundle, manual=manual)
+
+
+def test_equal_utilization_cannot_include_floor_slack(legacy_bundle, monkeypatch):
+    original = layer.load_harmonization_rules
+
+    def rules(bundle, owner):
+        result = original(bundle, owner)
+        if owner == "ev_chargers":
+            result["utilization"]["mhdv"]["floor_multiplier"] = 0.98
+        return result
+
+    monkeypatch.setattr(layer, "load_harmonization_rules", rules)
+    with pytest.raises(ValueError, match="equality requires multiplier one"):
+        prepare_charger_utilization_targets(legacy_bundle)
 
 
 @pytest.mark.parametrize("regions, expected", [(["ON"], {"ON"}), (["NL", "PE"], {"NLLAB", "PEI"})])

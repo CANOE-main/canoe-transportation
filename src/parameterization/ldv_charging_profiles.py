@@ -17,6 +17,7 @@ from fetching.legacy_charging_profiles import (
     build_request,
     normalize_profile,
 )
+from parameterization.ev_chargers import prepare_charger_utilization_targets
 from utils import (
     ConfigBundle,
     load_config_bundle,
@@ -28,7 +29,7 @@ from utils import (
     write_text_atomic,
 )
 from validation.insertion import validate_parameter_rows
-from validation.provenance import ResolvedProvenance, resolve_provenance
+from validation.provenance import ResolvedProvenance, resolve_composite_provenance, resolve_provenance
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class ChargingPreparation:
     audit: dict
     regions: tuple[str, ...]
     expected_keys: frozenset[tuple[str, str, str, str]] = frozenset()
+    utilization_targets: tuple[tuple[str, str, float], ...] = ()
 
 
 def project_hours(
@@ -130,6 +132,55 @@ def project_hours(
     return projected, mapping.sort_values("hour_index").reset_index(drop=True)
 
 
+def select_profile_utilization_targets(
+    utilization: pd.DataFrame, *, regions: Sequence[str], technologies: Sequence[str],
+) -> tuple[tuple[str, str, float], ...]:
+    """Require one reviewed mean per region/technology, since CFT has no vintage."""
+    selected = utilization.loc[
+        utilization.region.isin(regions) & utilization.tech_or_group.isin(technologies)
+    ]
+    expected = {(region, tech) for region in regions for tech in technologies}
+    actual = set(zip(selected.region, selected.tech_or_group, strict=True))
+    if actual != expected or selected.duplicated(["region", "tech_or_group", "vintage"]).any():
+        raise ValueError("Charging utilization target coverage is missing or duplicated")
+    targets = []
+    for (region, tech), group in selected.groupby(["region", "tech_or_group"], sort=True):
+        values = group.target_utilization.to_numpy(dtype=float)
+        if not np.isfinite(values).all() or not ((values > 0) & (values < 1)).all():
+            raise ValueError(f"Invalid charging utilization target: {region}/{tech}")
+        if not np.allclose(values, values[0], atol=1e-12, rtol=0):
+            raise ValueError(
+                f"Mixed-vintage charging utilization for {region}/{tech}: "
+                f"{group[['vintage', 'target_utilization']].to_dict('records')}. "
+                "capacity_factor_tech has no vintage index; align reviewed targets "
+                "or explicitly design a capacity_factor_process representation."
+            )
+        targets.append((region, tech, float(values[0])))
+    return tuple(targets)
+
+
+def scale_projected_profile(
+    projected: pd.DataFrame, *, profile_mean: float, target_utilization: float,
+) -> tuple[pd.DataFrame, dict]:
+    """Use the native full-year hourly mean; representative weights belong upstream."""
+    factors = projected.factor.to_numpy(dtype=float)
+    if not np.isfinite(factors).all() or not ((factors >= 0) & (factors <= 1)).all():
+        raise ValueError("Invalid normalized charging factors before utilization scaling")
+    if (not np.isfinite(profile_mean) or profile_mean <= 0
+            or not np.isfinite(target_utilization) or not 0 < target_utilization < 1):
+        raise ValueError("Charging profile mean and utilization target must be positive")
+    scale = target_utilization / profile_mean
+    scaled = factors * scale
+    if (scaled > 1).any():
+        raise ValueError("Charging utilization target exceeds the profile's feasible mean; scaled factors exceed one")
+    return projected.assign(factor=scaled), {
+        "mean_basis": "native_full_year_hourly_arithmetic_mean",
+        "normalized_profile_mean": profile_mean, "target_utilization": target_utilization,
+        "scale_factor": scale, "scaled_profile_mean": profile_mean * scale,
+        "scaled_minimum": float(scaled.min()), "scaled_maximum": float(scaled.max()),
+    }
+
+
 def validate_charging_rows(
     rows: Sequence[CapacityFactorTech], *, expected_keys: set
 ) -> dict:
@@ -179,9 +230,20 @@ def validate_charging_preparation(
         mapping=result.mapping,
         tolerance=result.audit["conservation_tolerance"],
     )
-    expected = {(r.season, r.tod): r.factor for r in projected.itertuples(index=False)}
+    target_keys = [(region, tech) for region, tech, _ in result.utilization_targets]
+    if len(target_keys) != len(set(target_keys)) or set(target_keys) != {
+        (r.region, r.tech) for r in result.rows
+    }:
+        raise ValueError("Charging utilization target coverage is missing or duplicated")
+    expected = {}
+    for region, tech, target in result.utilization_targets:
+        scaled, _ = scale_projected_profile(
+            projected, profile_mean=float(result.hourly.factor.mean()), target_utilization=target,
+        )
+        expected.update({(region, tech, r.season, r.tod): r.factor
+                         for r in scaled.itertuples(index=False)})
     if any(
-        not np.isclose(r.factor, expected[r.season, r.tod], atol=1e-12, rtol=0)
+        not np.isclose(r.factor, expected[r.region, r.tech, r.season, r.tod], atol=1e-12, rtol=0)
         for r in result.rows
     ):
         raise ValueError(
@@ -301,9 +363,13 @@ def prepare_charging_profile_rows(
         mapping=time_mapping,
         tolerance=rules["conservation_tolerance"],
     )
+    utilization, utilization_context = prepare_charger_utilization_targets(bundle)
+    utilization_targets = select_profile_utilization_targets(
+        utilization, regions=scope, technologies=targets.tech.tolist(),
+    )
     digest = hashlib.sha256(mapping.to_csv(index=False).encode()).hexdigest()
     regions = scope
-    context = resolve_provenance(
+    profile_context = resolve_provenance(
         bundle.sources,
         source_key=SOURCE,
         component_key=selection.travel_behavior_source,
@@ -319,18 +385,26 @@ def prepare_charging_profile_rows(
             "selection": selection.model_dump(),
         },
     )
-    records = [
-        {
-            "region": region,
-            "tech": tech,
-            "season": r.season,
-            "tod": r.tod,
-            "factor": r.factor,
-        }
-        for region in regions
-        for tech in targets.tech
-        for r in projected.itertuples(index=False)
-    ]
+    scaling_audit, records = [], []
+    for region, tech, target in utilization_targets:
+        scaled, scaling = scale_projected_profile(
+            projected, profile_mean=float(evidence.hourly.factor.mean()), target_utilization=target,
+        )
+        scaling_audit.append({"region": region, "tech": tech, **scaling})
+        records.extend({"region": region, "tech": tech, "season": r.season,
+                        "tod": r.tod, "factor": r.factor}
+                       for r in scaled.itertuples(index=False))
+        LOGGER.info("Scaled charging profile %s/%s: full-year hourly mean %.8f -> %.8f; multiplier %.8f",
+                    region, tech, scaling["normalized_profile_mean"], target, scaling["scale_factor"])
+    context = resolve_composite_provenance(
+        inputs=[profile_context, utilization_context],
+        dataset_key=f"ldv_charging_profiles.{selection.travel_behavior_source}",
+        transformation="Legacy charging shape scaled by native full-year hourly mean and projected to CANOE time slices",
+        transformation_version=rules["transformation_version"],
+        governing_source_id=profile_context.source_id, data_quality=profile_context.data_quality,
+        value_variant={"projection_sha256": digest, "utilization_targets": utilization_targets,
+                       "rules": rules},
+    )
     rows = validate_parameter_rows(CapacityFactorTech, records, context, bundle=bundle)
     expected = {
         (region, tech, r.season, r.tod)
@@ -350,6 +424,9 @@ def prepare_charging_profile_rows(
         "conservation_tolerance": rules["conservation_tolerance"],
         "new_time_structures": bool(created_seasons),
         "inherited_time_structures_preserved": not created_seasons,
+        "utilization_scaling": scaling_audit,
+        "utilization_provenance": utilization_context.data_id,
+        "native_normalized_hourly_evidence_preserved": True,
     }
     LOGGER.warning(
         "Using legacy Ontario BEV charging shape for shared LDV chargers in all selected regions: %s",
@@ -366,6 +443,7 @@ def prepare_charging_profile_rows(
         audit,
         scope,
         frozenset(expected),
+        utilization_targets,
     )
     if publish:
         publish_charging(bundle, result)

@@ -162,7 +162,7 @@ artifacts:
     owner: parameterization.ldv_charging_profiles
     producers: [parameterization.ldv_charging_profiles.prepare_charging_profile_rows]
     consumers: [build_transport, reviewers]
-    validation_surfaces: [parameterization.ldv_charging_profiles.validate_charging_rows]
+    validation_surfaces: [parameterization.ldv_charging_profiles.validate_charging_rows, parameterization.ldv_charging_profiles.validate_charging_preparation, parameterization.ldv_charging_profiles.scale_projected_profile]
   charging_profiles_validation:
     path: inputs/validation/ldv_charging_profiles
     layer: input_validation

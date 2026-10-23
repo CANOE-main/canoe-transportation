@@ -138,8 +138,8 @@ with its own orchestration:
 `FuelGrouping.Shared` now has a concrete industry example: one subsector technology
 uses several fuel inputs with annual input splits. This demonstrates object composition,
 not a transportation renewable mandate or a PHEV replacement. Industry splits are
-region/period rows; local PHEV blend splits are already prepared for their own
-region/technology/vintage contract.
+region/period rows; local annual PHEV blend splits use their own
+region/period/technology/input-commodity contract.
 
 Several upstream implementation details should remain local to their evidence: industry
 can deduct `Other` fuels or supply them freely without price/emissions; its Atlantic
@@ -150,6 +150,25 @@ benchmark was conducted, so module organization here is evidence of ownership an
 testability, not measured performance.
 
 ## Transportation's existing callable building block
+
+### Development note: charging profiles and representative-time weights
+
+The transport backend scales its native full-year hourly profile as
+`CF_hour = profile_hour × utilization / mean(profile_8760_hours)`, using the
+ordinary arithmetic mean. It does not normalize to a later representative-day
+selection. After selecting representative periods, CANOE-main must reconcile
+the retained profile with the final time-slice weights before insertion:
+`mean_model = sum(weight_slice × CF_slice) / sum(weight_slice)`.
+Those weights must represent season frequency and slice duration. To retain the
+reviewed utilization target, multiply the selected CFs by `utilization / mean_model`,
+check every resulting CF remains in [0, 1], and use the same weights for hourly
+ceilings and annual utilization. Leave the configured annual utilization target
+and slack unchanged. Record selection, weights and scaling as integration evidence.
+
+This is a future integration requirement, not a verified upstream implementation.
+On 2026-10-22 the previously reviewed `yep/industry-refactor` branch was no longer
+returned by the GitHub branch query; the existing reviewed commit remains
+historical context until an integration branch is explicitly selected.
 
 The existing [`TransportContribution`](../src/build_transport.py) already bundles
 schema-model parameter blocks, structural rows, resolved provenance, and family audits.
@@ -164,7 +183,7 @@ assembly; no second transport transformation path is needed. Current coverage is
 | `build_lifetime_parameters` | Configured fixed lifetimes or supported survival-curve rows. |
 | `build_efficiencies` | Fuel/service edges and PHEV blend input splits. |
 | `build_costs` | Investment and variable costs, with currency and coverage evidence. |
-| `ev_chargers` | Charger capacity, efficiency, investment/fixed costs, and audit products; period-indexed utilization remains outside SQLite. |
+| `ev_chargers` | Charger capacity, efficiency, investment/fixed costs and vintage-indexed annual utilization limits, with hourly LDV profiles prepared separately. |
 | `build_transport` | Technology/commodity templates, family composition, provenance registration, and validated insertion. |
 
 For a compatible initialized connection, the executable local seam is

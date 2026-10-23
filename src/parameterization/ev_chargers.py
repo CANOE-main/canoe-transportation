@@ -173,15 +173,90 @@ def _validate_shares(manual: pd.DataFrame) -> None:
             raise ValueError(f"Charger {category}/{usage} shares do not sum to one")
 
 
+def prepare_charger_utilization_targets(
+    bundle: ConfigBundle, *, manual: pd.DataFrame | None = None,
+) -> tuple[pd.DataFrame, ResolvedProvenance]:
+    """Select reviewed utilization by technology kind for profiles and annual limits.
+
+    The source's legacy ``max_annual_utilization`` name is preserved. Its reviewed
+    average utilization is the profile mean. Source-period choices apply to every
+    vintage; configured slack applies only to annual lower bounds, not equalities.
+    """
+    rules = load_harmonization_rules(bundle, "ev_chargers")
+    if rules["utilization_time_basis"] != "technology_kind":
+        raise ValueError("Charger utilization requires technology-kind source selection")
+    policies = rules["utilization"]
+    if set(policies) != set(rules["technology"]):
+        raise ValueError("Charger utilization policies must cover each technology category")
+    for category, policy in policies.items():
+        for annual_policy in (policy, policy.get("without_profile", policy)):
+            multiplier = float(annual_policy["floor_multiplier"])
+            if not math.isfinite(multiplier) or not 0 < multiplier <= 1:
+                raise ValueError("Charger utilization floor multiplier must be in (0, 1]")
+            if annual_policy["operator"] not in {"ge", "e"}:
+                raise ValueError(f"Unsupported charger annual utilization operator: {category}")
+            if annual_policy["operator"] == "e" and multiplier != 1:
+                raise ValueError("Charger utilization equality requires multiplier one")
+        if set(policy["source_period"]) != {"existing", "new"}:
+            raise ValueError(f"Charger utilization source selectors must cover existing/new: {category}")
+    profiles_enabled = bundle.scenario.charging_profiles.travel_behavior_source != "none"
+    if not profiles_enabled:
+        policies = {
+            category: {**policy, **policy.get("without_profile", {})}
+            for category, policy in policies.items()
+        }
+    if manual is None:
+        manual_rules = load_harmonization_rules(bundle, "manual_parameters")
+        _, frames = validate_manual_registry(
+            bundle, source_column=manual_rules["source_column"],
+            notes_column=manual_rules["notes_column"],
+            selected_files={rules["manual_file"]},
+        )
+        manual = frames[rules["manual_file"]]
+    region_map = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]["region_output_map"]
+    regions = sorted(region_map.get(r, r) for r in bundle.scenario.geography.regions)
+    records = []
+    for category, mapping in rules["technology"].items():
+        policy = policies[category]
+        multiplier = float(policy["floor_multiplier"])
+        for kind, vintages in (("existing", [bundle.scenario.periods.latest_observed_vintage]),
+                               ("new", bundle.scenario.periods.model)):
+            source_period = str(policy["source_period"][kind])
+            target = _manual_value(manual, category, "max_annual_utilization", source_period)
+            if not 0 < target < 1:
+                raise ValueError(f"Invalid charger utilization: {category}/{kind}")
+            for vintage in vintages:
+                records.extend({
+                    "region": region, "vintage": vintage, "source_period": source_period,
+                    "tech_or_group": mapping[kind], "output_comm": mapping["output"],
+                    "operator": policy["operator"],
+                    "target_utilization": target, "floor_multiplier": multiplier,
+                    "factor": target * multiplier, "units": "fraction",
+                } for region in regions)
+    targets = pd.DataFrame(records)
+    if targets.duplicated(["region", "tech_or_group", "vintage"]).any():
+        raise ValueError("Duplicate charger utilization target keys")
+    digest = hashlib.sha256(json.dumps({
+        "manual_sha256": file_sha256(resolve_input_path(bundle, "manual", rules["manual_file"])),
+        "selected_policies": policies,
+    }, sort_keys=True).encode()).hexdigest()
+    context = _context(
+        bundle, [("dunsky_ev_charging_infrastructure", "charger_shares_and_utilization")],
+        name="utilization", digest=digest,
+    )
+    LOGGER.info("Charger utilization annual limits use %s; LDV hourly profiles enabled=%s",
+                {category: policy["operator"] for category, policy in policies.items()}, profiles_enabled)
+    return targets, context
+
+
 def prepare_ev_charger_rows(
     bundle: ConfigBundle, *, existing_capacity_rows: list[ExistingCapacity],
     existing_capacity_contexts: list[ResolvedProvenance],
 ) -> ChargerPreparation:
     """Reuse prepared vehicle stock and return validated charger products."""
     rules = load_harmonization_rules(bundle, "ev_chargers")
-    if (rules["utilization_time_basis"] != "vintage_input_year"
-            or rules["historical_utilization"] != "earliest_reviewed_value"):
-        raise ValueError("Unsupported charger utilization time interpretation")
     manual_rules = load_harmonization_rules(bundle, "manual_parameters")
     _, frames = validate_manual_registry(
         bundle, source_column=manual_rules["source_column"],
@@ -453,7 +528,7 @@ def prepare_ev_charger_rows(
                          name="mhdv_efficiency", digest=digest),
     }
     efficiency_rows = []
-    utilization_context = _context(bundle, [dunsky], name="utilization", digest=digest)
+    utilization_targets, utilization_context = prepare_charger_utilization_targets(bundle, manual=manual)
     utilization_records = []
     for category in ("ldv", "mhdv"):
         efficiency = _manual_value(manual, category, "efficiency", "all")
@@ -473,32 +548,23 @@ def prepare_ev_charger_rows(
                     for vintage in vintages
                 ], efficiency_contexts[category], bundle=bundle))
                 for vintage in vintages:
-                    reviewed = manual.loc[
-                        manual.category.eq("charger") & manual.sub_category.eq(category)
-                        & manual.parameter.eq("max_annual_utilization")
+                    selected = utilization_targets.loc[
+                        utilization_targets.region.eq(region) & utilization_targets.tech_or_group.eq(tech)
+                        & utilization_targets.vintage.eq(vintage)
                     ]
-                    explicit_years = [int(value) for value in reviewed.period if str(value).isdigit()]
-                    source_year = (
-                        min(explicit_years) if kind == "existing" and explicit_years
-                        else bundle.scenario.periods.model[0] if kind == "existing"
-                        else bundle.scenario.periods.projection_year(vintage, legacy_at_end=False)
-                    )
-                    row = _period_value(manual, category, "max_annual_utilization", source_year)
-                    factor = float(row.value)
-                    if not 0 < factor < 1:
-                        raise ValueError(f"Invalid charger utilization: {category}/{vintage}")
-                    utilization_records.append({
-                        "region": region, "vintage": vintage, "source_year": source_year, "tech_or_group": tech,
-                        "output_comm": mapping["output"], "operator": rules["utilization_operator"],
-                        "factor": factor, "units": "fraction",
-                    })
+                    if len(selected) != 1:
+                        raise ValueError(f"Missing charger utilization target: {region}/{tech}/{vintage}")
+                    utilization_records.append(selected.iloc[0].to_dict())
     utilization_rows = validate_parameter_rows(
         LimitAnnualCapacityFactor,
-        [{key: value for key, value in record.items() if key not in {"source_year", "units"}}
+        [{key: value for key, value in record.items()
+          if key not in {"source_period", "units", "target_utilization", "floor_multiplier"}}
          for record in utilization_records], utilization_context, bundle=bundle,
     )
     utilization_records = [
-        {**row.model_dump(), "source_year": record["source_year"], "units": record["units"]}
+        {**row.model_dump(), **{key: record[key] for key in (
+            "source_period", "units", "target_utilization", "floor_multiplier",
+        )}}
         for row, record in zip(utilization_rows, utilization_records, strict=True)
     ]
     utilization = pd.DataFrame(utilization_records).sort_values(
@@ -537,7 +603,8 @@ def prepare_ev_charger_rows(
         "existing_investment_rows_excluded": len(capacity_rows),
         "utilization_rows": len(utilization_rows), "utilization_schema_supported": True,
         "utilization_time_basis": rules["utilization_time_basis"],
-        "historical_utilization": rules["historical_utilization"],
+        "utilization_policy": rules["utilization"],
+        "utilization_profile_enabled": bundle.scenario.charging_profiles.travel_behavior_source != "none",
         "utilization_provenance": {
             "data_id": utilization_context.data_id,
             "contributors": [item.source_key for item in utilization_context.contributors],

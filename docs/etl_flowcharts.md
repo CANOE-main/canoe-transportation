@@ -261,7 +261,7 @@ flowchart LR
 
   o1[/"`**limit_annual_capacity_factor**
     *Operator: =*
-    *Indexed by period*`"/]
+    *Indexed by vintage*`"/]
   p2 -- road_stocks_and_demands.py --> o1
 
   p3["`**Age-based trajectory**
@@ -294,7 +294,7 @@ flowchart LR
 | ------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Annual utilization as activity÷stock ratios | Road vehicles    | Represents how much activity a unit of capacity can deliver annually. Utilization is scaled with an arbitrary `capacity_to_activity` factor to avoid near-zero values |
 | `capacity_to_activity` | Road vehicles    | An inconsequential scaling constant that represents the theoretical upper-bound of annual activity delivered by a thousand vehicle units operating year-round. |
-| Assume constant annual utilization          | Road vehicles    | Annual utilization derived from 5-year average ratios remains constant across all periods                                                                             |
+| Assume constant annual utilization          | Road vehicles    | The constant factor applies in every active operating period. Existing technologies are keyed to actual positive stock cohorts in each region; new technologies are keyed to model vintages. #to-review |
 | Aggregate profiles and normalize            | Road vehicles    | Aggregate annual mileage profiles by vehicle size/weight class using aggregation mappings (see `efficiency` flowchart) and apply max scaling to each series           |
 | Scale utilization by normalized trajectory  | Road vehicles    | Baseline utilization is indexed through normalized age trajectories to obtain utilization as a function of vehicle age, mostly decaying                               |
 
@@ -577,6 +577,8 @@ flowchart LR
 | Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) efficiencies |
 | Prepare period consumptions | All | Use the [existing-period year bins](#existing-period-handling) through `base_year`. Weight car/truck consumption per distance by raw cohort counts before lifetime eligibility/redistribution, renormalizing over available observations and reporting covered stock. Average occupancy/payload with the same year weights. Existing LDV PEV ranges normalize their own supported years before applying the complete OMEGA share vector. Buses, motorcycles and off-road retain equal annual consumption/intensity weights. Future periods use exact interval-end source points; notebook axes show source years and retain model vintages separately. #to-review |
 | Convert to service-output efficiency units | All | As the final step, divide the aggregated occupancy/payload by aggregated energy per vehicle-km. For CEUD energy-per-service inputs, invert the aggregated intensity once. Source fuel-economy values and relative efficiency factors are converted to consumption before indexing or averaging; use configured HHVs and units. #to-review |
+
+Annual PHEV blend technologies use `limit_tech_input_split_annual` for their fuel/electricity energy shares. Preserve the reviewed proportions and equality operator; the hourly split table does not constrain these annual technologies. #to-review
 
 **Note on light-duty PHEVs**: The CANOE-transportation legacy backend used to compile Islam et al. 2023 Autonomie results directly, opting for the parallel PHEV powertrain configuration, whereas the v2.0 backend compiles the same Autonomie results via the NLR ATB database, where only the EREV voltec PHEV powertrain configuration is listed. This will result in inconsistent PHEV parameters between both versions.
 
@@ -918,18 +920,16 @@ flowchart LR
     [$M 2020CAD/GW]`"/]
 
   p1["`**Annual EV charger utilization rate**
-    Maximum utilization represents amount of load chargers can provide annually:<br>
-    • *LDVs*: 15% in 2025 to 20% through 2050<br>
-    • *MHDVs*: Dunsky estimates of charging time, vehicles/day served, and charger type shares yields an UF of ~30%`"]
+    • *LDVs*: existing chargers average 15%; new chargers average 20% in every vintage. With a profile, scale hourly ceilings to this mean and set the annual floor to UF × 0.98; without a profile, enforce annual equality to UF. #to-review<br>
+    • *MHDVs*: annual utilization equals 30%; no hourly charging profile or floor slack`"]
   p1_2@{shape: hex, label: "**inputs/0_manual_params/**
-    *LDV/MHD charger UF* ∈ (0, 1) ∀ future_period; defaults are:
-    • *LDV charger UF* = [0.15, 0.2, 0.2, ...]
-    • *MHDV charger UF* = [0.3, 0.3, 0.3, ...]"}
+    • *LDV charger UF*: select 0.15 for existing and 0.20 for new chargers<br>
+    • *MHDV charger UF*: 0.30 for existing and new chargers"}
   s1 --> p1_2 -- ev_chargers.py --> p1
   p1 -- ev_chargers.py --> o1[/"`***limit_annual_capacity_factor***
-    *Operator: ≤*
-    *Indexed by period
-    #to-do: must be reconciled with canoe-schema`"/]
+    *Indexed by capacity vintage*<br>
+    *LDV with profile: ≥ 0.147 existing; ≥ 0.196 new. Without profile: = 0.15 / 0.20.* #to-review<br>
+    *MHDV: = 0.30 (operator e).*`"/]
 
   p2["`**Existing charging infrastructure capacity**
     • Fetch TC total public LD chargers by province and distribute by type using national shares<br>
@@ -1122,7 +1122,10 @@ flowchart LR
   legacy -- charging_profiles/ --> ramp
   vehicle -- spreadsheet_database/ --> ramp
 
-  ramp -- ldv_charging_profiles.py --> o1[/"`***capacity_factor_tech***
+  ramp -- ldv_charging_profiles.py --> p4["`**Scale to annual charger utilization**<br>
+    Hourly CF = peak-normalized profile × UF / full-year hourly profile mean.<br>
+    Use the ordinary mean of all 8,760 hours; retain hourly chargers/upstream electricity and annual charger-output balance. #to-review`"]
+  p4 --> o1[/"`***capacity_factor_tech***
     [-]`"/]
 
   %% --- Hyperlinks ---
