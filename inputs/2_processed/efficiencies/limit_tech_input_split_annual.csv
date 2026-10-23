@@ -1,0 +1,1142 @@
+region,period,input_comm,tech,operator,proportion,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
+AB,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3718340288339891,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6281659711660109,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3718340288339891,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6281659711660109,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3718340288339891,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6281659711660109,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3718340288339891,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6281659711660109,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3718340288339891,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6281659711660109,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c1e15cb5ffa03763
+AB,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7117162fd6013401
+AB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:742e7b53767ce863
+AB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:69cf912355bf76bb
+AB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c2971cb4eb6c27ff
+AB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dd6ba1afc237f470
+AB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+AB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f588d927ac2367c4
+BCT,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3710025706512724,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6289974293487276,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3710025706512724,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6289974293487276,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3710025706512724,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6289974293487276,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3710025706512724,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6289974293487276,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3710025706512724,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6289974293487276,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:16a9376da69d0c83
+BCT,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f3f7420fabbcd3f6
+BCT,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:842a78e6154c6ab9
+BCT,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:659d7c14ec712bf3
+BCT,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:7c49ee62b756a28d
+BCT,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:52a278a3d1eb73c2
+BCT,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+BCT,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:450a7b88627ed899
+MB,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37016713310275584,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298328668972442,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37016713310275584,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298328668972442,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37016713310275584,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298328668972442,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37016713310275584,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298328668972442,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37016713310275584,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298328668972442,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:31674dd5e5f23fc6
+MB,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f47721cdb613b81e
+MB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:f314998d6eef42a9
+MB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a4c77ff846b47e5
+MB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5c7164c12f0e6aca
+MB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:051767d3dfc506d0
+MB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+MB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a5ba9ea901fe9750
+NB,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3708201180099797,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6291798819900203,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3708201180099797,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6291798819900203,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3708201180099797,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6291798819900203,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3708201180099797,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6291798819900203,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3708201180099797,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6291798819900203,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:577d910754cf4ff0
+NB,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5de94a305865c439
+NB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:08a212c1dd9b0b7a
+NB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8398a0886b5bcab3
+NB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b3a4f7463ceefe03
+NB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8ac1b96608af8ed2
+NB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:24f769df36990684
+NLLAB,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.36998887019667404,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.630011129803326,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.36998887019667404,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.630011129803326,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.36998887019667404,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.630011129803326,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.36998887019667404,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.630011129803326,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.36998887019667404,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.630011129803326,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2f9f110223fe9e85
+NLLAB,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4fc1eecaaaff099b
+NLLAB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:df3ed82f4faea3e7
+NLLAB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0785dcfe240ccedf
+NLLAB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e87e3f1f26e9403e
+NLLAB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:b33fca140dd7f1d3
+NLLAB,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NLLAB,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:87a08544235b8a58
+NS,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37040698283378426,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6295930171662157,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37040698283378426,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6295930171662157,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37040698283378426,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6295930171662157,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37040698283378426,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6295930171662157,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37040698283378426,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6295930171662157,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:776c751d7ecc6867
+NS,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2db2135fade482fa
+NS,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c15a02915759e166
+NS,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:dcab81dab0806943
+NS,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:1163d6221b44b664
+NS,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6c2043d1bb6ff991
+NS,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+NS,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:95a871dcfc7c335f
+ON,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37095614540616806,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6290438545938319,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.6398135527769868,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.36018644722301313,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37095614540616806,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6290438545938319,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.6398135527769868,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.36018644722301313,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37095614540616806,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6290438545938319,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.6398135527769868,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.36018644722301313,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37095614540616806,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6290438545938319,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.6398135527769868,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.36018644722301313,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37095614540616806,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6290438545938319,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5d14b9ee5e7284ca
+ON,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.6398135527769868,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.36018644722301313,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6a8394f4345766b9
+ON,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e24a4ac29db9e050
+ON,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d719a3e692cc6b6c
+ON,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:84e3811225a78116
+ON,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7af260d95f26f92
+ON,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+ON,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:4ce03c499e68b0d3
+PEI,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37010169418239847,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298983058176015,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37010169418239847,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298983058176015,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37010169418239847,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298983058176015,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37010169418239847,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298983058176015,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37010169418239847,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6298983058176015,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5dba24c26fb9f127
+PEI,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:836570cd334d468b
+PEI,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:d72f631a3243e6d0
+PEI,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:db35798c02e628b8
+PEI,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:6566adbbc3850243
+PEI,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:41bf716e200d79df
+PEI,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+PEI,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a40dc337fb38df6b
+QC,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37194669719726536,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6280533028027346,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37194669719726536,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6280533028027346,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37194669719726536,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6280533028027346,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37194669719726536,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6280533028027346,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.37194669719726536,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6280533028027346,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:bbb6fc4d3e40ecce
+QC,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e7a159d98c80dd67
+QC,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:0f6346518104020b
+QC,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a110a53d17115141
+QC,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:eb3264adc0037212
+QC,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:e3889cb298799f32
+QC,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+QC,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:a1c98958d77f5b4f
+SK,2025,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3721637139769184,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6278362860230816,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2025,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,"nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_mdhd: MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+wards_intelligence_sales_shares: Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2025,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2025,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - phev_utility_factor_ldv: Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie.
+  - phev_vehicle_inputs: Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - fuel_heating_values: Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2025,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2030,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3721637139769184,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6278362860230816,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2030,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2030,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2030,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2030,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2030,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2030,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2030,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2035,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3721637139769184,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6278362860230816,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2035,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2035,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2035,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2035,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2035,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2035,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2035,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2040,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3721637139769184,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6278362860230816,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2040,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2040,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2040,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2040,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2040,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2040,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2040,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2045,T_dsl,T_BLND_DSL_ELC_HDV,e,0.3721637139769184,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_HDV,e,0.6278362860230816,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:c815d241ea381af1
+SK,2045,T_dsl,T_BLND_DSL_ELC_MDV,e,0.5085802741804173,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2045,T_elc_mhdv_chrg,T_BLND_DSL_ELC_MDV,e,0.4914197258195827,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:9349adf6912dc42b
+SK,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV35,e,0.34354848555501566,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2045,T_gsl,T_BLND_GSL_ELC_PHEV35,e,0.6564515144449843,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:893fc7707ea20855
+SK,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV50,e,0.4653802478684453,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2045,T_gsl,T_BLND_GSL_ELC_PHEV50,e,0.5346197521315548,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:fed45ad4b1a2c67c
+SK,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_C_EX,e,0.355795114912332,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2045,T_gsl,T_BLND_GSL_ELC_PHEV_C_EX,e,0.644204885087668,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:8e8d102d6c2e375e
+SK,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTF_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:5b774bfe16c189a1
+SK,2045,T_elc_ldv_chrg,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.36193925116966696,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
+SK,2045,T_gsl,T_BLND_GSL_ELC_PHEV_LTP_EX,e,0.638060748830333,,T06,2,3,2,2,2,efficiency-phev-splits:composite:11:2ff6231b65b15cdd
