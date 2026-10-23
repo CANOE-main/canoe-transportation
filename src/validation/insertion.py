@@ -79,8 +79,20 @@ def replace_owned_ldv_rows(
                 charging.rows,
                 "tech",
                 charging.audit["target_technologies"],
-                "legacy-charging-profiles-%",
-                "Legacy hourly charging mean/peak and explicit temporal projection v1;%",
+                (
+                    (
+                        "legacy-charging-profiles-%",
+                        "Legacy hourly charging mean/peak and explicit temporal projection v1;%",
+                    ),
+                    (
+                        "ldv-charging-profiles-%",
+                        "Legacy charging shape projected to CANOE time slices and scaled to reviewed annual utilization v2",
+                    ),
+                    (
+                        "ldv-charging-profiles-%",
+                        "Legacy charging shape scaled by native full-year hourly mean and projected to CANOE time slices v3",
+                    ),
+                ),
             )
         )
     if ranges is not None:
@@ -91,8 +103,10 @@ def replace_owned_ldv_rows(
                 ranges.share_rows,
                 "super_group",
                 ranges.audit["scope_super_groups"],
-                "ldv-range-minimum-new-capacity-shares:%",
-                "Within-class/powertrain minimum new capacity shares v1",
+                ((
+                    "ldv-range-minimum-new-capacity-shares:%",
+                    "Within-class/powertrain minimum new capacity shares v1",
+                ),),
             )
         )
     pending = []
@@ -102,11 +116,11 @@ def replace_owned_ldv_rows(
         rows,
         scope_column,
         scope_values,
-        identifier,
-        description,
+        ownership_patterns,
     ) in specifications:
         owned = {
             r[0]
+            for identifier, description in ownership_patterns
             for r in connection.execute(
                 "SELECT data_id FROM data_set WHERE data_id LIKE ? AND description LIKE ?",
                 (identifier, description),
@@ -242,6 +256,7 @@ def replace_owned_ldv_representation(
         "lifetime_survival_curve",
         "efficiency",
         "limit_tech_input_split",
+        "limit_tech_input_split_annual",
         "cost_invest",
         "cost_fixed",
         "cost_variable",

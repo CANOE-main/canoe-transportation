@@ -169,7 +169,7 @@ def test_weighted_age_profile_preserves_pattern_and_rejects_gaps() -> None:
         )
 
 
-def test_flat_road_factor_records_keep_period_only_v4_grain() -> None:
+def test_flat_road_factor_records_apply_constant_values_to_owned_vintages() -> None:
     baseline = pd.DataFrame([
         {"region": "ON", "road_class": "cars", "utilization": 0.2},
         {"region": "AB", "road_class": "cars", "utilization": 0.3},
@@ -178,24 +178,39 @@ def test_flat_road_factor_records_keep_period_only_v4_grain() -> None:
         {"tech": "T_CAR_EX", "category": "cars"},
         {"tech": "T_CAR_N", "category": "cars"},
     ])
+    vintages = {("ON", "T_CAR_EX"): [2015, 2020], ("AB", "T_CAR_EX"): [],
+                ("ON", "T_CAR_N"): [2025, 2030], ("AB", "T_CAR_N"): [2025, 2030]}
     rows = flat_road_capacity_factor_records(
-        baseline, technology, periods=[2025, 2030],
+        baseline, technology, vintages_by_region_tech=vintages,
         commodity_by_class={"cars": "T_D_pkm_ldv_c"},
     )
-    assert len(rows) == 8
+    assert len(rows) == 6
     assert {(row["region"], row["tech_or_group"], row["vintage"])
             for row in rows} == {
-        (region, tech, period)
+        (region, tech, vintage)
         for region in ("AB", "ON")
         for tech in ("T_CAR_EX", "T_CAR_N")
-        for period in (2025, 2030)
+        for vintage in vintages[region, tech]
     }
     assert {row["operator"] for row in rows} == {"e"}
     assert {row["output_comm"] for row in rows} == {"T_D_pkm_ldv_c"}
+    assert {row["factor"] for row in rows if row["region"] == "ON"} == {0.2}
+    assert {row["factor"] for row in rows if row["region"] == "AB"} == {0.3}
     with pytest.raises(ValueError, match="unit interval"):
         flat_road_capacity_factor_records(
-            baseline.assign(utilization=1.2), technology, periods=[2025],
+            baseline.assign(utilization=1.2), technology, vintages_by_region_tech=vintages,
             commodity_by_class={"cars": "T_D_pkm_ldv_c"},
+        )
+
+
+@pytest.mark.parametrize("vintages", [{}, {("ON", "CAR"): [2015, 2015]},
+                                     {("ON", "CAR"): [2015], ("AB", "CAR"): [2025]}])
+def test_flat_road_factor_vintage_mapping_requires_exact_valid_ownership(vintages) -> None:
+    with pytest.raises(ValueError, match="vintage"):
+        flat_road_capacity_factor_records(
+            pd.DataFrame([{"region": "ON", "road_class": "cars", "utilization": 0.2}]),
+            pd.DataFrame([{"tech": "CAR", "category": "cars"}]),
+            vintages_by_region_tech=vintages, commodity_by_class={"cars": "TRAVEL"},
         )
 
 

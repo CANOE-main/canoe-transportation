@@ -15,7 +15,7 @@ from canoe_schema.v4_0 import (
     CommodityLabel,
     DataSet,
     Efficiency,
-    LimitTechInputSplit,
+    LimitTechInputSplitAnnual,
     LimitNewCapacityShare,
     TechGroup,
     TechGroupMember,
@@ -1372,7 +1372,7 @@ def _prepare_representative_blend(
                 )
             split = [
                 r
-                for r in batches["limit_tech_input_split"]
+                for r in batches["limit_tech_input_split_annual"]
                 if r.region == region and r.tech == blend
             ]
             original_splits.extend(split)
@@ -1409,7 +1409,7 @@ def _prepare_representative_blend(
                 )
             electricity += weights[row.tech] * next(iter(elc)) / row.efficiency
         fractions[region].append((vintage, electricity / total, total))
-    context = context_for([*original_splits, *vehicle_rows], "limit_tech_input_split")
+    context = context_for([*original_splits, *vehicle_rows], "limit_tech_input_split_annual")
     generated["technology"].append(
         TransportationTechnology.model_validate(
             {
@@ -1443,8 +1443,8 @@ def _prepare_representative_blend(
                 (spec.electricity_commodity, mean),
                 (spec.fuel_commodity, 1 - mean),
             ):
-                generated["limit_tech_input_split"].append(
-                    LimitTechInputSplit(
+                generated["limit_tech_input_split_annual"].append(
+                    LimitTechInputSplitAnnual(
                         region=region,
                         period=period,
                         tech=family.phev_blend,
@@ -1453,7 +1453,7 @@ def _prepare_representative_blend(
                         proportion=proportion,
                         notes=context.parameter_notes(note_variants=("energy_blend",)),
                         **context.parameter_fields(
-                            "limit_tech_input_split", category=category, tech=family.phev_blend,
+                            "limit_tech_input_split_annual", category=category, tech=family.phev_blend,
                         ),
                     )
                 )

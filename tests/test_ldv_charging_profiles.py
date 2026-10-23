@@ -25,21 +25,35 @@ from fetching.legacy_charging_profiles import (
 from parameterization.ldv_charging_profiles import (
     prepare_charging_profile_rows,
     project_hours,
+    scale_projected_profile,
+    select_profile_utilization_targets,
+    validate_charging_preparation,
 )
-from utils import load_config_bundle, resolve_input_path
+from utils import load_config_bundle, resolve_artifact_path, resolve_input_path
 from validation.config_models import ScenarioConfig
 from validation.insertion import insert_models
 from validation.schema_contract import create_v4_schema
 
 
 @pytest.fixture
-def bundle():
-    b = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+def bundle(tmp_path, monkeypatch):
+    b = load_config_bundle("config/scenarios/default.yaml")
     payload = b.scenario.model_dump()
     payload["geography"]["regions"] = ["ON"]
     payload["embodied_emissions"] = False
     # This fixture supplies charging evidence/axes, not range-share model periods.
     payload["BEV_PHEV_range_representation"]["mode"] = "none"
+    payload["charging_profiles"]["travel_behavior_source"] = "nhts"
+    isolated = {"charging_profiles_processed", "charging_profiles_validation",
+                "ldv_range_processed", "ldv_range_validation"}
+
+    def artifact_path(config, family, *parts):
+        if family in isolated:
+            return tmp_path.joinpath(family, *parts)
+        return resolve_artifact_path(config, family, *parts)
+
+    for owner in ("ldv_charging_profiles", "ldv_ev_ranges"):
+        monkeypatch.setattr(f"parameterization.{owner}.resolve_artifact_path", artifact_path)
     return replace(b, scenario=ScenarioConfig.model_validate(payload))
 
 
@@ -162,10 +176,21 @@ def test_preparation_can_reuse_evidence_and_has_complete_dq_and_labels(
     assert len(result.rows) == 17520
     assert len(result.seasons) == 365 and len(result.times_of_day) == 24
     assert all(r.tech in {"T_LDV_CHRG_EX", "T_LDV_CHRG_N"} for r in result.rows)
+    expected_dq = bundle.sources.resolved_data_quality(
+        "legacy_charging_profiles", "nhts",
+    ).row_fields()
+    assert all(r.data_source == "T31" for r in result.rows)
     assert all(
-        r.data_source == "T31" and r.dq_cred == 5 and r.dq_time == 5
+        all(getattr(r, field) == value for field, value in expected_dq.items())
         for r in result.rows
     )
+    for tech, target in (("T_LDV_CHRG_EX", 0.15), ("T_LDV_CHRG_N", 0.2)):
+        assert np.mean([r.factor for r in result.rows if r.tech == tech]) == pytest.approx(target)
+    pd.testing.assert_frame_equal(result.hourly, evidence.hourly)
+    assert {c.source_key for c in result.provenance_contexts[0].contributors} == {
+        "legacy_charging_profiles", "dunsky_ev_charging_infrastructure",
+    }
+    validate_charging_preparation(result, seasons=result.seasons, times_of_day=result.times_of_day)
 
 
 def contribution(connection, bundle, charging=None):
@@ -401,3 +426,70 @@ def test_existing_capacity_preparation_keeps_charging_provenance(
     )
     assert {x.source_id for x in result.provenance_contexts} == {"T01", "T31"}
     c.close()
+
+
+def test_utilization_scaling_uses_native_hourly_mean_and_keeps_shape():
+    projected = pd.DataFrame({"season": ["A", "A", "B", "B"],
+                              "tod": ["day", "night", "day", "night"],
+                              "factor": [0.2, 0.4, 0.6, 0.8]})
+    original = projected.copy(deep=True)
+    # Native equal-duration hours own the mean, not the four projected cells.
+    native = np.tile([0.2, 0.2, 0.4, 0.8], 2190)
+    mean = float(native.mean())
+    scaled, audit = scale_projected_profile(
+        projected, profile_mean=mean, target_utilization=0.2,
+    )
+    assert audit["normalized_profile_mean"] == pytest.approx(0.4)
+    assert audit["mean_basis"] == "native_full_year_hourly_arithmetic_mean"
+    assert (native * audit["scale_factor"]).mean() == pytest.approx(0.2)
+    assert (scaled.factor / projected.factor).tolist() == pytest.approx([0.2 / mean] * 4)
+    pd.testing.assert_frame_equal(original, projected)
+    with pytest.raises(ValueError, match="exceed one"):
+        scale_projected_profile(projected, profile_mean=mean, target_utilization=0.95)
+
+
+@pytest.mark.parametrize("mean", [0, -0.1, float("inf"), float("nan")])
+def test_scaling_rejects_invalid_native_mean(mean):
+    with pytest.raises(ValueError, match="mean"):
+        scale_projected_profile(pd.DataFrame({"factor": [0.2, 0.8]}),
+                                profile_mean=mean, target_utilization=0.2)
+
+
+@pytest.mark.parametrize("problem,match", [("missing", "coverage"), ("duplicate", "coverage"),
+                                          ("mixed", "Mixed-vintage")])
+def test_profile_scaling_rejects_missing_duplicate_or_mixed_vintage_targets(problem, match):
+    targets = pd.DataFrame({"region": ["ON", "ON"], "tech_or_group": ["CHARGER", "CHARGER"],
+                            "vintage": [2025, 2030], "target_utilization": [0.2, 0.2]})
+    if problem == "missing":
+        targets = targets.iloc[:0]
+    elif problem == "duplicate":
+        targets.loc[1, "vintage"] = 2025
+    else:
+        targets.loc[0, "target_utilization"] = 0.15
+    with pytest.raises(ValueError, match=match):
+        select_profile_utilization_targets(targets, regions=["ON"], technologies=["CHARGER"])
+
+
+def test_legacy_comparison_uses_kind_specific_targets_for_all_vintages(bundle, evidence):
+    payload = load_config_bundle("config/scenarios/legacy_comparison.yaml").scenario.model_dump()
+    payload["geography"]["regions"] = ["ON"]
+    legacy = replace(bundle, scenario=ScenarioConfig.model_validate(payload))
+    result = prepare_charging_profile_rows(legacy, evidence=evidence, publish=False)
+    assert set(result.utilization_targets) == {
+        ("ON", "T_LDV_CHRG_EX", 0.15), ("ON", "T_LDV_CHRG_N", 0.2),
+    }
+    assert len(result.rows) == 17520
+    validate_charging_preparation(result, seasons=result.seasons, times_of_day=result.times_of_day)
+
+
+def test_disabled_profiles_do_not_read_utilization_or_modify_hourly_evidence(bundle, monkeypatch):
+    payload = bundle.scenario.model_dump()
+    payload["charging_profiles"]["travel_behavior_source"] = "none"
+    disabled = replace(bundle, scenario=ScenarioConfig.model_validate(payload))
+
+    def fail(*args, **kwargs):
+        raise AssertionError("disabled profiles read utilization")
+
+    monkeypatch.setattr("parameterization.ldv_charging_profiles.prepare_charger_utilization_targets", fail)
+    result = prepare_charging_profile_rows(disabled, publish=False)
+    assert not result.rows and not result.utilization_targets

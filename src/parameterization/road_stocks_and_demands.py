@@ -5,7 +5,7 @@ import logging
 from math import isfinite
 from pathlib import Path
 from typing import Any
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 import pandas as pd
 
@@ -210,12 +210,10 @@ def flat_road_capacity_factor_records(
     baseline: pd.DataFrame,
     technology: pd.DataFrame,
     *,
-    periods: list[int],
+    vintages_by_region_tech: Mapping[tuple[str, str], Sequence[int]],
     commodity_by_class: Mapping[str, str],
 ) -> list[dict[str, Any]]:
-    """Expand a validated class baseline to period-indexed v4 row payloads."""
-    if not periods or len(periods) != len(set(periods)):
-        raise ValueError("Flat utilization periods must be unique and nonempty")
+    """Apply each constant class baseline to its technology's declared vintages."""
     if {"region", "road_class", "utilization"} - set(baseline):
         raise ValueError("Flat utilization baseline lacks columns")
     if {"tech", "category"} - set(technology):
@@ -231,6 +229,12 @@ def flat_road_capacity_factor_records(
         raise ValueError("Flat utilization class coverage differs by region")
     if set(technology["category"]) != set(commodity_by_class) or technology["tech"].duplicated().any():
         raise ValueError("Flat utilization technology ownership is incomplete")
+    if set(vintages_by_region_tech) != {
+        (region, tech) for region in baseline.region.unique() for tech in technology.tech
+    }:
+        raise ValueError("Flat utilization vintage ownership must cover every region/technology exactly")
+    if any(len(vintages) != len(set(vintages)) for vintages in vintages_by_region_tech.values()):
+        raise ValueError("Flat utilization vintages must be unique for each region/technology")
     if baseline["utilization"].map(
         lambda value: not isfinite(value) or value < 0 or value > 1
     ).any():
@@ -243,7 +247,7 @@ def flat_road_capacity_factor_records(
         {
             "region": row.region,
             "tech_or_group": row.tech,
-            "vintage": period,
+            "vintage": vintage,
             "output_comm": commodity_by_class[row.road_class],
             "operator": "e",
             "factor": float(row.utilization),
@@ -251,7 +255,7 @@ def flat_road_capacity_factor_records(
         for row in expanded.sort_values(
             ["region", "road_class", "tech"], kind="stable"
         ).itertuples(index=False)
-        for period in sorted(periods)
+        for vintage in sorted(vintages_by_region_tech[row.region, row.tech])
     ]
 
 

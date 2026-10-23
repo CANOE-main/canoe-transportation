@@ -442,6 +442,7 @@ ParameterTable = Literal[
     "existing_capacity", "demand", "efficiency", "cost_invest", "cost_fixed",
     "cost_variable", "emission_embodied", "lifetime_tech", "lifetime_survival_curve",
     "limit_annual_capacity_factor", "capacity_factor_tech", "limit_tech_input_split",
+    "limit_tech_input_split_annual",
     "limit_new_capacity_share",
 ]
 

@@ -60,6 +60,7 @@ defaults:
     lifetime_survival_curve: [tech, region]
     limit_annual_capacity_factor: [tech_or_group, region]
     limit_tech_input_split: [tech, region]
+    limit_tech_input_split_annual: [tech, region]
     limit_new_capacity_share: [sub_group, region]
     emission_embodied: [tech, emis_comm, region]
   data_quality: {dq_cred: 5, dq_geog: 5, dq_struc: 5, dq_tech: 5, dq_time: 5}

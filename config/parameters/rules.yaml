@@ -1613,7 +1613,7 @@ parameterization:
       mto_benchmark: mto_weighting_benchmark.csv
       summary: summary.json
   efficiencies:
-    transformation_version: '10'
+    transformation_version: '11'
     pev_projection_anchors:
       bev: bev_300_miles
       phev: phev_35_miles
@@ -1623,7 +1623,7 @@ parameterization:
     projection_missing_stock: configured_analogue
     files:
       efficiency: efficiency.csv
-      splits: limit_tech_input_split.csv
+      splits: limit_tech_input_split_annual.csv
       annual: annual_efficiency_evidence.csv
       periods: period_consumption_evidence.csv
       loads: road_load_factors.csv
@@ -1887,7 +1887,7 @@ parameterization:
         - 8
     phev_split_method: regional_consumption_weighted_classes_mean_horizon_endpoints
     phev_split_operator: e
-    phev_split_target: limit_tech_input_split
+    phev_split_target: limit_tech_input_split_annual
     intercity:
       baseline_class: urban_transit
       multiplier_basis: regen_intercity_powertrain_over_diesel_fuel_economy
@@ -1970,8 +1970,9 @@ parameterization:
       integrity: cost_integrity.json
 
   ldv_charging_profiles:
+    transformation_version: "3"
     factor_units: fraction
-    applicability: "Ontario BEV charging shape used unchanged on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted."
+    applicability: "Ontario BEV charging shape scaled to reviewed annual utilization on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted."
     technology_category: charger
     technology_sub_category: ldv
     target_technologies: [T_LDV_CHRG_EX, T_LDV_CHRG_N]
@@ -2038,10 +2039,18 @@ parameterization:
       members: tech_group_member.csv
       decisions: representative_decisions.json
   ev_chargers:
-    transformation_version: "2"
-    utilization_time_basis: vintage_input_year
-    historical_utilization: earliest_reviewed_value
-    utilization_operator: le
+    transformation_version: "3"
+    utilization_time_basis: technology_kind
+    utilization:
+      ldv:
+        source_period: {existing: "2025", new: remainder}  # Reviewed utilization: 0.15 existing, 0.20 new, for every vintage.
+        operator: ge
+        floor_multiplier: 0.98  # Annual floor slack; profile mean retains the full utilization target.
+        without_profile: {operator: e, floor_multiplier: 1.0}  # No hourly ceiling: set exact annual utilization.
+      mhdv:
+        source_period: {existing: all, new: all}  # Reviewed utilization: 0.30, without an hourly profile.
+        operator: e
+        floor_multiplier: 1.0  # Equality uses the full reviewed utilization.
     manual_file: charger_parameters.csv
     capacity_to_activity_file: capacity_to_activity.csv
     capacity_to_activity_units: PJ/GW

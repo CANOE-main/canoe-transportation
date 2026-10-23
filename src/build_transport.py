@@ -33,7 +33,7 @@ from canoe_schema.v4_0 import (
     LifetimeTech,
     LifetimeSurvivalCurve,
     Efficiency,
-    LimitTechInputSplit,
+    LimitTechInputSplitAnnual,
     CostInvest,
     CostFixed,
     CostVariable,
@@ -137,7 +137,7 @@ class TransportContribution:
     lifetime_tech_rows: list[LifetimeTech] = dataclass_field(default_factory=list)
     lifetime_survival_curve_rows: list[LifetimeSurvivalCurve] = dataclass_field(default_factory=list)
     efficiency_rows: list[Efficiency] = dataclass_field(default_factory=list)
-    input_split_rows: list[LimitTechInputSplit] = dataclass_field(default_factory=list)
+    input_split_rows: list[LimitTechInputSplitAnnual] = dataclass_field(default_factory=list)
     cost_invest_rows: list[CostInvest] = dataclass_field(default_factory=list)
     cost_fixed_rows: list[CostFixed] = dataclass_field(default_factory=list)
     cost_variable_rows: list[CostVariable] = dataclass_field(default_factory=list)
@@ -530,7 +530,7 @@ def prepare_transport_contribution(
         from parameterization.road_utilization import prepare_road_utilization
 
         with log_duration(LOGGER, "Road utilization (capacity_to_activity, limit_annual_capacity_factor)"):
-            road = prepare_road_utilization(bundle)
+            road = prepare_road_utilization(bundle, existing_capacity_rows=parameter_rows)
         road_assumption_dataset = road.assumption_dataset
         c2a_rows = road.capacity_to_activity_rows
         flat_factor_rows = road.flat_factor_rows
@@ -549,13 +549,13 @@ def prepare_transport_contribution(
         contexts.extend(lifetimes.provenance_contexts)
         lifetime_audit = lifetimes.audit
     efficiency_rows: list[Efficiency] = []
-    split_rows: list[LimitTechInputSplit] = []
+    split_rows: list[LimitTechInputSplitAnnual] = []
     efficiency_dataset: DataSet | None = None
     efficiency_audit: dict[str, Any] = {}
     if include_efficiencies is not False:
         from parameterization.build_efficiencies import prepare_efficiency_rows
 
-        with log_duration(LOGGER, "Efficiencies (efficiency, limit_tech_input_split)"):
+        with log_duration(LOGGER, "Efficiencies (efficiency, limit_tech_input_split_annual)"):
             efficiencies = prepare_efficiency_rows(
                 bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
                 existing_capacity_contexts=capacity_contexts if selected_capacity else None,
@@ -699,7 +699,7 @@ def _representative_batches(contribution: TransportContribution) -> dict[str, li
         "lifetime_tech": contribution.lifetime_tech_rows,
         "lifetime_survival_curve": contribution.lifetime_survival_curve_rows,
         "efficiency": contribution.efficiency_rows,
-        "limit_tech_input_split": contribution.input_split_rows,
+        "limit_tech_input_split_annual": contribution.input_split_rows,
         "cost_invest": contribution.cost_invest_rows,
         "cost_fixed": contribution.cost_fixed_rows,
         "cost_variable": contribution.cost_variable_rows,
@@ -740,7 +740,7 @@ def _apply_ldv_range_representation(bundle: ConfigBundle, contribution: Transpor
         parameter_rows=rows["existing_capacity"], capacity_to_activity_rows=rows["capacity_to_activity"],
         flat_road_factor_rows=rows["limit_annual_capacity_factor"], lifetime_tech_rows=rows["lifetime_tech"],
         lifetime_survival_curve_rows=rows["lifetime_survival_curve"], efficiency_rows=rows["efficiency"],
-        input_split_rows=rows["limit_tech_input_split"], cost_invest_rows=rows["cost_invest"],
+        input_split_rows=rows["limit_tech_input_split_annual"], cost_invest_rows=rows["cost_invest"],
         cost_fixed_rows=rows["cost_fixed"], cost_variable_rows=rows["cost_variable"], emission_embodied=embodied,
         provenance_contexts=[*contribution.provenance_contexts, *ranges.provenance_contexts],
         new_technologies=tuple(r.tech for r in rows["technology"] if r.tech in contribution.new_technologies

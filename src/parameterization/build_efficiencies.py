@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from canoe_schema.v4_0 import DataSet, Efficiency, LimitTechInputSplit
+from canoe_schema.v4_0 import DataSet, Efficiency, LimitTechInputSplitAnnual
 
 from fetching.fueleconomy_vehicles import build_request, validate_cache
 from fetching.nlr_atb_autonomie import configured_trajectory
@@ -59,7 +59,7 @@ CEUD = "nrcan_ceud_transport_provincial"
 @dataclass(frozen=True)
 class EfficiencyPreparation:
     efficiency_rows: list[Efficiency]
-    split_rows: list[LimitTechInputSplit]
+    split_rows: list[LimitTechInputSplitAnnual]
     assumption_dataset: DataSet
     provenance_contexts: list[ResolvedProvenance]
     audit: dict
@@ -377,7 +377,7 @@ def existing_phev_split_evidence(
 
 def validate_efficiency_outputs(
     rows: list[Efficiency],
-    splits: list[LimitTechInputSplit],
+    splits: list[LimitTechInputSplitAnnual],
     *,
     relationships: pd.DataFrame,
     regions: set[str],
@@ -536,7 +536,7 @@ def prepare_efficiency_rows(
         or rules["missing_rating_classes"] != "renormalize_observed"
     ):
         raise ValueError("Unsupported efficiency period/aggregation policy")
-    if rules["phev_split_target"] != LimitTechInputSplit.table_name():
+    if rules["phev_split_target"] != LimitTechInputSplitAnnual.table_name():
         raise ValueError("PHEV split target does not match canoe_schema")
     supported_policies = {
         "unknown_powertrain": "error",
@@ -586,6 +586,12 @@ def prepare_efficiency_rows(
         return frame
 
     technology = read(resolve_input_path(bundle, "template", "technology.csv"))
+    blends = {spec["tech"] for spec in phev_blend_relationships(rules).values()}
+    annual_blends = set(technology.loc[
+        pd.to_numeric(technology.annual, errors="coerce").eq(1), "tech"
+    ])
+    if missing := blends - annual_blends:
+        raise ValueError(f"PHEV annual split targets must be annual technologies: {sorted(missing)}")
     range_rules = range_module_rules(bundle)
     historical_weights, range_evidence = existing_range_weights(bundle, evidence=range_evidence)
     paths.append(omega_request(bundle).extract_path)
@@ -1085,7 +1091,7 @@ def prepare_efficiency_rows(
                             "proportion": proportion,
                         }
                     )
-            splits.extend(validate_parameter_rows(LimitTechInputSplit, regional_records, split_context, bundle=bundle))
+            splits.extend(validate_parameter_rows(LimitTechInputSplitAnnual, regional_records, split_context, bundle=bundle))
     rows.sort(key=lambda r: (r.region, r.tech, r.vintage, r.input_comm, r.output_comm))
     splits.sort(key=lambda r: (r.region, r.period, r.tech, r.input_comm))
     regions = {rules["region_output_map"].get(r, r) for r in scenario.geography.regions}
@@ -1192,7 +1198,7 @@ def prepare_efficiency_rows(
     (validation / rules["files"]["integrity"]).write_text(
         json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    LOGGER.info("Prepared efficiency=%s and limit_tech_input_split=%s rows (%s technologies)",
+    LOGGER.info("Prepared efficiency=%s and limit_tech_input_split_annual=%s rows (%s technologies)",
                 len(rows), len(splits), audit["technologies"])
     LOGGER.info(
         "Efficiency data handling: rating fallbacks=%s, omitted rows=%s, ambiguous EPA rows=%s, renormalized cells=%s",

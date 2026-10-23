@@ -1038,8 +1038,9 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
         assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
         assert connection.execute(
-            "SELECT DISTINCT operator FROM limit_tech_input_split"
+            "SELECT DISTINCT operator FROM limit_tech_input_split_annual"
         ).fetchall() == [("e",)]
+        assert connection.execute("SELECT COUNT(*) FROM limit_tech_input_split").fetchone()[0] == 0
         connection.rollback()
         assert connection.execute("SELECT COUNT(*) FROM efficiency").fetchone()[0] == 0
 

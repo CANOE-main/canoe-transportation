@@ -945,7 +945,7 @@ explanations:
           - src/parameterization/ev_chargers.py
           - config/scenarios/legacy_comparison.yaml
 
-  limit_tech_input_split:
+  limit_tech_input_split_annual:
     summary: >-
       Legacy PHEV blend notes describe averages across vehicle classes and
       model years. Current blends sum class-weighted electrical and total
