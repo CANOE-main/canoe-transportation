@@ -696,6 +696,35 @@ def test_representative_preserves_native_dq_when_omega_support_differs(
                     ) == 1
 
 
+@pytest.mark.parametrize("flag", ["p", "a"])
+def test_representative_blend_preserves_source_balance_flag(representative_prerequisites, flag):
+    bundle, kwargs = representative_prerequisites
+    names = {"T_gsl_elc_phev35", "T_gsl_elc_phev50"}
+    original_names = {row.name for row in kwargs["batches"]["commodity"]}
+    kwargs["batches"]["commodity"] = [
+        type(row).model_validate({**row.model_dump(), "flag": flag}) if row.name in names else row
+        for row in kwargs["batches"]["commodity"]
+    ]
+    result = prepare_representative_parameters(bundle, **kwargs)
+    generated = [row for row in result.batches["commodity"] if row.name not in original_names]
+    assert len(generated) == 3
+    assert {row.flag.value for row in generated} == {flag}
+
+
+@pytest.mark.parametrize("flags,match", [
+    (("p", "a"), "same balance flag"), (("d", "d"), "unlimited annual PJ blend"),
+])
+def test_representative_blend_rejects_inconsistent_balance_types(representative_prerequisites, flags, match):
+    bundle, kwargs = representative_prerequisites
+    mapping = dict(zip(("T_gsl_elc_phev35", "T_gsl_elc_phev50"), flags, strict=True))
+    kwargs["batches"]["commodity"] = [
+        type(row).model_validate({**row.model_dump(), "flag": mapping[row.name]}) if row.name in mapping else row
+        for row in kwargs["batches"]["commodity"]
+    ]
+    with pytest.raises(RangeRepresentationBlocked, match=match):
+        prepare_representative_parameters(bundle, **kwargs)
+
+
 def test_representative_rules_conserve_parameters_and_preserve_stock_and_mhdv(
     representative_prerequisites,
 ):

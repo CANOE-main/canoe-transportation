@@ -18,7 +18,7 @@ from utils import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/legacy_comparison.yaml"
 SOURCE_COLUMN = "source -> data_source"
 
 

@@ -1,0 +1,74 @@
+2026-10-23T05:06:53Z INFO utils.build_logging: Scenario build started: scenario=h2_refueling_validation yaml=C:\Users\rashi\ESM_databases\canoe-transportation\tmp\h2-refuel106\build\config\scenarios\h2_validation.yaml yaml_sha256=f01b5d0d21cf665d1a423be95dfa9c1ef29077b17c57f2ae89559b5a7d15cb16 verbosity=INFO log=C:\Users\rashi\ESM_databases\canoe-transportation\tmp\h2-refuel106\build\outputs\logs\h2_refueling_validation_h2_validation_2026-10-23_05-06-53-085239Z.log
+2026-10-23T05:06:53Z INFO build_transport: Scenario h2_refueling_validation: period_mode=prospective, base_year=2023; 1 regions, 5 existing vintages, 5 model periods (2025-2050, step=5)
+2026-10-23T05:06:53Z INFO build_transport: Selections: road lifetimes=fixed medians; heavy-truck survival=epa_moves_heavy_truck_survival; charging=nhts; LDV ranges=representative_archetype; embodied emissions=True
+2026-10-23T05:06:53Z INFO build_transport: Trajectories: demand=Current Measures; efficiency=Mid; costs=Mid; cost basis=2020 CAD
+2026-10-23T05:06:55Z INFO build_transport: Preparing scenario inputs: cache downloads disabled
+2026-10-23T05:06:56Z INFO build_transport: Prerequisite fetching.nrcan_ceud.fetch_and_normalize completed in 1.36 s
+2026-10-23T05:06:58Z INFO build_transport: Prerequisite fetching.nrcan_ceud.fetch_and_normalize_ratings completed in 1.43 s
+2026-10-23T05:08:48Z INFO build_transport: Prerequisite fetching.statcan_tables.fetch_and_normalize completed in 110.52 s
+2026-10-23T05:08:49Z INFO build_transport: Prerequisite fetching.cer_enerfuture.fetch_and_normalize completed in 1.05 s
+2026-10-23T05:08:59Z INFO build_transport: Prerequisite fetching.nlr_atb_autonomie.fetch_and_normalize completed in 10.29 s
+2026-10-23T05:09:12Z INFO root: MOVES5 heavy-truck survival: cache=cached; normalized 41 annual rate rows
+2026-10-23T05:09:12Z INFO build_transport: Prerequisite fetching.assorted_sources.fetch_and_normalize completed in 13.08 s
+2026-10-23T05:09:13Z INFO build_transport: Prerequisite fetching.assorted_sources.fetch_and_normalize_tc_dashboard completed in 0.25 s
+2026-10-23T05:09:17Z INFO root: Skipped all-edition MTO key inventory during single-year override 2025
+2026-10-23T05:09:17Z INFO root: Published Ontario production edition 2025 (aggregate history preserved); audit evidence: C:\Users\rashi\ESM_databases\canoe-transportation\tmp\h2-refuel106\build\inputs\1_interim\fetched_ontario_vehicle_population\editions\2025
+2026-10-23T05:09:17Z INFO build_transport: Ontario vehicle evidence (2025) completed in 4.24 s
+2026-10-23T05:09:17Z INFO build_transport: FuelEconomy class evidence validation completed in 0.13 s
+2026-10-23T05:09:22Z INFO build_transport: Road aggregation from reviewed mappings completed in 5.38 s
+2026-10-23T05:09:22Z INFO build_transport: Scenario prerequisites completed in 149.85 s
+2026-10-23T05:09:23Z INFO build_transport: SQLite schema and scenario economics completed in 0.06 s
+2026-10-23T05:09:23Z INFO parameterization.ldv_ev_ranges: OMEGA range evidence: 855557 sales, unresolved=0, accepted=True
+2026-10-23T05:09:23Z INFO parameterization.ldv_ev_ranges: OMEGA sales/range evidence completed in 0.40 s
+2026-10-23T05:09:23Z INFO build_transport: LDV range selection completed in 0.30 s
+2026-10-23T05:09:28Z INFO fetching.legacy_charging_profiles: Normalized nhts charging: 527040 minute rows -> 8760 hours; peak=1161.90 integral=4911640.62; excluded=1440 (nulls=300)
+2026-10-23T05:09:28Z WARNING fetching.legacy_charging_profiles: Legacy charging composition is already embedded; do not apply new range shares to this profile
+2026-10-23T05:09:29Z INFO parameterization.ev_chargers: Charger utilization annual limits use {'ldv': 'ge', 'mhdv': 'e'}; LDV hourly profiles enabled=True
+2026-10-23T05:09:29Z INFO parameterization.ldv_charging_profiles: Scaled charging profile ON/T_LDV_CHRG_EX: full-year hourly mean 0.48256230 -> 0.15000000; multiplier 0.31084070
+2026-10-23T05:09:29Z INFO parameterization.ldv_charging_profiles: Scaled charging profile ON/T_LDV_CHRG_N: full-year hourly mean 0.48256230 -> 0.20000000; multiplier 0.41445426
+2026-10-23T05:09:30Z WARNING parameterization.ldv_charging_profiles: Using legacy Ontario BEV charging shape for shared LDV chargers in all selected regions: ('ON',)
+2026-10-23T05:09:30Z INFO parameterization.ldv_charging_profiles: Prepared 17520 charging factors; no composition reweighting
+2026-10-23T05:09:30Z INFO build_transport: Charging profiles (capacity_factor_tech) completed in 6.97 s
+2026-10-23T05:09:39Z INFO parameterization.build_existing_capacity: Prepared 97 existing-capacity rows across 1 regions; removed 31 below epsilon=0.001; excluded 165 road fuel shares
+2026-10-23T05:09:39Z INFO parameterization.build_existing_capacity: Redistributed 3271.362 thousand road vehicles within the same technology; bus transfers=0 (0.000 thousand vehicles)
+2026-10-23T05:09:39Z INFO build_transport: Existing capacity completed in 9.00 s
+2026-10-23T05:09:40Z INFO parameterization.build_demand: Prepared 70 demand rows for 1 regions and 5 periods
+2026-10-23T05:09:40Z INFO build_transport: Demand completed in 0.49 s
+2026-10-23T05:09:40Z INFO parameterization.road_utilization: Road utilization uses positive prepared stock cohorts; skipped 0 zero-capacity rows
+2026-10-23T05:09:43Z INFO parameterization.road_utilization: Prepared 98 road C2A and 414 flat annual factor rows
+2026-10-23T05:09:43Z INFO build_transport: Road utilization (capacity_to_activity, limit_annual_capacity_factor) completed in 3.53 s
+2026-10-23T05:09:44Z INFO parameterization.build_lifetime_parameters: Prepared lifetime_tech=122 and lifetime_survival_curve=0 rows; StatCan Canada fallback rows=0
+2026-10-23T05:09:44Z INFO build_transport: Lifetimes (lifetime_tech, lifetime_survival_curve) completed in 1.04 s
+2026-10-23T05:09:54Z INFO parameterization.road_efficiencies: NRCan outlier filter: 946 of 29607 eligible source rows excluded; 490 sparse and 3 zero-IQR cohorts retained; 39 native-only rows retained without energy screening; all 30815 rows retained in audit
+2026-10-23T05:10:17Z INFO parameterization.build_efficiencies: Prepared efficiency=577 and limit_tech_input_split_annual=70 rows (124 technologies)
+2026-10-23T05:10:17Z INFO parameterization.build_efficiencies: Efficiency data handling: rating fallbacks=119, omitted rows=2154, ambiguous EPA rows=14, renormalized cells=253
+2026-10-23T05:10:17Z INFO parameterization.build_efficiencies: Efficiency observation coverage: omitted annual observations=1 across 6 periods
+2026-10-23T05:10:17Z INFO build_transport: Efficiencies (efficiency, limit_tech_input_split_annual) completed in 32.62 s
+2026-10-23T05:10:47Z INFO parameterization.build_costs: Prepared cost_invest=405 and cost_variable=1281 rows; converted 6 currency/year groups to 2020 CAD
+2026-10-23T05:10:47Z INFO parameterization.build_costs: Cost data handling: excluded 419 expired period/vintage pairs; historical MSRP proxy rows=51
+2026-10-23T05:10:47Z INFO build_transport: Transport costs (cost_invest, cost_variable) completed in 30.15 s
+2026-10-23T05:10:48Z INFO parameterization.ev_chargers: Prepared 4 charger capacity_to_activity rows: 31.536 PJ/GW per year
+2026-10-23T05:10:49Z INFO parameterization.ev_chargers: Charger utilization annual limits use {'ldv': 'ge', 'mhdv': 'e'}; LDV hourly profiles enabled=True
+2026-10-23T05:10:50Z INFO parameterization.ev_chargers: EV charger rows: capacity=2 invest=20 fixed=46 efficiency=22 annual_utilization=12; public_ports=39220
+2026-10-23T05:10:50Z INFO parameterization.ev_chargers: Excluded 2 existing charger investment rows; retained their annual fixed-cost basis
+2026-10-23T05:10:50Z INFO parameterization.ev_chargers: Excluded fixed-cost pairs at/after retirement: chargers=12 H2=12
+2026-10-23T05:10:50Z INFO parameterization.ev_chargers: H2 refueling rows: invest=10 fixed=18 efficiency=10; no existing station stock input
+2026-10-23T05:10:50Z INFO build_transport: EV chargers and H2 refueling completed in 2.38 s
+2026-10-23T05:10:53Z INFO fetching.greet_vehicle_cycle: Normalized 198 GREET range-specific gas rows; retained 23 cases and 322 exclusions
+2026-10-23T05:10:54Z INFO parameterization.road_embodied_emissions: Prepared emission_embodied=690 rows; excluded 19 existing-vehicle manufacturing cases
+2026-10-23T05:10:54Z INFO build_transport: Vehicle-cycle emissions (emission_embodied) completed in 4.57 s
+2026-10-23T05:10:55Z INFO parameterization.ldv_ev_ranges: Prepared representative LDV parameters; conservation checks passed; maximum PHEV component difference=0.0661%
+2026-10-23T05:10:55Z INFO build_transport: Representative LDV parameter tables completed in 0.55 s
+2026-10-23T05:10:57Z INFO build_transport: Publishing 194 readable transport dataset IDs for scenario h2_refueling_validation
+2026-10-23T05:10:57Z INFO validation.insertion: Scoped capacity_factor_tech replacement removed 0 owned rows across 1 regions
+2026-10-23T05:10:57Z INFO validation.insertion: Scoped limit_new_capacity_share replacement removed 0 owned rows across 1 regions
+2026-10-23T05:10:57Z INFO validation.insertion: LDV representation replacement removed 0 owned rows across 11 parameter tables
+2026-10-23T05:10:58Z INFO build_transport: Inserted transport contribution: 22620 rows across 21 tables; 14 cross-table support checks passed
+2026-10-23T05:10:58Z INFO build_transport: SQLite transport insertion completed in 3.12 s
+2026-10-23T05:10:58Z INFO build_transport: Database integrity, keys and provenance validation completed in 0.19 s
+2026-10-23T05:10:58Z INFO build_transport: Database validation passed: integrity ok; foreign-key violations=0
+2026-10-23T05:10:58Z INFO build_transport: SQLite assembly completed in 95.87 s
+2026-10-23T05:10:58Z INFO build_transport: Database and validation report publication completed in 0.02 s
+2026-10-23T05:10:58Z INFO build_transport: Created C:\Users\rashi\ESM_databases\canoe-transportation\tmp\h2-refuel106\build\outputs\sqlite\hydrogen_refueling.sqlite; validation report: C:\Users\rashi\ESM_databases\canoe-transportation\tmp\h2-refuel106\build\outputs\validation\hydrogen_refueling.json
+2026-10-23T05:10:58Z INFO build_transport: Total scenario build completed in 245.79 s
+2026-10-23T05:10:58Z INFO utils.build_logging: Scenario build completed: scenario=h2_refueling_validation verbosity=INFO

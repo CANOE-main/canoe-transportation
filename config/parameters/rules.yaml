@@ -1376,6 +1376,12 @@ parameterization:
   offroad_stocks_and_demands:
     demand:
       region_output_map: {NL: NLLAB, PE: PEI}
+      energy_only_series:
+        off_road:
+          provincial_table: 7
+          energy_series: Energy Use by Transportation Mode (PJ)|Off-Road1
+          commodity: T_D_pj_off
+          units: PJ
       energy_intensity_series:
         passenger_air:
           provincial_table: 14
@@ -2039,7 +2045,7 @@ parameterization:
       members: tech_group_member.csv
       decisions: representative_decisions.json
   ev_chargers:
-    transformation_version: "3"
+    transformation_version: "4"
     utilization_time_basis: technology_kind
     utilization:
       ldv:
@@ -2066,6 +2072,14 @@ parameterization:
       ldv: {existing: T_LDV_CHRG_EX, new: T_LDV_CHRG_N, output: T_elc_ldv_chrg}
       mhdv: {existing: T_MHDV_CHRG_EX, new: T_MHDV_CHRG_N, output: T_elc_mhdv_chrg}
     input_commodity: T_elc
+    hydrogen_refueling:
+      input_commodity: T_h2_700
+      capacity_units: PJ/year
+      cost_units: "$M 2020CAD / (PJ/year)"
+      fixed_cost_units: "$M 2020CAD / (PJ/year) / year"
+      technology:
+        ldv: {tech: T_H2_LDV_REFUEL, output: T_h2_ldv}
+        mhdv: {tech: T_H2_MHDV_REFUEL, output: T_h2_mhdv}
     stock_classes:
       ldv: [cars, passenger_light_trucks, freight_light_trucks, motorcycles]
       mhdv: [medium_trucks, heavy_trucks]

@@ -20,7 +20,7 @@ def derive_offroad_baseline_demand(
     provincial: pd.DataFrame, national: pd.DataFrame, *,
     regions: list[str], base_year: int, rules: dict[str, Any],
 ) -> pd.DataFrame:
-    """Use total provincial mode energy and national same-year intensity."""
+    """Convert mode energy to service, preserving energy-only demands in PJ."""
     energy_rows: list[dict[str, Any]] = []
     intensity_rows: list[dict[str, Any]] = []
     for service, selector in rules["energy_intensity_series"].items():
@@ -48,15 +48,39 @@ def derive_offroad_baseline_demand(
                                 "ceud_region": region, "mode": service,
                                 "tech": selector["commodity"], "year": base_year,
                                 "energy_pj": energy.iloc[0]["value"]})
-    annual = estimate_demand_unit_capacity(pd.DataFrame(energy_rows), pd.DataFrame(intensity_rows))
-    annual = annual.merge(
-        pd.DataFrame(energy_rows)[["region", "mode", "tech", "ceud_region"]],
-        on=["region", "mode", "tech"], validate="one_to_one",
-    )
-    return annual.rename(columns={"mode": "service", "tech": "commodity",
-                                  "capacity": "baseline_demand"})[
-        ["ceud_region", "region", "service", "commodity", "units", "baseline_demand"]
-    ]
+    columns = ["ceud_region", "region", "service", "commodity", "units", "baseline_demand"]
+    annual = pd.DataFrame(columns=columns)
+    if energy_rows:
+        annual = estimate_demand_unit_capacity(pd.DataFrame(energy_rows), pd.DataFrame(intensity_rows))
+        annual = annual.merge(
+            pd.DataFrame(energy_rows)[["region", "mode", "tech", "ceud_region"]],
+            on=["region", "mode", "tech"], validate="one_to_one",
+        ).rename(columns={"mode": "service", "tech": "commodity", "capacity": "baseline_demand"})[columns]
+    energy_only = []
+    for service, selector in rules.get("energy_only_series", {}).items():
+        if selector["units"] != "PJ":
+            raise ValueError("Energy-only off-road demand requires PJ units")
+        for region in regions:
+            selected = provincial.loc[
+                provincial.region.eq(region) & provincial.year.eq(base_year)
+                & provincial.table_id.eq(int(selector["provincial_table"]))
+                & provincial.raw_series.eq(selector["energy_series"])
+            ]
+            if len(selected) != 1 or selected.iloc[0].unit != "PJ":
+                raise ValueError(f"Missing, duplicate or wrong-unit provincial CEUD energy for {(region, service)}")
+            value = float(selected.iloc[0].value)
+            if not isfinite(value) or value < 0:
+                raise ValueError(f"Energy-only off-road demand must be finite and nonnegative: {(region, service)}")
+            energy_only.append({
+                "ceud_region": region, "region": rules["region_output_map"].get(region, region),
+                "service": service, "commodity": selector["commodity"],
+                "units": "PJ", "baseline_demand": value,
+            })
+    if energy_only:
+        return pd.concat([annual, pd.DataFrame(energy_only)], ignore_index=True) if not annual.empty else pd.DataFrame(energy_only)[columns]
+    if annual.empty:
+        raise ValueError("Off-road demand has no configured source series")
+    return annual
 
 
 def estimate_demand_unit_capacity(
