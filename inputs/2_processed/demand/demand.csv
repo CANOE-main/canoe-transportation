@@ -1169,3 +1169,83 @@ SK,2030,T_D_tkm_hdv_wt,0.004179754580111354,bn tonne-km,,T02,2,2,3,2,1,demand-of
 SK,2035,T_D_tkm_hdv_wt,0.00452543192155643,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-marine:composite:1:16b1351efedeec0e
 SK,2040,T_D_tkm_hdv_wt,0.004840439237899107,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-marine:composite:1:16b1351efedeec0e
 SK,2045,T_D_tkm_hdv_wt,0.005218152149430476,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-marine:composite:1:16b1351efedeec0e
+ON,2025,T_D_pj_off,55.25589208377647,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+ON,2030,T_D_pj_off,60.443981164085656,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+ON,2035,T_D_pj_off,65.44286670023136,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+ON,2040,T_D_pj_off,69.99822896627586,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+ON,2045,T_D_pj_off,75.46038509828153,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+AB,2025,T_D_pj_off,15.445851097678712,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+AB,2030,T_D_pj_off,16.89609374862447,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+AB,2035,T_D_pj_off,18.293447745345414,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+AB,2040,T_D_pj_off,19.5668223051232,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+AB,2045,T_D_pj_off,21.09367577007709,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+BCT,2025,T_D_pj_off,22.028964020519457,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+BCT,2030,T_D_pj_off,24.09730865084598,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+BCT,2035,T_D_pj_off,26.090223170287448,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+BCT,2040,T_D_pj_off,27.906317484844532,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+BCT,2045,T_D_pj_off,30.083924910383523,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+MB,2025,T_D_pj_off,4.6926919821601265,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+MB,2030,T_D_pj_off,5.133298460705202,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+MB,2035,T_D_pj_off,5.557836536022869,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+MB,2040,T_D_pj_off,5.944707712571627,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+MB,2045,T_D_pj_off,6.408589758799518,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NB,2025,T_D_pj_off,4.614851119896808,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NB,2030,T_D_pj_off,5.048148960172178,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NB,2035,T_D_pj_off,5.465644934714433,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NB,2040,T_D_pj_off,5.846098816865464,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NB,2045,T_D_pj_off,6.302286137208058,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NLLAB,2025,T_D_pj_off,4.859493829867241,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NLLAB,2030,T_D_pj_off,5.315761676133112,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NLLAB,2035,T_D_pj_off,5.75538996739809,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NLLAB,2040,T_D_pj_off,6.156012489084837,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NLLAB,2045,T_D_pj_off,6.636383233638364,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NS,2025,T_D_pj_off,4.759412721242973,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NS,2030,T_D_pj_off,5.206283746876366,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NS,2035,T_D_pj_off,5.636857908572957,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NS,2040,T_D_pj_off,6.029229623176912,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+NS,2045,T_D_pj_off,6.499707148735057,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+PEI,2025,T_D_pj_off,0.6316229966509365,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+PEI,2030,T_D_pj_off,0.6909273757536859,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+PEI,2035,T_D_pj_off,0.7480689934741681,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+PEI,2040,T_D_pj_off,0.8001407537300199,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+PEI,2045,T_D_pj_off,0.862577958056428,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+QC,2025,T_D_pj_off,29.212563595105816,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+QC,2030,T_D_pj_off,31.955391128607975,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+QC,2035,T_D_pj_off,34.598190948180275,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+QC,2040,T_D_pj_off,37.00650986001342,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+QC,2045,T_D_pj_off,39.8942305601098,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+SK,2025,T_D_pj_off,4.714932228521076,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+SK,2030,T_D_pj_off,5.157626889428924,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+SK,2035,T_D_pj_off,5.5841769935395655,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+SK,2040,T_D_pj_off,5.972881682773389,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9
+SK,2045,T_D_pj_off,6.438962222111365,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:composite:1:19051b0f8afba2d9

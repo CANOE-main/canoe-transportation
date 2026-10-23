@@ -1822,7 +1822,7 @@ sources:
     version: "2024 updated forecast; reviewed manual extraction"
     units: "Reviewed dimensionless utilization and shares, kW port ratings, and 2022 CAD million per GW charger capital costs."
     citation: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-    database_note: "Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs; cost inputs retain 2022 CAD per rated charging power."
+    database_note: "Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year."
     database_precedence:
       - table: existing_capacity
         categories: [charger]
