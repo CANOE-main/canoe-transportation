@@ -27,7 +27,10 @@ def md5(content: bytes) -> str:
     return hashlib.md5(content, usedforsecurity=False).hexdigest()
 
 
-def portal(request, *, content: bytes, modified: str = "2026-09-29T21:33:51.575288") -> dict:
+NEW_DATE = "2099-01-15"  # any portal date later than the current pin
+
+
+def portal(request, *, content: bytes, modified: str = f"{NEW_DATE}T12:00:00") -> dict:
     return {"id": request.resource_id, "hash": md5(content), "size": len(content), "last_modified": modified}
 
 
@@ -56,10 +59,10 @@ class FakeResponse:
 def test_status_reports_changed_and_current_releases(bev_request) -> None:
     changed = refresh.refresh_status(bev_request, portal(bev_request, content=b"new release"))
     assert changed.changed
-    assert (changed.pinned_version, changed.portal_version) == ("2026-07-17", "2026-09-29")
+    assert (changed.pinned_version, changed.portal_version) == (bev_request.component_meta.version, NEW_DATE)
     current = refresh.refresh_status(bev_request, {
         "id": bev_request.resource_id, "hash": bev_request.expected_md5,
-        "size": bev_request.expected_bytes, "last_modified": "2026-07-17T10:00:00",
+        "size": bev_request.expected_bytes, "last_modified": f"{bev_request.component_meta.version}T10:00:00",
     })
     assert not current.changed
 
@@ -98,8 +101,8 @@ def test_rewrite_changes_only_the_selected_component(bev_request, newline) -> No
     assert ("\r\n" in updated) == (newline == "\r\n")
     components = yaml.safe_load(updated)["sources"]["nrcan_fuel_consumption_ratings"]["components"]
     entry = components[BEV]
-    assert entry["version"] == "2026-09-29" and entry["label"].endswith("(2026-09-29)")
-    assert entry["adapter"]["cache_path"].startswith("nrcan_fuel_consumption_ratings/2026-09-29_")
+    assert entry["version"] == NEW_DATE and entry["label"].endswith(f"({NEW_DATE})")
+    assert entry["adapter"]["cache_path"].startswith(f"nrcan_fuel_consumption_ratings/{NEW_DATE}_")
     assert entry["adapter"]["expected_md5"] == md5(b"new release")
     assert entry["adapter"]["expected_bytes"] == len(b"new release")
     before = yaml.safe_load(original)["sources"]["nrcan_fuel_consumption_ratings"]["components"]
@@ -123,7 +126,7 @@ def test_apply_adopts_only_changed_releases(bev_request, tmp_path, monkeypatch) 
     assert not (tmp_path / "cache").exists()
 
     refresh.refresh(bundle, apply=True)
-    assert (tmp_path / "cache" / "2026-09-29_battery_electric_2012_2026.csv").read_bytes() == content
+    assert (tmp_path / "cache" / f"{NEW_DATE}_battery_electric_2012_2026.csv").read_bytes() == content
     entry = yaml.safe_load(registry.read_text(encoding="utf-8"))["sources"]["nrcan_fuel_consumption_ratings"]["components"][BEV]
     assert entry["adapter"]["expected_md5"] == md5(content)
 
