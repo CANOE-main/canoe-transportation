@@ -311,10 +311,20 @@ def load_notebook_evidence(profile: Profile, *, repo_root: Path | None = None) -
         if not path.is_file() or file_sha256(path) != evidence.sha256:
             raise ValueError(f"Missing or changed recorded notebook evidence: {path}. Rebuild with: {command}")
         resolved[key] = path
-    bundle = load_config_bundle(
-        resolved["config:scenario"], repo_root=root,
-        paths_path=resolved["config:paths"], sources_path=resolved["config:sources"],
-    )
+    try:
+        bundle = load_config_bundle(
+            resolved["config:scenario"], repo_root=root,
+            paths_path=resolved["config:paths"], sources_path=resolved["config:sources"],
+        )
+    except ValueError as exc:
+        # Captured YAML can predate a required backend configuration field even
+        # when every stored hash is intact. Refresh through the native build;
+        # never patch the capture or substitute mutable live configuration.
+        raise ValueError(
+            f"Recorded {profile} notebook build {manifest.build_id} has configuration "
+            f"incompatible with the current backend. Rebuild with: {command}\n"
+            f"Run this command from the repository root: {root}\n{exc}"
+        ) from exc
     parameter_dir = resolved["config:rules"].parent
     if (resolved["config:conversion"].parent != parameter_dir
             or not resolved["config:mapping"].is_relative_to(parameter_dir)):

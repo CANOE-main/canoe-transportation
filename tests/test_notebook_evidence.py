@@ -142,6 +142,44 @@ def test_changed_snapshot_is_rejected(prepared):
         layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
 
 
+@pytest.mark.parametrize("profile", ["vehicle_stock", "efficiency"])
+def test_incompatible_captured_config_explains_rebuild_without_mutating_evidence(prepared, monkeypatch, profile):
+    bundle, report, table = prepared
+    bundle.scenario.notebook_diagnostics = [profile]
+    monkeypatch.setattr("validation.ldv_efficiency_diagnostic.collect_efficiency_inputs", lambda bundle: {"sample": table})
+    bundle.scenario_path.write_text(yaml.safe_dump(bundle.scenario.model_dump(mode="json")), encoding="utf-8")
+    original = bundle.paths_path.read_bytes()
+    older_paths = yaml.safe_load(original)
+    del older_paths["outputs"]["build_log"]
+    # Simulate a valid capture made before build_log became a required field.
+    bundle.paths_path.write_text(yaml.safe_dump(older_paths), encoding="utf-8")
+    try:
+        publication = layer.stage_notebook_evidence(bundle, report)
+    finally:
+        bundle.paths_path.write_bytes(original)
+    layer.publish_notebook_evidence(publication)
+    manifest = publication.index_path.parent / publication.bundles[profile]
+    metadata = json.loads(manifest.read_text(encoding="utf-8"))
+    captured_paths = manifest.parent / metadata["config"]["paths"]["path"]
+    watched = [publication.index_path, manifest, captured_paths, bundle.paths_path, table]
+    hashes = {path: file_sha256(path) for path in watched}
+
+    with pytest.raises(ValueError, match="incompatible with the current backend") as caught:
+        layer.load_notebook_evidence(profile, repo_root=bundle.repo_root)
+
+    message = str(caught.value)
+    assert profile in message
+    assert metadata["build_id"] in message
+    assert "outputs.build_log" in message
+    assert f"Rebuild with: {layer.prepare_command(bundle.repo_root)}" in message
+    assert f"repository root: {bundle.repo_root}" in message
+    assert isinstance(caught.value.__cause__, ValidationError)
+    assert {path: file_sha256(path) for path in watched} == hashes
+    # A current native build still requires the YAML-owned log path.
+    with pytest.raises(ValidationError, match="outputs.build_log"):
+        type(bundle.paths).model_validate(older_paths)
+
+
 def test_missing_inputs_leave_latest_successful_build_unchanged(prepared):
     bundle, report, table = prepared
     publication = layer.stage_notebook_evidence(bundle, report)

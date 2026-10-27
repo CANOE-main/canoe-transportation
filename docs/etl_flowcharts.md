@@ -141,8 +141,7 @@ flowchart LR
   s5 -- statcan_tables.py --> p2
   s6 -- assorted_sources.py --> p2
 
-  p2 -- road_stocks_and_demands.py
-  offroad_stocks_and_demands.py --> o1[/"`**existing_capacity**
+  p2 -- build_existing_capacity.py --> o1[/"`**existing_capacity**
     [k vehicles]
     [bn tonne-km]
     [bn passenger-km]`"/]
@@ -208,8 +207,7 @@ flowchart LR
 
   s0 -- nrcan_ceud.py --> p0 --> p1
   s1 -- cer_enerfuture.py --> p0_2 --> p1
-  p1 -- road_stocks_and_demands.py
-  offroad_stocks_and_demands.py --> o1[/"`**demand**
+  p1 -- build_demand.py --> o1[/"`**demand**
     [bn passenger-km]
     [bn tonne-km]`"/]
 
@@ -262,7 +260,7 @@ flowchart LR
   o1[/"`**limit_annual_capacity_factor**
     *Operator: =*
     *Indexed by vintage*`"/]
-  p2 -- road_stocks_and_demands.py --> o1
+  p2 -- road_utilization.py --> o1
 
   p3["`**Age-based trajectory**
     • Aggregate mileage profiles by vehicle class using mappings<br>
@@ -277,7 +275,7 @@ flowchart LR
     *Operator: =*
     *Indexed by vintage and period*
     #to-do: must be reconciled with canoe-schema`"/]
-  p3 -. "road_stocks_and_demands.py" .-> o2
+  p3 -. "road_utilization.py" .-> o2
 
   %% --- Hyperlinks ---
   click s0 "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm"
@@ -318,7 +316,7 @@ flowchart LR
     s3[("`**EIA NEMS model**
       HD truck scrappage rates (Class 7–8)`")]
     s7[("`**EPA MOVES5 model**
-      HD truck annual survival rates (Table C-1)`")]
+      Cars, light and heavy truck survival rates (Table C-1)`")]
   end
 
   subgraph population["`**Vehicle population evidence**`"]
@@ -333,11 +331,20 @@ flowchart LR
     Reuse aggregation weights for LDV size, MD/HD truck weight, and HD truck haul classes; see *efficiency* diagram"}
 
   %% ############ Processes ###########
+  p4@{shape: hex, label: "**config/scenarios/**
+    *road_lifetime_survival_source:*
+    NHTSA CAFE & EIA NEMS, or EPA MOVES6 rates"}
+  s2 & s3 & s7 -- "assorted_sources.py" --> p4
+
   p0["`**Survival rate estimation**
     • **eq. (i)** Estimate apparent retirement from make-model-vintage cohorts across Report A editions before mapping<br>
     • The MTO make-model mapping separates LDV stock exposure from unmapped and non-LDV; and aggregates evidence accordingly<br>
     • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
     • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only NHTSA CAFE and selected heavy-truck sources are promoted as parameters**`"]
+  p4 -- "road_lifetimes_survival.py" --> p0
+  s0 -. "`vehicle_population.py
+    *\*diagnostic-only*`" .-> p0
+  s6 -- road_aggregation.py --> p0
 
   p0_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
     MTO make-model codes are difficult to map. This notebook visualizes:<br>
@@ -348,16 +355,6 @@ flowchart LR
     • MTO stock vs NRCan CEUD data
     • survival rates from mapped cohorts"}
   p0 -- vehicle_stock_diagnosis.py --> p0_2
-  s2 -- "assorted_sources.py" --> p0
-  p4@{shape: hex, label: "**config/scenarios/**
-    *heavy_truck_survival_source:*
-    EIA NEMS or EPA MOVES5 rates"}
-  s3 -- "assorted_sources.py" --> p4
-  s7 -- "assorted_sources.py" --> p4
-  p4 -- "Selected HD schedule<br>road_lifetimes_survival.py" --> p0
-  s0 -. "`vehicle_population.py
-    *\*diagnostic-only*`" .-> p0
-  s6 -- road_aggregation.py --> p0
 
   p1@{shape: hex, label: "**config/scenarios/**
     *survival_curves:* true or false"}
@@ -369,7 +366,7 @@ flowchart LR
     Lifetime of remaining modes"}
 
   p2@{shape: hex, label: "**config/scenarios/**
-    *survival_curve_max_age:* 25"}
+    *survival_curve_max_age:* 29"}
   p1 -. true .-> p2
 
   p3["`**Fixed lifetimes**
@@ -379,9 +376,9 @@ flowchart LR
   s4 -- statcan_tables.py --> p3
   s5 -- inputs/0_manual_params/ --> p3
 
-  p2 -. "road_lifetimes_survival.py" .-> o1[/"`**lifetime_survival_curve**
+  p2 -. "build_lifetime_parameters.py" .-> o1[/"`**lifetime_survival_curve**
     [-]`"/]
-  p3 -- road_lifetimes_survival.py
+  p3 -- build_lifetime_parameters.py
   offroad_lifetimes.py --> o2[/"`**lifetime_tech**
     [years]`"/]
 
@@ -489,9 +486,6 @@ flowchart LR
       ***Def. scenario:*** mid trajectory`")]
     s2_2[("`**JGCRI GCAM model**
       Motorcycle (>250 cc) efficiencies for Canada`")]
-    s11@{shape: docs, label: "**Annual cohort stock evidence**
-      Raw annual counts by fuel and class, before lifetime filtering or redistribution
-      #to-review"}
   end
   
   subgraph off["`**Off-road efficiencies**`"]
@@ -503,26 +497,37 @@ flowchart LR
   end
   
   s0[("`**NRCan CEUD**
-    Truck fuel use in physical L/100 km; off-road energy per unit of service
-    #to-review`")]
+    Truck fleet avg. fuel consumption in L/100 km; off-road energy intensity in MJ/service unit`")]
   s9[("`**NRCan CEUD**
-    Activity, annual distance and stock used to derive occupancy and payload
-    #to-review`")]
+    Activity, avg. annual distance travelled and stock used to derive occupancy and payload`")]
+  s11@{shape: processes, label: "**Annual cohort aggregation weights**
+      Reuse ***existing_capacity*** cohort counts by fuel and class for period aggregation"}  
 
   %% ############ Processes ###########
   p2_2@{shape: hex, label: "**config/scenarios/**
     *atb_scenario:* mid, conservative, or advanced"}
   p2["`**Road consumption and projection anchors**
-    • *Existing LDVs:* retain each powertrain/range's own aggregated NRCan consumption<br>
+    • *Existing LDVs:* retain each powertrain/range's own aggregated NRCan fuel consumption<br>
     • *Existing MD/HD trucks:* use own CEUD consumption; emerging technologies use diesel × ATB consumption ratios<br>
     • *New LDVs:* project latest cohort anchors with ATB ratios; BEV/PHEV ranges use BEV300/PHEV35 anchors<br>
     • *New MD/HD trucks:* apply aggregated ATB consumption ratios to cohort anchors; gasoline uses diesel's ratio<br>
-    #to-review`"]
+  `"]
   p0 -- road_aggregation.py --> p2
   s1 -- nrcan_ceud.py --> p2
   s2 -- nlr_atb_autonomie.py --> p2_2 --> p2
   s2_2 -- assorted_sources.py --> p2
-  s11 -- build_existing_capacity.py --> p2 & p4
+  s11 -- build_existing_capacity.py --> p4
+
+  p2_3@{shape: notch-rect, label: "**LDV efficiency-trajectory diagnosis**
+      Bridging NRCan Ratings baseline with trajectories of ATB improvement rates. This notebook visualizes:<br>
+      • distribution of NRCan Ratings evidence 
+      • OMEGA-derived PEV range composition
+      • historical NRCan efficiency trajectories
+      • projected NLR ATB efficiency trajectories
+      • overlapping of harmonized trajectories 
+      • indexed production trajectories 
+      "}
+    p2 -- ldv_efficiency_diagnosis.py --> p2_3
   
   s0 -- nrcan_ceud.py --> p3 & p2
 
@@ -532,10 +537,10 @@ flowchart LR
   off -- inputs/0_manual_params/ --> p3
     
   p4["`**Period aggregation & unit conversion**
-    • Weight car/truck consumption and load by raw cohort counts<br>
+    • Weight car/truck consumption and load by vintage-powertrain cohort counts<br>
     • Apply configured stock proxies; report observed coverage<br>
-    • Convert aggregated consumption to service-output efficiency last<br>
-    #to-review`"]
+    • Convert aggregated consumption to reciprocal service-output efficiency<br>
+  `"]
   s9 -- nrcan_ceud.py --> p4
   p2 -- road_efficiencies.py --> p4
   p3 -- offroad_efficiencies.py --> p4
@@ -561,23 +566,21 @@ flowchart LR
 | Map size classes and derive aggregation weights | Cars and light trucks | - Map MTO make-model-vintage keys from normalized NRCan Ratings, FuelEconomy.gov, and NHTSA vPIC API evidence<br>- Derive latest-snapshot fleet composition weights by mapped vehicle class |
 | Map weight classes and derive aggregation weights | MD/HD trucks | Map truck weight-rating counts to classes that align with Autonomie truck projection classes |
 | Derive regional- and long-haul activity weights | Heavy-duty trucks | Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
-| Aggregate efficiency ratings using mappings | Cars and light trucks | Within each exact model-year, size-class, powertrain/range and native-unit cohort, average variants of each Make/Model. Average distinct models (or use the configured median), then apply MTO class weights. MTO supplies class/vintage evidence, not powertrain/range shares. #to-review |
-| Retain each range's observed consumption | Cars and light trucks | Retain each range's exact NRCan history. Form PHEV totals from CD electricity/liquid fuel and CS fuel using the matched ATB bucket's utility factor. Missing years reduce coverage; only wholly empty bins may use a recorded, configured analogue. #to-review |
-| Anchor future LDVs to Canadian cohorts | Cars and light trucks | Weight the latest historical bin's consumption and load by raw cohort counts. Use each non-PEV's own ATB improvement ratio; BEV/PHEV ranges use BEV300/PHEV35 anchors: `C_range(y) = C_anchor × ATB_range(y) / ATB_anchor(reference)`. Under the current temporal setup, 2021–2023 observations anchor 2025; 2030 is the first improvement year. #to-review |
-| Convert incumbent truck fuel volumes | MD/HD trucks | Convert each incumbent's own [CEUD fuel consumption](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/showTable.cfm?juris=on&page=0&rn=37&sector=tran&type=CP&wbdisable=true&year=2023) using its configured fuel HHV: `MJ/vkm = L/100km × MJ/L / 100`. CEUD gasoline/diesel volumes are physical litres, including their stated biofuel components. #to-review |
-| Derive emerging truck history | MD/HD trucks | Multiply annual CEUD diesel consumption by the aggregated ATB target/diesel consumption ratio at the first projection reference year (2025 in the current temporal setup). All truck histories use fleet series as vintage proxies; emerging histories are derived, not observed model-year efficiencies. #to-review |
-| Project from the latest truck cohort | MD/HD trucks | Weight the latest bin's incumbent or derived emerging consumption by its own raw cohort counts. Use an explicit diesel cohort proxy when an emerging powertrain has no positive own counts. Apply each powertrain's ATB future/reference consumption ratio (diesel's for gasoline); hold the load factor averaged with the same cohort weights. #to-review |
-| Special handling of buses | Transit, school, intercity | Use reported Autonomie values for existing and future transit and school bus efficiencies; use EPRI REGEN inputs for intercity buses |
-| Special handling of motorcycles | Motorcycles | Use [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) efficiencies |
-| Prepare period consumptions | All | Through `base_year`, use the [existing-period year bins](#existing-period-handling). Average car/truck consumption per distance and occupancy/payload with raw cohort counts before lifetime filtering/redistribution; renormalize over observed years and report covered stock. Normalize each existing LDV PEV range over its supported years, then apply the complete OMEGA share vector. Weight annual bus, motorcycle and off-road consumption/intensity equally. Future periods use exact interval-end source points; notebook plots show source years separately from model vintages. #to-review |
-| Convert to service-output efficiency units | All | Finally, divide aggregated occupancy/payload by aggregated energy per vehicle-km. For CEUD energy-per-service inputs, invert the aggregated intensity once. Convert fuel economy and relative efficiency factors to consumption before indexing or averaging, using configured HHVs and units. #to-review |
+| Aggregate NRCan ratings using mappings | Cars and light trucks | Within each exact model-year, size-class and powertrain/range cohort, average distinct make-models (or use the configured median), then apply MTO class weights. MTO supplies class/vintage evidence, not powertrain/range shares. |
+| Retain each range's observed consumption | Cars and light trucks | Retain each range's exact NRCan history. Form PHEV totals from CD electricity/liquid fuel and CS fuel using the matched ATB bucket's utility factor. Missing years reduce coverage; only wholly empty bins may use a recorded, configured analogue. |
+| Anchor future LDVs to Canadian cohorts | Cars and light trucks | Weight the latest historical period bin's consumption by `existing_capacity` cohort counts. Use each non-PEV's own ATB improvement ratio; BEV/PHEV ranges use BEV300/PHEV35 anchors: `C_range(y) = C_anchor × ATB_range(y) / ATB_anchor(reference)`. Use observed years in the latest configured historical bin, through `base_year`, to establish the anchor; use the first model-period year as the ATB ratio reference. |
+| Derive emerging truck history | MD/HD trucks | Multiply annual NRCan CEUD diesel consumption by the aggregated ATB target/diesel consumption ratio at the first projection reference year. All truck histories use average fleet consumption as vintage proxies; emerging histories (e.g., battery trucks) are derived, not observed model-year efficiencies. |
+| Project from the latest truck cohort | MD/HD trucks | Weight the latest period bin's incumbent or derived emerging consumption by its own cohort counts. Use an explicit diesel cohort proxy when an emerging powertrain has no positive own counts. Apply each powertrain's ATB future/reference consumption ratio (diesel's for gasoline); hold the load factor averaged with the same cohort weights. |
+| Special handling of buses | Transit, school, intercity | Existing school/transit efficiencies are indexed backwards from ATB using CEUD historical service-intensity ratios. Intercity buses use an ATB transit diesel baseline with REGEN powertrain/diesel consumption ratios; HEVs retain the ATB transit HEV/diesel ratio. |
+| Special handling of motorcycles | Motorcycles | Future efficiencies retain the CEUD baseline and apply [PNNL GCAM](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) consumption ratios from `UCD_trn_data_CORE.csv`; where motorcycle `engine > 250 cc`. |
+| Prepare period consumptions | All | Through `base_year`, use the [existing-period year bins](#existing-period-handling). Average car/truck consumption per distance and occupancy/payload with cohort counts before lifetime filtering/redistribution; renormalize over observed years and report covered stock. Normalize each existing LDV PEV range over its supported years, then apply the complete OMEGA share vector. Weight annual bus, motorcycle and off-road consumption/intensity equally; derive future consumption at interval-end years. |
+| Convert to service-output efficiency units | All | Finally, divide aggregated occupancy/payload by aggregated energy per vehicle-km. For CEUD energy-per-service inputs, invert the aggregated intensity once. Convert fuel economy and relative efficiency factors to consumption before indexing or averaging, using configured HHVs and units. |
 
 #### Notes
 
-- Cars and trucks retain Canadian consumption before cohort aggregation. With five-year periods starting in 2025 and observations through 2023, the latest historical bin (2021–2023) anchors projections at the 2025 ATB reference. Truck histories proxy vintages, not measured model-year cohorts. #to-review
 - Annual PHEV blend technologies use `limit_tech_input_split_annual` for their utility-weighted annual average fuel/electricity consumption split.
 - The CANOE-transportation legacy backend used to compile Islam et al. 2023 Autonomie results directly, opting for the parallel PHEV powertrain configuration, whereas the v2.0 backend compiles the same Autonomie results via the NLR ATB database, where only the EREV voltec PHEV powertrain configuration is listed. This will result in inconsistent PHEV parameters between both versions.
-- Demand from other off-road modes includes vehicles not registered for on−road travel such as ATVs, snowmobiles, golf carts and some military vehicles, as per NRCan CEUD notes; it is assumed to consume diesel only, passed directly as units of PJ for full secondary-energy accounting.
+- Demand from other off-road modes includes vehicles not registered for on−road travel such as ATVs, snowmobiles, golf carts and some military vehicles, as per NRCan CEUD notes; assumed to consume diesel only, passed directly as units of PJ for complete secondary-energy accounting.
 
 #### Vehicle make-model to vehicle classes mapping
 
@@ -658,8 +661,7 @@ flowchart LR
   p3 -- offroad_capex_opex.py --> p4
   s3 -- cer_enerfuture.py --> p0 --> p4
 
-  p4 -- road_capex_opex.py
-  offroad_capex_opex.py --> o1[/"`***cost_invest***
+  p4 -- build_costs.py --> o1[/"`***cost_invest***
     [$M 2020CAD/k vehicles]
     [$M 2020CAD/bn passenger-km]
     [$M 2020CAD/bn tonne-km]`"/]
@@ -758,8 +760,7 @@ flowchart LR
   s0 -- cer_enerfuture.py --> p0 --> p4
   s9 -- nrcan_ceud.py --> p4
 
-  p4 -- road_capex_opex.py
-  offroad_capex_opex.py --> o1[/"`***cost_variable***
+  p4 -- build_costs.py --> o1[/"`***cost_variable***
     [$M 2020CAD/k vehicles]
     [$M 2020CAD/bn passenger-km]
     [$M 2020CAD/bn tonne-km]`"/]
