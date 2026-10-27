@@ -1,0 +1,7 @@
+# Files pinned by checksum in config/sources.yaml must check out as the exact
+# registered bytes on every platform (#10). Most were registered in CRLF form.
+legacy_backend/charging_profiles[[]deprecated]/ramp_mobility/results/*.csv eol=crlf
+legacy_backend/model_constraints[[]deprecated]/HATCH_dataset/** eol=crlf
+legacy_backend/model_constraints[[]deprecated]/bev_phev_aer_market_shares/LDV_AER_market_shares.ipynb eol=crlf
+legacy_backend/model_constraints[[]deprecated]/bev_phev_aer_market_shares/EPA_OMEGA_v2.5/**/aggregated_vehicles.csv eol=crlf
+inputs/0_external_models/epa_omega_ldv_range_extract/*.csv -text

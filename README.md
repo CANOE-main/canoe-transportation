@@ -348,6 +348,15 @@ missing caches; existing caches are reused. Ontario replay uses the resource ide
 and hashes in `sources.yaml`, independently of generated manifests. Source refresh,
 reviewed mapping changes and external-model generation remain separate operations.
 
+NRCan replaces Fuel Consumption Ratings files in place, so a pinned download can stop
+matching its registered size and MD5. `uv run python -m fetching.nrcan_ratings_refresh`
+reports, without changing anything, which pinned resources the Open Government Portal now
+serves in a newer release. Adding `--apply` (optionally with `--component <key>`) downloads
+each changed resource and verifies it against the portal's own MD5. It also checks the
+registered columns and model years, then writes the new cache file and rewrites that
+component's version, cache path, MD5 and byte count. Review and commit that diff, then
+rebuild.
+
 Derived prerequisites are rebuilt even when files already exist, so changes to source
 content, YAML or implementation cannot leave the database silently reused. This is a
 serial full rebuild, with no incremental job cache. Run one scenario at a time while

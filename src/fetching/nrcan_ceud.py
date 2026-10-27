@@ -393,6 +393,16 @@ def file_md5(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _republished_hint(request: FuelConsumptionRatingRequest) -> str:
+    """Explain a pinned-snapshot mismatch and the two ways forward."""
+    return (
+        "NRCan has likely republished this resource. To rebuild the registered "
+        f"version, place its cached copy at {request.cache_path}. To review and adopt "
+        "the current release, run `uv run python -m fetching.nrcan_ratings_refresh "
+        f"--component {request.component_key}` and add --apply after review."
+    )
+
+
 def fetch_rating_to_cache(
     request: FuelConsumptionRatingRequest,
     *,
@@ -413,13 +423,13 @@ def fetch_rating_to_cache(
         if len(content) != request.expected_bytes:
             raise ValueError(
                 f"{request.component_key} download has {len(content)} bytes; "
-                f"expected {request.expected_bytes}"
+                f"expected {request.expected_bytes}. {_republished_hint(request)}"
             )
         actual_md5 = bytes_md5(content)
         if actual_md5 != request.expected_md5:
             raise ValueError(
                 f"{request.component_key} download MD5 is {actual_md5}; "
-                f"expected {request.expected_md5}"
+                f"expected {request.expected_md5}. {_republished_hint(request)}"
             )
         temporary.write_bytes(content)
         temporary.replace(request.cache_path)
