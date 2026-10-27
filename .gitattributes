@@ -1,3 +1,23 @@
+# Keep source/configuration scripts usable with Unix tools and shebangs even
+# when a contributor has core.autocrlf=true. Binary files retain their bytes.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sqlite binary
+*.sqlite3 binary
+*.db binary
+*.xls binary
+*.xlsx binary
+*.xlsm binary
+*.xla binary
+*.pptx binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.zip binary
+*.gz binary
+
 # Files pinned by checksum in config/sources.yaml must check out as the exact
 # registered bytes on every platform (#10). Most were registered in CRLF form.
 legacy_backend/charging_profiles[[]deprecated]/ramp_mobility/results/*.csv eol=crlf

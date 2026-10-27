@@ -31,7 +31,7 @@ from utils import load_config_bundle
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 def ontario_rules() -> dict[str, object]:

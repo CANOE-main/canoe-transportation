@@ -5,14 +5,14 @@ from __future__ import annotations
 import argparse
 import logging
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 from urllib.parse import urlparse
 
 import numpy as np
 import pandas as pd
 import requests
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator, model_validator
 
 from utils import (
     ConfigBundle,
@@ -29,6 +29,35 @@ SOURCE_ID = "cer_canadas_energy_future"
 
 class CerEnergyFutureError(ValueError):
     """Raised when a configured CER source contract is unavailable or changed."""
+
+
+class CerSnapshot(BaseModel):
+    """An adopted revision within an explicitly selected CER edition."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    url: str
+    cache_path: str = Field(min_length=1)
+    expected_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    expected_bytes: int = Field(gt=0)
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, value: str) -> str:
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError(f"CER snapshot URL is invalid: {value}")
+        return value
+
+    @field_validator("cache_path")
+    @classmethod
+    def validate_relative_path(cls, value: str) -> str:
+        normalized = value.replace("\\", "/")
+        if (PureWindowsPath(value).drive or PureWindowsPath(value).root
+                or PurePosixPath(normalized).is_absolute()
+                or ".." in PurePosixPath(normalized).parts):
+            raise ValueError("CER snapshot paths must be cache-relative without traversal")
+        return normalized
 
 
 class CerTableRequest(BaseModel):
@@ -48,6 +77,8 @@ class CerTableRequest(BaseModel):
     expected_scenarios: tuple[str, ...]
     first_year: int
     last_year: int
+    expected_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    expected_bytes: int | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
     def validate_request(self) -> "CerTableRequest":
@@ -62,6 +93,8 @@ class CerTableRequest(BaseModel):
             raise ValueError("CER component identity and required columns are required")
         if not self.expected_scenarios:
             raise ValueError("CER expected scenarios must be configured")
+        if (self.expected_sha256 is None) != (self.expected_bytes is None):
+            raise ValueError("CER snapshot SHA-256 and bytes must be configured together")
         return self
 
 
@@ -171,6 +204,13 @@ def build_requests(
     url_template = str(access.get("url_template", ""))
     cache_template = str(source.adapter.get("cache_path_template", ""))
     first_year, last_year = (int(value) for value in edition_meta["year_range"])
+    snapshots = TypeAdapter(dict[int, dict[str, CerSnapshot]]).validate_python(
+        source.adapter.get("registered_snapshots", {})
+    )
+    if set(snapshots) - {int(value) for value in editions}:
+        raise CerEnergyFutureError("CER snapshots contain an unregistered edition")
+    if any(set(components) - set(source.components) for components in snapshots.values()):
+        raise CerEnergyFutureError("CER snapshots contain an unregistered component")
     requests_to_make: list[CerTableRequest] = []
     for component_id, component in source.components.items():
         if isinstance(component.label, list):
@@ -179,6 +219,13 @@ def build_requests(
             )
         resource = str(component.adapter.get("resource", ""))
         table_rules = component_rules[component_id]
+        snapshot = snapshots.get(selected_edition, {}).get(component_id)
+        cache_path = resolve_input_path(
+            bundle, "cache", snapshot.cache_path if snapshot else
+            cache_template.format(edition=selected_edition, resource=resource),
+        )
+        if snapshot and not cache_path.resolve().is_relative_to(resolve_input_path(bundle, "cache").resolve()):
+            raise CerEnergyFutureError("CER snapshot resolves outside the configured cache")
         requests_to_make.append(
             CerTableRequest(
                 component_id=component_id,
@@ -188,18 +235,11 @@ def build_requests(
                 open_government_record_id=str(
                     edition_meta["open_government_record_id"]
                 ),
-                url=url_template.format(
+                url=snapshot.url if snapshot else url_template.format(
                     edition=selected_edition,
                     resource=resource,
                 ),
-                cache_path=resolve_input_path(
-                    bundle,
-                    "cache",
-                    cache_template.format(
-                        edition=selected_edition,
-                        resource=resource,
-                    ),
-                ),
+                cache_path=cache_path,
                 output_file=str(table_rules["output_file"]),
                 required_columns=tuple(str(value) for value in table_rules["required_columns"]),
                 expected_scenarios=tuple(
@@ -207,9 +247,22 @@ def build_requests(
                 ),
                 first_year=first_year,
                 last_year=last_year,
+                expected_sha256=snapshot.expected_sha256 if snapshot else None,
+                expected_bytes=snapshot.expected_bytes if snapshot else None,
             )
         )
     return requests_to_make
+
+
+def validate_snapshot_identity(request: CerTableRequest, path: Path | None = None) -> None:
+    """Check an adopted same-edition snapshot before parsing or publication."""
+    if request.expected_sha256 is None:
+        return
+    path = path or request.cache_path
+    if path.stat().st_size != request.expected_bytes:
+        raise CerEnergyFutureError(f"CER snapshot byte count changed: {path}")
+    if file_sha256(path) != request.expected_sha256:
+        raise CerEnergyFutureError(f"CER snapshot SHA-256 changed: {path}")
 
 
 def fetch_to_cache(
@@ -220,6 +273,7 @@ def fetch_to_cache(
 ) -> str:
     """Fetch one official CSV atomically, or reuse its existing cache."""
     if request.cache_path.exists():
+        validate_snapshot_identity(request)
         return "cached"
     request.cache_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = request.cache_path.with_suffix(request.cache_path.suffix + ".part")
@@ -233,6 +287,7 @@ def fetch_to_cache(
                     handle.write(chunk)
         if not temporary.exists() or temporary.stat().st_size == 0:
             raise CerEnergyFutureError(f"CER download was empty: {request.url}")
+        validate_snapshot_identity(request, temporary)
         os.replace(temporary, request.cache_path)
     except Exception:
         temporary.unlink(missing_ok=True)
@@ -248,6 +303,7 @@ def read_and_validate_source(request: CerTableRequest) -> pd.DataFrame:
     """Read a cached CSV and validate its physical and semantic source contract."""
     if not request.cache_path.is_file() or request.cache_path.stat().st_size == 0:
         raise FileNotFoundError(request.cache_path)
+    validate_snapshot_identity(request)
     frame = _drop_unnamed_columns(pd.read_csv(request.cache_path))
     missing = sorted(set(request.required_columns) - set(frame.columns))
     if missing:

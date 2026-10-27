@@ -6,12 +6,13 @@ import importlib
 from pathlib import Path
 import subprocess
 import sys
+from types import ModuleType
 
 from utils import load_config_bundle, resolve_artifact_path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 def _resolve_dotted_object(reference: str):
@@ -36,7 +37,10 @@ def _assert_live_interface(reference: str) -> None:
             check=True, capture_output=True, cwd=REPO_ROOT,
         )
     else:
-        assert callable(_resolve_dotted_object(reference)), reference
+        interface = _resolve_dotted_object(reference)
+        assert callable(interface) or (
+            isinstance(interface, ModuleType) and callable(getattr(interface, "main", None))
+        ), reference
 
 
 def test_impact_routes_have_live_owners_producers_and_validation_surfaces(monkeypatch) -> None:
@@ -83,6 +87,7 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
         "cache",
         "documentation",
         "legacy",
+        "logs",
     }
 
 

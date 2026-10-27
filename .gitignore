@@ -18,6 +18,7 @@ inputs/playground/
 # outputs/
 # Local rebuilds and notebook state; maintain their producers, not build snapshots.
 /outputs/logs/
+/outputs/validation/source_updates/
 /outputs/validation/notebook_evidence/
 /outputs/validation/ldv_efficiency_diagnostic/
 /outputs/validation/notebook_diagnostics_build.json

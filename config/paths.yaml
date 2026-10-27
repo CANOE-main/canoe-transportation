@@ -33,6 +33,20 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  source_update_audits:
+    path: outputs/validation/source_updates
+    layer: output_validation
+    owner: fetching.source_updater
+    producers: [fetching.source_updater.run_update]
+    consumers: [reviewers]
+    validation_surfaces: [fetching.source_updater.run_update]
+  source_update_logs:
+    path: outputs/logs/source_updates
+    layer: logs
+    owner: fetching.source_updater
+    producers: [fetching.source_updater.run_update]
+    consumers: [reviewers]
+    validation_surfaces: [fetching.source_updater.run_update]
   assorted_sources_interim:
     path: inputs/1_interim/fetched_assorted_sources
     layer: interim

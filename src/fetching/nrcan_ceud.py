@@ -398,8 +398,9 @@ def _republished_hint(request: FuelConsumptionRatingRequest) -> str:
     return (
         "NRCan has likely republished this resource. To rebuild the registered "
         f"version, place its cached copy at {request.cache_path}. To review and adopt "
-        "the current release, run `uv run python -m fetching.nrcan_ratings_refresh "
-        f"--component {request.component_key}` and add --apply after review."
+        "the current release, run `uv run python -m fetching.source_updater "
+        "--scenario <scenario.yaml> --source nrcan_fuel_consumption_ratings` "
+        "and add --apply after reviewing its log and registry diff."
     )
 
 

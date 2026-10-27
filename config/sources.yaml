@@ -44,6 +44,11 @@
 
 version: 3
 
+# Explicit maintenance only; normal builds never check for or adopt new snapshots.
+updater:
+  timeout_seconds: 120
+  max_download_bytes: 268435456
+
 defaults:
   required: true
   component_required: true
@@ -301,6 +306,9 @@ sources:
         parameter_modules: [offroad_stocks_and_demands]
 
   ontario_ministry_transport_vehicle_population:
+    update:
+      strategy: ontario_population
+      metadata_url: https://data.ontario.ca/api/3/action/package_show
     source_id: T03
     title: "Ontario Ministry of Transportation vehicle population data"
     status: active
@@ -463,6 +471,7 @@ sources:
         notes: "Production uses Report 5 age distributions for trucks, motorcycles, and buses; LDV age distributions use Report A."
 
   statcan_transport_tables:
+    update: {strategy: statcan_tables}
     source_id: T04
     title: "Statistics Canada transportation tables"
     status: active
@@ -562,6 +571,9 @@ sources:
         adapter: {product_id: 23100142, frequency: annual, archive_status: current}
 
   cer_canadas_energy_future:
+    update:
+      strategy: cer_energy_future
+      metadata_url: https://open.canada.ca/data/api/3/action/package_show
     source_id: T05
     title: "CER Canada's Energy Future"
     status: active
@@ -854,6 +866,10 @@ sources:
         validation_rule: "The rules.yaml extraction mapping must yield non-empty numeric long-form coefficients with source labels and cell coordinates."
 
   nrcan_fuel_consumption_ratings:
+    update:
+      strategy: nrcan_ratings
+      metadata_url: https://open.canada.ca/data/api/3/action/resource_show
+      download_hosts: [opencanada.blob.core.windows.net]
     source_id: T08
     title: "NRCan Fuel Consumption Ratings"
     status: active
@@ -1708,6 +1724,7 @@ sources:
           expected_rows: 1
 
   fueleconomy_gov_vehicle_data:
+    update: {strategy: fueleconomy}
     source_id: T21
     title: "FuelEconomy.gov Find a Car vehicle data"
     status: active
@@ -1857,6 +1874,8 @@ sources:
           expected_rows: 35
 
   transport_canada_ev_dashboard:
+    # No API: permit HTML republishing only when every parsed observation is unchanged.
+    update: {strategy: tc_dashboard_same_values}
     source_id: T25
     title: "Transport Canada electric vehicle dashboard"
     status: active

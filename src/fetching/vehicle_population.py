@@ -8,14 +8,14 @@ import re
 import tempfile
 from collections.abc import Iterable
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Literal
 from urllib.parse import urlparse
 from zipfile import BadZipFile, ZipFile
 
 import pandas as pd
 import requests
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator, model_validator
 
 from utils import (
     ConfigBundle,
@@ -81,6 +81,19 @@ class RegisteredOntarioResource(DiscoveredOntarioResource):
     """Reviewed cache identity retained independently of generated interim files."""
 
     cache_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    cache_path: str | None = Field(default=None, min_length=1)
+
+    @field_validator("cache_path")
+    @classmethod
+    def validate_relative_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.replace("\\", "/")
+        if (PureWindowsPath(value).drive or PureWindowsPath(value).root
+                or PurePosixPath(normalized).is_absolute()
+                or ".." in PurePosixPath(normalized).parts):
+            raise ValueError("Ontario snapshot paths must be cache-relative without traversal")
+        return normalized
 
 
 class OntarioVehiclePopulationRequest(BaseModel):
@@ -471,6 +484,7 @@ def fetch_to_cache(
 ) -> str:
     """Download one annual ZIP atomically, or validate and reuse its cache."""
     if request.cache_path.exists():
+        validate_registered_identity(request)
         validate_zip_integrity(request.cache_path)
         return "cached"
     request.cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -481,6 +495,7 @@ def fetch_to_cache(
         response = requests.get(request.url, timeout=timeout)
         response.raise_for_status()
         temporary.write_bytes(response.content)
+        validate_registered_identity(request, temporary)
         validate_zip_integrity(temporary)
         os.replace(temporary, request.cache_path)
     finally:
@@ -600,19 +615,24 @@ def read_vehicle_population_txt(path: Path) -> pd.DataFrame:
     )
 
 
+def validate_registered_identity(request: OntarioVehiclePopulationRequest, path: Path | None = None) -> None:
+    """Reject bytes outside the registered snapshot before use or publication."""
+    if request.expected_sha256 is not None:
+        actual = file_sha256(path or request.cache_path)
+        if actual != request.expected_sha256:
+            raise ValueError(
+                f"Cached Ontario archive SHA-256 changed for {request.year}: "
+                f"{actual} != {request.expected_sha256}"
+            )
+
+
 def validate_source(
     request: OntarioVehiclePopulationRequest,
     *,
     require_auxiliary: bool = True,
 ) -> dict[str, ArchiveMember]:
     """Validate one cached ZIP and resolve its required report members."""
-    if request.expected_sha256 is not None:
-        actual = file_sha256(request.cache_path)
-        if actual != request.expected_sha256:
-            raise ValueError(
-                f"Cached Ontario archive SHA-256 changed for {request.year}: "
-                f"{actual} != {request.expected_sha256}"
-            )
+    validate_registered_identity(request)
     validate_zip_integrity(request.cache_path)
     resolved = {
         "A": resolve_archive_member(
@@ -1430,8 +1450,15 @@ def registered_requests(
         if year is not None and report_year != year:
             continue
         request = request_from_resource(bundle, resource)
+        cache_path = (
+            resolve_input_path(bundle, "cache", resource.cache_path)
+            if resource.cache_path is not None else request.cache_path
+        )
+        if not cache_path.resolve().is_relative_to(resolve_input_path(bundle, "cache").resolve()):
+            raise ValueError("Ontario snapshot resolves outside the configured cache")
         requests.append(OntarioVehiclePopulationRequest.model_validate({
             **request.model_dump(), "expected_sha256": resource.cache_sha256,
+            "cache_path": cache_path,
         }))
     if not requests:
         raise ValueError(
