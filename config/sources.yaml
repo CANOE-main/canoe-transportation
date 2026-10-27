@@ -881,9 +881,9 @@ sources:
         language: en
     components:
       battery_electric_2012_2026:
-        label: "Battery-electric vehicles 2012-2026 (2026-07-17)"
+        label: "Battery-electric vehicles 2012-2026 (2026-09-29)"
         short_name: nrcan_battery_electric_vehicle_ratings
-        version: "2026-07-17"
+        version: "2026-09-29"
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, combined_electricity_consumption, motor_power, all_electric_range]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing, all_electric_range]
@@ -892,17 +892,17 @@ sources:
         adapter:
           resource_id: "026e45b4-eb63-451f-b34f-d9308ea3a3d9"
           url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/026e45b4-eb63-451f-b34f-d9308ea3a3d9/download/my2012-2026-battery-electric-vehicles.csv"
-          cache_path: "nrcan_fuel_consumption_ratings/2026-07-17_battery_electric_2012_2026.csv"
-          expected_md5: "8be467910e21cd7d9e0a386c69644ae3"
-          expected_bytes: 134425
+          cache_path: "nrcan_fuel_consumption_ratings/2026-09-29_battery_electric_2012_2026.csv"
+          expected_md5: "aed9e4b209985d925d5c35c729ddd632"
+          expected_bytes: 138739
           expected_model_years: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
           required_columns: ["Model year", "Make", "Model", "Vehicle class", "Motor (kW)", "Transmission", "Fuel type", "City (kWh/100 km)", "Highway (kWh/100 km)", "Combined (kWh/100 km)", "City (Le/100 km)", "Highway (Le/100 km)", "Combined (Le/100 km)", "Range (km)", "CO2 emissions (g/km)", "CO2 rating", "Smog rating", "Recharge time (h)"]
           required_non_null_columns: ["Model year", "Make", "Model", "Vehicle class", "Combined (kWh/100 km)"]
       plug_in_hybrid_2012_2026:
         database_note: "Canadian PHEV ratings with charge-sustaining fuel consumption, electric range and charge-depleting rating fields; their distinct energy and operating-mode meanings are retained."
-        label: "Plug-in hybrid electric vehicles 2012-2026 (2026-04-07)"
+        label: "Plug-in hybrid electric vehicles 2012-2026 (2026-09-29)"
         short_name: nrcan_plug_in_hybrid_vehicle_ratings
-        version: "2026-04-07"
+        version: "2026-09-29"
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, combined_charge_depleting_energy_consumption, combined_charge_sustaining_fuel_consumption, motor_power, engine_size, all_electric_range]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing, all_electric_range]
@@ -911,9 +911,9 @@ sources:
         adapter:
           resource_id: "8812228b-a6aa-4303-b3d0-66489225120d"
           url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/8812228b-a6aa-4303-b3d0-66489225120d/download/my2012-2026-plug-in-hybrid-electric-vehicles.csv"
-          cache_path: "nrcan_fuel_consumption_ratings/2026-04-07_plug_in_hybrid_2012_2026.csv"
-          expected_md5: "e12bf4e03ef27743dd912c7b394d12db"
-          expected_bytes: 52330
+          cache_path: "nrcan_fuel_consumption_ratings/2026-09-29_plug_in_hybrid_2012_2026.csv"
+          expected_md5: "13e96c9373ec42288fa16a160b3762e5"
+          expected_bytes: 53663
           expected_model_years: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
           required_columns: ["Model year", "Make", "Model", "Vehicle class", "Motor (kW)", "Engine size (L)", "Cylinders", "Transmission", "Fuel type 1", "Combined Le/100 km", "Range 1 (km)", "Recharge time (h)", "Fuel type 2", "City (L/100 km)", "Highway (L/100 km)", "Combined (L/100 km)", "Range 2 (km)", "CO2 emissions (g/km)", "CO2 rating", "Smog rating"]
           required_non_null_columns: ["Model year", "Make", "Model", "Vehicle class", "Combined Le/100 km", "Combined (L/100 km)"]
@@ -936,9 +936,9 @@ sources:
           required_columns: &fuel_consumption_rating_columns ["Model year", "Make", "Model", "Vehicle class", "Engine size (L)", "Cylinders", "Transmission", "Fuel type", "City (L/100 km)", "Highway (L/100 km)", "Combined (L/100 km)", "Combined (mpg)", "CO2 emissions (g/km)", "CO2 rating", "Smog rating"]
           required_non_null_columns: &fuel_consumption_rating_non_null ["Model year", "Make", "Model", "Vehicle class", "Combined (L/100 km)"]
       fuel_consumption_2015_2024:
-        label: "2015-2024 Fuel Consumption Ratings (2026-03-23)"
+        label: "2015-2024 Fuel Consumption Ratings (2026-09-23)"
         short_name: nrcan_combustion_hybrid_vehicle_ratings_2015_2024
-        version: "2026-03-23"
+        version: "2026-09-23"
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing]
@@ -947,16 +947,16 @@ sources:
         adapter:
           resource_id: "c98b9dc8-b23f-4cd8-8b19-e892da1e4688"
           url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/c98b9dc8-b23f-4cd8-8b19-e892da1e4688/download/my2015-2024-fuel-consumption-ratings.csv"
-          cache_path: "nrcan_fuel_consumption_ratings/2026-03-23_fuel_consumption_2015_2024.csv"
-          expected_md5: "b21e8cfe10a50a31c2b354681e5ffaa8"
-          expected_bytes: 812234
+          cache_path: "nrcan_fuel_consumption_ratings/2026-09-23_fuel_consumption_2015_2024.csv"
+          expected_md5: "dfa99fce2a857e2de17df70d40bcf210"
+          expected_bytes: 827253
           expected_model_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
           required_columns: *fuel_consumption_rating_columns
           required_non_null_columns: *fuel_consumption_rating_non_null
       fuel_consumption_2025:
-        label: "2025 Fuel Consumption Ratings (2026-06-02)"
+        label: "2025 Fuel Consumption Ratings (2026-10-16)"
         short_name: nrcan_combustion_hybrid_vehicle_ratings_2025
-        version: "2026-06-02"
+        version: "2026-10-16"
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing]
@@ -965,16 +965,16 @@ sources:
         adapter:
           resource_id: "d589f2bc-9a85-4f65-be2f-20f17debfcb1"
           url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/d589f2bc-9a85-4f65-be2f-20f17debfcb1/download/my2025-fuel-consumption-ratings.csv"
-          cache_path: "nrcan_fuel_consumption_ratings/2026-06-02_fuel_consumption_2025.csv"
-          expected_md5: "cc26c0d73db3be90a5e85943d6b4fd73"
-          expected_bytes: 59855
+          cache_path: "nrcan_fuel_consumption_ratings/2026-10-16_fuel_consumption_2025.csv"
+          expected_md5: "cd8f4c0010ce151d1352b26f2a92bf8d"
+          expected_bytes: 60700
           expected_model_years: [2025]
           required_columns: *fuel_consumption_rating_columns
           required_non_null_columns: *fuel_consumption_rating_non_null
       fuel_consumption_2026:
-        label: "2026 Fuel Consumption Ratings (2026-07-17)"
+        label: "2026 Fuel Consumption Ratings (2026-10-16)"
         short_name: nrcan_combustion_hybrid_vehicle_ratings_2026
-        version: "2026-07-17"
+        version: "2026-10-16"
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
         produces: [vehicle_efficiency_existing]
@@ -983,9 +983,9 @@ sources:
         adapter:
           resource_id: "9df1b18d-d036-4783-a61c-99f1f75b3ac5"
           url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/9df1b18d-d036-4783-a61c-99f1f75b3ac5/download/my2026-fuel-consumption-ratings.csv"
-          cache_path: "nrcan_fuel_consumption_ratings/2026-07-17_fuel_consumption_2026.csv"
-          expected_md5: "7f4ffa434f9bd4281022b722f9ed3223"
-          expected_bytes: 52482
+          cache_path: "nrcan_fuel_consumption_ratings/2026-10-16_fuel_consumption_2026.csv"
+          expected_md5: "e8f8b26255d9534b7989b00f8a0f8650"
+          expected_bytes: 53702
           expected_model_years: [2026]
           required_columns: *fuel_consumption_rating_columns
           required_non_null_columns: *fuel_consumption_rating_non_null
@@ -1713,7 +1713,7 @@ sources:
     status: active
     source_type: upstream_download
     file_type: zip
-    version: "2026-06-16 vehicle snapshot"
+    version: "2026-09-29 vehicle snapshot"
     units: "Source vehicle classification records by model year, make, and model."
     citation: "U.S. Department of Energy and U.S. Environmental Protection Agency. FuelEconomy.gov Find a Car vehicle data. https://www.fueleconomy.gov/feg/ws/index.shtml"
     database_note: "U.S. model-year make/model and vehicle-class records used to corroborate Canadian vehicle classification; model names and classes require harmonization."
@@ -1729,7 +1729,7 @@ sources:
       or widen classification implicitly.
     components:
       vehicles:
-        label: "FuelEconomy.gov vehicles.csv (2026-06-16)"
+        label: "FuelEconomy.gov vehicles.csv (2026-09-29)"
         short_name: fueleconomy_vehicle_class_evidence
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
@@ -1739,10 +1739,10 @@ sources:
         validation_rule: "Select only year, make, model, and VClass and retain unresolved class normalizations explicitly."
         adapter:
           url: "https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip"
-          cache_path: "fueleconomy_vehicles/2026-06-16_vehicles.csv.zip"
+          cache_path: "fueleconomy_vehicles/2026-09-29_vehicles.csv.zip"
           archive_member: vehicles.csv
-          expected_sha256: "83ee4bf48e65e8e962e55952e0bfbdc6ab94d4bf63f42e2d38aa39143d6f1ecc"
-          expected_bytes: 2185627
+          expected_sha256: "33d32caa0343cdb11c47be631e8a80b7ed7c351ee8503646a4e96485bd67b22f"
+          expected_bytes: 2212193
           expected_model_year_from: 1984
           expected_model_year_to: 2027
           required_columns: [year, make, model, VClass]
@@ -1751,7 +1751,7 @@ sources:
       range_evidence:
         database_note: "U.S. MY2024 BEV range and PHEV charge-depleting range keyed by model type; the range records carry no production weights."
         data_quality: {dq_time: 2}
-        label: "FuelEconomy.gov MY2024 BEV/PHEV range and EPA model-type keys (2026-06-16)"
+        label: "FuelEconomy.gov MY2024 BEV/PHEV range and EPA model-type keys (2026-09-29)"
         short_name: fueleconomy_cd_range_evidence
         inputs: [vehicle_id, model_year, manufacturer_code, model_type_index, powertrain, range, secondary_fuel_range]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
@@ -1876,8 +1876,8 @@ sources:
         method: https
         url: "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
       cache_path: assorted_sources/transport_canada_ev_dashboard_2026_q1.html
-      expected_sha256: 4ffdbdda087b6a361decfb21b49557d058ef571ced34a4f45d731546a3544091
-      expected_bytes: 91590
+      expected_sha256: 83aae9ce04228090d46d697bc9c6c851dbf11e2a776dcd0d4aa1930575f104b0
+      expected_bytes: 92141
     components:
       medium_heavy_ev_market_share:
         database_note: "Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet."
