@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 from urllib.parse import urlparse
 from zipfile import BadZipFile, ZipFile
@@ -15,10 +16,11 @@ from zipfile import BadZipFile, ZipFile
 import numpy as np
 import pandas as pd
 import requests
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from utils import (
     ConfigBundle,
+    file_sha256,
     load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
@@ -33,6 +35,28 @@ SOURCE_ID = "statcan_transport_tables"
 
 class StatCanSourceError(ValueError):
     """Raised when a configured StatCan source contract is unavailable or changed."""
+
+
+class StatCanSnapshot(BaseModel):
+    """Explicitly adopted, immutable WDS archive and metadata pair."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    archive_cache_path: str = Field(min_length=1)
+    metadata_cache_path: str = Field(min_length=1)
+    archive_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    metadata_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    release_time: str = Field(min_length=1)
+
+    @field_validator("archive_cache_path", "metadata_cache_path")
+    @classmethod
+    def validate_relative_path(cls, value: str) -> str:
+        normalized = value.replace("\\", "/")
+        if (PureWindowsPath(value).drive or PureWindowsPath(value).root
+                or PurePosixPath(normalized).is_absolute()
+                or ".." in PurePosixPath(normalized).parts):
+            raise ValueError("StatCan snapshot paths must be cache-relative without traversal")
+        return normalized
 
 
 class StatCanTableRequest(BaseModel):
@@ -50,6 +74,7 @@ class StatCanTableRequest(BaseModel):
     output_file: str
     normalizer: str
     table_rules: dict[str, Any]
+    snapshot: StatCanSnapshot | None = None
 
     @model_validator(mode="after")
     def validate_request(self) -> "StatCanTableRequest":
@@ -126,6 +151,23 @@ def build_requests(bundle: ConfigBundle) -> list[StatCanTableRequest]:
         table_rules = rule_tables[table_id]
         if isinstance(table_meta.label, list):
             raise StatCanSourceError(f"StatCan table {table_id} label must be one title")
+        snapshot = (
+            StatCanSnapshot.model_validate(table_meta.adapter["snapshot"])
+            if "snapshot" in table_meta.adapter else None
+        )
+        archive_path = resolve_input_path(
+            bundle, "cache", snapshot.archive_cache_path if snapshot else
+            str(source.adapter["cache_path_template"]).format(product_id=product_id),
+        )
+        metadata_path = resolve_input_path(
+            bundle, "cache", snapshot.metadata_cache_path if snapshot else
+            str(source.adapter["metadata_cache_path_template"]).format(product_id=product_id),
+        )
+        if snapshot and any(
+            not path.resolve().is_relative_to(resolve_input_path(bundle, "cache").resolve())
+            for path in (archive_path, metadata_path)
+        ):
+            raise StatCanSourceError("StatCan snapshot resolves outside the configured cache")
         requests_to_make.append(
             StatCanTableRequest(
                 table_id=table_id,
@@ -136,26 +178,27 @@ def build_requests(bundle: ConfigBundle) -> list[StatCanTableRequest]:
                     product_id=product_id,
                     language=language,
                 ),
-                archive_cache_path=resolve_input_path(
-                    bundle,
-                    "cache",
-                    str(source.adapter["cache_path_template"]).format(
-                        product_id=product_id
-                    ),
-                ),
-                metadata_cache_path=resolve_input_path(
-                    bundle,
-                    "cache",
-                    str(source.adapter["metadata_cache_path_template"]).format(
-                        product_id=product_id
-                    ),
-                ),
+                archive_cache_path=archive_path,
+                metadata_cache_path=metadata_path,
                 output_file=str(table_rules["output_file"]),
                 normalizer=str(table_rules["normalizer"]),
                 table_rules=table_rules,
+                snapshot=snapshot,
             )
         )
     return requests_to_make
+
+
+def validate_snapshot_identity(request: StatCanTableRequest, *, metadata: bool = True, archive: bool = True) -> None:
+    """Reject changed bytes before an adopted WDS snapshot can be reused."""
+    if request.snapshot is None:
+        return
+    for selected, path, expected in (
+        (metadata, request.metadata_cache_path, request.snapshot.metadata_sha256),
+        (archive, request.archive_cache_path, request.snapshot.archive_sha256),
+    ):
+        if selected and file_sha256(path) != expected:
+            raise StatCanSourceError(f"StatCan snapshot SHA-256 changed: {path}")
 
 
 def resolve_download_url(
@@ -184,6 +227,7 @@ def fetch_metadata_to_cache(
 ) -> str:
     """Cache the authoritative cube metadata response if it is not already present."""
     if request.metadata_cache_path.exists():
+        validate_snapshot_identity(request, archive=False)
         return "cached"
     client = session or requests.Session()
     response = client.post(
@@ -194,9 +238,14 @@ def fetch_metadata_to_cache(
     response.raise_for_status()
     payload = response.json()
     metadata_object(payload, request)
+    text = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    if (request.snapshot is not None
+            and hashlib.sha256(text.encode("utf-8")).hexdigest() != request.snapshot.metadata_sha256):
+        raise StatCanSourceError(f"StatCan downloaded metadata SHA-256 changed for {request.table_id}")
     write_text_atomic(
-        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        text,
         request.metadata_cache_path,
+        newline="\n" if request.snapshot is not None else None,
     )
     return "downloaded"
 
@@ -209,6 +258,7 @@ def fetch_archive_to_cache(
 ) -> tuple[str, str]:
     """Cache the resolved authoritative full-table ZIP if absent."""
     if request.archive_cache_path.exists():
+        validate_snapshot_identity(request, metadata=False)
         return "cached", ""
     client = session or requests.Session()
     download_url = resolve_download_url(request, session=client, timeout=timeout)
@@ -226,6 +276,9 @@ def fetch_archive_to_cache(
         with ZipFile(temporary) as archive:
             if not archive.namelist():
                 raise StatCanSourceError(f"Downloaded ZIP is empty: {download_url}")
+        if (request.snapshot is not None
+                and file_sha256(temporary) != request.snapshot.archive_sha256):
+            raise StatCanSourceError(f"StatCan downloaded archive SHA-256 changed for {request.table_id}")
         os.replace(temporary, request.archive_cache_path)
     except Exception:
         temporary.unlink(missing_ok=True)
@@ -250,9 +303,11 @@ def ensure_cached_artifacts(
             raise FileNotFoundError(
                 f"Offline StatCan cache is incomplete for {request.table_id}: {missing}"
             )
+        validate_snapshot_identity(request)
         return "cached", "cached", ""
     metadata_status = fetch_metadata_to_cache(request, session=session)
     archive_status, download_url = fetch_archive_to_cache(request, session=session)
+    validate_snapshot_identity(request)
     return metadata_status, archive_status, download_url
 
 
@@ -278,6 +333,7 @@ def metadata_object(payload: Any, request: StatCanTableRequest) -> dict[str, Any
 
 def read_cached_metadata(request: StatCanTableRequest) -> dict[str, Any]:
     """Read a cached WDS metadata artifact."""
+    validate_snapshot_identity(request, archive=False)
     try:
         payload = json.loads(request.metadata_cache_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -329,6 +385,7 @@ def validate_metadata_contract(
 
 def main_csv_member(request: StatCanTableRequest) -> str:
     """Find the PID data CSV inside a full-table archive."""
+    validate_snapshot_identity(request, metadata=False)
     expected = f"{request.product_id}.csv".casefold()
     try:
         with ZipFile(request.archive_cache_path) as archive:

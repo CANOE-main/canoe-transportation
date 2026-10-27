@@ -499,6 +499,30 @@ class SourceComponent(MappingModel):
     adapter: dict[str, Any] = Field(default_factory=dict)
 
 
+class SourceUpdatePolicy(MappingModel):
+    """Explicit eligibility for the user-invoked source updater, never a build hook."""
+
+    strategy: Literal[
+        "nrcan_ratings", "ontario_population", "statcan_tables",
+        "cer_energy_future", "fueleconomy", "tc_dashboard_same_values",
+    ]
+    metadata_url: str | None = Field(default=None, pattern=r"^https://[^\s]+$")
+    download_hosts: list[Annotated[str, StringConstraints(pattern=r"^[a-z0-9.-]+$")]] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_catalogue_endpoint(self) -> Self:
+        if self.strategy in {"nrcan_ratings", "ontario_population", "cer_energy_future"} and not self.metadata_url:
+            raise ValueError("Catalogue update strategies require an explicit metadata_url")
+        return self
+
+
+class SourceUpdaterSettings(MappingModel):
+    """Bounded network limits for explicit updates; locations belong to paths.yaml."""
+
+    timeout_seconds: int = Field(gt=0)
+    max_download_bytes: int = Field(gt=0)
+
+
 class SourceSpec(MappingModel):
     """Small shared source contract plus an adapter-owned extension mapping."""
 
@@ -518,6 +542,7 @@ class SourceSpec(MappingModel):
     data_quality: DataQuality
     components: dict[str | int, SourceComponent] = Field(default_factory=dict)
     adapter: dict[str, Any] = Field(default_factory=dict)
+    update: SourceUpdatePolicy | None = None
 
     def component(self, key: str | int) -> SourceComponent:
         for candidate in (key, str(key)):
@@ -554,6 +579,7 @@ class SourcesConfig(MappingModel):
     version: Literal[3]
     defaults: SourceDefaults
     sources: dict[str, SourceSpec]
+    updater: SourceUpdaterSettings | None = None
 
     def resolved_data_quality(
         self, source_key: str, component_key: str | int,

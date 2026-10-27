@@ -88,11 +88,32 @@ def test_tc_public_charger_parser_reconciles_pinned_html_and_rejects_drift(bundl
         normalize_tc_public_chargers(html.replace("Total public chargers: 13,392", "Total public chargers: 13,393"), **options)
 
 
-def test_tc_dashboard_offline_replay_publishes_both_registered_components() -> None:
+def test_tc_dashboard_offline_replay_publishes_both_registered_components(tmp_path, monkeypatch, bundle) -> None:
     class NoNetwork:
         def get(self, *_args, **_kwargs):
             raise AssertionError("Pinned dashboard replay attempted network access")
 
+    # Isolate publication and freeze the fixture's bytes independently of rolling pins.
+    source_key = "transport_canada_ev_dashboard"
+    source = bundle.sources.sources[source_key]
+    content = resolve_input_path(bundle, "cache", source.adapter["cache_path"]).read_bytes()
+    fixture = tmp_path / "cache" / source.adapter["cache_path"]
+    fixture.parent.mkdir(parents=True)
+    fixture.write_bytes(content)
+    fixture_source = source.model_copy(update={"adapter": {
+        **source.adapter, "expected_sha256": sha256(content).hexdigest(), "expected_bytes": len(content),
+    }})
+    fixture_sources = bundle.sources.model_copy(update={"sources": {**bundle.sources.sources, source_key: fixture_source}})
+    routes = dict(bundle.paths.artifacts)
+    routes["tc_ev_dashboard_interim"] = routes["tc_ev_dashboard_interim"].model_copy(
+        update={"path": str(tmp_path / "interim")}
+    )
+    paths = bundle.paths.model_copy(update={
+        "inputs": bundle.paths.inputs.model_copy(update={"cache": str(tmp_path / "cache")}),
+        "artifacts": routes,
+    })
+    fixture_bundle = replace(bundle, paths=paths, sources=fixture_sources)
+    monkeypatch.setattr(adapter, "load_config_bundle", lambda _: fixture_bundle)
     output_dir = adapter.fetch_and_normalize_tc_dashboard(
         SCENARIO, download=False, session=NoNetwork()
     )
