@@ -41,7 +41,7 @@ def _(alt, diagnostic, pd):
                          scale=alt.Scale(domain=domain, range=[range_colors[value] for value in domain]),
                          legend=alt.Legend(orient="right", labelLimit=250))
 
-    def trajectory_chart(frame, title, *, native=False, facet="units", width=820, y_domain=None):
+    def trajectory_chart(frame, title, *, native=False, facet="units", width=850, y_domain=None):
         plot = frame.reset_index(drop=True).copy()
         plot["range_label"] = plot.powertrain.map(range_label)
         plot["style_category"] = plot.range_label if native else plot.series
@@ -85,7 +85,7 @@ def _(alt, diagnostic, pd):
             if selected.empty:
                 continue
             span = max(float(panel.value.max() - panel.value.min()), abs(float(panel.value.mean())) * .25, .01)
-            gap = span * 18 / 265
+            gap = span * 18 / 290
             positions = []
             for value in selected.value:
                 positions.append(max(float(value), positions[-1] + gap) if positions else float(value))
@@ -170,7 +170,7 @@ def _(alt, diagnostic, pd):
         )
         chart = alt.layer(lines, points, boundary, leaders, halo, text).resolve_legend(
             strokeDash="independent", shape="independent", color="shared",
-        ).properties(width=width, height=265)
+        ).properties(width=width, height=290)
         if faceted:
             return chart.facet(row=alt.Row(facet + ":N", title=None,
                 header=alt.Header(labelAngle=270, labelOrient="left", labelLimit=250, labelPadding=10))).resolve_scale(y="independent").properties(title=title)
@@ -359,7 +359,7 @@ def _(alt, chart_ui, diagnostic, distribution_group, mo, pd, range_color, range_
             if outside_count:
                 title += f" · {outside_count} model values beyond axis limits (triangles)"
         return alt.layer(*layers).properties(
-            width=140, height=max(100, 22 * len(cohorts)),
+            width=190, height=max(100, 22 * len(cohorts)),
         ).facet(column=alt.Column("period:N", title="Selected NRCan model year" if show_year_title else None, sort=list(year_labels.values()),
                                   header=alt.Header(labelLimit=180, labelFontSize=11)), spacing=5).properties(title=title)
 
