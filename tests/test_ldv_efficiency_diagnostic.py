@@ -83,6 +83,39 @@ def test_phev_distribution_keeps_native_cd_separate_from_total_energy(bundle):
     assert summary.native_unit.iloc[0] == "Le/100 km (CD)"
 
 
+def test_notebook_classification_audit_retains_uncertainty_without_provisional_gasoline_labels():
+    notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
+    app = runpy.run_path(str(notebook))["app"]
+    cell = next(data.cell for data in app._cell_manager.cell_data() if "gasoline_hev_classification_view" in data.cell.defs)
+    _, definitions = cell.run()
+    source = pd.DataFrame([
+        {"year": 2023, "Make": "Maker", "Model": model, "rating_class": size, "Fuel type": fuel,
+         "native_unit": unit, "powertrain": powertrain, "propulsion_resolved": resolved,
+         "classification_method": method, "included": included, "Engine size (L)": 2., "Cylinders": 4,
+         "Transmission": None, "component": None, "source_row": index}
+        for index, (model, size, fuel, unit, powertrain, resolved, method, included) in enumerate([
+            ("Gas", "Compact", "X", "L/100 km", "gasoline", True, "exact_epa_conventional", True),
+            ("Hybrid", "Compact", "Z", "L/100 km", "hev", True, "configuration_epa_hybrid", True),
+            ("Unknown", "Compact", "X", "L/100 km", "gasoline", False, "unverified_source_fuel", False),
+            ("Unknown", "Compact", "X", "L/100 km", "gasoline", False, "unverified_source_fuel", False),
+            ("Truck", "Sport utility vehicle: Small", "X", "L/100 km", "gasoline", True, "exact_epa_conventional", True),
+            ("Diesel", "Compact", "D", "L/100 km", "diesel", True, "source_fuel", True),
+            ("Electric", "Compact", "X", "kWh/100 km", "bev_300_miles", True, "omega_range_bucket", True),
+        ], 2)
+    ])
+    original = source.copy(deep=True)
+    actual = definitions["gasoline_hev_classification_view"](source, ["Compact"])
+    assert len(actual) == 4
+    assert actual.loc[actual.Model.eq("Unknown"), "Propulsion"].tolist() == ["Unresolved gasoline/HEV"] * 2
+    assert not actual.loc[actual.Model.eq("Unknown"), "Eligible?"].any()
+    assert actual.loc[actual.Model.eq("Hybrid"), "Propulsion"].item() == "HEV"
+    assert actual.loc[actual.Model.eq("Gas"), "Classification evidence"].item() == "Same-year named EPA gasoline configuration"
+    assert actual.loc[actual.Model.eq("Unknown"), "Classification evidence"].eq("No supported EPA configuration correspondence").all()
+    assert {"Transmission", "Source component"}.isdisjoint(actual.columns)
+    assert set(actual["Source row"]) == {2, 3, 4, 5}
+    pd.testing.assert_frame_equal(source, original)
+
+
 def phev_ratings_and_weights(bundle):
     rows, weights = [], []
     conversions = load_conversion_factors(bundle)
@@ -512,8 +545,8 @@ def test_loader_uses_recorded_snapshot_and_never_accepts_reader_scenario(bundle,
         diagnostic.load_diagnostic("config/scenarios/default.yaml")
 
 
-@pytest.mark.parametrize("allocation,statistic", [("equal_distinct_variants", "median"), ("family_median", "mean")])
-def test_loader_rejects_old_trim_mean_capture_with_explicit_rebuild_instruction(bundle, monkeypatch, allocation, statistic):
+@pytest.mark.parametrize("allocation,statistic", [("equal_distinct_variants", "median"), ("family_median", "mean"), ("family_median", "median")])
+def test_loader_rejects_prior_matching_capture_with_explicit_rebuild_instruction(bundle, monkeypatch, allocation, statistic):
     from validation import notebook_evidence
 
     recorded = SimpleNamespace(bundle=bundle, paths={}, metadata={})
@@ -823,16 +856,72 @@ def test_review_retains_ambiguous_families_and_clear_multitrim_assumptions_witho
     ])
     original = rows.copy(deep=True)
     review = diagnostic.composition_review_cases(SimpleNamespace(frames={"composition_observations": rows})).set_index("empirical_observation_id")
-    assert set(review.index) == {"ambiguous", "median", "policy"}
-    assert review.source_count.sum() == 121
+    assert set(review.index) == {"ambiguous", "median", "policy", "administrative"}
+    assert review.source_count.sum() == 171
     assert review.loc["ambiguous", "candidate_families"] == "Family A | Family B"
     assert review.loc["median", "recommended_handling"].startswith("Leave as is")
     assert "no empirical weight" in review.loc["policy", "recommended_handling"]
-    assert review.loc["ambiguous", "review_kind"] == "Unresolved identity / configuration"
+    assert review.loc["ambiguous", "review_kind"] == "Actionable matching issue"
+    assert review.loc["administrative", "review_kind"] == "Expected exclusion"
+    assert "More than one" in review.loc["ambiguous", "review_reason"]
     pd.testing.assert_frame_equal(rows, original)
 
 
-def test_review_includes_positive_known_ldv_year_gaps_from_captured_mapping_only(bundle, tmp_path):
+def test_review_explains_expected_exclusions_catalogue_gaps_and_proxy_limitations():
+    observations = pd.DataFrame([
+        {"empirical_observation_id": identity, "source_kind": source, "year": year, "source_count": 10,
+         "match_status": status, "composition_basis": basis, "matched_variant_count": 0, "match_reason": reason}
+        for identity, source, year, status, basis, reason in [
+            ("tesla_gasoline", "mto", 2023, "ineligible_observed_propulsion", "observed_model_year_stock", "Tesla Model 3 is a BEV; MTO estimator uses conventional gasoline only."),
+            ("tesla_proxy", "izev", 2012, "target_year_rating_unavailable", "historical_pooled_model_year_window", "No captured MY2012 Model 3 rating."),
+            ("nissan_gap", "izev", 2023, "target_year_rating_unavailable", "observed_model_year", "No BEV Nissan rating is present in the captured MY2023 edition."),
+            ("old_mto", "mto", 1990, "unmatched_ratings", "observed_model_year_stock", ""),
+            ("heterogeneous", "mto", 2023, "family_consumption_heterogeneity", "observed_model_year_stock", "Central eligible configuration dispersion exceeds the configured limit."),
+            ("propulsion_unknown", "mto", 2023, "unresolved_propulsion_evidence", "observed_model_year_stock", "X/Z fuel codes alone do not establish conventional gasoline."),
+        ]
+    ])
+    item = SimpleNamespace(frames={"composition_observations": observations}, inputs={"ratings": pd.DataFrame({"year": [1995, 2024]})})
+    actual = diagnostic.composition_review_cases(item).set_index("empirical_observation_id")
+    assert actual.loc["tesla_gasoline", "review_kind"] == "Expected exclusion"
+    assert actual.loc["tesla_proxy", "review_kind"] == "Historical proxy limitation"
+    assert "does not diagnose" in actual.loc["tesla_proxy", "recommended_handling"]
+    assert actual.loc["nissan_gap", "review_kind"] == "Actionable matching issue"
+    assert actual.loc["nissan_gap", "review_reason"] == "No BEV Nissan rating is present in the captured MY2023 edition."
+    assert actual.loc["old_mto", "review_kind"] == "Historical catalogue limitation"
+    assert "first MY 1995" in actual.loc["old_mto", "review_reason"]
+    assert "narrower configuration" in actual.loc["heterogeneous", "recommended_handling"]
+    assert actual.loc["propulsion_unknown", "review_kind"] == "Actionable matching issue"
+    assert "X/Z fuel codes alone" in actual.loc["propulsion_unknown", "recommended_handling"]
+
+
+def test_review_exposure_counts_source_observations_once_and_keeps_proxy_pool_separate():
+    # The 5-count native group includes repeated legitimate transaction rows.
+    # Its grouped count is authoritative; neither recipient nor target reuse adds mass.
+    rows = pd.DataFrame([
+        {"empirical_observation_id": identity, "source_kind": "izev", "province": "ON", "raw_make": "Maker",
+         "raw_model": "Family", "observed_powertrain": "bev", "source_count": count,
+         "year": year, "composition_basis": basis, "source_model_years": years,
+         "review_kind": kind, "review_reason": "Captured rating gap.", "recommended_handling": "Retain fallback."}
+        for identity, count, year, basis, years, kind in [
+            ("native_2023", 5, 2023, "observed_model_year", "2023", "Actionable matching issue"),
+            ("native_2023", 5, 2023, "observed_model_year", "2023", "Actionable matching issue"),
+            ("native_2024", 7, 2024, "observed_model_year", "2024", "Actionable matching issue"),
+            ("proxy_2014", 12, 2014, "historical_pooled_model_year_window", "2023 | 2024", "Historical proxy limitation"),
+            ("proxy_2015", 12, 2015, "historical_pooled_model_year_window", "2023 | 2024", "Historical proxy limitation"),
+            ("proxy_2015", 12, 2015, "historical_pooled_model_year_window", "2023 | 2024", "Historical proxy limitation"),
+        ]
+    ])
+    original = rows.copy(deep=True)
+    actual = diagnostic.composition_review_summary(rows).set_index("review_kind")
+    assert actual.loc["Actionable matching issue", "source_count_exposure"] == 12
+    assert actual.loc["Historical proxy limitation", "source_count_exposure"] == 12
+    assert actual.loc["Actionable matching issue", "target_applications"] == 2
+    assert actual.loc["Historical proxy limitation", "target_applications"] == 2
+    assert "separate from own-year" in actual.loc["Historical proxy limitation", "exposure_basis"]
+    pd.testing.assert_frame_equal(rows, original)
+
+
+def test_review_preserves_all_positive_unmapped_keys_and_separates_known_scope_exclusions(bundle, tmp_path):
     import yaml
 
     directory = tmp_path / "captured_parameters"
@@ -849,8 +938,15 @@ def test_review_includes_positive_known_ldv_year_gaps_from_captured_mapping_only
             ("HOND", "CRV", 1997, 2023, "ldv"), ("HOND", "CRV", 2025, 2025, "ldv"),
             ("HEAV", "TRK", 1997, 2023, "mhdv"),
             ("MIXD", "KEY", 1997, 2023, "ldv"), ("MIXD", "KEY", 2025, 2025, "mhdv"),
+            ("MAZD", "3GT", 2020, 2025, "ldv_class_unresolved"),
+            ("FORD", "FSE", 1948, 2025, "scope_unresolved"),
         ]
     ])
+    mapping["review_notes"] = ""
+    mapping.loc[mapping.mto_make_code.eq("MAZD"), ["canonical_make", "canonical_model", "review_notes"]] = [
+        "Mazda", "Mazda3", "Sedan versus hatchback body is not observed."]
+    mapping.loc[mapping.mto_make_code.eq("FORD"), ["canonical_make", "canonical_model", "review_notes"]] = [
+        "Ford", "F-Series", "The key does not distinguish F-150 from heavier numbered families."]
     mapping.to_csv(directory / rules["vehicle_size_class_map_file"], index=False)
     captured = replace(bundle, paths=bundle.paths.model_copy(update={
         "config": bundle.paths.config.model_copy(update={"parameters": str(directory)})}))
@@ -863,15 +959,19 @@ def test_review_includes_positive_known_ldv_year_gaps_from_captured_mapping_only
             ("HOND", "CRV", 2026, 0, "unmapped"),
             ("HOND", "CRV", 1990, 10, "out_of_scope"),
             ("HEAV", "TRK", 2024, 40, "unmapped"),
+            ("HEAV", "TRK", 2023, 9, "mapped_non_ldv"),
             ("MIXD", "KEY", 2024, 50, "unmapped"),
             ("RAWW", "UNK", 2024, 60, "unmapped"),
+            ("MAZD", "3GT", 2023, 71, "unmapped"),
+            ("FORD", "FSE", 2023, 79, "unmapped"),
         ]
     ])
     item = diagnostic.LDVEfficiencyDiagnostic(captured, {"composition_observations": pd.DataFrame()}, {},
         {"benchmark_mto_mapped": mapped})
     review = diagnostic.composition_review_cases(item)
-    assert len(review) == 1
-    row = review.iloc[0]
+    assert len(review) == 9
+    assert review.source_count.sum() == 346
+    row = review.loc[review.raw_make.eq("HOND") & review.year.eq(2024)].iloc[0]
     assert row.source_count == 12 and row.year == 2024
     assert row.raw_make == "HOND" and row.raw_model == "CRV"
     assert row.reviewed_mapping_year_intervals == "1997–2023 | 2025–2025"
@@ -881,6 +981,33 @@ def test_review_includes_positive_known_ldv_year_gaps_from_captured_mapping_only
     assert row.family_make == row.family_model == row.rating_class == row.resolved_powertrain == ""
     assert "no reviewed interval" in row.identity_exclusion_reason
     assert "do not extend" in row.recommended_handling
+    unknown = review.loc[review.raw_make.eq("RAWW")].iloc[0]
+    assert unknown.match_status == "missing_reviewed_mapping_identity"
+    assert unknown.review_kind == "Actionable matching issue"
+    assert unknown.candidate_families == unknown.rating_class == ""
+    mixed = review.loc[review.raw_make.eq("MIXD")].iloc[0]
+    assert mixed.match_status == "missing_applicable_reviewed_mapping_year"
+    assert mixed.reviewed_mapping_scopes == "ldv | mhdv"
+    assert mixed.rating_class == ""
+    scope = review.loc[review.raw_make.eq("HEAV") & review.year.eq(2023)].iloc[0]
+    assert scope.review_kind == "Expected exclusion" and scope.match_status == "mapped_non_ldv"
+    old = review.loc[review.raw_make.eq("HOND") & review.year.eq(1990)].iloc[0]
+    assert old.review_kind == "Expected exclusion" and old.match_status == "outside_mapping_scope"
+    contradictory = review.loc[review.raw_make.eq("HOND") & review.year.eq(2023)].iloc[0]
+    assert contradictory.match_status == "unresolved_mapping_identity"
+    assert "reconcile" in contradictory.review_reason
+    body = review.loc[review.raw_make.eq("MAZD")].iloc[0]
+    assert body.match_status == "unresolved_reviewed_size_class" and body.review_kind == "Actionable matching issue"
+    assert body.reviewed_identity == "Mazda / Mazda3"
+    assert body.family_make == "Mazda" and body.family_model == "Mazda3"
+    assert body.rating_class == body.resolved_powertrain == ""
+    assert "Sedan versus hatchback" in body.review_reason
+    truck = review.loc[review.raw_make.eq("FORD")].iloc[0]
+    assert truck.match_status == "unresolved_reviewed_vehicle_scope" and truck.review_kind == "Actionable matching issue"
+    assert truck.reviewed_identity == "Ford / F-Series"
+    assert truck.rating_class == truck.resolved_powertrain == ""
+    assert "F-150 from heavier" in truck.review_reason
+    assert "similar consumption cannot establish" in truck.recommended_handling
 
 
 def test_detail_filters_retain_ambiguous_candidates_and_separate_unknown_context(bundle):

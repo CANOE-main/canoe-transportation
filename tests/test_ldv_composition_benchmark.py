@@ -67,7 +67,7 @@ def setup(monkeypatch):
         observations.append({"source_kind": "mto", "year": 2023, "family_make": "Fixture", "family_model": str(index),
                              "observed_powertrain": "", "rating_class": rating_class, "candidate_rating_classes": rating_class,
                              "candidate_powertrains": powertrain, "resolved_powertrain": powertrain, "empirical_observation_id": f"m{index}",
-                             "match_status": "resolved" if powertrain == "gasoline" else "catalogue_median_powertrain", "source_count": count, "region": "ON"})
+                             "match_status": "resolved", "source_count": count, "region": "ON"})
     # Repeated Ontario evidence in another requested-region audit is not another fleet.
     observations.append({**observations[-2], "region": "MB"})
     cohort_columns = ["population_group", "report_year", "model_year", "cohort_class", "stock_status", "cohort_count"]
@@ -352,3 +352,56 @@ def test_collector_only_returns_prepared_configured_paths(setup, monkeypatch, tm
     collected["benchmark_statcan_stock"].unlink()
     with pytest.raises(FileNotFoundError, match="Prepare the diagnostic benchmark inputs"):
         benchmark.collect_composition_benchmark_inputs(bundle)
+
+
+@pytest.mark.parametrize('status,classes,expected_count',[
+    ('resolved','Sport utility vehicle: Small | Sport utility vehicle: Standard',100),
+    ('ambiguous_rating_class','Sport utility vehicle: Small | Sport utility vehicle: Standard',0),
+    ('family_consumption_heterogeneity','Sport utility vehicle: Small | Sport utility vehicle: Standard',0),
+    ('conflicting_reviewed_rating_class','Sport utility vehicle: Small | Sport utility vehicle: Standard',0),
+    ('resolved','Compact | Sport utility vehicle: Small',0),
+    ('resolved','Unknown class | Sport utility vehicle: Small',0),
+])
+def test_mto_catalogue_subset_respects_supported_predominant_class_and_final_disposition(setup,status,classes,expected_count):
+    bundle,inputs,_=setup
+    rows=inputs['composition_observations']
+    selected=rows.source_kind.eq('mto') & rows.rating_class.eq('Sport utility vehicle: Small')
+    rows.loc[selected,'candidate_rating_classes']=classes
+    rows.loc[selected,'class_resolution_status']='predominant_distinct_target_year_configurations'
+    rows.loc[selected,'match_status']=status
+    result=benchmark.build_composition_benchmark(bundle,inputs)
+    subset=result.comparison.loc[result.comparison.source.eq('mto_catalogue_subset')
+        & result.comparison.vehicle_group.eq('Light trucks')]
+    assert subset['count'].sum()==expected_count
+    # Catalogue candidates remain intact; a resolved assignment never erases
+    # the native class disagreement or creates another Ontario source count.
+    assert rows.loc[selected,'candidate_rating_classes'].item()==classes
+    cars=result.comparison.loc[result.comparison.source.eq('mto_catalogue_subset')
+        & result.comparison.vehicle_group.eq('Cars')]
+    assert cars['count'].sum()==50
+
+
+def test_benchmark_uses_reported_powertrain_observation_aliases_without_mixing_same_visible_model(setup):
+    bundle,_,spec=setup
+    policy=benchmark.load_harmonization_rules(bundle,'efficiencies')['ratings']['composition']
+    policy['izev_observation_aliases_by_powertrain']={'bev':[
+        {'make':'MINI','canonical_model':'Cooper SE 3 Door','models':['Cooper SE'],'exact_only':True},
+        {'make':'Dodge','canonical_model':'Charger Daytona','models':['Charger'],'exact_only':True}]}
+    raw=pd.DataFrame([{'province':'ON','request_year':2024,'model_year':2024,'Purchase or Lease':'Purchase',
+        'make':make,'model':model,'powertrain':powertrain,'count':count}
+        for make,model,powertrain,count in [('MINI','Cooper SE','bev',68),('MINI','Cooper SE','phev',55),('Dodge','Charger','bev',1)]])
+    matched=pd.DataFrame([{'source_kind':'izev','year':2024,'family_make':make,'family_model':model,
+        'observed_powertrain':powertrain,'candidate_rating_classes':rating_class}
+        for make,model,powertrain,rating_class in [('MINI','Cooper SE 3 Door','bev','Subcompact'),
+            ('MINI','Cooper SE','phev',''),('Dodge','Charger Daytona','bev','Full-size')]])
+    _,coverage,_,observations=benchmark._izev(bundle,raw,matched,spec,{'Subcompact':'Cars','Full-size':'Cars'},['ON'])
+    counts=coverage.set_index('powertrain')
+    assert counts.loc['bev','total_count']==69
+    assert counts.loc['bev','mapped_count']==69
+    assert counts.loc['phev','total_count']==55
+    assert counts.loc['phev','mapped_count']==0
+    assert observations['count'].sum()==124
+    mini=observations.loc[observations.source_make.eq('MINI')].set_index('powertrain')
+    assert mini.loc['bev','vehicle_group']=='Cars'
+    assert mini.loc['phev','vehicle_group']==''
+    assert mini.source_model.eq('Cooper SE').all()

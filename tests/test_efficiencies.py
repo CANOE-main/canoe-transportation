@@ -259,7 +259,7 @@ def test_load_factor_is_activity_over_vehicle_distance(rules, bundle):
         )
 
 
-def test_hybrid_evidence_requires_unambiguous_exact_key(rules, bundle):
+def test_hybrid_evidence_accepts_exact_or_name_and_reports_ambiguity(rules, bundle):
     source = pd.DataFrame(
         [
             {
@@ -302,13 +302,149 @@ def test_production_classification_keeps_catalogue_extremes_for_empirical_select
          "Fuel type": "X", "Combined (L/100 km)": value}
         for index, value in enumerate([5, 5.5, 6, 6.5, 7, 30])
     ])
+    epa = source.rename(columns={"Model year": "year", "Make": "make", "Model": "model"})[
+        ["year", "make", "model"]
+    ].assign(atvType="")
     result = classify_ratings(
-        [source], pd.DataFrame(columns=rules["ratings"]["evidence_columns"]), rules=rules,
+        [source], epa, rules=rules,
         conversions=load_conversion_factors(bundle), range_rules=range_module_rules(bundle),
     )
     assert result.included.all()
     assert result.set_index("Model").loc["M5", "native_consumption"] == 30
     assert not {"outlier_excluded", "included_before_filter", "filter_reason"} & set(result)
+
+
+def test_hybrid_evidence_resolves_configurations_without_family_contamination(rules, bundle):
+    source = pd.DataFrame([
+        {"source_row": index + 2, "component": "conventional", "Model year": 2023,
+         "Make": "Example", "Model": model, "Vehicle class": "Compact",
+         "Fuel type": fuel, "Combined (L/100 km)": 6,
+         "Engine size (L)": engine, "Cylinders": cylinders}
+        for index, (model, engine, cylinders, fuel) in enumerate([
+            ("Mixed AWD", 2., 4, "X"), ("Mixed AWD", 3., 6, "Z"),
+            ("Unknown", 2., 4, "X"), ("Named eTorque", 3., 6, "X"),
+            ("FFV", 3., 6, "X"), ("FFV", 3., 6, "E"),
+        ])
+    ])
+    epa = pd.DataFrame([
+        {"year": 2023, "make": "Example", "model": model, "atvType": label,
+         "displ": engine, "cylinders": cylinders, "drive": "All-Wheel Drive",
+         "fuelType1": "Regular Gasoline"}
+        for model, engine, cylinders, label in [
+            ("Mixed AWD", 2., 4, "Hybrid"), ("Mixed AWD", 3., 6, ""),
+            ("FFV", 3., 6, "FFV"),
+        ]
+    ])
+    result = classify_ratings(
+        [source], epa, rules=rules, conversions=load_conversion_factors(bundle),
+        range_rules=range_module_rules(bundle),
+    ).reset_index(drop=True)
+    assert result.powertrain.tolist() == ["hev", "gasoline", "gasoline", "hev", "gasoline", "ethanol"]
+    assert result.included.tolist() == [True, True, False, True, True, False]
+    assert result.loc[2, "classification_method"] == "unverified_source_fuel"
+    assert result.loc[3, "classification_method"] == "hybrid_name"
+
+
+def test_hybrid_family_evidence_requires_compatible_engine_and_driven_wheels(rules, bundle):
+    source = pd.DataFrame([
+        {"source_row": index + 2, "component": "conventional", "Model year": 2023,
+         "Make": "Example", "Model": model, "Vehicle class": "Compact", "Fuel type": "X",
+         "Combined (L/100 km)": 6, "Engine size (L)": 2., "Cylinders": 4}
+        for index, model in enumerate(["Hidden Touring AWD", "Hidden Touring FWD"])
+    ])
+    epa = pd.DataFrame([
+        {"year": 2023, "make": "Example", "model": "Hidden AWD", "atvType": "Hybrid",
+         "displ": 2., "cylinders": 4, "drive": "All-Wheel Drive", "fuelType1": "Regular Gasoline"},
+        {"year": 2023, "make": "Example", "model": "Hidden FWD", "atvType": "",
+         "displ": 2., "cylinders": 4, "drive": "Front-Wheel Drive", "fuelType1": "Regular Gasoline"},
+    ])
+    result = classify_ratings(
+        [source], epa, rules=rules, conversions=load_conversion_factors(bundle),
+        range_rules=range_module_rules(bundle),
+    )
+    assert result.powertrain.tolist() == ["hev", "gasoline"]
+    assert result.classification_method.tolist() == ["configuration_epa_hybrid", "configuration_epa_conventional"]
+
+
+@pytest.mark.parametrize("model,drive", [("Hidden AWD", "Part-time 4-Wheel Drive"),
+                                          ("Hidden 2WD", "Front-Wheel Drive")])
+def test_hybrid_evidence_reconciles_source_driven_wheel_labels(rules, bundle, model, drive):
+    source = pd.DataFrame([{
+        "source_row": 2, "component": "conventional", "Model year": 2023,
+        "Make": "Example", "Model": model, "Vehicle class": "Compact", "Fuel type": "X",
+        "Combined (L/100 km)": 6, "Engine size (L)": 2., "Cylinders": 4,
+    }])
+    epa = pd.DataFrame([{
+        "year": 2023, "make": "Example", "model": model, "atvType": "Hybrid",
+        "displ": 2., "cylinders": 4, "drive": drive, "fuelType1": "Regular Gasoline",
+    }])
+    result = classify_ratings([source], epa, rules=rules, conversions=load_conversion_factors(bundle),
+                              range_rules=range_module_rules(bundle))
+    assert result.powertrain.tolist() == ["hev"]
+    assert result.included.all()
+
+
+def test_hybrid_evidence_accepts_epa_signal_without_matching_name_wording(rules, bundle):
+    source = pd.DataFrame([{
+        "source_row": 2, "component": "conventional", "Model year": 2020,
+        "Make": "Acura", "Model": "NSX", "Vehicle class": "Two-seater", "Fuel type": "Z",
+        "Combined (L/100 km)": 11., "Engine size (L)": 3.5, "Cylinders": 6,
+    }])
+    epa = pd.DataFrame([{
+        "year": 2020, "make": "Acura", "model": "NSX Hybrid", "atvType": "Hybrid",
+        "displ": 3.5, "cylinders": 6, "drive": "All-Wheel Drive", "fuelType1": "Premium Gasoline",
+    }])
+    result = classify_ratings([source], epa, rules=rules, conversions=load_conversion_factors(bundle),
+                              range_rules=range_module_rules(bundle))
+    assert result.powertrain.tolist() == ["hev"]
+    assert result.included.all()
+
+
+def test_hybrid_evidence_uses_transmission_and_excludes_separate_pev_scope(rules, bundle):
+    source = pd.DataFrame([
+        {"source_row": index + 2, "component": "conventional", "Model year": 2020,
+         "Make": "Example", "Model": "Mixed AWD", "Vehicle class": "Compact", "Fuel type": "X",
+         "Combined (L/100 km)": 6, "Engine size (L)": 2., "Cylinders": 4, "Transmission": code}
+        for index, code in enumerate(["AS7", "AV"])
+    ])
+    epa = pd.DataFrame([
+        {"year": 2020, "make": "Example", "model": "Mixed AWD", "atvType": technology,
+         "displ": 2., "cylinders": 4, "drive": "All-Wheel Drive", "fuelType1": "Regular Gasoline", "trany": transmission}
+        for technology, transmission in [("", "Automatic (S7)"), ("Hybrid", "Automatic (variable gear ratios)"),
+                                         ("Plug-in Hybrid", "Automatic (S8)")]
+    ])
+    result = classify_ratings([source], epa, rules=rules, conversions=load_conversion_factors(bundle),
+                              range_rules=range_module_rules(bundle))
+    assert result.powertrain.tolist() == ["gasoline", "hev"]
+    assert result.included.all()
+
+
+@pytest.mark.parametrize("make,model,epa_model,year,engine,cylinders,code", [
+    ("Mitsubishi", "RVR 4WD", "Outlander Sport 4WD", 2023, 2., 4, "AV"),
+    ("Chrysler", "Grand Caravan", "Voyager", 2021, 3.6, 6, "AS9"),
+    ("Nissan", "Qashqai AWD", "Rogue Sport AWD", 2020, 2., 4, "AV"),
+    ("MINI", "Cooper S 3 Door", "Cooper S Hardtop 2 door", 2020, 2., 4, "AS9"),
+])
+def test_regional_propulsion_alias_requires_applicable_year_and_configuration(
+    rules, bundle, make, model, epa_model, year, engine, cylinders, code,
+):
+    def classify(target_year, displacement):
+        source = pd.DataFrame([{
+            "source_row": 2, "component": "conventional", "Model year": target_year,
+            "Make": make, "Model": model, "Vehicle class": "Compact", "Fuel type": "X",
+            "Combined (L/100 km)": 8, "Engine size (L)": displacement,
+            "Cylinders": cylinders, "Transmission": code,
+        }])
+        epa = pd.DataFrame([{
+            "year": target_year, "make": make, "model": epa_model, "atvType": "",
+            "displ": engine, "cylinders": cylinders, "drive": "4-Wheel Drive",
+            "fuelType1": "Regular Gasoline", "trany": "Automatic (S9)" if code == "AS9" else "Automatic (variable gear ratios)",
+        }])
+        return classify_ratings([source], epa, rules=rules, conversions=load_conversion_factors(bundle),
+                                range_rules=range_module_rules(bundle))
+    assert classify(year, engine).included.all()
+    assert not classify(year, engine + 1).included.any()
+    assert not classify(2000, engine).included.any()
 
 
 def test_phev_rating_keeps_components_and_combines_cd_cs_with_explicit_uf(rules, bundle):

@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from parameterization.rating_composition import canonical_family
+from parameterization.rating_composition import canonical_izev_observation
 from parameterization.road_aggregation import (
     ceud_class_for_nlr,
     normalize_vehicle_text,
@@ -144,7 +144,6 @@ def _izev(bundle: ConfigBundle, frame: pd.DataFrame, matched: pd.DataFrame, spec
           groups: dict[str, str], regions: list[str]) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     _require(frame, {"model_year", "request_year", "province", "make", "model", "powertrain", "count", "Purchase or Lease"}, "iZEV benchmark")
     policy = load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"]
-    aliases = {**policy, "aliases": [*policy.get("aliases", []), *policy.get("izev_aliases", [])]}
     lookup = _class_lookup(matched, groups)
     accepted = frame["Purchase or Lease"].isin(spec["incentive_transaction_types"])
     raw = frame.loc[accepted & frame.powertrain.isin(["bev", "phev"])].copy()
@@ -154,9 +153,9 @@ def _izev(bundle: ConfigBundle, frame: pd.DataFrame, matched: pd.DataFrame, spec
     if raw[["year", "model_year"]].isna().any().any() or raw[["year", "model_year"]].mod(1).ne(0).any().any():
         raise ValueError("iZEV benchmark needs distinct integer request and model years")
     # Resolve hundreds of source labels once, rather than per transaction.
-    labels = {(make, model): canonical_family(make, model, aliases)
-              for make, model in raw[["make", "model"]].drop_duplicates().itertuples(index=False, name=None)}
-    keys = [(int(year), *map(normalize_vehicle_text, labels[make, model]), powertrain)
+    labels = {(make, model, powertrain): canonical_izev_observation(make, model, powertrain, policy)
+              for make, model, powertrain in raw[["make", "model", "powertrain"]].drop_duplicates().itertuples(index=False, name=None)}
+    keys = [(int(year), *map(normalize_vehicle_text, labels[make, model, powertrain]), powertrain)
             for year, make, model, powertrain in raw[["model_year", "make", "model", "powertrain"]].itertuples(index=False, name=None)]
     resolved_classes = [lookup.get(key, ("", None)) for key in keys]
     raw["rating_class"] = [classes for classes, _ in resolved_classes]
@@ -254,8 +253,19 @@ def _mto_subset(mapped: pd.DataFrame, observations: pd.DataFrame, groups: dict[s
     # One family may occur in several requested regions; count its Ontario evidence once.
     source = source.drop_duplicates("empirical_observation_id")
     single = source.candidate_rating_classes.fillna("").ne("") & ~source.candidate_rating_classes.fillna("").str.contains("|", regex=False)
+    # A production-resolved predominant class deliberately retains minority
+    # catalogue classes as audit evidence. They do not undo its supported one-
+    # class allocation; unresolved/heterogeneous families still cannot enter.
+    predominant = source.get("class_resolution_status", pd.Series("", index=source.index)).eq(
+        "predominant_distinct_target_year_configurations")
+    predominant &= source.apply(lambda row: (
+        str(row.rating_class) in [value.strip() for value in str(row.candidate_rating_classes).split("|")]
+        and groups.get(row.rating_class) is not None
+        and all(groups.get(value.strip()) == groups.get(row.rating_class)
+                for value in str(row.candidate_rating_classes).split("|"))), axis=1)
+    single |= predominant
     single &= source.candidate_powertrains.fillna("").ne("") & ~source.candidate_powertrains.fillna("").str.contains("|", regex=False)
-    single &= source.resolved_powertrain.fillna("").ne("") & ~source.match_status.isin(["unresolved_mapping_identity", "ambiguous_powertrain_evidence"])
+    single &= source.resolved_powertrain.fillna("").ne("") & source.match_status.eq("resolved")
     source = source.loc[single]
     source["vehicle_group"] = source.rating_class.map(groups)
     source["powertrain"] = source.resolved_powertrain.str.split("_").str[0]

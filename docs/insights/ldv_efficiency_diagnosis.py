@@ -12,12 +12,14 @@ def _():
     import marimo as mo
     import pandas as pd
 
-    from validation.ldv_efficiency_diagnostic import COHORT, VIEW_MODES, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_view_settings, distribution_metric_rows, load_diagnostic, nrcan_anchor_endpoints, practical_axis, supported_display_years
+    from validation.ldv_efficiency_diagnostic import COHORT, VIEW_MODES, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, load_diagnostic, nrcan_anchor_endpoints, practical_axis, supported_display_years
 
     def chart_ui(chart):
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
 
     def table_ui(frame, label):
+        if not frame.empty:
+            frame = frame.dropna(axis=1, how="all")
         formats = {
             column: "{:,.1f}" if "(%)" in column else "{:,.0f}" if pd.api.types.is_integer_dtype(frame[column].dtype)
                 or any(word in column.lower() for word in ("count", "rows", "models", "families", "variants", "year"))
@@ -28,7 +30,33 @@ def _():
                            format_mapping=formats, show_data_types=False, show_column_summaries=False,
                            freeze_columns_left=["Target model year"] if "Target model year" in frame else [], max_columns=None)
 
-    return COHORT, VIEW_MODES, alt, chart_ui, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_view_settings, distribution_metric_rows, load_diagnostic, mo, nrcan_anchor_endpoints, pd, practical_axis, supported_display_years, table_ui
+    def gasoline_hev_classification_view(ratings, classes):
+        rows = ratings.loc[ratings.rating_class.isin(classes) & ratings.native_unit.eq("L/100 km")
+                           & ratings["Fuel type"].isin(["X", "Z"])].copy()
+        rows["propulsion_label"] = rows.powertrain.map({"gasoline": "Gasoline", "hev": "HEV"}).fillna("Unresolved gasoline/HEV")
+        unresolved = rows.get("propulsion_resolved", pd.Series(False, index=rows.index)).ne(True)
+        rows.loc[unresolved, "propulsion_label"] = "Unresolved gasoline/HEV"
+        methods = {
+            "hybrid_name": "NRCan hybrid wording",
+            "exact_epa_hybrid": "Same-year named EPA hybrid configuration",
+            "exact_epa_conventional": "Same-year named EPA gasoline configuration",
+            "configuration_epa_hybrid": "Compatible EPA hybrid configuration",
+            "configuration_epa_conventional": "Compatible EPA gasoline configuration",
+            "exact_epa_unresolved": "EPA configuration evidence unavailable or conflicting",
+            "configuration_epa_unresolved": "EPA configuration evidence unavailable or conflicting",
+            "unverified_source_fuel": "No supported EPA configuration correspondence",
+            "source_fuel": "NRCan fuel field",
+        }
+        rows["evidence_label"] = rows.classification_method.map(methods).fillna("Classification evidence unavailable")
+        columns = {"year": "Model year", "Make": "Make", "Model": "Model", "rating_class": "Size class",
+            "Engine size (L)": "Engine (L)", "Cylinders": "Cylinders", "Transmission": "Transmission",
+            "Fuel type": "Fuel code", "propulsion_label": "Propulsion", "evidence_label": "Classification evidence",
+            "included": "Eligible?", "component": "Source component", "source_row": "Source row"}
+        fields = [field for field in columns if field in rows and (rows.empty or rows[field].notna().any())]
+        return rows[fields].sort_values([field for field in ("year", "Make", "Model", "source_row") if field in fields],
+                                        kind="stable").rename(columns=columns)
+
+    return COHORT, VIEW_MODES, alt, chart_ui, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, gasoline_hev_classification_view, load_diagnostic, mo, nrcan_anchor_endpoints, pd, practical_axis, supported_display_years, table_ui
 
 
 @app.cell
@@ -300,7 +328,7 @@ def _(mo):
 
 
 @app.cell
-def distribution_plot(alt, chart_ui, composition_class_columns, composition_view, diagnostic, distribution_group, distribution_metric, distribution_metric_rows, mo, pd, practical_axis, range_color, range_label, supported_display_years, table_ui):
+def distribution_plot(alt, chart_ui, composition_class_columns, composition_view, diagnostic, distribution_group, distribution_metric, distribution_metric_rows, gasoline_hev_classification_view, mo, pd, practical_axis, range_color, range_label, supported_display_years, table_ui):
     distribution = diagnostic.frames["rating_distribution"]
     distribution = distribution.loc[distribution.vehicle_group.eq(distribution_group.value)].copy()
     distribution, missing_measurements = distribution_metric_rows(distribution, distribution_metric.value)
@@ -404,8 +432,9 @@ def distribution_plot(alt, chart_ui, composition_class_columns, composition_view
         "model_rows_in_cohort": "Rows for this make-model"}
     raw_catalogue = diagnostic.frames["rating_distribution"].loc[
         diagnostic.frames["rating_distribution"].vehicle_group.eq(distribution_group.value)]
+    classification_view = gasoline_hev_classification_view(diagnostic.inputs["ratings"], classes)
     distribution_output = mo.vstack([
-        mo.md(f"**{distribution_metric.value}:** {len(distribution):,} source rows with a reported positive value; {missing_measurements:,} unavailable measurements omitted."),
+        mo.md(f"**{distribution_metric.value}:** {len(distribution):,} eligible catalogue rows with a reported positive value; {missing_measurements:,} unavailable measurements omitted."),
         *family_panels,
         mo.accordion({
             "All-year consumption summary": table_ui(cohort_summary[list(consumption_columns)].rename(columns=consumption_columns),
@@ -413,7 +442,11 @@ def distribution_plot(alt, chart_ui, composition_class_columns, composition_view
             "Rows behind the selected measurement": table_ui(distribution[list(measurement_columns)].rename(columns=measurement_columns),
                 f"{distribution_metric.value} observations · units shown per row"),
             "Full cohort statistics audit": table_ui(cohort_summary, "All descriptive statistics · original field names"),
-            "Full catalogue provenance and technical fields": table_ui(raw_catalogue, "Original consumption and engine fields · all source rows"),
+            "Full catalogue provenance and technical fields": table_ui(raw_catalogue, "Original consumption and engine fields · eligible catalogue rows"),
+            "Gasoline / HEV classification evidence": mo.vstack([
+                mo.md("These are captured **X/Z, L/100 km source rows** for the selected group's size classes, including uncertain rows excluded from the eligible catalogue graphs. **Unresolved gasoline/HEV** means propulsion is unverified; its provisional internal gasoline label is not an accepted classification. X/Z identify gasoline fuel modes, not hybrid status. Eligibility here does not establish empirical composition weight."),
+                table_ui(classification_view, "Gasoline and HEV configuration evidence · included and excluded rows"),
+            ]),
         }),
     ])
     distribution_output
@@ -502,11 +535,22 @@ def _(diagnostic, mo):
         Documented MTO identities must cover **{policy['mto_selection']['minimum_resolved_count_share']:.0%}** of
         gasoline-compatible family counts before weighting that class; otherwise it uses its median.
         MTO does not observe fuel; compatible gasoline trims exclude hybrids and alternative fuels.
+        Gasoline-capable FFVs may contribute their X/Z ratings; E85 and diesel modes do not.
+        HEVs use NRCan model signals plus compatible FuelEconomy.gov configuration evidence,
+        and always retain catalogue medians without MTO composition weights.
         This is a coverage policy, not a confidence score. Every rated subclass
         without empirical weights uses **distinct trim → family median → cohort median**, retaining original outer
         class weights. Only genuinely absent rated classes require renormalization.
         **{empirical_classes}/{len(gasoline)} gasoline class-year cohorts** receive MTO weights;
         the class tables show eligible/resolved and whole-mapped coverage separately.
+
+        Supported families retrieve **all eligible target-year configurations** before medians.
+        A class may predominate only within its configured body group, at
+        **{policy['family_matching']['class_resolution']['minimum_predominant_share']:.0%}** of distinct configurations;
+        catalogue frequency is not sales share and cannot overrule a reviewed class or body change.
+        Residual consumption variation is screened by **(P90 − P10) / median**, with a limit of
+        **{policy['family_matching']['consumption_dispersion']['maximum_relative_p90_p10_span']:.0%}**.
+        This central-spread rule measures representative adequacy, not statistical confidence.
 
         Counts proxy activity weights under **equal annual distance within each CEUD class**:
         the common VKT factor cancels. Equal use is an assumption, not measured behaviour.
@@ -735,6 +779,7 @@ def _(composition_detail_frames, diagnostic, mo, mto_filters, pd, pev_filters, t
             if "relative_contribution" in rows:
                 rows["weight_percent"] = rows.relative_contribution * 100
             return view(rows, {"source_label": "Observed make / model", "source_count": "Source count", "outcome": "Selection outcome",
+                "match_reason": "Matching reason",
                 "family_label": "Canonical family", "weight_percent": "Class weight (%)", "year": "Target model year", "source_model_years": "Composition source MYs", "province": "Recipient province",
                 "rating_class": "Assigned class", "resolved_powertrain": "Assigned powertrain / range", "duplicate_identity_merged": "Naming duplicate merged"})
 
@@ -786,45 +831,45 @@ def _(composition_detail_frames, diagnostic, mo, mto_filters, pd, pev_filters, t
 
 
 @app.cell(hide_code=True)
-def ambiguity_review(composition_review_cases, diagnostic, mo, table_ui):
+def ambiguity_review(composition_review_cases, composition_review_summary, diagnostic, mo, table_ui):
     review = composition_review_cases(diagnostic)
-    labels = {"source_kind": "Source", "year": "Target MY", "province": "Recipient / proxy province",
-        "raw_make": "Observed make", "raw_model": "Observed description", "family_make": "Canonical make",
-        "family_model": "Canonical family", "rating_class": "Assigned size class", "source_count": "Source count",
-        "review_kind": "Review category", "match_status": "Match outcome", "selection_status": "Selection outcome",
-        "identity_exclusion_reason": "Identity exclusion reason", "identity_support_reason": "Identity support reason",
-        "reviewed_mapping_year_intervals": "Reviewed years for raw key (context only)",
-        "candidate_families": "Competing families", "candidate_rating_classes": "Candidate classes",
-        "candidate_powertrains": "Native range alternatives", "configuration_status": "Configuration evidence",
-        "matched_variant_count": "Compatible distinct trims", "resolved_powertrain": "Assigned range",
-        "observed_family_range_median_km": "Family median range (km)",
-        "observed_family_mj_per_vkm": "Family median (MJ/vkm)", "recommended_handling": "Recommended handling"}
-    unresolved = review.loc[review.review_kind.eq("Unresolved identity / configuration")]
-    representatives = review.loc[review.review_kind.eq("Retained family-median representative")]
-    def reviewed_table(rows, title):
-        return table_ui(rows[[field for field in labels if field in rows]].rename(columns=labels), title)
+    summary = composition_review_summary(review)
+    labels = {"source_kind": "Source", "raw_make": "Observed make", "raw_model": "Observed description",
+        "observed_powertrain": "Reported powertrain",
+        "source_count_exposure": "Source-count exposure", "province": "Source province",
+        "target_model_years": "Affected target MYs", "reviewed_identity": "Supported reviewed identity", "review_reason": "Reason",
+        "recommended_handling": "Handling"}
+    def reviewed_table(category, title):
+        rows = summary.loc[summary.review_kind.eq(category)] if not summary.empty else summary
+        columns = [field for field in labels if field in rows
+                   and (rows[field].notna() & rows[field].astype(str).str.strip().ne("")).any()]
+        return table_ui(rows[columns].rename(columns=labels), title)
     mo.vstack([
         mo.md("""
-        ### Matching ambiguities and representative assumptions to review
+        ### Matching review · ranked by source-count exposure
 
-        Unresolved competing families, classes or contradictory configurations add no empirical
-        allocation. Cohorts lacking sufficient support retain the configured hierarchical median
-        fallback. A clear family with unspecified trim remains usable through median consumption
-        and median range; these retained assumptions appear separately for review.
+        Each row groups one source description and source province. **Source-count exposure**
+        counts each own-year source observation once, including all legitimate native records;
+        repeated target-year and geographic applications do not increase it. Source counts are
+        acquisitions for iZEV and fit-active stock for MTO, so their totals describe different populations.
+        Every positive unmapped MTO key remains visible with an unknown assigned class,
+        including wholly unresolved keys and missing intervals for mixed-scope keys.
+        Reviewed non-light-duty vehicles and configured year-scope exclusions appear separately.
 
-        Known reviewed LDV raw keys missing an applicable mapping year are included even
-        when excluded before rating matching. Their other reviewed years are context only:
-        no target-year canonical identity, class or powertrain is assigned. Mixed-scope keys,
-        non-LDV keys, out-of-scope rows and zero active-stock counts are omitted from this review.
-
-        One row is a source observation in a target cohort. Historical proxies reuse observations,
-        and regions may share national pools. **Do not sum source counts across target years or
-        overlapping regions.** These tables record handling recommendations, not new overrides.
+        Historical proxies are separate: their pooled-window count appears once per description,
+        across all affected target years. **Do not add proxy exposure to own-year exposure.**
+        Missing proxy-era ratings and gasoline-only exclusions do not imply that supported-year
+        iZEV observations fail. All applications and candidate details remain in the audit below.
         """),
-        reviewed_table(unresolved, "Unresolved matching cases: identity, alternatives and handling"),
-        mo.accordion({"Retained family representatives: leave as is or specify a reviewed override":
-            reviewed_table(representatives, "Clear families using distinct-trim medians"),
-            "Complete review provenance": table_ui(review, "Review rows with original source and matching fields")}),
+        reviewed_table("Actionable matching issue", "Matching issues requiring identity, year or configuration review"),
+        mo.accordion({
+            "Expected estimator and program exclusions": reviewed_table("Expected exclusion", "Expected exclusions"),
+            "Historical proxy limitations": reviewed_table("Historical proxy limitation", "Reused source-window evidence; separate from own-year exposure"),
+            "Years before the captured NRCan catalogue": reviewed_table("Historical catalogue limitation", "Historical catalogue coverage"),
+            "Supported families using representative medians": reviewed_table("Retained family-median representative", "Supported distinct-trim family medians"),
+            "Source exposure, target applications and alternatives": table_ui(summary, "Exposure reconciliation and candidate context"),
+            "All target-year applications and provenance": table_ui(review, "Captured applications; source counts are not additive across proxy years or recipient regions"),
+        }),
     ])
     return
 
@@ -1248,64 +1293,6 @@ def _(diagnostic, mo, table_ui):
     benchmark_audit_output = benchmark_audits()
     benchmark_audit_output
     return (benchmark_audit_output,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## EPA supplementation: archived reference
-
-    **Retain NRCan-only consumption.** The 2026-10-30 assessment found no fully
-    verified Canadian/US physical correspondence that justified accepting recovered
-    empirical observations. No EPA consumption source or backend assumption was adopted.
-
-    That assessment used build **`notebook_diagnostics-20261028T200804Z`** and the
-    earlier matching method. Its coverage, gap diagnoses and holdout results are
-    historical evidence; they do **not** describe the family-median production method
-    shown above. The matching changes invalidate the old report's current-code hashes.
-    Reassessment would require a separate validated run using the new method.
-
-    The original [assessment summary](../../outputs/validation/ldv_efficiency_diagnostic/epa_supplementation/summary.json)
-    and its adjacent CSV exports retain the dated regional denominators, candidate
-    pairs, component comparisons, simulated gaps and provenance. Opening this notebook
-    does not rerun or recertify that archived analysis.
-
-    | Group | Archived decision boundary |
-    | --- | --- |
-    | Gasoline MY2017 onward | Restrict consideration to genuinely missing Canadian configurations with verified engine, fuel, transmission, drive and compatible rating revision. |
-    | Earlier gasoline | Insufficient evidence across retrospective revision groups. |
-    | HEV / diesel | Reject a catalogue union without demonstrated empirical coverage benefit. |
-    | BEV | Restrict to verified battery, motor/drive, class, range and electricity boundaries. A name candidate alone is insufficient. |
-    | PHEV | Insufficient evidence without separate CD electricity, CD fuel and CS fuel, correct range and CANOE's utility factor. |
-
-    The current NRCan family-median allocation rule is independent of this archived
-    EPA decision. Neither archived exclusions nor alternative EPA trims constrain the
-    production charts above.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.accordion({"Archived compatibility considerations": mo.md(r"""
-    **Measurement compatibility remains a prerequisite for any future reassessment.**
-    Liquid MPG uses US gallons and the configured fuel HHV after reciprocation.
-    EPA adjusted label MPG must be distinguished from unadjusted laboratory values.
-    BEV native kWh/100 miles and MPGe require their own energy conventions; applying
-    liquid-gasoline HHV to MPGe is inappropriate. Reported combined ratings should
-    not be rebuilt from rounded city/highway values.
-
-    NRCan's MY1995–2014 archive is approximately five-cycle adjusted; Canadian
-    testing changed in 2015 and calculations changed in 2017. Source revision groups
-    must therefore remain explicit. Charging-loss and physical-configuration boundaries
-    require verification even when MJ/vkm agrees. PHEV CD electricity, CD fuel and
-    CS fuel must remain separate before applying CANOE's utility factor; a composite
-    MPGe rating cannot substitute for these components.
-
-    These are the archived study's compatibility checks, not newly accepted production
-    parameters. Its source references and detailed findings remain in the original report.
-    """)})
-    return
 
 
 if __name__ == "__main__":
