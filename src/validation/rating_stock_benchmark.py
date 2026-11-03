@@ -210,14 +210,14 @@ def derive_rating_stock_weights(
 
 
 def _production_rating_statistic(audit: pd.DataFrame) -> str:
-    """Reject stale or mixed production methods before using their fallback values."""
+    """Require one explicit catalogue comparison method for benchmark fallbacks."""
     if (audit.empty or "aggregation_method" not in audit
             or not audit.aggregation_method.eq("distinct_model_class_weighted").all()):
         raise ValueError("Prepare production distinct-model/class rating aggregation before benchmarking")
     if ("rating_statistic" not in audit or audit.rating_statistic.isna().any()
             or audit.rating_statistic.nunique() != 1
-            or audit.rating_statistic.iloc[0] not in {"mean", "median"}):
-        raise ValueError("Production rating audit must record one mean or median rating statistic")
+            or audit.rating_statistic.iloc[0] != "median"):
+        raise ValueError("Catalogue comparison must record one distinct-model median rating statistic")
     return str(audit.rating_statistic.iloc[0])
 
 
@@ -228,7 +228,7 @@ def aggregate_stock_weighted_ratings(
 
     Each model-year stock count enters once. Size-class shares are conditional on
     the resolved powertrain/range cohort, rather than pooled across all fuels and
-    ages. A wholly uncovered cohort retains the production distinct-model fallback;
+    ages. A wholly uncovered cohort retains the distinct-model comparison fallback;
     partly covered cohorts use only resolved stock and expose their denominator.
     """
     policy = rules["stock_weighting"]
@@ -295,9 +295,9 @@ def aggregate_stock_weighted_ratings(
 def build_rating_stock_benchmark(bundle: ConfigBundle) -> dict[str, Path]:
     """Export opt-in match evidence using already-prepared production ratings.
 
-    No source preparation or network calls occur here. The output directory is a
-    diagnostic route, and the promoted aggregate is read solely as a comparison
-    and an explicitly labelled fallback for completely uncovered cohorts.
+    No source preparation or network calls occur here. The unfiltered catalogue
+    median is an explicit comparison input; empirical production class means
+    must never become this separate benchmark's fallback authority.
     """
     rules = load_harmonization_rules(bundle, "rating_stock_benchmark")
     efficiency_rules = load_harmonization_rules(bundle, "efficiencies")
@@ -309,7 +309,7 @@ def build_rating_stock_benchmark(bundle: ConfigBundle) -> dict[str, Path]:
     )
     source_paths = {
         "classified": production / efficiency_rules["files"]["ratings"],
-        "production_ratings": production / efficiency_rules["files"]["rating_weights"],
+        "catalogue_ratings": production / efficiency_rules["files"]["catalogue_rating_weights"],
         "mapped": mapped_path,
     }
     missing = [str(path) for path in source_paths.values() if not path.is_file()]
@@ -320,11 +320,9 @@ def build_rating_stock_benchmark(bundle: ConfigBundle) -> dict[str, Path]:
         )
     classified, production_audit, mapped = (
         pd.read_csv(source_paths[key], low_memory=False)
-        for key in ("classified", "production_ratings", "mapped")
+        for key in ("classified", "catalogue_ratings", "mapped")
     )
-    statistic = _production_rating_statistic(production_audit)
-    if statistic != bundle.scenario.efficiencies.rating_statistic:
-        raise ValueError("Production rating audit statistic differs from the selected scenario rating_statistic")
+    _production_rating_statistic(production_audit)
     population_year = bundle.scenario.existing_capacity.vehicle_population_year
     if set(mapped.report_year) != {population_year}:
         raise ValueError("MTO benchmark stock edition differs from the prepared population selection")

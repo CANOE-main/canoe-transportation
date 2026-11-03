@@ -33,6 +33,41 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  ceud_parameter_inputs:
+    path: inputs/1_interim/ceud_parameter_inputs
+    layer: interim
+    owner: parameterization.ceud_inputs
+    producers: [parameterization.ceud_inputs.prepare_ceud_inputs]
+    consumers: [parameterization.build_existing_capacity, parameterization.build_demand, parameterization.build_efficiencies, parameterization.build_costs, parameterization.road_utilization]
+    validation_surfaces: [parameterization.ceud_inputs.extend_ceud_to_base_year]
+  transportation_validation_researcher_inputs:
+    path: legacy_backend/validation_1
+    layer: legacy
+    owner: validation.transportation_research
+    producers: [researcher]
+    consumers: [validation.transportation_research]
+    validation_surfaces: [validation.transportation_research]
+  transportation_validation_charging_inputs:
+    path: legacy_backend/validation_2
+    layer: legacy
+    owner: validation.charging_cost_comparison
+    producers: [researcher]
+    consumers: [validation.charging_cost_comparison]
+    validation_surfaces: [validation.charging_cost_comparison.read_reference_costs]
+  transportation_research_report:
+    path: outputs/validation/transportation_research
+    layer: output_validation
+    owner: validation.transportation_research
+    producers: [validation.transportation_research]
+    consumers: [reviewers]
+    validation_surfaces: [validation.transportation_research]
+  charging_cost_comparison_report:
+    path: outputs/validation/charging_cost_comparison
+    layer: output_validation
+    owner: validation.charging_cost_comparison
+    producers: [validation.charging_cost_comparison]
+    consumers: [reviewers]
+    validation_surfaces: [validation.charging_cost_comparison]
   source_update_audits:
     path: outputs/validation/source_updates
     layer: output_validation
@@ -95,6 +130,20 @@ artifacts:
     producers: [validation.ldv_efficiency_diagnostic, marimo.export]
     consumers: [docs.insights.ldv_efficiency_diagnosis, reviewers]
     validation_surfaces: [validation.ldv_efficiency_diagnostic.load_diagnostic]
+  ldv_epa_supplementation_report:
+    path: outputs/validation/ldv_efficiency_diagnostic/epa_supplementation
+    layer: output_validation
+    owner: validation.ldv_epa_supplementation
+    producers: [validation.ldv_epa_supplementation]
+    consumers: [docs.insights.ldv_efficiency_diagnosis, reviewers]
+    validation_surfaces: [validation.ldv_epa_supplementation]
+  statcan_ldv_composition:
+    path: inputs/1_interim/fetched_statcan_transport
+    layer: interim
+    owner: fetching.statcan_tables
+    producers: [fetching.statcan_tables.prepare_ldv_stock_benchmark]
+    consumers: [validation.ldv_composition_benchmark, validation.notebook_evidence]
+    validation_surfaces: [fetching.statcan_tables.validate_snapshot_identity, fetching.statcan_tables.validate_metadata_contract]
   # Local reproducible notebook handoff; excludes temporary development conclusions.
   notebook_evidence:
     path: outputs/validation/notebook_evidence
@@ -115,7 +164,7 @@ artifacts:
     layer: input_validation
     owner: validation.rating_stock_benchmark
     producers: [validation.rating_stock_benchmark.build_rating_stock_benchmark]
-    consumers: [validation.ldv_efficiency_diagnostic, validation.notebook_evidence, reviewers]
+    consumers: [reviewers]
     validation_surfaces: [validation.rating_stock_benchmark.aggregate_stock_weighted_ratings]
   # Opt-in growth research: these are evidence/review products, not production inputs.
   technology_growth_cache:
@@ -266,6 +315,13 @@ artifacts:
       - parameterization.vehicle_mapping_bootstrap
       - validation.vehicle_stock_diagnostic
     validation_surfaces: [fetching.vehicle_population.registered_requests, fetching.vehicle_population.validate_source, fetching.vehicle_population.load_history_manifest]
+  transport_canada_izev:
+    path: inputs/1_interim/fetched_transport_canada_izev
+    layer: interim
+    owner: fetching.transport_canada_izev
+    producers: [fetching.transport_canada_izev.fetch_izev]
+    consumers: [parameterization.rating_composition, parameterization.build_efficiencies]
+    validation_surfaces: [fetching.transport_canada_izev.build_requests, fetching.transport_canada_izev.validate_cache, fetching.transport_canada_izev.parse_csv]
   vehicle_survival_interim:
     path: inputs/1_interim/vehicle_survival
     layer: interim
@@ -375,7 +431,7 @@ artifacts:
     owner: parameterization.build_efficiencies
     producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
     consumers: [parameterization.build_efficiencies, validation.ldv_efficiency_diagnostic, reviewers]
-    validation_surfaces: [parameterization.build_efficiencies.aggregate_consumption_period, parameterization.build_efficiencies.validate_efficiency_outputs]
+    validation_surfaces: [parameterization.build_efficiencies.aggregate_consumption_period, parameterization.build_efficiencies.validate_efficiency_outputs, parameterization.rating_composition.aggregate_empirical_ratings]
   efficiencies_processed:
     path: inputs/2_processed/efficiencies
     layer: processed

@@ -1,0 +1,2419 @@
+{
+  "accepted_survival_sha256": "e072358eb1f73ba680a7c7a4c68d0aa0e7f042ecb13b048261d7765cfba98ef2",
+  "build_parameter_support": {
+    "checks": {
+      "capacity_to_activity_coverage": {
+        "checked_keys": 90,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "capacity_to_activity_values": {
+        "checked_rows": 90,
+        "duplicate_keys": 0,
+        "examples": [],
+        "invalid_rows": 0
+      },
+      "cost_fixed_efficiency": {
+        "checked_keys": 22,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "cost_fixed_historical_capacity": {
+        "checked_keys": 2,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "cost_invest_efficiency": {
+        "checked_keys": 365,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "cost_invest_historical_capacity": {
+        "checked_keys": 0,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "cost_variable_efficiency": {
+        "checked_keys": 442,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "cost_variable_historical_capacity": {
+        "checked_keys": 97,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "efficiency_historical_capacity": {
+        "checked_keys": 99,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "emission_embodied_efficiency": {
+        "checked_keys": 170,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "emission_embodied_historical_capacity": {
+        "checked_keys": 0,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "existing_capacity_efficiency": {
+        "checked_keys": 99,
+        "examples": [],
+        "unsupported_keys": 0
+      },
+      "existing_capacity_positive": {
+        "checked_rows": 99,
+        "examples": [],
+        "invalid_rows": 0
+      },
+      "new_capacity_factor_efficiency": {
+        "checked_keys": 295,
+        "examples": [],
+        "unsupported_keys": 0
+      }
+    },
+    "errors": [],
+    "ok": true,
+    "prepared_tables": [
+      "capacity_to_activity",
+      "cost_fixed",
+      "cost_invest",
+      "cost_variable",
+      "efficiency",
+      "emission_embodied",
+      "existing_capacity",
+      "limit_annual_capacity_factor"
+    ]
+  },
+  "build_validation": {
+    "errors": [],
+    "foreign_key_violations": 0,
+    "foreign_keys_enabled": true,
+    "integrity_check": [
+      "ok"
+    ],
+    "ok": true,
+    "schema_table_count": 91,
+    "tables": {
+      "capacity_factor_tech": {
+        "primary_key_columns": [
+          "region",
+          "season",
+          "tod",
+          "tech",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 17520
+      },
+      "capacity_to_activity": {
+        "primary_key_columns": [
+          "region",
+          "tech",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 90
+      },
+      "commodity": {
+        "primary_key_columns": [
+          "name",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 44
+      },
+      "commodity_label": {
+        "primary_key_columns": [
+          "commodity"
+        ],
+        "primary_keys_match": true,
+        "row_count": 44
+      },
+      "cost_fixed": {
+        "primary_key_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 46
+      },
+      "cost_invest": {
+        "primary_key_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 365
+      },
+      "cost_variable": {
+        "primary_key_columns": [
+          "region",
+          "period",
+          "tech",
+          "vintage",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 1121
+      },
+      "data_set": {
+        "primary_key_columns": [
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 195
+      },
+      "data_source": {
+        "primary_key_columns": [
+          "source_id",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 728
+      },
+      "data_source_label": {
+        "primary_key_columns": [
+          "source_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 29
+      },
+      "demand": {
+        "primary_key_columns": [
+          "region",
+          "period",
+          "commodity",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 75
+      },
+      "efficiency": {
+        "primary_key_columns": [
+          "region",
+          "input_comm",
+          "tech",
+          "vintage",
+          "output_comm",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 569
+      },
+      "emission_embodied": {
+        "primary_key_columns": [
+          "region",
+          "emis_comm",
+          "tech",
+          "vintage",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 510
+      },
+      "existing_capacity": {
+        "primary_key_columns": [
+          "region",
+          "tech",
+          "vintage",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 99
+      },
+      "lifetime_tech": {
+        "primary_key_columns": [
+          "region",
+          "tech",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 110
+      },
+      "limit_annual_capacity_factor": {
+        "primary_key_columns": [
+          "region",
+          "tech_or_group",
+          "vintage",
+          "output_comm",
+          "operator",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 366
+      },
+      "limit_tech_input_split_annual": {
+        "primary_key_columns": [
+          "region",
+          "period",
+          "input_comm",
+          "tech",
+          "operator",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 100
+      },
+      "region": {
+        "primary_key_columns": [
+          "region"
+        ],
+        "primary_keys_match": true,
+        "row_count": 10
+      },
+      "technology": {
+        "primary_key_columns": [
+          "tech",
+          "data_id"
+        ],
+        "primary_keys_match": true,
+        "row_count": 125
+      },
+      "technology_label": {
+        "primary_key_columns": [
+          "tech"
+        ],
+        "primary_keys_match": true,
+        "row_count": 125
+      },
+      "time_of_day": {
+        "primary_key_columns": [
+          "tod"
+        ],
+        "primary_keys_match": true,
+        "row_count": 24
+      },
+      "time_period": {
+        "primary_key_columns": [
+          "period"
+        ],
+        "primary_keys_match": true,
+        "row_count": 11
+      },
+      "time_season": {
+        "primary_key_columns": [
+          "season"
+        ],
+        "primary_keys_match": true,
+        "row_count": 365
+      }
+    },
+    "touched_table_audit": {
+      "capacity_factor_tech": {
+        "null_data_id": 0,
+        "row_count": 17520,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "capacity_to_activity": {
+        "null_data_id": 0,
+        "row_count": 90,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "commodity": {
+        "null_data_id": 0,
+        "row_count": 44,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "commodity_label": {
+        "null_data_id": 0,
+        "row_count": 44,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "cost_fixed": {
+        "null_data_id": 0,
+        "row_count": 46,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "cost_invest": {
+        "null_data_id": 0,
+        "row_count": 365,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "cost_variable": {
+        "null_data_id": 0,
+        "row_count": 1121,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "data_set": {
+        "null_data_id": 0,
+        "row_count": 195,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "data_source": {
+        "null_data_id": 0,
+        "row_count": 728,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "data_source_label": {
+        "null_data_id": 0,
+        "row_count": 29,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "demand": {
+        "null_data_id": 0,
+        "row_count": 75,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "efficiency": {
+        "null_data_id": 0,
+        "row_count": 569,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "emission_embodied": {
+        "null_data_id": 0,
+        "row_count": 510,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "existing_capacity": {
+        "null_data_id": 0,
+        "row_count": 99,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "lifetime_tech": {
+        "null_data_id": 0,
+        "row_count": 110,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "limit_annual_capacity_factor": {
+        "null_data_id": 0,
+        "row_count": 366,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "limit_tech_input_split_annual": {
+        "null_data_id": 0,
+        "row_count": 100,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "region": {
+        "null_data_id": 0,
+        "row_count": 10,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "technology": {
+        "null_data_id": 0,
+        "row_count": 125,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "technology_label": {
+        "null_data_id": 0,
+        "row_count": 125,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "time_of_day": {
+        "null_data_id": 0,
+        "row_count": 24,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "time_period": {
+        "null_data_id": 0,
+        "row_count": 11,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      },
+      "time_season": {
+        "null_data_id": 0,
+        "row_count": 365,
+        "unregistered_data_id": 0,
+        "unregistered_source_pair": 0
+      }
+    }
+  },
+  "ceud_parameter_inputs": {
+    "audit_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_extension_audit.csv",
+    "audit_sha256": "cbe10b500a6ce758d11b0ba1cde44230ddd829fef9a61682d47b2e46141a3bb1",
+    "base_year": 2023,
+    "extended_rows": 0,
+    "extension_rule": "constant_after_table_observed_endpoint_only",
+    "native_source_files_modified": false,
+    "observed_history_preserved": true,
+    "policy": "error",
+    "scenario": "validation_baseline",
+    "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\scenarios\\validation_baseline.yaml",
+    "series_status_counts": {
+      "skipped_not_observed_at_source_endpoint": 14,
+      "within_observed_horizon": 156
+    },
+    "sources": [
+      {
+        "native_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\fetched_nrcan_ceud_inputs\\nrcan_ceud_transport_on.csv",
+        "native_rows": 2823,
+        "native_sha256": "43b6c7392c84e2a96460f829a063a2438649641d5504a05acb2b3b88a3200e14",
+        "observed_max_year": 2023,
+        "observed_min_year": 2000,
+        "output_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\ceud_parameter_inputs\\nrcan_ceud_transport_on.csv",
+        "output_sha256": "7df3c050e8e8e90422f7d1d4f2f99e89f81a1de31fca92c01ec992dd4a24e8bb",
+        "parameter_evidence_rows": 2823,
+        "region": "ON",
+        "selected_source_edition": 2023,
+        "source_id": "nrcan_ceud_transport_provincial"
+      },
+      {
+        "native_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\fetched_nrcan_ceud_inputs\\nrcan_ceud_transport_national.csv",
+        "native_rows": 984,
+        "native_sha256": "161709e18fd4711f3f5f02ba5fa29028c1ee2a0532d92794ac69e07c274b75d7",
+        "observed_max_year": 2023,
+        "observed_min_year": 2000,
+        "output_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\ceud_parameter_inputs\\nrcan_ceud_transport_national.csv",
+        "output_sha256": "409bdb6325aaaf0437d87748f5e451d82448a78c71e64c17ba908a15e458acca",
+        "parameter_evidence_rows": 984,
+        "region": "national",
+        "selected_source_edition": 2023,
+        "source_id": "nrcan_ceud_transport_national"
+      }
+    ]
+  },
+  "cohort_audit": {
+    "accepted_survival_sha256": "e072358eb1f73ba680a7c7a4c68d0aa0e7f042ecb13b048261d7765cfba98ef2",
+    "annual_stock_evidence": {
+      "path": "inputs\\1_interim\\existing_capacity\\road_existing_capacity_fuel_shares.csv",
+      "sha256": "e3fb95c8f0f10b3af61f8cd1f9a6ada1b749ee6b0cab3d88e06888d64384446a"
+    },
+    "bus_classes": [
+      "inter_city_buses",
+      "school_buses",
+      "urban_transit"
+    ],
+    "bus_ineligible_raw_stock_k_vehicles": 9.82442725749814,
+    "bus_stock_k_vehicles": 19.99999999999997,
+    "bus_technology_transfers": 0,
+    "bus_transferred_stock_k_vehicles": 0.0,
+    "ceud_parameter_evidence": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_parameter_inputs_manifest.json",
+      "sha256": "7cf52ce1bf6f7988870e31d08069e3a4bc75ca0d44701e7215d65bba48b1c78e"
+    },
+    "cleanup": {
+      "epsilon": 0.001,
+      "removed_capacity_by_unit": {
+        "bn passenger-km": 0.0,
+        "bn tonne-km": 0.0,
+        "k vehicles": 0.0
+      },
+      "removed_count": 31,
+      "removed_rows": [
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BIC_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BIC_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BIC_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BIC_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BIC_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BIC_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_CNG_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_CNG_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_CNG_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_CNG_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2015
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BS_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_BEV_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_BEV_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_BEV_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_CNG_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_CNG_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_CNG_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_CNG_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2015
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_DSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2005
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_BT_GSL_EX",
+          "units": "k vehicles",
+          "value": 0.0,
+          "vintage": 2010
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_RF_DSL_EX",
+          "units": "bn tonne-km",
+          "value": 0.0,
+          "vintage": 2000
+        },
+        {
+          "reason": "below_cleanup_tolerance",
+          "region": "ON",
+          "table": "existing_capacity",
+          "tech": "T_HDV_RICP_DSL_EX",
+          "units": "bn passenger-km",
+          "value": 0.0,
+          "vintage": 2000
+        }
+      ]
+    },
+    "excluded_air_gasoline_pj": {
+      "freight_air": 0.143151,
+      "passenger_air": 8.933849
+    },
+    "excluded_air_gasoline_rows": 48,
+    "excluded_bus_fuel_pj": {
+      "Propane": 2.3194470000000003
+    },
+    "excluded_bus_fuel_rows": 5,
+    "excluded_family": "EV charger capacity",
+    "excluded_road_fuel_rows": 165,
+    "excluded_road_fuel_rows_by_reason": {
+      "configured_latest_vintage_only_fuel": 19,
+      "pre_evidence_non_combustion": 77,
+      "unsupported_existing_technology": 69
+    },
+    "input_content_digest": "bcf1903c02b78613de13cfe4663e8a6bc2ba374995b31910744ab4942b13cd19",
+    "max_excluded_fuel_source_share": [
+      {
+        "fuel_type": "Battery electric",
+        "max_share": 0.00026255942931698197,
+        "road_class": "cars"
+      },
+      {
+        "fuel_type": "Hybrid electric",
+        "max_share": 0.01387929537127923,
+        "road_class": "cars"
+      },
+      {
+        "fuel_type": "Other fuel types",
+        "max_share": 1.2010905902559524e-05,
+        "road_class": "cars"
+      },
+      {
+        "fuel_type": "Plug-in hybrid electric",
+        "max_share": 0.0006584182612102778,
+        "road_class": "cars"
+      },
+      {
+        "fuel_type": "Battery electric",
+        "max_share": 4.54850066256493e-05,
+        "road_class": "freight_light_trucks"
+      },
+      {
+        "fuel_type": "Hybrid electric",
+        "max_share": 0.002911040424041555,
+        "road_class": "freight_light_trucks"
+      },
+      {
+        "fuel_type": "Other fuel types",
+        "max_share": 0.00015923593853492773,
+        "road_class": "freight_light_trucks"
+      },
+      {
+        "fuel_type": "Gasoline",
+        "max_share": 0.018391303131208552,
+        "road_class": "heavy_trucks"
+      },
+      {
+        "fuel_type": "Battery electric",
+        "max_share": 7.10398817896367e-06,
+        "road_class": "medium_trucks"
+      },
+      {
+        "fuel_type": "Other fuel types",
+        "max_share": 6.493506493506494e-05,
+        "road_class": "medium_trucks"
+      },
+      {
+        "fuel_type": "Battery electric",
+        "max_share": 4.54850066256493e-05,
+        "road_class": "passenger_light_trucks"
+      },
+      {
+        "fuel_type": "Hybrid electric",
+        "max_share": 0.002911040424041555,
+        "road_class": "passenger_light_trucks"
+      },
+      {
+        "fuel_type": "Other fuel types",
+        "max_share": 0.00015923593853492773,
+        "road_class": "passenger_light_trucks"
+      }
+    ],
+    "offroad_capacity_by_unit": {
+      "bn passenger-km": 74.40527647693823,
+      "bn tonne-km": 98.0187240032437
+    },
+    "offroad_early_retired_capacity_by_mode": {
+      "freight_air": 0.8706921620680876,
+      "freight_marine": 31.088567446358752,
+      "freight_rail": 26.48886157320205,
+      "passenger_air": 67.3710382617615,
+      "passenger_rail": 0.42885707667161493
+    },
+    "offroad_ineligible_raw_capacity_by_unit": {
+      "bn passenger-km": 0.005400368832526928,
+      "bn tonne-km": 8.753360554145228
+    },
+    "offroad_modes": [
+      "freight_air",
+      "freight_marine",
+      "freight_rail",
+      "passenger_air",
+      "passenger_rail"
+    ],
+    "offroad_surviving_minus_observed_base_year": {
+      "freight_air": 0.0,
+      "freight_marine": -8.881784197001252e-16,
+      "freight_rail": 1.4210854715202004e-14,
+      "passenger_air": 0.0,
+      "passenger_rail": 0.0
+    },
+    "parameter_rows": 97,
+    "pending_classes": [],
+    "period_mapping": {
+      "base_year": 2023,
+      "base_year_role": "latest observed year for stock, demand and historical calibration",
+      "cost_and_charger_years": {
+        "2025": 2030,
+        "2030": 2035,
+        "2035": 2040,
+        "2040": 2045,
+        "2045": 2050
+      },
+      "efficiency_and_demand_years": {
+        "2025": 2030,
+        "2030": 2035,
+        "2035": 2040,
+        "2040": 2045,
+        "2045": 2050
+      },
+      "empty_observation_vintages": [],
+      "end_of_horizon": 2050,
+      "existing": [
+        2000,
+        2005,
+        2010,
+        2015,
+        2020
+      ],
+      "historical_years_by_vintage": {
+        "2000": [
+          2000,
+          2001,
+          2002,
+          2003,
+          2004,
+          2005
+        ],
+        "2005": [
+          2006,
+          2007,
+          2008,
+          2009,
+          2010
+        ],
+        "2010": [
+          2011,
+          2012,
+          2013,
+          2014,
+          2015
+        ],
+        "2015": [
+          2016,
+          2017,
+          2018,
+          2019,
+          2020
+        ],
+        "2020": [
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "latest_observed_vintage": 2020,
+      "model": [
+        2025,
+        2030,
+        2035,
+        2040,
+        2045
+      ],
+      "period_mode": "prospective",
+      "step": 5
+    },
+    "regions": [
+      "ON"
+    ],
+    "research_evidence": {
+      "road_age_cohorts": {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_age_cohorts.csv",
+        "sha256": "b69871b2f6e0c91b0596aa182a15632670af2361fb6f08f0ed2864f15d15e424"
+      }
+    },
+    "road_classes": [
+      "cars",
+      "freight_light_trucks",
+      "heavy_trucks",
+      "medium_trucks",
+      "motorcycles",
+      "passenger_light_trucks"
+    ],
+    "road_ineligible_raw_stock_k_vehicles": 3299.102968841882,
+    "road_stock_k_vehicles": 9953.500999999997,
+    "road_stock_method": {
+      "other": "stock_age"
+    },
+    "road_technology_redistribution": {
+      "checked_technology_totals": 20,
+      "composition_basis": "configured_historical_vintage_coverage",
+      "max_conservation_error_k_vehicles": 4.547473508864641e-13,
+      "redistributed_stock_k_vehicles": 3271.3622793207537,
+      "redistribution_scope": "same_region_and_technology"
+    },
+    "sales_reconstruction": []
+  },
+  "commands": [
+    "uv run python src/build_transport.py --scenario C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\scenarios\\validation_baseline.yaml",
+    "uv run python -m validation.transportation_research --scenario C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\scenarios\\validation_baseline.yaml --write-report"
+  ],
+  "configuration": {
+    "manual_inputs": [
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\capacity_to_activity.csv",
+        "sha256": "2d2ac665f138ee5f027f71f0bba43d1a5094c38ccfe90313724f7294d4e415a5"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\charger_parameters.csv",
+        "sha256": "dbca8f294e9476e764153787dd8d0001d984071eed4715f3605d30e2142b0278"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\cost_invest_multipliers.csv",
+        "sha256": "82151bc6444a19b4b82634e1e27b29efe0235c174311e34a8d9c5442f85d3ca3"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\cost_variable_multipliers.csv",
+        "sha256": "98364dd5d19ffc1ffbaf20702aa3bdafb37eec975f54e95d7d21f14e4d5e227f"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\efficiency_multipliers.csv",
+        "sha256": "63a7a09548ab5a3bbcf29803896dd7d85320ee724294ad95cb270a4fadd3215e"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\lifetime_process.csv",
+        "sha256": "5739a72bf3a423f952cde960365e82758d537ce5ca1f65ffbd9796874c9de372"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\mapped_mto_make_model_keys.csv",
+        "sha256": "bf9f2cf6660f6d3ababba3d18382456e17fb1a8f484ed4fe2cb625e90ee78106"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\vehicle_class_market_shares.csv",
+        "sha256": "575c7f67337e756004a6a708620e4e65c098a404972aceae86789d16d56ab376"
+      }
+    ],
+    "parameters": [
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\parameters\\rules.yaml",
+        "sha256": "4fb0c9f3048f306096180cf5242354c7c404f9096a284efce27762c686501ffc"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\parameters\\conversion.yaml",
+        "sha256": "6400be364e8509c89856803c8575d83ca2bfcc2bde29e61bb8f59bb80f5c57a2"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\parameters\\vehicle_size_class_map.csv",
+        "sha256": "98ae87089c4d28fcea2c1fa961eeed5c9c5d4a40bb0002bbc496854048406336"
+      }
+    ],
+    "paths": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\paths.yaml",
+      "sha256": "33b0f3bb6eb82f73f6473b60d2afca6ac893390b3b0ccd9fd14d811afc0d3b05"
+    },
+    "scenario": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\scenarios\\validation_baseline.yaml",
+      "sha256": "7e6dad4bd6c6dc5f60a9d673b06f0c1957e8f63876d6db30f8c35fa3c8b10022"
+    },
+    "sources": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\sources.yaml",
+      "sha256": "1f2545c9eb20373902949b3d78f2aef93cc35a43498d9f437cf20e7070927ec5"
+    }
+  },
+  "exports": {
+    "ceud_extension_audit.csv": {
+      "rows": 170,
+      "sha256": "cbe10b500a6ce758d11b0ba1cde44230ddd829fef9a61682d47b2e46141a3bb1"
+    },
+    "configured_survival_curves.csv": {
+      "rows": 586,
+      "sha256": "e072358eb1f73ba680a7c7a4c68d0aa0e7f042ecb13b048261d7765cfba98ef2"
+    },
+    "fleet_cohort_accounting.csv": {
+      "rows": 50,
+      "sha256": "6f142259b160314dbe7286507d3ed4ccec930c5cd183d736277758b913de0606"
+    },
+    "notebook_method_sensitivity.csv": {
+      "rows": 25,
+      "sha256": "847a1b5d4c0ceb59e720810c42d5e8fcf2020328d557f250012831fa48e85c8c"
+    },
+    "notebook_registered_sales.csv": {
+      "rows": 105,
+      "sha256": "cd953c0717c1730b25b33cc57fff009b8d378de1b5c1a9e2576ae84e73c5aced"
+    },
+    "notebook_source_cells.csv": {
+      "rows": 14,
+      "sha256": "491291981793bb4b32a46cf9f9dc880260327b39606f58ef41533a36bc46c3a2"
+    },
+    "reference_state.csv": {
+      "rows": 3,
+      "sha256": "54f19c5a63d7950dfba5745ddd7f76ec753e56d5f8f512cf3f1bbb17c66e008f"
+    },
+    "road_age_cohorts.csv": {
+      "rows": 180,
+      "sha256": "e89328a2cd92970c6f418f6adf6b73080ebac6941e3435f821bdc76106cf5746"
+    },
+    "road_fuel_shares.csv": {
+      "rows": 360,
+      "sha256": "cc468709508ed09e3f8c1e9034dd73d7c69defb60137330886e1d6e2a5541f6b"
+    },
+    "stock_activity_energy.csv": {
+      "rows": 5,
+      "sha256": "aa61c257e40c523ba8e0d4503b96af48f1f91504f7005e62535c67dd50cd9088"
+    },
+    "supplied_legacy_stock.csv": {
+      "rows": 36,
+      "sha256": "b5433a8462e98a820c4f4ee33e6e388209b6b31b2526bfb34a75db517eabf463"
+    }
+  },
+  "files": {
+    "build_report": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\outputs\\validation\\validation_baseline.json",
+      "sha256": "f12b5d1baacbddab5c5aa9ee4b49d4eafe422006ddb78f50caff909e459baf0b"
+    },
+    "ceud_manifest": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_parameter_inputs_manifest.json",
+      "sha256": "7cf52ce1bf6f7988870e31d08069e3a4bc75ca0d44701e7215d65bba48b1c78e"
+    },
+    "database": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\outputs\\sqlite\\validation_baseline.sqlite",
+      "sha256": "4add4e6f79400a5a1737a761c7e319f06d10a8a7118b290436a0a50574ed2c0f"
+    },
+    "road_age_cohorts": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_age_cohorts.csv",
+      "sha256": "b69871b2f6e0c91b0596aa182a15632670af2361fb6f08f0ed2864f15d15e424"
+    },
+    "road_fuel_shares": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_fuel_shares.csv",
+      "sha256": "e3fb95c8f0f10b3af61f8cd1f9a6ada1b749ee6b0cab3d88e06888d64384446a"
+    }
+  },
+  "implementation_sha256": "1c13e2fa7810936e57167840fc51f2f415dfe169a5e61663ac8b69886063be63",
+  "limitations": [
+    "Supplied legacy database is not a verified modified-notebook output; missing workbook values prevent numeric parity.",
+    "Notebook sensitivity substitutes current registered CEUD and configured survival schedules; it is not the researcher's missing inputs.",
+    "Activity/energy accounting evaluates all inserted base-year cohorts before future retirement; it is not an optimization result.",
+    "Vehicle input energy includes PHEV blend energy once, excluding upstream charger losses; CEUD class energy contains a different fuel/fleet boundary.",
+    "Current source history omits older cohorts and fuel registration shares proxy sales composition; stock discrepancy is not rescaled away."
+  ],
+  "notebook": {
+    "dependencies": [
+      {
+        "cell_index": 3,
+        "path": "Input data/vehicle_sales_by_size.xlsx",
+        "present_relative_to_notebook": false
+      },
+      {
+        "cell_index": 3,
+        "path": "Input data/vehicle_sales_by_powertrain.xlsx",
+        "present_relative_to_notebook": false
+      },
+      {
+        "cell_index": 3,
+        "path": "Input data/survival_curve_transport.xlsx",
+        "present_relative_to_notebook": false
+      },
+      {
+        "cell_index": 3,
+        "path": "Input data/c2a_vehicle.xlsx",
+        "present_relative_to_notebook": false
+      },
+      {
+        "cell_index": 3,
+        "path": "Input data/activity.xlsx",
+        "present_relative_to_notebook": false
+      },
+      {
+        "cell_index": 3,
+        "path": "Input data/demand_growth_rate.xlsx",
+        "present_relative_to_notebook": false
+      },
+      {
+        "cell_index": 31,
+        "path": "Input data/canoe_ALL_cm.sqlite",
+        "present_relative_to_notebook": false
+      }
+    ],
+    "execution": "not executed; dependencies checked relative to notebook location",
+    "fixed_lifetime_calls": [
+      {
+        "cell_index": 31,
+        "value": false
+      }
+    ],
+    "missing_dependency_count": 7,
+    "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\legacy_backend\\validation_1\\Update data_20260618_fixed lifetime (1).ipynb",
+    "sha256": "ada5b14fca8d53a72d5c1561d7757be3b4112a20fa04197ea8aa098b99469559",
+    "source_output_conflict": true,
+    "sqlite_dataframe_write_calls": [],
+    "stored_output_mentions_fixed_lifetime": true
+  },
+  "notebook_replay": {
+    "calibration_year": 2023,
+    "extension_policy": "constant",
+    "sales_end_year": 2025,
+    "sales_start_year": 2005,
+    "vintage_step": 5
+  },
+  "reference_state": {
+    "absolute_tolerance": 1e-09,
+    "annual_factor_columns": [
+      "region",
+      "period",
+      "tech",
+      "output_comm",
+      "operator",
+      "factor",
+      "notes",
+      "data_source",
+      "dq_cred",
+      "dq_geog",
+      "dq_struc",
+      "dq_tech",
+      "dq_time",
+      "data_id"
+    ],
+    "foreign_key_violations": 0,
+    "integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "interpretation": "supplied database state is compared separately from notebook intent",
+    "legacy_baseline": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\legacy_backend\\canoe_on_12d_baseline.sqlite",
+      "sha256": "d254623d032ebebce10a35675680ce67d7fc30236fbd5055d02c2f94322a4350"
+    },
+    "reference": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\legacy_backend\\validation_1\\canoe_ON_16d.sqlite",
+      "sha256": "b4db7481fb0f809bcdc32e75c0ca65a08027307c60ab526f886b7e5dbb2517f5"
+    },
+    "relative_tolerance": 1e-06,
+    "survival_rows": 0
+  },
+  "revision": "06a1b79b9ae81a1708de5d4d07ad3c49e5cc3b11",
+  "sales_activity_closure": {
+    "classes_checked": 0,
+    "interpretation": "calibration check, not independent validation",
+    "passes": true
+  },
+  "scenario": {
+    "BEV_PHEV_range_representation": {
+      "mode": "representative_archetype"
+    },
+    "aggregation_sources": {
+      "heavy_truck_haul": {
+        "ON": "statcan_transport_tables",
+        "other": "statcan_transport_tables"
+      },
+      "ldv": {
+        "ON": "ontario_ministry_transport_vehicle_population",
+        "other": "ontario_ministry_transport_vehicle_population"
+      },
+      "medium_trucks": {
+        "ON": "ontario_ministry_transport_vehicle_population",
+        "other": "wards_intelligence_sales_shares"
+      },
+      "stock_age": {
+        "ON": "ontario_ministry_transport_vehicle_population",
+        "other": "ontario_ministry_transport_vehicle_population"
+      }
+    },
+    "charging_profiles": {
+      "time_mapping": null,
+      "travel_behavior_source": "nhts"
+    },
+    "comparison": {
+      "absolute_tolerance": 1e-09,
+      "include_provenance": false,
+      "mode": "none",
+      "reference_sqlite": "legacy_backend/canoe_on_12d_baseline.sqlite",
+      "relative_tolerance": 1e-06
+    },
+    "costs": {
+      "atb_trajectory": "Mid"
+    },
+    "demand": {
+      "cer_scenario": "Current Measures",
+      "future_car_demand": "GDP-indexed"
+    },
+    "economics": {
+      "cer_scenario": "Current Measures",
+      "cost_reference_currency": "CAD",
+      "cost_reference_year": 2020,
+      "default_loan_rate": 0.03,
+      "global_discount_rate": 0.03
+    },
+    "efficiencies": {
+      "atb_trajectory": "Mid"
+    },
+    "embodied_emissions": true,
+    "embodied_materials": "conventional",
+    "ev_chargers": {
+      "ld_evs_per_port": 1.0,
+      "mhd_evs_per_port": 1.5
+    },
+    "existing_capacity": {
+      "cleanup_tolerance": 0.001,
+      "road_stock_method": {
+        "other": "stock_age"
+      },
+      "vehicle_population_year": 2025
+    },
+    "geography": {
+      "regions": [
+        "ON"
+      ]
+    },
+    "lifetimes": {
+      "heavy_truck_survival_source": "epa_moves_heavy_truck_survival",
+      "survival_curve_max_age": 29,
+      "survival_curves": false
+    },
+    "notebook_diagnostics": [],
+    "outputs": {
+      "setup_log": "outputs/logs/validation_baseline_setup.json",
+      "sqlite_name": "validation_baseline.sqlite",
+      "validation_report": "outputs/validation/validation_baseline.json"
+    },
+    "periods": {
+      "base_year": 2023,
+      "existing": [
+        2000,
+        2005,
+        2010,
+        2015,
+        2020
+      ],
+      "model": [
+        2025,
+        2030,
+        2035,
+        2040,
+        2045
+      ],
+      "period_mode": "prospective",
+      "step": 5
+    },
+    "road_utilization": {
+      "vkt_max_age": 25,
+      "vkt_schedules": false
+    },
+    "row_note_overrides": {
+      "technology": {}
+    },
+    "scenario": {
+      "description": "Ontario control for researcher validation; current stock and timing selections.",
+      "name": "validation_baseline",
+      "purpose": "research_validation_control"
+    },
+    "sources": {
+      "nrcan_ceud_beyond_observed": "error",
+      "selections": {
+        "cer_canadas_energy_future": {
+          "edition": 2026,
+          "year": null
+        },
+        "nrcan_ceud_transport_national": {
+          "edition": null,
+          "year": 2023
+        },
+        "nrcan_ceud_transport_provincial": {
+          "edition": null,
+          "year": 2023
+        },
+        "transport_canada_ev_dashboard": {
+          "edition": null,
+          "year": 2026
+        }
+      }
+    },
+    "version": 3
+  },
+  "utilization_audit": {
+    "annual_rows": 45,
+    "baseline_rows": 9,
+    "baseline_years": [
+      2017,
+      2018,
+      2019,
+      2022,
+      2023
+    ],
+    "capacity_to_activity_rows": 98,
+    "flat_factor_rows": 414,
+    "flat_vintages_by_region_technology": [
+      {
+        "region": "ON",
+        "tech": "T_HDV_BIC_BEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BIC_DSL_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BIC_DSL_HEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BIC_DSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BIC_FCEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BIC_GSL_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BIC_GSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_BEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_CNG_EX",
+        "vintages": [
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_CNG_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_DSL_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_DSL_HEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_DSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_DSL_PHEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_FCEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_FCHEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_GSL_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BS_GSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_BEV_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_BEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_CNG_EX",
+        "vintages": [
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_CNG_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_DSL_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_DSL_HEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_DSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_DSL_PHEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_FCEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_FCHEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_GSL_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_BT_GSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_T_BEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_T_DSL_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_T_DSL_HEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_T_DSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_T_DSL_PHEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_T_FCEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_HDV_T_FCHEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_BEV150_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_BEV200_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_BEV300_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_BEV400_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_BEV_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_CNG_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_DSL_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_DSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_FCEV400_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_GSL_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_GSL_HEV_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_GSL_HEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_GSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_GSL_PHEV35_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_GSL_PHEV50_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_C_GSL_PHEV_EX",
+        "vintages": [
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_BEV150_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_BEV200_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_BEV300_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_BEV400_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_BEV_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_CNG_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_DSL_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_DSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_FCEV400_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_GSL_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_GSL_HEV_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_GSL_HEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_GSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_GSL_PHEV35_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_GSL_PHEV50_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTF_GSL_PHEV_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_BEV150_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_BEV200_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_BEV300_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_BEV400_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_BEV_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_CNG_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_DSL_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_DSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_FCEV400_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_GSL_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_GSL_HEV_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_GSL_HEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_GSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_GSL_PHEV35_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_GSL_PHEV50_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_LTP_GSL_PHEV_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_M_BEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_M_GSL_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_M_GSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_BEV_EX",
+        "vintages": [
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_BEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_DSL_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_DSL_HEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_DSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_DSL_PHEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_FCEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_FCHEV_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_GSL_EX",
+        "vintages": [
+          2010,
+          2015,
+          2020
+        ]
+      },
+      {
+        "region": "ON",
+        "tech": "T_MDV_T_GSL_N",
+        "vintages": [
+          2025,
+          2030,
+          2035,
+          2040,
+          2045
+        ]
+      }
+    ],
+    "input_content_digest": "9143e3237a6a8f461ae676f859c9dc7e0281883d2d4d6e39975f19526bcd00c9",
+    "manual_assumption_data_id": "canoe-road-capacity-to-activity:39f76d748a70b3f1",
+    "sales_activity_calibration": [],
+    "vkt_schedules": false
+  }
+}

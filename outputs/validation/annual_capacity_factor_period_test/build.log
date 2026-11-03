@@ -1,0 +1,73 @@
+2026-10-29T15:08:52Z INFO utils.build_logging: Scenario build started: scenario=annual_capacity_factor_period_test yaml=C:\Users\rashi\ESM_databases\canoe-transportation\config\scenarios\period_index_test.yaml yaml_sha256=8d43856ec5b1555fc15d59f151334e934cf0160f6befff95ec6ae4a90c684f22 verbosity=INFO log=C:\Users\rashi\ESM_databases\canoe-transportation\outputs\logs\annual_capacity_factor_period_test_period_index_test_2026-10-29_15-08-52-111630Z.log
+2026-10-29T15:08:52Z INFO __main__: Scenario annual_capacity_factor_period_test: period_mode=prospective, base_year=2023; 1 regions, 5 existing vintages, 2 model periods (2025-2035, step=5)
+2026-10-29T15:08:52Z INFO __main__: Selections: road lifetimes=fixed medians; heavy-truck survival=epa_moves_heavy_truck_survival; charging=none; LDV ranges=none; embodied emissions=True
+2026-10-29T15:08:52Z INFO __main__: Trajectories: demand=Current Measures; efficiency=Mid; costs=Mid; cost basis=2020 CAD
+2026-10-29T15:08:52Z INFO __main__: Preparing scenario inputs: cache downloads disabled
+2026-10-29T15:08:53Z INFO __main__: Prerequisite fetching.nrcan_ceud.fetch_and_normalize completed in 0.44 s
+2026-10-29T15:08:53Z INFO __main__: Prerequisite fetching.nrcan_ceud.fetch_and_normalize_ratings completed in 0.46 s
+2026-10-29T15:09:31Z INFO __main__: Prerequisite fetching.statcan_tables.fetch_and_normalize completed in 38.06 s
+2026-10-29T15:09:31Z INFO __main__: Prerequisite fetching.cer_enerfuture.fetch_and_normalize completed in 0.34 s
+2026-10-29T15:09:35Z INFO __main__: Prerequisite fetching.nlr_atb_autonomie.fetch_and_normalize completed in 3.58 s
+2026-10-29T15:09:39Z INFO root: MOVES5 heavy-truck survival: cache=cached; normalized 41 annual rate rows
+2026-10-29T15:09:39Z INFO __main__: Prerequisite fetching.assorted_sources.fetch_and_normalize completed in 4.43 s
+2026-10-29T15:09:40Z INFO __main__: Prerequisite fetching.assorted_sources.fetch_and_normalize_tc_dashboard completed in 0.10 s
+2026-10-29T15:09:41Z INFO fetching.transport_canada_izev: iZEV fy2019_2022: 202195 records, 361133 blank rows removed, 75231 identical native rows retained
+2026-10-29T15:09:42Z INFO fetching.transport_canada_izev: iZEV fy2023: 164946 records, 1 blank rows removed, 68595 identical native rows retained
+2026-10-29T15:09:43Z INFO fetching.transport_canada_izev: iZEV fy2024: 196171 records, 0 blank rows removed, 72339 identical native rows retained
+2026-10-29T15:09:48Z INFO fetching.transport_canada_izev: Wrote 563312 observed iZEV incentive records to C:\Users\rashi\ESM_databases\canoe-transportation\inputs\1_interim\fetched_transport_canada_izev
+2026-10-29T15:09:48Z INFO __main__: Prerequisite Transport Canada iZEV composition completed in 8.62 s
+2026-10-29T15:09:50Z INFO root: Skipped all-edition MTO key inventory during single-year override 2025
+2026-10-29T15:09:50Z INFO root: Published Ontario production edition 2025 (aggregate history preserved); audit evidence: C:\Users\rashi\ESM_databases\canoe-transportation\inputs\1_interim\fetched_ontario_vehicle_population\editions\2025
+2026-10-29T15:09:50Z INFO __main__: Ontario vehicle evidence (2025) completed in 1.47 s
+2026-10-29T15:09:50Z INFO __main__: FuelEconomy class evidence validation completed in 0.09 s
+2026-10-29T15:09:52Z INFO __main__: Road aggregation from reviewed mappings completed in 1.90 s
+2026-10-29T15:09:52Z INFO __main__: Scenario prerequisites completed in 59.96 s
+2026-10-29T15:09:52Z INFO __main__: SQLite schema and scenario economics completed in 0.04 s
+2026-10-29T15:09:52Z INFO parameterization.ldv_ev_ranges: OMEGA range evidence: 855557 sales, unresolved=0, accepted=True
+2026-10-29T15:09:52Z INFO parameterization.ldv_ev_ranges: OMEGA sales/range evidence completed in 0.14 s
+2026-10-29T15:09:52Z INFO parameterization.ldv_ev_ranges: New LDV range representation disabled; no share constraints or technology changes
+2026-10-29T15:09:52Z INFO __main__: LDV range selection completed in 0.06 s
+2026-10-29T15:09:52Z INFO parameterization.ldv_charging_profiles: Legacy charging profiles disabled; no source evidence required
+2026-10-29T15:09:52Z INFO __main__: Charging profiles (capacity_factor_tech) completed in 0.09 s
+2026-10-29T15:09:55Z INFO parameterization.build_existing_capacity: Prepared 97 existing-capacity rows across 1 regions; removed 31 below epsilon=0.001; excluded 165 road fuel shares
+2026-10-29T15:09:55Z INFO parameterization.build_existing_capacity: Redistributed 3271.362 thousand road vehicles within the same technology; bus transfers=0 (0.000 thousand vehicles)
+2026-10-29T15:09:55Z INFO __main__: Existing capacity completed in 3.24 s
+2026-10-29T15:09:55Z INFO parameterization.build_demand: Prepared 30 demand rows for 1 regions and 2 periods
+2026-10-29T15:09:55Z INFO __main__: Demand completed in 0.18 s
+2026-10-29T15:09:56Z INFO parameterization.road_utilization: Road utilization uses positive prepared stock cohorts; skipped 0 zero-capacity rows
+2026-10-29T15:09:56Z INFO parameterization.road_utilization: Prepared 98 road C2A and 65 flat annual factor rows
+2026-10-29T15:09:56Z INFO __main__: Road utilization (capacity_to_activity, limit_annual_capacity_factor) completed in 0.79 s
+2026-10-29T15:09:57Z INFO parameterization.build_lifetime_parameters: Prepared lifetime_tech=122 and lifetime_survival_curve=0 rows; StatCan Canada fallback rows=0
+2026-10-29T15:09:57Z INFO __main__: Lifetimes (lifetime_tech, lifetime_survival_curve) completed in 0.47 s
+2026-10-29T15:11:24Z INFO parameterization.build_efficiencies: NRCan composition: {'catalogue_fallback_median_insufficient_identity_support': 319, 'catalogue_distinct_model_median': 313, 'catalogue_fallback_median_no_empirical_support': 294, 'mto_identity_supported_weighted': 73, 'izev_incentive_weighted': 69, 'izev_historical_composition_proxy': 51}
+2026-10-29T15:11:24Z INFO parameterization.build_efficiencies: NRCan composition ON count weights by source/basis/disposition (historical proxy records reused across target years): {('izev', 'historical_pooled_model_year_window', 'ambiguous_powertrain_or_range'): 18157, ('izev', 'historical_pooled_model_year_window', 'selected'): 69479, ('izev', 'historical_pooled_model_year_window', 'unmatched_ratings'): 646428, ('izev', 'observed_model_year', 'ambiguous_powertrain_or_range'): 48191, ('izev', 'observed_model_year', 'outside_supported_program_window'): 9072, ('izev', 'observed_model_year', 'selected'): 42825, ('izev', 'observed_model_year', 'unmatched_ratings'): 742, ('mto', 'observed_model_year_stock', 'ambiguous_powertrain_evidence'): 17102, ('mto', 'observed_model_year_stock', 'ambiguous_powertrain_or_range'): 1250634, ('mto', 'observed_model_year_stock', 'catalogue_median_powertrain'): 29676, ('mto', 'observed_model_year_stock', 'insufficient_identity_supported_mass'): 355942, ('mto', 'observed_model_year_stock', 'pev_requires_izev_evidence'): 29645, ('mto', 'observed_model_year_stock', 'selected'): 745994, ('mto', 'observed_model_year_stock', 'unmatched_ratings'): 954118, ('mto', 'observed_model_year_stock', 'unresolved_mapping_identity'): 4720, ('mto', 'observed_model_year_stock', 'unsupported_incumbent_powertrain'): 6, ('mto', 'observed_model_year_stock', 'unsupported_mapping_identity'): 2648052}
+2026-10-29T15:11:37Z INFO parameterization.build_efficiencies: Prepared efficiency=289 and limit_tech_input_split_annual=28 rows (124 technologies)
+2026-10-29T15:11:37Z INFO parameterization.build_efficiencies: Efficiency data handling: rating fallbacks=119, omitted rows=1208, ambiguous EPA rows=14, renormalized cells=253
+2026-10-29T15:11:37Z INFO parameterization.build_efficiencies: Efficiency observation coverage: omitted annual observations=1 across 6 periods
+2026-10-29T15:11:37Z INFO __main__: Efficiencies (efficiency, limit_tech_input_split_annual) completed in 100.64 s
+2026-10-29T15:11:42Z INFO parameterization.build_costs: Prepared cost_invest=162 and cost_variable=403 rows; converted 6 currency/year groups to 2020 CAD
+2026-10-29T15:11:42Z INFO parameterization.build_costs: Cost data handling: excluded 34 expired period/vintage pairs; historical MSRP proxy rows=51
+2026-10-29T15:11:42Z INFO __main__: Transport costs (cost_invest, cost_variable) completed in 4.23 s
+2026-10-29T15:11:42Z INFO parameterization.ev_chargers: Prepared 4 charger capacity_to_activity rows: 31.536 PJ/GW per year
+2026-10-29T15:11:42Z INFO parameterization.ev_chargers: Charger utilization annual limits use {'ldv': 'e', 'mhdv': 'e'}; LDV hourly profiles enabled=False
+2026-10-29T15:11:42Z INFO parameterization.ev_chargers: EV charger rows: capacity=2 invest=8 fixed=16 efficiency=10 annual_utilization=6; public_ports=39220
+2026-10-29T15:11:42Z INFO parameterization.ev_chargers: Excluded 2 existing charger investment rows; retained their annual fixed-cost basis
+2026-10-29T15:11:42Z INFO parameterization.ev_chargers: Excluded fixed-cost pairs at/after retirement: chargers=0 H2=0
+2026-10-29T15:11:42Z INFO parameterization.ev_chargers: H2 refueling rows: invest=4 fixed=6 efficiency=4; no existing station stock input
+2026-10-29T15:11:42Z INFO __main__: EV chargers and H2 refueling completed in 0.78 s
+2026-10-29T15:11:44Z INFO fetching.greet_vehicle_cycle: Normalized 198 GREET range-specific gas rows; retained 23 cases and 322 exclusions
+2026-10-29T15:11:44Z INFO parameterization.road_embodied_emissions: Prepared emission_embodied=276 rows; excluded 19 existing-vehicle manufacturing cases
+2026-10-29T15:11:44Z INFO __main__: Vehicle-cycle emissions (emission_embodied) completed in 1.74 s
+2026-10-29T15:11:44Z INFO __main__: Publishing 166 readable transport dataset IDs for scenario annual_capacity_factor_period_test
+2026-10-29T15:11:44Z INFO validation.insertion: Scoped capacity_factor_tech replacement removed 0 owned rows across 1 regions
+2026-10-29T15:11:44Z INFO validation.insertion: Scoped limit_new_capacity_share replacement removed 0 owned rows across 1 regions
+2026-10-29T15:11:44Z INFO validation.insertion: LDV representation replacement removed 0 owned rows across 11 parameter tables
+2026-10-29T15:11:44Z INFO __main__: Inserted transport contribution: 2752 rows across 18 tables; 14 cross-table support checks passed
+2026-10-29T15:11:44Z INFO __main__: SQLite transport insertion completed in 0.06 s
+2026-10-29T15:11:44Z INFO __main__: Database integrity, keys and provenance validation completed in 0.01 s
+2026-10-29T15:11:44Z INFO __main__: Database validation passed: integrity ok; foreign-key violations=0
+2026-10-29T15:11:44Z INFO __main__: SQLite assembly completed in 112.61 s
+2026-10-29T15:11:44Z INFO __main__: Database and validation report publication completed in 0.01 s
+2026-10-29T15:11:44Z INFO __main__: Created C:\Users\rashi\ESM_databases\canoe-transportation\outputs\sqlite\canoe_transport_period_index_test.sqlite; validation report: C:\Users\rashi\ESM_databases\canoe-transportation\outputs\validation\annual_capacity_factor_period_test\build_validation.json
+2026-10-29T15:11:44Z INFO __main__: Total scenario build completed in 172.61 s
+2026-10-29T15:11:44Z INFO utils.build_logging: Scenario build completed: scenario=annual_capacity_factor_period_test verbosity=INFO

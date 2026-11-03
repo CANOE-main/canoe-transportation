@@ -64,6 +64,7 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │   │   ├── build_costs.py                   # Combine and validate investment/variable costs
 │   │   ├── manual_parameters.py             # Validate registry and resolve generic selectors
 │   │   ├── road_stocks_and_demands.py       # Road existing stock and demand products
+│   │   ├── ceud_inputs.py                  # Explicit base-year views; preserves native CEUD observations #to-review
 │   │   ├── road_utilization.py              # Road C2A and annual utilization, including vintage-period artifacts
 │   │   ├── offroad_stocks_and_demands.py    # Off-road existing stock and demand products
 │   │   ├── road_lifetimes_survival.py       # Accepted road lifetime, survival, and MTO diagnostics
@@ -96,6 +97,8 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │       ├── sqlite_utils.py                  # Shared SQLite identifier mechanics
 │       ├── legacy_compare.py                # Narrow configured legacy comparison
 │       ├── sqlite_compare.py                # Scenario-to-scenario SQLite comparison #to-review
+│       ├── transportation_research.py        # Opt-in researcher reference, cohort and closure reports #to-review
+│       ├── charging_cost_comparison.py       # Opt-in source-year and unit-aware charger cost comparison #to-review
 │       ├── notebook_evidence.py             # Captured, hash-validated stock/efficiency evidence bundles #to-review
 │       ├── vehicle_stock_diagnostic.py      # Reader and views for recorded stock/mapping/retention evidence #to-review
 │       ├── ldv_efficiency_diagnostic.py     # Reader and views for recorded efficiency evidence #to-review

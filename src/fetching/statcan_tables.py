@@ -24,7 +24,9 @@ from utils import (
     load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
+    resolve_artifact_path,
     resolve_input_path,
+    write_dataframe_atomic,
     write_text_atomic,
 )
 from validation.config_models import SourceSpec
@@ -810,6 +812,56 @@ def write_outputs(
         "\n".join(warnings) + ("\n" if warnings else ""),
         encoding="utf-8",
     )
+
+
+def prepare_ldv_stock_benchmark(bundle: ConfigBundle) -> Path:
+    """Normalize the registered LDV stock subset for opt-in composition review.
+
+    Reuse the adopted physical source and its validation; acquisition is owned by
+    the ordinary source replay. Never widen the production MHDV selectors or
+    reinterpret missing/suppressed published cells as zero.
+    """
+    rules = module_rules(bundle)
+    requests_for_review = [request for request in build_requests(bundle)
+                           if "ldv_benchmark_output_file" in request.table_rules]
+    if len(requests_for_review) != 1:
+        raise StatCanSourceError("Configure exactly one registered LDV stock benchmark table")
+    base = requests_for_review[0]
+    filename = base.table_rules["ldv_benchmark_output_file"]
+    if not isinstance(filename, str) or Path(filename).name != filename or Path(filename).suffix != ".csv":
+        raise StatCanSourceError("LDV stock benchmark output must be one configured CSV filename")
+    selectors = base.table_rules["ldv_benchmark_selectors"]
+    if not isinstance(selectors, dict) or set(selectors) != {"Vehicle Type", "Fuel Type", "Statistics"}:
+        raise StatCanSourceError("LDV stock benchmark requires explicit vehicle, fuel and statistic selectors")
+    request = StatCanTableRequest.model_validate({
+        **base.model_dump(), "output_file": filename, "normalizer": "ldv_stock_benchmark",
+        "table_rules": {**base.table_rules, "selectors": selectors},
+    })
+    output_dir = resolve_artifact_path(bundle, "statcan_ldv_composition")
+    if output_dir.resolve() != resolve_input_path(bundle, "interim", rules["interim_subdir"]).resolve():
+        raise StatCanSourceError("LDV stock benchmark artifact route differs from the registered source owner")
+    validate_source(request)
+    validate_metadata_contract(read_cached_metadata(request), request)
+    regions = scenario_regions(bundle)
+    if "BCT" in regions and base.table_rules.get("include_bc_for_bct"):
+        regions = list(dict.fromkeys([*regions, "BC"]))
+    selected, member, input_rows = read_selected_table(
+        request, regions=regions, geography_rules=rules["geography"],
+        chunksize=int(rules["read_chunksize"]), provenance_columns=rules["provenance_columns"],
+    )
+    multipliers = {str(key).lower(): float(value) for key, value in
+                   load_conversion_factors(bundle)["statcan"]["scalar_factor_multipliers"].items()}
+    normalized = normalize_table(selected, request=request, source_member=member, scalar_multipliers=multipliers)
+    known = normalized.scaled_value.dropna()
+    if not np.isfinite(known).all() or known.lt(0).any() or known.mod(1).ne(0).any():
+        raise StatCanSourceError("LDV stock benchmark requires nonnegative integral published vehicle counts")
+    output = output_dir / filename
+    write_dataframe_atomic(normalized, output)
+    logging.getLogger(__name__).info(
+        "Prepared diagnostic-only LDV stock: %s selected rows from %s source rows; %s missing/suppressed values retained",
+        len(normalized), input_rows, int(normalized.scaled_value.isna().sum()),
+    )
+    return output
 
 
 def fetch_and_normalize(

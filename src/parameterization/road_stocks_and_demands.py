@@ -528,6 +528,83 @@ def build_existing_stock_age_artifacts(
     return output_dir
 
 
+def derive_sales_survival_cohorts(
+    provincial: pd.DataFrame, transformed_curves: pd.DataFrame, *,
+    regions: list[str], base_year: int, history_start: int, rules: dict[str, Any],
+) -> pd.DataFrame:
+    """Reconstruct surviving sales without a stock anchor or an age-distribution fit.
+
+    Cohort age is base year minus sale year; cumulative survival includes age zero.
+    Registered history is a bounded reconstruction, not evidence of zero older stock.
+    Fuel allocation is performed separately using the existing registration proxies.
+    """
+    records = []
+    for road_class, sales_selector in rules["ceud_sales_series"].items():
+        selector = rules["fixed_lifetime_sources"][road_class]
+        source_id = ("ontario_report_a_weighted_nhtsa_cafe"
+                     if selector["kind"] == "ceud_median" else selector["source_id"])
+        source_class = selector.get("target_class", selector.get("curve_source_class"))
+        selected = transformed_curves.loc[
+            transformed_curves.source_id.eq(source_id)
+            & transformed_curves.source_class.eq(source_class)
+        ]
+        if selected.empty or selected.age.duplicated().any():
+            raise ValueError(f"Missing or duplicate sales survival schedule: {road_class}")
+        survival = selected.set_index("age").survival_probability.sort_index()
+        if (not isfinite(float(survival.get(0, float("nan"))))
+                or abs(float(survival.loc[0]) - 1) > 1e-10
+                or survival.map(lambda x: not isfinite(x) or not 0 <= x <= 1).any()
+                or survival.diff().dropna().gt(1e-10).any()):
+            raise ValueError(f"Invalid cumulative sales survival schedule: {road_class}")
+        stock_selector = rules["ceud_stock_series"][road_class]
+        for region in regions:
+            sales = provincial.loc[
+                provincial.region.eq(region)
+                & provincial.table_id.eq(sales_selector["table_id"])
+                & provincial.raw_series.eq(sales_selector["raw_series"])
+                & provincial.year.le(base_year)
+            ].sort_values("year")
+            stock = provincial.loc[
+                provincial.region.eq(region) & provincial.year.eq(base_year)
+                & provincial.table_id.eq(stock_selector["table_id"])
+                & provincial.raw_series.eq(stock_selector["raw_series"])
+            ]
+            if (sales.empty or sales.year.duplicated().any()
+                    or set(sales.unit) != {"thousands"} or len(stock) != 1
+                    or stock.iloc[0].unit != "thousands"):
+                raise ValueError(f"Missing, duplicate or wrong-unit CEUD sales/stock: {(region, road_class)}")
+            source_start = int(sales.year.min())
+            start = max(source_start, history_start)
+            sales = sales.loc[sales.year.ge(start)]
+            if sales.year.tolist() != list(range(start, base_year + 1)):
+                raise ValueError(f"Incomplete CEUD annual sales history: {(region, road_class)}")
+            if sales.value.map(lambda x: not isfinite(x) or x < 0).any():
+                raise ValueError(f"Invalid CEUD sales: {(region, road_class)}")
+            observed_stock = float(stock.iloc[0].value)
+            if not isfinite(observed_stock) or observed_stock < 0:
+                raise ValueError(f"Invalid CEUD comparison stock: {(region, road_class)}")
+            ages = base_year - sales.year
+            if set(ages) - set(survival.index):
+                raise ValueError(f"Sales history exceeds accepted survival coverage: {(region, road_class)}")
+            for row in sales.itertuples(index=False):
+                age = base_year - int(row.year)
+                fraction = float(survival.loc[age])
+                records.append({
+                    "ceud_region": region, "road_class": road_class,
+                    "vintage_year": int(row.year), "age": age,
+                    "sales_k_vehicles": float(row.value),
+                    "survival_probability": fraction,
+                    "surviving_k_vehicles": float(row.value) * fraction,
+                    "ceud_stock_k_vehicles": observed_stock,
+                    "source_history_start": source_start,
+                    "included_history_start": start,
+                    "older_history_status": "not_reconstructed",
+                    "survival_source_id": source_id, "survival_source_class": source_class,
+                    "observation_status": getattr(row, "ceud_value_status", "observed"),
+                })
+    return pd.DataFrame(records)
+
+
 def distribute_existing_road_capacity(
     *,
     provincial: pd.DataFrame,
@@ -544,9 +621,15 @@ def distribute_existing_road_capacity(
     fixed_lifetimes_by_class: Mapping[str, float],
     curve_ages_by_class: Mapping[str, set[int]],
     rules: dict[str, Any],
+    sales_cohorts: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Apply reviewed age and registration shares to CEUD base-year road stocks."""
     base_year = period_config.base_year
+    sales_keys = set() if sales_cohorts is None or sales_cohorts.empty else set(
+        zip(sales_cohorts.ceud_region, sales_cohorts.road_class, strict=True)
+    )
+    age_classes = {name for name in rules["ceud_stock_series"]
+                   if any((region, name) not in sales_keys for region in regions)}
     periods = period_config.existing
     first_model_period = period_config.model[0]
     if (
@@ -564,18 +647,21 @@ def distribute_existing_road_capacity(
     historical_fuels = set(rules["historical_fuel_types"])
     if historical_fuels != {"Gasoline", "Diesel"}:
         raise ValueError("Historical fuel rule must select gasoline and diesel")
-    if ldv_age["report_year"].nunique() != 1 or int(
+    if age_classes.intersection(rules["statcan_ldv_source_types"]) and (ldv_age["report_year"].nunique() != 1 or int(
         ldv_age["report_year"].iloc[0]
-    ) != vehicle_population_year:
+    ) != vehicle_population_year):
         raise ValueError("Mapped LDV age evidence is not the configured MTO edition")
     ldv_age = ldv_age.copy()
-    ldv_age["age"] = pd.to_numeric(ldv_age["age"], errors="raise").astype(int)
+    if not ldv_age.empty:
+        ldv_age["age"] = pd.to_numeric(ldv_age["age"], errors="raise").astype(int)
     age_map: dict[str, pd.DataFrame] = {}
     for name, ceud_class in (
         ("cars", "Car"),
         ("passenger_light_trucks", "Light Truck"),
         ("freight_light_trucks", "Light Truck"),
     ):
+        if name not in age_classes:
+            continue
         selected = ldv_age.loc[ldv_age["nrcan_ceud_class"].eq(ceud_class)]
         if selected.empty:
             raise ValueError(f"No mapped MTO age evidence for {name}")
@@ -584,6 +670,8 @@ def distribute_existing_road_capacity(
             age_share=by_age["fit_active_stock"] / by_age["fit_active_stock"].sum()
         )
     for name, source_class in rules["report5_age_classes"].items():
+        if name not in age_classes:
+            continue
         selected = report5_age.loc[
             report5_age["VEHICLE_CLASS"].eq(source_class)
             & report5_age["year"].eq(vehicle_population_year)
@@ -622,8 +710,22 @@ def distribute_existing_road_capacity(
             stock = float(source.iloc[0]["value"])
             if not isfinite(stock) or stock < 0:
                 raise ValueError(f"Invalid CEUD road stock: {(region, name)}")
+            is_sales = (region, name) in sales_keys
+            observed_stock = stock
+            if is_sales:
+                selected_sales = sales_cohorts.loc[
+                    sales_cohorts.ceud_region.eq(region) & sales_cohorts.road_class.eq(name)
+                ]
+                stock = float(selected_sales.surviving_k_vehicles.sum())
+                if stock <= 0:
+                    raise ValueError(f"No surviving sales for {(region, name)}")
+                ages = selected_sales.assign(
+                    age_share=selected_sales.surviving_k_vehicles / stock,
+                )
+            else:
+                ages = age_map[name]
             eligible_age_rows: list[tuple[int, int, float, bool, bool]] = []
-            for age_row in age_map[name].itertuples(index=False):
+            for age_row in ages.itertuples(index=False):
                 actual_year = base_year - int(age_row.age)
                 year = max(periods[0], actual_year)
                 within_history = actual_year >= periods[0]
@@ -671,11 +773,13 @@ def distribute_existing_road_capacity(
                         "within_historical_coverage": within_history,
                         "eligible_first_model_period": eligible,
                         "stock_k_vehicles": stock,
+                        "ceud_stock_k_vehicles": observed_stock,
+                        "stock_method": "sales_survival" if is_sales else "stock_age",
                         "raw_cohort_k_vehicles": stock * age_share,
                         "reference_cohort_k_vehicles": stock * age_share / history_share
                         if within_history
                         else 0.0,
-                        "age_source": "MTO Report A mapped"
+                        "age_source": "CEUD sales times cumulative survival" if is_sales else "MTO Report A mapped"
                         if name in rules["statcan_ldv_source_types"]
                         else "MTO Report 5",
                     }

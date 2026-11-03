@@ -865,6 +865,103 @@ sources:
         units: "Source-labelled maintenance-and-repair coefficients."
         validation_rule: "The rules.yaml extraction mapping must yield non-empty numeric long-form coefficients with source labels and cell coordinates."
 
+  transport_canada_izev:
+    source_id: T40
+    title: "Transport Canada Incentives for Zero-Emission Vehicles (iZEV)"
+    status: active
+    source_type: upstream_download
+    file_type: csv
+    version: "November 2025 English snapshots; published 2025-12-19"
+    citation: "Transport Canada. iZEV program incentive requests. Government of Canada Open Government Portal. https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1"
+    units: "Incentivized purchase/lease records; one vehicle per record."
+    database_note: "Purchase/lease acquisition records proxy PEV composition. Own-year MY2020–2024 counts apply within that window; their pooled composition proxies older cohorts using each target year's Ratings consumption, classes and ranges. Geography is chosen for the whole source-period/broad-powertrain pool before matching. Eligibility and demonstrator exceptions limit market representation; public records lack VIN/transaction IDs, so identical rows are retained without claiming unique vehicles. Request year differs from model year. Unresolved matches use distinct-model catalogue medians; incentive composition does not measure historical sales or in-use consumption."
+    data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
+    validation_rule: "Pinned MD5/bytes, 18 native columns, Purchase/Lease categories, exact model-year/province/propulsion coverage and actual request dates; retain repeated transactions and audit blank physical rows."
+    refresh_notes: "Use the explicit source updater for the three registered resource IDs. Review eligibility and model-year coverage changes before adoption; never overwrite pinned caches. The FY2024-25 file contains an FY2025-26 processing tail through August 2025."
+    update:
+      strategy: tc_izev
+      metadata_url: https://open.canada.ca/data/api/3/action/resource_show
+      download_hosts: [opencanada.blob.core.windows.net]
+    adapter:
+      package_id: "42986a95-be23-436e-af15-7c6bf292a2e1"
+      dictionary_url: "https://open.canada.ca/data/dataset/42986a95-be23-436e-af15-7c6bf292a2e1/resource/12a8a111-d790-49ce-af7c-ec388345e147/download/izev-data-dictionary-bilingual_-ivze-dictionnaire-de-donnees-bilingue-nov-2025.pdf"
+      expected_provinces: ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"]
+      expected_powertrains: [bev, phev, fcev]
+      required_columns:
+        - "Incentive Request Date"
+        - "Month and Year"
+        - "Government of Canada Fiscal Year (FY)"
+        - "Calendar Year"
+        - "Dealership Province/Territory"
+        - "Dealership Postal Code"
+        - "Purchase or Lease"
+        - "Vehicle Year"
+        - "Vehicle Make"
+        - "Vehicle Model"
+        - "Vehicle Make and Model"
+        - "Battery, Plug-in Hybrid, or Fuel Cell EV (BEV, PHEV or FCEV)"
+        - "BEV/PHEV/FCEV - Battery ≥ 15kWh or electric range ≥ 50km"
+        - "Battery/Electric Range Criteria Pre/Since 2022-04-25"
+        - "Eligible Incentive Amount (in dollars)"
+        - "Individual or Organization (Recipient)"
+        - "Recipient Province/Territory"
+        - "Country"
+    components:
+      fy2019_2022:
+        label: "iZEV fy2019_2022 incentive records (November 2025 snapshot)"
+        short_name: "tc_izev_fy2019_2022"
+        version: "2025-12-19"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, recipient_province, propulsion, incentive_request_date]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [rating_composition, road_efficiencies]
+        units: incentivized vehicles
+        adapter:
+          resource_id: "bba4c959-53ca-4d23-9cde-da3ce771bba2"
+          url: "https://open.canada.ca/data/dataset/42986a95-be23-436e-af15-7c6bf292a2e1/resource/bba4c959-53ca-4d23-9cde-da3ce771bba2/download/izev-webstats_fy-2019-20-to-fy-2022-23_en_updated-november-2025.csv"
+          cache_path: "transport_canada_izev/2025-12-19_fy2019_2022.csv"
+          expected_md5: "a51bde3db9a6f217739b885e765e3a1d"
+          expected_bytes: 38538045
+          expected_model_years: [2017,2018,2019,2020,2021,2022,2023]
+          expected_request_date_from: "2019-05-15"
+          expected_request_date_to: "2023-03-31"
+      fy2023:
+        label: "iZEV fy2023 incentive records (November 2025 snapshot)"
+        short_name: "tc_izev_fy2023"
+        version: "2025-12-19"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, recipient_province, propulsion, incentive_request_date]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [rating_composition, road_efficiencies]
+        units: incentivized vehicles
+        adapter:
+          resource_id: "33f35447-fd93-45bc-866c-866aba4b2f4e"
+          url: "https://open.canada.ca/data/dataset/42986a95-be23-436e-af15-7c6bf292a2e1/resource/33f35447-fd93-45bc-866c-866aba4b2f4e/download/izev-webstats_fy-2023-24_en_updated-november-2025.csv"
+          cache_path: "transport_canada_izev/2025-12-19_fy2023.csv"
+          expected_md5: "9dbab46e9b95c56552baa0293e5b3947"
+          expected_bytes: 25304118
+          expected_model_years: [2019,2020,2021,2022,2023,2024]
+          expected_request_date_from: "2023-04-01"
+          expected_request_date_to: "2024-03-31"
+      fy2024:
+        label: "iZEV fy2024 incentive records (November 2025 snapshot)"
+        short_name: "tc_izev_fy2024"
+        version: "2025-12-19"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, recipient_province, propulsion, incentive_request_date]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [rating_composition, road_efficiencies]
+        units: incentivized vehicles
+        adapter:
+          resource_id: "167cec08-777a-4b29-a3a7-eda79f799bae"
+          url: "https://open.canada.ca/data/dataset/42986a95-be23-436e-af15-7c6bf292a2e1/resource/167cec08-777a-4b29-a3a7-eda79f799bae/download/izev-webstats_fy-2024-25_en_updated-november-2025.csv"
+          cache_path: "transport_canada_izev/2025-12-19_fy2024.csv"
+          expected_md5: "b9398d9229d5e0ffe770b902a4fa8851"
+          expected_bytes: 29288062
+          expected_model_years: [2018,2020,2021,2022,2023,2024,2025]
+          expected_request_date_from: "2024-04-01"
+          expected_request_date_to: "2025-08-25"
+
   nrcan_fuel_consumption_ratings:
     update:
       strategy: nrcan_ratings
@@ -1895,8 +1992,8 @@ sources:
         method: https
         url: "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
       cache_path: assorted_sources/transport_canada_ev_dashboard_2026_q1.html
-      expected_sha256: 83aae9ce04228090d46d697bc9c6c851dbf11e2a776dcd0d4aa1930575f104b0
-      expected_bytes: 92141
+      expected_sha256: 4ffdbdda087b6a361decfb21b49557d058ef571ced34a4f45d731546a3544091
+      expected_bytes: 91590
     components:
       medium_heavy_ev_market_share:
         database_note: "Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet."

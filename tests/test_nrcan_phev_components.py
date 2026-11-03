@@ -95,7 +95,7 @@ def rules(bundle):
     return load_harmonization_rules(bundle, "efficiencies")
 
 
-def test_classifier_filters_model_means_after_source_concatenation(rules, bundle):
+def test_classifier_preserves_all_models_after_source_concatenation(rules, bundle):
     source = pd.DataFrame([
         {"source_row": index, "component": "conventional", "Model year": 2023,
          "Make": "Fixture", "Model": model, "Vehicle class": "Compact",
@@ -113,14 +113,12 @@ def test_classifier_filters_model_means_after_source_concatenation(rules, bundle
     partitioned = classify([source.iloc[:4].copy(), source.iloc[4:].copy()])
     pd.testing.assert_frame_equal(result, partitioned)
     assert len(result) == 8
-    assert result.included.sum() == 5
-    assert set(result.loc[result.outlier_excluded, "Model"]) == {"A", "G"}
-    assert result.outlier_cohort_model_count.eq(7).all()
+    assert result.included.sum() == 8
     assert result["Engine size (L)"].eq(12).all()
     assert not {"engine_litres", "motor_kw", "cylinders", "performance_excluded"} & set(result)
     models = distinct_rating_models(result, rules=rules)
-    assert models.Model.tolist() == ["B", "C", "D", "E", "F"]
-    assert models.native_consumption.tolist() == [10, 11, 12, 13, 14]
+    assert models.Model.tolist() == ["A", "B", "C", "D", "E", "F", "G"]
+    assert models.native_consumption.tolist() == [2, 10, 11, 12, 13, 14, 45]
 
 
 def _classify_phev(rules, bundle, contract, utility_factors):

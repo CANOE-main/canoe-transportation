@@ -39,6 +39,7 @@ def test_notebook_prerequisites_are_explicit_and_ordered(monkeypatch, profiles):
         "fetching.fueleconomy_vehicles.fetch_and_normalize": "normalize_fueleconomy",
         "parameterization.road_aggregation.build_road_aggregation_artifacts": "aggregation",
         "parameterization.road_aggregation.build_mapping_diagnostic_artifacts": "mapping_review",
+        "fetching.statcan_tables.prepare_ldv_stock_benchmark": "statcan_stock_review",
         "fetching.assorted_sources.fetch_and_normalize_moves5_survival": "moves_review",
         "parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts": "retention_review",
     }
@@ -48,6 +49,7 @@ def test_notebook_prerequisites_are_explicit_and_ordered(monkeypatch, profiles):
     build_transport.prepare_scenario_inputs(bundle, download=False)
     names = [name for name, kwargs in calls]
     assert ("normalize_fueleconomy" in names) == bool(profiles)
+    assert ("statcan_stock_review" in names) == ("efficiency" in profiles)
     assert ("mapping_review" in names) == ("vehicle_stock" in profiles)
     assert ("retention_review" in names) == ("vehicle_stock" in profiles)
     assert ("moves_review" in names) == ("vehicle_stock" in profiles)
@@ -101,20 +103,19 @@ def test_notebook_index_advances_only_after_database_publication(tmp_path, monke
 
     monkeypatch.setattr(build_transport, "bootstrap_database", bootstrap)
     monkeypatch.setattr(os, "replace", publish_file)
-    monkeypatch.setattr("validation.rating_stock_benchmark.build_rating_stock_benchmark", lambda bundle: calls.append("benchmark"))
     monkeypatch.setattr("validation.notebook_evidence.stage_notebook_evidence", stage)
     monkeypatch.setattr("validation.notebook_evidence.prune_notebook_evidence",
                         lambda publication: calls.append("prune") or [])
     if publication_fails:
         with pytest.raises(PermissionError, match="index locked"):
             build_transport.build_from_scenario(bundle.scenario_path, overwrite=True)
-        assert calls == ["benchmark", "snapshot", "database", "index", "database"]
+        assert calls == ["snapshot", "database", "index", "database"]
         assert database.read_bytes() == b"previous database"
         assert report_path.read_bytes() == b"previous report"
         assert index_path.read_bytes() == previous_index
     else:
         build_transport.build_from_scenario(bundle.scenario_path, overwrite=True)
-        assert calls == ["benchmark", "snapshot", "database", "index", "prune"]
+        assert calls == ["snapshot", "database", "index", "prune"]
         assert database.read_bytes() == b"validated candidate"
         assert index_path.read_bytes() != previous_index
 
@@ -141,7 +142,6 @@ def test_config_change_during_capture_fails_before_publication(tmp_path, monkeyp
     bundle = load_config_bundle("config/scenarios/notebook_diagnostics.yaml", repo_root=tmp_path)
     monkeypatch.setattr(build_transport, "load_config_bundle", lambda path: bundle)
     monkeypatch.setattr(build_transport, "prepare_scenario_inputs", lambda *args, **kwargs: None)
-    monkeypatch.setattr("validation.rating_stock_benchmark.build_rating_stock_benchmark", lambda bundle: None)
 
     def bootstrap(**kwargs):
         kwargs["database_path"].write_bytes(b"candidate")

@@ -1,0 +1,22 @@
+{
+  "parameter": "limit_annual_capacity_factor",
+  "artifact": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\2_processed\\road_utilization\\limit_annual_capacity_factor_vintage_period.csv",
+  "required_key": [
+    "region",
+    "tech_or_group",
+    "vintage",
+    "period",
+    "output_comm"
+  ],
+  "canoe_schema_v4_key": [
+    "region",
+    "tech_or_group",
+    "vintage",
+    "output_comm",
+    "operator",
+    "data_id"
+  ],
+  "status": "not_inserted",
+  "reason": "The authoritative canoe_schema v4 row and DDL have one period-linked vintage column and no second period index.",
+  "rows": 271
+}

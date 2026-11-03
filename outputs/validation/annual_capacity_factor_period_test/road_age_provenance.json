@@ -1,0 +1,2105 @@
+{
+  "producer": "parameterization.road_utilization.build_age_factor_artifact / validation.provenance.registry_rows",
+  "description": "Unpublished preparation identities matching the age CSV; register matching metadata before importing into a fixture copy with provenance foreign keys.",
+  "contexts": [
+    {
+      "source_key": "composite",
+      "source_id": "T01",
+      "component_key": "road_utilization.age.cars.ON",
+      "data_id": "road-utilization-age-cars-on:composite:1:b6c34688238a77df",
+      "dataset_label": "road_utilization.age.cars.ON",
+      "dataset_version": "composite",
+      "dataset_description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "data_quality": {
+        "dq_cred": 2,
+        "dq_geog": 1,
+        "dq_struc": 2,
+        "dq_tech": 2,
+        "dq_time": 1
+      },
+      "governing_source_id": "T01",
+      "contributors": [
+        {
+          "source_key": "nrcan_ceud_transport_provincial",
+          "source_id": "T01",
+          "title": "NRCan Comprehensive Energy Use Database Transportation Sector provincial tables",
+          "citation": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+          "database_note": "Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.",
+          "data_id": "road-utilization-age-cars-on:composite:1:b6c34688238a77df",
+          "components": [
+            {
+              "component_key": "20",
+              "database_note": "Provincial passenger-car service activity in passenger-kilometres.",
+              "database_note_variants": {
+                "car_extrapolation": "Car activity follows historical growth; passenger-light-truck activity is the residual within the GDP-indexed passenger-LDV total."
+              },
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            },
+            {
+              "component_key": "21",
+              "database_note": "Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "source_key": "ontario_ministry_transport_vehicle_population",
+          "source_id": "T03",
+          "title": "Ontario Ministry of Transportation vehicle population data",
+          "citation": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+          "database_note": "Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.",
+          "data_id": "road-utilization-age-cars-on:composite:1:b6c34688238a77df",
+          "components": [
+            {
+              "component_key": "A",
+              "database_note": "Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 1,
+                "dq_geog": 2,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 2
+              },
+              "database_precedence": []
+            }
+          ]
+        },
+        {
+          "source_key": "nlr_atb_transportation",
+          "source_id": "T06",
+          "title": "2024 Transportation Annual Technology Baseline",
+          "citation": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+          "database_note": "U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.",
+          "data_id": "road-utilization-age-cars-on:composite:1:b6c34688238a77df",
+          "components": [
+            {
+              "component_key": "vmt_ldv",
+              "database_note": "U.S. age-based mileage profiles from SAFE FRIA 2020 odometer fits; the SUV profile extends beyond the original age coverage by extrapolation.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 3,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 3
+              },
+              "database_precedence": [
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "bev_150_miles",
+                    "bev_200_miles",
+                    "bev_300_miles",
+                    "bev_400_miles",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "phev",
+                    "phev_35_miles",
+                    "phev_50_miles"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "fchev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "phev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": [
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "cost_invest",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "cost_variable",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "maintenance_ldv"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "database_note_keys": {
+        "capacity_factor_tech": [
+          "season",
+          "region"
+        ],
+        "cost_invest": [
+          "tech",
+          "region"
+        ],
+        "cost_fixed": [
+          "tech",
+          "region"
+        ],
+        "cost_variable": [
+          "tech",
+          "region"
+        ],
+        "demand": [
+          "commodity",
+          "region"
+        ],
+        "efficiency": [
+          "tech",
+          "region"
+        ],
+        "existing_capacity": [
+          "tech",
+          "region"
+        ],
+        "lifetime_tech": [
+          "tech",
+          "region"
+        ],
+        "lifetime_survival_curve": [
+          "tech",
+          "region"
+        ],
+        "limit_annual_capacity_factor": [
+          "tech_or_group",
+          "region"
+        ],
+        "limit_tech_input_split": [
+          "tech",
+          "region"
+        ],
+        "limit_tech_input_split_annual": [
+          "tech",
+          "region"
+        ],
+        "limit_new_capacity_share": [
+          "sub_group",
+          "region"
+        ],
+        "emission_embodied": [
+          "tech",
+          "emis_comm",
+          "region"
+        ]
+      }
+    },
+    {
+      "source_key": "composite",
+      "source_id": "T01",
+      "component_key": "road_utilization.age.passenger_light_trucks.ON",
+      "data_id": "road-utilization-age-passenger-light-trucks-on:composite:1:d540a2cc61442353",
+      "dataset_label": "road_utilization.age.passenger_light_trucks.ON",
+      "dataset_version": "composite",
+      "dataset_description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "data_quality": {
+        "dq_cred": 2,
+        "dq_geog": 1,
+        "dq_struc": 2,
+        "dq_tech": 2,
+        "dq_time": 1
+      },
+      "governing_source_id": "T01",
+      "contributors": [
+        {
+          "source_key": "nrcan_ceud_transport_provincial",
+          "source_id": "T01",
+          "title": "NRCan Comprehensive Energy Use Database Transportation Sector provincial tables",
+          "citation": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+          "database_note": "Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.",
+          "data_id": "road-utilization-age-passenger-light-trucks-on:composite:1:d540a2cc61442353",
+          "components": [
+            {
+              "component_key": "34",
+              "database_note": "Provincial passenger-light-truck service activity in passenger-kilometres.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            },
+            {
+              "component_key": "37",
+              "database_note": "Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "source_key": "ontario_ministry_transport_vehicle_population",
+          "source_id": "T03",
+          "title": "Ontario Ministry of Transportation vehicle population data",
+          "citation": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+          "database_note": "Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.",
+          "data_id": "road-utilization-age-passenger-light-trucks-on:composite:1:d540a2cc61442353",
+          "components": [
+            {
+              "component_key": "A",
+              "database_note": "Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 1,
+                "dq_geog": 2,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 2
+              },
+              "database_precedence": []
+            }
+          ]
+        },
+        {
+          "source_key": "nlr_atb_transportation",
+          "source_id": "T06",
+          "title": "2024 Transportation Annual Technology Baseline",
+          "citation": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+          "database_note": "U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.",
+          "data_id": "road-utilization-age-passenger-light-trucks-on:composite:1:d540a2cc61442353",
+          "components": [
+            {
+              "component_key": "vmt_ldv",
+              "database_note": "U.S. age-based mileage profiles from SAFE FRIA 2020 odometer fits; the SUV profile extends beyond the original age coverage by extrapolation.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 3,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 3
+              },
+              "database_precedence": [
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "bev_150_miles",
+                    "bev_200_miles",
+                    "bev_300_miles",
+                    "bev_400_miles",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "phev",
+                    "phev_35_miles",
+                    "phev_50_miles"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "fchev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "phev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": [
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "cost_invest",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "cost_variable",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "maintenance_ldv"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "database_note_keys": {
+        "capacity_factor_tech": [
+          "season",
+          "region"
+        ],
+        "cost_invest": [
+          "tech",
+          "region"
+        ],
+        "cost_fixed": [
+          "tech",
+          "region"
+        ],
+        "cost_variable": [
+          "tech",
+          "region"
+        ],
+        "demand": [
+          "commodity",
+          "region"
+        ],
+        "efficiency": [
+          "tech",
+          "region"
+        ],
+        "existing_capacity": [
+          "tech",
+          "region"
+        ],
+        "lifetime_tech": [
+          "tech",
+          "region"
+        ],
+        "lifetime_survival_curve": [
+          "tech",
+          "region"
+        ],
+        "limit_annual_capacity_factor": [
+          "tech_or_group",
+          "region"
+        ],
+        "limit_tech_input_split": [
+          "tech",
+          "region"
+        ],
+        "limit_tech_input_split_annual": [
+          "tech",
+          "region"
+        ],
+        "limit_new_capacity_share": [
+          "sub_group",
+          "region"
+        ],
+        "emission_embodied": [
+          "tech",
+          "emis_comm",
+          "region"
+        ]
+      }
+    },
+    {
+      "source_key": "composite",
+      "source_id": "T01",
+      "component_key": "road_utilization.age.freight_light_trucks.ON",
+      "data_id": "road-utilization-age-freight-light-trucks-on:composite:1:c856cdbc5d692daa",
+      "dataset_label": "road_utilization.age.freight_light_trucks.ON",
+      "dataset_version": "composite",
+      "dataset_description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "data_quality": {
+        "dq_cred": 2,
+        "dq_geog": 1,
+        "dq_struc": 2,
+        "dq_tech": 2,
+        "dq_time": 1
+      },
+      "governing_source_id": "T01",
+      "contributors": [
+        {
+          "source_key": "nrcan_ceud_transport_provincial",
+          "source_id": "T01",
+          "title": "NRCan Comprehensive Energy Use Database Transportation Sector provincial tables",
+          "citation": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+          "database_note": "Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.",
+          "data_id": "road-utilization-age-freight-light-trucks-on:composite:1:c856cdbc5d692daa",
+          "components": [
+            {
+              "component_key": "35",
+              "database_note": "Provincial freight-light-truck service activity in tonne-kilometres.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            },
+            {
+              "component_key": "37",
+              "database_note": "Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "source_key": "ontario_ministry_transport_vehicle_population",
+          "source_id": "T03",
+          "title": "Ontario Ministry of Transportation vehicle population data",
+          "citation": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+          "database_note": "Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.",
+          "data_id": "road-utilization-age-freight-light-trucks-on:composite:1:c856cdbc5d692daa",
+          "components": [
+            {
+              "component_key": "A",
+              "database_note": "Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 1,
+                "dq_geog": 2,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 2
+              },
+              "database_precedence": []
+            }
+          ]
+        },
+        {
+          "source_key": "nlr_atb_transportation",
+          "source_id": "T06",
+          "title": "2024 Transportation Annual Technology Baseline",
+          "citation": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+          "database_note": "U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.",
+          "data_id": "road-utilization-age-freight-light-trucks-on:composite:1:c856cdbc5d692daa",
+          "components": [
+            {
+              "component_key": "vmt_ldv",
+              "database_note": "U.S. age-based mileage profiles from SAFE FRIA 2020 odometer fits; the SUV profile extends beyond the original age coverage by extrapolation.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 3,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 3
+              },
+              "database_precedence": [
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "bev_150_miles",
+                    "bev_200_miles",
+                    "bev_300_miles",
+                    "bev_400_miles",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "phev",
+                    "phev_35_miles",
+                    "phev_50_miles"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "fchev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "phev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": [
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "cost_invest",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "cost_variable",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "maintenance_ldv"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "database_note_keys": {
+        "capacity_factor_tech": [
+          "season",
+          "region"
+        ],
+        "cost_invest": [
+          "tech",
+          "region"
+        ],
+        "cost_fixed": [
+          "tech",
+          "region"
+        ],
+        "cost_variable": [
+          "tech",
+          "region"
+        ],
+        "demand": [
+          "commodity",
+          "region"
+        ],
+        "efficiency": [
+          "tech",
+          "region"
+        ],
+        "existing_capacity": [
+          "tech",
+          "region"
+        ],
+        "lifetime_tech": [
+          "tech",
+          "region"
+        ],
+        "lifetime_survival_curve": [
+          "tech",
+          "region"
+        ],
+        "limit_annual_capacity_factor": [
+          "tech_or_group",
+          "region"
+        ],
+        "limit_tech_input_split": [
+          "tech",
+          "region"
+        ],
+        "limit_tech_input_split_annual": [
+          "tech",
+          "region"
+        ],
+        "limit_new_capacity_share": [
+          "sub_group",
+          "region"
+        ],
+        "emission_embodied": [
+          "tech",
+          "emis_comm",
+          "region"
+        ]
+      }
+    },
+    {
+      "source_key": "composite",
+      "source_id": "T01",
+      "component_key": "road_utilization.age.medium_trucks.ON",
+      "data_id": "road-utilization-age-medium-trucks-on:composite:1:449fdc3c187377ff",
+      "dataset_label": "road_utilization.age.medium_trucks.ON",
+      "dataset_version": "composite",
+      "dataset_description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "data_quality": {
+        "dq_cred": 2,
+        "dq_geog": 1,
+        "dq_struc": 2,
+        "dq_tech": 2,
+        "dq_time": 1
+      },
+      "governing_source_id": "T01",
+      "contributors": [
+        {
+          "source_key": "nrcan_ceud_transport_provincial",
+          "source_id": "T01",
+          "title": "NRCan Comprehensive Energy Use Database Transportation Sector provincial tables",
+          "citation": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+          "database_note": "Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.",
+          "data_id": "road-utilization-age-medium-trucks-on:composite:1:449fdc3c187377ff",
+          "components": [
+            {
+              "component_key": "36",
+              "database_note": "Provincial medium- and heavy-truck freight activity in tonne-kilometres.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            },
+            {
+              "component_key": "37",
+              "database_note": "Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "source_key": "ontario_ministry_transport_vehicle_population",
+          "source_id": "T03",
+          "title": "Ontario Ministry of Transportation vehicle population data",
+          "citation": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+          "database_note": "Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.",
+          "data_id": "road-utilization-age-medium-trucks-on:composite:1:449fdc3c187377ff",
+          "components": [
+            {
+              "component_key": "4",
+              "database_note": "Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 1,
+                "dq_geog": 2,
+                "dq_struc": 3,
+                "dq_tech": 3,
+                "dq_time": 2
+              },
+              "database_precedence": []
+            }
+          ]
+        },
+        {
+          "source_key": "nlr_atb_transportation",
+          "source_id": "T06",
+          "title": "2024 Transportation Annual Technology Baseline",
+          "citation": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+          "database_note": "U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.",
+          "data_id": "road-utilization-age-medium-trucks-on:composite:1:449fdc3c187377ff",
+          "components": [
+            {
+              "component_key": "vmt_mdhd",
+              "database_note": "U.S. truck and bus age-based mileage profiles from Burnham, drawing on VIUS 2002; the underlying activity evidence is dated.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 3,
+                "dq_struc": 3,
+                "dq_tech": 2,
+                "dq_time": 4
+              },
+              "database_precedence": [
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "bev_150_miles",
+                    "bev_200_miles",
+                    "bev_300_miles",
+                    "bev_400_miles",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "phev",
+                    "phev_35_miles",
+                    "phev_50_miles"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "fchev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "phev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": [
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "cost_invest",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "cost_variable",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "maintenance_ldv"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "database_note_keys": {
+        "capacity_factor_tech": [
+          "season",
+          "region"
+        ],
+        "cost_invest": [
+          "tech",
+          "region"
+        ],
+        "cost_fixed": [
+          "tech",
+          "region"
+        ],
+        "cost_variable": [
+          "tech",
+          "region"
+        ],
+        "demand": [
+          "commodity",
+          "region"
+        ],
+        "efficiency": [
+          "tech",
+          "region"
+        ],
+        "existing_capacity": [
+          "tech",
+          "region"
+        ],
+        "lifetime_tech": [
+          "tech",
+          "region"
+        ],
+        "lifetime_survival_curve": [
+          "tech",
+          "region"
+        ],
+        "limit_annual_capacity_factor": [
+          "tech_or_group",
+          "region"
+        ],
+        "limit_tech_input_split": [
+          "tech",
+          "region"
+        ],
+        "limit_tech_input_split_annual": [
+          "tech",
+          "region"
+        ],
+        "limit_new_capacity_share": [
+          "sub_group",
+          "region"
+        ],
+        "emission_embodied": [
+          "tech",
+          "emis_comm",
+          "region"
+        ]
+      }
+    },
+    {
+      "source_key": "composite",
+      "source_id": "T01",
+      "component_key": "road_utilization.age.heavy_trucks.ON",
+      "data_id": "road-utilization-age-heavy-trucks-on:composite:1:79cd639f180f8b84",
+      "dataset_label": "road_utilization.age.heavy_trucks.ON",
+      "dataset_version": "composite",
+      "dataset_description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "data_quality": {
+        "dq_cred": 2,
+        "dq_geog": 1,
+        "dq_struc": 2,
+        "dq_tech": 2,
+        "dq_time": 1
+      },
+      "governing_source_id": "T01",
+      "contributors": [
+        {
+          "source_key": "nrcan_ceud_transport_provincial",
+          "source_id": "T01",
+          "title": "NRCan Comprehensive Energy Use Database Transportation Sector provincial tables",
+          "citation": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+          "database_note": "Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.",
+          "data_id": "road-utilization-age-heavy-trucks-on:composite:1:79cd639f180f8b84",
+          "components": [
+            {
+              "component_key": "36",
+              "database_note": "Provincial medium- and heavy-truck freight activity in tonne-kilometres.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            },
+            {
+              "component_key": "37",
+              "database_note": "Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 1,
+                "dq_struc": 2,
+                "dq_tech": 2,
+                "dq_time": 1
+              },
+              "database_precedence": [
+                {
+                  "table": "existing_capacity",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "demand",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "20",
+                    "34",
+                    "35",
+                    "36",
+                    "32",
+                    "28",
+                    "29",
+                    "30",
+                    "7"
+                  ]
+                },
+                {
+                  "table": "limit_annual_capacity_factor",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "motorcycles",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit",
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "source_key": "statcan_transport_tables",
+          "source_id": "T04",
+          "title": "Statistics Canada transportation tables",
+          "citation": "Statistics Canada. Table 23-10-0142-01. https://doi.org/10.25318/2310014201-eng",
+          "database_note": "Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.",
+          "data_id": "road-utilization-age-heavy-trucks-on:composite:1:79cd639f180f8b84",
+          "components": [
+            {
+              "component_key": "23-10-0142-01",
+              "database_note": "For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 2,
+                "dq_struc": 3,
+                "dq_tech": 3,
+                "dq_time": 3
+              },
+              "database_precedence": []
+            }
+          ]
+        },
+        {
+          "source_key": "nlr_atb_transportation",
+          "source_id": "T06",
+          "title": "2024 Transportation Annual Technology Baseline",
+          "citation": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+          "database_note": "U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.",
+          "data_id": "road-utilization-age-heavy-trucks-on:composite:1:79cd639f180f8b84",
+          "components": [
+            {
+              "component_key": "vmt_mdhd",
+              "database_note": "U.S. truck and bus age-based mileage profiles from Burnham, drawing on VIUS 2002; the underlying activity evidence is dated.",
+              "database_note_variants": {},
+              "data_quality": {
+                "dq_cred": 2,
+                "dq_geog": 3,
+                "dq_struc": 3,
+                "dq_tech": 2,
+                "dq_time": 4
+              },
+              "database_precedence": [
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "bev_150_miles",
+                    "bev_200_miles",
+                    "bev_300_miles",
+                    "bev_400_miles",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks"
+                  ],
+                  "sub_categories": [
+                    "phev",
+                    "phev_35_miles",
+                    "phev_50_miles"
+                  ],
+                  "technology_suffixes": [
+                    "_N"
+                  ],
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "bev",
+                    "cng",
+                    "diesel",
+                    "fcev",
+                    "fchev",
+                    "gasoline",
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": [
+                    "phev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "phev_vehicle_inputs"
+                  ]
+                },
+                {
+                  "table": "efficiency",
+                  "categories": [
+                    "inter_city_buses"
+                  ],
+                  "sub_categories": [
+                    "hev"
+                  ],
+                  "technology_suffixes": null,
+                  "components": [
+                    "vehicles"
+                  ]
+                },
+                {
+                  "table": "cost_invest",
+                  "categories": [
+                    "cars",
+                    "passenger_light_trucks",
+                    "freight_light_trucks",
+                    "medium_trucks",
+                    "heavy_trucks",
+                    "school_buses",
+                    "urban_transit"
+                  ],
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": null
+                },
+                {
+                  "table": "cost_variable",
+                  "categories": null,
+                  "sub_categories": null,
+                  "technology_suffixes": null,
+                  "components": [
+                    "maintenance_ldv"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "database_note_keys": {
+        "capacity_factor_tech": [
+          "season",
+          "region"
+        ],
+        "cost_invest": [
+          "tech",
+          "region"
+        ],
+        "cost_fixed": [
+          "tech",
+          "region"
+        ],
+        "cost_variable": [
+          "tech",
+          "region"
+        ],
+        "demand": [
+          "commodity",
+          "region"
+        ],
+        "efficiency": [
+          "tech",
+          "region"
+        ],
+        "existing_capacity": [
+          "tech",
+          "region"
+        ],
+        "lifetime_tech": [
+          "tech",
+          "region"
+        ],
+        "lifetime_survival_curve": [
+          "tech",
+          "region"
+        ],
+        "limit_annual_capacity_factor": [
+          "tech_or_group",
+          "region"
+        ],
+        "limit_tech_input_split": [
+          "tech",
+          "region"
+        ],
+        "limit_tech_input_split_annual": [
+          "tech",
+          "region"
+        ],
+        "limit_new_capacity_share": [
+          "sub_group",
+          "region"
+        ],
+        "emission_embodied": [
+          "tech",
+          "emis_comm",
+          "region"
+        ]
+      }
+    }
+  ],
+  "data_source_labels": [
+    {
+      "source_id": "T01",
+      "notes": "nrcan_ceud_transport_provincial: NRCan Comprehensive Energy Use Database Transportation Sector provincial tables"
+    },
+    {
+      "source_id": "T03",
+      "notes": "ontario_ministry_transport_vehicle_population: Ontario Ministry of Transportation vehicle population data"
+    },
+    {
+      "source_id": "T06",
+      "notes": "nlr_atb_transportation: 2024 Transportation Annual Technology Baseline"
+    },
+    {
+      "source_id": "T04",
+      "notes": "statcan_transport_tables: Statistics Canada transportation tables"
+    }
+  ],
+  "data_set": [
+    {
+      "data_id": "road-utilization-age-cars-on:composite:1:b6c34688238a77df",
+      "label": "road_utilization.age.cars.ON",
+      "version": "composite",
+      "description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "status": null,
+      "author": null,
+      "date": null,
+      "parent_id": null,
+      "changelog": null,
+      "notes": null
+    },
+    {
+      "data_id": "road-utilization-age-passenger-light-trucks-on:composite:1:d540a2cc61442353",
+      "label": "road_utilization.age.passenger_light_trucks.ON",
+      "version": "composite",
+      "description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "status": null,
+      "author": null,
+      "date": null,
+      "parent_id": null,
+      "changelog": null,
+      "notes": null
+    },
+    {
+      "data_id": "road-utilization-age-freight-light-trucks-on:composite:1:c856cdbc5d692daa",
+      "label": "road_utilization.age.freight_light_trucks.ON",
+      "version": "composite",
+      "description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "status": null,
+      "author": null,
+      "date": null,
+      "parent_id": null,
+      "changelog": null,
+      "notes": null
+    },
+    {
+      "data_id": "road-utilization-age-medium-trucks-on:composite:1:449fdc3c187377ff",
+      "label": "road_utilization.age.medium_trucks.ON",
+      "version": "composite",
+      "description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "status": null,
+      "author": null,
+      "date": null,
+      "parent_id": null,
+      "changelog": null,
+      "notes": null
+    },
+    {
+      "data_id": "road-utilization-age-heavy-trucks-on:composite:1:79cd639f180f8b84",
+      "label": "road_utilization.age.heavy_trucks.ON",
+      "version": "composite",
+      "description": "CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages v1",
+      "status": null,
+      "author": null,
+      "date": null,
+      "parent_id": null,
+      "changelog": null,
+      "notes": null
+    }
+  ],
+  "data_source": [
+    {
+      "source_id": "T01",
+      "source": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+      "notes": "nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.\n  - 20: Provincial passenger-car service activity in passenger-kilometres.\n  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.",
+      "data_id": "road-utilization-age-cars-on:composite:1:b6c34688238a77df"
+    },
+    {
+      "source_id": "T03",
+      "source": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+      "notes": "ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.\n  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.",
+      "data_id": "road-utilization-age-cars-on:composite:1:b6c34688238a77df"
+    },
+    {
+      "source_id": "T06",
+      "source": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+      "notes": "nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.\n  - vmt_ldv: U.S. age-based mileage profiles from SAFE FRIA 2020 odometer fits; the SUV profile extends beyond the original age coverage by extrapolation.",
+      "data_id": "road-utilization-age-cars-on:composite:1:b6c34688238a77df"
+    },
+    {
+      "source_id": "T01",
+      "source": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+      "notes": "nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.\n  - 34: Provincial passenger-light-truck service activity in passenger-kilometres.\n  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.",
+      "data_id": "road-utilization-age-passenger-light-trucks-on:composite:1:d540a2cc61442353"
+    },
+    {
+      "source_id": "T03",
+      "source": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+      "notes": "ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.\n  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.",
+      "data_id": "road-utilization-age-passenger-light-trucks-on:composite:1:d540a2cc61442353"
+    },
+    {
+      "source_id": "T06",
+      "source": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+      "notes": "nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.\n  - vmt_ldv: U.S. age-based mileage profiles from SAFE FRIA 2020 odometer fits; the SUV profile extends beyond the original age coverage by extrapolation.",
+      "data_id": "road-utilization-age-passenger-light-trucks-on:composite:1:d540a2cc61442353"
+    },
+    {
+      "source_id": "T01",
+      "source": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+      "notes": "nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.\n  - 35: Provincial freight-light-truck service activity in tonne-kilometres.\n  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.",
+      "data_id": "road-utilization-age-freight-light-trucks-on:composite:1:c856cdbc5d692daa"
+    },
+    {
+      "source_id": "T03",
+      "source": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+      "notes": "ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.\n  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.",
+      "data_id": "road-utilization-age-freight-light-trucks-on:composite:1:c856cdbc5d692daa"
+    },
+    {
+      "source_id": "T06",
+      "source": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+      "notes": "nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.\n  - vmt_ldv: U.S. age-based mileage profiles from SAFE FRIA 2020 odometer fits; the SUV profile extends beyond the original age coverage by extrapolation.",
+      "data_id": "road-utilization-age-freight-light-trucks-on:composite:1:c856cdbc5d692daa"
+    },
+    {
+      "source_id": "T01",
+      "source": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+      "notes": "nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.\n  - 36: Provincial medium- and heavy-truck freight activity in tonne-kilometres.\n  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.",
+      "data_id": "road-utilization-age-medium-trucks-on:composite:1:449fdc3c187377ff"
+    },
+    {
+      "source_id": "T03",
+      "source": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+      "notes": "ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.\n  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.",
+      "data_id": "road-utilization-age-medium-trucks-on:composite:1:449fdc3c187377ff"
+    },
+    {
+      "source_id": "T06",
+      "source": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+      "notes": "nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.\n  - vmt_mdhd: U.S. truck and bus age-based mileage profiles from Burnham, drawing on VIUS 2002; the underlying activity evidence is dated.",
+      "data_id": "road-utilization-age-medium-trucks-on:composite:1:449fdc3c187377ff"
+    },
+    {
+      "source_id": "T01",
+      "source": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+      "notes": "nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.\n  - 36: Provincial medium- and heavy-truck freight activity in tonne-kilometres.\n  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.",
+      "data_id": "road-utilization-age-heavy-trucks-on:composite:1:79cd639f180f8b84"
+    },
+    {
+      "source_id": "T04",
+      "source": "Statistics Canada. Table 23-10-0142-01. https://doi.org/10.25318/2310014201-eng",
+      "notes": "statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.\n  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.",
+      "data_id": "road-utilization-age-heavy-trucks-on:composite:1:79cd639f180f8b84"
+    },
+    {
+      "source_id": "T06",
+      "source": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+      "notes": "nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.\n  - vmt_mdhd: U.S. truck and bus age-based mileage profiles from Burnham, drawing on VIUS 2002; the underlying activity evidence is dated.",
+      "data_id": "road-utilization-age-heavy-trucks-on:composite:1:79cd639f180f8b84"
+    }
+  ]
+}

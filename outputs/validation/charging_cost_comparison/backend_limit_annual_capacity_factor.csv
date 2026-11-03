@@ -1,0 +1,13 @@
+region,tech_or_group,vintage,output_comm,operator,factor,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
+ON,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,ge,0.147,"dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.",T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,ge,0.196,"dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.",T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,ge,0.196,,T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,ge,0.196,,T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,ge,0.196,,T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,ge,0.196,,T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,e,0.3,"dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.",T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,e,0.3,"dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.",T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,e,0.3,,T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,e,0.3,,T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,e,0.3,,T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline
+ON,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,e,0.3,,T24,2,2,3,2,2,ev-chargers-utilization:ON:T24:validation_baseline

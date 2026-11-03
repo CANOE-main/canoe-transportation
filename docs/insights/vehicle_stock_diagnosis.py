@@ -12,6 +12,7 @@ def _():
     import marimo as mo
     import pandas as pd
 
+    from parameterization.rating_composition import canonical_family
     from validation.notebook_evidence import prepare_command
     from validation.vehicle_stock_diagnostic import load_stock_diagnostic
 
@@ -73,6 +74,7 @@ def _():
         STATUS_COLORS,
         STATUS_ORDER,
         alt,
+        canonical_family,
         chart_ui,
         load_stock_diagnostic,
         mo,
@@ -175,9 +177,33 @@ def _(mo):
 
 
 @app.cell
-def _(load_stock_diagnostic, reload_evidence):
+def _(canonical_family, load_stock_diagnostic, reload_evidence):
     reload_evidence.value
     evidence = load_stock_diagnostic()
+    for _key in ["mapped_fleet", "mapping_config", "vehicle_class_evidence"]:
+        _frame = evidence[_key].copy()
+        for _field in ["make", "model"]:
+            _raw = f"raw_canonical_{_field}"
+            if _raw not in _frame:
+                _frame[_raw] = _frame[f"canonical_{_field}"]
+        _has_identity = _frame[["canonical_make", "canonical_model"]].notna().all(axis=1)
+        _canonical = [
+            canonical_family(_make, _model, evidence["composition_rules"])
+            for _make, _model in zip(
+                _frame.loc[_has_identity, "canonical_make"],
+                _frame.loc[_has_identity, "canonical_model"],
+                strict=True,
+            )
+        ]
+        _frame.loc[_has_identity, "canonical_make"] = [_pair[0] for _pair in _canonical]
+        _frame.loc[_has_identity, "canonical_model"] = [_pair[1] for _pair in _canonical]
+        _native_fields = ("MAKE", "MODEL") if "MAKE" in _frame else ("mto_make_code", "mto_model_code")
+        if set(_native_fields).issubset(_frame.columns):
+            _native_keys = _frame[_native_fields[0]].astype(str) + "/" + _frame[_native_fields[1]].astype(str)
+            _excluded_identity = _native_keys.isin(evidence["composition_rules"].get("unresolved_mto_keys", []))
+            _frame["composition_identity_excluded"] = _excluded_identity
+            _frame.loc[_excluded_identity, "canonical_model"] = "Unresolved family (G/GLS/GLE/AMG GT)"
+        evidence[_key] = _frame
     return (evidence,)
 
 
@@ -1699,6 +1725,10 @@ def _(alt, chart_ui, evidence, mo, pd):
             & top_source["FIT_ACTIVE"].gt(0)
         ].copy()
         top_source["normalized_make_model"] = top_source["canonical_make"].astype(str) + " " + top_source["canonical_model"].astype(str)
+        top_source["original_make_model"] = (
+            top_source["raw_canonical_make"].astype(str)
+            + " " + top_source["raw_canonical_model"].astype(str)
+        )
         top_source["mto_key"] = (
             top_source["MAKE"].astype(str) + "/" + top_source["MODEL"].astype(str)
         )
@@ -1732,6 +1762,29 @@ def _(alt, chart_ui, evidence, mo, pd):
             validate="one_to_one",
         )
         top_family_totals["family_rank"] = top_family_totals.groupby("nrcan_ceud_class")["family_fit_active_stock"].rank(method="first", ascending=False)
+        corrected_families = top_source.loc[
+            top_source["original_make_model"].ne(top_source["normalized_make_model"]),
+            "normalized_make_model",
+        ].unique()
+        identity_merge_evidence = (
+            top_source.loc[top_source["normalized_make_model"].isin(corrected_families)]
+            .groupby(
+                ["nrcan_ceud_class", "normalized_make_model", "original_make_model"],
+                as_index=False,
+            )
+            .agg(
+                original_label_stock=("FIT_ACTIVE", "sum"),
+                original_mto_keys=("mto_key", lambda values: " | ".join(sorted(set(values)))),
+                first_model_year=("MODEL_YEAR", "min"),
+                last_model_year=("MODEL_YEAR", "max"),
+            )
+            .merge(
+                top_family_totals[["nrcan_ceud_class", "normalized_make_model", "family_fit_active_stock"]],
+                on=["nrcan_ceud_class", "normalized_make_model"],
+                how="left",
+                validate="many_to_one",
+            )
+        )
         top_20_families = top_family_totals.loc[top_family_totals["family_rank"].le(30)].copy()
         top_heatmap_data = top_by_year.merge(
             top_20_families[
@@ -1825,9 +1878,24 @@ def _(alt, chart_ui, evidence, mo, pd):
             total observation count across those years, and the categorical y-axis is
             explicitly sorted in descending order by that total. Totals appear only in
             the family table and are not repeated as if they were annual observations.
+            These pooled rankings describe surviving mapped Ontario stock across
+            vintages and propulsion types. Consumption weights require documented raw
+            identity support covering the configured share of uniquely gasoline-resolved counts in
+            that model-year/size-class cohort. All qualifying families use fit-active
+            counts; other cohorts use distinct-model catalogue medians. Report A does
+            not observe propulsion or trim. PEV composition uses eligible iZEV purchase
+            and lease records only when the compatible rated range is unambiguous.
             Matched abbreviated MTO make/model keys are retained as list-form tooltips and
             table columns; keeping them out of the categorical axis preserves heat-map
             alignment and readability when many keys resolve to one normalized family.
+            Configured identity aliases from the captured build merge naming duplicates
+            before ranking, including `Mazda 3` and `Mazda Mazda3`. Original labels,
+            source keys, counts and model-year ranges remain in **Identity merges**;
+            this relabeling preserves every stock count and class/vintage distinction.
+            The unresolved Mercedes bucket retains its accepted class and raw keys;
+            it is not a resolved model family. Its original mappings list incompatible
+            G/GLS/GLE/AMG GT identities. These counts are excluded from consumption
+            composition, with the evidence retained in **Unresolved identities**.
             """),
             mo.vstack([
                 chart_ui(top_family_heatmap("Car")),
@@ -1847,6 +1915,13 @@ def _(alt, chart_ui, evidence, mo, pd):
                 "Family totals": mo.ui.table(top_20_families.sort_values(["nrcan_ceud_class", "family_rank"]), selection=None, pagination=True, page_size=10, freeze_columns_left=["nrcan_ceud_class", "normalized_make_model"]),
                 "Exact model-year stock": mo.ui.table(top_heatmap_data.sort_values(["nrcan_ceud_class", "family_rank", "model_year"]), selection=None, pagination=True, page_size=10, visible_columns=["nrcan_ceud_class", "normalized_make_model", "matched_mto_keys", "model_year", "fit_active_stock", "nrcan_vehicle_class", "nlr_atb_class"], freeze_columns_left=["nrcan_ceud_class", "normalized_make_model"]),
                 "Crosswalk intervals": mo.ui.table(top_crosswalk_interval_table, selection=None, pagination=True, page_size=10, label="Accepted crosswalk intervals for top mapped families"),
+                "Identity merges": mo.ui.table(identity_merge_evidence, selection=None, pagination=True, page_size=10, label="Original naming aliases and conserved merged-family stock"),
+                "Unresolved identities": mo.ui.table(
+                    top_source.loc[top_source.composition_identity_excluded,
+                        ["MAKE", "MODEL", "MODEL_YEAR", "raw_canonical_make", "raw_canonical_model",
+                         "canonical_model", "nrcan_vehicle_class", "FIT_ACTIVE"]],
+                    selection=None, pagination=True, page_size=10,
+                    label="Accepted class mappings whose model identity cannot support consumption weights"),
             }),
         ])
         return top_mapped_output

@@ -146,8 +146,9 @@ def test_cli_explicitly_prepares_stock_once_before_utilization(monkeypatch) -> N
         events.append("stock")
         return stock, [], {}
 
-    def prepare_utilization(bundle, *, existing_capacity_rows):
+    def prepare_utilization(bundle, *, existing_capacity_rows, existing_capacity_contexts):
         assert existing_capacity_rows is stock
+        assert existing_capacity_contexts == []
         events.append("utilization")
 
     monkeypatch.setattr("parameterization.build_existing_capacity.prepare_existing_capacity_rows", prepare_stock)

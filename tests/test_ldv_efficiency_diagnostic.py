@@ -1,6 +1,8 @@
 """Source distributions, class resolution and recorded efficiency bridge contracts."""
 
 from dataclasses import replace
+from pathlib import Path
+import runpy
 from types import SimpleNamespace
 
 import numpy as np
@@ -17,6 +19,32 @@ def bundle():
     loaded = load_config_bundle("config/scenarios/default.yaml")
     geography = loaded.scenario.geography.model_copy(update={"regions": ["ON"]})
     return replace(loaded, scenario=loaded.scenario.model_copy(update={"geography": geography}))
+
+
+def test_composition_view_reads_only_current_presentation_choices(bundle, tmp_path):
+    import yaml
+
+    paths = bundle.paths.model_dump(mode="json")
+    paths["config"]["parameters"] = "live_view_parameters"
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config/paths.yaml").write_text(yaml.safe_dump(paths), encoding="utf-8")
+    directory = tmp_path / "live_view_parameters"
+    directory.mkdir()
+    rules = {"composition_years": list(range(2015, 2026)), "composition_top_size_classes": 7,
+             "minimum_model_year": 2005, "distribution_year_end": 2025, "distribution_year_step": 2,
+             "size_class_order": {"Cars": ["Compact"], "Light trucks": ["Minivan"]},
+             "grid_plot_width": 1200, "line_plot_width": 900, "heatmap_plot_width": 760,
+             "native_year_start": 2000, "bridge_years": [2010, 2040],
+             "region": "IGNORE_LIVE_MODEL_CHOICE"}
+    (directory / "rules.yaml").write_text(yaml.safe_dump({"parameterization": {
+        "ldv_efficiency_diagnostic": rules}}), encoding="utf-8")
+    captured = replace(bundle, repo_root=tmp_path)
+    assert diagnostic.composition_view_settings(captured) == {"years": list(range(2015, 2026)), "top_size_classes": 7,
+        "distribution_years": list(range(2005, 2026, 2)), "class_order": rules["size_class_order"],
+        "grid_plot_width": 1200, "line_plot_width": 900, "heatmap_plot_width": 760,
+        "native_year_start": 2000, "bridge_years": [2010, 2040]}
+    assert captured.paths == bundle.paths
+    assert captured.scenario == bundle.scenario
 
 
 def ratings():
@@ -53,21 +81,6 @@ def test_phev_distribution_keeps_native_cd_separate_from_total_energy(bundle):
     assert summary.consumption_mj_per_vkm.tolist() == [1.8]
     assert summary.equal_row_mean.iloc[0] == 10
     assert summary.native_unit.iloc[0] == "Le/100 km (CD)"
-
-
-def test_filter_evidence_compares_same_native_cohorts_before_and_after(bundle):
-    source = ratings().assign(included_before_filter=True, outlier_excluded=False,
-                             filter_reason="", outlier_status="within_fences")
-    source.loc[source.Model.eq("B"), ["included", "outlier_excluded", "filter_reason", "outlier_status"]] = [False, True, "Above upper fence", "above_upper_fence"]
-    original = source.copy(deep=True)
-    audit_rows, impact = diagnostic.rating_filter_evidence(bundle, source)
-    compact = impact.loc[impact.rating_class.eq("Compact")].iloc[0]
-    assert compact.before_distinct_models == 3 and compact.after_distinct_models == 2
-    assert compact.before_catalogue_rows == 4 and compact.after_catalogue_rows == 3
-    assert compact.before_distinct_model_mean == pytest.approx((15 + 100 + 40) / 3)
-    assert compact.after_distinct_model_mean == compact.after_distinct_model_median == pytest.approx(27.5)
-    assert audit_rows.loc[audit_rows.Model.eq("B"), "filter_reason"].tolist() == ["Above upper fence"]
-    pd.testing.assert_frame_equal(source, original)
 
 
 def phev_ratings_and_weights(bundle):
@@ -126,6 +139,28 @@ def test_phev_components_preserve_operating_basis_and_recorded_class_weights(bun
     assert rows.consumption_mj_per_vkm.notna().all()
 
 
+def test_phev_components_use_catalogue_median_or_selected_empirical_weights(bundle):
+    source, original_weights = phev_ratings_and_weights(bundle)
+    source = source.loc[source.included & source.year.eq(2023)].copy()
+    source["rating_class"] = "Compact"
+    source["Model"] = ["A", "B", "C"]
+    source["combined_cs_consumption_L_100_km"] = [2, 8, 30]
+    source["combined_cd_consumption_Le_100_km"] = [1, 5, 20]
+    source["cd_electricity_kwh_per_100km"] = [5, 25, 100]
+    source["cd_fuel_l_per_100km"] = [.1, .5, 2]
+    source["native_consumption"] = source.combined_cd_consumption_Le_100_km
+    source["component"], source["source_row"] = "phev", [1, 2, 3]
+    weights = original_weights.loc[original_weights.year.eq(2023) & original_weights.rating_class.eq("Compact")].assign(weight=1)
+    fallback = diagnostic.phev_rating_components(bundle, source, weights).set_index("component")
+    assert fallback.loc["CD", "native_value"] == 5
+    assert fallback.loc["CS", "native_value"] == 8
+    allocations = source[["year", "rating_class", "powertrain", "component", "source_row"]].assign(
+        region="ON", variant_weight=[.8, .1, .1])
+    empirical = diagnostic.phev_rating_components(bundle, source, weights, allocations).set_index("component")
+    assert empirical.loc["CD", "native_value"] == pytest.approx(3.3)
+    assert empirical.loc["CS", "native_value"] == pytest.approx(5.4)
+
+
 def test_phev_component_comparison_rejects_missing_cd_class_and_invalid_values(bundle):
     rows, weights = phev_ratings_and_weights(bundle)
     with pytest.raises(ValueError, match="missing a recorded rating class"):
@@ -153,7 +188,7 @@ def test_phev_components_use_each_records_liquid_fuel_hhv(bundle):
         diagnostic.phev_rating_components(bundle, rows, weights)
 
 
-def test_native_phev_keeps_cs_and_cd_means_distinct(bundle, monkeypatch):
+def test_native_phev_shows_independent_cd_without_cs_curves(bundle, monkeypatch):
     rows, _ = phev_ratings_and_weights(bundle)
     distribution, _ = diagnostic.rating_distributions(bundle, rows)
     monkeypatch.setattr(diagnostic, "VIEW_MODES", {})
@@ -162,9 +197,27 @@ def test_native_phev_keeps_cs_and_cd_means_distinct(bundle, monkeypatch):
               "atb": pd.DataFrame(columns=["mode", "vehicle_class"])}
     native = diagnostic._raw_sources(bundle, inputs, distribution)
     selected = native.loc[native.year.eq(2023) & native.source_class.eq("Compact")].set_index("series")
-    assert selected.loc["NRCan CS distinct-model mean", "value"] == 4
-    assert selected.loc["NRCan CD distinct-model mean", "value"] == 2
-    assert set(selected.units) == {"L/100 km (CS)", "Le/100 km (CD)"}
+    assert selected.loc["NRCan CD family-median fallback", "value"] == 2
+    assert set(selected.units) == {"Le/100 km (CD)"}
+    assert not native.series.str.contains("CS").any()
+
+
+def test_native_phev_trajectory_uses_native_median_when_total_energy_has_different_support(bundle, monkeypatch):
+    source = pd.DataFrame([
+        {"included": True, "year": 2023, "rating_class": "Compact", "powertrain": "phev_35_miles",
+         "Make": "Maker", "Model": model, "native_consumption": native, "native_unit": "Le/100 km (CD)",
+         "consumption_mj_per_vkm": total, "component": "phev", "source_row": row,
+         "combined_cd_consumption_Le_100_km": native}
+        for row, model, native, total in [(1, "A", 10, 3), (2, "A AWD", 20, 1), (3, "A 4WD", 30, 2)]
+    ])
+    distribution, _ = diagnostic.rating_distributions(bundle, source)
+    monkeypatch.setattr(diagnostic, "VIEW_MODES", {})
+    monkeypatch.setattr(diagnostic, "select_atb_consumption", lambda *args, **kwargs: pd.DataFrame())
+    inputs = {"atb_phev": pd.DataFrame(columns=["trajectory"]), "atb_vehicles": pd.DataFrame(),
+              "atb": pd.DataFrame(columns=["mode", "vehicle_class"])}
+    native = diagnostic._raw_sources(bundle, inputs, distribution)
+    assert native.value.item() == 20
+    assert native.units.item() == "Le/100 km (CD)"
 
 
 def phev_bridge_inputs(bundle):
@@ -199,7 +252,7 @@ def test_bridge_keeps_observed_phev_energy_and_projects_from_weighted_cohort(bun
     inputs = phev_bridge_inputs(bundle)
     bridge, anchors = diagnostic._bridge_rows(bundle, inputs)
     harmonised = bridge.loc[bridge.stage.eq("Harmonised before indexing")]
-    assert set(harmonised.series) == {"NRCan size-class aggregate", "NRCan CS fuel-only aggregate",
+    assert set(harmonised.series) == {"NRCan size-class aggregate",
                                      "NRCan CD component-energy aggregate", "ATB absolute total energy"}
     assert not bridge.series.str.contains("backcast|Exploratory", case=False).any()
     assert not bridge.sample_kind.eq("curve").any()
@@ -448,7 +501,7 @@ def test_loader_uses_recorded_snapshot_and_never_accepts_reader_scenario(bundle,
     recorded = SimpleNamespace(bundle=bundle, paths={"actual": source}, metadata=metadata)
     seen = []
     monkeypatch.setattr(notebook_evidence, "load_notebook_evidence", lambda kind, repo_root: seen.append((kind, repo_root)) or recorded)
-    monkeypatch.setattr(diagnostic, "build_diagnostic_frames", lambda config, inputs: ({"actual": inputs["actual"]}, {"base_year": config.scenario.periods.base_year}))
+    monkeypatch.setattr(diagnostic, "build_diagnostic_frames", lambda config, inputs, **view: ({"actual": inputs["actual"]}, {"base_year": config.scenario.periods.base_year}))
     monkeypatch.setattr(diagnostic, "write_dataframe_atomic", lambda *args: pytest.fail("loader wrote evidence"))
     loaded = diagnostic.load_diagnostic(repo_root=tmp_path)
     assert seen == [("efficiency", tmp_path)]
@@ -459,13 +512,32 @@ def test_loader_uses_recorded_snapshot_and_never_accepts_reader_scenario(bundle,
         diagnostic.load_diagnostic("config/scenarios/default.yaml")
 
 
-def test_collector_captures_raw_final_and_benchmark_evidence(bundle):
+@pytest.mark.parametrize("allocation,statistic", [("equal_distinct_variants", "median"), ("family_median", "mean")])
+def test_loader_rejects_old_trim_mean_capture_with_explicit_rebuild_instruction(bundle, monkeypatch, allocation, statistic):
+    from validation import notebook_evidence
+
+    recorded = SimpleNamespace(bundle=bundle, paths={}, metadata={})
+    monkeypatch.setattr(notebook_evidence, "load_notebook_evidence", lambda *args, **kwargs: recorded)
+    monkeypatch.setattr(notebook_evidence, "prepare_command", lambda root: "uv run python explicit_rebuild.py")
+    monkeypatch.setattr(diagnostic, "load_harmonization_rules", lambda *args: {
+        "ratings": {"composition": {"variant_allocation": allocation, "family_statistic": statistic}}})
+    monkeypatch.setattr(diagnostic, "build_diagnostic_frames", lambda *args, **kwargs: pytest.fail("Old evidence was relabelled"))
+    with pytest.raises(ValueError, match="predates.*family-median.*explicit_rebuild"):
+        diagnostic.load_diagnostic()
+
+
+def test_collector_captures_raw_final_and_empirical_match_evidence(bundle, tmp_path, monkeypatch):
+    benchmarks = {"benchmark_" + key: tmp_path / (key + ".csv")
+                  for key in ("statcan_new", "statcan_stock", "mto_passenger_cohorts", "mto_commercial_cohorts", "mto_mapped", "izev_records")}
+    monkeypatch.setattr(diagnostic, "collect_composition_benchmark_inputs", lambda config: benchmarks if config is bundle else pytest.fail("wrong config"))
     paths = diagnostic.collect_efficiency_inputs(bundle)
     assert {"atb_vehicles", "atb_phev", "ceud", "final_efficiency", "final_splits", "loads", "relationships",
-            "benchmark_matches", "benchmark_allocations", "benchmark_weighted", "omega_records", "omega_buckets",
-            "periods", "rating_class_weights", "annual_cohort_stock"} <= set(paths)
+            "omega_records", "omega_buckets",
+            "periods", "rating_class_weights", "annual_cohort_stock", "composition_observations",
+            "composition_variants", "composition_matches", "composition_coverage", "catalogue_rating_weights"} <= set(paths)
     outputs = load_harmonization_rules(bundle, "nrcan_fuel_consumption_ratings")["outputs"]
     assert {"raw_ratings_" + component for component in outputs} <= set(paths)
+    assert {key: paths[key] for key in benchmarks} == benchmarks
 
 
 def test_future_truck_powertrains_do_not_require_unobserved_historical_labels(bundle, monkeypatch):
@@ -530,18 +602,6 @@ def test_ceud_pre_index_energy_keeps_native_fuel_ratio(bundle):
     assert set(result.source_fuel) == {"diesel"}
 
 
-def test_benchmark_distinguishes_uncovered_fallback_from_resolved_stock(bundle):
-    catalogue = audit().assign(aggregation_method="distinct_model_class_weighted", cohort_matched_stock=0)
-    weighted = catalogue.assign(aggregation_method="distinct_model_fallback_no_resolved_stock")
-    weighted.loc[weighted.year.eq(2023), "aggregation_method"] = "mto_stock_weighted"
-    weighted.loc[weighted.year.eq(2023), "cohort_matched_stock"] = 10
-    comparison = diagnostic._benchmark(bundle, {"rating_weights": catalogue, "benchmark_weighted": weighted})
-    measured = comparison.loc[comparison.series.str.startswith("Diagnostic")]
-    assert measured.loc[measured.year.eq(2023), "cohort_matched_stock"].eq(10).all()
-    assert measured.loc[measured.year.eq(2010), "aggregation_method"].eq("distinct_model_fallback_no_resolved_stock").all()
-    assert measured.loc[measured.year.eq(2010), "cohort_matched_stock"].eq(0).all()
-
-
 def test_cohort_weights_use_raw_age_counts_before_eligibility_or_redistribution(bundle):
     inputs = {
         "relationships": pd.DataFrame([{"mode": "cars", "powertrain": "bev", "tech": "T_C_BEV_EX"}]),
@@ -556,35 +616,668 @@ def test_cohort_weights_use_raw_age_counts_before_eligibility_or_redistribution(
     assert counts.to_dict() == {2021: 1, 2022: 3, 2023: 6}
 
 
-def test_statistic_selection_reuses_production_aggregation_without_changing_recorded_identity(bundle, monkeypatch):
-    classified = ratings()
-    aggregation = load_harmonization_rules(bundle, "road_aggregation")
-    weights = pd.DataFrame([
-        {"report_year": 2025, "weight_basis": aggregation["ldv_weight_basis"], "nrcan_ceud_class": "Car",
-         "nrcan_vehicle_class": size, "aggregation_weight": weight}
-        for size, weight in [("Compact", .75), ("Mid-size", .25)]
+def test_distribution_selector_preserves_native_engine_and_motor_measurements():
+    frame = pd.DataFrame({"native_consumption": [6, 8, 12], "native_unit": ["L/100 km"] * 3,
+        "Engine size (L)": [2, np.nan, 4], "Motor (kW)": [np.nan, 150, 0]})
+    original = frame.copy(deep=True)
+    engine, missing_engine = diagnostic.distribution_metric_rows(frame, "Engine size")
+    assert engine.native_consumption.tolist() == [2, 4] and missing_engine == 1
+    assert engine.native_unit.eq("Engine displacement (L)").all()
+    motor, missing_motor = diagnostic.distribution_metric_rows(frame, "Motor power")
+    assert motor.native_consumption.tolist() == [150] and missing_motor == 2
+    assert motor.native_unit.eq("Electric motor power (kW)").all()
+    consumption, missing = diagnostic.distribution_metric_rows(frame, "Consumption")
+    assert missing == 0
+    pd.testing.assert_frame_equal(consumption, original)
+    pd.testing.assert_frame_equal(frame, original)
+    absent, missing = diagnostic.distribution_metric_rows(frame.drop(columns="Motor (kW)"), "Motor power")
+    assert absent.empty and missing == len(frame)
+    with pytest.raises(ValueError, match="Unsupported NRCan distribution metric"):
+        diagnostic.distribution_metric_rows(frame, "engine horsepower")
+
+
+def test_phev_component_means_follow_empirical_source_row_weights_and_recipient_region(bundle):
+    rows, weights = phev_ratings_and_weights(bundle)
+    rows["component"] = "phev_ratings"
+    rows["source_row"] = range(1, len(rows) + 1)
+    compact = rows.loc[rows.included & rows.rating_class.eq("Compact")]
+    selected = compact[["component", "source_row", "year", "powertrain", "rating_class"]].copy()
+    # Unequal empirical family weights must replace the equal-model CD mean.
+    selected["variant_weight"] = [.8, .2] * compact.year.nunique()
+    selected["region"] = "ON"
+    other = selected.assign(region="QC", variant_weight=[.2, .8] * compact.year.nunique())
+    allocations = pd.concat([selected, other], ignore_index=True)
+    baseline = diagnostic.phev_rating_components(bundle, rows, weights).query("year == 2023").set_index("component")
+    actual = diagnostic.phev_rating_components(bundle, rows, weights, allocations).query("year == 2023").set_index("component")
+    assert baseline.loc["CD", "native_value"] == 5
+    assert actual.loc["CD", "native_value"] == pytest.approx(.25 * (.8 * 1 + .2 * 3) + .75 * 6)
+    assert actual.loc["CS", "native_value"] == baseline.loc["CS", "native_value"]
+    # Splitting one source row's weight across observations preserves its mass.
+    divided = pd.concat([allocations.assign(variant_weight=allocations.variant_weight / 2)] * 2, ignore_index=True)
+    duplicate = diagnostic.phev_rating_components(bundle, rows, weights, divided)
+    pd.testing.assert_frame_equal(duplicate, diagnostic.phev_rating_components(bundle, rows, weights, allocations))
+
+
+def test_empirical_component_decomposition_rejects_missing_rows_and_nonunit_mass(bundle):
+    rows, weights = phev_ratings_and_weights(bundle)
+    rows["component"], rows["source_row"] = "phev_ratings", range(1, len(rows) + 1)
+    allocations = rows.loc[rows.included & rows.rating_class.eq("Subcompact"),
+        ["component", "source_row", "year", "powertrain", "rating_class"]].assign(region="ON", variant_weight=.5)
+    with pytest.raises(ValueError, match="sum to one"):
+        diagnostic.phev_rating_components(bundle, rows, weights, allocations)
+    allocations["variant_weight"] = 1
+    allocations.loc[allocations.index[0], "source_row"] = 999999
+    with pytest.raises(ValueError, match="missing NRCan source row"):
+        diagnostic.phev_rating_components(bundle, rows, weights, allocations)
+
+
+def test_class_recalculation_selects_one_recipient_region_before_normalizing(bundle):
+    regional = pd.concat([audit().assign(region="ON"), audit().assign(region="QC", weight=10)], ignore_index=True)
+    expected = diagnostic._class_rating_audit(bundle, audit(), "Compact")
+    actual = diagnostic._class_rating_audit(bundle, regional, "Compact")
+    pd.testing.assert_frame_equal(actual.drop(columns="region").reset_index(drop=True), expected.reset_index(drop=True))
+
+
+def test_composition_comparison_preserves_empirical_methods_and_missing_catalogue_support(bundle):
+    identity = {"region": "ON", "ceud_class": "Car", "year": 2023, "rating_class": "Compact",
+                "powertrain": "bev_300_miles", "native_unit": "kWh/100 km"}
+    production = pd.DataFrame([{**identity, "native_class_mean": 15, "class_mean_mj_per_vkm": .54,
+        "aggregation_method": "izev_incentive_weighted", "empirical_families": 2},
+        {**identity, "region": "QC", "native_class_mean": 30, "class_mean_mj_per_vkm": 1.08,
+         "aggregation_method": "izev_incentive_weighted", "empirical_families": 2},
+        {**identity, "year": 2024, "native_class_mean": 10, "class_mean_mj_per_vkm": .36,
+         "aggregation_method": "catalogue_fallback_median_no_empirical_support", "empirical_families": 0}])
+    previous = pd.DataFrame([{**identity, "native_class_mean": 20, "class_mean_mj_per_vkm": .72}])
+    result = diagnostic.composition_comparison(bundle, {"rating_weights": production, "catalogue_rating_weights": previous})
+    current = result.set_index("year")
+    assert len(result) == 2
+    assert current.loc[2023, "consumption_change_fraction"] == pytest.approx(-.25)
+    assert current.loc[2023, "aggregation_method"] == "izev_incentive_weighted"
+    assert pd.isna(current.loc[2024, "catalogue_mj_per_vkm"])
+
+
+def test_old_notebook_capture_requests_an_explicit_rebuild(bundle):
+    with pytest.raises(ValueError, match="Rebuild notebook evidence.*empirical NRCan composition"):
+        diagnostic.build_diagnostic_frames(bundle, {"ratings": ratings()})
+
+
+def test_composition_only_capture_requires_new_independent_benchmark_evidence(bundle):
+    inputs = {key: pd.DataFrame() for key in ("composition_observations", "composition_variants", "composition_matches",
+              "composition_coverage", "catalogue_rating_weights")}
+    with pytest.raises(ValueError, match="Rebuild notebook evidence to capture composition benchmarks"):
+        diagnostic.build_diagnostic_frames(bundle, inputs)
+
+
+def test_composition_model_points_take_trim_medians_once_and_keep_source_ranges(bundle):
+    source = ratings().assign(component="ratings", source_row=range(1, 6))
+    points = diagnostic.composition_model_evidence(bundle, source)
+    compact = points.loc[points.year.eq(2023)].set_index("Model")
+    assert len(compact) == 3
+    assert compact.loc["A", "model_native_consumption"] == 15
+    assert compact.loc["A", "model_min_mj_per_vkm"] == pytest.approx(.36)
+    assert compact.loc["A", "model_max_mj_per_vkm"] == pytest.approx(.72)
+    assert compact.loc["A", "rating_row_ids"] == "ratings:1 | ratings:2"
+    assert compact.catalogue_rows.sum() == 4
+    assert set(points.vehicle_group) == {"Cars"}
+
+
+def test_catalogue_family_median_and_native_trajectory_ignore_duplicate_trim_rows(bundle, monkeypatch):
+    source = pd.DataFrame([
+        {"included": True, "year": 2023, "rating_class": "Compact", "powertrain": "gasoline",
+         "Make": "Maker", "Model": model, "native_consumption": value, "native_unit": "L/100 km",
+         "consumption_mj_per_vkm": value * .4, "component": "ratings", "source_row": row,
+         "combined_cd_consumption_Le_100_km": np.nan, "combined_cs_consumption_L_100_km": np.nan}
+        for row, (model, value) in enumerate([("A", 10), ("A AWD", 20), ("A 4WD", 30), ("B", 100), ("A AWD", 20)], 1)
     ])
-    summary = {"rating_statistic": "mean", "recorded_rating_statistic": "mean", "build": {"build_id": "recorded"},
-               "inputs": {"ratings": {"sha256": "recorded-hash"}}}
-    original = diagnostic.LDVEfficiencyDiagnostic(bundle, {}, summary, {"ratings": classified, "rating_class_weights": weights})
-    seen = []
-    def frames(config, inputs, *, recorded_statistic):
-        seen.append((config.scenario.efficiencies.rating_statistic, recorded_statistic))
-        return {"bridge": inputs["rating_weights"]}, {
-            "rating_statistic": config.scenario.efficiencies.rating_statistic,
-            "recorded_rating_statistic": recorded_statistic,
-        }
-    monkeypatch.setattr(diagnostic, "build_diagnostic_frames", frames)
-    monkeypatch.setattr(diagnostic, "write_dataframe_atomic", lambda *args: pytest.fail("selector published a parameter"))
-    assert diagnostic.select_rating_statistic(original, "mean") is original
-    selected = diagnostic.select_rating_statistic(original, "median")
-    assert seen == [("median", "mean")]
-    assert selected.summary["build"] == original.summary["build"]
-    assert selected.summary["inputs"] == original.summary["inputs"]
-    actual = selected.frames["bridge"].loc[selected.frames["bridge"].year.eq(2023)].iloc[0]
-    assert actual.native_class_mean == 40
-    assert selected.bundle.scenario.efficiencies.rating_statistic == "median"
-    assert original.bundle.scenario.efficiencies.rating_statistic == "mean"
-    assert "rating_weights" not in original.inputs
-    with pytest.raises(ValueError, match="Unsupported rating statistic"):
-        diagnostic.select_rating_statistic(original, "mode")
+    original = source.copy(deep=True)
+    points = diagnostic.composition_model_evidence(bundle, source).set_index("Model")
+    assert set(points.index) == {"A", "B"}
+    assert points.loc["A", "model_native_consumption"] == 20
+    assert points.loc["A", "family_median_mj_per_vkm"] == 8
+    assert points.loc["A", "distinct_trims"] == 3
+    assert points.loc["A", "catalogue_rows"] == 4
+    distribution, summary = diagnostic.rating_distributions(bundle, source)
+    assert summary.equal_distinct_model_median.item() == 60
+    monkeypatch.setattr(diagnostic, "VIEW_MODES", {})
+    monkeypatch.setattr(diagnostic, "select_atb_consumption", lambda *args, **kwargs: pd.DataFrame())
+    inputs = {"atb_phev": pd.DataFrame(columns=["trajectory"]), "atb_vehicles": pd.DataFrame(),
+              "atb": pd.DataFrame(columns=["mode", "vehicle_class"])}
+    native = diagnostic._raw_sources(bundle, inputs, distribution)
+    assert native.series.item() == "NRCan family-median fallback"
+    assert native.value.item() == 60
+    pd.testing.assert_frame_equal(source, original)
+
+
+def family_evidence_inputs():
+    observations = pd.DataFrame([
+        {"region": "ON", "empirical_observation_id": identifier, "province": province, "source_kind": "izev",
+         "pool_geography": "national", "pool_provinces": "ON | QC", "range_assignment": "family_single_range"}
+        for identifier, province in [("ON-A", "ON"), ("QC-A", "QC"), ("ON-B", "ON")]
+    ])
+    variants = pd.DataFrame([
+        {"region": "ON", "empirical_observation_id": identifier, "year": 2023, "rating_class": "Compact",
+         "powertrain": "bev_300_miles", "catalogue_powertrain": raw_powertrain,
+         "empirical_family_make": "Maker", "empirical_family_model": family,
+         "component": "bev", "source_row": row, "rating_variant_id": f"variant{row}",
+         "native_consumption": value, "consumption_mj_per_vkm": value * .036, "native_unit": "kWh/100 km",
+         "variant_weight": weight, "allocated_count": weight * 100}
+        for identifier, family, row, raw_powertrain, value, weight in [
+            ("ON-A", "A", 1, "bev_300_miles", 15, .3), ("ON-A", "A", 2, "bev_300_miles", 19, .3),
+            ("QC-A", "A", 1, "bev_300_miles", 15, .1), ("QC-A", "A", 2, "bev_300_miles", 19, .1),
+            ("ON-B", "B", 3, "bev_300_miles", 25, .2),
+        ]
+    ])
+    audit = pd.DataFrame([{"region": "ON", "year": 2023, "rating_class": "Compact", "powertrain": "bev_300_miles",
+        "native_class_mean": 18.6, "class_mean_mj_per_vkm": 18.6 * .036, "aggregation_method": "izev_incentive_weighted"}])
+    return {"composition_observations": observations, "composition_variants": variants, "rating_weights": audit}
+
+
+def test_family_dot_weights_combine_provinces_without_count_or_range_multiplication(bundle):
+    inputs = family_evidence_inputs()
+    original = inputs["composition_variants"].copy(deep=True)
+    actual = diagnostic.composition_family_evidence(bundle, inputs).set_index("family_model")
+    assert len(actual) == 2
+    assert actual.loc["A", "family_count"] == 80
+    assert actual.loc["A", "family_weight"] == pytest.approx(.8)
+    assert actual.loc["A", "family_native_consumption"] == pytest.approx(17)
+    assert actual.loc["A", "geography"] == "ON | QC"
+    assert actual.loc["A", "variant_count"] == 2
+    assert actual.loc["A", "catalogue_powertrain"] == "bev_300_miles"
+    assert actual.loc["A", "powertrain"] == "bev_300_miles"
+    assert actual.loc["A", "production_native_consumption"] == 18.6
+    assert actual.family_weight.sum() == pytest.approx(1)
+    assert (actual.family_median_mj_per_vkm * actual.family_weight).sum() == pytest.approx(18.6 * .036)
+    pd.testing.assert_frame_equal(inputs["composition_variants"], original)
+
+
+def test_family_native_median_uses_its_own_support_without_changing_total_energy(bundle):
+    inputs = family_evidence_inputs()
+    inputs["composition_observations"] = inputs["composition_observations"].iloc[[0]].copy()
+    template = inputs["composition_variants"].iloc[0].to_dict()
+    inputs["composition_variants"] = pd.DataFrame([
+        {**template, "source_row": row, "rating_variant_id": str(row), "native_consumption": native,
+         "consumption_mj_per_vkm": mj, "variant_weight": energy_weight,
+         "native_median_weight": native_weight, "allocated_count": 100 * energy_weight}
+        for row, native, mj, energy_weight, native_weight in [(1, 30, 1, 0., 0.), (2, 10, 2, 1., 0.), (3, 20, 3, 0., 1.)]
+    ])
+    actual = diagnostic.composition_family_evidence(bundle, inputs)
+    assert actual.family_native_consumption.item() == 20
+    assert actual.family_median_mj_per_vkm.item() == 2
+    assert actual.family_count.item() == 100
+    assert actual.family_weight.item() == 1
+    assert actual.variant_count.item() == 3
+
+
+def test_review_retains_ambiguous_families_and_clear_multitrim_assumptions_without_count_expansion():
+    rows = pd.DataFrame([
+        {"empirical_observation_id": identity, "source_kind": "izev", "year": 2023, "province": "ON",
+         "source_count": count, "match_status": status, "matched_variant_count": variants,
+         "candidate_families": alternatives, "selected": selected}
+        for identity, count, status, variants, alternatives, selected in [
+            ("ambiguous", 12, "ambiguous_model_family", 4, "Family A | Family B", False),
+            ("median", 100, "resolved", 3, "Family C", True),
+            ("single", 5, "resolved", 1, "Family D", True),
+            ("policy", 9, "resolved", 2, "Family E", False),
+            ("administrative", 50, "unsupported_transaction_type", 2, "Family F", False),
+        ]
+    ])
+    original = rows.copy(deep=True)
+    review = diagnostic.composition_review_cases(SimpleNamespace(frames={"composition_observations": rows})).set_index("empirical_observation_id")
+    assert set(review.index) == {"ambiguous", "median", "policy"}
+    assert review.source_count.sum() == 121
+    assert review.loc["ambiguous", "candidate_families"] == "Family A | Family B"
+    assert review.loc["median", "recommended_handling"].startswith("Leave as is")
+    assert "no empirical weight" in review.loc["policy", "recommended_handling"]
+    assert review.loc["ambiguous", "review_kind"] == "Unresolved identity / configuration"
+    pd.testing.assert_frame_equal(rows, original)
+
+
+def test_review_includes_positive_known_ldv_year_gaps_from_captured_mapping_only(bundle, tmp_path):
+    import yaml
+
+    directory = tmp_path / "captured_parameters"
+    directory.mkdir()
+    rules = load_harmonization_rules(bundle, "road_aggregation")
+    (directory / "rules.yaml").write_text(yaml.safe_dump({"version": 2, "fetching": {},
+        "parameterization": {"road_aggregation": rules}}), encoding="utf-8")
+    mapping = pd.DataFrame([
+        {"entry_type": "mto_crosswalk", "mto_make_code": make, "mto_model_code": model,
+         "model_year_from": first, "model_year_to": last, "canonical_make": "Captured Honda",
+         "canonical_model": "CR-V", "vehicle_scope": scope, "mapping_status": "reviewed",
+         "nrcan_vehicle_class": "Sport utility vehicle: Small"}
+        for make, model, first, last, scope in [
+            ("HOND", "CRV", 1997, 2023, "ldv"), ("HOND", "CRV", 2025, 2025, "ldv"),
+            ("HEAV", "TRK", 1997, 2023, "mhdv"),
+            ("MIXD", "KEY", 1997, 2023, "ldv"), ("MIXD", "KEY", 2025, 2025, "mhdv"),
+        ]
+    ])
+    mapping.to_csv(directory / rules["vehicle_size_class_map_file"], index=False)
+    captured = replace(bundle, paths=bundle.paths.model_copy(update={
+        "config": bundle.paths.config.model_copy(update={"parameters": str(directory)})}))
+    mapped = pd.DataFrame([
+        {"report_year": 2025, "MAKE": make, "MODEL": model, "MODEL_YEAR": year, "FIT_ACTIVE": count,
+         "mapping_accepted": False, "mapping_outcome": outcome}
+        for make, model, year, count, outcome in [
+            ("HOND", "CRV", 2024, 12, "unmapped"),
+            ("HOND", "CRV", 2023, 15, "unmapped"),  # An interval exists: not a year-gap review case.
+            ("HOND", "CRV", 2026, 0, "unmapped"),
+            ("HOND", "CRV", 1990, 10, "out_of_scope"),
+            ("HEAV", "TRK", 2024, 40, "unmapped"),
+            ("MIXD", "KEY", 2024, 50, "unmapped"),
+            ("RAWW", "UNK", 2024, 60, "unmapped"),
+        ]
+    ])
+    item = diagnostic.LDVEfficiencyDiagnostic(captured, {"composition_observations": pd.DataFrame()}, {},
+        {"benchmark_mto_mapped": mapped})
+    review = diagnostic.composition_review_cases(item)
+    assert len(review) == 1
+    row = review.iloc[0]
+    assert row.source_count == 12 and row.year == 2024
+    assert row.raw_make == "HOND" and row.raw_model == "CRV"
+    assert row.reviewed_mapping_year_intervals == "1997–2023 | 2025–2025"
+    assert row.candidate_families == "Captured Honda / CR-V"
+    assert row.match_status == "missing_applicable_reviewed_mapping_year"
+    assert not row.selected
+    assert row.family_make == row.family_model == row.rating_class == row.resolved_powertrain == ""
+    assert "no reviewed interval" in row.identity_exclusion_reason
+    assert "do not extend" in row.recommended_handling
+
+
+def test_detail_filters_retain_ambiguous_candidates_and_separate_unknown_context(bundle):
+    observations = pd.DataFrame([
+        {"empirical_observation_id": identifier, "source_kind": "mto", "year": 2023,
+         "rating_class": size, "resolved_powertrain": resolved, "candidate_powertrains": candidates,
+         "candidate_rating_classes": candidate_classes, "match_status": status}
+        for identifier, size, resolved, candidates, candidate_classes, status in [
+            ("shared", "Compact", "", "gasoline | hev", "Compact", "ambiguous_powertrain_or_range"),
+            ("size_unknown", "", "", "gasoline", "Compact | Mid-size", "ambiguous_rating_class"),
+            ("unknown", "", "", "", "", "unmatched_ratings"),
+        ]
+    ])
+    matches = pd.DataFrame({"empirical_observation_id": ["shared", "shared", "size_unknown"],
+                            "component": ["ratings"] * 3, "source_row": [1, 2, 3],
+                            "variant_weight": [0, 0, 0]})
+    empty_variants = pd.DataFrame(columns=["empirical_observation_id", "variant_weight"])
+    families = pd.DataFrame(columns=["source_kind", "year", "rating_class", "powertrain"])
+    coverage = pd.DataFrame([{"year": 2023, "rating_class": "Compact", "powertrain": "gasoline"}])
+    audit = pd.DataFrame([{"year": 2023, "rating_class": "Compact", "powertrain": "gasoline",
+                          "native_class_mean": 8, "class_mean_mj_per_vkm": 3.2}])
+    item = diagnostic.LDVEfficiencyDiagnostic(bundle,
+        {"composition_observations": observations, "composition_matches": matches, "composition_variants": empty_variants,
+         "composition_families": families, "composition_coverage": coverage}, {}, {"rating_weights": audit, "catalogue_rating_weights": audit.copy()})
+    actual = diagnostic.composition_detail_frames(item, "mto", year=2023, rating_class="Compact", powertrain="gasoline")
+    assert set(actual["observations"].empirical_observation_id) == {"shared", "size_unknown"}
+    assert set(actual["matches"].source_row) == {1, 2, 3}
+    assert set(actual["unresolved"].empirical_observation_id) == {"shared", "size_unknown", "unknown"}
+    assert actual["families"].empty
+
+
+def test_catalogue_median_reference_omits_only_wholly_identical_trajectories():
+    points = [
+        {"vehicle_group": "Cars", "atb_class": diagnostic.COHORT, "powertrain": powertrain,
+         "metric": "consumption", "stage": "Indexed bridge", "sample_kind": kind,
+         "year": year, "vintage": vintage, "value": value}
+        for powertrain in ("gasoline", "diesel", "phev_35_miles")
+        for kind, year, vintage, value in [("period", 2020, 2015, 2.),
+            ("base_year_anchor", 2025, np.nan, 1.9), ("period", 2030, 2025, 1.8)]
+    ]
+    production = pd.DataFrame(points)
+    reference = production.copy(deep=True)
+    reference.loc[reference.powertrain.eq("gasoline") & reference.year.eq(2030), "value"] = 2.1
+    reference = pd.concat([reference, pd.DataFrame([{**points[-1], "year": 2010, "vintage": 2005}])], ignore_index=True)
+    original = reference.copy(deep=True)
+    actual = diagnostic.distinct_catalogue_reference(production, reference)
+    assert set(actual.powertrain) == {"gasoline", "phev_35_miles"}
+    assert len(actual) == 7
+    # The source-year anchor and interval-end period must remain separate.
+    gasoline = actual.loc[actual.powertrain.eq("gasoline")]
+    assert gasoline.loc[gasoline.year.eq(2025), "sample_kind"].item() == "base_year_anchor"
+    assert gasoline.loc[gasoline.year.eq(2030), "value"].item() == 2.1
+    pd.testing.assert_frame_equal(reference, original)
+
+
+def test_detail_class_table_retains_catalogue_median_and_original_outer_weight(bundle):
+    observations = pd.DataFrame(columns=["empirical_observation_id", "source_kind", "year", "rating_class",
+        "resolved_powertrain", "candidate_powertrains", "match_status"])
+    coverage = pd.DataFrame([{"year": 2023, "rating_class": "Compact", "powertrain": "gasoline",
+                             "aggregation_method": "catalogue_fallback_median_insufficient_identity_support"}])
+    audit = pd.DataFrame([{"year": 2023, "rating_class": "Compact", "powertrain": "gasoline",
+        "native_class_mean": 8., "class_mean_mj_per_vkm": 3.2, "weight": .4, "native_unit": "L/100 km"}])
+    frames = {"composition_observations": observations,
+        "composition_matches": pd.DataFrame(columns=["empirical_observation_id"]),
+        "composition_variants": pd.DataFrame(columns=["empirical_observation_id", "variant_weight"]),
+        "composition_families": pd.DataFrame(columns=["source_kind", "year", "rating_class", "powertrain"]),
+        "composition_coverage": coverage}
+    item = diagnostic.LDVEfficiencyDiagnostic(bundle, frames, {}, {"rating_weights": audit, "catalogue_rating_weights": audit.copy()})
+    actual = diagnostic.composition_detail_frames(item, "mto", year=2023, rating_class="Compact", powertrain="gasoline")
+    result = actual["coverage"].iloc[0]
+    assert result.aggregation_weight == .4
+    assert result.production_mj_per_vkm == result.catalogue_mj_per_vkm == 3.2
+    assert result.production_native_consumption == result.catalogue_native_consumption == 8
+    assert actual["families"].empty
+
+
+def weighted_detail_diagnostic(bundle):
+    inputs = family_evidence_inputs()
+    inputs["composition_variants"] = inputs["composition_variants"].assign(year=2015, Make="Maker", Model="Shared catalogue model")
+    observations = inputs["composition_observations"].assign(year=2015, rating_class="Compact",
+        observed_powertrain="bev", resolved_powertrain="bev_300_miles", candidate_powertrains="bev_300_miles",
+        candidate_rating_classes="Compact", match_status="resolved", selection_status="selected", selected=True,
+        raw_make="Maker", raw_model=["Description A", "Description A", "Description B"],
+        family_make="Maker", family_model=["A", "A", "B"], source_count=[60, 20, 20],
+        relative_contribution=[.6, .2, .2], source_model_year_min=2020, source_model_year_max=2024,
+        source_model_years="2020 | 2023", composition_basis="historical_pooled_model_year_window")
+    inputs["composition_observations"] = observations
+    inputs["rating_weights"] = inputs["rating_weights"].assign(year=2015, native_unit="kWh/100 km", weight=.4,
+        aggregation_method="izev_historical_composition_proxy", composition_basis="historical_pooled_model_year_window",
+        observations=3, distinct_models=1, empirical_families=2, selected_source_count=100,
+        source_model_year_min=2020, source_model_year_max=2024, pool_geography="national")
+    catalogue_value = 19  # One catalogue family: median of its three distinct trims.
+    inputs["catalogue_rating_weights"] = inputs["rating_weights"].assign(native_class_mean=catalogue_value,
+        class_mean_mj_per_vkm=catalogue_value * .036)
+    frames = {"composition_observations": observations,
+        "composition_variants": inputs["composition_variants"],
+        "composition_matches": inputs["composition_variants"].assign(selected=True, assigned_powertrain="bev_300_miles"),
+        "composition_families": diagnostic.composition_family_evidence(bundle, inputs),
+        "composition_coverage": inputs["rating_weights"].copy()}
+    return diagnostic.LDVEfficiencyDiagnostic(bundle, frames, {"region": "ON"}, inputs)
+
+
+def test_detail_compares_actual_catalogue_baseline_and_distinct_weighted_models(bundle):
+    item = weighted_detail_diagnostic(bundle)
+    original = {key: frame.copy(deep=True) for key, frame in item.frames.items()}
+    frames = diagnostic.composition_detail_frames(item, "izev", year=2015)
+    row = frames["coverage"].iloc[0]
+    assert row.production_native_consumption == pytest.approx(18.6)
+    assert row.catalogue_native_consumption == pytest.approx(19)
+    assert row.production_mj_per_vkm == pytest.approx(18.6 * .036)
+    assert row.catalogue_mj_per_vkm == pytest.approx(19 * .036)
+    assert row.catalogue_rows == 3 and row.catalogue_models == 1
+    assert row.empirical_families == 2 and row.weighted_catalogue_models == 1
+    assert row.aggregation_weight == .4
+    assert set(frames["families"].source_model_years) == {"2020 | 2023"}
+    for key, frame in original.items():
+        pd.testing.assert_frame_equal(item.frames[key], frame)
+
+
+def test_izev_detail_excludes_resolved_other_ranges_but_keeps_ambiguous_candidates(bundle):
+    item = weighted_detail_diagnostic(bundle)
+    original = item.frames["composition_observations"].iloc[[0]].copy()
+    observations = pd.concat([original.assign(empirical_observation_id=identifier, observed_powertrain="phev",
+        resolved_powertrain=resolved, candidate_powertrains=candidates, match_status=status, selected=status == "resolved")
+        for identifier, resolved, candidates, status in [
+            ("selected35", "phev_35_miles", "phev_35_miles", "resolved"),
+            ("selected50", "phev_50_miles", "phev_50_miles", "resolved"),
+            ("ambiguous", "", "phev_35_miles | phev_50_miles", "ambiguous_powertrain_or_range"),
+            ("outside50", "phev_50_miles", "phev_50_miles", "outside_supported_program_window"),
+            ("unknown", "", "", "unmatched_ratings"),
+        ]], ignore_index=True)
+    matches = pd.DataFrame({"empirical_observation_id": ["selected35", "selected50", "ambiguous", "ambiguous", "outside50"],
+        "powertrain": ["phev_35_miles", "phev_50_miles", "phev_35_miles", "phev_50_miles", "phev_50_miles"],
+        "selected": [True, True, False, False, False], "variant_weight": [1., 1., 0., 0., 0.]})
+    frames = {**item.frames, "composition_observations": observations, "composition_matches": matches,
+        "composition_variants": item.frames["composition_variants"].iloc[:0]}
+    actual = diagnostic.composition_detail_frames(replace(item, frames=frames), "izev", powertrain="phev_35_miles")
+    assert set(actual["observations"].empirical_observation_id) == {"selected35", "ambiguous", "unknown"}
+    assert set(actual["matches"].empirical_observation_id) == {"selected35", "ambiguous"}
+    assert set(actual["unresolved"].empirical_observation_id) == {"ambiguous", "unknown"}
+    selected = actual["matches"].loc[actual["matches"].selected]
+    assert selected.powertrain.eq("phev_35_miles").all() and selected.variant_weight.sum() == 1
+
+
+def test_composition_detail_tables_put_paired_values_counts_and_units_before_audit(bundle):
+    import marimo as mo
+
+    item = weighted_detail_diagnostic(bundle)
+    frames = diagnostic.composition_detail_frames(item, "izev", year=2015)
+    empty = {name: frame.iloc[:0].copy() for name, frame in frames.items()}
+    app = runpy.run_path(str(Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"))["app"]
+    cell = next(data.cell for data in app._cell_manager.cell_data() if "detailed_evidence" in data.cell.defs)
+    tables = []
+
+    class Controls:
+        value = {"year": 2015, "rating_class": None, "powertrain": None}
+
+        def __getitem__(self, name):
+            return mo.md(name)
+
+    def table_ui(frame, label):
+        tables.append((label, frame.copy(deep=True)))
+        return mo.md(label)
+
+    cell.run(composition_detail_frames=lambda _item, kind, **_filters: frames if kind == "izev" else empty,
+        diagnostic=item, mo=mo, mto_filters=Controls(), pev_filters=Controls(), pd=pd, table_ui=table_ui)
+    consumption = next(frame for label, frame in tables if label == "Recorded class estimates: consumption, catalogue size and contributing evidence")
+    assert list(consumption) == ["Target model year", "Size class", "Powertrain / range", "Cohort fallback median", "Production", "Native unit",
+        "Cohort fallback median (total MJ/vkm)", "Production (total MJ/vkm)", "Catalogue − production (MJ/vkm)", "Catalogue rows", "Distinct families",
+        "Weighted catalogue families", "Source descriptions", "Contributing source count", "Method"]
+    assert consumption["Cohort fallback median"].item() == pytest.approx(19)
+    assert consumption["Production"].item() == pytest.approx(18.6)
+    assert consumption["Target model year"].item() == 2015
+    assert consumption["Catalogue − production (MJ/vkm)"].item() == pytest.approx(
+        consumption["Cohort fallback median (total MJ/vkm)"].item() - consumption["Production (total MJ/vkm)"].item())
+    assert consumption["Native unit"].item() == "kWh/100 km"
+    assert consumption["Source descriptions"].item() == 2
+    assert consumption["Weighted catalogue families"].item() == 1
+    assert consumption["Method"].item() == "iZEV proxy mean"
+    context = next(frame for label, frame in tables if label == "Target year versus composition window and geographic pool")
+    assert context["Composition source MYs"].item() == "2020–2024"
+    assert context["Geographic pool"].item() == "national"
+    descriptions = next(frame for label, frame in tables if label == "Contributing source descriptions and their actual counts")
+    assert descriptions["Source count"].sum() == 100
+    assert descriptions["Selected-count weight (%)"].tolist() == pytest.approx([80, 20])
+    assert "empirical_observation_ids" not in descriptions
+    technical = next(frame for label, frame in tables if label == "All class fields · original names")
+    assert "class_mean_mj_per_vkm" in technical and "native_class_mean" in technical
+
+
+@pytest.mark.parametrize("vehicle_group", ["Cars", "Light trucks"])
+def test_composition_plot_emits_small_html_without_losing_points_or_audit_tables(vehicle_group):
+    import altair as alt
+    import marimo as mo
+
+    models, families, summaries = [], [], []
+    audit = "not-for-chart|" * 20_000
+    for group, size in [("Cars", "Compact"), ("Light trucks", "Sport utility vehicle: Small")]:
+        cohort = {"year": 2022, "rating_class": size, "powertrain": "gasoline", "native_unit": "L/100 km"}
+        models.extend({**cohort, "vehicle_group": group, "Model": name, "make_model": name,
+                       "family_median_mj_per_vkm": value, "model_native_consumption": value * 3,
+                       "rating_row_ids": audit}
+                      for name, value in [("Model A", 1.), ("Model B", 3.)])
+        families.append({**cohort, "family_label": "Observed family", "family_weight": 1., "family_count": 100,
+                         "family_median_mj_per_vkm": 1.2, "family_native_consumption": 3.6,
+                         "empirical_observation_ids": audit})
+        summaries.append({**cohort, "vehicle_group": group,
+                          "production_mj_per_vkm": 1.2, "production_native_consumption": 3.6,
+                          "catalogue_mj_per_vkm": 2., "catalogue_native_consumption": 6.,
+                          "catalogue_model_min": 1., "catalogue_model_max": 3.,
+                          "aggregation_method": "mto_identity_supported_weighted", "notes": audit})
+    frames = {"composition_models": pd.DataFrame(models), "composition_families": pd.DataFrame(families),
+              "composition_comparison": pd.DataFrame(summaries)}
+    original = {key: frame.copy(deep=True) for key, frame in frames.items()}
+    notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
+    cell = runpy.run_path(str(notebook))["composition_plot"]
+    charts = []
+
+    def chart_ui(chart):
+        charts.append(chart.to_dict(validate=True))
+        return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
+
+    years = list(range(2015, 2026))
+    weights = pd.DataFrame([{"report_year": 2025, "weight_basis": "all_vintages",
+        "nrcan_ceud_class": group, "nrcan_vehicle_class": size, "aggregation_weight": 1.}
+        for group, size in [("Car", "Compact"), ("Light Truck", "Sport utility vehicle: Small")]])
+    output, _ = cell.run(alt=alt, chart_ui=chart_ui,
+        composition_class_columns=diagnostic.composition_class_columns, supported_display_years=diagnostic.supported_display_years,
+        composition_view={"years": years, "top_size_classes": 5, "grid_plot_width": 1200,
+            "class_order": {"Cars": ["Compact"], "Light trucks": ["Sport utility vehicle: Small"]}},
+        diagnostic=SimpleNamespace(frames=frames, inputs={"rating_class_weights": weights}, summary={"base_year": 2023}),
+        mo=mo, pd=pd, range_label=str, vehicle_group=SimpleNamespace(value=vehicle_group))
+    assert len(output.text.encode("utf-8")) < 1_000_000
+    assert len(charts) == 1
+    rows = pd.DataFrame(charts[0]["data"]["values"])
+    assert len(rows) == 7
+    assert set(rows.year) == {2022}
+    assert charts[0]["facet"]["column"]["field"] == "rating_class"
+    assert charts[0]["facet"]["column"]["sort"] == ["Compact" if vehicle_group == "Cars" else "Sport utility vehicle: Small"]
+    assert rows.loc[rows.evidence_kind.eq("Catalogue family median"), "value"].tolist() == [1., 3.]
+    assert rows.loc[rows.evidence_kind.eq("Selected empirical description"), "family_weight"].item() == 1.
+    assert rows.loc[rows.evidence_kind.eq("Production estimate"), "value"].item() == 1.2
+    assert rows.loc[rows.evidence_kind.eq("Cohort fallback median"), "value"].item() == 2.
+    aggregate = charts[0]["spec"]["layer"][-1]
+    assert aggregate["mark"]["filled"] is False
+    assert aggregate["encoding"]["size"]["condition"]["value"] == 180
+    assert aggregate["encoding"]["size"]["value"] == 60
+    assert aggregate["encoding"]["x"]["field"] == "value"
+    assert aggregate["encoding"]["y"]["field"] == "model_year"
+    assert aggregate["encoding"]["y"]["sort"] == ["2022"]
+    assert aggregate["encoding"]["y"]["scale"]["domain"] == ["2022"]
+    assert len(aggregate["encoding"]["x"]["axis"]["values"]) == 4
+    assert aggregate["encoding"]["color"]["legend"]["orient"] == "bottom"
+    kinds = ["Catalogue family median", "Selected empirical description", "Cohort fallback median", "Production estimate"]
+    for channel in ["color", "shape"]:
+        encoding = aggregate["encoding"][channel]
+        assert encoding["title"] == "Evidence"
+        assert encoding["scale"]["domain"] == kinds
+        assert encoding["legend"]["columns"] == 4
+        assert encoding["legend"]["direction"] == "horizontal"
+        assert "values" not in encoding["legend"]
+    assert aggregate["encoding"]["shape"]["scale"]["range"] == ["circle", "circle", "diamond", "cross"]
+    assert charts[0]["spec"]["resolve"]["legend"]["size"] == "shared"
+    assert charts[0]["spec"]["width"] == 1200
+    assert aggregate["encoding"]["fill"]["condition"]["value"] == "#b7303e"
+    assert aggregate["encoding"]["fill"]["value"] == "transparent"
+    assert "xOffset" not in aggregate["encoding"]
+    assert not {"rating_row_ids", "empirical_observation_ids", "notes"} & set(rows)
+    for key, frame in original.items():
+        pd.testing.assert_frame_equal(frames[key], frame)
+
+
+def test_composition_columns_use_latest_pooled_mto_shares_across_years_and_powertrains():
+    import altair as alt
+    import marimo as mo
+
+    years = list(range(2015, 2026))
+    classes = ["Largest", "Second", "Third", "Fourth", "Fifth", "Excluded"]
+    weights = pd.DataFrame([
+        {"report_year": 2025, "weight_basis": "all_vintages", "nrcan_ceud_class": "Car",
+         "nrcan_vehicle_class": size, "aggregation_weight": weight}
+        for size, weight in zip(reversed(classes), [.01, .04, .1, .15, .3, .4], strict=True)
+    ] + [
+        {"report_year": report, "weight_basis": basis, "nrcan_ceud_class": group,
+         "nrcan_vehicle_class": "Excluded", "aggregation_weight": 1.}
+        for report, basis, group in [(2024, "all_vintages", "Car"), (2025, "model_year", "Car"),
+                                     (2025, "all_vintages", "Light Truck")]
+    ])
+    cohorts = [{"year": year, "rating_class": size, "powertrain": powertrain, "native_unit": "L/100 km",
+        "vehicle_group": "Cars"} for year, size, powertrain in [(2015, "Largest", "gasoline"),
+        (2025, "Second", "phev_35_miles"), (2022, "Excluded", "gasoline"), (2014, "Largest", "gasoline")]]
+    models = pd.DataFrame([{**cohort, "family_median_mj_per_vkm": 2., "model_native_consumption": 6.,
+        "make_model": "Model " + cohort["rating_class"]} for cohort in cohorts])
+    families = pd.DataFrame([{**cohort, "family_median_mj_per_vkm": 1.5, "family_native_consumption": 4.5,
+        "family_label": "Observed " + cohort["rating_class"], "family_weight": 1., "family_count": 10} for cohort in cohorts])
+    summaries = pd.DataFrame([{**cohort, "production_mj_per_vkm": 1.5, "production_native_consumption": 4.5,
+        "catalogue_mj_per_vkm": 2., "catalogue_native_consumption": 6., "catalogue_model_min": 2.,
+        "catalogue_model_max": 2., "aggregation_method": "izev_incentive_weighted"} for cohort in cohorts])
+    frames = {"composition_models": models, "composition_families": families, "composition_comparison": summaries}
+    notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
+    cell = runpy.run_path(str(notebook))["composition_plot"]
+    charts = []
+    output, _ = cell.run(alt=alt, chart_ui=lambda chart: charts.append(chart.to_dict(validate=True)) or mo.md("chart"),
+        composition_class_columns=diagnostic.composition_class_columns, supported_display_years=diagnostic.supported_display_years,
+        composition_view={"years": years, "top_size_classes": 5, "grid_plot_width": 1200, "class_order": {"Cars": classes[:5]}},
+        diagnostic=SimpleNamespace(frames=frames, inputs={"rating_class_weights": weights}, summary={"base_year": 2023}),
+        mo=mo, pd=pd, range_label=str, vehicle_group=SimpleNamespace(value="Cars"))
+    assert len(charts) == 2
+    assert "2025 MTO stock, all vintages" in output.text
+    assert "99.0%" in output.text
+    for chart in charts:
+        assert chart["facet"]["column"]["sort"] == classes[:5]
+        # Powertrain and measurement now share the facet header's title area.
+        assert "title" not in chart
+        assert "NRCan size class" in chart["facet"]["column"]["title"]
+        target_year = 2015 if chart["facet"]["column"]["title"].startswith("gasoline ·") else 2025
+        assert chart["spec"]["layer"][-1]["encoding"]["y"]["scale"]["domain"] == [str(target_year) + ("*" if target_year > 2023 else "")]
+        rows = pd.DataFrame(chart["data"]["values"])
+        assert set(rows.rating_class) == set(classes[:5])
+        assert set(rows.year) == {target_year}
+        missing = rows.loc[rows.evidence_kind.eq("Missing cohort")]
+        assert len(missing) == 5
+        actual = rows.loc[rows.evidence_kind.eq("Production estimate")]
+        assert len(actual) == 1
+        assert actual.value.item() == 1.5
+        assert set(rows.loc[rows.evidence_kind.eq("Catalogue family median"), "label"]) <= {"Model Largest", "Model Second"}
+
+
+@pytest.mark.parametrize("scope", ["stock_vehicle_group_share", "new_pev_powertrain_share",
+                                  "new_pev_vehicle_group_share", "statcan_stock_powertrain_reference"])
+def test_benchmark_chart_preserves_population_denominators_missing_cells_and_unpaired_years(scope):
+    import altair as alt
+    import marimo as mo
+
+    source_ids = (["statcan_stock"] if scope == "statcan_stock_powertrain_reference" else
+                  ["statcan_stock", "mto_stock"] if scope == "stock_vehicle_group_share" else ["statcan_new", "izev"])
+    rows = []
+    for region in ["ON", "QC"]:
+        for year in [2023, 2024]:
+            for source in source_ids:
+                if year == 2024 and source == source_ids[0] and len(source_ids) == 2:
+                    continue
+                for group in ["Cars", "Light trucks"]:
+                    for powertrain in (["all"] if scope == "stock_vehicle_group_share" else ["bev", "phev"]):
+                        missing = year == 2024 and powertrain == "phev"
+                        rows.append({"region": region, "year": year, "vehicle_group": group, "powertrain": powertrain,
+                            "source": source, "count": 10 if region == "ON" else 900, "share": np.nan if missing else .25,
+                            "denominator": 40 if region == "ON" else 3600, "comparison_scope": scope,
+                            "population": "Explicit source population", "time_basis": "Request or registration calendar year",
+                            "status": "missing_or_suppressed" if missing else "reported", "source_geography": region,
+                            "denominator_basis": "Specific conditional population", "comparability_note": "Distinct populations remain explicit."})
+    frame = pd.DataFrame(rows)
+    original = frame.copy(deep=True)
+    notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
+    cell = runpy.run_path(str(notebook))["composition_benchmark_plot"]
+    charts, tables = [], []
+
+    def chart_ui(chart):
+        charts.append(chart.to_dict(validate=True))
+        return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
+
+    def table_ui(table, label):
+        tables.append(table.copy())
+        return mo.md(label)
+
+    output, _ = cell.run(alt=alt, chart_ui=chart_ui, benchmark_scope=SimpleNamespace(value=scope),
+        diagnostic=SimpleNamespace(frames={"composition_benchmark": frame}, summary={"region": "ON"}), mo=mo, table_ui=table_ui)
+    assert "Distinct populations remain explicit" in output.text
+    assert len(charts) == 1 and len(tables) == 2
+    plotted = pd.DataFrame(charts[0]["data"]["values"])
+    assert plotted["count"].eq(10).all()
+    assert plotted.denominator.eq(40).all()
+    assert set(plotted.year) == {2023, 2024}
+    if scope != "stock_vehicle_group_share":
+        assert plotted.share.isna().any()
+    if len(source_ids) == 2:
+        assert set(plotted.comparison_overlap) == {"Both sources present", "Source only or incomplete"}
+    else:
+        assert plotted.comparison_overlap.eq("StatCan reference only").all()
+    assert tables[0]["Denominator count"].eq(40).all()
+    assert tables[0]["Count"].eq(10).all()
+    assert tables[0]["Share (%)"].dropna().eq(25).all()
+    assert tables[1].region.eq("ON").all()
+    assert tables[1].denominator_basis.eq("Specific conditional population").all()
+    assert all(layer["encoding"]["y"]["scale"]["domain"] == [0, 1] for layer in charts[0]["spec"]["layer"])
+    pd.testing.assert_frame_equal(frame, original)
+
+
+def test_empty_benchmark_selection_displays_coverage_gap_without_a_zero_chart():
+    import altair as alt
+    import marimo as mo
+
+    notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
+    cell = runpy.run_path(str(notebook))["composition_benchmark_plot"]
+    frame = pd.DataFrame(columns=["region", "comparison_scope"])
+    output, _ = cell.run(alt=alt, chart_ui=lambda _: pytest.fail("empty comparison became a chart"),
+        benchmark_scope=SimpleNamespace(value="stock_vehicle_group_share"),
+        diagnostic=SimpleNamespace(frames={"composition_benchmark": frame}, summary={"region": "ON"}),
+        mo=mo, table_ui=lambda *_: pytest.fail("empty comparison became observations"))
+    assert "No captured observations support this comparison" in output.text

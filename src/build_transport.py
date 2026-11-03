@@ -530,7 +530,10 @@ def prepare_transport_contribution(
         from parameterization.road_utilization import prepare_road_utilization
 
         with log_duration(LOGGER, "Road utilization (capacity_to_activity, limit_annual_capacity_factor)"):
-            road = prepare_road_utilization(bundle, existing_capacity_rows=parameter_rows)
+            road = prepare_road_utilization(
+                bundle, existing_capacity_rows=parameter_rows,
+                existing_capacity_contexts=capacity_contexts,
+            )
         road_assumption_dataset = road.assumption_dataset
         c2a_rows = road.capacity_to_activity_rows
         flat_factor_rows = road.flat_factor_rows
@@ -1152,9 +1155,10 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
     """
     from fetching import (
         assorted_sources, cer_enerfuture, fueleconomy_vehicles,
-        nlr_atb_autonomie, nrcan_ceud, statcan_tables, vehicle_population,
+        nlr_atb_autonomie, nrcan_ceud, statcan_tables, transport_canada_izev, vehicle_population,
     )
     from parameterization.road_aggregation import build_road_aggregation_artifacts
+    from parameterization.ceud_inputs import prepare_ceud_inputs
 
     scenario = bundle.scenario_path
     LOGGER.info("Preparing scenario inputs: cache downloads %s", "enabled" if download else "disabled")
@@ -1169,6 +1173,13 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
     ):
         with log_duration(LOGGER, f"Prerequisite {prepare.__module__}.{prepare.__name__}"):
             prepare(scenario, download=download)
+    with log_duration(LOGGER, "CEUD base-year parameter views"):
+        prepare_ceud_inputs(bundle)
+    with log_duration(LOGGER, "Prerequisite Transport Canada iZEV composition"):
+        transport_canada_izev.fetch_izev(bundle, download=download)
+    if "efficiency" in bundle.scenario.notebook_diagnostics:
+        with log_duration(LOGGER, "Notebook StatCan LDV stock composition"):
+            statcan_tables.prepare_ldv_stock_benchmark(bundle)
     if "vehicle_stock" in bundle.scenario.notebook_diagnostics:
         # Historical replay publishes a latest-edition handoff. Restore the selected
         # production edition afterwards, before class weights and review products.
@@ -1384,10 +1395,6 @@ def _build_scenario(
                 raise ValueError("Notebook build configuration changed during preparation; rerun before publication: "
                                  + "; ".join(changed_controls))
             from validation.notebook_evidence import stage_notebook_evidence
-            if "efficiency" in scenario.notebook_diagnostics:
-                from validation.rating_stock_benchmark import build_rating_stock_benchmark
-                with log_duration(LOGGER, "Diagnostic-only MTO rating benchmark"):
-                    build_rating_stock_benchmark(bundle)
             with log_duration(LOGGER, "Recorded notebook evidence"):
                 notebook_publication = stage_notebook_evidence(bundle, report)
             report["notebook_evidence"] = notebook_publication.bundles

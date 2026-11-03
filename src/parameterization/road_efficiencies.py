@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from functools import cache
-import logging
 from math import isfinite
 from pathlib import Path
 from typing import Any
@@ -12,6 +11,10 @@ import numpy as np
 import pandas as pd
 
 from fetching.nlr_atb_autonomie import configured_trajectory
+from parameterization.rating_composition import (
+    distinct_catalogue_variants,
+    median_support_weights,
+)
 from utils import (
     ConfigBundle,
     load_conversion_factors,
@@ -189,86 +192,6 @@ def parse_nrcan_phev_cd_components(raw: pd.Series, *, contract: dict) -> pd.Data
     values = result.to_numpy()
     if not np.isfinite(values).all() or (values < 0).any():
         raise ValueError("NRCan PHEV CD components must be finite and nonnegative")
-    return result
-
-
-def apply_rating_outlier_filter(frame: pd.DataFrame, *, rules: dict) -> pd.DataFrame:
-    """Screen equal-weight make/model means once; retain every native source row."""
-    spec = rules["ratings"]["outlier_filter"]
-    cohort = ["year", "rating_class", "powertrain", "native_unit"]
-    supported = {
-        "method": "tukey_iqr", "metric": "consumption_mj_per_vkm",
-        "cohort_fields": cohort, "variant_aggregation": "mean", "tails": "both",
-        "quartile_interpolation": "linear", "insufficient_support": "retain", "zero_iqr": "retain",
-        "missing_energy_metric": "retain_native_audit",
-    }
-    for key, expected in supported.items():
-        if spec.get(key) != expected:
-            raise ValueError(f"Unsupported NRCan outlier_filter.{key}: {spec.get(key)!r}")
-    minimum, multiplier = spec.get("minimum_models"), spec.get("iqr_multiplier")
-    if isinstance(minimum, bool) or not isinstance(minimum, int) or minimum < 1:
-        raise ValueError("NRCan outlier minimum_models must be a positive integer")
-    if (isinstance(multiplier, bool) or not isinstance(multiplier, (int, float))
-            or not np.isfinite(multiplier) or multiplier <= 0):
-        raise ValueError("NRCan outlier iqr_multiplier must be finite and positive")
-    unconverted = spec.get("unconverted_powertrains")
-    if (not isinstance(unconverted, list) or any(not isinstance(value, str) for value in unconverted)
-            or len(unconverted) != len(set(unconverted)) or set(unconverted) - set(rules["ldv_archetypes"])):
-        raise ValueError("NRCan outlier unconverted_powertrains must name distinct configured powertrains")
-    identities = [rules["ratings"]["fields"][name] for name in ("make", "model")]
-    keys, metric = [*cohort, *identities], spec["metric"]
-    if missing := {"included", metric, *keys} - set(frame):
-        raise ValueError(f"NRCan outlier filtering requires columns: {sorted(missing)}")
-    if not pd.api.types.is_bool_dtype(frame.included) or frame.included.isna().any():
-        raise ValueError("NRCan outlier filtering requires complete boolean inclusion flags")
-    result = frame.copy()
-    result["included_before_filter"] = result.included
-    observed = result.loc[result.included, [*keys, metric]].copy()
-    if observed[keys].isna().any().any():
-        raise ValueError("NRCan outlier filtering requires complete eligible cohort and identity keys")
-    for column in [*cohort[1:], *identities]:
-        if observed[column].astype("string[python]").str.strip().eq("").any():
-            raise ValueError(f"NRCan outlier filtering requires nonblank eligible {column}")
-    observed[metric] = pd.to_numeric(observed[metric], errors="raise")
-    unavailable = result.included_before_filter & result.powertrain.isin(unconverted) & result[metric].isna()
-    observed = observed.loc[~(observed.powertrain.isin(unconverted) & observed[metric].isna())]
-    if not np.isfinite(observed[metric]).all() or observed[metric].le(0).any():
-        raise ValueError("NRCan outlier filtering requires finite positive eligible total consumption")
-
-    mean = "outlier_model_mean_mj_per_vkm"
-    count = "outlier_cohort_model_count"
-    q1, q3 = "outlier_q1_mj_per_vkm", "outlier_q3_mj_per_vkm"
-    lower, upper = "outlier_lower_fence_mj_per_vkm", "outlier_upper_fence_mj_per_vkm"
-    models = observed.groupby(keys, sort=True)[metric].mean().rename(mean).to_frame()
-    grouped = models.groupby(level=cohort)[mean]
-    models[count] = grouped.transform("size").astype("Int64")
-    models[q1] = grouped.transform(lambda values: values.quantile(.25, interpolation=spec["quartile_interpolation"]))
-    models[q3] = grouped.transform(lambda values: values.quantile(.75, interpolation=spec["quartile_interpolation"]))
-    iqr = models[q3] - models[q1]
-    models[lower], models[upper] = models[q1] - multiplier * iqr, models[q3] + multiplier * iqr
-    models["outlier_status"] = "within_fences"
-    enough = models[count].ge(minimum)
-    models.loc[~enough, "outlier_status"] = "insufficient_models"
-    models.loc[enough & iqr.eq(0), "outlier_status"] = "zero_iqr"
-    supported_cohort = enough & iqr.gt(0)
-    models.loc[supported_cohort & models[mean].lt(models[lower]), "outlier_status"] = "below_lower_fence"
-    models.loc[supported_cohort & models[mean].gt(models[upper]), "outlier_status"] = "above_upper_fence"
-    result = result.join(models, on=keys, validate="many_to_one")
-    ineligible = ~result.included_before_filter
-    result.loc[ineligible | unavailable, [mean, count, q1, q3, lower, upper]] = pd.NA
-    result.loc[ineligible, "outlier_status"] = "not_eligible"
-    result.loc[unavailable, "outlier_status"] = "unavailable_energy_metric"
-    result["outlier_excluded"] = result.outlier_status.isin(["below_lower_fence", "above_upper_fence"])
-    result["filter_reason"] = result.outlier_status.where(result.outlier_excluded, "")
-    result["included"] = result.included_before_filter & ~result.outlier_excluded
-    cohort_audit = models.reset_index().drop_duplicates(cohort)
-    logging.getLogger(__name__).info(
-        "NRCan outlier filter: %s of %s eligible source rows excluded; %s sparse and %s zero-IQR cohorts retained; %s native-only rows retained without energy screening; all %s rows retained in audit",
-        int(result.outlier_excluded.sum()), int(result.included_before_filter.sum()),
-        int(cohort_audit[count].lt(minimum).sum()),
-        int((cohort_audit[count].ge(minimum) & cohort_audit[q1].eq(cohort_audit[q3])).sum()),
-        int(unavailable.sum()), len(result),
-    )
     return result
 
 
@@ -455,13 +378,13 @@ def classify_ratings(
             raise ValueError("Nonpositive/nonfinite source rating")
         results.append(frame)
     classified = pd.concat(results, ignore_index=True).sort_values(["component", "source_row"])
-    return apply_rating_outlier_filter(classified, rules=rules)
+    return classified
 
 
 def distinct_rating_models(
     classified: pd.DataFrame, *, rules: dict, value_columns: tuple[str, ...] = (),
 ) -> pd.DataFrame:
-    """Average rated variants within each exact make/model and annual class cohort."""
+    """Median distinct eligible trims within each annual size/range family cell."""
     fields = rules["ratings"]["fields"]
     cohort = ["year", "powertrain", "rating_class", "native_unit"]
     identities = [fields["make"], fields["model"]]
@@ -471,7 +394,7 @@ def distinct_rating_models(
     required = {"included", *cohort, *identities, *values} - {"range_km"}
     if missing := required - set(classified):
         raise ValueError(f"Distinct-model rating evidence is missing columns: {sorted(missing)}")
-    observed = classified.loc[classified.included].copy()
+    observed = classified.loc[classified.included].copy().reset_index(drop=True)
     missing_identity = observed[identities].isna().any(axis=1)
     for field in identities:
         missing_identity |= observed[field].astype(str).str.strip().eq("")
@@ -486,30 +409,100 @@ def distinct_rating_models(
         raise ValueError("Conflicting native units within an annual rating class/powertrain cohort")
     if "range_km" not in observed:
         observed["range_km"] = np.nan
-    return observed.groupby([*cohort, *identities], as_index=False, sort=True).agg(
-        **{field: (field, "mean") for field in values},
-        catalogue_rows=("native_consumption", "size"),
-    )
+    spec = dict(rules["ratings"].get("composition", {}))
+    spec.setdefault("variant_identity_columns", ["Make", "Model", *values])
+    native_labels = observed.rename(columns={fields["make"]: "Make", fields["model"]: "Model"}).copy()
+    # Positional identities here are internal traversal keys, not exported source
+    # provenance. Duplicate evidence rows still share the common distinct-trim key.
+    native_labels["component"] = "rating_statistics"
+    native_labels["source_row"] = np.arange(len(native_labels))
+    labels = distinct_catalogue_variants(native_labels, spec)
+    observed["family_key"] = labels.family_key
+    observed["family_make"] = labels.family_make
+    observed["family_model"] = labels.family_model
+    observed["rating_variant_id"] = labels.rating_variant_id
+    if not value_columns:
+        keys = [*cohort, "family_key"]
+        distinct = observed.drop_duplicates("rating_variant_id")
+        result = distinct.groupby(keys, as_index=False, sort=True).agg(
+            **{field: (field, "median") for field in values},
+            **{fields["make"]: ("family_make", "first"), fields["model"]: ("family_model", "first")},
+            distinct_trims=("rating_variant_id", "size"),
+        )
+        counts = observed.groupby(keys, as_index=False, sort=True).size().rename(columns={"size": "catalogue_rows"})
+        result = result.merge(counts, on=keys, validate="one_to_one")
+        return result[[*cohort, *identities, "family_key", *values, "catalogue_rows", "distinct_trims"]]
+    records = []
+    for key, group in observed.groupby([*cohort, "family_key"], sort=True):
+        distinct = group.drop_duplicates("rating_variant_id")
+        order_field = "consumption_mj_per_vkm"
+        if distinct[order_field].isna().all():
+            order_field = "native_consumption"
+        support = median_support_weights(distinct, order_field) if value_columns else None
+        record = dict(zip(cohort, key[:-1], strict=True))
+        record.update({
+            fields["make"]: group.family_make.iloc[0],
+            fields["model"]: group.family_model.iloc[0],
+            "family_key": key[-1], "catalogue_rows": len(group),
+            "distinct_trims": len(distinct),
+        })
+        for field in values:
+            # Components share TOTAL-energy median support so their sum remains
+            # the representative total; native rates and range have own medians.
+            record[field] = (
+                distinct[field].median() if field not in value_columns
+                else _supported_rating_value(distinct[field], support)
+            )
+        records.append(record)
+    return pd.DataFrame(records, columns=[
+        *cohort, *identities, "family_key", *values, "catalogue_rows", "distinct_trims",
+    ])
+
+
+def _supported_rating_value(values: pd.Series, support: pd.Series) -> float:
+    selected = values.loc[support.gt(0)]
+    if selected.empty or selected.isna().any():
+        return float("nan")
+    return float((selected * support.loc[selected.index]).sum())
 
 
 def rating_class_statistics(
     classified: pd.DataFrame, *, rules: dict, statistic: str,
     value_columns: tuple[str, ...] = (),
 ) -> pd.DataFrame:
-    """Apply the selected statistic equally across distinct models within each cohort."""
+    """Apply the selected statistic equally across family medians within a cohort."""
     if statistic not in {"mean", "median"}:
         raise ValueError(f"Unsupported distinct-model rating statistic: {statistic!r}")
     models = distinct_rating_models(classified, rules=rules, value_columns=value_columns)
     values = list(dict.fromkeys([
         "native_consumption", "consumption_mj_per_vkm", "range_km", *value_columns,
     ]))
-    annual = models.groupby(
-        ["year", "powertrain", "rating_class", "native_unit"], as_index=False, sort=True,
-    ).agg(
-        **{field: (field, statistic) for field in values},
-        observations=("catalogue_rows", "sum"),
-        distinct_models=("catalogue_rows", "size"),
-    )
+    cohort = ["year", "powertrain", "rating_class", "native_unit"]
+    if not value_columns:
+        annual = models.groupby(cohort, as_index=False, sort=True).agg(
+            **{field: (field, statistic) for field in values},
+            observations=("catalogue_rows", "sum"),
+            distinct_models=("family_key", "size"),
+        )
+        annual["rating_statistic"] = statistic
+        return annual
+    records = []
+    for key, group in models.groupby(cohort, sort=True):
+        record = dict(zip(cohort, key, strict=True))
+        order_field = "consumption_mj_per_vkm"
+        if group[order_field].isna().all():
+            order_field = "native_consumption"
+        support = (median_support_weights(group.assign(rating_variant_id=group.family_key), order_field)
+                   if value_columns and statistic == "median" else None)
+        for field in values:
+            record[field] = (
+                _supported_rating_value(group[field], support)
+                if statistic == "median" and field in value_columns
+                else getattr(group[field], statistic)()
+            )
+        record.update(observations=group.catalogue_rows.sum(), distinct_models=len(group))
+        records.append(record)
+    annual = pd.DataFrame(records, columns=[*cohort, *values, "observations", "distinct_models"])
     annual["rating_statistic"] = statistic
     return annual
 
@@ -795,7 +788,7 @@ class RoadEfficiencyEvidence:
         rated["weighted_native"] = rated.native_class_mean * rated.weight
         rated["weighted_mj"] = rated.class_mean_mj_per_vkm * rated.weight
         self.ratings = rated.groupby(
-            ["ceud_class", "powertrain", "year"], as_index=False
+            (["region"] if "region" in rated else []) + ["ceud_class", "powertrain", "year"], as_index=False
         ).agg(
             native=("weighted_native", "sum"),
             mj=("weighted_mj", lambda s: s.sum(min_count=1)),
@@ -822,12 +815,18 @@ class RoadEfficiencyEvidence:
         return value
 
     def rating(
-        self, mode: str, powertrain: str, year: int, column: str
+        self, mode: str, powertrain: str, year: int, column: str, *, region: str | None = None,
     ) -> float | None:
         weights = self.rules["road_classes"][mode]["weights"]
         series = self.ratings.loc[
             self.ratings.ceud_class.eq(weights) & self.ratings.powertrain.eq(powertrain)
         ]
+        if "region" in series:
+            if region is None:
+                if series.region.nunique() > 1:
+                    raise ValueError("Regional composition requires an explicit region")
+            else:
+                series = series.loc[series.region.eq(region)]
         return observed_value(series, year, column)
 
     def period_observations(
@@ -851,6 +850,7 @@ class RoadEfficiencyEvidence:
 
     def historical_rating_ratio(
         self, mode: str, powertrain: str, year: int, anchor: int, *, missing_ok: bool = False,
+        region: str | None = None,
     ) -> tuple[float, str] | None:
         candidates, current = [], powertrain
         while current not in candidates:
@@ -861,8 +861,8 @@ class RoadEfficiencyEvidence:
             candidates.append(incumbent)
         for candidate in candidates:
             a, b = (
-                self.rating(mode, candidate, year, "native"),
-                self.rating(mode, candidate, anchor, "native"),
+                self.rating(mode, candidate, year, "native", region=region),
+                self.rating(mode, candidate, anchor, "native", region=region),
             )
             if a is not None and b is not None:
                 return a / b, candidate
@@ -877,7 +877,7 @@ class RoadEfficiencyEvidence:
     ) -> tuple[float, str]:
         if powertrain in seen:
             raise ValueError(f"Cyclic/missing LDV rating analogue: {mode}/{powertrain}")
-        value = self.rating(mode, powertrain, self.base_year, "mj")
+        value = self.rating(mode, powertrain, self.base_year, "mj", region=region)
         if value is not None:
             return value, powertrain
         observed = self.ratings.loc[
@@ -885,10 +885,12 @@ class RoadEfficiencyEvidence:
             & self.ratings.powertrain.eq(powertrain)
             & self.ratings.mj.notna()
         ]
+        if "region" in observed:
+            observed = observed.loc[observed.region.eq(region)]
         if not observed.empty:
             latest = observed.loc[observed.year.idxmax()]
             index, evidence = self.historical_rating_ratio(
-                mode, powertrain, self.base_year, int(latest.year)
+                mode, powertrain, self.base_year, int(latest.year), region=region,
             )
             self.findings.add(
                 (
@@ -1028,14 +1030,14 @@ class RoadEfficiencyEvidence:
         source_years, projection_details = {}, {}
         if pathway == "ldv":
             if year <= base:
-                observed = self.rating(mode, powertrain, year, "mj")
+                observed = self.rating(mode, powertrain, year, "mj", region=region)
                 if observed is not None:
                     consumption, treatment = observed, "NRCan_observed_class_weighted"
                 else:
                     if not allow_analogue:
                         return None
                     proxy = self.historical_rating_ratio(
-                        mode, powertrain, year, base, missing_ok=True,
+                        mode, powertrain, year, base, missing_ok=True, region=region,
                     )
                     if proxy is None:
                         return None
