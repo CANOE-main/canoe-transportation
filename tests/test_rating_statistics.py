@@ -45,7 +45,7 @@ def ratings():
 
 
 @pytest.mark.parametrize("statistic,consumption,distance", [("mean", 12, 350), ("median", 10, 300)])
-def test_distinct_models_receive_equal_influence_after_variant_means(
+def test_distinct_models_receive_equal_influence_after_variant_medians(
     ratings, rules, statistic, consumption, distance,
 ):
     original = ratings.copy(deep=True)
@@ -82,7 +82,7 @@ def test_model_identity_stays_within_exact_year_class_powertrain_and_name(rating
         ratings.iloc[[0]].assign(Make="Another make"),
     ], ignore_index=True)
     models = distinct_rating_models(variants, rules=rules)
-    assert len(models) == 8
+    assert len(models) == 7  # Case alone does not create another family.
     assert models.catalogue_rows.sum() == len(variants)
 
 
@@ -110,6 +110,38 @@ def test_identity_fields_follow_configured_source_names(ratings, rules):
         ratings.rename(columns={"Make": "Manufacturer", "Model": "Name"}), rules=rules,
     )
     assert result.Name.tolist() == ["A", "B", "C"]
+
+
+def test_nested_family_medians_ignore_unequal_trim_repetition(ratings, rules):
+    rules["ratings"]["composition"] = {
+        "variant_identity_columns": ["Model", "native_consumption", "consumption_mj_per_vkm", "range_km"],
+        "family_matching": {"trim_suffix_patterns": [r"(?i)\s+(?:AWD|4WD)$"]},
+    }
+    rows = ratings.assign(
+        Model=["A", "A AWD", "A 4WD", "B"],
+        native_consumption=[10., 20., 100., 200.],
+        consumption_mj_per_vkm=[.36, .72, 3.6, 7.2],
+    )
+    expected = rating_class_statistics(rows, rules=rules, statistic="median")
+    assert expected.native_consumption.item() == 110
+    repeated = pd.concat([rows, rows.iloc[[0]]] * 2 + [rows.iloc[[0]]], ignore_index=True)
+    actual = rating_class_statistics(repeated, rules=rules, statistic="median")
+    assert actual.native_consumption.item() == 110
+    assert actual.distinct_models.item() == 2
+
+
+def test_phev_components_share_total_median_support(ratings, rules):
+    rows = ratings.assign(
+        Model=["A", "A", "A", "B"],
+        consumption_mj_per_vkm=[1., 2., 9., 4.],
+        electric=[.8, .2, 8., 3.], fuel=[.2, 1.8, 1., 1.],
+    )
+    actual = rating_class_statistics(
+        rows, rules=rules, statistic="median", value_columns=("electric", "fuel"),
+    ).iloc[0]
+    assert actual.consumption_mj_per_vkm == 3
+    assert actual.electric + actual.fuel == pytest.approx(3)
+    assert actual.electric == pytest.approx(1.6)
 
 
 @pytest.mark.parametrize("statistic,consumption", [("mean", 12), ("median", 10)])
@@ -153,11 +185,10 @@ def test_class_weights_apply_after_the_selected_model_statistic(ratings, rules, 
     assert missing_class.weight == 1
 
 
-def test_rating_statistic_requires_an_explicit_supported_selection(ratings, rules):
-    assert ScenarioEfficiencies(atb_trajectory="Mid", rating_statistic="mean").rating_statistic == "mean"
-    assert ScenarioEfficiencies(atb_trajectory="Mid", rating_statistic="median").rating_statistic == "median"
+def test_scenario_rejects_the_obsolete_catalogue_statistic_selection(ratings, rules):
+    assert ScenarioEfficiencies(atb_trajectory="Mid").atb_trajectory == "Mid"
     with pytest.raises(ValidationError, match="rating_statistic"):
-        ScenarioEfficiencies(atb_trajectory="Mid")
+        ScenarioEfficiencies(atb_trajectory="Mid", rating_statistic="mean")
     with pytest.raises(ValidationError, match="rating_statistic"):
         ScenarioEfficiencies(atb_trajectory="Mid", rating_statistic="mode")
     with pytest.raises(ValueError, match="Unsupported distinct-model rating statistic"):
@@ -165,8 +196,8 @@ def test_rating_statistic_requires_an_explicit_supported_selection(ratings, rule
 
 
 @pytest.mark.parametrize("scenario", ["default", "legacy_comparison", "notebook_diagnostics"])
-def test_versioned_scenarios_explicitly_select_the_promoted_model_mean(scenario):
+def test_versioned_scenarios_use_the_shared_fixed_catalogue_policy(scenario):
     bundle = load_config_bundle(
         f"config/scenarios/{scenario}.yaml", repo_root=Path(__file__).resolve().parents[1],
     )
-    assert bundle.scenario.efficiencies.rating_statistic == "mean"
+    assert not hasattr(bundle.scenario.efficiencies, "rating_statistic")

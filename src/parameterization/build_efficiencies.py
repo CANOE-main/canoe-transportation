@@ -14,10 +14,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from parameterization.ceud_inputs import read_ceud_input
 from canoe_schema.v4_0 import DataSet, Efficiency, LimitTechInputSplitAnnual
 
 from fetching.fueleconomy_vehicles import build_request, validate_cache
 from fetching.nlr_atb_autonomie import configured_trajectory
+from fetching.transport_canada_izev import SOURCE as IZEV, build_requests as izev_requests, validate_cache as validate_izev_cache
 from parameterization.manual_parameters import validate_manual_registry
 from parameterization.ldv_ev_ranges import RangeEvidence, existing_range_weights, module_rules as range_module_rules
 from fetching.epa_omega_baseline import SOURCE as OMEGA, COMPONENT as OMEGA_COMPONENT, build_request as omega_request
@@ -31,7 +33,8 @@ from parameterization.road_efficiencies import (
     require_observed_value,
     select_atb_consumption,
 )
-from parameterization.road_fleet_weights import aggregation_component, load_fleet_aggregation_evidence
+from parameterization.rating_composition import aggregate_empirical_ratings
+from parameterization.road_fleet_weights import MTO, aggregation_component, load_fleet_aggregation_evidence
 from utils import (
     ConfigBundle,
     active_source_keys,
@@ -576,9 +579,9 @@ def prepare_efficiency_rows(
     }
     paths: list[Path] = []
 
-    def read(path: Path, source: str | None = None) -> pd.DataFrame:
+    def read(path: Path, source: str | None = None, *, usecols=None) -> pd.DataFrame:
         paths.append(path)
-        frame = pd.read_csv(path)
+        frame = pd.read_csv(path, usecols=usecols)
         if frame.empty:
             raise ValueError(f"Empty efficiency evidence: {path}")
         if source is not None and set(frame.source_id) != {source}:
@@ -650,10 +653,11 @@ def prepare_efficiency_rows(
         )
 
     provincial = pd.concat(
-        [read(ceud_path(region), CEUD) for region in scenario.geography.regions],
+        [read_ceud_input(bundle, region) for region in scenario.geography.regions],
         ignore_index=True,
     )
-    national = read(ceud_path("national"), "nrcan_ceud_transport_national")
+    national = read_ceud_input(bundle, "national")
+    paths.extend(ceud_path(region) for region in [*scenario.geography.regions, "national"])
     if (
         int(provincial.year.max()) != scenario.periods.base_year
         or int(national.year.max()) != scenario.periods.base_year
@@ -718,10 +722,33 @@ def prepare_efficiency_rows(
     fleet = load_fleet_aggregation_evidence(bundle)
     paths.extend(fleet.paths)
     nlr_weights = fleet.ldv
-    rating_audit = aggregate_ratings(
-        classified, rating_weights, rules=rules, weight_basis=aggregation["ldv_weight_basis"],
-        statistic=scenario.efficiencies.rating_statistic,
+    mto_stock = read(weights_dir / aggregation["mapped_current_stock_file"], MTO)
+    izev_rules = load_harmonization_rules(bundle, IZEV)
+    izev = read(resolve_artifact_path(bundle, IZEV, izev_rules["output_file"]), IZEV, usecols=[
+        "source_id", "component", "source_row", "model_year", "request_year", "province",
+        "make", "model", "powertrain", "count", "Purchase or Lease",
+    ])
+    for request in izev_requests(bundle):
+        validate_izev_cache(request)
+        paths.append(request.cache_path)
+    composition = aggregate_empirical_ratings(
+        classified, rating_weights, mto_stock, izev,
+        rules=rules, composition_rules=rules["ratings"]["composition"],
+        regions=list(scenario.geography.regions), weight_basis=aggregation["ldv_weight_basis"],
+        range_rules=range_rules, conversions=conversions, uf_by_powertrain=utility_factors,
     )
+    rating_audit = composition.class_audit
+    LOGGER.info("NRCan composition: %s", rating_audit.aggregation_method.value_counts().to_dict())
+    for region, observations in composition.observations.groupby("region", sort=True):
+        LOGGER.info("NRCan composition %s count weights by source/basis/disposition (historical proxy records reused across target years): %s", region,
+                    observations.groupby(["source_kind", "composition_basis", "selection_status"]).source_count.sum().to_dict())
+    catalogue_comparison = None
+    if "efficiency" in scenario.notebook_diagnostics:
+        catalogue_comparison = aggregate_ratings(
+            classified, rating_weights,
+            rules=rules, weight_basis=aggregation["ldv_weight_basis"],
+            statistic="median",
+        )
     vehicle_source = read(
         atb_dir / atb_rules["components"]["vehicles"]["output_file"], ATB
     )
@@ -813,7 +840,7 @@ def prepare_efficiency_rows(
         ),
     )
     rating_inputs, baseline_inputs = ldv_rating_input_resolvers(
-        evidence, classified, rating_audit, rules=rules,
+        evidence, classified, rating_audit, rules=rules, composition_variants=composition.variants,
     )
     component_cache = {}
 
@@ -1022,8 +1049,9 @@ def prepare_efficiency_rows(
                 "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
                 "conversions": conversions,
                 "trajectory": trajectory,
-                "rating_statistic": scenario.efficiencies.rating_statistic,
+                "catalogue_aggregation": rules["ratings"]["composition"]["uncovered_cohort"],
                 "periods": scenario.periods.model_dump(),
+                "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
                 "existing_keys": sorted(existing_keys),
                 "historical_range_rules": range_rules.existing.model_dump(),
                 "historical_range_weights": range_evidence.bucket_totals.to_dict("records"),
@@ -1036,7 +1064,7 @@ def prepare_efficiency_rows(
         "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
         "population_year": scenario.existing_capacity.vehicle_population_year,
         "trajectory": trajectory,
-        "rating_statistic": scenario.efficiencies.rating_statistic,
+        "catalogue_aggregation": rules["ratings"]["composition"]["uncovered_cohort"],
         "historical_aggregation": rules["historical_aggregation"],
     }
     assumption = DataSet(
@@ -1115,11 +1143,14 @@ def prepare_efficiency_rows(
     )
     audit["rating_index_fallbacks"] = sum(not finding[-1].startswith("omitted_annual_consumption=")
                                            for finding in evidence.findings)
-    audit["rating_aggregation"] = "distinct_model_class_weighted"
+    audit["rating_aggregation"] = "identity_supported_gasoline_izev_and_median_catalogue"
+    audit["rating_composition_methods"] = rating_audit.aggregation_method.value_counts().to_dict()
+    audit["rating_composition_observation_dispositions"] = composition.observations.groupby(
+        ["region", "source_kind", "composition_basis", "selection_status"], as_index=False,
+    ).source_count.sum().to_dict("records")
     audit["annual_stock_evidence"] = dict(existing_capacity_audit["annual_stock_evidence"])
     audit["pev_projection_anchors"] = dict(evidence.pev_projection_anchors)
     audit["ldv_projection_reference_year"] = evidence.projection_reference_year
-    audit["rating_outlier_exclusions"] = int(classified.outlier_excluded.sum())
     audit["historical_source_backed_rows_without_capacity"] = len(
         existing_keys - capacity_keys
     )
@@ -1174,13 +1205,17 @@ def prepare_efficiency_rows(
         resolve_artifact_path(bundle, "efficiencies_" + layer)
         for layer in ("interim", "processed", "validation")
     )
-    for frame, path in (
+    exports = [
         (pd.DataFrame(annual_records), interim / rules["files"]["annual"]),
         (period_frame, interim / rules["files"]["periods"]),
         (loads, interim / rules["files"]["loads"]),
         (classified, interim / rules["files"]["ratings"]),
         (atb_audit, interim / rules["files"]["atb"]),
         (rating_audit, interim / rules["files"]["rating_weights"]),
+        (composition.observations, interim / rules["files"]["composition_observations"]),
+        (composition.variants, interim / rules["files"]["composition_variants"]),
+        (composition.matches, interim / rules["files"]["composition_matches"]),
+        (composition.coverage, interim / rules["files"]["composition_coverage"]),
         (split_audit, interim / rules["files"]["split_evidence"]),
         (relationships, interim / rules["files"]["relationships"]),
         (findings, validation / rules["files"]["findings"]),
@@ -1192,7 +1227,10 @@ def prepare_efficiency_rows(
             pd.DataFrame([r.model_dump(mode="json") for r in splits]),
             processed / rules["files"]["splits"],
         ),
-    ):
+    ]
+    if catalogue_comparison is not None:
+        exports.append((catalogue_comparison, interim / rules["files"]["catalogue_rating_weights"]))
+    for frame, path in exports:
         write_dataframe_atomic(frame, path)
     validation.mkdir(parents=True, exist_ok=True)
     (validation / rules["files"]["integrity"]).write_text(
@@ -1224,26 +1262,62 @@ def atb_efficiency_components(powertrain: str, pathway: str, rules: dict) -> lis
     return components
 
 
-def ldv_rating_input_resolvers(evidence, classified, rating_audit, *, rules: dict):
+def ldv_rating_input_resolvers(evidence, classified, rating_audit, *, rules: dict, composition_variants=None):
     """Trace exact observed rating years and approved baseline inputs."""
     @cache
-    def rating_inputs(mode, powertrain, year, column):
+    def rating_inputs(mode, powertrain, year, column, region=None):
         ceud_class = rules["road_classes"][mode]["weights"]
         annual = rating_audit.loc[
             rating_audit.ceud_class.eq(ceud_class)
             & rating_audit.powertrain.eq(powertrain)
             & rating_audit.year.le(evidence.base_year)
         ]
-        keys = annual.loc[annual.year.eq(year), ["year", "rating_class"]]
+        if "region" in annual:
+            if region is None and annual.region.nunique() > 1:
+                raise ValueError("Regional rating provenance requires an explicit region")
+            if region is not None:
+                annual = annual.loc[annual.region.eq(region)]
+        annual = annual.loc[annual.year.eq(year)]
+        keys = annual[["year", "rating_class"]].drop_duplicates()
         if keys.empty:
             raise ValueError(f"Missing exact annual rating provenance: {mode}/{powertrain}/{year}")
         selected = classified.loc[classified.included & classified.powertrain.eq(powertrain)].merge(
             keys, on=["year", "rating_class"], validate="many_to_one",
         )
+        empirical_classes = set(annual.loc[
+            annual.get("aggregation_method", pd.Series("", index=annual.index)).isin(
+                ["mto_identity_supported_weighted", "izev_incentive_weighted", "izev_historical_composition_proxy"]
+            ), "rating_class",
+        ])
+        if empirical_classes:
+            if composition_variants is None:
+                raise ValueError("Empirical rating provenance requires the selected variant audit")
+            variants = composition_variants.loc[
+                composition_variants.year.eq(year) & composition_variants.powertrain.eq(powertrain)
+                & composition_variants.rating_class.isin(empirical_classes)
+            ]
+            if region is not None:
+                variants = variants.loc[variants.region.eq(region)]
+            if set(variants.rating_class) != empirical_classes:
+                raise ValueError("Empirical rating provenance lacks selected variants for a class cohort")
+            empirical_rows = classified.loc[classified.included].merge(
+                variants[["component", "source_row"]].drop_duplicates(),
+                on=["component", "source_row"], how="right", validate="one_to_one", indicator=True,
+            )
+            if not empirical_rows._merge.eq("both").all():
+                raise ValueError("Empirical rating provenance contains an unknown catalogue source row")
+            selected = pd.concat([
+                selected.loc[~selected.rating_class.isin(empirical_classes)],
+                empirical_rows.drop(columns="_merge"),
+            ], ignore_index=True)
         components = {
             ("nrcan_fuel_consumption_ratings", str(component))
             for component in selected.component.unique()
         }
+        if empirical_classes:
+            for item in annual.loc[annual.rating_class.isin(empirical_classes)].itertuples(index=False):
+                components.update((item.composition_source, component.strip())
+                                  for component in item.composition_components.split("|") if component.strip())
         if powertrain in {"gasoline", "hev"}:
             classifications = classified.loc[
                 classified.included & classified.classification_method.eq("exact_epa_hybrid")
@@ -1258,29 +1332,31 @@ def ldv_rating_input_resolvers(evidence, classified, rating_audit, *, rules: dic
         return tuple(sorted(components))
 
     @cache
-    def baseline_inputs(mode, powertrain, seen=()):
+    def baseline_inputs(mode, powertrain, seen=(), region=None):
         if powertrain in seen:
             raise ValueError(f"Cyclic/missing LDV rating lineage: {mode}/{powertrain}")
         base = evidence.base_year
-        if evidence.rating(mode, powertrain, base, "mj") is not None:
-            return rating_inputs(mode, powertrain, base, "mj")
+        if evidence.rating(mode, powertrain, base, "mj", region=region) is not None:
+            return rating_inputs(mode, powertrain, base, "mj", region)
         observed = evidence.ratings.loc[
             evidence.ratings.ceud_class.eq(rules["road_classes"][mode]["weights"])
             & evidence.ratings.powertrain.eq(powertrain) & evidence.ratings.mj.notna()
         ]
+        if "region" in observed and region is not None:
+            observed = observed.loc[observed.region.eq(region)]
         if not observed.empty:
             latest = int(observed.year.max())
-            _, analogue = evidence.historical_rating_ratio(mode, powertrain, base, latest)
+            _, analogue = evidence.historical_rating_ratio(mode, powertrain, base, latest, region=region)
             return tuple(sorted(set(
-                rating_inputs(mode, powertrain, latest, "mj")
-                + rating_inputs(mode, analogue, base, "native")
-                + rating_inputs(mode, analogue, latest, "native")
+                rating_inputs(mode, powertrain, latest, "mj", region)
+                + rating_inputs(mode, analogue, base, "native", region)
+                + rating_inputs(mode, analogue, latest, "native", region)
             )))
         analogue = rules["ldv_archetypes"][powertrain]["analogue"]
         if analogue in (*seen, powertrain):
             analogue = rules["ldv_incumbent_fallback"]
         return tuple(sorted(set(
-            baseline_inputs(mode, analogue, (*seen, powertrain))
+            baseline_inputs(mode, analogue, (*seen, powertrain), region)
             + tuple(atb_efficiency_components(powertrain, "ldv", rules))
             + tuple(atb_efficiency_components(analogue, "ldv", rules))
         )))
@@ -1319,7 +1395,7 @@ def efficiency_components(
         components.append(aggregation_component(bundle, "ldv", region))
         treatment = result["treatment"]
         if treatment == "NRCan_observed_class_weighted":
-            components.extend(rating_inputs(mode, powertrain, year, "mj"))
+            components.extend(rating_inputs(mode, powertrain, year, "mj", region))
         elif treatment == "NRCan_cohort_anchor_ATB_relative_projection":
             components.extend(atb_efficiency_components(powertrain, pathway, rules))
             anchor = rules["pev_projection_anchors"].get(powertrain.split("_", 1)[0], powertrain)
@@ -1327,12 +1403,12 @@ def efficiency_components(
                 components.extend(atb_efficiency_components(anchor, pathway, rules))
             # The caller adds each observed anchor year and its raw-stock lineage.
         else:
-            components.extend(baseline_inputs(mode, powertrain))
+            components.extend(baseline_inputs(mode, powertrain, (), region))
             if year > base:
                 components.extend(atb_efficiency_components(powertrain, pathway, rules))
             else:
-                components.extend(rating_inputs(mode, result["analogue"], year, "native"))
-                components.extend(rating_inputs(mode, result["analogue"], base, "native"))
+                components.extend(rating_inputs(mode, result["analogue"], year, "native", region))
+                components.extend(rating_inputs(mode, result["analogue"], base, "native", region))
     elif pathway == "mhdv":
         spec = rules["mhdv_fleet_baseline"]
         observed = spec["observed_fuels"][mode]

@@ -313,6 +313,7 @@ class ScenarioSourceSelection(MappingModel):
 
 class ScenarioSources(MappingModel):
     selections: dict[str, ScenarioSourceSelection] = Field(default_factory=dict)
+    nrcan_ceud_beyond_observed: Literal["error", "constant"] = "error"
 
 
 class ScenarioEconomics(MappingModel):
@@ -362,6 +363,22 @@ class ScenarioRowNoteOverrides(MappingModel):
 class ScenarioExistingCapacity(MappingModel):
     vehicle_population_year: int = Field(gt=0)
     cleanup_tolerance: float = Field(ge=0, allow_inf_nan=False)
+    road_stock_method: dict[str, Literal["stock_age", "sales_survival"]] = Field(
+        default_factory=lambda: {"other": "stock_age"},
+    )
+
+    @model_validator(mode="after")
+    def validate_road_stock_method(self) -> Self:
+        if "other" not in self.road_stock_method:
+            raise ValueError("existing_capacity.road_stock_method requires an other fallback")
+        allowed = {"other", "ON", "AB", "BC", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"}
+        if set(self.road_stock_method) - allowed:
+            raise ValueError("Unknown region in existing_capacity.road_stock_method")
+        return self
+
+    def method_for(self, region: str) -> str:
+        methods = self.road_stock_method
+        return methods.get(region, methods.get("BC", methods["other"]) if region == "BCT" else methods["other"])
 
 
 class ScenarioDemand(MappingModel):
@@ -376,7 +393,6 @@ class ScenarioRoadUtilization(MappingModel):
 
 class ScenarioEfficiencies(MappingModel):
     atb_trajectory: str = Field(min_length=1)
-    rating_statistic: Literal["mean", "median"]
 
 
 class ScenarioCosts(MappingModel):
@@ -435,6 +451,15 @@ class ScenarioConfig(MappingModel):
             self.road_utilization.vkt_max_age < self.periods.step
         ):
             raise ValueError("road_utilization.vkt_max_age cannot contain a full period")
+        if any(self.existing_capacity.method_for(region) == "sales_survival"
+               for region in self.geography.regions):
+            if self.lifetimes.survival_curves:
+                raise ValueError(
+                    "sales_survival requires fixed future lifetimes: current unconditional "
+                    "survival rows would apply historical retirement twice"
+                )
+            if self.road_utilization.vkt_schedules:
+                raise ValueError("sales_survival activity calibration requires flat road utilization")
         return self
 
 
@@ -504,14 +529,14 @@ class SourceUpdatePolicy(MappingModel):
 
     strategy: Literal[
         "nrcan_ratings", "ontario_population", "statcan_tables",
-        "cer_energy_future", "fueleconomy", "tc_dashboard_same_values",
+        "cer_energy_future", "fueleconomy", "tc_dashboard_same_values", "tc_izev",
     ]
     metadata_url: str | None = Field(default=None, pattern=r"^https://[^\s]+$")
     download_hosts: list[Annotated[str, StringConstraints(pattern=r"^[a-z0-9.-]+$")]] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def require_catalogue_endpoint(self) -> Self:
-        if self.strategy in {"nrcan_ratings", "ontario_population", "cer_energy_future"} and not self.metadata_url:
+        if self.strategy in {"nrcan_ratings", "ontario_population", "cer_energy_future", "tc_izev"} and not self.metadata_url:
             raise ValueError("Catalogue update strategies require an explicit metadata_url")
         return self
 

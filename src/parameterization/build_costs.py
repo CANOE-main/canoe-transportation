@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from parameterization.ceud_inputs import read_ceud_input
 from canoe_schema.v4_0 import CostInvest, CostVariable
 
 from fetching.nlr_atb_autonomie import configured_trajectory
@@ -269,12 +270,11 @@ def prepare_cost_rows(
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
     ceud_dir = resolve_input_path(bundle, "interim", ceud_rules["interim_subdir"])
     ceud = pd.concat([
-        _read(
-            ceud_dir / ceud_rules["region_output_template"].format(region=region.lower()),
-            paths,
-        )
+        read_ceud_input(bundle, region)
         for region in scenario.geography.regions
     ], ignore_index=True)
+    paths.extend(ceud_dir / ceud_rules["region_output_template"].format(region=region.lower())
+                 for region in scenario.geography.regions)
     if set(ceud.source_id) != {CEUD}:
         raise ValueError("Wrong CEUD provenance for cost load factors")
     road_demand = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
@@ -774,6 +774,8 @@ def prepare_cost_rows(
         {
             "files": [(str(path.relative_to(bundle.repo_root)), file_sha256(path)) for path in digest_inputs],
             "lifetime_signature": lifetime_signature,
+            "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
+            "base_year": scenario.periods.base_year,
             "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
             "fleet_rules": load_harmonization_rules(bundle, "road_aggregation"),
             "historical_range_rules": range_module_rules(bundle).existing.model_dump(),

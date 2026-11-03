@@ -10,6 +10,7 @@ from math import isfinite
 from typing import Any
 
 import pandas as pd
+from parameterization.ceud_inputs import read_ceud_input
 from canoe_schema.v4_0 import Demand
 
 from fetching.cer_enerfuture import configured_edition, configured_scenario
@@ -124,8 +125,8 @@ def prepare_demand_rows(
         return ceud_dir / ceud_rules["region_output_template"].format(region=region.lower())
     ceud_files = [ceud_file(region) for region in regions]
     national_file = ceud_file("national")
-    provincial = pd.concat([pd.read_csv(path) for path in ceud_files], ignore_index=True)
-    national = pd.read_csv(national_file)
+    provincial = pd.concat([read_ceud_input(bundle, region) for region in regions], ignore_index=True)
+    national = read_ceud_input(bundle, "national")
     if set(provincial["region"]) != set(regions) or int(provincial["year"].max()) != base_year:
         raise ValueError("Provincial CEUD coverage or edition differs from scenario")
     if int(national["year"].max()) != base_year:
@@ -176,7 +177,8 @@ def prepare_demand_rows(
     }, sort_keys=True).encode()).hexdigest()
     variant = {"base_year": base_year, "periods": periods, "step": step,
                "cer_edition": edition, "cer_scenario": selected_scenario,
-               "input_content_digest": digest}
+               "input_content_digest": digest,
+               "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed}
     source_ids = source_id_mapping(bundle.sources)
     cer_context = resolve_provenance(bundle.sources, source_key=CER,
                                      component_key="macro-indicators",

@@ -61,6 +61,91 @@ def test_capture_does_not_publish_until_build_succeeds(prepared):
     assert not pd.read_csv(recorded_map).empty
 
 
+def test_directory_rename_permission_falls_back_to_verified_copy_before_publication(prepared, monkeypatch):
+    bundle, report, table = prepared
+    first = layer.stage_notebook_evidence(bundle, report)
+    layer.publish_notebook_evidence(first)
+    previous_index = first.index_path.read_bytes()
+    table.write_text("year,value\n2023,8\n", encoding="utf-8")
+    original_rename = Path.rename
+    rename_calls = []
+
+    def deny_staging_rename(source, destination):
+        if source.name.startswith(".staging-"):
+            rename_calls.append((source, destination))
+            raise PermissionError("directory handle prevents rename")
+        return original_rename(source, destination)
+
+    monkeypatch.setattr(Path, "rename", deny_staging_rename)
+    copied = layer.stage_notebook_evidence(bundle, report)
+    assert len(rename_calls) == 1
+    assert copied.index_path.read_bytes() == previous_index
+    assert not list(copied.index_path.parent.glob(".staging-*"))
+    manifest_path = copied.index_path.parent / copied.bundles["vehicle_stock"]
+    manifest = layer.NotebookManifest.model_validate_json(manifest_path.read_text(encoding="utf-8"))
+    for evidence in (*manifest.files.values(), *manifest.config.values()):
+        assert file_sha256(manifest_path.parent / evidence.path) == evidence.sha256
+    assert layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root).metadata["build_id"] != manifest.build_id
+    layer.publish_notebook_evidence(copied)
+    loaded = layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
+    assert loaded.metadata["build_id"] == manifest.build_id
+    assert pd.read_csv(loaded.paths["sample"]).value.tolist() == [8]
+
+
+def test_directory_copy_collision_preserves_existing_release_and_index(prepared, monkeypatch):
+    bundle, report, _ = prepared
+    first = layer.stage_notebook_evidence(bundle, report)
+    layer.publish_notebook_evidence(first)
+    previous_index = first.index_path.read_bytes()
+    collision = []
+    original_rename = Path.rename
+
+    def create_collision(source, destination):
+        if source.name.startswith(".staging-"):
+            destination.mkdir()
+            marker = destination / "preserve.txt"
+            marker.write_text("existing release", encoding="utf-8")
+            collision.append(marker)
+            raise PermissionError("rename blocked after destination appeared")
+        return original_rename(source, destination)
+
+    monkeypatch.setattr(Path, "rename", create_collision)
+    with pytest.raises(FileExistsError, match="release already exists"):
+        layer.stage_notebook_evidence(bundle, report)
+    assert first.index_path.read_bytes() == previous_index
+    assert collision[0].read_text(encoding="utf-8") == "existing release"
+    assert not list(first.index_path.parent.glob(".staging-*"))
+    assert layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root).metadata["build_id"] == first.bundles["vehicle_stock"].split("/")[1]
+
+
+def test_directory_copy_corruption_fails_before_index_publication(prepared, monkeypatch):
+    bundle, report, _ = prepared
+    first = layer.stage_notebook_evidence(bundle, report)
+    layer.publish_notebook_evidence(first)
+    previous_index = first.index_path.read_bytes()
+    original_copytree = shutil.copytree
+    original_rename = Path.rename
+
+    def deny_staging_rename(source, destination):
+        if source.name.startswith(".staging-"):
+            raise PermissionError("directory handle prevents rename")
+        return original_rename(source, destination)
+
+    def corrupt_copy(source, destination, *args, **kwargs):
+        copied = original_copytree(source, destination, *args, **kwargs)
+        if Path(source).name.startswith(".staging-"):
+            (Path(destination) / "vehicle_stock/files/sample.csv.gz").write_bytes(b"changed copy")
+        return copied
+
+    monkeypatch.setattr(Path, "rename", deny_staging_rename)
+    monkeypatch.setattr(shutil, "copytree", corrupt_copy)
+    with pytest.raises(ValueError, match="Copied notebook evidence is missing or changed"):
+        layer.stage_notebook_evidence(bundle, report)
+    assert first.index_path.read_bytes() == previous_index
+    assert not list(first.index_path.parent.glob(".staging-*"))
+    assert layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root).metadata["build_id"] == first.bundles["vehicle_stock"].split("/")[1]
+
+
 def test_build_ids_are_utc_windows_safe_and_distinguish_same_second(prepared):
     bundle, report, _ = prepared
     bundle.scenario.scenario.name = "Ontario: diagnostic / run"

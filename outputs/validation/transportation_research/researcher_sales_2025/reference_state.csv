@@ -1,0 +1,4 @@
+table,scope,common_keys,matching_values,different_values,reference_only_keys,baseline_only_keys
+ExistingCapacity,non_charger_transport,99,99,0,0,1
+Demand,transport,90,90,0,0,15
+LifetimeTech,transport,122,122,0,7,0

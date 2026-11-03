@@ -14,6 +14,7 @@ from typing import Any
 
 import pandas as pd
 from canoe_schema.v4_0 import CapacityToActivity, DataSet, ExistingCapacity, LimitAnnualCapacityFactor
+from parameterization.ceud_inputs import read_ceud_input
 
 from parameterization.road_fleet_weights import (
     FleetAggregationEvidence, aggregation_component, load_fleet_aggregation_evidence,
@@ -378,10 +379,53 @@ def validate_road_utilization(
     }
 
 
+def calibrate_sales_activity(
+    baseline: pd.DataFrame, annual: pd.DataFrame, capacity: pd.DataFrame,
+    technology: pd.DataFrame, *, selected_pairs: set[tuple[str, str]], base_year: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Close base-year class activity on retained stock without changing fleet totals."""
+    result = baseline.copy()
+    result["calibration_basis"] = "mean_observed_ceud_activity_per_stock"
+    records = []
+    for region, road_class in sorted(selected_pairs):
+        owners = technology.loc[technology.category.eq(road_class)]
+        selected = capacity.loc[capacity.region.eq(region) & capacity.tech.isin(owners.tech)]
+        target = annual.loc[annual.region.eq(region) & annual.road_class.eq(road_class)
+                            & annual.year.eq(base_year)]
+        if len(target) != 1 or selected.empty or owners.empty:
+            raise ValueError(f"Missing activity calibration inputs: {(region, road_class)}")
+        c2a = owners.set_index("tech").c2a
+        denominator = float((selected.capacity * selected.tech.map(c2a)).sum())
+        activity = float(target.iloc[0].activity_bn)
+        if not isfinite(denominator) or denominator <= 0 or not isfinite(activity) or activity < 0:
+            raise ValueError(f"Invalid activity calibration denominator/target: {(region, road_class)}")
+        utilization = activity / denominator
+        if not isfinite(utilization) or not 0 <= utilization <= 1:
+            raise ValueError(f"Infeasible sales activity calibration: {(region, road_class, utilization)}")
+        mask = result.region.eq(region) & result.road_class.eq(road_class)
+        if int(mask.sum()) != 1:
+            raise ValueError(f"Nonunique utilization owner: {(region, road_class)}")
+        previous = float(result.loc[mask, "utilization"].iloc[0])
+        result.loc[mask, "utilization"] = utilization
+        result.loc[mask, "calibration_basis"] = "base_year_activity_on_retained_sales_survivors"
+        records.append({
+            "region": region, "road_class": road_class, "base_year": base_year,
+            "retained_stock_k_vehicles": float(selected.capacity.sum()),
+            "reported_stock_k_vehicles": float(target.iloc[0].stock_k_vehicles),
+            "target_activity_bn": activity, "modelled_activity_bn": denominator * utilization,
+            "activity_residual_bn": denominator * utilization - activity,
+            "capacity_activity_denominator_bn": denominator,
+            "utilization": utilization, "prior_mean_utilization": previous,
+            "future_policy": "same flat level for existing and new vintages",
+        })
+    return result, pd.DataFrame(records)
+
+
 def prepare_road_utilization(
     bundle: ConfigBundle,
     *,
     existing_capacity_rows: list[ExistingCapacity],
+    existing_capacity_contexts: list[ResolvedProvenance] | None = None,
     technology: pd.DataFrame | None = None,
 ) -> RoadUtilizationPreparation:
     """Prepare deterministic road rows and audit artifacts from registered local inputs."""
@@ -427,11 +471,12 @@ def prepare_road_utilization(
         ceud_dir / ceud_rules["region_output_template"].format(region=region.lower())
         for region in regions
     ]
-    provincial = pd.concat([pd.read_csv(path) for path in ceud_files], ignore_index=True)
+    provincial = pd.concat([read_ceud_input(bundle, region) for region in regions], ignore_index=True)
     if set(provincial.region) != set(regions):
         raise ValueError("CEUD region coverage differs from scenario")
+    observed = provincial.loc[provincial.ceud_value_status.eq("observed")]
     years = select_baseline_years(
-        provincial, base_year=scenario.periods.base_year,
+        observed, base_year=min(scenario.periods.base_year, int(observed.year.max())),
         observations=int(factor_rules["baseline_observations"]),
         excluded_years=list(factor_rules["excluded_years"]),
     )
@@ -445,6 +490,28 @@ def prepare_road_utilization(
     )
     baseline = annual.groupby(["region", "road_class"], as_index=False)["utilization"].mean()
     baseline["unit"] = "dimensionless"
+    sales_pairs = {
+        (demand_rules["region_output_map"].get(region, region), name)
+        for region in regions if scenario.existing_capacity.method_for(region) == "sales_survival"
+        for name in capacity_rules["ceud_sales_series"]
+    }
+    calibration = pd.DataFrame()
+    if sales_pairs:
+        if not existing_capacity_contexts:
+            raise ValueError("Sales utilization calibration requires prepared stock provenance")
+        base_annual = derive_road_annual_utilization(
+            provincial, regions=regions, years=[scenario.periods.base_year],
+            activity_series=activity, stock_series=stock, capacity_by_class=c2a_by_class,
+            region_output_map=demand_rules["region_output_map"],
+            activity_to_billion_factor=float(demand_rules["activity_to_billion_factor"]),
+        )
+        baseline, calibration = calibrate_sales_activity(
+            baseline, base_annual,
+            pd.DataFrame([row.model_dump() for row in existing_capacity_rows]), expanded,
+            selected_pairs=sales_pairs, base_year=scenario.periods.base_year,
+        )
+        LOGGER.info("Calibrated %s sales-based class activity totals; maximum closure residual %.3g",
+                    len(calibration), calibration.activity_residual_bn.abs().max())
     flat_classes = (
         set(factor_rules["flat_only_classes"])
         if scenario.road_utilization.vkt_schedules else road_classes
@@ -486,6 +553,12 @@ def prepare_road_utilization(
         "activity_to_billion_factor": demand_rules["activity_to_billion_factor"],
         "rules": factor_rules,
         "years": years,
+        "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
+        "sales_activity_calibration": calibration.to_dict("records"),
+        "calibrated_capacity": [row.model_dump(mode="json") for row in existing_capacity_rows
+                                if any(row.region == region and row.tech in set(expanded.loc[
+                                    expanded.category.eq(name), "tech"])
+                                       for region, name in sales_pairs)],
     }, sort_keys=True).encode()).hexdigest()
     contexts: list[ResolvedProvenance] = []
     flat_rows: list[LimitAnnualCapacityFactor] = []
@@ -498,10 +571,21 @@ def prepare_road_utilization(
             )
             for selector in (activity[road_class], stock[road_class])
         ]
+        if any(name == road_class for _, name in sales_pairs):
+            owners = set(expanded.loc[expanded.category.eq(road_class), "tech"])
+            ids = {row.data_id for row in existing_capacity_rows if row.tech in owners
+                   and (row.region, road_class) in sales_pairs}
+            stock_inputs = [context for context in existing_capacity_contexts or []
+                            if context.data_id in ids]
+            if {context.data_id for context in stock_inputs} != ids:
+                raise ValueError(f"Incomplete stock lineage for activity calibration: {road_class}")
+            inputs.extend(stock_inputs)
         context = resolve_composite_provenance(
             inputs=inputs,
             dataset_key=f"road_utilization.flat.{road_class}",
-            transformation="Mean CEUD annual activity-to-stock ratio divided by manual capacity-to-activity",
+            transformation=("CEUD base-year activity divided by retained sales-survival stock and manual capacity-to-activity; "
+                            "unselected regions retain mean CEUD ratios" if any(name == road_class for _, name in sales_pairs)
+                            else "Mean CEUD annual activity-to-stock ratio divided by manual capacity-to-activity"),
             transformation_version="2", governing_source_id=source_id,
             data_quality=bundle.sources.resolved_data_quality(
                 CEUD, activity[road_class]["table_id"],
@@ -545,11 +629,14 @@ def prepare_road_utilization(
         "vkt_schedules": scenario.road_utilization.vkt_schedules,
         "manual_assumption_data_id": assumption_dataset.data_id,
         "input_content_digest": input_digest,
+        "sales_activity_calibration": calibration.to_dict("records"),
         **age_audit,
     })
     output = resolve_artifact_path(bundle, "road_utilization_processed")
     write_dataframe_atomic(annual, output / factor_rules["annual_audit_file"])
     write_dataframe_atomic(baseline, output / factor_rules["baseline_file"])
+    if not calibration.empty:
+        write_dataframe_atomic(calibration, output / factor_rules["sales_calibration_file"])
     write_dataframe_atomic(
         pd.DataFrame([row.model_dump(mode="python") for row in c2a_rows]),
         output / factor_rules["c2a_file"],
@@ -596,8 +683,8 @@ def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     bundle = load_config_bundle(args.scenario)
-    stock, _, _ = prepare_existing_capacity_rows(bundle)
-    prepare_road_utilization(bundle, existing_capacity_rows=stock)
+    stock, contexts, _ = prepare_existing_capacity_rows(bundle)
+    prepare_road_utilization(bundle, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
 
 
 if __name__ == "__main__":

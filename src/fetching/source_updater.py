@@ -291,6 +291,9 @@ def edit_registry(text: str, edits: list[tuple[tuple[str | int, ...], Any]]) -> 
                     if isinstance(value, str)
                     else yaml.safe_dump(value).split("\n...")[0].strip()
                 )
+            elif isinstance(node, SequenceNode) and not node.flow_style:
+                lines = yaml.safe_dump(value, sort_keys=False, default_flow_style=False).strip().splitlines()
+                rendered = (newline + " " * node.start_mark.column).join(lines)
             else:
                 rendered = yaml.safe_dump(
                     value, sort_keys=False, default_flow_style=True, width=100000
@@ -419,6 +422,74 @@ def _nrcan(bundle, client, settings, folder) -> list[Candidate]:
                 },
             )
         )
+    return candidates
+
+
+def _tc_izev(bundle, client, settings, folder) -> list[Candidate]:
+    """Adopt revisions of registered iZEV resources without discovering new scope."""
+    from fetching import transport_canada_izev as adapter
+
+    source_key = adapter.SOURCE
+    source = bundle.sources.sources[source_key]
+    endpoint = source.update.metadata_url
+    candidates = []
+    for request in adapter.build_requests(bundle):
+        resource = _resource(client, endpoint, str(request.resource_id), settings)
+        if urlparse(resource.url).hostname != urlparse(request.url).hostname:
+            raise UpdateError(f"iZEV resource moved to another host: {resource.url}")
+        content = _verified_bytes(
+            client, resource, settings, require_md5=True,
+            allowed_hosts=source.update.download_hosts,
+        )
+        staged_request = request.model_copy(update={
+            "cache_path": _staged(folder, request.cache_path, content),
+            "url": resource.url, "expected_md5": resource.hash.lower(),
+            "expected_bytes": len(content),
+        })
+        frame = adapter.parse_csv(staged_request, rules=adapter.module_rules(bundle), enforce_coverage=False)
+        audit = frame.attrs["audit"]
+        for key, expected in (
+            ("model_years", request.expected_model_years),
+            ("provinces", request.expected_provinces),
+            ("powertrains", request.expected_powertrains),
+        ):
+            if missing := set(expected) - set(audit[key]):
+                raise UpdateError(f"iZEV {request.component_key} lost registered {key}: {sorted(missing)}")
+        if (
+            date.fromisoformat(audit["request_date_from"]) > request.expected_request_date_from
+            or date.fromisoformat(audit["request_date_to"]) < request.expected_request_date_to
+        ):
+            raise UpdateError(f"iZEV {request.component_key} request-date coverage shrank")
+        if _resource(client, endpoint, str(request.resource_id), settings) != resource:
+            raise UpdateError(f"iZEV metadata changed during download: {request.component_key}")
+        changed = (resource.hash.lower(), len(content)) != (request.expected_md5, request.expected_bytes)
+        version = _version(resource.last_modified)
+        base = ("sources", source_key, "components", request.component_key)
+        edits = [(base + ("version",), version), (base + ("adapter", "url"), resource.url)]
+        if isinstance(request.component_meta.label, str) and request.component_meta.version:
+            edits.append((base + ("label",), request.component_meta.label.replace(request.component_meta.version, version)))
+        local = _cache_identity(request.cache_path, request.expected_md5, algorithm="md5", expected_bytes=request.expected_bytes)
+        files = {}
+        if changed or local["status"] != "valid":
+            target = _snapshot_path(bundle, request.cache_path, content)
+            edits.extend([
+                (base + ("adapter", "cache_path"), _relative(bundle, target)),
+                (base + ("adapter", "expected_md5"), resource.hash.lower()),
+                (base + ("adapter", "expected_bytes"), len(content)),
+                (base + ("adapter", "expected_model_years"), audit["model_years"]),
+                (base + ("adapter", "expected_request_date_from"), audit["request_date_from"]),
+                (base + ("adapter", "expected_request_date_to"), audit["request_date_to"]),
+            ])
+            files[target] = content
+        candidates.append(Candidate(source_key, request.component_key, edits, files, {
+            "metadata_url": endpoint, "resource": resource.model_dump(),
+            "sha256": _sha(content), "bytes_changed": changed,
+            "registered_cache": local, **audit,
+            "validation": "publisher MD5/size, complete native records, distinct vehicle/request years, nonshrinking registered coverage",
+        }))
+    intervals = sorted((item.evidence["request_date_from"], item.evidence["request_date_to"]) for item in candidates)
+    if any(a[1] >= b[0] for a, b in zip(intervals, intervals[1:])):
+        raise UpdateError("iZEV revised resources have overlapping request-date coverage; review manually")
     return candidates
 
 
@@ -1080,6 +1151,7 @@ def run_update(
             )
         dispatch = {
             "nrcan_ratings": ("nrcan_fuel_consumption_ratings", _nrcan),
+            "tc_izev": ("transport_canada_izev", _tc_izev),
             "ontario_population": (
                 "ontario_ministry_transport_vehicle_population",
                 _ontario,

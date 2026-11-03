@@ -20,7 +20,7 @@ from utils import load_config_bundle, load_harmonization_rules
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/legacy_comparison.yaml"
 
 
 def config():
@@ -98,6 +98,22 @@ def test_reviewed_mapping_rejects_competing_class_hierarchy() -> None:
             rules=rules,
             rating_class_rules=rating_rules,
         )
+
+
+@pytest.mark.parametrize("value", [2020.5, float("inf"), None])
+def test_reviewed_mapping_rejects_noninteger_year_bounds(value) -> None:
+    _, rules, rating_rules = config()
+    with pytest.raises(ValueError, match="finite integers"):
+        validate_vehicle_mapping(mapping_frame(mapping_row(model_year_from=value)),
+                                 rules=rules, rating_class_rules=rating_rules)
+
+
+@pytest.mark.parametrize("column", ["canonical_make", "canonical_model"])
+def test_reviewed_mapping_requires_canonical_identity_for_ldv(column) -> None:
+    _, rules, rating_rules = config()
+    with pytest.raises(ValueError, match="nonblank canonical"):
+        validate_vehicle_mapping(mapping_frame(mapping_row(**{column: " "})),
+                                 rules=rules, rating_class_rules=rating_rules)
 
 
 def test_candidate_generation_uses_reviewed_make_alias_without_accepting() -> None:
@@ -306,6 +322,82 @@ def test_non_ldv_mapping_is_resolved_but_not_ldv_eligible() -> None:
     assert not mapped.loc[0, "mapping_accepted"]
     assert mapped.loc[0, "canonical_model"] == "Escape"
     assert pd.isna(mapped.loc[0, "nrcan_vehicle_class"])
+
+
+def test_reviewed_identity_is_authoritative_independent_of_candidate_method() -> None:
+    mapping = mapping_frame(mapping_row(mto_make_code="MAZD", mto_model_code="MZ3",
+        canonical_make="Mazda", canonical_model="3", nrcan_vehicle_class="Compact",
+        nlr_atb_class="Compact", nrcan_ceud_class="Car", match_method="old_residual_fuzzy_candidate"))
+    stock = pd.DataFrame([{"report_year": 2025, "VEHICLE_CLASS": "PASSENGER", "MAKE": " mazd ",
+        "MODEL": "mz3", "MODEL_YEAR": 2023, "FIT_ACTIVE": 35}])
+    original = stock.copy(deep=True)
+
+    mapped = apply_vehicle_mapping(stock, mapping, accepted_statuses={"reviewed"})
+
+    assert len(mapped) == 1
+    assert mapped.loc[0, "canonical_make"] == "Mazda"
+    assert mapped.loc[0, "canonical_model"] == mapped.loc[0, "raw_canonical_model"] == "3"
+    assert mapped.loc[0, "nrcan_vehicle_class"] == "Compact"
+    assert mapped.loc[0, "identity_authority"] == "reviewed_vehicle_size_class_map"
+    assert mapped.loc[0, "identity_supported"]
+    assert mapped.loc[0, "match_method"] == "old_residual_fuzzy_candidate"
+    assert mapped.loc[0, "MAKE"] == " mazd " and mapped.loc[0, "MODEL"] == "mz3"
+    assert mapped.FIT_ACTIVE.sum() == 35
+    pd.testing.assert_frame_equal(stock, original)
+
+
+def test_reviewed_mapping_gap_does_not_borrow_an_adjacent_model_year() -> None:
+    mapping = mapping_frame(*[mapping_row(mto_make_code="HOND", mto_model_code="CRV",
+        canonical_make="Honda", canonical_model="CR-V", model_year_from=year, model_year_to=year)
+        for year in [2023, 2025]])
+    stock = pd.DataFrame([{"report_year": 2025, "VEHICLE_CLASS": "PASSENGER", "MAKE": "HOND",
+        "MODEL": "CRV", "MODEL_YEAR": year, "FIT_ACTIVE": 10} for year in [2023, 2024, 2025]])
+
+    mapped = apply_vehicle_mapping(stock, mapping, accepted_statuses={"reviewed"}).set_index("MODEL_YEAR")
+
+    assert mapped.mapping_accepted.tolist() == [True, False, True]
+    assert mapped.loc[2024, "identity_authority"] == ""
+    assert not mapped.loc[2024, "identity_supported"]
+    assert pd.isna(mapped.loc[2024, "canonical_model"])
+    assert mapped.FIT_ACTIVE.sum() == 30
+
+
+def test_runtime_mapping_preserves_reviewed_labels_without_residual_evidence(tmp_path, monkeypatch) -> None:
+    from parameterization import road_aggregation as module
+
+    bundle, rules, rating_rules = config()
+    source = tmp_path / "source"
+    source.mkdir()
+    stock_file = source / "current.csv"
+    pd.DataFrame([{"report_year": 2025, "VEHICLE_CLASS": "PASSENGER", "MAKE": "MAZD",
+        "MODEL": "MZ3", "MODEL_YEAR": 2023, "FIT_ACTIVE": 20}]).to_csv(stock_file, index=False)
+    mapping_path = tmp_path / "vehicle_size_class_map.csv"
+    mapping_frame(mapping_row(mto_make_code="MAZD", mto_model_code="MZ3", canonical_make="Mazda",
+        canonical_model="3", nrcan_vehicle_class="Compact", nlr_atb_class="Compact", nrcan_ceud_class="Car")).to_csv(mapping_path, index=False)
+    routes = {"ontario_vehicle_population": source, "road_aggregation": tmp_path / "processed",
+              "vehicle_mapping_review": tmp_path / "review"}
+    monkeypatch.setattr(module, "load_config_bundle", lambda path: bundle)
+    monkeypatch.setattr(module, "module_rules", lambda actual: rules)
+    monkeypatch.setattr(module, "resolve_artifact_path", lambda actual, key: routes[key])
+    monkeypatch.setattr(module, "resolve_parameter_path", lambda actual, filename: mapping_path)
+    monkeypatch.setattr(module, "load_wards_legacy_comparison", lambda actual: pd.DataFrame())
+    def harmonization(actual, name):
+        if name == module.ONTARIO_RULE_KEY:
+            return {"current_stock_file": stock_file.name}
+        if name == module.RATINGS_RULE_KEY:
+            return {"vehicle_class_harmonization": rating_rules}
+        raise AssertionError("Runtime MTO identities must not be rewritten by rating aliases")
+    monkeypatch.setattr(module, "load_harmonization_rules", harmonization)
+    def reject_residual(*args, **kwargs):
+        raise AssertionError("Runtime mapping must not consult residual evidence")
+    monkeypatch.setattr(module, "resolve_input_path", reject_residual)
+
+    output = module.build_road_aggregation_artifacts("fixture.yaml")
+
+    mapped = pd.read_csv(output / rules["mapped_current_stock_file"], dtype={"canonical_model": str})
+    assert mapped.canonical_model.tolist() == ["3"]
+    assert mapped.identity_authority.tolist() == ["reviewed_vehicle_size_class_map"]
+    assert mapped.FIT_ACTIVE.sum() == 20
 
 
 def test_ontario_weights_sum_within_ceud_class_and_vintage() -> None:

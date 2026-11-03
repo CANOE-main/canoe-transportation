@@ -11,6 +11,7 @@ from dataclasses import dataclass, replace
 from contextlib import contextmanager
 from datetime import UTC, datetime
 import gzip
+import logging
 from pathlib import Path
 import re
 import shutil
@@ -204,7 +205,30 @@ def stage_notebook_evidence(bundle: ConfigBundle, report: dict) -> NotebookPubli
             references[profile] = (release / profile / "manifest.json").relative_to(root).as_posix()
         # Immutable releases can exist before publication, but are undiscoverable
         # until the one small latest index is advanced after SQLite publication.
-        staging.rename(release)
+        if release.exists():
+            raise FileExistsError(f"Notebook evidence release already exists: {release}")
+        try:
+            staging.rename(release)
+        except PermissionError as error:
+            # Some Windows directory handles prevent rename while allowing reads.
+            # Copy into a new release only; the successful-build index stays put.
+            if release.exists():
+                raise FileExistsError(f"Notebook evidence release already exists: {release}") from error
+            logging.getLogger(__name__).info(
+                "Notebook evidence directory rename blocked; copying and verifying new release %s: %s",
+                release, error,
+            )
+            shutil.copytree(staging, release)
+            for profile in profiles:
+                original_manifest = staging / profile / "manifest.json"
+                copied_manifest = release / profile / "manifest.json"
+                if file_sha256(original_manifest) != file_sha256(copied_manifest):
+                    raise ValueError(f"Copied notebook evidence manifest differs: {copied_manifest}")
+                recorded = NotebookManifest.model_validate_json(copied_manifest.read_text(encoding="utf-8"))
+                for evidence in (*recorded.files.values(), *recorded.config.values()):
+                    copied = _within(copied_manifest.parent, evidence.path)
+                    if not copied.is_file() or file_sha256(copied) != evidence.sha256:
+                        raise ValueError(f"Copied notebook evidence is missing or changed: {copied}")
     return NotebookPublication(root / rules["latest_file"], references)
 
 

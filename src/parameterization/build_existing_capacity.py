@@ -12,6 +12,7 @@ import pandas as pd
 from canoe_schema.v4_0 import ExistingCapacity
 
 from parameterization.road_efficiencies import prepare_bus_annual_efficiency_evidence
+from parameterization.ceud_inputs import read_ceud_input
 from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames,
     fixed_existing_lifetimes,
@@ -25,6 +26,7 @@ from parameterization.road_stocks_and_demands import (
     build_existing_stock_age_artifacts,
     distribute_existing_bus_capacity,
     distribute_existing_road_capacity,
+    derive_sales_survival_cohorts,
 )
 from utils import (
     ConfigBundle,
@@ -76,6 +78,7 @@ def _context(
     components: list[tuple[str, str | int]],
     variant: dict[str, Any],
     transformation_version: str = "2",
+    transformation: str = "CEUD stock or energy with reviewed age, fuel, and lifetime evidence",
 ) -> ResolvedProvenance:
     inputs = [_component(bundle, source, component) for source, component in components]
     governing_id = source_id_mapping(bundle.sources)["nrcan_ceud_transport_provincial"]
@@ -85,7 +88,7 @@ def _context(
     return resolve_composite_provenance(
         inputs=inputs,
         dataset_key=f"existing_capacity.{name}",
-        transformation="CEUD stock or energy with reviewed age, fuel, and lifetime evidence",
+        transformation=transformation,
         transformation_version=transformation_version,
         governing_source_id=governing_id,
         data_quality=governing_quality,
@@ -154,7 +157,7 @@ def validate_capacity_outputs(
         "stock_k_vehicles"
     ].first()
     if not (road_stock - road_source).abs().le(1e-7).all():
-        raise ValueError("Road age cohorts do not conserve CEUD base-year stock")
+        raise ValueError("Road age cohorts do not conserve their selected stock basis")
     if (
         abs(
             float(road_capacity["capacity"].sum())
@@ -265,10 +268,10 @@ def build_existing_capacity_artifacts(
         region="national"
     )
     provincial = pd.concat(
-        [pd.read_csv(path) for path in ceud_files],
+        [read_ceud_input(bundle, region) for region in regions],
         ignore_index=True,
     )
-    national = pd.read_csv(national_file)
+    national = read_ceud_input(bundle, "national")
     validate_capacity_inputs(bundle, provincial, national)
     statcan_dir = resolve_input_path(bundle, "interim", statcan_rules["interim_subdir"])
     lifetime_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
@@ -277,7 +280,11 @@ def build_existing_capacity_artifacts(
         road_rules=load_harmonization_rules(bundle, "road_aggregation"),
         assorted_rules=assorted_rules,
     )
-    build_existing_stock_age_artifacts(bundle, lifetime_frames=lifetime_frames)
+    sales_regions = [region for region in regions
+                     if scenario.existing_capacity.method_for(region) == "sales_survival"]
+    needs_ldv_ages = len(sales_regions) != len(regions)
+    if needs_ldv_ages:
+        build_existing_stock_age_artifacts(bundle, lifetime_frames=lifetime_frames)
     road_age_file = (
         resolve_artifact_path(bundle, "road_stocks_and_demands")
         / load_harmonization_rules(bundle, "road_stocks_and_demands")[
@@ -320,7 +327,7 @@ def build_existing_capacity_artifacts(
         [
             *ceud_files,
             national_file,
-            road_age_file,
+            *([road_age_file] if needs_ldv_ages else []),
             report5_file,
             ldv_file,
             truck_file,
@@ -352,10 +359,14 @@ def build_existing_capacity_artifacts(
         ):
             raise ValueError(f"Manual road lifetime source mismatch for {category}")
     medians = lifetime_frames["medians"]
+    sales_cohorts = derive_sales_survival_cohorts(
+        provincial, lifetime_frames["transformed_curves"], regions=sales_regions,
+        base_year=base_year, history_start=min(scenario.periods.existing), rules=road_rules,
+    ) if sales_regions else pd.DataFrame()
     road_cohorts, road_shares, road_exclusions, road_capacity = (
         distribute_existing_road_capacity(
             provincial=provincial,
-            ldv_age=pd.read_csv(road_age_file),
+            ldv_age=pd.read_csv(road_age_file) if needs_ldv_ages else pd.DataFrame(),
             report5_age=pd.read_csv(report5_file),
             ldv_registrations=pd.read_csv(ldv_file),
             truck_registrations=pd.read_csv(truck_file),
@@ -372,6 +383,7 @@ def build_existing_capacity_artifacts(
             if scenario.lifetimes.survival_curves
             else {},
             rules=road_rules,
+            sales_cohorts=sales_cohorts,
         )
     )
     bus_cohorts, bus_shares, bus_exclusions, bus_transfers, bus_capacity = (
@@ -417,6 +429,8 @@ def build_existing_capacity_artifacts(
         "stock_age_sources": selected_sources,
         "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
         "input_content_digest": input_digest.hexdigest(),
+        "road_stock_method": scenario.existing_capacity.road_stock_method,
+        "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
     }
     rows: list[ExistingCapacity] = []
     contexts: list[ResolvedProvenance] = []
@@ -436,8 +450,13 @@ def build_existing_capacity_artifacts(
         )
         components: list[tuple[str, str | int]] = [
             ("nrcan_ceud_transport_provincial", ceud_component),
-            (selected_sources[input_regions[region]], mto_component),
         ]
+        sales_based = input_regions[region] in sales_regions and road_class in road_rules["ceud_sales_series"]
+        if not sales_based:
+            components.append((selected_sources[input_regions[region]], mto_component))
+        elif road_class in road_rules["statcan_ldv_source_types"]:
+            # Report A still supplies class weights for NHTSA survival, not ages.
+            components.append((selected_sources[input_regions[region]], "A"))
         if road_class in road_rules["statcan_ldv_source_types"]:
             mapping_candidates = (
                 "nrcan_fuel_consumption_ratings",
@@ -501,6 +520,11 @@ def build_existing_capacity_artifacts(
             components=components,
             variant=variants,
             transformation_version="3",
+            transformation=(
+                "Annual CEUD sales times cumulative survival, registration fuel proxy and "
+                "stock-preserving fixed-lifetime eligibility redistribution" if sales_based else
+                "CEUD stock with reviewed age, fuel, and lifetime evidence"
+            ),
         )
         contexts.append(context)
         rows.extend(
@@ -633,6 +657,40 @@ def build_existing_capacity_artifacts(
         },
     }
     audit["period_mapping"] = scenario.periods.audit()
+    ceud_manifest = resolve_artifact_path(bundle, "ceud_parameter_inputs") / load_harmonization_rules(
+        bundle, "ceud_inputs",
+    )["manifest_file"]
+    if ceud_manifest.exists():
+        manifest = json.loads(ceud_manifest.read_text(encoding="utf-8"))
+        if (manifest["scenario"] == scenario.scenario.name
+                and manifest["base_year"] == base_year
+                and manifest["policy"] == scenario.sources.nrcan_ceud_beyond_observed):
+            audit["ceud_parameter_evidence"] = {
+                "path": str(ceud_manifest), "sha256": file_sha256(ceud_manifest),
+            }
+    audit["road_stock_method"] = scenario.existing_capacity.road_stock_method
+    audit["sales_reconstruction"] = [
+        {
+            "region": region, "road_class": road_class,
+            "history_start": int(group.vintage_year.min()),
+            "history_end": int(group.vintage_year.max()),
+            "observed_stock_k_vehicles": float(group.ceud_stock_k_vehicles.iloc[0]),
+            "reconstructed_stock_k_vehicles": float(group.surviving_k_vehicles.sum()),
+            "raw_sales_k_vehicles": float(group.sales_k_vehicles.sum()),
+            "oldest_survival_probability": float(group.sort_values("age").survival_probability.iloc[-1]),
+            "older_cohorts": "not reconstructed; no assumed sales before registered/configured coverage",
+            "fuel_allocation": "existing registration shares proxy sales composition",
+            "future_lifetimes": "fixed; no second cumulative survival multiplication",
+        }
+        for (region, road_class), group in sales_cohorts.groupby(["ceud_region", "road_class"])
+    ] if not sales_cohorts.empty else []
+    if not sales_cohorts.empty:
+        write_dataframe_atomic(sales_cohorts, interim_output / road_rules["sales_cohorts_file"])
+        LOGGER.warning(
+            "Sales reconstruction covers %s through %s; older cohorts are unestimated, "
+            "registration shares proxy sales composition; fixed-lifetime eligibility redistributes within technology",
+            int(sales_cohorts.vintage_year.min()), base_year,
+        )
     audit["excluded_road_fuel_rows"] = len(road_exclusions)
     audit["excluded_bus_fuel_rows"] = len(bus_exclusions)
     audit["bus_technology_transfers"] = len(bus_transfers)
@@ -696,6 +754,9 @@ def build_existing_capacity_artifacts(
     }
     audit["excluded_air_gasoline_rows"] = len(air_exclusions)
     audit["input_content_digest"] = input_digest.hexdigest()
+    audit["accepted_survival_sha256"] = hashlib.sha256(
+        lifetime_frames["transformed_curves"].to_csv(index=False).encode("utf-8")
+    ).hexdigest()
     audit["max_excluded_fuel_source_share"] = (
         [
             {
@@ -778,6 +839,14 @@ def build_existing_capacity_artifacts(
         "path": str(annual_stock_path.relative_to(bundle.repo_root)
                     if annual_stock_path.is_relative_to(bundle.repo_root) else annual_stock_path),
         "sha256": file_sha256(annual_stock_path),
+    }
+    audit["research_evidence"] = {
+        name: {"path": str(path), "sha256": file_sha256(path)}
+        for name, path in {
+            "road_age_cohorts": interim_output / road_rules["age_cohorts_file"],
+            **({"sales_cohorts": interim_output / road_rules["sales_cohorts_file"]}
+               if not sales_cohorts.empty else {}),
+        }.items()
     }
     validation_output.mkdir(parents=True, exist_ok=True)
     (validation_output / "integrity.json").write_text(

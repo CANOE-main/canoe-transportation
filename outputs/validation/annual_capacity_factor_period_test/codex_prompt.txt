@@ -1,0 +1,171 @@
+Implement and open a focused draft PR against TemoaProject/temoa:unstable adding an
+operating-period index to limit_annual_capacity_factor while KEEPING vintage.
+Work autonomously through implementation, real solver validation and opening the draft
+PR on GitHub. This authorizes publishing the feature branch and draft PR, not merging.
+Follow this checkout's applicable instructions and contribution standards. Preserve
+unrelated local changes. Do not install spec-kit or introduce a new workflow framework.
+
+Why this feature is needed
+
+An annual utilization factor describes how much service a unit of available capacity
+provides each year. Vintage identifies a cohort; period identifies when it operates.
+Demand/consumer technologies need both: an individual vehicle cohort can be driven
+less as it ages, and charging infrastructure can have changing utilization as transport
+electrifies. A vintage-only factor freezes each cohort's utilization through time;
+a period-only factor cannot distinguish cohorts operating in the same period. Either
+limitation can bias the capacity required to meet future demand. This feature must
+allow both dimensions without changing existing models' meaning.
+
+The supplied transport test input derives road utilization from CEUD annual
+activity/stock and configured capacity_to_activity, then scales it with normalized ATB
+age-mileage profiles. It supplies a realistic example of a cohort's changing annual
+service output. These factors are dimensionless; they are not efficiency,
+retirement/survival, or hourly availability. Charger period variation is another use
+case; do not reinterpret today's reviewed charger policies as a newly approved
+calendar-period trajectory.
+
+Temoa PR #281 deliberately introduced vintage indexing to constrain end-use cohorts:
+https://github.com/TemoaProject/temoa/pull/281
+Extend that correction rather than reverting to period-only indexing. Preserve
+output_comm and operator in the key, including the multi-output behavior in PR #163:
+https://github.com/TemoaProject/temoa/pull/163
+
+First map the smallest complete change, then implement it
+
+Check current unstable and applicable AGENTS/contribution instructions, relevant
+issues/PRs and tests. If contribution policy requires a feature issue first, find/reuse
+a suitable issue or create a concise one before implementation. Record a short plan
+covering the input contract, compatibility,
+affected routines and decisive tests; proceed without a separate plan-approval round.
+Reconcile existing owners/routines instead of adding parallel loading or constraint
+paths. Inspect current code; the following map was verified at commit
+dcea8e80926651cbf6be49e7b1d3fbb86a8b26ae and is a starting point, not a fixed design:
+
+- temoa/db_schema/temoa_schema_v4.sql: table definition, keys and validation.
+- temoa/data_io/component_manifest.py: input dimensions, viability map and period filtering.
+- temoa/core/model.py: input set/Param and constraint declarations.
+- temoa/components/limits.py: index generation and limit_annual_capacity_factor_constraint.
+  Constraints already have period/vintage, but expand vintage-only inputs over active
+  periods and retrieve a period-invariant factor.
+- temoa/model_checking/commodity_network_manager.py and data_io/hybrid_loader.py:
+  process/group viability, validation and myopic-window loading.
+- temoa/utilities/master_migration.py, version checks and migration/fixture tests.
+- Documentation of this parameter and mathematical formulation; affected examples,
+  exporters/reporting or other consumers found by a scoped symbol/table search.
+
+Temoa owns its own SQL schema. Keep the feature and its public rationale, issue, PR
+description, evidence and release notes about Temoa's own input contract and model
+behavior. Do not refer to what CANOE's canoe-schema package does or does not support,
+or present it as a reason, dependency, limitation or acceptance criterion for this PR.
+CANOE is an independent project. Any separate CANOE schema PR can follow acceptance
+of the Temoa feature and is outside this task and all public PR material. The supplied
+transport data is optional test input, not authority over Temoa's design or standards.
+
+Required behavior
+
+1. Support factors keyed by region, period, technology/group, vintage, output commodity
+   and operator. Different periods for the SAME vintage must retain different factors.
+   Different vintages in the SAME period must remain independent. Never put operating
+   periods in vintage, average away either dimension or duplicate technologies to
+   simulate this feature.
+2. Choose and document the smallest repository-consistent compatibility/migration
+   policy for existing vintage-only inputs. Demonstrate unchanged legacy behavior,
+   including migration/old-column insert implications. Explicit periods affect only
+   their intended active periods. Define omitted-period/missing-row behavior and any
+   wildcard/explicit overlap; do not silently discard constraints or let precedence
+   depend on row order. No wildcard convention is prescribed by this prompt.
+3. Preserve le/ge/e, factor bounds, output-specific constraints, technology groups,
+   regional/global grouping, annual and timeslice technologies, unit conversion,
+   lifetime/survival/available-capacity accounting and relevant myopic behavior.
+   Validate keys/duplicates and period/process eligibility at the existing boundaries.
+   Do not multiply by period length twice or substitute installed for available capacity.
+4. Keep scope to this feature and necessary reconciliation. Use the repository's
+   schema/fixture/migration mechanisms, typing, docstrings, formatting and test patterns.
+
+Validation must prove the optimization behavior
+
+Add small distributable tests independent of CANOE data or commercial solvers, using
+the repository's supported solver and full-run fixture (currently HiGHS/system_test_run).
+Do not stop at schema creation, model construction, or build-only execution.
+
+- Analytical capacity test: one investible vintage operating in two periods, C2A=1,
+  demand=1 in each period, positive investment cost, no replacement option, no retirement
+  or survival reduction, and no competing binding limit. With le factors 0.5 then
+  0.25, optimal capacity is 4; with 0.5 then 0.5 it is 2. Check outputs and constraint
+  residuals within explicit tolerances, and show that the test detects vintage-only
+  broadcasting. Exercise both annual and timeslice paths without accidentally binding
+  an independent hourly capacity-factor ceiling.
+- A two-vintage case must prove independent cohort/period selection. Cover e/ge as
+  well as le, applicable groups/output distinctions, invalid/conflicting keys, factor
+  bounds, inactive/invalid periods and myopic active windows. Reuse existing tests
+  where they already establish unaffected behavior; keep the new tests proportional.
+- Compare legacy fixtures before/after the compatibility path: objective, capacities,
+  activity and constraint coverage, within documented tolerances.
+
+Also exercise the real transport handoff
+
+On this Windows machine the input bundle is:
+C:/Users/rashi/ESM_databases/canoe-transportation/outputs/validation/annual_capacity_factor_period_test/
+
+Read handoff.json there first. It describes/hashes the scenario, compiled base SQLite,
+produced period-indexed CSV, normalized mileage profiles, provenance and build reports.
+The compiled input contains 271 candidate road-factor rows. For ON/T_LDV_C_GSL_N,
+vintage 2025, the factor is 0.01877767291566308 in period 2025 and
+0.01606553648404465 in period 2030: a 14.44% decline for the SAME vintage. These are
+prepared model inputs, not a claimed optimization result. road_age_provenance.json
+contains the five matching preparation contexts and data_set/data_source metadata.
+The source scenario is config/scenarios/period_index_test.yaml in that transport repo:
+Ontario, 2025/2030 active periods, terminal 2035, five-year periods, age schedules on,
+fixed lifetimes, no hourly charging and no future range aggregation. Rebuild command:
+uv run --offline python src/build_transport.py --scenario config/scenarios/period_index_test.yaml --overwrite
+Run that only from its transport checkout, serially; its generated input routes are shared.
+
+IMPORTANT: the provided base SQLite is valid CURRENT-schema transport input. Its road
+age rows have deliberately NOT been inserted and period support has NOT been solved.
+Create a disposable period-enabled copy using THIS PR's schema/migration. Import the
+CSV's model columns and needed provenance metadata through the appropriate fixture
+path. Preserve the source files. Select actual viable period/vintage/output processes
+using native eligibility rules; report excluded candidates by reason and counts. Keep
+supported flat-class and charger constraints. Do not silently lose required coverage
+or convert the period column into a cohort label. The CSV's factor already averages
+the relevant annual ages; do not recompute or average it across model periods.
+
+Solve a bounded two-period Ontario road case using these actual age factors. Transport
+input needs an explicitly documented supply-side completion or a native fixture
+extraction; use existing test/integration routines. A gasoline-car slice is sufficient
+if all retained demands/processes/limits reconcile. Record any synthetic supply prices
+and explicit scope reductions. Compare with the SAME case holding each cohort's
+factor constant at its first eligible period, for diagnostic comparison only. Check
+both selected factors and output/(available capacity*C2A), plus actual capacity or
+activity effects; claim capacity impact only if the factor binds and the result shows it.
+Do not repair unrelated assumptions or claim this bounded test validates a full forecast.
+Keep private/heavy CANOE inputs and solver outputs out of the upstream commit; the
+small analytical fixture belongs in automated tests. If the bundle is unavailable in
+this execution environment, complete the distributable tests, explicitly mark the
+real-data run unverified, and state exactly what remains. Never invent a successful run.
+
+Finish the work and the PR
+
+Run focused tests, actual solver cases and the repository-required checks, broadening
+only as required. Current CONTRIBUTING calls for pytest, mypy and Ruff checks/format
+and an issue before significant feature work; verify the checkout's current commands.
+Commit only this feature and open a draft PR targeting unstable. If remote access
+prevents this, leave the reviewed branch and exact PR-ready title/body plus the
+specific access limitation. Do not merge.
+
+Suggested title: Add period indexing to annual capacity factor limits
+
+Keep the PR body short and evidence-based: explain the vintage-only limitation and
+why both dimensions matter; summarize the final contract/compatibility choice; report
+actual solver tests and results with their scope. Suggested opening, adapt to the
+implemented result:
+
+"Annual capacity factors currently stay constant across operating periods for each
+vintage. This cannot represent a vehicle cohort's declining annual mileage or changing
+charger utilization as transport electrifies, which can bias capacity requirements.
+This PR adds period indexing while retaining vintage, so annual utilization can vary
+over a cohort's operating life. [State the implemented compatibility policy.]"
+
+Finish with the PR link, concise changed-behavior and validation summary, and any
+unresolved Temoa limitation. Keep independent-project schema follow-ups out of the
+PR description and evidence.

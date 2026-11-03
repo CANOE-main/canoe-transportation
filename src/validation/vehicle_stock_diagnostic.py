@@ -132,6 +132,7 @@ def load_stock_diagnostic(*, repo_root: Path | None = None) -> dict[str, Any]:
             for switch, value in switches.items()
         ]),
         "build_metadata": recorded.metadata,
+        "composition_rules": load_harmonization_rules(recorded.bundle, "efficiencies")["ratings"]["composition"],
         "heavy_truck_survival": heavy_curves,
         "heavy_truck_medians": heavy_medians,
         "heavy_truck_median_interpolation": interpolation,

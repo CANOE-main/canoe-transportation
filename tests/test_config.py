@@ -87,6 +87,7 @@ def test_registry_owns_source_availability_and_template_is_not_a_source() -> Non
 def test_source_component_vocabularies_are_canonical() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     architecture_modules = {
+        "rating_composition",
         "ev_chargers",
         "ldv_charging_profiles",
         "ldv_ev_ranges",

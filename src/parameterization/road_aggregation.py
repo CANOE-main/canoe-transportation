@@ -482,11 +482,17 @@ def validate_vehicle_mapping(
         raise ValueError("MTO crosswalk rows require nonblank make/model keys")
     if ~validated.loc[catalog, "mapping_status"].eq("evidence_only").all():
         raise ValueError("Ratings catalogue rows must be evidence_only")
+    for column in ["canonical_make", "canonical_model"]:
+        if validated[column].fillna("").astype(str).str.strip().eq("").any():
+            raise ValueError("Reviewed mapping rows require nonblank canonical make/model identities")
     for column in ["model_year_from", "model_year_to"]:
-        validated[column] = pd.to_numeric(
+        years = pd.to_numeric(
             validated[column],
             errors="raise",
-        ).astype(int)
+        )
+        if years.isna().any() or years.mod(1).ne(0).any():
+            raise ValueError("Reviewed mapping model-year bounds must be finite integers")
+        validated[column] = years.astype(int)
     invalid_ranges = validated["model_year_from"] > validated["model_year_to"]
     if invalid_ranges.any():
         raise ValueError("Reviewed mapping has model_year_from after model_year_to")
@@ -790,9 +796,11 @@ def apply_vehicle_mapping(
     *,
     accepted_statuses: set[str],
 ) -> pd.DataFrame:
-    """Apply accepted mappings and retain vintages outside the reviewed scope."""
+    """Apply only year-applicable reviewed identities, preserving their native keys."""
     stock = current_stock.copy()
     stock["_stock_row_id"] = range(len(stock))
+    stock["_reviewed_make_code"] = stock["MAKE"].astype(str).str.strip().str.upper()
+    stock["_reviewed_model_code"] = stock["MODEL"].astype(str).str.strip().str.upper()
     stock["MODEL_YEAR"] = pd.to_numeric(
         stock["MODEL_YEAR"],
         errors="coerce",
@@ -817,11 +825,15 @@ def apply_vehicle_mapping(
         stock["mapping_status"] = "unmatched"
         stock["mapping_outcome"] = "unmapped"
         stock["mapping_accepted"] = False
-        return stock.drop(columns="_stock_row_id")
+        stock["identity_authority"] = ""
+        stock["identity_supported"] = False
+        stock["raw_canonical_make"] = stock.canonical_make
+        stock["raw_canonical_model"] = stock.canonical_model
+        return stock.drop(columns=["_stock_row_id", "_reviewed_make_code", "_reviewed_model_code"])
 
     joined = stock.merge(
         crosswalk,
-        left_on=["MAKE", "MODEL"],
+        left_on=["_reviewed_make_code", "_reviewed_model_code"],
         right_on=["mto_make_code", "mto_model_code"],
         how="left",
         validate="many_to_many",
@@ -880,9 +892,16 @@ def apply_vehicle_mapping(
         joined["mapping_outcome"].isin({"unmapped", "out_of_scope"}),
         rejected_class_columns,
     ] = pd.NA
+    # The reviewed crosswalk establishes model identity. Its historical candidate
+    # match_method is audit context, not a second production acceptance gate.
+    joined["identity_authority"] = ""
+    joined.loc[joined.mapping_accepted, "identity_authority"] = "reviewed_vehicle_size_class_map"
+    joined["identity_supported"] = joined.mapping_accepted
+    joined["raw_canonical_make"] = joined.canonical_make
+    joined["raw_canonical_model"] = joined.canonical_model
     return (
         joined.sort_values("_stock_row_id", kind="stable")
-        .drop(columns="_stock_row_id")
+        .drop(columns=["_stock_row_id", "_reviewed_make_code", "_reviewed_model_code"])
         .reset_index(drop=True)
     )
 
@@ -1598,6 +1617,8 @@ def build_road_aggregation_artifacts(
             for status in rules["accepted_mapping_statuses"]
         },
     )
+    logging.info("Applied reviewed MTO crosswalk: %s accepted LDV rows, %s unresolved/out-of-scope rows",
+                 int(mapped.mapping_accepted.sum()), int((~mapped.mapping_accepted).sum()))
     coverage = mapping_coverage(mapped)
     nrcan_weights, nlr_weights = derive_aggregation_weights(
         mapped,
@@ -1674,20 +1695,17 @@ def build_mapping_diagnostic_artifacts(scenario_path: str | Path) -> Path:
         },
     )
     coverage = mapping_coverage(mapped)
-    unresolved_detail, unresolved_summary = unresolved_mapping_reasons(
-        mapped,
-        candidates,
-        mapping,
-        pd.read_csv(
-            resolve_input_path(
-                bundle,
-                "manual",
-                str(rules["mapping_bootstrap"]["manual_evidence_file"]),
-            ),
-            dtype=str,
-            keep_default_na=False,
-        ),
-    )
+    # Residual inference evidence is optional development context. It cannot
+    # establish or replace a runtime identity from the reviewed crosswalk.
+    manual_evidence = None
+    manual_filename = rules["mapping_bootstrap"].get("manual_evidence_file")
+    if manual_filename:
+        manual_path = resolve_input_path(bundle, "manual", str(manual_filename))
+        if manual_path.is_file():
+            manual_evidence = pd.read_csv(manual_path, dtype=str, keep_default_na=False)
+        else:
+            logging.info("Skipped unavailable development-only MTO residual evidence: %s", manual_path)
+    unresolved_detail, unresolved_summary = unresolved_mapping_reasons(mapped, candidates, mapping, manual_evidence)
     unresolved = (
         mapped.loc[mapped["mapping_outcome"].eq("unmapped")]
         .sort_values("FIT_ACTIVE", ascending=False, kind="stable")

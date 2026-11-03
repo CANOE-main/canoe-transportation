@@ -22,6 +22,7 @@ periods:
   step: 5  # Years per model period.
 
 sources:
+  nrcan_ceud_beyond_observed: error  # error | constant; source edition remains unchanged.
   # Registered source years/editions to replay.
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
@@ -72,6 +73,7 @@ lifetimes:
   survival_curve_max_age: 25  # Curve mode: maximum road survival/stock age.
 
 existing_capacity:
+  road_stock_method: {other: stock_age}  # Regional overrides: stock_age | sales_survival.
   vehicle_population_year: 2025  # MTO evidence year.
   cleanup_tolerance: 0.001  # Minimum retained capacity in each row's native unit.
 
@@ -86,7 +88,6 @@ road_utilization:
 
 efficiencies:
   atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
-  rating_statistic: mean  # mean | median of distinct make-models
 
 costs:
   atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid

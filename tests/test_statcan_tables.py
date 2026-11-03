@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
+import shutil
 from pathlib import Path
 from zipfile import ZipFile
 
 import pandas as pd
 import pytest
 from pydantic import ValidationError
+from fetching import statcan_tables
 
 from fetching.statcan_tables import (
     StatCanSourceError,
@@ -529,3 +532,53 @@ def test_cached_metadata_shape_can_be_serialized_for_offline_fixture(bundle) -> 
     request = request_for(bundle, "20-10-0021-01")
     payload = [{"status": "SUCCESS", "object": {"productId": str(request.product_id)}}]
     assert json.loads(json.dumps(payload))[0]["object"]["productId"] == "20100021"
+
+
+@pytest.mark.parametrize("invalid_count", [False, True])
+def test_ldv_stock_review_reads_registered_subset_without_widening_production_or_filling_suppression(
+    bundle, rules, tmp_path, monkeypatch, invalid_count,
+):
+    scenario = bundle.scenario.model_copy(update={
+        "geography": bundle.scenario.geography.model_copy(update={"regions": ["ON"]}),
+    })
+    configured = replace(bundle, repo_root=tmp_path, scenario=scenario)
+    shutil.copytree(REPO_ROOT / "config", tmp_path / "config")
+    request = request_for(bundle, "23-10-0308-01").model_copy(update={
+        "archive_cache_path": tmp_path / "23100308.zip", "metadata_cache_path": tmp_path / "23100308.json",
+        "snapshot": None,
+    })
+    original_selectors = dict(request.table_rules["selectors"])
+    review_selectors = request.table_rules["ldv_benchmark_selectors"]
+    metadata = {"productId": request.product_id, "cubeTitleEn": request.title, "dimension": [
+        {"dimensionNameEn": name, "member": [{"memberNameEn": value} for value in values]}
+        for name, values in {"Geography": ["Ontario"], **review_selectors}.items()
+    ]}
+    request.metadata_cache_path.write_text(json.dumps([{"status": "SUCCESS", "object": metadata}]), encoding="utf-8")
+    rows = []
+    for label, fuel, count, status in [
+        (review_selectors["Vehicle Type"][0], "All fuel types", -1 if invalid_count else 100, ""),
+        (review_selectors["Vehicle Type"][0], "Battery electric", None, "x"),
+        (original_selectors["Vehicle Type"][0], "Gasoline", 500, ""),
+    ]:
+        row = dict.fromkeys([*request.table_rules["required_columns"], *rules["provenance_columns"]], "")
+        row.update({"REF_DATE": "2024", "GEO": "Ontario", "Vehicle Type": label, "Fuel Type": fuel,
+                    "Statistics": "Number of vehicles", "UOM": "Number", "SCALAR_FACTOR": "units",
+                    "VALUE": count, "STATUS": status})
+        rows.append(row)
+    with ZipFile(request.archive_cache_path, "w") as archive:
+        archive.writestr("23100308.csv", pd.DataFrame(rows).to_csv(index=False))
+    cache_before = (request.archive_cache_path.read_bytes(), request.metadata_cache_path.read_bytes())
+    monkeypatch.setattr(statcan_tables, "build_requests", lambda _bundle: [request])
+    if invalid_count:
+        with pytest.raises(StatCanSourceError, match="nonnegative integral"):
+            statcan_tables.prepare_ldv_stock_benchmark(configured)
+    else:
+        path = statcan_tables.prepare_ldv_stock_benchmark(configured)
+        actual = pd.read_csv(path)
+        assert len(actual) == 2
+        assert set(actual.vehicle_type) == {review_selectors["Vehicle Type"][0]}
+        assert actual.loc[actual.fuel_type.eq("All fuel types"), "scaled_value"].item() == 100
+        assert actual.loc[actual.fuel_type.eq("Battery electric"), "scaled_value"].isna().all()
+        assert actual.loc[actual.fuel_type.eq("Battery electric"), "status"].item() == "x"
+    assert request.table_rules["selectors"] == original_selectors
+    assert cache_before == (request.archive_cache_path.read_bytes(), request.metadata_cache_path.read_bytes())

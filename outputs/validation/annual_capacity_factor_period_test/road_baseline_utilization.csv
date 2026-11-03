@@ -1,0 +1,10 @@
+region,road_class,utilization,unit
+ON,cars,0.020756891109511903,dimensionless
+ON,freight_light_trucks,0.03712231546489149,dimensionless
+ON,heavy_trucks,0.2366269659840278,dimensionless
+ON,inter_city_buses,0.052633521939548886,dimensionless
+ON,medium_trucks,0.028953754237791396,dimensionless
+ON,motorcycles,0.008349474059812909,dimensionless
+ON,passenger_light_trucks,0.019118684188846276,dimensionless
+ON,school_buses,0.03418968638822989,dimensionless
+ON,urban_transit,0.04513884529495441,dimensionless

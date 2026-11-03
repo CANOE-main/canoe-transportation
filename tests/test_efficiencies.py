@@ -295,6 +295,22 @@ def test_hybrid_evidence_requires_unambiguous_exact_key(rules, bundle):
     assert result.loc["Unmatched", "powertrain"] == "gasoline"
 
 
+def test_production_classification_keeps_catalogue_extremes_for_empirical_selection(rules, bundle):
+    source = pd.DataFrame([
+        {"source_row": index + 2, "component": "conventional", "Model year": 2023,
+         "Make": "Fixture", "Model": f"M{index}", "Vehicle class": "Compact",
+         "Fuel type": "X", "Combined (L/100 km)": value}
+        for index, value in enumerate([5, 5.5, 6, 6.5, 7, 30])
+    ])
+    result = classify_ratings(
+        [source], pd.DataFrame(columns=rules["ratings"]["evidence_columns"]), rules=rules,
+        conversions=load_conversion_factors(bundle), range_rules=range_module_rules(bundle),
+    )
+    assert result.included.all()
+    assert result.set_index("Model").loc["M5", "native_consumption"] == 30
+    assert not {"outlier_excluded", "included_before_filter", "filter_reason"} & set(result)
+
+
 def test_phev_rating_keeps_components_and_combines_cd_cs_with_explicit_uf(rules, bundle):
     source = pd.DataFrame(
         [
@@ -402,7 +418,7 @@ def test_rating_stock_weights_replace_pooled_class_shares_and_expose_whole_cohor
             "class_mean_mj_per_vkm": value * 0.036, "native_unit": "kWh/100 km",
             "observations": 1, "original_weight": share, "observed_weight_sum": 1,
             "weight": share, "range_class_mean_km": 300, "matched_stock": 0,
-            "cohort_matched_stock": 0, "aggregation_method": "distinct_model_class_weighted", "rating_statistic": "mean",
+            "cohort_matched_stock": 0, "aggregation_method": "distinct_model_class_weighted", "rating_statistic": "median",
         }
         for year, powertrain in [(2023, "bev_200_miles"), (2022, "bev_200_miles")]
         for rating_class, value, share in [("Compact", 10, 0.2), ("Mid-size", 20, 0.8)]
@@ -470,7 +486,8 @@ def test_pev_lineage_uses_observed_history_and_projection_ratio_sources(
 ):
     calls = []
 
-    def rating_inputs(mode, source_powertrain, source_year, column):
+    def rating_inputs(mode, source_powertrain, source_year, column, region):
+        assert region == "ON"
         calls.append((mode, source_powertrain, source_year, column))
         return (("nrcan_fuel_consumption_ratings", source_powertrain),)
 
@@ -811,13 +828,17 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         str(p.relative_to(tmp_path)): file_sha256(p) for p in tmp_path.rglob("*.csv")
     }
     assert first.audit == second.audit
-    assert first.audit["rating_aggregation"] == "distinct_model_class_weighted"
-    assert first.audit["rating_statistic"] == configured.scenario.efficiencies.rating_statistic
+    assert first.audit["rating_aggregation"] == "identity_supported_gasoline_izev_and_median_catalogue"
+    assert "mto_identity_supported_weighted" in first.audit["rating_composition_methods"]
+    assert "izev_incentive_weighted" in first.audit["rating_composition_methods"]
+    assert "izev_historical_composition_proxy" in first.audit["rating_composition_methods"]
+    assert "catalogue_distinct_model_median" in first.audit["rating_composition_methods"]
+    assert first.audit["catalogue_aggregation"] == "distinct_model_median"
     assert first.audit["annual_stock_evidence"] == capacity_audit["annual_stock_evidence"]
     assert "rating_stock_weighting" not in first.audit
     aggregation_rules = load_harmonization_rules(configured, "road_aggregation")
     evidence_names = {Path(item["path"]).name for item in first.audit["input_evidence"]}
-    assert aggregation_rules["mapped_current_stock_file"] not in evidence_names
+    assert aggregation_rules["mapped_current_stock_file"] in evidence_names
     assert aggregation_rules["fueleconomy_evidence_file"] not in evidence_names
     assert stock_file in evidence_names
     assert not (tmp_path / "efficiencies_interim/rating_stock_match_audit.csv").exists()
@@ -1169,3 +1190,68 @@ def test_efficiency_metadata_rating_editions_require_exact_observation_years():
     }
     with pytest.raises(ValueError, match="Missing exact annual rating provenance"):
         rating_inputs("cars", "gasoline", 2018, "mj")
+
+
+def test_recipient_region_changes_consumption_without_pooling_provinces(rules):
+    ratings = pd.DataFrame([
+        {"region": region, "ceud_class": "Car", "year": 2023, "powertrain": "bev_300_miles",
+         "weight": 1.0, "native_class_mean": value, "class_mean_mj_per_vkm": value}
+        for region, value in [("ON", .5), ("QC", .8)]
+    ])
+    loads = pd.DataFrame([
+        {"region": region, "mode": "cars", "year": 2023, "load_factor": 1.5}
+        for region in ["ON", "QC"]
+    ])
+    evidence = RoadEfficiencyEvidence(
+        ceud=pd.DataFrame(), loads=loads, rating_audit=ratings,
+        atb_audit=pd.DataFrame(columns=["region", "mode", "powertrain", "year", "weighted_consumption"]),
+        gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=2023, rules=rules,
+    )
+    assert evidence.derive_consumption("ON", "cars", "bev_300_miles", 2023)["native_intensity"] == .5
+    assert evidence.derive_consumption("QC", "cars", "bev_300_miles", 2023)["native_intensity"] == .8
+    with pytest.raises(ValueError, match="explicit region"):
+        evidence.rating("cars", "bev_300_miles", 2023, "mj")
+
+
+@pytest.mark.parametrize("catalogue_powertrain", ["bev_300_miles", "bev_150_miles"])
+@pytest.mark.parametrize("method,year", [
+    ("izev_incentive_weighted", 2023), ("izev_historical_composition_proxy", 2018),
+])
+def test_empirical_lineage_uses_selected_variants_and_actual_component_by_region(rules, catalogue_powertrain, method, year):
+    classified = pd.DataFrame([
+        {"year": year, "powertrain": catalogue_powertrain, "rating_class": "Compact", "included": True,
+         "component": component, "source_row": index, "native_unit": "kWh/100 km",
+         "classification_method": "omega_range_bucket"}
+        for index, component in [(1, "selected_edition"), (2, "unused_catalogue_edition")]
+    ])
+    audit = pd.DataFrame([
+        {"region": region, "ceud_class": "Car", "year": year, "powertrain": "bev_300_miles",
+         "rating_class": "Compact", "aggregation_method": method,
+         "composition_source": "transport_canada_izev", "composition_components": component}
+        for region, component in [("ON", "fy2023"), ("QC", "fy2024")]
+    ])
+    variants = pd.DataFrame([
+        {"region": region, "year": year, "powertrain": "bev_300_miles", "rating_class": "Compact",
+         "component": "selected_edition", "source_row": 1}
+        for region in ["ON", "QC"]
+    ])
+    resolver, _ = layer.ldv_rating_input_resolvers(
+        SimpleNamespace(base_year=2023), classified, audit, rules=rules, composition_variants=variants,
+    )
+    assert set(resolver("cars", "bev_300_miles", year, "mj", "ON")) == {
+        ("nrcan_fuel_consumption_ratings", "selected_edition"), ("transport_canada_izev", "fy2023"),
+    }
+    assert set(resolver("cars", "bev_300_miles", year, "mj", "QC")) == {
+        ("nrcan_fuel_consumption_ratings", "selected_edition"), ("transport_canada_izev", "fy2024"),
+    }
+    with pytest.raises(ValueError, match="explicit region"):
+        resolver("cars", "bev_300_miles", year, "mj")
+    for invalid, message in [
+        (variants.assign(source_row=999), "unknown catalogue source row"),
+        (variants.iloc[:0], "lacks selected variants"),
+    ]:
+        invalid_resolver, _ = layer.ldv_rating_input_resolvers(
+            SimpleNamespace(base_year=2023), classified, audit, rules=rules, composition_variants=invalid,
+        )
+        with pytest.raises(ValueError, match=message):
+            invalid_resolver("cars", "bev_300_miles", year, "mj", "ON")
