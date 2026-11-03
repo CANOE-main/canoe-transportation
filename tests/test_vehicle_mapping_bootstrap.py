@@ -28,7 +28,7 @@ from utils import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/legacy_comparison.yaml"
 
 
 def _bootstrap_rules() -> dict[str, object]:
@@ -861,7 +861,7 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
         "ordered_model_abbreviation",
         regex=False,
     ).any()
-    assert crosswalk["match_method"].str.startswith("automatic_").sum() >= 600
+    assert set(crosswalk["match_method"]) == {"reviewed_identity_and_applicability"}
 
     ontario_rules = load_harmonization_rules(
         bundle,

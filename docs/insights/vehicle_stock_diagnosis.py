@@ -182,6 +182,8 @@ def _(canonical_family, load_stock_diagnostic, reload_evidence):
     evidence = load_stock_diagnostic()
     for _key in ["mapped_fleet", "mapping_config", "vehicle_class_evidence"]:
         _frame = evidence[_key].copy()
+        if _key == "mapping_config" and "entry_type" not in _frame:
+            _frame["entry_type"] = "mto_crosswalk"
         for _field in ["make", "model"]:
             _raw = f"raw_canonical_{_field}"
             if _raw not in _frame:
@@ -1825,7 +1827,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                 "model_year_to",
                 "nrcan_vehicle_class",
                 "nlr_atb_class",
-                "match_method",
+                "evidence_source",
             ],
         ].sort_values(
             [

@@ -50,10 +50,14 @@ def policy():
 
 @pytest.fixture(scope="module")
 def production_family_policy():
-    """Exercise reviewed runtime family patterns rather than copying their regexes."""
+    """Isolate production naming rules from synthetic fixture consumption spreads."""
     path = Path(__file__).resolve().parents[1] / "config" / "parameters" / "rules.yaml"
     rules = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return rules["parameterization"]["efficiencies"]["ratings"]["composition"]
+    policy = rules["parameterization"]["efficiencies"]["ratings"]["composition"]
+    # Existing naming fixtures intentionally span 10-100 units to prove medians,
+    # not physical trim dispersion; dedicated tests below cover that policy.
+    policy["family_matching"].pop("consumption_dispersion", None)
+    return policy
 
 
 def ratings(models, *, year=2023, make="Fixture", powertrain="gasoline", rating_class="Compact"):
@@ -176,7 +180,7 @@ def test_mto_family_proxy_uses_only_compatible_gasoline_ratings(policy):
                        mto=stock([("Shared", 1000), ("Gas only", 90), ("Hybrid only", 50)]))
     status = result.observations.set_index("family_model").match_status
     assert status["Shared"] == "resolved"
-    assert status["Hybrid only"] == "unmatched_ratings"
+    assert status["Hybrid only"] == "ineligible_observed_propulsion"
     assert result.class_audit.set_index("powertrain").loc["gasoline", "native_class_mean"] == pytest.approx((1000 * 5 + 90 * 10) / 1090)
     assert result.class_audit.set_index("powertrain").loc["gasoline", "propulsion_basis"] == "canonical_family_gasoline_compatibility_not_observed_fuel"
     assert result.class_audit.set_index("powertrain").loc["hev", "aggregation_method"] == "catalogue_distinct_model_median"
@@ -367,7 +371,7 @@ def test_historical_suv_uses_existing_coarse_source_class_and_conserves_family_c
 def test_historical_suv_rollup_does_not_coarsen_already_split_source_year(policy):
     frame = ratings([("A", 10)], year=2023, rating_class="Small SUV")
     result = aggregate(frame, policy, mto=stock([("A", 100)], rating_class="Large SUV"))
-    assert result.observations.match_status.item() == "unmatched_ratings"
+    assert result.observations.match_status.item() == "conflicting_reviewed_rating_class"
     assert result.observations.rating_class.item() == "Large SUV"
 
 
@@ -1133,8 +1137,8 @@ def test_fuzzy_candidates_require_a_unique_structurally_compatible_family(policy
     assert result.variants.empty
     unique = aggregate(frame.iloc[[0]], policy, mto=stock([("Thunderbird", 100)]))
     assert unique.observations.match_method.item() == "fuzzy_family_candidates"
-    assert unique.observations.match_status.item() == "resolved"
-    assert unique.variants.allocated_count.sum() == 100
+    assert unique.observations.match_status.item() == "unverified_model_family"
+    assert unique.variants.empty
 
 
 def test_explicit_drivetrain_and_engine_constraints_cannot_be_erased_by_family_matching(policy):
@@ -1380,3 +1384,518 @@ def test_remaining_family_patterns_never_override_model_number_or_battery_unit_c
     assert not result.observations.selected.any()
     assert result.observations.match_status.item() in {"unmatched_ratings", "conflicting_or_unverified_configuration"}
     assert result.variants.empty
+
+
+def test_model_token_500l_is_identity_not_engine_capacity(policy):
+    policy['family_matching']['trim_suffix_patterns'].append(r'(?i)\s+\d+(?:\.\d+)?L$')
+    frame = ratings([('500L Turbo', 8.5)], make='FIAT', rating_class='Station wagon: Small')
+    frame['Engine size (L)'] = 1.4
+    mapped = stock([('500L', 100)], make='FIAT', rating_class='Station wagon: Small')
+    weights = pd.DataFrame([{'weight_basis':'all_vintages', 'report_year':2025,
+        'nrcan_ceud_class':'Car', 'nrcan_vehicle_class':'Station wagon: Small', 'aggregation_weight':1.}])
+    result = aggregate(frame, policy, mto=mapped, weights=weights)
+    assert result.observations.match_status.item() == 'resolved'
+    assert result.observations.observed_family_native_median.item() == 8.5
+    assert result.variants.allocated_count.sum() == 100
+    incompatible = aggregate(frame, policy, mto=mapped.assign(canonical_model='500L 2.0L'), weights=weights)
+    assert incompatible.observations.match_status.item() == 'conflicting_or_unverified_configuration'
+    other = aggregate(frame, policy, mto=mapped.assign(canonical_model='500'), weights=weights)
+    assert not other.observations.selected.any()
+
+
+def test_predominant_class_keeps_complete_same_year_configuration_median(policy):
+    policy['family_matching']['class_resolution'] = {'minimum_predominant_share':.8,
+        'compatible_class_groups':[['Small SUV','Large SUV']]}
+    # Thirteen small and two standard configurations; repeated source rows must
+    # neither create class votes nor shift the all-configuration family median.
+    frame = ratings([('A', 8 + i / 10) for i in range(15)], rating_class='Small SUV')
+    frame.loc[13:, 'rating_class'] = 'Large SUV'
+    duplicates = frame.iloc[[13,14]].copy()
+    duplicates.source_row += 100
+    frame = pd.concat([frame,duplicates], ignore_index=True)
+    weights = pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,
+        'nrcan_ceud_class':'Light truck','nrcan_vehicle_class':label,'aggregation_weight':.5}
+        for label in ['Small SUV','Large SUV']])
+    result = aggregate(frame,policy,mto=stock([('A',150)],rating_class='Small SUV'),weights=weights)
+    observation = result.observations.iloc[0]
+    assert observation.match_status == 'resolved'
+    assert observation.class_predominant_share == pytest.approx(13/15)
+    assert observation.class_resolution_status == 'predominant_distinct_target_year_configurations'
+    assert observation.observed_family_native_median == 8.7
+    assert observation.matched_variant_count == 15
+    assert result.variants.rating_variant_id.nunique() == 15
+    assert set(result.variants.catalogue_rating_class) == {'Small SUV','Large SUV'}
+    assert result.variants.rating_class.eq('Small SUV').all()
+    assert result.variants.allocated_count.sum() == 150
+    assert result.class_audit.set_index('rating_class').loc['Small SUV','selected_source_count'] == 150
+    assert result.class_audit.set_index('rating_class').loc['Large SUV','selected_source_count'] == 0
+
+
+def test_predominance_cannot_hide_explicit_body_or_reviewed_class_conflicts(policy):
+    policy['family_matching']['class_resolution'] = {'minimum_predominant_share':.8,
+        'compatible_class_groups':[['Compact','Mid-size']]}
+    policy['family_matching']['family_patterns'].append(
+        {'make':'Fixture','pattern':r'^A\b.*$','canonical_model':'A'})
+    frame=ratings([('A Sedan',8+i/10) for i in range(9)] + [('A Hatchback',9)],rating_class='Compact')
+    frame.loc[9,'rating_class']='Mid-size'
+    result=aggregate(frame,policy,mto=stock([('A',100)]))
+    assert result.observations.match_status.item() == 'ambiguous_rating_class'
+    assert result.variants.empty
+    # A genuinely different model-year class is checked against that year's
+    # reviewed mapping; adjacent-year configurations never vote on its class.
+    wrong=aggregate(ratings([('A',8)],rating_class='Mid-size'),policy,mto=stock([('A',100)]))
+    assert wrong.observations.match_status.item() == 'conflicting_reviewed_rating_class'
+
+
+@pytest.mark.parametrize('values,expected', [([8,8.5,9,9.5,10],'resolved'),
+    ([5,7,10,15,20],'family_consumption_heterogeneity')])
+def test_representative_dispersion_accepts_ordinary_variation_and_reports_material_spread(policy,values,expected):
+    policy['family_matching']['consumption_dispersion']={'maximum_relative_p90_p10_span':.5}
+    frame=ratings([('A',value) for value in values])
+    result=aggregate(frame,policy,mto=stock([('A',100)]))
+    row=result.observations.iloc[0]
+    series=pd.Series(values)
+    assert row.consumption_relative_p90_p10_span == pytest.approx((series.quantile(.9)-series.quantile(.1))/series.median())
+    assert row.match_status == expected
+    assert bool(row.selected) == (expected=='resolved')
+    assert result.variants.allocated_count.sum() == (100 if expected=='resolved' else 0)
+    if expected!='resolved':
+        assert 'dispersion' in row.match_reason
+        assert result.class_audit.aggregation_method.item() == 'catalogue_fallback_median_no_empirical_support'
+
+
+def test_target_year_catalogue_gap_and_ineligible_propulsion_are_different(policy):
+    early=ratings([('A',15)],year=2022,powertrain='bev_300_miles')
+    current=ratings([('B',20)],year=2023,powertrain='bev_300_miles')
+    current.source_row+=100
+    frame=pd.concat([early,current],ignore_index=True)
+    result=aggregate(frame,policy,izev=incentives([('A',10)],year=2023),mto=stock([('B',20)],year=2023))
+    observations=result.observations.set_index('source_kind')
+    assert observations.loc['izev','match_status']=='target_year_rating_unavailable'
+    assert observations.loc['mto','match_status']=='ineligible_observed_propulsion'
+    assert 'does not establish model nonexistence' in observations.loc['izev','match_reason']
+    assert not result.observations.selected.any()
+
+
+def test_native_identical_izev_rows_are_legitimate_separate_counted_observations(policy):
+    records=incentives([('A',1),('A',1),('A',1)])
+    assert records.drop(columns='source_row').duplicated().sum()==2
+    result=aggregate(ratings([('A',20)],powertrain='bev_300_miles'),policy,izev=records)
+    assert result.observations.source_count.item()==3
+    assert result.observations.source_rows.item()==3
+    assert result.variants.allocated_count.sum()==3
+    assert result.class_audit.selected_source_count.item()==3
+
+
+@pytest.mark.parametrize('make,description,models,powertrain',[
+    ('Nissan','LEAF',['LEAF (40 kWh)','LEAF S PLUS','LEAF SV/SL PLUS'],'bev_200_miles'),
+    ('Nissan','ARIYA',['ARIYA Engage','ARIYA Evolve+','ARIYA Evolve e-4ORCE','ARIYA Evolve+ e-4ORCE','ARIYA Platinum+ e-4ORCE'],'bev_300_miles'),
+    ('Kia','EV6',['EV6 Standard Range','EV6 Long Range','EV6 Long Range AWD (19" Wheels)','EV6 Long Range AWD (20" Wheels)','EV6 GT AWD'],'bev_300_miles'),
+    ('Kia','EV9',['EV9 Light','EV9 Wind','EV9 Land AWD','EV9 Land AWD GT-Line'],'bev_300_miles'),
+    ('Acura','RDX',['RDX SH-AWD','RDX SH-AWD A-SPEC'],'gasoline'),
+    ('Acura','MDX',['MDX SH-AWD','MDX SH-AWD Elite','MDX SH-AWD A-SPEC'],'gasoline'),
+    ('Toyota','Camry',['Camry LE/SE','Camry XSE','Camry XSE V6','Camry TRD','Camry AWD SE','Camry AWD XSE'],'gasoline')])
+def test_complete_production_family_candidates_precede_representative_medians(production_family_policy,make,description,models,powertrain):
+    frame=ratings([(model,8+i*.1) for i,model in enumerate(models)],make=make,powertrain=powertrain)
+    if powertrain=='gasoline':
+        result=aggregate(frame,production_family_policy,mto=stock([(description,100)],make=make))
+    else:
+        result=aggregate(frame,production_family_policy,izev=incentives([(description,100)],make=make))
+    row=result.observations.iloc[0]
+    assert row.match_status=='resolved'
+    assert row.candidate_variant_count==len(models)
+    assert row.matched_variant_count==len(models)
+    assert set(result.variants.Model)==set(models)
+    assert row.observed_family_native_median==pytest.approx(pd.Series(frame.native_consumption).median())
+    assert result.variants.allocated_count.sum()==pytest.approx(100)
+
+
+@pytest.mark.parametrize('classification_method',['unverified_source_fuel','configuration_epa_unresolved'])
+def test_unresolved_gasoline_hybrid_evidence_is_not_an_incompatible_propulsion_exclusion(policy,classification_method):
+    unresolved=ratings([('Unverified',8)])
+    unresolved['Fuel type']='X'
+    unresolved['propulsion_resolved']=False
+    unresolved['classification_method']=classification_method
+    unresolved['included']=False
+    bev=ratings([('Battery',20)],powertrain='bev_300_miles')
+    bev.source_row+=100
+    hev=ratings([('Supported hybrid',5)],powertrain='hev')
+    hev.source_row+=200
+    result=aggregate(pd.concat([unresolved,bev,hev],ignore_index=True),policy,
+        mto=stock([('Unverified',100),('Battery',10),('Supported hybrid',20)]))
+    observations=result.observations.set_index('family_model')
+    assert observations.loc['Unverified','match_status']=='unresolved_propulsion_evidence'
+    assert 'unavailable or conflicting' in observations.loc['Unverified','match_reason']
+    assert 'X/Z fuel codes alone' in observations.loc['Unverified','match_reason']
+    assert observations.loc['Battery','match_status']=='ineligible_observed_propulsion'
+    assert observations.loc['Supported hybrid','match_status']=='ineligible_observed_propulsion'
+    assert not result.observations.selected.any()
+    assert result.variants.empty
+
+
+@pytest.mark.parametrize('description,expected_models,expected_median',[
+    ('Caravan',{'Caravan SE','Caravan Sport','Grand Caravan SE','Grand Caravan Sport'},11.5),
+    ('Grand Caravan',{'Grand Caravan SE','Grand Caravan Sport'},12.5),
+])
+def test_generic_caravan_family_combines_wheelbases_but_explicit_grand_retains_scope(production_family_policy,description,expected_models,expected_median):
+    frame=ratings([('Caravan SE',10),('Caravan Sport',11),('Grand Caravan SE',12),('Grand Caravan Sport',13)],
+        year=2007,make='Dodge',rating_class='Minivan')
+    weights=pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,'nrcan_ceud_class':'Light Truck',
+        'nrcan_vehicle_class':'Minivan','aggregation_weight':1.}])
+    mapped=stock([(description,100)],year=2007,make='Dodge',rating_class='Minivan')
+    result=aggregate(frame,production_family_policy,mto=mapped,weights=weights)
+    assert result.observations.match_status.item()=='resolved'
+    assert result.observations.candidate_variant_count.item()==4
+    assert set(result.variants.Model)==expected_models
+    assert result.observations.observed_family_native_median.item()==expected_median
+    assert result.variants.allocated_count.sum()==100
+    assert result.class_audit.selected_source_count.item()==100
+    assert result.class_audit.native_class_mean.item()==expected_median
+    assert catalogue_family('Jeep','Grand Cherokee',production_family_policy)[1]=='Grand Cherokee'
+    assert catalogue_family('Jeep','Cherokee',production_family_policy)[1]=='Cherokee'
+    assert catalogue_family('Chrysler','Grand Caravan',production_family_policy)[1]=='Grand Caravan'
+
+
+def test_production_f150_family_has_complete_gasoline_ffv_modes_without_other_propulsion(production_family_policy):
+    frame=ratings([('F-150',10),('F-150 FFV',11),('F-150 FFV',17),('F-150 4WD',12),
+        ('F-150 Pickup 4WD',13),('F-150 Hybrid 4WD',8),('F-150 Diesel 4WD',7),('F-150 Lightning 4WD',20)],
+        make='Ford',rating_class='Pickup truck: Standard')
+    frame['Fuel type']=['X','X','E','Z','X','X','D','E']
+    frame.loc[frame.Model.eq('F-150 Hybrid 4WD'),'powertrain']='hev'
+    frame.loc[frame.Model.eq('F-150 Diesel 4WD'),'powertrain']='diesel'
+    frame.loc[frame.Model.eq('F-150 Lightning 4WD'),'powertrain']='bev_300_miles'
+    frame.loc[frame.powertrain.eq('bev_300_miles'),['native_unit','range_km']]=['kWh/100 km',500.]
+    weights=pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,'nrcan_ceud_class':'Light Truck',
+        'nrcan_vehicle_class':'Pickup truck: Standard','aggregation_weight':1.}])
+    result=aggregate(frame,production_family_policy,mto=stock([('F-150',100)],make='Ford',rating_class='Pickup truck: Standard'),weights=weights)
+    assert result.observations.match_status.item()=='resolved'
+    assert result.observations.candidate_variant_count.item()==4
+    assert set(result.variants.Model)=={'F-150','F-150 FFV','F-150 4WD','F-150 Pickup 4WD'}
+    assert result.variants['Fuel type'].isin(['X','Z']).all()
+    assert result.variants.powertrain.eq('gasoline').all()
+    assert result.variants.allocated_count.sum()==100
+    assert result.class_audit.loc[result.class_audit.powertrain.eq('gasoline'),'native_class_mean'].item()==11.5
+    assert catalogue_family('Ford','F-150 Lightning 4WD',production_family_policy)[1]=='F-150 Lightning'
+
+
+@pytest.mark.parametrize('make,description,models',[
+    ('Toyota','RAV4',['RAV4','RAV4 LE/XLE','RAV4 Limited/SE AWD','RAV4 AWD TRD Off-Road','RAV4 (Stop/Start)']),
+    ('Nissan','Altima',['Altima','Altima SR/Platinum','Altima 3.5']),
+    ('Nissan','Sentra',['Sentra','Sentra (Turbo)','Sentra Nismo','Sentra SR']),
+    ('Nissan','Rogue',['Rogue','Rogue AWD','Rogue AWD SL/Platinum']),
+])
+def test_native_style_combined_configuration_labels_do_not_shorten_family_candidate_sets(production_family_policy,make,description,models):
+    frame=ratings([(model,8+i*.2) for i,model in enumerate(models)],make=make)
+    result=aggregate(frame,production_family_policy,mto=stock([(description,100)],make=make))
+    assert result.observations.match_status.item()=='resolved'
+    assert result.observations.candidate_variant_count.item()==len(models)
+    assert set(result.variants.Model)==set(models)
+    assert result.observations.observed_family_native_median.item()==pytest.approx(frame.native_consumption.median())
+    assert result.variants.allocated_count.sum()==pytest.approx(100)
+
+
+@pytest.mark.parametrize('suffix',['LE/XLE','SR/Platinum','Limited/SE','(MDS)','(FuelSaverMDS)',
+    '(Fuel Saver MDS)','(Stop/Start)','(Without Stop-Start)','(LT Tire Pkg)','(Payload Pkg)','(Turbo)'])
+def test_recognized_combined_trims_and_neutral_parentheticals_are_configuration_metadata(production_family_policy,suffix):
+    assert catalogue_family('Fixture','Family '+suffix,production_family_policy)==('Fixture','Family')
+
+
+def test_new_conventional_roots_keep_named_propulsion_and_body_families_distinct(production_family_policy):
+    for make,model,expected in [
+        ('Toyota','RAV4 Hybrid AWD','RAV4 Hybrid'),('Toyota','RAV4 Prime','RAV4 Prime'),
+        ('Nissan','Rogue Sport AWD','Rogue Sport'),('Nissan','Rogue Hybrid AWD','Rogue Hybrid'),
+        ('Toyota','Corolla Hatchback','Corolla Hatchback'),('Toyota','Corolla Cross AWD','Corolla Cross')]:
+        assert catalogue_family(make,model,production_family_policy)==(make,expected)
+    plain=ratings([('Rogue',8),('Rogue AWD SL/Platinum',9),('Rogue Sport AWD',18)],make='Nissan')
+    result=aggregate(plain,production_family_policy,mto=stock([('Rogue',100)],make='Nissan'))
+    assert set(result.variants.Model)=={'Rogue','Rogue AWD SL/Platinum'}
+    assert result.observations.candidate_variant_count.item()==2
+    assert result.class_audit.native_class_mean.item()==8.5
+    assert result.variants.allocated_count.sum()==100
+
+
+@pytest.mark.parametrize('make,observed,catalogue_model',[
+    ('Nissan','Rogue','Rogue Sport AWD'),('Nissan','Rogue Sport','Rogue AWD'),
+    ('Toyota','Corolla','Corolla Hatchback'),('Toyota','Corolla','Corolla Cross AWD'),
+    ('Toyota','Corolla Cross','Corolla Hatchback')])
+def test_absent_known_family_cannot_borrow_a_distinct_configured_body_family(production_family_policy,make,observed,catalogue_model):
+    frame=ratings([(catalogue_model,8)],make=make)
+    result=aggregate(frame,production_family_policy,mto=stock([(observed,100)],make=make))
+    assert not result.observations.match_status.eq('resolved').any()
+    assert not result.observations.selected.any()
+    assert result.variants.empty
+    assert result.class_audit.selected_source_count.item()==0
+
+
+def test_elantra_gt_retains_its_body_family_and_cannot_replace_absent_sedan(production_family_policy):
+    assert catalogue_family('Hyundai','Elantra GT',production_family_policy)==('Hyundai','Elantra GT')
+    assert catalogue_family('Hyundai','Elantra Touring',production_family_policy)==('Hyundai','Elantra Touring')
+    frame=ratings([('Elantra GT',8),('Elantra GT N Line',9)],make='Hyundai')
+    generic=aggregate(frame,production_family_policy,mto=stock([('Elantra',100)],make='Hyundai'))
+    assert not generic.observations.selected.any()
+    assert generic.variants.empty
+    explicit=aggregate(frame,production_family_policy,mto=stock([('Elantra GT',100)],make='Hyundai'))
+    assert explicit.observations.match_status.item()=='resolved'
+    assert set(explicit.variants.Model)==set(frame.Model)
+    assert explicit.observations.observed_family_native_median.item()==8.5
+    assert explicit.variants.allocated_count.sum()==100
+
+
+def test_isg_equipment_does_not_omit_elantra_configurations_but_explicit_equipment_constrains(production_family_policy):
+    frame=ratings([('Elantra',6.5),('Elantra (ISG)',6.1),('Elantra (ISS)',6.3)],year=2023,make='Hyundai')
+    generic=aggregate(frame,production_family_policy,mto=stock([('Elantra',100)],make='Hyundai'))
+    assert generic.observations.match_status.item()=='resolved'
+    assert generic.observations.candidate_variant_count.item()==3
+    assert set(generic.variants.Model)==set(frame.Model)
+    assert generic.observations.observed_family_native_median.item()==6.3
+    assert generic.variants.allocated_count.sum()==100
+    explicit=aggregate(frame,production_family_policy,mto=stock([('Elantra (ISG)',100)],make='Hyundai'))
+    assert set(explicit.variants.Model)=={'Elantra (ISG)'}
+    assert explicit.observations.observed_family_native_median.item()==6.1
+    assert explicit.variants.allocated_count.sum()==100
+
+
+@pytest.mark.parametrize('suffix',['(i-ELOOP)','(Cylinder Deactivation)','(SIDI with Stop/Start)','(GDI)',
+    '(MPI)','(No DFM)','(Without AFM)','(Without DMS)','(LE2 Engine)','(LUV Engine)','(EcoBoost)',
+    '(Supercharged)','(Start-Stop)','(Start/Stop System)','(Without Stop-Start)','(SIL)','(Autostick)',
+    '(With Sport Mode)','(123 kWh)','(85/90 kWh)','(60 kWh pre-6/16)','(120 Ah)','(20M Battery)',
+    '(11.5 kW)','(19.2 kW Charger)','(3-mode)','(Performance Battery Plus, 19" AS Tire)',
+    '(17" Wheels)','(19" and 20" Wheels)','(21" Aero Design Wheels)','(21" All-Season Tire)',
+    '(20" Wheels AT)','(22" Wheels UHP)','(All-Terrain Tire)','(Falken Tire)','(Pirelli Tire)',
+    '(Performance Tire)','(Performance Pack)','(Performance Pkg)','(Import)','(modified)','(Refresh)'])
+def test_known_catalogue_equipment_parentheses_are_family_metadata(production_family_policy,suffix):
+    assert catalogue_family('Fixture','Family '+suffix,production_family_policy)==('Fixture','Family')
+
+
+@pytest.mark.parametrize('suffix',['(2-Door)','(4-Door)','(Coupe)','(Convertible)','(Hatchback)',
+    '(Wagon)','(Cargo)','(Passenger)','(LWB)','(SWB)','(Prime)','(Prime SE)','(Prime XSE)','(Unknown equipment)'])
+def test_body_identity_and_unknown_parentheses_are_not_stripped(production_family_policy,suffix):
+    assert catalogue_family('Fixture','Family '+suffix,production_family_policy)==('Fixture','Family '+suffix)
+
+
+@pytest.mark.parametrize('description,expected',[
+    ('Family',{'Family (120 Ah) (18" Wheels)','Family (120 Ah) (19" Wheels)','Family (180 Ah) (19" Wheels)'}),
+    ('Family (120 Ah)',{'Family (120 Ah) (18" Wheels)','Family (120 Ah) (19" Wheels)'}),
+    ('Family (120 Ah) (18" Wheels)',{'Family (120 Ah) (18" Wheels)'}),
+])
+def test_ev_equipment_parentheses_complete_candidates_without_erasing_explicit_attributes(production_family_policy,description,expected):
+    models=['Family (120 Ah) (18" Wheels)','Family (120 Ah) (19" Wheels)','Family (180 Ah) (19" Wheels)']
+    frame=ratings([(model,18+i) for i,model in enumerate(models)],powertrain='bev_300_miles')
+    result=aggregate(frame,production_family_policy,izev=incentives([(description,100)]))
+    assert result.observations.match_status.item()=='resolved'
+    assert result.observations.candidate_variant_count.item()==3
+    assert set(result.variants.Model)==expected
+    assert result.variants.allocated_count.sum()==pytest.approx(100)
+    assert result.variants.variant_weight.sum()==pytest.approx(1.)
+
+
+def test_reported_bev_mini_alias_recovers_68_native_observations_without_hiding_55_phev_catalogue_gap(production_family_policy):
+    bev=ratings([('Cooper SE 3 Door',19.1)],year=2024,make='MINI',powertrain='bev_150_miles',rating_class='Subcompact')
+    bev['range_km']=183.
+    prior_phev=ratings([('Cooper SE Countryman ALL4',3.)],year=2023,make='MINI',powertrain='phev_35_miles',rating_class='Mid-size')
+    prior_phev.source_row+=100
+    bev_records=incentives([('Cooper SE',1)]*68,year=2024,make='MINI')
+    phev_records=incentives([('Cooper SE',1)]*55,year=2024,make='MINI',powertrain='phev')
+    phev_records.source_row+=100
+    records=pd.concat([bev_records,phev_records],ignore_index=True)
+    weights=pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,'nrcan_ceud_class':'Car',
+        'nrcan_vehicle_class':label,'aggregation_weight':.5} for label in ['Subcompact','Mid-size']])
+    result=aggregate(pd.concat([bev,prior_phev],ignore_index=True),production_family_policy,izev=records,weights=weights)
+    observations=result.observations.set_index('observed_powertrain')
+    assert observations.loc['bev','family_model']=='Cooper SE 3 Door'
+    assert observations.loc['bev','match_status']=='resolved'
+    assert observations.loc['bev','source_count']==68
+    assert observations.loc['bev','source_rows']==68
+    assert observations.loc['bev','candidate_variant_count']==1
+    assert observations.loc['phev','family_model']=='Cooper SE'
+    assert observations.loc['phev','source_count']==55
+    assert observations.loc['phev','source_rows']==55
+    assert observations.loc['phev','match_status']=='target_year_rating_unavailable'
+    assert not observations.loc['phev','selected']
+    assert result.variants.allocated_count.sum()==68
+    assert result.variants.Model.eq('Cooper SE 3 Door').all()
+    assert result.class_audit.loc[result.class_audit.selected_source_count.gt(0),'selected_source_count'].sum()==68
+    assert bev.Model.item()=='Cooper SE 3 Door'  # Native evidence was not rewritten.
+
+
+def test_reported_bev_charger_alias_uses_all_five_daytona_configurations_without_rewriting_gasoline(production_family_policy):
+    models=[('Charger Daytona R/T AWD 2Dr (18" Nexen Tire)',24.1),
+        ('Charger Daytona R/T AWD 2Dr (20" Nexen Tire)',21.5),
+        ('Charger Daytona R/T AWD 2Dr (20" Goodyear Tire)',24.6),
+        ('Charger Daytona Scat Pack Trk Pack AWD 2Dr AS Tire',27.),
+        ('Charger Daytona Scat Pack Trk Pack AWD 2Dr 3S Tire',29.9)]
+    bev=ratings(models,year=2024,make='Dodge',powertrain='bev_300_miles',rating_class='Full-size')
+    bev['range_km']=[441.,496.,431.,388.,348.]
+    bev.loc[bev.range_km.lt(400),'powertrain']='bev_200_miles'
+    gas=ratings([('Charger',12)],year=2023,make='Dodge',rating_class='Full-size')
+    gas.source_row+=100
+    weights=pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,'nrcan_ceud_class':'Car',
+        'nrcan_vehicle_class':'Full-size','aggregation_weight':1.}])
+    result=aggregate(pd.concat([bev,gas],ignore_index=True),production_family_policy,
+        izev=incentives([('Charger',1)],year=2024,make='Dodge'),mto=stock([('Charger',100)],year=2023,make='Dodge',rating_class='Full-size'),weights=weights)
+    observations=result.observations.set_index('source_kind')
+    assert observations.loc['izev','family_model']=='Charger Daytona'
+    assert observations.loc['izev','candidate_variant_count']==5
+    assert observations.loc['izev','matched_variant_count']==5
+    assert observations.loc['izev','observed_family_native_median']==24.6
+    assert observations.loc['izev','observed_family_range_median_km']==431.
+    assert observations.loc['izev','source_count']==1
+    assert observations.loc['mto','family_model']=='Charger'
+    assert observations.match_status.eq('resolved').all()
+    pev=result.variants.loc[result.variants.composition_source.eq('transport_canada_izev')]
+    assert set(pev.Model)=={name for name,_ in models}
+    assert pev.allocated_count.sum()==1
+    assert pev.powertrain.eq('bev_300_miles').all()
+    gasoline=result.variants.loc[result.variants.composition_source.eq('ontario_ministry_transport_vehicle_population')]
+    assert gasoline.Model.eq('Charger').all()
+    assert gasoline.allocated_count.sum()==100
+    assert set(bev.Model)=={name for name,_ in models}
+
+
+@pytest.mark.parametrize('invalid',[None,[],{'gasoline':[]},{'bev':{}},{'bev':[{}]},
+    {'bev':[{'make':'MINI','canonical_model':'Cooper SE 3 Door','models':'Cooper SE'}]},
+    {'bev':[{'make':'MINI','canonical_model':'Cooper SE 3 Door','models':['Cooper SE'],'exact_only':'true'}]},
+    {'bev':[{'make':'','canonical_model':'Cooper SE 3 Door','models':['Cooper SE']}]},
+    {'bev':[{'make':'MINI','canonical_model':'Cooper SE 3 Door','models':['']}]},
+    {'bev':[{'make':'MINI','canonical_model':'Cooper SE 3 Door','models':['Cooper SE'],'model_year_from':2024}]}])
+def test_observation_only_alias_policy_rejects_invalid_shapes_or_unreported_powertrain_scopes(policy,invalid):
+    policy['izev_observation_aliases_by_powertrain']=invalid
+    with pytest.raises(ValueError,match='[Oo]bservation-only iZEV alias'):
+        aggregate(ratings([('A',8)]),policy)
+
+
+def test_actual_hev_power_variants_receive_one_annual_family_vote_without_mto_weighting(production_family_policy):
+    from parameterization.road_efficiencies import distinct_rating_models
+
+    native = [
+        ('Ford', 'Escape Hybrid', 5.8), ('Ford', 'Escape Hybrid AWD', 5.9),
+        ('Hyundai', 'Santa Fe Hybrid', 7.4),
+        ('Jaguar', 'F-PACE P340', 10.6), ('Jaguar', 'F-PACE P400', 10.7),
+        ('Jeep', 'Wrangler JL 4X4 eTorque', 11.),
+        ('Jeep', 'Wrangler JL Unlimited 4X4 eTorque', 11.2),
+        ('Land Rover', 'Range Rover Velar P340', 10.5),
+        ('Land Rover', 'Range Rover Velar P400', 11.3),
+        ('Lexus', 'NX 300h AWD', 7.5), ('Toyota', 'RAV4 Hybrid AWD', 6.),
+        ('Toyota', 'Venza AWD', 6.1),
+    ]
+    size = 'Sport utility vehicle: Small'
+    frame = pd.concat([
+        ratings([(model, value)], year=2021, make=make, powertrain='hev', rating_class=size)
+        for make, model, value in native
+    ], ignore_index=True)
+    frame['source_row'] = np.arange(len(frame)) + 2
+    rules = {
+        'ratings': {'fields': {'make': 'Make', 'model': 'Model'}, 'composition': production_family_policy},
+        'historical_suv': {'source_label': 'SUV', 'combined_weight_classes': ['Small SUV', 'Large SUV']},
+        'tolerances': {'weight_sum': 1e-9},
+    }
+    families = distinct_rating_models(frame, rules=rules)
+    assert len(families) == 9
+    assert families.distinct_trims.sum() == 12
+    assert families.set_index('family_key').loc['JAGUAR/FPACE', 'native_consumption'] == pytest.approx(10.65)
+    assert families.set_index('family_key').loc['LANDROVER/RANGEROVERVELAR', 'native_consumption'] == pytest.approx(10.9)
+    assert families.native_consumption.median() == 7.5
+    assert families.loc[families.Make.eq('Jeep'), 'family_key'].nunique() == 2
+
+    weights = pd.DataFrame([{
+        'weight_basis': 'all_vintages', 'report_year': 2025, 'nrcan_ceud_class': 'SUV',
+        'nrcan_vehicle_class': size, 'aggregation_weight': 1.,
+    }])
+    for count in [1, 1_000_000]:
+        result = aggregate_empirical_ratings(
+            frame, weights, stock([('F-PACE', count)], year=2021, make='Jaguar', rating_class=size),
+            pd.DataFrame(), rules=rules, composition_rules=production_family_policy,
+            regions=['ON'], weight_basis='all_vintages',
+        )
+        assert result.class_audit.native_class_mean.item() == 7.5
+        assert result.class_audit.aggregation_method.item() == 'catalogue_distinct_model_median'
+        assert result.variants.empty
+
+
+@pytest.mark.parametrize('make,models,expected', [
+    ('Jaguar', ['F-PACE', 'F-PACE P340', 'F-PACE P400'], 'F-PACE'),
+    ('Land Rover', ['Range Rover Velar', 'Range Rover Velar P340', 'Range Rover Velar P400'], 'Range Rover Velar'),
+    ('Land Rover', ['Defender 90', 'Defender 90 P300', 'Defender 90 P400'], 'Defender 90'),
+    ('Land Rover', ['Defender 110', 'Defender 110 P400', 'Defender 110 OCTA P635'], 'Defender 110'),
+    ('Land Rover', ['Defender 130', 'Defender 130 P300', 'Defender 130 P400 Outbound'], 'Defender 130'),
+    ('Volvo', ['XC90', 'XC90 B5 AWD', 'XC90 B6 AWD'], 'XC90'),
+    ('BMW', ['X5', 'X5 xDrive40i', 'X5 M60i', 'X5 M Competition'], 'X5'),
+    ('BMW', ['X6', 'X6 xDrive40i', 'X6 M60i', 'X6 M Competition'], 'X6'),
+    ('BMW', ['X7', 'X7 xDrive40i', 'X7 M60i xDrive'], 'X7'),
+    ('Mercedes-Benz', ['CLE Coupe', 'CLE 300 4MATIC Coupe', 'CLE 450 4MATIC Coupe'], 'CLE Coupe'),
+    ('Mercedes-Benz', ['GLC Coupe', 'GLC 300 4MATIC Coupe', 'AMG GLC 43 4MATIC Coupe'], 'GLC Coupe'),
+    ('Mercedes-Benz', ['GLS', 'GLS 450 4MATIC', 'GLS 580 4MATIC SUV'], 'GLS'),
+    ('Porsche', ['Boxster', '718 Boxster', '718 Boxster S'], 'Boxster'),
+    ('Porsche', ['Cayman', '718 Cayman', '718 Cayman GT4'], 'Cayman'),
+])
+def test_native_power_codes_and_reviewed_prefix_transitions_preserve_family_roots(production_family_policy, make, models, expected):
+    assert {catalogue_family(make, model, production_family_policy)[1] for model in models} == {expected}
+
+
+@pytest.mark.parametrize('make,left,right', [
+    ('Land Rover', 'Defender 90 P400', 'Defender 110 P400'),
+    ('Land Rover', 'Defender 110 P400', 'Defender 130 P400'),
+    ('Land Rover', 'Range Rover P400', 'Range Rover P400 LWB'),
+    ('Land Rover', 'New Range Rover P400', 'New Range Rover P400 LWB'),
+    ('Land Rover', 'Range Rover P400', 'New Range Rover P400'),
+    ('Land Rover', 'Range Rover Sport P400', 'Range Rover Velar P400'),
+    ('Mercedes-Benz', 'CLE 300 4MATIC Coupe', 'CLE 300 4MATIC Cabriolet'),
+    ('Mercedes-Benz', 'GLC 300 4MATIC Coupe', 'GLC 300 4MATIC SUV'),
+    ('BMW', 'X5 xDrive40i', 'X6 xDrive40i'),
+    ('Porsche', '718 Boxster', '718 Cayman'),
+    ('Porsche', '718 Boxster', '718 Spyder'),
+])
+def test_power_variant_grouping_preserves_body_generation_and_model_boundaries(production_family_policy, make, left, right):
+    assert catalogue_family(make, left, production_family_policy) != catalogue_family(make, right, production_family_policy)
+
+
+def test_z4_power_variants_contribute_complete_family_once_and_preserve_explicit_trim(production_family_policy):
+    frame = ratings([('Z4 sDrive30i', 8.5), ('Z4 M40i', 9.3)], year=2020, make='BMW')
+    generic = aggregate(frame, production_family_policy, mto=stock([('Z4', 155)], year=2020, make='BMW'))
+    assert generic.observations.match_status.item() == 'resolved'
+    assert generic.observations.candidate_variant_count.item() == 2
+    assert generic.observations.observed_family_native_median.item() == 8.9
+    assert generic.variants.allocated_count.sum() == 155
+    explicit = aggregate(frame, production_family_policy, mto=stock([('Z4 M40i', 155)], year=2020, make='BMW'))
+    assert explicit.variants.Model.tolist() == ['Z4 M40i']
+    assert explicit.variants.allocated_count.sum() == 155
+
+
+@pytest.mark.parametrize('make,family', [('Lamborghini', 'Huracan'), ('Audi', 'R8')])
+def test_unresolved_propulsion_cannot_select_one_unspecified_body_family(production_family_policy, make, family):
+    frame = ratings([(family + ' Spyder', 15.7), (family + ' Coupe', 15.7)], make=make, rating_class='Two-seater')
+    frame['Fuel type'] = 'Z'
+    frame['propulsion_resolved'] = [True, False]
+    frame['included'] = [True, False]
+    weights = pd.DataFrame([{
+        'weight_basis': 'all_vintages', 'report_year': 2025, 'nrcan_ceud_class': 'Car',
+        'nrcan_vehicle_class': 'Two-seater', 'aggregation_weight': 1.,
+    }])
+    generic = aggregate(frame, production_family_policy,
+        mto=stock([(family, 100)], make=make, rating_class='Two-seater'), weights=weights)
+    assert generic.observations.match_status.item() == 'ambiguous_model_family'
+    assert generic.observations.configuration_status.item() == 'unresolved_propulsion_competing_family'
+    assert generic.observations.family_candidate_count.item() == 2
+    assert 'propulsion evidence is unresolved' in generic.observations.match_reason.item()
+    assert generic.variants.empty
+    explicit = aggregate(frame, production_family_policy,
+        mto=stock([(family + ' Spyder', 100)], make=make, rating_class='Two-seater'), weights=weights)
+    assert explicit.observations.match_status.item() == 'resolved'
+    assert explicit.variants.Model.tolist() == [family + ' Spyder']
+    assert explicit.variants.allocated_count.sum() == 100
+    unresolved = aggregate(frame, production_family_policy,
+        mto=stock([(family + ' Coupe', 100)], make=make, rating_class='Two-seater'), weights=weights)
+    assert unresolved.observations.match_status.item() == 'unresolved_propulsion_evidence'
+    assert unresolved.variants.empty
+
+
+@pytest.mark.parametrize('other_powertrain,fuel', [('hev', 'Z'), ('diesel', 'D'), ('ethanol', 'E')])
+def test_positive_other_propulsion_does_not_create_unknown_body_identity_conflict(production_family_policy, other_powertrain, fuel):
+    frame = ratings([('Huracan Spyder', 15.7), ('Huracan Coupe', 15.7)], make='Lamborghini')
+    frame['propulsion_resolved'] = [True, True]
+    frame['powertrain'] = ['gasoline', other_powertrain]
+    frame['Fuel type'] = ['Z', fuel]
+    result = aggregate(frame, production_family_policy, mto=stock([('Huracan', 100)], make='Lamborghini'))
+    assert result.observations.match_status.item() == 'resolved'
+    assert result.variants.Model.tolist() == ['Huracan Spyder']
+    assert result.variants.allocated_count.sum() == 100

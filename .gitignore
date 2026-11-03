@@ -29,3 +29,5 @@ inputs/playground/
 .agents/skills/*
 .agents/plans/*
 tmp/
+# Wards workbooks are local-only licensed source files.
+/config/parameters/CanSa08*.xls*

@@ -453,7 +453,13 @@ def validate_vehicle_mapping(
 ) -> pd.DataFrame:
     """Validate the human-reviewed mapping without changing its contents."""
     expected = [str(column) for column in rules["mapping_columns"]]
-    if list(mapping.columns) != expected:
+    compact = [str(column) for column in rules.get("reviewed_mapping_columns", [])]
+    if compact and list(mapping.columns) == compact:
+        mapping = mapping.assign(
+            entry_type="mto_crosswalk", mapping_status="reviewed",
+            match_method="reviewed_identity_and_applicability", supporting_rating_rows="",
+        ).loc[:, expected]
+    elif list(mapping.columns) != expected:
         raise ValueError(
             "vehicle_size_class_map.csv columns differ from the reviewed schema: "
             f"{list(mapping.columns)} != {expected}"
@@ -497,7 +503,9 @@ def validate_vehicle_mapping(
     if invalid_ranges.any():
         raise ValueError("Reviewed mapping has model_year_from after model_year_to")
 
-    allowed_scopes = {"ldv", "mhdv", "non_ldv_unclassified"}
+    allowed_scopes = {
+        "ldv", "mhdv", "non_ldv_unclassified", "ldv_class_unresolved", "scope_unresolved",
+    }
     validated["vehicle_scope"] = validated["vehicle_scope"].fillna("").astype(str)
     unexpected_scopes = sorted(set(validated["vehicle_scope"]) - allowed_scopes)
     if unexpected_scopes:
@@ -507,16 +515,14 @@ def validate_vehicle_mapping(
         )
     if ~validated.loc[catalog, "vehicle_scope"].eq("ldv").all():
         raise ValueError("Ratings catalogue rows must have vehicle_scope='ldv'")
-    non_ldv = validated["vehicle_scope"].isin(
-        {"mhdv", "non_ldv_unclassified"}
-    )
+    non_ldv = ~validated["vehicle_scope"].eq("ldv")
     hierarchy_columns = [
         "nrcan_vehicle_class",
         "nlr_atb_class",
         "nrcan_ceud_class",
     ]
     if validated.loc[non_ldv, hierarchy_columns].ne("").any().any():
-        raise ValueError("Non-LDV mapping rows must leave the LDV hierarchy blank")
+        raise ValueError("Non-LDV or unresolved-class mapping rows must leave the LDV hierarchy blank")
     if validated.loc[non_ldv, ["canonical_make", "canonical_model"]].eq("").any().any():
         raise ValueError("Non-LDV mapping rows require canonical make/model evidence")
 
@@ -881,22 +887,20 @@ def apply_vehicle_mapping(
         joined["mapping_outcome"].eq("mapped_non_ldv"),
         ["nrcan_vehicle_class", "nlr_atb_class", "nrcan_ceud_class"],
     ] = pd.NA
-    rejected_class_columns = [
-        "canonical_make",
-        "canonical_model",
-        "nrcan_vehicle_class",
-        "nlr_atb_class",
-        "nrcan_ceud_class",
-    ]
+    unresolved_scope = resolved & scope.isin({"ldv_class_unresolved", "scope_unresolved"})
     joined.loc[
         joined["mapping_outcome"].isin({"unmapped", "out_of_scope"}),
-        rejected_class_columns,
+        ["nrcan_vehicle_class", "nlr_atb_class", "nrcan_ceud_class"],
+    ] = pd.NA
+    joined.loc[
+        joined["mapping_outcome"].isin({"unmapped", "out_of_scope"}) & ~unresolved_scope,
+        ["canonical_make", "canonical_model"],
     ] = pd.NA
     # The reviewed crosswalk establishes model identity. Its historical candidate
     # match_method is audit context, not a second production acceptance gate.
     joined["identity_authority"] = ""
-    joined.loc[joined.mapping_accepted, "identity_authority"] = "reviewed_vehicle_size_class_map"
-    joined["identity_supported"] = joined.mapping_accepted
+    joined.loc[resolved, "identity_authority"] = "reviewed_vehicle_size_class_map"
+    joined["identity_supported"] = resolved
     joined["raw_canonical_make"] = joined.canonical_make
     joined["raw_canonical_model"] = joined.canonical_model
     return (
@@ -1104,6 +1108,14 @@ def unresolved_mapping_reasons(
         unresolved.loc[selected, "unresolved_reason"] = reason
         unresolved.loc[selected, "unresolved_reason_detail"] = detail
 
+    for scope, reason in [
+        ("ldv_class_unresolved", "reviewed_family_class_unresolved"),
+        ("scope_unresolved", "reviewed_family_scope_unresolved"),
+    ]:
+        selected = unresolved.get("vehicle_scope", pd.Series("", index=unresolved.index)).eq(scope)
+        unresolved.loc[selected, "unresolved_reason"] = reason
+        notes = unresolved.get("review_notes", pd.Series("", index=unresolved.index))
+        unresolved.loc[selected, "unresolved_reason_detail"] = notes.loc[selected]
     assign(
         suppressed,
         "suppressed_or_unknown_code",

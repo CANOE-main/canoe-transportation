@@ -445,59 +445,94 @@ def composition_detail_frames(diagnostic: LDVEfficiencyDiagnostic, kind: str, *,
 
 
 def _mto_mapping_year_review(diagnostic: LDVEfficiencyDiagnostic) -> pd.DataFrame:
-    """Known reviewed LDV keys missing a year interval; never infer their class."""
+    """Expose every positive MTO observation excluded before ratings matching.
+
+    Other-year identities and mixed-scope keys provide review context only. The
+    native rows remain distinct, including passenger/commercial observations with
+    the same make/model/year; counts are never deduplicated by visible labels.
+    """
     mapped = getattr(diagnostic, "inputs", {}).get("benchmark_mto_mapped", pd.DataFrame())
     if mapped.empty:
         return pd.DataFrame()
     rules = load_harmonization_rules(diagnostic.bundle, "road_aggregation")
     crosswalk = pd.read_csv(resolve_parameter_path(diagnostic.bundle, rules["vehicle_size_class_map_file"]), low_memory=False)
+    # The compact sheet has implicit metadata; older captures have it explicitly.
+    for field, value in (("entry_type", "mto_crosswalk"), ("mapping_status", "reviewed")):
+        if field not in crosswalk:
+            crosswalk[field] = value
     reviewed = crosswalk.loc[crosswalk.entry_type.eq("mto_crosswalk")
         & crosswalk.mapping_status.isin(rules["accepted_mapping_statuses"])].copy()
     keys = ["mto_make_code", "mto_model_code"]
     for field in keys:
         reviewed[field] = reviewed[field].astype(str).str.strip().str.upper()
-    # A key with any reviewed non-LDV scope is deliberately excluded. A reviewed
-    # family elsewhere is context for review, never authority for a missing year.
-    groups = {key: group for key, group in reviewed.groupby(keys, sort=False)
-              if group.vehicle_scope.eq("ldv").all()}
-    pending = mapped.loc[~mapped.mapping_accepted.eq(True) & mapped.mapping_outcome.eq("unmapped")
+    groups = {key: group for key, group in reviewed.groupby(keys, sort=False)}
+    pending = mapped.loc[~mapped.mapping_accepted.eq(True)
                          & pd.to_numeric(mapped.FIT_ACTIVE, errors="raise").gt(0)].copy()
     records = []
     for index, row in pending.iterrows():
         key = (str(row.MAKE).strip().upper(), str(row.MODEL).strip().upper())
         family = groups.get(key)
-        if family is None or (family.model_year_from.le(row.MODEL_YEAR) & family.model_year_to.ge(row.MODEL_YEAR)).any():
-            continue
+        outcome = str(row.mapping_outcome)
+        status = "missing_reviewed_mapping_identity"
+        reason = "No reviewed mapping establishes this MTO make–model key's identity and scope."
+        current = pd.DataFrame()
+        if outcome == "mapped_non_ldv":
+            status = "mapped_non_ldv"
+            reason = "The applicable reviewed mapping identifies a vehicle outside the light-duty estimator."
+        elif outcome == "out_of_scope":
+            status = "outside_mapping_scope"
+            reason = "The source model year is outside the configured reviewed-mapping scope."
+        elif family is not None:
+            applicable = family.model_year_from.le(row.MODEL_YEAR) & family.model_year_to.ge(row.MODEL_YEAR)
+            if not applicable.any():
+                status = "missing_applicable_reviewed_mapping_year"
+                reason = "Reviewed key exists, but no reviewed interval covers this vehicle model year."
+            else:
+                current = family.loc[applicable]
+                scopes = set(current.vehicle_scope)
+                if scopes == {"ldv_class_unresolved"}:
+                    status = "unresolved_reviewed_size_class"
+                    reason = "Reviewed evidence establishes the light-duty family, but not a defensible fine size class."
+                elif "scope_unresolved" in scopes:
+                    status = "unresolved_reviewed_vehicle_scope"
+                    reason = "Reviewed evidence identifies the broad vehicle family, but not its light-duty or numbered-truck scope."
+                else:
+                    status = "unresolved_mapping_identity"
+                    reason = "A reviewed interval exists, but this captured observation has no accepted mapping; reconcile its mapping outcome."
+                notes = _joined(current.review_notes) if "review_notes" in current else ""
+                if notes and status in {"unresolved_reviewed_size_class", "unresolved_reviewed_vehicle_scope"}:
+                    reason += " " + notes
         record = row.to_dict()
-        record.update(empirical_observation_id=f"mto_mapping_year:{row.report_year}:{index}",
+        record.update(empirical_observation_id=f"mto_mapping:{row.report_year}:{index}",
             source_kind="mto", province="ON", year=int(row.MODEL_YEAR), source_count=float(row.FIT_ACTIVE),
+            composition_basis="observed_model_year_stock", source_model_years=str(int(row.MODEL_YEAR)),
             raw_make=row.MAKE, raw_model=row.MODEL, family_make="", family_model="", rating_class="", resolved_powertrain="",
-            selected=False, match_status="missing_applicable_reviewed_mapping_year", selection_status="excluded_before_rating_matching",
-            candidate_families=_joined(family.canonical_make.astype(str) + " / " + family.canonical_model.astype(str)),
-            candidate_rating_classes=_joined(family.nrcan_vehicle_class), candidate_powertrains="",
-            reviewed_mapping_year_intervals=_joined(family.model_year_from.map(lambda value: str(int(value)))
-                + "–" + family.model_year_to.map(lambda value: str(int(value)))),
-            identity_exclusion_reason="Reviewed LDV key exists, but no reviewed interval covers this vehicle model year.",
-            identity_support_reason="Other reviewed years provide context only; no applicable-year identity is assigned.",
-            review_kind="Unresolved identity / configuration",
-            recommended_handling="Review a year-specific crosswalk entry; do not extend the reviewed identity or class automatically.")
+            selected=False, match_status=status, selection_status="excluded_before_rating_matching", match_reason=reason,
+            candidate_families="", candidate_rating_classes="", candidate_powertrains="", reviewed_mapping_year_intervals="", reviewed_identity="",
+            identity_exclusion_reason=reason,
+            identity_support_reason="Other reviewed intervals are context only; no target-year class or propulsion is inferred.")
+        if family is not None:
+            record.update(candidate_families=_joined(family.canonical_make.fillna("").astype(str) + " / " + family.canonical_model.fillna("").astype(str)),
+                candidate_rating_classes=_joined(family.nrcan_vehicle_class),
+                reviewed_mapping_year_intervals=_joined(family.model_year_from.map(lambda value: str(int(value)))
+                    + "–" + family.model_year_to.map(lambda value: str(int(value)))),
+                reviewed_mapping_scopes=_joined(family.vehicle_scope))
+        if not current.empty and status in {"unresolved_reviewed_size_class", "unresolved_reviewed_vehicle_scope"}:
+            record.update(family_make=_joined(current.canonical_make), family_model=_joined(current.canonical_model),
+                reviewed_identity=_joined(current.canonical_make.fillna("").astype(str) + " / " + current.canonical_model.fillna("").astype(str)),
+                identity_support_reason="The applicable reviewed interval supports this family identity; its size class or vehicle scope remains unresolved.")
         records.append(record)
     return pd.DataFrame(records)
 
 
 def composition_review_cases(diagnostic: LDVEfficiencyDiagnostic) -> pd.DataFrame:
-    """Expose unresolved identities and retained median representatives for review.
-
-    Each row remains one captured observation/cohort allocation; proxy windows and
-    shared geographic pools are not additive independent vehicle populations.
-    """
+    """Explain captured applications; source exposure is summarized separately."""
     rows = diagnostic.frames["composition_observations"].copy()
     status = rows.get("match_status", pd.Series("", index=rows.index, dtype=str)).fillna("")
     rows["match_status"] = status
     resolved = status.str.startswith("resolved")
-    administrative = status.isin(["outside_supported_program_window", "unsupported_transaction_type", "unsupported_observed_powertrain"])
     variants = pd.to_numeric(rows.get("matched_variant_count", pd.Series(0, index=rows.index)), errors="coerce")
-    review = rows.loc[(~resolved & ~administrative) | (resolved & variants.gt(1))].copy()
+    review = rows.loc[~resolved | variants.gt(1)].copy()
     unresolved = ~review.match_status.fillna("").str.startswith("resolved")
     review["review_kind"] = np.where(unresolved, "Unresolved identity / configuration", "Retained family-median representative")
     review["recommended_handling"] = np.where(unresolved,
@@ -511,8 +546,121 @@ def composition_review_cases(diagnostic: LDVEfficiencyDiagnostic) -> pd.DataFram
         review = pd.concat([review, missing_years], ignore_index=True)
     if review.empty:
         return review
-    fields = [field for field in ("source_kind", "year", "province", "rating_class", "resolved_powertrain", "source_count") if field in review]
-    return review.sort_values(fields, ascending=[False if field == "source_count" else True for field in fields], kind="stable")
+    ratings = getattr(diagnostic, "inputs", {}).get("ratings", pd.DataFrame())
+    first_rating_year = pd.to_numeric(ratings.get("year", pd.Series(dtype=float)), errors="coerce").min()
+    explanations = [_composition_case_explanation(row, first_rating_year) for row in review.to_dict("records")]
+    review["review_kind"] = [item[0] for item in explanations]
+    review["review_reason"] = [item[1] for item in explanations]
+    review["recommended_handling"] = [item[2] for item in explanations]
+    # Regional recipients repeat the same source observation; preserve those
+    # applications here and remove repetition only in the exposure summary.
+    return review.sort_values("source_count", ascending=False, kind="stable")
+
+
+def _composition_case_explanation(row: dict, first_rating_year: float) -> tuple[str, str, str]:
+    """Use production findings without treating a missing rating as nonexistence."""
+    status = str(row.get("match_status", ""))
+    specific = row.get("match_reason", row.get("matching_reason", ""))
+    specific = str(specific) if pd.notna(specific) else ""
+    if status.startswith("resolved"):
+        selected = row.get("selected", False)
+        handling = ("Leave as is: each source count uses its compatible family's median consumption and median range."
+                    if pd.notna(selected) and bool(selected) else
+                    "Retain the recorded selection policy; this available family median has no empirical weight here.")
+        return "Retained family-median representative", specific or "Family identity is supported; trim composition is unspecified.", handling
+    reasons = {
+        "outside_supported_program_window": ("Outside the configured iZEV model-year window.", "Retain the configured program window."),
+        "unsupported_transaction_type": ("The transaction is outside the configured eligible purchase/lease types.", "Retain the configured transaction eligibility."),
+        "unsupported_observed_powertrain": ("The observed propulsion is outside the BEV/PHEV acquisition estimator.", "Retain the propulsion exclusion."),
+        "missing_applicable_reviewed_mapping_year": ("No applicable reviewed mapping interval covers this MTO model year.", "Review year-specific identity evidence; do not extend another interval automatically."),
+        "missing_reviewed_mapping_identity": ("No reviewed mapping establishes this MTO make–model key's identity and scope.", "Review the raw manufacturer/model code and year evidence before assigning an identity or class."),
+        "unresolved_reviewed_size_class": ("Reviewed evidence establishes the light-duty family, but not a defensible fine size class.", "Review the applicable model-year/body size-class evidence; retain the supported family identity without allocating a class."),
+        "unresolved_reviewed_vehicle_scope": ("Reviewed evidence identifies a broad family without establishing light-duty or numbered-truck scope.", "Review numbered-family, body and GVWR evidence; similar consumption cannot establish truck scope."),
+        "mapped_non_ldv": ("The applicable reviewed mapping identifies a vehicle outside the light-duty estimator.", "Retain the reviewed non-light-duty exclusion."),
+        "outside_mapping_scope": ("The source model year is outside the configured reviewed-mapping scope.", "Retain the configured mapping scope; source observations remain intact."),
+        "unresolved_mapping_identity": ("The mapping does not establish one supported make–model family and scope.", "Review the mapping's identity evidence and scope before allocation."),
+        "ambiguous_model_family": ("More than one make–model family remains compatible with the observation.", "Resolve family identity using year and scope evidence; trim similarity alone is insufficient."),
+        "ambiguous_rating_class": ("Eligible configurations retain conflicting size/body classes.", "Review the target-year body/class evidence before choosing a representative."),
+        "conflicting_reviewed_rating_class": ("The eligible target-year family class conflicts with the authoritative mapped interval.", "Review the mapping interval and target-year body/class evidence; do not override the reviewed class automatically."),
+        "ambiguous_powertrain_evidence": ("Available configuration evidence does not distinguish conventional gasoline from hybrid propulsion.", "Review year/configuration HEV evidence; fuel code alone does not decide propulsion."),
+        "unresolved_propulsion_evidence": ("Target-year ratings exist, but complementary configuration evidence does not establish conventional gasoline.", "Review year/configuration HEV evidence and source identity correspondence; X/Z fuel codes alone do not establish propulsion."),
+        "ambiguous_powertrain_or_range": ("Compatible candidates retain conflicting propulsion or range evidence.", "Review explicit propulsion/configuration evidence before allocation."),
+        "conflicting_or_unverified_configuration": ("The explicit configuration conflicts with available target-year ratings.", "Review the observation's explicit configuration against the captured ratings."),
+        "material_consumption_dispersion": ("Compatible configurations vary too widely for the configured family representative.", "Retain the catalogue fallback unless evidence supports a narrower configuration scope."),
+        "family_consumption_heterogeneity": ("Compatible configurations vary too widely for the configured family representative.", "Retain the catalogue fallback unless evidence supports a narrower configuration scope."),
+        "ineligible_for_estimator": ("The supported vehicle is ineligible for this estimator's propulsion/fuel scope.", "Retain the estimator exclusion."),
+        "ineligible_observed_propulsion": ("The supported vehicle is ineligible for this estimator's propulsion/fuel scope.", "Retain the estimator exclusion."),
+        "target_year_rating_unavailable": ("The family is supported, but no eligible target-year NRCan rating is available.", "Retain the catalogue fallback; a missing rating does not establish model nonexistence."),
+        "unverified_model_family": ("Name similarity finds possible families without establishing identity.", "Review manufacturer, year and scope evidence before assigning the family."),
+        "incompatible_model_year": ("Identity evidence places the model/configuration outside this target model year.", "Review the MTO identity/year assignment; preserve the source observation."),
+    }
+    reason, handling = reasons.get(status, (
+        "No eligible target-year NRCan rating matches this observation; catalogue absence alone does not establish nonexistence.",
+        "Check the captured target-year catalogue, family identity and estimator eligibility; retain the fallback."))
+    if specific:
+        reason = specific
+    elif status == "unresolved_mapping_identity" and pd.notna(row.get("identity_exclusion_reason")) and row.get("identity_exclusion_reason"):
+        reason = str(row["identity_exclusion_reason"])
+    elif status == "conflicting_or_unverified_configuration" and row.get("configuration_status"):
+        reason += " " + str(row["configuration_status"]).replace("_", " ") + "."
+    category = "Actionable matching issue"
+    if status in {"outside_supported_program_window", "unsupported_transaction_type", "unsupported_observed_powertrain", "ineligible_for_estimator", "ineligible_observed_propulsion", "mapped_non_ldv", "outside_mapping_scope"}:
+        category = "Expected exclusion"
+    elif row.get("composition_basis") == "historical_pooled_model_year_window":
+        category = "Historical proxy limitation"
+        handling = "Retain only target-year-compatible proxy families; this does not diagnose the family's own-year iZEV matching."
+    elif (status in {"unmatched_ratings", "target_year_rating_unavailable"}
+          and pd.notna(first_rating_year) and row.get("year", first_rating_year) < first_rating_year):
+        category = "Historical catalogue limitation"
+        reason = f"Target MY precedes the captured NRCan catalogue (first MY {int(first_rating_year)})."
+        handling = "Retain the historical coverage limitation and configured fallback."
+    return category, reason, handling
+
+
+def composition_review_summary(review: pd.DataFrame) -> pd.DataFrame:
+    """Rank source-family issues without adding repeated target/pool applications.
+
+    Own-year rows identify disjoint source-year counts. Historical proxies are a
+    separate population: a pooled count is counted once across its target years,
+    never added to own-year counts. Identical native transaction rows have already
+    contributed their full counts to each captured source observation.
+    """
+    if review.empty:
+        return review.copy()
+    rows = review.copy()
+    defaults = {"raw_make": "", "raw_model": "", "province": "", "family_make": "", "family_model": "",
+                "observed_powertrain": "", "composition_basis": "", "source_model_years": ""}
+    for field, default in defaults.items():
+        rows[field] = rows.get(field, pd.Series(default, index=rows.index)).fillna(default)
+    rows["exposure_basis"] = np.where(rows.composition_basis.eq("historical_pooled_model_year_window"),
+        "Pooled source window; separate from own-year counts", "Own-year source observations")
+    keys = ["review_kind", "source_kind", "province", "raw_make", "raw_model", "observed_powertrain", "exposure_basis"]
+    records = []
+    for key, group in rows.groupby(keys, sort=False, dropna=False):
+        item = dict(zip(keys, key, strict=True))
+        applications = group.drop_duplicates(["empirical_observation_id", "year"])
+        pooled = applications.composition_basis.eq("historical_pooled_model_year_window")
+        native = applications.loc[~pooled].drop_duplicates("empirical_observation_id")
+        exposure = native.source_count.sum() if not native.empty else applications.source_count.max()
+        item.update(source_count_exposure=float(exposure), target_model_years=_review_year_intervals(group.year),
+            source_model_years=_joined(group.source_model_years), target_applications=len(applications),
+            review_reason=_joined(group.review_reason), recommended_handling=_joined(group.recommended_handling))
+        for field in ("reviewed_identity", "candidate_families", "candidate_rating_classes", "reviewed_mapping_year_intervals", "reviewed_mapping_scopes"):
+            if field in group:
+                item[field] = _joined(group[field].dropna())
+        records.append(item)
+    return pd.DataFrame(records).sort_values("source_count_exposure", ascending=False, kind="stable").reset_index(drop=True)
+
+
+def _review_year_intervals(years: pd.Series) -> str:
+    ordered = sorted({int(year) for year in years if pd.notna(year)})
+    intervals = []
+    for year in ordered:
+        if intervals and year == intervals[-1][1] + 1:
+            intervals[-1][1] = year
+        else:
+            intervals.append([year, year])
+    return ", ".join(str(first) if first == last else f"{first}–{last}" for first, last in intervals)
 
 
 def _class_rating_audit(bundle: ConfigBundle, audit: pd.DataFrame, atb_class: str) -> pd.DataFrame:
@@ -1161,7 +1309,9 @@ def load_diagnostic(*, repo_root: Path | None = None) -> LDVEfficiencyDiagnostic
 
     recorded = load_notebook_evidence("efficiency", repo_root=repo_root)
     policy = load_harmonization_rules(recorded.bundle, "efficiencies")["ratings"]["composition"]
-    if policy.get("variant_allocation") != "family_median" or policy.get("family_statistic") != "median":
+    family_policy = policy.get("family_matching", {})
+    if (policy.get("variant_allocation") != "family_median" or policy.get("family_statistic") != "median"
+            or not {"class_resolution", "consumption_dispersion"}.issubset(family_policy)):
         raise ValueError("Recorded efficiency evidence predates the production family-median matching method. "
                          "Rebuild the evidence explicitly, then reload this notebook: "
                          + prepare_command(recorded.bundle.repo_root))

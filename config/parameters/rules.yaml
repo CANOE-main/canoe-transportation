@@ -1218,6 +1218,20 @@ parameterization:
         WEST: Western Star
         WRKH: Workhorse
         WSTR: Western Star
+    # Compact reviewed authority; constant generator metadata stays in evidence outputs.
+    reviewed_mapping_columns:
+      - mto_make_code
+      - mto_model_code
+      - model_year_from
+      - model_year_to
+      - canonical_make
+      - canonical_model
+      - vehicle_scope
+      - nrcan_vehicle_class
+      - nlr_atb_class
+      - nrcan_ceud_class
+      - evidence_source
+      - review_notes
     mapping_columns:
       - entry_type
       - mto_make_code
@@ -1835,15 +1849,79 @@ parameterization:
         family_matching:
           minimum_similarity: 0.90
           minimum_family_margin: 0.08
+          # Same-year distinct configurations, never observed market shares.
+          # Only minor differences inside one body group may use a predominant
+          # class; reviewed MTO class and explicit body evidence must agree.
+          class_resolution:
+            minimum_predominant_share: 0.8
+            compatible_class_groups:
+              - ['Sport utility vehicle: Small', 'Sport utility vehicle: Standard']
+              - ['Pickup truck: Small', 'Pickup truck: Standard']
+              - [Minicompact, Subcompact, Compact, Mid-size, Full-size]
+              - ['Station wagon: Small', 'Station wagon: Mid-size']
+          # Central 80% consumption spread relative to the median. This is a
+          # permissive representativeness screen, not sampling uncertainty.
+          consumption_dispersion:
+            maximum_relative_p90_p10_span: 0.5
           # Generate candidate families; explicit year/class/fuel/config conflicts
           # cannot be overruled by a text score. Numeric model identities stay intact.
           trim_suffix_patterns:
+            - '(?i)\s+(?:\(FFV\)|FFV)$'
+            - '(?i)\s+\((?:ISG|ISS|i-ELOOP|Cylinder\s+Deactivation|SIDI(?:\s+with\s+(?:Start[- /]?Stop|Stop[- /]?Start)(?:\s+System)?)?|GDI|MPI|(?:(?:No|Without)\s+)?(?:AFM|DFM|DMS)|(?:Fuel\s*Saver\s*)?MDS|(?:LE2|LUV)\s+Engine|EcoBoost|Supercharged|Turbo(?:\s+Plus)?|ULEV)\)$'
+            - '(?i)\s+\((?:(?:(?:No|Without)\s+)?(?:Start[- /]?Stop|Stop[- /]?Start)(?:\s+System)?|SIL|Autostick|With\s+Sport\s+Mode|Part-Time\s+4WD|High\s+(?:Output|Performance|Power)|Low\s+Power|Import|modified|Refresh|LFP|Range\s+Setup|pre-\d{1,2}/\d{1,2}(?:/\d{2})?)\)$'
+            - '(?i)\s+\((?:\d+(?:\.\d+)?(?:/\d+(?:\.\d+)?)?\s*(?:Ah|kWh)(?:\s+pre-\d{1,2}/\d{1,2}(?:/\d{2})?)?|\d+(?:\.\d+)?\s*kW(?:\s+Charger)?|20M\s+Battery|\d+[- ]?mode|Performance\s+Battery(?:\s+Plus)?(?:,\s*\d+"\s+AS\s+Tire)?)\)$'
+            - '(?i)\s+\((?:\d+"(?:\s+(?:and|or)\s+\d+")?\s+(?:(?:Aero\s+Design|All-Season|Nexen|Goodyear)\s+)?(?:Wheels|Tire)(?:\s+(?:AT|UHP))?|(?:All-Terrain|Falken|Pirelli|Performance)\s+Tire|LT\s+Tire\s+Pkg|Payload\s+Pkg|Performance(?:\s+(?:Pack|Pkg))?|(?:Long|Extended|Standard)\s+Range)\)$'
+            - '(?i)\s+(?:LE|SE|XLE|XSE|Limited|Premium|Platinum|SR|SV|SL|Sport|S|GT|LX|EX)(?:/(?:LE|SE|XLE|XSE|Limited|Premium|Platinum|SR|SV|SL|Sport|S|GT|LX|EX))+$'
             - '(?i)\s+(?:AWD|FWD|RWD|4WD|4X4|2WD|QUATTRO|4MATIC|XDRIVE|ALL4)$'
             - '(?i)\s+(?:Standard Range(?: Plus)?|Long Range|Extended Range|Short Range|Performance|High Power|Low Power)$'
-            - '(?i)\s+\((?:High Power|Low Power|Long Range|Extended Range|Standard Range|Performance)\)$'
             - '(?i)\s+(?:Turbo|Supercharged|Limited|Platinum|Ultimate|Preferred|Touring|Denali|Premier|Premium)$'
             - '(?i)\s+\d+(?:\.\d+)?\s*L(?:\s+Turbo)?$'
+            - '(?i)\s+(?:A[- ]?SPEC|SH[- ]?AWD|Elite|Technology|Tech|Advance|Base|Sport|LX|EX|EX-L|LE|SE|XLE|XSE|XSE Premium|TRD|SR|SV|SL|S|GT|GT-Line|GT-Line Package [12]|Wind|Land|Light|Wave|Venture\+|Evolve\+|Engage\+|Platinum\+|Empower\+|Evolve|Engage|Platinum|e-4ORCE|e-4ORCE [A-Z]+|V6)$'
           family_patterns:
+            - {make: Subaru, pattern: '(?i)^Outback\s+Sport\b.*$', canonical_model: Outback Sport}
+            - {make: Mitsubishi, pattern: '(?i)^Outlander\s+Sport\b.*$', canonical_model: Outlander Sport}
+            - {make: Nissan, pattern: '(?i)^Rogue\s+Sport\b.*$', canonical_model: Rogue Sport}
+            - {make: Ford, pattern: '(?i)^Bronco\s+Sport\b.*$', canonical_model: Bronco Sport}
+            - {make: Land Rover, pattern: '(?i)^Range\s+Rover\s+Sport\b.*$', canonical_model: Range Rover Sport}
+            # Power codes share one annual family vote; explicit body/generation
+            # identities remain separate, and raw labels retain trim constraints.
+            - {make: Jaguar, pattern: '(?i)^F[- ]?PACE(?:\s+(?:P\d{3}e?|20d|25t|30t|35t|S|SVR))*$', canonical_model: F-PACE}
+            - {make: Land Rover, pattern: '(?i)^Range\s+Rover\s+Velar(?:\s+(?:[PD]\d{3}|SVAutobiography|Dynamic))*$', canonical_model: Range Rover Velar}
+            - {make: Land Rover, pattern: '(?i)^New\s+Range\s+Rover(?:\s+P\d{3})?\s+LWB$', canonical_model: New Range Rover LWB}
+            - {make: Land Rover, pattern: '(?i)^New\s+Range\s+Rover(?:\s+P\d{3})?$', canonical_model: New Range Rover}
+            - {make: Land Rover, pattern: '(?i)^Range\s+Rover(?:\s+(?:P\d{3}(?:/P\d{3})?|SV))*\s+LWB$', canonical_model: Range Rover LWB}
+            - {make: Land Rover, pattern: '(?i)^Range\s+Rover(?:\s+(?:P\d{3}(?:/P\d{3})?|SV))*$', canonical_model: Range Rover}
+            - {make: Land Rover, pattern: '(?i)^Defender\s+90(?:\s+(?:P\d{3}|V8|5\.0L))*$', canonical_model: Defender 90}
+            - {make: Land Rover, pattern: '(?i)^Defender\s+110(?:\s+(?:P\d{3}(?:/P\d{3})?|V8|5\.0L|OCTA))*$', canonical_model: Defender 110}
+            - {make: Land Rover, pattern: '(?i)^Defender\s+130(?:\s+(?:P\d{3}|V8|Outbound))*$', canonical_model: Defender 130}
+            - {make: Hyundai, pattern: '(?i)^Santa\s+Fe\s+Sport\b.*$', canonical_model: Santa Fe Sport}
+            - {make: Hyundai, pattern: '(?i)^Elantra\s+Touring\b.*$', canonical_model: Elantra Touring}
+            - {make: Hyundai, pattern: '(?i)^Elantra\s+GT\b.*$', canonical_model: Elantra GT}
+            - {make: Hyundai, pattern: '(?i)^Elantra$', canonical_model: Elantra}
+            - {make: Ford, pattern: '(?i)^F[- ]?150\s+Lightning\b.*$', canonical_model: F-150 Lightning}
+            - {make: Ford, pattern: '(?i)^F[- ]?150\b(?!.*Lightning).*$', canonical_model: F-150}
+            - {make: Dodge, pattern: '(?i)^Ram\s+1500\b.*$', canonical_model: Ram 1500}
+            - {make: Acura, pattern: '(?i)^RDX\b.*$', canonical_model: RDX}
+            - {make: Acura, pattern: '(?i)^MDX\b.*$', canonical_model: MDX}
+            - {make: Toyota, pattern: '(?i)^Camry\b(?!.*Hybrid).*$', canonical_model: Camry}
+            - {make: Toyota, pattern: '(?i)^RAV4\b(?!.*(?:Hybrid|Prime|PHEV|Plug[- ]?in|\bEV\b)).*$', canonical_model: RAV4}
+            - {make: Nissan, pattern: '(?i)^Altima\b(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$', canonical_model: Altima}
+            - {make: Nissan, pattern: '(?i)^Sentra\b(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$', canonical_model: Sentra}
+            - {make: Nissan, pattern: '(?i)^Rogue\b(?!\s+Sport\b)(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$', canonical_model: Rogue}
+            - {make: Nissan, pattern: '(?i)^LEAF\b.*$', canonical_model: LEAF}
+            - {make: Nissan, pattern: '(?i)^ARIYA\b.*$', canonical_model: ARIYA}
+            - {make: Kia, pattern: '(?i)^EV6\b.*$', canonical_model: EV6}
+            - {make: Kia, pattern: '(?i)^EV9\b.*$', canonical_model: EV9}
+            - {make: Mazda, pattern: '(?i)^(?:Mazda\s*)?3\b.*$', canonical_model: Mazda3}
+            - {make: Volkswagen, pattern: '(?i)^Atlas\s+Cross\s+Sport\b.*$', canonical_model: Atlas Cross Sport}
+            - {make: Volkswagen, pattern: '(?i)^Atlas\b(?!.*Cross\s+Sport).*$', canonical_model: Atlas}
+            - {make: Volkswagen, pattern: '(?i)^Tiguan\b.*$', canonical_model: Tiguan}
+            - {make: Audi, pattern: '(?i)^Q3\b.*$', canonical_model: Q3}
+            - {make: Audi, pattern: '(?i)^Q8\b(?!.*e[- ]?tron).*$', canonical_model: Q8}
+            - {make: Toyota, pattern: '(?i)^Corolla\s+Hatchback\b.*$', canonical_model: Corolla Hatchback}
+            - {make: Toyota, pattern: '(?i)^Corolla\s+Cross\b(?!.*Hybrid).*$', canonical_model: Corolla Cross}
+            - {make: Toyota, pattern: '(?i)^Corolla\b(?!.*(?:Cross|Hatchback|Hybrid)).*$', canonical_model: Corolla}
+            - {make: Ram, pattern: '(?i)^1500\b.*$', canonical_model: '1500'}
             - {make: Tesla, pattern: '(?i)^Model\s*3\b.*$', canonical_model: Model 3}
             - {make: Tesla, pattern: '(?i)^Model\s*Y\b.*$', canonical_model: Model Y}
             - {make: Tesla, pattern: '(?i)^Model\s*S\b.*$', canonical_model: Model S}
@@ -1852,18 +1930,30 @@ parameterization:
             - {make: BMW, pattern: '(?i)^i4\b.*$', canonical_model: i4}
             - {make: BMW, pattern: '(?i)^i3\b.*$', canonical_model: i3}
             - {make: BMW, pattern: '(?i)^X3\b.*$', canonical_model: X3}
+            - {make: BMW, pattern: '(?i)^X5(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive|\d\.\d(?:si|is|i)?))*$', canonical_model: X5}
+            - {make: BMW, pattern: '(?i)^X6(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive))*$', canonical_model: X6}
+            - {make: BMW, pattern: '(?i)^X7(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive))*$', canonical_model: X7}
+            - {make: BMW, pattern: '(?i)^Z4(?:\s+(?:sDrive\d{2}i|M\d{2}i))*$', canonical_model: Z4}
             - {make: Polestar, pattern: '(?i)^2\b.*$', canonical_model: '2'}
             - {make: VinFast, pattern: '(?i)^VF\s*8\b.*$', canonical_model: VF8}
             - {make: Fisker, pattern: '(?i)^Ocean\b.*$', canonical_model: Ocean}
             - {make: Mercedes-Benz, pattern: '(?i)^EQB\b.*$', canonical_model: EQB}
+            - {make: Mercedes-Benz, pattern: '(?i)^CLE(?:\s+\d{3})?(?:\s+4MATIC)?\s+Coupe$', canonical_model: CLE Coupe}
+            - {make: Mercedes-Benz, pattern: '(?i)^CLE(?:\s+\d{3})?(?:\s+4MATIC)?\s+Cabriolet$', canonical_model: CLE Cabriolet}
+            - {make: Mercedes-Benz, pattern: '(?i)^(?:AMG\s+)?GLC(?:\s+(?:\d{2,3}e?|S|4MATIC\+?|E|PERFORMANCE))*\s+Coupe$', canonical_model: GLC Coupe}
+            - {make: Mercedes-Benz, pattern: '(?i)^(?:AMG\s+)?GLC(?:\s+(?:\d{2,3}e?|S|4MATIC\+?|E|PERFORMANCE))*(?:\s+SUV)?$', canonical_model: GLC}
+            - {make: Mercedes-Benz, pattern: '(?i)^GLS(?:\s+(?:\d{3}|4MATIC|SUV))*$', canonical_model: GLS}
             - {make: Volvo, pattern: '(?i)^V60(?:\s+(?:T8|AWD|Recharge|Plug[ -]?in Hybrid|PHEV|Polestar Engineered))*$', canonical_model: V60}
             - {make: Volvo, pattern: '(?i)^S60(?:\s+(?:T8|AWD|Recharge|Plug[ -]?in Hybrid|PHEV|Polestar Engineered))*$', canonical_model: S60}
             - {make: Volvo, pattern: '(?i)^XC60\b.*$', canonical_model: XC60}
+            - {make: Volvo, pattern: '(?i)^XC90\b.*$', canonical_model: XC90}
             - {make: Kia, pattern: '(?i)^Soul\s+(?:EV|Electric)\b.*$', canonical_model: Soul EV}
             - {make: Audi, pattern: '(?i)^Q4\s+(?:\d+\s+)?(?:Sportback\s+e[- ]?tron|e[- ]?tron\s+Sportback)\b.*$', canonical_model: Q4 Sportback e-tron}
             - {make: Audi, pattern: '(?i)^Q4\s+(?:\d+\s+)?e[- ]?tron\b(?!.*Sportback).*$', canonical_model: Q4 e-tron}
             - {make: Audi, pattern: '(?i)^(?:RS\s+)?e[- ]?tron\s+GT\b.*$', canonical_model: e-tron GT}
             - {make: Ford, pattern: '(?i)^(?:Mustang\s+)?Mach[- ]?E\b.*$', canonical_model: Mustang Mach-E}
+            - {make: Dodge, pattern: '(?i)^(?:Grand\s+)?Caravan\b.*$', canonical_model: Caravan}
+            - {make: Dodge, pattern: '(?i)^Charger\s+Daytona\b.*$', canonical_model: Charger Daytona}
             - {make: Hyundai, pattern: '(?i)^Kona\s+(?:EV|Electric)\b.*$', canonical_model: Kona Electric}
             - {make: Hyundai, pattern: '(?i)^Tucson\s+(?:PHEV|Plug[- ]?in Hybrid)\b.*$', canonical_model: Tucson Plug-in Hybrid}
             - {make: Hyundai, pattern: '(?i)^Santa Fe\s+(?:PHEV|Plug[- ]?in Hybrid)\b.*$', canonical_model: Santa Fe Plug-in Hybrid}
@@ -1885,11 +1975,9 @@ parameterization:
             - {make: Porsche, pattern: '(?i)^Taycan\b.*\bCross\s+Turismo\b.*$', canonical_model: Taycan Cross Turismo}
             - {make: Porsche, pattern: '(?i)^Taycan\b.*\bSport\s+Turismo\b.*$', canonical_model: Taycan Sport Turismo}
             - {make: Porsche, pattern: '(?i)^Taycan\b(?!.*(?:Cross|Sport)\s+Turismo).*$', canonical_model: Taycan}
-        unresolved_mto_cohorts:
-          - key: HOND/CIV
-            model_year_from: 2021
-            model_year_to: 2025
-            reason: Reviewed Civic 5Dr Full-size mapping does not establish compatible hatchback/sedan size-class evidence for consumption weighting.
+            - {make: Porsche, pattern: '(?i)^(?:718\s+)?Boxster\b.*$', canonical_model: Boxster}
+            - {make: Porsche, pattern: '(?i)^(?:718\s+)?Cayman\b.*$', canonical_model: Cayman}
+        unresolved_mto_cohorts: []
         aliases:
           - {make: Mazda, canonical_model: Mazda3, models: ['3', Mazda3]}
           - {make: Mazda, canonical_model: Mazda2, models: ['2', Mazda2]}
@@ -1915,6 +2003,12 @@ parameterization:
           - {"make":"Subaru","canonical_model":"Crosstrek Hybrid AWD","models":["Crosstrek Plug-In Hybrid"]}
           - {"make":"MINI","canonical_model":"Cooper SE 3 Door","models":["3 Door","3 Door Hatch"]}
           - {"make":"MINI","canonical_model":"Cooper SE Countryman ALL4","models":["Countryman","Countryman All4"]}
+        # Source-reported propulsion qualifies these observation names only;
+        # native Ratings and MTO identities do not use this translation.
+        izev_observation_aliases_by_powertrain:
+          bev:
+            - {make: MINI, canonical_model: Cooper SE 3 Door, models: [Cooper SE], exact_only: true}
+            - {make: Dodge, canonical_model: Charger Daytona, models: [Charger], exact_only: true}
         variant_identity_columns: [Model, Engine size (L), Cylinders, Transmission, Motor (kW), Fuel type, Fuel type 1, Fuel type 2, native_consumption, consumption_mj_per_vkm, native_unit, range_km]
       fields:
         year: Model year
@@ -1929,12 +2023,63 @@ parameterization:
         phev_fuel: Fuel type 2
       fuel_codes: {X: gasoline, Z: gasoline, D: diesel, E: ethanol, N: cng}
       excluded_fuels: [ethanol]
-      hybrid_pattern: '(?i)hybrid'
+      hybrid_pattern: '(?i)\b(?:hybrid|MHEV|eTorque)\b'
       evidence_source: fueleconomy_gov_vehicle_data
-      evidence_columns: [year, make, model, atvType]
+      evidence_columns: [year, make, model, atvType, displ, cylinders, drive, fuelType1, trany]
       hybrid_evidence_label: Hybrid
-      evidence_join: exact_normalized_year_make_model
-      ambiguous_evidence: retain_name_rule_and_report
+      evidence_join: compatible_year_family_configuration
+      hybrid_configuration_evidence:
+        numeric_fields: {'Engine size (L)': displ, Cylinders: cylinders}
+        displacement_tolerance_l: 0.05
+        # The conventional NRCan resource covers combustion and non-plug-in
+        # hybrids; PEVs have separate resources. Preserve mixed HEV/ICE evidence.
+        excluded_epa_technologies: [EV, Plug-in Hybrid]
+        identity_signal_pattern: '(?i)\b(?:hybrid|MHEV|eTorque|FFV)\b'
+        model_aliases:
+          # Propulsion evidence only: regional names, with same-year physical
+          # configuration checks. No EPA consumption or MTO identity transfer.
+          # Mitsubishi groups ASX/OUTLANDER SPORT/RVR: https://www.mitsubishi-motors.com/en/products/
+          - {make: Mitsubishi, pattern: '(?i)^(?:RVR|Outlander Sport)$', canonical_model: Outlander Sport, model_year_from: 2011}
+          # Canadian MY2021 launch and paired US Voyager specifications:
+          # https://media.stellantisnorthamerica.com/newsrelease.do?id=21857&mid=193
+          # https://media.stellantisnorthamerica.com/newsrelease.do?id=22923
+          - {make: Chrysler, pattern: '(?i)^(?:Grand Caravan|Voyager)$', canonical_model: Voyager, model_year_from: 2021}
+          # Nissan explicitly pairs US Rogue Sport / Canadian Qashqai:
+          # https://usa.nissannews.com/en-US/releases/nissan-to-expand-propilot-technology-to-additional-models
+          - {make: Nissan, pattern: '(?i)^(?:Qashqai|Rogue Sport)$', canonical_model: Rogue Sport, model_year_from: 2017, model_year_to: 2022}
+          - {make: Ford, pattern: '(?i)^F[- ]?150(?:\s+Pickup)?$', canonical_model: F-150}
+          - {make: Dodge, pattern: '(?i)^(?:Grand\s+)?Caravan(?:/Grand Caravan)?$', canonical_model: Grand Caravan}
+          - {make: Honda, pattern: '(?i)^Civic\s+(?:Sedan|4[- ]?(?:Dr|Door))$', canonical_model: Civic}
+          - {make: GMC, pattern: '(?i)^Sierra\s+(?:1500|C15|K15)(?:\s+Pickup)?$', canonical_model: Sierra 1500}
+          - {make: Chevrolet, pattern: '(?i)^Silverado\s+1500(?:\s+Pickup)?$', canonical_model: Silverado 1500}
+          # MINI USA calls the same 3-door body Hardtop 2 Door. Keep S/JCW/SE
+          # and 5-door/Clubman/Countryman bodies distinct (official 2022 release):
+          # https://www.press.bmwgroup.com/usa/article/detail/T0324990EN_US/
+          - {make: MINI, pattern: '(?i)^Cooper\s+(?:3 Door|Hardtop 2 door)$', canonical_model: Cooper Hardtop, model_year_from: 2015}
+          - {make: MINI, pattern: '(?i)^Cooper S\s+(?:3 Door|Hardtop 2 door)$', canonical_model: Cooper S Hardtop, model_year_from: 2015}
+          - {make: MINI, pattern: '(?i)^John Cooper Works\s+(?:3 Door|Hardtop(?: 2 door)?)$', canonical_model: John Cooper Works Hardtop, model_year_from: 2017}
+        transmission:
+          nrcan_cvt_pattern: '(?i)^AV'
+          epa_cvt_pattern: '(?i)variable|\b(?:AV|CVT)\b'
+          nrcan_manual_pattern: '(?i)^M'
+          epa_manual_pattern: '(?i)^Manual'
+        # For propulsion evidence, AWD/4WD labels both identify driven wheels
+        # on both axles; this does not equate their consumption configurations.
+        # Do not infer driven wheels when omitted.
+        drive_patterns:
+          Front-Wheel Drive: '(?i)\bFWD\b'
+          Rear-Wheel Drive: '(?i)\bRWD\b'
+          Two-Wheel Drive: '(?i)\b2WD\b'
+          All-Wheel Drive: '(?i)\b(?:AWD|quattro|4matic|xDrive|SH-AWD)\b'
+          4-Wheel Drive: '(?i)\b(?:4WD|4x4)\b'
+        compatible_drive_labels:
+          Front-Wheel Drive: [Front-Wheel Drive, 2-Wheel Drive]
+          Rear-Wheel Drive: [Rear-Wheel Drive, 2-Wheel Drive]
+          Two-Wheel Drive: [Front-Wheel Drive, Rear-Wheel Drive, 2-Wheel Drive]
+          All-Wheel Drive: [All-Wheel Drive, 4-Wheel Drive, Part-time 4-Wheel Drive, 4-Wheel or All-Wheel Drive]
+          4-Wheel Drive: [All-Wheel Drive, 4-Wheel Drive, Part-time 4-Wheel Drive, 4-Wheel or All-Wheel Drive]
+        gasoline_fuels: [Regular Gasoline, Premium Gasoline, Midgrade Gasoline]
+        unresolved: exclude_and_report
       normalization_pattern: '[^a-z0-9]'
       range_mapping: omega_bucket_boundaries
       # Retained only as legacy audit labels, separate from the production buckets.

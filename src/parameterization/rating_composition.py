@@ -121,6 +121,18 @@ def normalize_family(make: object, model: object, spec: dict) -> tuple[str, str]
     return tuple(normalize_vehicle_text(value) for value in canonical_family(make, model, spec))
 
 
+def canonical_izev_observation(make: object, model: object, powertrain: str, spec: dict) -> tuple[str, str]:
+    """Resolve an incentive description using its reported propulsion context.
+
+    These aliases translate source observations only. They neither relabel native
+    catalogue rows nor establish propulsion for MTO registrations.
+    """
+    shared = {"aliases": [*spec.get("aliases", []), *spec.get("izev_aliases", [])]}
+    identity = canonical_family(make, model, shared)
+    scoped = spec.get("izev_observation_aliases_by_powertrain", {}).get(powertrain, [])
+    return canonical_family(*identity, {"aliases": scoped}) if scoped else identity
+
+
 def _canonical_labels(make: pd.Series, model: pd.Series, spec: dict) -> list[tuple[str, str]]:
     # The iZEV extract has hundreds of thousands of transactions but only hundreds
     # of labels. Resolve each spelling once instead of repeating alias scans.
@@ -189,6 +201,24 @@ def _validate_policy(spec: dict) -> None:
         value = family_matching.get(field)
         if value is not None and (isinstance(value, bool) or not isfinite(value) or not 0 <= value <= 1):
             raise ValueError(f"Invalid family matching {field}")
+    class_policy = family_matching.get("class_resolution", {})
+    if class_policy:
+        minimum = class_policy.get("minimum_predominant_share")
+        groups = class_policy.get("compatible_class_groups")
+        if (isinstance(minimum, bool) or not isinstance(minimum, (float, int))
+                or not isfinite(minimum) or not .5 < minimum <= 1
+                or not isinstance(groups, list) or not groups
+                or any(not isinstance(group, list) or len(group) < 2
+                       or len(group) != len(set(group))
+                       or any(not isinstance(label, str) or not label.strip() for label in group)
+                       for group in groups)):
+            raise ValueError("Predominant rating class requires a majority threshold and compatible body-class groups")
+    dispersion = family_matching.get("consumption_dispersion", {})
+    if dispersion:
+        maximum = dispersion.get("maximum_relative_p90_p10_span")
+        if (isinstance(maximum, bool) or not isinstance(maximum, (float, int))
+                or not isfinite(maximum) or maximum <= 0):
+            raise ValueError("Family consumption dispersion requires a positive relative P90-P10 span")
     try:
         for pattern in family_matching.get("trim_suffix_patterns", []):
             re.compile(pattern)
@@ -203,6 +233,20 @@ def _validate_policy(spec: dict) -> None:
     if any(not isinstance(alias.get("exact_only", False), bool)
            for alias in [*spec.get("aliases", []), *spec.get("izev_aliases", [])]):
         raise ValueError("Family alias exact_only must be a boolean")
+    observation_aliases = spec.get("izev_observation_aliases_by_powertrain", {})
+    if not isinstance(observation_aliases, dict) or set(observation_aliases) - {"bev", "phev"}:
+        raise ValueError("Observation-only iZEV aliases require a bev/phev dictionary")
+    for aliases in observation_aliases.values():
+        if not isinstance(aliases, list):
+            raise ValueError("Observation-only iZEV aliases must be lists")
+        for alias in aliases:
+            if (not isinstance(alias, dict) or set(alias) - {"make", "canonical_model", "models", "exact_only"}
+                    or any(not isinstance(alias.get(field), str) or not alias[field].strip()
+                           for field in ("make", "canonical_model"))
+                    or not isinstance(alias.get("models"), list) or not alias["models"]
+                    or any(not isinstance(model, str) or not model.strip() for model in alias["models"])
+                    or not isinstance(alias.get("exact_only", False), bool)):
+                raise ValueError("Invalid observation-only iZEV alias identity/models/exact_only")
     pooling = spec["izev_pool_selection"]
     minimum = pooling["minimum_observations"]
     if (pooling.get("method") != "provincial_observation_count" or isinstance(minimum, bool)
@@ -442,13 +486,13 @@ def _observed_families(
     if combined[["raw_make", "raw_model", "province"]].isna().any().any():
         raise ValueError("Empirical composition requires complete make/model and province")
     canonical = _canonical_labels(combined.match_make, combined.match_model, spec)
-    if spec.get("izev_aliases"):
-        izev_spec = {**spec, "aliases": [*spec.get("aliases", []), *spec["izev_aliases"]]}
+    if spec.get("izev_aliases") or spec.get("izev_observation_aliases_by_powertrain"):
         incentive_rows = combined.source_kind.eq("izev")
-        translated = _canonical_labels(combined.loc[incentive_rows, "raw_make"],
-                                       combined.loc[incentive_rows, "raw_model"], izev_spec)
-        for index, identity in zip(combined.index[incentive_rows], translated, strict=True):
-            canonical[index] = identity
+        descriptions = list(combined.loc[incentive_rows, ["raw_make", "raw_model", "observed_powertrain"]]
+                            .astype(str).itertuples(index=False, name=None))
+        translations = {description: canonical_izev_observation(*description, spec) for description in set(descriptions)}
+        for index, description in zip(combined.index[incentive_rows], descriptions, strict=True):
+            canonical[index] = translations[description]
     combined["family_make"] = [value[0] for value in canonical]
     combined["family_model"] = [value[1] for value in canonical]
     combined["_make_key"] = combined.family_make.map(normalize_vehicle_text)
@@ -579,6 +623,14 @@ def _candidate_families(candidates: pd.DataFrame, description: str, spec: dict) 
     key = normalize_vehicle_text(description)
     families = candidates[["_candidate_family", "_candidate_key"]].drop_duplicates()
     structural = families._candidate_family.map(lambda label: _family_structure_compatible(description, str(label)))
+    makes = set(candidates._make_key) if "_make_key" in candidates else set()
+    reviewed_families = {normalize_vehicle_text(rule["canonical_model"])
+                        for rule in spec.get("family_matching", {}).get("family_patterns", [])
+                        if normalize_vehicle_text(rule["make"]) in makes}
+    if key in reviewed_families:
+        # Known body/nameplate families remain separate even when one is absent
+        # from this edition (Rogue vs Rogue Sport, Corolla vs Corolla Cross).
+        structural &= ~families._candidate_key.isin(reviewed_families - {key})
     families = families.loc[structural]
     exact = families.loc[families._candidate_key.eq(key)]
     if not exact.empty:
@@ -626,7 +678,16 @@ def _constrain_configurations(candidates: pd.DataFrame, description: str, family
         selected = selected.loc[np.isclose(capacities, float(battery[1]), atol=.05)]
         if selected.empty:
             return selected, "unverified_explicit_battery_capacity"
-    engine = re.search(r"(?i)\b(\d+(?:\.\d+)?)\s*(?:L|litre|liter)\b", text)
+    # Parse attributes after the supported model identity. In FIAT 500L the L
+    # belongs to the model token; it is not a 500-litre engine specification.
+    attribute_text = text
+    cumulative = ""
+    for token in re.finditer(r"[A-Z0-9]+", text.upper()):
+        cumulative += token[0]
+        if cumulative == normalize_vehicle_text(family):
+            attribute_text = text[token.end():]
+            break
+    engine = re.search(r"(?i)\b(\d+(?:\.\d+)?)\s*(?:L|litre|liter)\b", attribute_text)
     if engine:
         values = pd.to_numeric(selected.get("Engine size (L)", pd.Series(np.nan, index=selected.index)), errors="coerce")
         selected = selected.loc[np.isclose(values, float(engine[1]), atol=.05)]
@@ -736,17 +797,73 @@ def _phev_assigned_components(chosen: pd.DataFrame, powertrain: str, conversions
     return result
 
 
+def _representative_class(chosen: pd.DataFrame, spec: dict) -> tuple[str, str, float]:
+    """Resolve minor same-year class disagreements without pretending market shares.
+
+    Every distinct compatible configuration remains in the consumption median.
+    A predominant class changes only the family's class allocation. Explicit
+    sedan/hatchback or other body conflicts cannot be suppressed by frequency.
+    """
+    distinct = chosen.drop_duplicates("rating_variant_id")
+    counts = distinct.rating_class.value_counts()
+    winner, share = str(counts.index[0]), float(counts.iloc[0] / counts.sum())
+    if len(counts) == 1:
+        return winner, "unanimous_target_year_class", share
+    policy = spec.get("family_matching", {}).get("class_resolution", {})
+    body_labels = {value for value in distinct.Model.map(_body_kind) if value}
+    compatible = any(set(counts.index).issubset(group) for group in policy.get("compatible_class_groups", []))
+    if (policy and compatible and len(body_labels) <= 1
+            and share >= policy["minimum_predominant_share"]):
+        return winner, "predominant_distinct_target_year_configurations", share
+    return "", "conflicting_target_year_classes_or_bodies", share
+
+
+def _relative_consumption_span(chosen: pd.DataFrame) -> float:
+    """Central 80-percent catalogue spread relative to its median, not uncertainty."""
+    values = pd.to_numeric(chosen.drop_duplicates("rating_variant_id").consumption_mj_per_vkm,
+                           errors="raise").dropna()
+    if values.empty:
+        return np.nan
+    median = float(values.median())
+    if not np.isfinite(values).all() or values.le(0).any():
+        raise ValueError("Representative family consumption must be finite and positive")
+    return float((values.quantile(.9) - values.quantile(.1)) / median)
+
+
 def _match_observations(
     observed: pd.DataFrame, ratings: pd.DataFrame, spec: dict, *,
     range_rules: Any = None, conversions: dict | None = None, uf_by_powertrain: dict | None = None,
+    catalogue_evidence: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
     result, matches, all_candidates = [], {}, {}
-    candidate_cache: dict[tuple, tuple[pd.DataFrame, str]] = {}
+    candidate_cache: dict[tuple, tuple[pd.DataFrame, str, str, pd.DataFrame]] = {}
     ratings = ratings.copy()
     izev_spec = {**spec, "aliases": [*spec.get("aliases", []), *spec.get("izev_aliases", [])]}
-    ratings["_izev_family_model"] = [catalogue_family(make, model, izev_spec)[1]
-                                      for make, model in zip(ratings.Make, ratings.Model, strict=True)]
+    evidence_input = ratings if catalogue_evidence is None else catalogue_evidence
+    izev_labels = {pair: catalogue_family(*pair, izev_spec)[1]
+                   for pair in set(zip(evidence_input.Make, evidence_input.Model, strict=True))}
+    ratings["_izev_family_model"] = [izev_labels[pair] for pair in zip(ratings.Make, ratings.Model, strict=True)]
     catalog = {(int(year), make): group for (year, make), group in ratings.groupby(["year", "_make_key"], sort=False)}
+    # Retain excluded fuels/propulsions for explanations, not for allocation.
+    evidence = catalogue_family_labels(evidence_input, spec)
+    evidence["_make_key"] = evidence.family_make.map(normalize_vehicle_text)
+    evidence["_izev_family_model"] = [izev_labels[pair] for pair in zip(evidence.Make, evidence.Model, strict=True)]
+    # Conventional X/Z rows with unverified/conflicting complementary evidence
+    # remain source evidence, but are neither proven gasoline nor proven HEV.
+    # Native BEV/PHEV frames need not carry this conventional-only flag.
+    evidence["unresolved_propulsion_evidence"] = evidence.get(
+        "propulsion_resolved", pd.Series(True, index=evidence.index)).eq(False).fillna(False)
+    unresolved = evidence.unresolved_propulsion_evidence & evidence.powertrain.eq("gasoline")
+    unresolved &= ~evidence.Model.astype(str).str.contains(r"(?i)\b(?:hybrid|mhev|hev|phev|bev|electric|plug[ -]?in)\b")
+    if "Fuel type" in evidence:
+        unresolved &= evidence["Fuel type"].isin(spec["mto_selection"].get("eligible_fuel_codes", ["X", "Z"]))
+    unresolved_catalog = {
+        (int(year), make): group
+        for (year, make), group in evidence.loc[unresolved].groupby(["year", "_make_key"], sort=False)
+    }
+    evidence = evidence[["year", "_make_key", "family_model", "_izev_family_model",
+                         "unresolved_propulsion_evidence"]].drop_duplicates()
+    evidence_catalog = {make: group for make, group in evidence.groupby("_make_key", sort=False)}
     for observation in observed.to_dict("records"):
         item = dict(observation)
         cache_key = tuple(item[field] for field in ("source_kind", "year", "_make_key", "family_model", "rating_class", "observed_powertrain"))
@@ -755,7 +872,6 @@ def _match_observations(
         if cache_key not in candidate_cache:
             candidates = catalog.get((int(item["year"]), item["_make_key"]), ratings.iloc[:0]).copy()
             if item["source_kind"] == "mto":
-                candidates = candidates.loc[candidates.rating_class.eq(item["rating_class"])]
                 eligible = candidates.powertrain.eq("gasoline") & ~candidates.Model.astype(str).str.contains(r"(?i)\b(?:hybrid|mhev|hev|phev|bev|electric|plug[ -]?in)\b")
                 if "Fuel type" in candidates:
                     codes = candidates["Fuel type"]
@@ -766,10 +882,41 @@ def _match_observations(
                 candidates = candidates.loc[candidates._powertrain_family.eq(item["observed_powertrain"])].copy()
                 candidates["_candidate_family"] = candidates._izev_family_model
             candidates["_candidate_key"] = candidates._candidate_family.map(normalize_vehicle_text)
-            candidate_cache[cache_key] = _candidate_families(candidates, source_family, source_spec)
-        candidates, method = candidate_cache[cache_key]
+            candidates, method = _candidate_families(candidates, source_family, source_spec)
+            unresolved_identity = evidence.iloc[:0].copy()
+            if item["source_kind"] == "mto" and not candidates.empty:
+                # Eligibility cannot silently settle an unspecified body/family
+                # identity when a corresponding native sibling has unresolved
+                # propulsion. Positive HEV/diesel/E85 alternatives do not enter.
+                unresolved_identity = unresolved_catalog.get(
+                    (int(item["year"]), item["_make_key"]), unresolved_identity).copy()
+                unresolved_identity["_candidate_family"] = unresolved_identity.family_model
+                unresolved_identity["_candidate_key"] = unresolved_identity._candidate_family.map(normalize_vehicle_text)
+                unresolved_identity, identity_method = _candidate_families(unresolved_identity, source_family, source_spec)
+                if identity_method in {"canonical_family", "recognized_family_extensions"}:
+                    unresolved_identity, _ = _constrain_configurations(
+                        unresolved_identity, item["family_model"], source_family)
+                else:
+                    unresolved_identity = unresolved_identity.iloc[:0]
+            absence = "unmatched_ratings"
+            if candidates.empty:
+                known = evidence_catalog.get(item["_make_key"], evidence.iloc[:0]).copy()
+                known["_candidate_family"] = (known._izev_family_model if item["source_kind"] == "izev"
+                                               else known.family_model)
+                known["_candidate_key"] = known._candidate_family.map(normalize_vehicle_text)
+                known, known_method = _candidate_families(known, source_family, source_spec)
+                if known_method in {"canonical_family", "recognized_family_extensions"} and not known.empty:
+                    target = known.loc[known.year.eq(item["year"])]
+                    if target.empty:
+                        absence = "target_year_rating_unavailable"
+                    elif item["source_kind"] == "mto" and target.unresolved_propulsion_evidence.any():
+                        absence = "unresolved_propulsion_evidence"
+                    else:
+                        absence = "ineligible_observed_propulsion"
+            candidate_cache[cache_key] = candidates, method, absence, unresolved_identity
+        candidates, method, absence, unresolved_identity = candidate_cache[cache_key]
         all_candidates[item["empirical_observation_id"]] = candidates
-        item.update(match_status="unmatched_ratings", match_method=method, resolved_powertrain="",
+        item.update(match_status=absence, match_method=method, resolved_powertrain="",
             candidate_variant_count=int(candidates.rating_variant_id.nunique()), candidate_rating_classes=_labels(candidates.rating_class),
             candidate_powertrains=_labels(candidates.powertrain), candidate_models=_labels(candidates.Model), selected=False,
             candidate_families=_labels(candidates._candidate_family) if "_candidate_family" in candidates else "",
@@ -777,22 +924,37 @@ def _match_observations(
             observed_family_native_mean=np.nan, observed_family_native_median=np.nan, observed_family_mj_per_vkm=np.nan,
             observed_family_range_median_km=np.nan, matched_family_make="", matched_family_model="",
             representative_bucket_has_native_trim=True, configuration_status="unspecified_configurations_use_family_median",
+            class_resolution_status="not_resolved", class_predominant_share=np.nan,
+            consumption_relative_p90_p10_span=np.nan,
             family_candidate_count=int(candidates._candidate_key.nunique()) if "_candidate_key" in candidates else 0)
         if not candidates.empty:
             chosen, conflict = _constrain_configurations(candidates, item["family_model"], source_family)
             item["matched_variant_count"] = int(chosen.rating_variant_id.nunique())
+            rating_class, class_status, class_share = _representative_class(chosen, spec) if not chosen.empty else ("", "not_resolved", np.nan)
+            item.update(class_resolution_status=class_status, class_predominant_share=class_share)
             if conflict:
                 item["match_status"] = "conflicting_or_unverified_configuration"
                 item["configuration_status"] = conflict
+            elif not unresolved_identity.empty and not unresolved_identity._candidate_key.isin(chosen._candidate_key).all():
+                item["match_status"] = "ambiguous_model_family"
+                item["configuration_status"] = "unresolved_propulsion_competing_family"
+                families = pd.concat([chosen._candidate_family, unresolved_identity._candidate_family])
+                item["candidate_families"] = _labels(families)
+                item["family_candidate_count"] = families.map(normalize_vehicle_text).nunique()
+                item["candidate_models"] = _labels(pd.concat([candidates.Model, unresolved_identity.Model]))
             elif chosen._candidate_key.nunique() > 1:
                 item["match_status"] = "ambiguous_model_family"
-            elif chosen.rating_class.nunique() > 1:
+            elif method == "fuzzy_family_candidates":
+                item["match_status"] = "unverified_model_family"
+            elif not rating_class:
                 item["match_status"] = "ambiguous_rating_class"
+            elif item["source_kind"] == "mto" and rating_class != item["rating_class"]:
+                item["match_status"] = "conflicting_reviewed_rating_class"
             elif (item["source_kind"] == "mto" and "ambiguous_epa_match" in chosen and chosen.ambiguous_epa_match.fillna(False).any()):
                 item["match_status"] = "ambiguous_powertrain_evidence"
             else:
                 item["match_status"] = "resolved"
-                item["rating_class"] = str(chosen.rating_class.iloc[0])
+                item["rating_class"] = rating_class
                 item["matched_family_make"] = str(chosen.family_make.iloc[0])
                 item["matched_family_model"] = str(chosen._candidate_family.iloc[0])
                 assigned = str(chosen.powertrain.iloc[0])
@@ -804,14 +966,22 @@ def _match_observations(
                     if item["observed_powertrain"] == "phev":
                         chosen = _phev_assigned_components(chosen, assigned, conversions, uf_by_powertrain)
                 item["resolved_powertrain"] = assigned
+                span = _relative_consumption_span(chosen)
+                item["consumption_relative_p90_p10_span"] = span
+                maximum_span = spec.get("family_matching", {}).get("consumption_dispersion", {}).get("maximum_relative_p90_p10_span")
+                if maximum_span is not None and span > maximum_span:
+                    item["match_status"] = "family_consumption_heterogeneity"
                 distinct = chosen.drop_duplicates("rating_variant_id")
                 item["observed_family_native_median"] = float(distinct.native_consumption.median())
                 item["observed_family_native_mean"] = item["observed_family_native_median"]
                 item["observed_family_mj_per_vkm"] = float(distinct.consumption_mj_per_vkm.median()) if distinct.consumption_mj_per_vkm.notna().any() else np.nan
                 chosen = chosen.copy()
+                chosen["catalogue_rating_class"] = chosen.rating_class
+                chosen["rating_class"] = rating_class
                 chosen["powertrain"] = assigned
                 chosen["range_assignment"] = item["range_assignment"]
-                matches[item["empirical_observation_id"]] = chosen
+                if item["match_status"] == "resolved":
+                    matches[item["empirical_observation_id"]] = chosen
         if (item["source_kind"] == "izev" and item["composition_basis"] == "observed_model_year" and not
                 spec["izev_model_year_min"] <= item["year"] <= spec["izev_model_year_max"]):
             item["match_status"] = "outside_supported_program_window"
@@ -825,6 +995,29 @@ def _match_observations(
         if item["source_kind"] == "izev" and not item["transaction_eligible"]:
             item["match_status"] = "unsupported_transaction_type"
             matches.pop(item["empirical_observation_id"], None)
+        reasons = {
+            "resolved": "Supported target-year family; compatible distinct configurations use representative medians.",
+            "unmatched_ratings": "No supported family correspondence in the captured NRCan catalogue; identity or rating availability needs evidence.",
+            "target_year_rating_unavailable": "Family is present in other captured NRCan years, but its target-year eligible rating is unavailable; catalogue absence does not establish model nonexistence.",
+            "ineligible_observed_propulsion": ("Target-year family has no eligible conventional-gasoline X/Z configuration for this gasoline-only MTO estimator."
+                                               if item["source_kind"] == "mto" else "Target-year family has no eligible configuration for the source-reported propulsion."),
+            "unresolved_propulsion_evidence": "Target-year family ratings exist, but complementary configuration evidence is unavailable or conflicting; X/Z fuel codes alone do not establish conventional gasoline.",
+            "conflicting_or_unverified_configuration": "Explicit source configuration is conflicting or unavailable in the target-year ratings: " + item["configuration_status"].replace("_", " ") + ".",
+            "ambiguous_model_family": (
+                "Description also corresponds to a target-year body/family whose complementary propulsion evidence is unresolved; eligible ratings alone cannot establish that the observation belongs to the remaining family."
+                if item["configuration_status"] == "unresolved_propulsion_competing_family"
+                else "Description corresponds to multiple model families; trim similarity does not establish family identity."),
+            "unverified_model_family": "Only similar model names were found; similarity alone does not establish the family correspondence.",
+            "ambiguous_rating_class": "Eligible target-year configurations have conflicting classes or body identities without a supported predominant class.",
+            "conflicting_reviewed_rating_class": "Eligible target-year family class conflicts with the authoritative MTO mapping interval.",
+            "ambiguous_powertrain_evidence": "Complementary propulsion evidence conflicts at the compatible configuration level.",
+            "family_consumption_heterogeneity": "Compatible target-year configurations have material consumption dispersion beyond the configured representative-family limit.",
+            "outside_supported_program_window": "Observation model year is outside the configured complete iZEV composition window.",
+            "unsupported_observed_powertrain": "Source-reported propulsion is outside the BEV/PHEV iZEV estimator.",
+            "unresolved_mapping_identity": str(item["identity_exclusion_reason"]),
+            "unsupported_transaction_type": "Source transaction is outside the configured purchase/lease observations.",
+        }
+        item["match_reason"] = reasons[item["match_status"]]
         result.append(item)
     return pd.DataFrame(result), matches, all_candidates
 
@@ -1000,7 +1193,8 @@ def aggregate_empirical_ratings(
         disposition, matches, candidate_matches = pd.DataFrame(), {}, {}
     else:
         disposition, matches, candidate_matches = _match_observations(observed, ratings, composition_rules,
-            range_rules=range_rules, conversions=conversions, uf_by_powertrain=uf_by_powertrain)
+            range_rules=range_rules, conversions=conversions, uf_by_powertrain=uf_by_powertrain,
+            catalogue_evidence=classified)
         disposition = _select_families(disposition, composition_rules)
     class_records, regional_observations, allocations, coverage_records, match_audits = [], [], [], [], []
     for region in regions:
@@ -1130,7 +1324,8 @@ def aggregate_empirical_ratings(
                                       "identity_supported_resolved_share", "identity_coverage_met", "composition_basis",
                                       "source_model_year_min", "source_model_year_max", "source_model_years",
                               "representative_statistic", "representative_bucket_has_native_trim", "configuration_status",
-                              "matched_family_make", "matched_family_model", "family_candidate_count"):
+                              "matched_family_make", "matched_family_model", "family_candidate_count", "match_reason",
+                              "class_resolution_status", "class_predominant_share", "consumption_relative_p90_p10_span"):
                             variants[field] = observation[field]
                         variants["empirical_observation_id"] = observation["empirical_observation_id"]
                         variants["empirical_family_make"] = observation["family_make"]
@@ -1211,6 +1406,8 @@ def aggregate_empirical_ratings(
                               "selection_status", "range_assignment", "pool_geography", "pool_provinces",
                               "provincial_observation_count", "pool_observation_count", "minimum_observations",
                               "candidate_variant_count", "matched_variant_count", "composition_source", "composition_components",
+                              "match_reason", "configuration_status", "class_resolution_status",
+                              "class_predominant_share", "consumption_relative_p90_p10_span",
                               "identity_supported", "identity_evidence_methods", "identity_support_reason",
                               "identity_exclusion_reason",
                               "resolved_gasoline_count", "identity_supported_count", "identity_supported_resolved_share",

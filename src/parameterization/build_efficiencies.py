@@ -716,6 +716,8 @@ def prepare_efficiency_rows(
         range_rules=range_rules,
         uf_by_powertrain=utility_factors,
     )
+    LOGGER.info("NRCan classification/inclusion counts: %s",
+                classified.groupby(["classification_method", "included"]).size().to_dict())
     aggregation = load_harmonization_rules(bundle, "road_aggregation")
     weights_dir = resolve_artifact_path(bundle, "road_aggregation")
     rating_weights = read(weights_dir / aggregation["nrcan_weights_file"])
@@ -1141,6 +1143,9 @@ def prepare_efficiency_rows(
     audit["hybrid_evidence_counts"] = (
         classified.classification_method.value_counts().to_dict()
     )
+    audit["rating_classification_inclusion"] = classified.groupby(
+        ["classification_method", "included"], as_index=False,
+    ).size().to_dict("records")
     audit["rating_index_fallbacks"] = sum(not finding[-1].startswith("omitted_annual_consumption=")
                                            for finding in evidence.findings)
     audit["rating_aggregation"] = "identity_supported_gasoline_izev_and_median_catalogue"
@@ -1320,7 +1325,7 @@ def ldv_rating_input_resolvers(evidence, classified, rating_audit, *, rules: dic
                                   for component in item.composition_components.split("|") if component.strip())
         if powertrain in {"gasoline", "hev"}:
             classifications = classified.loc[
-                classified.included & classified.classification_method.eq("exact_epa_hybrid")
+                classified.classification_method.str.startswith(("exact_epa_", "configuration_epa_"))
             ].merge(keys, on=["year", "rating_class"], validate="many_to_one")
             if not classifications.empty:
                 components.add((rules["ratings"]["evidence_source"], "vehicles"))

@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import cache
 from math import isfinite
 from pathlib import Path
+import re
 from typing import Any
 
 import numpy as np
@@ -12,6 +13,7 @@ import pandas as pd
 
 from fetching.nlr_atb_autonomie import configured_trajectory
 from parameterization.rating_composition import (
+    catalogue_family,
     distinct_catalogue_variants,
     median_support_weights,
 )
@@ -195,6 +197,104 @@ def parse_nrcan_phev_cd_components(raw: pd.Series, *, contract: dict) -> pd.Data
     return result
 
 
+def _configuration_hybrid_evidence(frame: pd.DataFrame, epa: pd.DataFrame, spec: dict) -> pd.DataFrame:
+    """Resolve EPA propulsion at compatible year/configuration grain, never family-wide.
+
+    vPIC's registered model/type endpoints contain no electrification field; their
+    presence supports identity/scope, not a hybrid label. No source unanimity is
+    required: NRCan explicit hybrid wording is independently sufficient.
+    """
+    policy = spec.get("hybrid_configuration_evidence", {})
+    normalization = spec["normalization_pattern"]
+
+    def norm(value):
+        return re.sub(normalization, "", str(value).lower())
+
+    identities = {}
+
+    def identity(make, model, year):
+        pair = str(make), str(model), int(year)
+        if pair not in identities:
+            label = re.sub(policy.get("identity_signal_pattern", r"(?!)"), " ", pair[1])
+            make_label, model_label = catalogue_family(pair[0], " ".join(label.split()), spec["composition"])
+            for alias in policy.get("model_aliases", []):
+                if (alias.get("model_year_from", pair[2]) <= pair[2] <= alias.get("model_year_to", pair[2])
+                        and norm(alias["make"]) == norm(make_label)
+                        and re.fullmatch(alias["pattern"], model_label)):
+                    model_label = alias["canonical_model"]
+                    break
+            identities[pair] = norm(make_label), norm(model_label)
+        return identities[pair]
+
+    evidence = epa.copy()
+    evidence["make_key"] = evidence.make.fillna("").map(norm)
+    evidence["model_key"] = evidence.model.fillna("").map(norm)
+    evidence["family_key"] = [identity(*pair)[1] for pair in zip(evidence.make, evidence.model, evidence.year, strict=True)]
+    exact = {key: rows for key, rows in evidence.groupby(["year", "make_key", "model_key"])}
+    families = {key: rows for key, rows in evidence.groupby(["year", "make_key", "family_key"])}
+    cache = {}
+    results = []
+    numeric_fields = policy.get("numeric_fields", {})
+    for row in frame.to_dict("records"):
+        make, model = str(row[spec["fields"]["make"]]), str(row[spec["fields"]["model"]])
+        cache_key = (row["year"], make, model, str(row.get("Transmission")),
+                     *(str(row.get(field)) for field in numeric_fields))
+        if cache_key not in cache:
+            key = (row["year"], norm(make), norm(model))
+            candidates = exact.get(key)
+            route = "exact_epa"
+            if candidates is None:
+                family = identity(make, model, row["year"])
+                candidates = families.get((row["year"], *family))
+                route = "configuration_epa"
+            if candidates is None:
+                cache[cache_key] = (None, False, "unverified_source_fuel")
+            else:
+                selected = candidates
+                filters = 0
+                for source_field, evidence_field in numeric_fields.items():
+                    value = pd.to_numeric(row.get(source_field), errors="coerce")
+                    if pd.notna(value) and evidence_field in selected:
+                        values = pd.to_numeric(selected[evidence_field], errors="coerce")
+                        tolerance = policy["displacement_tolerance_l"] if evidence_field == "displ" else 0
+                        selected = selected.loc[(values - value).abs().le(tolerance)]
+                        filters += 1
+                for drive, pattern in policy.get("drive_patterns", {}).items():
+                    if re.search(pattern, model) and "drive" in selected:
+                        labels = policy.get("compatible_drive_labels", {}).get(drive, [drive])
+                        selected = selected.loc[selected.drive.isin(labels)]
+                        break
+                if "fuelType1" in selected:
+                    # EPA FFVs may list gasoline as their conventional fuel.
+                    selected = selected.loc[selected.fuelType1.isin(policy.get("gasoline_fuels", []))]
+                selected = selected.loc[~selected.atvType.isin(policy.get("excluded_epa_technologies", []))]
+                transmission = policy.get("transmission", {})
+                code = str(row.get("Transmission", ""))
+                if transmission and code and code != "nan" and "trany" in selected:
+                    epa_transmission = selected.trany.fillna("")
+                    cvt = bool(re.search(transmission["nrcan_cvt_pattern"], code))
+                    manual = bool(re.search(transmission["nrcan_manual_pattern"], code))
+                    selected = selected.loc[
+                        epa_transmission.str.contains(transmission["epa_cvt_pattern"]).eq(cvt)
+                        & epa_transmission.str.contains(transmission["epa_manual_pattern"]).eq(manual)
+                    ]
+                    # CVT simulated ratios are not physical gear counts.
+                    speed = re.search(r"\d+", code) if not cvt else None
+                    if speed:
+                        speeds = selected.trany.fillna("").str.extract(r"(\d+)(?:-spd|\))", expand=False)
+                        selected = selected.loc[speeds.eq(speed[0])]
+                labels = set(selected.atvType.fillna(""))
+                if route == "configuration_epa" and filters < len(numeric_fields):
+                    labels = set()
+                hybrid = labels == {spec["hybrid_evidence_label"]}
+                conventional = bool(labels) and not labels.intersection({spec["hybrid_evidence_label"], "Plug-in Hybrid", "EV"})
+                value = True if hybrid else False if conventional else None
+                cache[cache_key] = (value, value is None and bool(labels),
+                                    route + ("_hybrid" if hybrid else "_conventional" if conventional else "_unresolved"))
+        results.append(cache[cache_key])
+    return pd.DataFrame(results, index=frame.index, columns=["epa_hybrid", "ambiguous_epa_match", "epa_classification_method"])
+
+
 def classify_ratings(
     frames: list[pd.DataFrame],
     epa: pd.DataFrame,
@@ -205,20 +305,25 @@ def classify_ratings(
     uf_by_powertrain: dict[str, float] | None = None,
     range_rules=None,
 ) -> pd.DataFrame:
-    """Retain native rows; exact EPA hybrid evidence supplements the legacy name rule."""
+    """Retain native rows and combine independent name/configuration HEV evidence."""
     spec = rules["ratings"]
     if spec["range_mapping"] != "omega_bucket_boundaries" or range_rules is None:
         raise ValueError("NRCan EV ratings require the configured OMEGA range-bucket contract")
     from parameterization.ldv_ev_ranges import range_bucket
     fields = spec["fields"]
     supported = {
-        "evidence_join": "exact_normalized_year_make_model",
-        "ambiguous_evidence": "retain_name_rule_and_report",
+        "evidence_join": "compatible_year_family_configuration",
         "phev_baseline": "nrcan_cd_cs_atb_bucket_uf",
     }
     for key, expected in supported.items():
         if spec[key] != expected:
             raise ValueError(f"Unsupported ratings.{key}: {spec[key]!r}")
+    policy = spec["hybrid_configuration_evidence"]
+    if policy["unresolved"] != "exclude_and_report":
+        raise ValueError("Unresolved Ratings propulsion must be excluded and reported")
+    if (not policy["numeric_fields"] or not np.isfinite(policy["displacement_tolerance_l"])
+            or policy["displacement_tolerance_l"] < 0):
+        raise ValueError("Hybrid configuration evidence requires fields and a finite nonnegative displacement tolerance")
 
     def norm(values):
         return (
@@ -228,15 +333,14 @@ def classify_ratings(
             .str.replace(spec["normalization_pattern"], "", regex=True)
         )
 
-    evidence = epa[spec["evidence_columns"]].copy()
-    evidence["make_key"], evidence["model_key"] = (
-        norm(evidence.make),
-        norm(evidence.model),
-    )
-    evidence["is_hybrid"] = evidence.atvType.eq(spec["hybrid_evidence_label"])
-    grouped = evidence.groupby(["year", "make_key", "model_key"]).is_hybrid.agg(
-        ["min", "max"]
-    )
+    conventional = [source for source in frames
+                    if fields["electricity"] not in source and fields["phev_range"] not in source]
+    hybrid_audit = None
+    if conventional:
+        conventional = pd.concat(conventional, ignore_index=True)
+        conventional["year"] = pd.to_numeric(conventional[fields["year"]], errors="raise").astype(int)
+        hybrid_audit = _configuration_hybrid_evidence(conventional, epa, spec)
+        hybrid_audit.index = pd.MultiIndex.from_frame(conventional[["component", "source_row"]])
     results = []
     for source in frames:
         frame = source.copy()
@@ -336,19 +440,17 @@ def classify_ratings(
                 norm(frame[fields["make"]]),
                 norm(frame[fields["model"]]),
             )
-            frame = frame.join(
-                grouped, on=["year", "make_key", "model_key"], validate="many_to_one"
-            )
+            frame = frame.join(hybrid_audit, on=["component", "source_row"], validate="one_to_one")
             named = frame[fields["model"]].str.contains(
                 spec["hybrid_pattern"], na=False
             )
-            matched = frame["min"].eq(True) & frame["max"].eq(True)
-            ambiguous = frame["min"].eq(False) & frame["max"].eq(True)
+            matched = frame.epa_hybrid.eq(True)
             gasoline = frame.powertrain.eq("gasoline")
             frame.loc[gasoline & (named | matched), "powertrain"] = "hev"
             frame.loc[gasoline & named, "classification_method"] = "hybrid_name"
-            frame.loc[gasoline & matched, "classification_method"] = "exact_epa_hybrid"
-            frame["ambiguous_epa_match"] = ambiguous
+            frame.loc[gasoline, "classification_method"] = frame.loc[gasoline, "epa_classification_method"]
+            frame.loc[gasoline & named, "classification_method"] = "hybrid_name"
+            frame["propulsion_resolved"] = ~gasoline | named | frame.epa_hybrid.notna()
             frame["native_consumption"] = pd.to_numeric(
                 frame[fields["consumption"]], errors="raise"
             )
@@ -364,7 +466,6 @@ def classify_ratings(
                 * hhv
                 * conversions["service"]["per_100_km_to_per_km"]
             )
-            frame = frame.drop(columns=["min", "max"])
         if frame.powertrain.isna().any():
             raise ValueError(
                 f"Unclassified NRCan rows: {frame.loc[frame.powertrain.isna(), ['component', 'source_row']].to_dict('records')[:10]}"
@@ -372,6 +473,8 @@ def classify_ratings(
         frame["included"] = ~frame.powertrain.isin(
             spec["excluded_fuels"]
         ) & ~frame.rating_class.isin(spec["ignored_classes"])
+        if spec.get("hybrid_configuration_evidence", {}).get("unresolved") == "exclude_and_report":
+            frame["included"] &= frame.get("propulsion_resolved", pd.Series(True, index=frame.index))
         if (frame.native_consumption <= 0).any() or not np.isfinite(
             frame.native_consumption
         ).all():

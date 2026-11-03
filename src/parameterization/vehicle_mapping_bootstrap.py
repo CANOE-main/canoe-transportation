@@ -1494,6 +1494,13 @@ def build_bootstrap_mapping(
         dtype=str,
         keep_default_na=False,
     )
+    reviewed_mapping = validate_vehicle_mapping(
+        reviewed_mapping,
+        rules=rules,
+        rating_class_rules=load_harmonization_rules(
+            bundle, "nrcan_fuel_consumption_ratings"
+        )["vehicle_class_harmonization"],
+    )
     if "entry_type" not in reviewed_mapping.columns:
         reviewed_mapping.insert(0, "entry_type", "mto_crosswalk")
     if "supporting_rating_rows" not in reviewed_mapping.columns:
@@ -1905,7 +1912,13 @@ def main() -> None:
             "Refusing to replace reviewed configuration without "
             "--replace-reviewed-config"
         )
-    write_dataframe_atomic(mapping, output_path)
+    # Requested crosswalk replacements use the compact reviewed contract. Full
+    # candidate-generation metadata remains in the separate evidence exports.
+    reviewed_columns = module_rules(bundle).get("reviewed_mapping_columns")
+    write_dataframe_atomic(
+        mapping.loc[:, reviewed_columns] if reviewed_columns else mapping,
+        output_path,
+    )
     bootstrap_file = module_rules(bundle).get("bootstrap_evidence_file")
     if bootstrap_file:
         interim_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")

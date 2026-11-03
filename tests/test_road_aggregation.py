@@ -11,6 +11,7 @@ from parameterization.road_aggregation import (
     generate_mapping_candidates,
     latest_unresolved_key_worklist,
     load_rating_evidence,
+    mapping_coverage,
     module_rules,
     normalize_vehicle_text,
     unresolved_mapping_reasons,
@@ -86,6 +87,70 @@ def test_reviewed_mapping_rejects_overlapping_model_year_ranges() -> None:
             rules=rules,
             rating_class_rules=rating_rules,
         )
+
+
+def test_compact_reviewed_mapping_expands_internal_metadata_without_mutation() -> None:
+    _, rules, rating_rules = config()
+    compact = mapping_frame(mapping_row()).loc[:, rules["reviewed_mapping_columns"]]
+    original = compact.copy(deep=True)
+    validated = validate_vehicle_mapping(compact, rules=rules, rating_class_rules=rating_rules)
+    pd.testing.assert_frame_equal(compact, original)
+    assert list(validated.columns) == rules["mapping_columns"]
+    assert validated.entry_type.tolist() == ["mto_crosswalk"]
+    assert validated.mapping_status.tolist() == ["reviewed"]
+    assert validated.match_method.tolist() == ["reviewed_identity_and_applicability"]
+    assert validated.supporting_rating_rows.tolist() == [""]
+
+
+@pytest.mark.parametrize("scope", ["ldv_class_unresolved", "scope_unresolved"])
+def test_reviewed_identity_without_fine_class_preserves_counts_and_unmapped_denominator(scope) -> None:
+    _, rules, rating_rules = config()
+    mapping = mapping_frame(mapping_row(
+        vehicle_scope=scope, nrcan_vehicle_class="", nlr_atb_class="", nrcan_ceud_class="",
+    ))
+    validated = validate_vehicle_mapping(mapping, rules=rules, rating_class_rules=rating_rules)
+    stock = pd.DataFrame([
+        {"report_year": 2025, "VEHICLE_CLASS": "PASSENGER", "MAKE": "FORD",
+         "MODEL": "SPE", "MODEL_YEAR": year, "FIT_ACTIVE": count}
+        for year, count in [(2020, 17), (2030, 3)]
+    ])
+    mapped = apply_vehicle_mapping(stock, validated, accepted_statuses={"reviewed"})
+    assert mapped.FIT_ACTIVE.sum() == 20
+    assert mapped.mapping_outcome.tolist() == ["unmapped", "unmapped"]
+    assert not mapped.mapping_accepted.any()
+    assert mapped.identity_supported.tolist() == [True, False]
+    assert mapped.loc[0, "canonical_model"] == "Escape"
+    assert pd.isna(mapped.loc[1, "canonical_model"])
+    assert mapped.nrcan_vehicle_class.isna().all()
+    coverage = mapping_coverage(mapped)
+    all_stock = coverage.loc[coverage.vehicle_class.eq("ALL") & coverage.measure.eq("fit_active_stock")]
+    assert all_stock.unmapped.item() == 20
+
+
+def test_authoritative_mapping_respects_identity_scope_body_and_year_decisions() -> None:
+    bundle, rules, rating_rules = config()
+    mapping = validate_vehicle_mapping(
+        pd.read_csv(bundle.repo_root / "config/parameters/vehicle_size_class_map.csv", dtype=str, keep_default_na=False),
+        rules=rules, rating_class_rules=rating_rules,
+    )
+    samples = [
+        ("LEXS", "RX5", 2018), ("DODG", "CAR", 2018), ("MAZD", "3SP", 2015),
+        ("RAM", "RTR", 2020), ("HOND", "CIV", 2023), ("HYUN", "EXL", 2023),
+        ("MAZD", "C30", 2022), ("MAZD", "C30", 1998),
+    ]
+    stock = pd.DataFrame([
+        {"report_year": 2025, "VEHICLE_CLASS": "PASSENGER", "MAKE": make, "MODEL": code,
+         "MODEL_YEAR": year, "FIT_ACTIVE": 11}
+        for make, code, year in samples
+    ])
+    mapped = apply_vehicle_mapping(stock, mapping, accepted_statuses={"reviewed"})
+    assert mapped.FIT_ACTIVE.sum() == 88
+    assert mapped.canonical_model.iloc[:3].tolist() == ["RX 350", "Grand Caravan", "Mazda3 5-Door"]
+    assert mapped.nrcan_vehicle_class.iloc[2] == "Mid-size"
+    assert mapped.vehicle_scope.iloc[3:5].tolist() == ["scope_unresolved", "ldv_class_unresolved"]
+    assert mapped.mapping_accepted.tolist() == [True, True, True, False, False, True, True, False]
+    assert mapped.canonical_model.iloc[5] == "Elantra"
+    assert mapped.canonical_model.iloc[6] == "CX-30"
 
 
 def test_reviewed_mapping_rejects_competing_class_hierarchy() -> None:
