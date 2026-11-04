@@ -2,13 +2,13 @@
 
 import argparse
 import logging
-import re
-import unicodedata
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping, resolve_source_labels
 
 from utils import (
     ConfigBundle,
@@ -16,10 +16,9 @@ from utils import (
     load_harmonization_rules,
     resolve_artifact_path,
     resolve_input_path,
-    resolve_parameter_path,
     write_dataframe_atomic,
 )
-from utils.vehicle_labels import is_unresolved_vehicle_label
+from utils.vehicle_labels import is_unresolved_vehicle_label, normalize_vehicle_text
 
 
 ONTARIO_RULE_KEY = "ontario_vehicle_population"
@@ -32,13 +31,6 @@ WARDS_SOURCE_ID = "wards_intelligence_sales_shares"
 def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
     """Load road-aggregation rules."""
     return load_harmonization_rules(bundle, ROAD_RULE_KEY)
-
-
-def normalize_vehicle_text(value: object) -> str:
-    """Return deterministic ASCII alphanumeric make/model text."""
-    normalized = unicodedata.normalize("NFKD", str(value))
-    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
-    return re.sub(r"[^A-Z0-9]+", "", ascii_text.upper())
 
 
 def nrcan_to_nlr_map(class_rules: dict[str, Any]) -> dict[str, str]:
@@ -166,282 +158,115 @@ def load_rating_evidence(
     evidence = evidence.drop_duplicates(
         ["Model year", "Make", "Model", "Vehicle class", "evidence_source"]
     ).reset_index(drop=True)
-    return assign_rating_model_families(evidence)
-
-
-def _is_model_family_prefix(base: str, label: str) -> bool:
-    """Return whether an observed Ratings label extends a family label."""
-    base_text = re.sub(r"\s+", " ", str(base).strip())
-    label_text = re.sub(r"\s+", " ", str(label).strip())
-    if base_text.casefold() == label_text.casefold():
-        return True
-    if len(normalize_vehicle_text(base_text)) < 2:
-        return False
-    if not label_text.casefold().startswith(base_text.casefold()):
-        return False
-    remainder = label_text[len(base_text) :]
-    return bool(remainder) and not remainder[0].isalnum()
-
-
-_RATING_VARIANT_MARKERS = frozenset(
-    {
-        "2WD",
-        "4MATIC",
-        "4WD",
-        "ASPEC",
-        "AT4",
-        "AT4X",
-        "AWD",
-        "BASE",
-        "BOSS",
-        "CABRIOLET",
-        "CONVERTIBLE",
-        "COUPE",
-        "CUSTOM",
-        "DENALI",
-        "EDITION",
-        "EV",
-        "EXT",
-        "FFV",
-        "FWD",
-        "HATCHBACK",
-        "HYBRID",
-        "ISS",
-        "LE",
-        "LIMITED",
-        "LONG",
-        "LT",
-        "LX",
-        "MAX",
-        "MUD",
-        "NO",
-        "OFF",
-        "PACKAGE",
-        "PERFORMANCE",
-        "PLUG",
-        "PLUGIN",
-        "PREMIUM",
-        "PRIME",
-        "PRO",
-        "QUATTRO",
-        "RANGE",
-        "RAPTOR",
-        "RST",
-        "SE",
-        "SEL",
-        "SEDAN",
-        "SPORT",
-        "SPORTBACK",
-        "START",
-        "STD",
-        "STOP",
-        "TECHNOLOGY",
-        "TERRAIN",
-        "TIRE",
-        "TIRES",
-        "TOURING",
-        "TRAIL",
-        "TREMOR",
-        "TRD",
-        "VAN",
-        "WAGON",
-        "WITH",
-        "WITHOUT",
-        "WOODLAND",
-        "WT",
-        "XLE",
-        "XDRIVE",
-        "XSE",
-        "ZR2",
-    }
-)
-
-
-def _rating_model_stem(label: object) -> str:
-    """Strip source-native drivetrain/trim suffixes from a Ratings label."""
-    text = re.sub(r"\s+", " ", str(label).strip())
-    tokens = list(re.finditer(r"[A-Za-z0-9]+", text))
-    for token in tokens[1:]:
-        marker = token.group(0).upper()
-        if marker in _RATING_VARIANT_MARKERS:
-            stem = text[: token.start()].rstrip(" -/(")
-            if len(normalize_vehicle_text(stem)) >= 2:
-                return stem
-    return text
-
-
-def _minimal_class_distinguishing_model(
-    row: pd.Series,
-    family_rows: pd.DataFrame,
-) -> str:
-    """Retain the shortest model prefix needed for a same-year class split."""
-    initial = str(row["_initial_family"])
-    same_year = family_rows.loc[
-        family_rows["Model year"].eq(row["Model year"])
-    ]
-    if same_year["Vehicle class"].nunique(dropna=False) <= 1:
-        return initial
-    tokens = re.findall(r"[A-Za-z0-9]+", str(row["Model"]))
-    initial_normalized = normalize_vehicle_text(initial)
-    for token_count in range(1, len(tokens) + 1):
-        candidate = " ".join(tokens[:token_count])
-        normalized_candidate = normalize_vehicle_text(candidate)
-        if (
-            len(normalized_candidate) < len(initial_normalized)
-            or not normalized_candidate.startswith(initial_normalized)
-        ):
-            continue
-        matching = same_year.loc[
-            same_year["normalized_model"].str.startswith(normalized_candidate)
-        ]
-        if set(matching["Vehicle class"].astype(str)) == {
-            str(row["Vehicle class"])
-        }:
-            return candidate
-    return initial
-
-
-def assign_rating_model_families(evidence: pd.DataFrame) -> pd.DataFrame:
-    """Assign source labels to minimal, model-year-aware make/model families."""
-    required = {
-        "Model year",
-        "Make",
-        "Model",
-        "Vehicle class",
-        "nlr_atb_class",
-        "nrcan_ceud_class",
-    }
-    missing = sorted(required - set(evidence.columns))
-    if missing:
-        raise ValueError(
-            "Ratings family evidence missing columns: " + ", ".join(missing)
+    reference = load_vehicle_reference(bundle)
+    composition_rules = load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"]
+    linked = []
+    for source, group in evidence.groupby("evidence_source", sort=False):
+        resolved = resolve_source_labels(
+            group, reference, source=source, make_column="Make", model_column="Model",
+            year_column="Model year", class_column="Vehicle class",
+            require_registered=source == "nrcan_fuel_consumption_ratings",
         )
+        # Unreviewed auxiliary labels remain candidate-discovery evidence. Generic
+        # trim parsing does not attach an accepted canonical ID or approve a link.
+        pending = resolved.reference_link_status.eq("no_applicable_source_link")
+        if pending.any():
+            from parameterization.vehicle_reference import catalogue_family_labels
+
+            labels = catalogue_family_labels(
+                resolved.loc[pending].drop(columns=["family_make", "family_model", "family_key"]),
+                composition_rules,
+            )
+            for field in ("family_make", "family_model", "family_key"):
+                resolved.loc[pending, field] = labels[field]
+            resolved.loc[pending, "reference_link_status"] = "unreviewed_auxiliary_label"
+        resolved["canonical_make"] = resolved.family_make
+        resolved["canonical_model"] = resolved.family_model
+        linked.append(resolved)
+    return assign_rating_model_families(pd.concat(linked, ignore_index=True))
+
+
+def assign_rating_model_families(
+    evidence: pd.DataFrame, *, composition_rules: dict[str, Any] | None = None,
+) -> pd.DataFrame:
+    """Use the production canonical identity policy without inferring family roots.
+
+    Already labelled evidence may be reused by pure candidate helpers. Unlabelled
+    source rows require the caller's policy rather than a different fallback heuristic.
+    """
+    required = {"Model year", "Make", "Model", "Vehicle class", "nlr_atb_class", "nrcan_ceud_class"}
+    if missing := required - set(evidence):
+        raise ValueError("Ratings family evidence missing columns: " + ", ".join(sorted(missing)))
     enriched = evidence.copy()
     if "evidence_source" not in enriched:
         enriched["evidence_source"] = "nrcan_fuel_consumption_ratings"
-    if "normalized_make" not in enriched:
-        enriched["normalized_make"] = enriched["Make"].map(normalize_vehicle_text)
-    if "normalized_model" not in enriched:
-        enriched["normalized_model"] = enriched["Model"].map(normalize_vehicle_text)
-    enriched["_model_stem"] = enriched["Model"].map(_rating_model_stem)
+    if {"canonical_make", "canonical_model"} <= set(enriched):
+        pass
+    elif composition_rules is not None:
+        from parameterization.vehicle_reference import catalogue_family_labels
 
-    make_names = (
-        enriched[["normalized_make", "Make"]]
-        .drop_duplicates()
-        .sort_values(
-            ["normalized_make", "Make"],
-            key=lambda values: values.astype(str).str.casefold(),
-            kind="stable",
-        )
-        .drop_duplicates("normalized_make")
-        .set_index("normalized_make")["Make"]
-        .to_dict()
-    )
-    family_by_stem: dict[tuple[str, str], str] = {}
-    for normalized_make, rows in enriched.groupby("normalized_make", dropna=False):
-        labels = sorted(
-            rows["_model_stem"].dropna().astype(str).unique(),
-            key=lambda value: (len(normalize_vehicle_text(value)), value.casefold()),
-        )
-        for label in labels:
-            roots = [base for base in labels if _is_model_family_prefix(base, label)]
-            family_by_stem[(str(normalized_make), str(label))] = min(
-                roots,
-                key=lambda value: (
-                    len(normalize_vehicle_text(value)),
-                    value.casefold(),
-                ),
-            )
-    enriched["canonical_make"] = enriched["normalized_make"].map(make_names)
-    enriched["_initial_family"] = enriched.apply(
-        lambda row: family_by_stem[
-            (
-                str(row["normalized_make"]),
-                str(row["_model_stem"]),
-            )
-        ],
-        axis=1,
-    )
-    enriched["canonical_model"] = enriched["_initial_family"]
-    conflicting = (
-        enriched.groupby(
-            ["normalized_make", "_initial_family", "Model year"],
-            dropna=False,
-        )["Vehicle class"]
-        .transform("nunique")
-        .gt(1)
-    )
-    family_columns = ["normalized_make", "_initial_family"]
-    for family_key, conflict_rows in enriched.loc[conflicting].groupby(
-        family_columns,
-        dropna=False,
-    ):
-        family_rows = enriched.loc[
-            enriched["normalized_make"].eq(family_key[0])
-            & enriched["_initial_family"].eq(family_key[1])
-        ]
-        enriched.loc[conflict_rows.index, "canonical_model"] = conflict_rows.apply(
-            _minimal_class_distinguishing_model,
-            axis=1,
-            family_rows=family_rows,
-        )
-    enriched["normalized_canonical_model"] = enriched["canonical_model"].map(
-        normalize_vehicle_text
-    )
-    return enriched.drop(columns=["_model_stem", "_initial_family"])
+        labels = catalogue_family_labels(enriched, composition_rules)
+        enriched["canonical_make"] = labels.family_make
+        enriched["canonical_model"] = labels.family_model
+    elif not {"canonical_make", "canonical_model"} <= set(enriched):
+        raise ValueError("Unlabelled Ratings evidence requires canonical composition_rules")
+    enriched["normalized_make"] = enriched["Make"].map(normalize_vehicle_text)
+    enriched["normalized_model"] = enriched["Model"].map(normalize_vehicle_text)
+    enriched["normalized_canonical_model"] = enriched["canonical_model"].map(normalize_vehicle_text)
+    # Case-only source spellings are one identity, with a stable readable label.
+    keys = ["normalized_make", "normalized_canonical_model"]
+    labels = (enriched[keys + ["canonical_make", "canonical_model"]].drop_duplicates()
+              .sort_values([*keys, "canonical_make", "canonical_model"], kind="stable")
+              .drop_duplicates(keys).set_index(keys))
+    normalized = pd.MultiIndex.from_frame(enriched[keys])
+    enriched["canonical_make"] = labels.canonical_make.reindex(normalized).to_numpy()
+    enriched["canonical_model"] = labels.canonical_model.reindex(normalized).to_numpy()
+    return enriched
 
 
 def build_rating_model_catalog(
-    rating_evidence: pd.DataFrame,
-    *,
-    mapping_columns: list[str],
+    rating_evidence: pd.DataFrame, *, mapping_columns: list[str],
+    composition_rules: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
-    """Build exhaustive evidence-only rows for normalized Ratings families."""
-    evidence = assign_rating_model_families(rating_evidence)
-    grouped = (
-        evidence.groupby(
-            [
-                "canonical_make",
-                "canonical_model",
-                "Vehicle class",
-                "nlr_atb_class",
-                "nrcan_ceud_class",
-            ],
-            as_index=False,
-            dropna=False,
-        )
-        .agg(
-            model_year_from=("Model year", "min"),
-            model_year_to=("Model year", "max"),
-            supporting_rating_rows=("Model year", "size"),
-            supporting_model_labels=(
-                "Model",
-                lambda values: " | ".join(
-                    sorted(
-                        set(map(str, values)),
-                        key=lambda value: (value.casefold(), value),
-                    )
-                ),
-            ),
-            evidence_source=(
-                "evidence_source",
-                lambda values: " | ".join(sorted(set(map(str, values)))),
-            ),
-        )
-        .rename(columns={"Vehicle class": "nrcan_vehicle_class"})
+    """Summarize exact contiguous public-evidence years using canonical identities.
+
+    EPA-only class evidence is retained as such; it does not establish NRCan rating
+    availability. Missing years and source-coverage changes split intervals.
+    """
+    evidence = assign_rating_model_families(rating_evidence, composition_rules=composition_rules)
+    identities = ["canonical_make", "canonical_model", "Vehicle class", "nlr_atb_class", "nrcan_ceud_class"]
+    annual = evidence.groupby([*identities, "Model year"], as_index=False, dropna=False).agg(
+        supporting_rating_rows=("Model", "size"),
+        evidence_source=("evidence_source", lambda values: " | ".join(sorted(set(map(str, values))))),
     )
-    grouped.insert(0, "entry_type", "ratings_catalog")
-    grouped.insert(1, "mto_make_code", "")
-    grouped.insert(2, "mto_model_code", "")
-    grouped["vehicle_scope"] = "ldv"
-    grouped["match_method"] = "ratings_family_token_prefix"
-    grouped["mapping_status"] = "evidence_only"
-    grouped["review_notes"] = (
-        "Generated normalized source-family evidence; not a runtime MTO key."
-    )
-    return grouped.loc[:, mapping_columns].sort_values(
-        ["canonical_make", "canonical_model", "nrcan_vehicle_class"],
-        kind="stable",
+    records = []
+    for _, group in annual.groupby(identities, sort=True, dropna=False):
+        current = None
+        for row in group.sort_values("Model year").to_dict("records"):
+            year = int(row["Model year"])
+            if current is not None and year == current["model_year_to"] + 1 and row["evidence_source"] == current["evidence_source"]:
+                current["model_year_to"] = year
+                current["supporting_rating_rows"] += int(row["supporting_rating_rows"])
+                continue
+            if current is not None:
+                records.append(current)
+            current = {field: row[field] for field in identities}
+            nrcan = "nrcan_fuel_consumption_ratings" in row["evidence_source"].split(" | ")
+            current.update(
+                entry_type="ratings_catalog", mto_make_code="", mto_model_code="",
+                model_year_from=year, model_year_to=year, vehicle_scope="ldv",
+                match_method="configured_canonical_identity", mapping_status="evidence_only",
+                supporting_rating_rows=int(row["supporting_rating_rows"]), evidence_source=row["evidence_source"],
+                review_notes=("Exact contiguous NRCan rating years; identity/class evidence only."
+                              if nrcan else "EPA-only identity/class evidence; no NRCan rating availability claim."),
+            )
+        if current is not None:
+            records.append(current)
+    result = pd.DataFrame(records).rename(columns={"Vehicle class": "nrcan_vehicle_class"})
+    if result.empty:
+        return pd.DataFrame(columns=mapping_columns)
+    return result.loc[:, mapping_columns].sort_values(
+        ["canonical_make", "canonical_model", "nrcan_vehicle_class", "model_year_from"], kind="stable",
     ).reset_index(drop=True)
 
 
@@ -453,15 +278,9 @@ def validate_vehicle_mapping(
 ) -> pd.DataFrame:
     """Validate the human-reviewed mapping without changing its contents."""
     expected = [str(column) for column in rules["mapping_columns"]]
-    compact = [str(column) for column in rules.get("reviewed_mapping_columns", [])]
-    if compact and list(mapping.columns) == compact:
-        mapping = mapping.assign(
-            entry_type="mto_crosswalk", mapping_status="reviewed",
-            match_method="reviewed_identity_and_applicability", supporting_rating_rows="",
-        ).loc[:, expected]
-    elif list(mapping.columns) != expected:
+    if list(mapping.columns) != expected:
         raise ValueError(
-            "vehicle_size_class_map.csv columns differ from the reviewed schema: "
+            "Internal reviewed vehicle mapping columns differ from the validated schema: "
             f"{list(mapping.columns)} != {expected}"
         )
     if mapping.empty:
@@ -488,9 +307,13 @@ def validate_vehicle_mapping(
         raise ValueError("MTO crosswalk rows require nonblank make/model keys")
     if ~validated.loc[catalog, "mapping_status"].eq("evidence_only").all():
         raise ValueError("Ratings catalogue rows must be evidence_only")
+    identity_unresolved = validated["vehicle_scope"].eq("identity_unresolved")
     for column in ["canonical_make", "canonical_model"]:
-        if validated[column].fillna("").astype(str).str.strip().eq("").any():
-            raise ValueError("Reviewed mapping rows require nonblank canonical make/model identities")
+        validated[column] = validated[column].fillna("").astype(str).str.strip()
+    if ((validated.canonical_make.eq("") | validated.canonical_model.eq("")) & ~identity_unresolved).any():
+        raise ValueError("Reviewed mapping rows require nonblank canonical make/model identities unless identity is explicitly unresolved")
+    if (identity_unresolved & validated.canonical_model.ne("")).any():
+        raise ValueError("Unresolved model identity must leave canonical_model blank")
     for column in ["model_year_from", "model_year_to"]:
         years = pd.to_numeric(
             validated[column],
@@ -504,7 +327,7 @@ def validate_vehicle_mapping(
         raise ValueError("Reviewed mapping has model_year_from after model_year_to")
 
     allowed_scopes = {
-        "ldv", "mhdv", "non_ldv_unclassified", "ldv_class_unresolved", "scope_unresolved",
+        "ldv", "mhdv", "non_ldv_unclassified", "ldv_class_unresolved", "scope_unresolved", "identity_unresolved",
     }
     validated["vehicle_scope"] = validated["vehicle_scope"].fillna("").astype(str)
     unexpected_scopes = sorted(set(validated["vehicle_scope"]) - allowed_scopes)
@@ -523,8 +346,6 @@ def validate_vehicle_mapping(
     ]
     if validated.loc[non_ldv, hierarchy_columns].ne("").any().any():
         raise ValueError("Non-LDV or unresolved-class mapping rows must leave the LDV hierarchy blank")
-    if validated.loc[non_ldv, ["canonical_make", "canonical_model"]].eq("").any().any():
-        raise ValueError("Non-LDV mapping rows require canonical make/model evidence")
 
     inverse = nrcan_to_nlr_map(rating_class_rules)
     for row in validated.itertuples(index=False):
@@ -610,6 +431,7 @@ def generate_mapping_candidates(
     candidates_per_key: int,
     similarity_scores: dict[str, float],
     canonical_aliases: dict[str, str] | None = None,
+    composition_rules: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
     """Generate ranked evidence without accepting or overwriting mappings."""
     required_stock = {"MAKE", "MODEL", "MODEL_YEAR", "FIT_ACTIVE"}
@@ -637,7 +459,7 @@ def generate_mapping_candidates(
         )
         .sort_values("fit_active_stock", ascending=False, kind="stable")
     )
-    rating_evidence = assign_rating_model_families(rating_evidence)
+    rating_evidence = assign_rating_model_families(rating_evidence, composition_rules=composition_rules)
     rating_groups = (
         rating_evidence.groupby(
             [
@@ -887,7 +709,7 @@ def apply_vehicle_mapping(
         joined["mapping_outcome"].eq("mapped_non_ldv"),
         ["nrcan_vehicle_class", "nlr_atb_class", "nrcan_ceud_class"],
     ] = pd.NA
-    unresolved_scope = resolved & scope.isin({"ldv_class_unresolved", "scope_unresolved"})
+    unresolved_scope = resolved & scope.isin({"ldv_class_unresolved", "scope_unresolved", "identity_unresolved"})
     joined.loc[
         joined["mapping_outcome"].isin({"unmapped", "out_of_scope"}),
         ["nrcan_vehicle_class", "nlr_atb_class", "nrcan_ceud_class"],
@@ -896,11 +718,11 @@ def apply_vehicle_mapping(
         joined["mapping_outcome"].isin({"unmapped", "out_of_scope"}) & ~unresolved_scope,
         ["canonical_make", "canonical_model"],
     ] = pd.NA
-    # The reviewed crosswalk establishes model identity. Its historical candidate
-    # match_method is audit context, not a second production acceptance gate.
+    # The reviewed crosswalk owns positive and explicitly unresolved identity
+    # decisions; a historical candidate method is not an acceptance gate.
     joined["identity_authority"] = ""
-    joined.loc[resolved, "identity_authority"] = "reviewed_vehicle_size_class_map"
-    joined["identity_supported"] = resolved
+    joined.loc[resolved, "identity_authority"] = "reviewed_vehicle_reference"
+    joined["identity_supported"] = resolved & ~scope.eq("identity_unresolved")
     joined["raw_canonical_make"] = joined.canonical_make
     joined["raw_canonical_model"] = joined.canonical_model
     return (
@@ -1103,12 +925,13 @@ def unresolved_mapping_reasons(
     unresolved["unresolved_reason"] = ""
     unresolved["unresolved_reason_detail"] = ""
 
-    def assign(mask: pd.Series, reason: str, detail: str) -> None:
+    def assign(mask: pd.Series, reason: str, detail: str | pd.Series) -> None:
         selected = unresolved["unresolved_reason"].eq("") & mask.fillna(False)
         unresolved.loc[selected, "unresolved_reason"] = reason
         unresolved.loc[selected, "unresolved_reason_detail"] = detail
 
     for scope, reason in [
+        ("identity_unresolved", "reviewed_identity_unresolved"),
         ("ldv_class_unresolved", "reviewed_family_class_unresolved"),
         ("scope_unresolved", "reviewed_family_scope_unresolved"),
     ]:
@@ -1120,6 +943,28 @@ def unresolved_mapping_reasons(
         suppressed,
         "suppressed_or_unknown_code",
         "MTO make or model is blank, suppressed, or explicitly unknown.",
+    )
+    reviewed = mapping.loc[
+        mapping["entry_type"].eq("mto_crosswalk")
+        & mapping["mapping_status"].eq("reviewed")
+    ]
+    intervals = {
+        key: sorted(set(zip(group.model_year_from.astype(int), group.model_year_to.astype(int))))
+        for key, group in reviewed.groupby(["mto_make_code", "mto_model_code"], sort=False)
+    }
+    interval_details = pd.Series("", index=unresolved.index)
+    for row in unresolved.itertuples():
+        ranges = intervals.get((str(row.MAKE).strip().upper(), str(row.MODEL).strip().upper()), [])
+        if ranges and pd.notna(row.MODEL_YEAR) and not any(start <= row.MODEL_YEAR <= end for start, end in ranges):
+            years = ", ".join(str(start) if start == end else f"{start}-{end}" for start, end in ranges)
+            interval_details.loc[row.Index] = (
+                f"Reviewed source-link years: {years}. No reviewed interval covers MY{int(row.MODEL_YEAR)}. "
+                "Check model identity and year evidence; a label match does not extend applicability."
+            )
+    assign(
+        interval_details.ne(""),
+        "no_applicable_reviewed_interval",
+        interval_details,
     )
     promotion_eligible = (
         unresolved["manual_promotion_eligible"]
@@ -1159,7 +1004,7 @@ def unresolved_mapping_reasons(
             ["exact_normalized", "normalized_prefix"]
         ),
         "unreviewed_high_confidence_candidate",
-        "A strong model-label candidate exists, but it is not yet an accepted reviewed MTO make/model mapping.",
+        "An exact or prefix label candidate exists, but no reviewed source link establishes its identity, year and class.",
     )
     assign(
         unresolved["candidate_match_method"].isin(
@@ -1611,15 +1456,8 @@ def build_road_aggregation_artifacts(
         raise FileNotFoundError(current_path)
     current_stock = pd.read_csv(current_path, low_memory=False)
 
-    mapping_path = resolve_parameter_path(
-        bundle,
-        rules["vehicle_size_class_map_file"],
-    )
-    mapping = pd.read_csv(mapping_path, dtype=str, keep_default_na=False)
-    validated_mapping = validate_vehicle_mapping(
-        mapping,
-        rules=rules,
-        rating_class_rules=rating_rules["vehicle_class_harmonization"],
+    validated_mapping = reference_mto_mapping(
+        load_vehicle_reference(bundle), rules, rating_rules["vehicle_class_harmonization"],
     )
     mapped = apply_vehicle_mapping(
         current_stock,
@@ -1672,19 +1510,14 @@ def build_mapping_diagnostic_artifacts(scenario_path: str | Path) -> Path:
         source_dir / str(ontario_rules["current_stock_file"]),
         low_memory=False,
     )
-    mapping = validate_vehicle_mapping(
-        pd.read_csv(
-            resolve_parameter_path(bundle, rules["vehicle_size_class_map_file"]),
-            dtype=str,
-            keep_default_na=False,
-        ),
-        rules=rules,
-        rating_class_rules=rating_rules["vehicle_class_harmonization"],
+    mapping = reference_mto_mapping(
+        load_vehicle_reference(bundle), rules, rating_rules["vehicle_class_harmonization"],
     )
     ratings = load_rating_evidence(bundle, rules=rules)
     candidates = generate_mapping_candidates(
         current_stock,
         ratings,
+        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
         candidates_per_key=int(
             rules["mapping_bootstrap"]["candidate_rows_per_key"]
         ),
@@ -1760,6 +1593,7 @@ def build_mapping_diagnostic_artifacts(scenario_path: str | Path) -> Path:
         rules["vehicle_class_evidence_file"]: build_rating_model_catalog(
             ratings,
             mapping_columns=[str(column) for column in rules["mapping_columns"]],
+            composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
         ),
         rules["top_observations_file"]: top,
     }
@@ -1772,7 +1606,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--scenario",
-        default="config/scenarios/legacy_reproduction.yaml",
+        default="config/scenarios/default.yaml",
     )
     parser.add_argument(
         "--mapping-diagnostics",

@@ -29,7 +29,7 @@ from validation.schema_contract import create_v4_schema
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 LDV_CLASSES = {"Car": 1, "SUV": 2, "Pickup": 3}
 TRUCK_CLASSES = {"Class 6 PnD Trucks": 1, "Class 8 Day-Cab Trucks": 2, "Class 8 Sleeper-Cab Trucks": 3}
 LDV_BLOCKS = [

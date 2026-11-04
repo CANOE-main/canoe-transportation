@@ -17,7 +17,7 @@ from fetching.vpic_vehicle_types import VPicResponse
 from utils import load_config_bundle
 
 
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 def eligible_rows() -> pd.DataFrame:

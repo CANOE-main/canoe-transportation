@@ -530,8 +530,16 @@ def test_loader_uses_recorded_snapshot_and_never_accepts_reader_scenario(bundle,
 
     source = tmp_path / ("actual" + suffix)
     pd.DataFrame({"value": [3]}).to_csv(source, index=False)
+    paths = {"actual": source}
+    canonical = pd.DataFrame({"vehicle_id": ["FIXTURE/MODEL"], "model_year_from": [2023]})
+    links = pd.DataFrame({
+        "vehicle_id": ["FIXTURE/MODEL", None, "FIXTURE/MODEL"],
+        "source": ["nrcan_fuel_consumption_ratings", "transport_canada_izev", "transport_canada_izev"],
+        "link_status": ["catalogue_label", "unresolved_identity", "configuration_unresolved"],
+    })
+    monkeypatch.setattr(diagnostic, "load_vehicle_reference", lambda captured: SimpleNamespace(canonical=canonical, links=links))
     metadata = {"build_id": "recorded-build", "built_at": "2026-10-17", "scenario": {"name": "recorded"}}
-    recorded = SimpleNamespace(bundle=bundle, paths={"actual": source}, metadata=metadata)
+    recorded = SimpleNamespace(bundle=bundle, paths=paths, metadata=metadata)
     seen = []
     monkeypatch.setattr(notebook_evidence, "load_notebook_evidence", lambda kind, repo_root: seen.append((kind, repo_root)) or recorded)
     monkeypatch.setattr(diagnostic, "build_diagnostic_frames", lambda config, inputs, **view: ({"actual": inputs["actual"]}, {"base_year": config.scenario.periods.base_year}))
@@ -541,6 +549,9 @@ def test_loader_uses_recorded_snapshot_and_never_accepts_reader_scenario(bundle,
     assert loaded.frames["actual"].value.iloc[0] == 3
     assert loaded.summary["build"] == metadata
     assert loaded.summary["inputs"]["actual"]["path"] == str(source)
+    assert loaded.summary["vehicle_reference"]["identities_without_mto_link"] == 1
+    assert loaded.summary["vehicle_reference"]["unlinked_identity_intervals"] == 1
+    assert loaded.summary["vehicle_reference"]["configuration_unresolved_intervals"] == 1
     with pytest.raises(TypeError):
         diagnostic.load_diagnostic("config/scenarios/default.yaml")
 
@@ -564,6 +575,7 @@ def test_collector_captures_raw_final_and_empirical_match_evidence(bundle, tmp_p
                   for key in ("statcan_new", "statcan_stock", "mto_passenger_cohorts", "mto_commercial_cohorts", "mto_mapped", "izev_records")}
     monkeypatch.setattr(diagnostic, "collect_composition_benchmark_inputs", lambda config: benchmarks if config is bundle else pytest.fail("wrong config"))
     paths = diagnostic.collect_efficiency_inputs(bundle)
+    assert not any(key.startswith("vehicle_reference_") for key in paths)
     assert {"atb_vehicles", "atb_phev", "ceud", "final_efficiency", "final_splits", "loads", "relationships",
             "omega_records", "omega_buckets",
             "periods", "rating_class_weights", "annual_cohort_stock", "composition_observations",
@@ -921,14 +933,7 @@ def test_review_exposure_counts_source_observations_once_and_keeps_proxy_pool_se
     pd.testing.assert_frame_equal(rows, original)
 
 
-def test_review_preserves_all_positive_unmapped_keys_and_separates_known_scope_exclusions(bundle, tmp_path):
-    import yaml
-
-    directory = tmp_path / "captured_parameters"
-    directory.mkdir()
-    rules = load_harmonization_rules(bundle, "road_aggregation")
-    (directory / "rules.yaml").write_text(yaml.safe_dump({"version": 2, "fetching": {},
-        "parameterization": {"road_aggregation": rules}}), encoding="utf-8")
+def test_review_preserves_all_positive_unmapped_keys_and_separates_known_scope_exclusions(bundle, monkeypatch):
     mapping = pd.DataFrame([
         {"entry_type": "mto_crosswalk", "mto_make_code": make, "mto_model_code": model,
          "model_year_from": first, "model_year_to": last, "canonical_make": "Captured Honda",
@@ -947,9 +952,9 @@ def test_review_preserves_all_positive_unmapped_keys_and_separates_known_scope_e
         "Mazda", "Mazda3", "Sedan versus hatchback body is not observed."]
     mapping.loc[mapping.mto_make_code.eq("FORD"), ["canonical_make", "canonical_model", "review_notes"]] = [
         "Ford", "F-Series", "The key does not distinguish F-150 from heavier numbered families."]
-    mapping.to_csv(directory / rules["vehicle_size_class_map_file"], index=False)
-    captured = replace(bundle, paths=bundle.paths.model_copy(update={
-        "config": bundle.paths.config.model_copy(update={"parameters": str(directory)})}))
+    monkeypatch.setattr(diagnostic, "load_vehicle_reference", lambda captured: "captured tables")
+    monkeypatch.setattr(diagnostic, "reference_mto_mapping", lambda reference, *args: mapping.copy())
+    captured = bundle
     mapped = pd.DataFrame([
         {"report_year": 2025, "MAKE": make, "MODEL": model, "MODEL_YEAR": year, "FIT_ACTIVE": count,
          "mapping_accepted": False, "mapping_outcome": outcome}

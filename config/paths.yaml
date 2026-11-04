@@ -128,14 +128,14 @@ artifacts:
     layer: output_validation
     owner: validation.ldv_efficiency_diagnostic
     producers: [validation.ldv_efficiency_diagnostic, marimo.export]
-    consumers: [docs.insights.ldv_efficiency_diagnosis, reviewers]
+    consumers: [reviewers]
     validation_surfaces: [validation.ldv_efficiency_diagnostic.load_diagnostic]
   ldv_epa_supplementation_report:
     path: outputs/validation/ldv_efficiency_diagnostic/epa_supplementation
     layer: output_validation
     owner: validation.ldv_epa_supplementation
     producers: [validation.ldv_epa_supplementation]
-    consumers: [docs.insights.ldv_efficiency_diagnosis, reviewers]
+    consumers: [reviewers]
     validation_surfaces: [validation.ldv_epa_supplementation]
   statcan_ldv_composition:
     path: inputs/1_interim/fetched_statcan_transport

@@ -11,7 +11,7 @@ from validation.config_models import ScenarioConfig
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+SCENARIO = "config/scenarios/default.yaml"
 
 
 def load_script_module(name: str, path: Path):
@@ -139,7 +139,7 @@ def test_doctor_runs_without_mutating_by_default() -> None:
             ],
         "file_count": 7,
         "component_count": 18,
-        "selected_cited_rows": 124,
+        "selected_cited_rows": 127,
         }
 
 

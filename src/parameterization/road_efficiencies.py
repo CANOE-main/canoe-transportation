@@ -216,7 +216,11 @@ def _configuration_hybrid_evidence(frame: pd.DataFrame, epa: pd.DataFrame, spec:
         pair = str(make), str(model), int(year)
         if pair not in identities:
             label = re.sub(policy.get("identity_signal_pattern", r"(?!)"), " ", pair[1])
-            make_label, model_label = catalogue_family(pair[0], " ".join(label.split()), spec["composition"])
+            # This normalizes auxiliary physical-configuration candidates only;
+            # canonical identities are resolved separately from reviewed source links.
+            make_label, model_label = catalogue_family(
+                pair[0], " ".join(label.split()), policy.get("family_normalization", spec["composition"]),
+            )
             for alias in policy.get("model_aliases", []):
                 if (alias.get("model_year_from", pair[2]) <= pair[2] <= alias.get("model_year_to", pair[2])
                         and norm(alias["make"]) == norm(make_label)

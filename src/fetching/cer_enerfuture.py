@@ -562,7 +562,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--scenario",
-        default="config/scenarios/legacy_reproduction.yaml",
+        default="config/scenarios/default.yaml",
         help="Scenario YAML controlling regions and configured paths.",
     )
     parser.add_argument(

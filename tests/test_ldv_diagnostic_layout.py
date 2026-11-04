@@ -343,3 +343,63 @@ def test_heatmap_duplicate_check_is_limited_to_displayed_scope(comparison, exclu
 
     assert len(result) == 4
     assert not result.duplicated(["year", "rating_class", "powertrain"]).any()
+
+
+def heatmap_helper():
+    import altair as alt
+
+    notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
+    cell = runpy.run_path(str(notebook))["heatmap_helpers"]
+    _, definitions = cell.run(alt=alt, pd=pd)
+    return definitions["class_consumption_heatmap"]
+
+
+def test_heatmap_display_reverses_sign_and_palette_without_changing_captured_deltas(comparison):
+    frame = diagnostic.composition_heatmap_data(recorded_comparison(comparison), "Cars", "phev", years=(2020, 2021))
+    panel = frame.loc[frame.powertrain.eq("phev_35_miles")]
+    original = frame.copy(deep=True)
+
+    chart = heatmap_helper()(panel, years=[2020, 2021], classes=["Compact", "Mid-size"], maximum=1.,
+                             width=900, title="Consumption change").to_dict(validate=True)
+    rows = pd.DataFrame(chart["data"]["values"])
+    reduced = rows.loc[rows.year.eq(2020) & rows.rating_class.eq("Compact")].iloc[0]
+    scale = chart["layer"][1]["encoding"]["color"]["scale"]
+    tooltips = chart["layer"][1]["encoding"]["tooltip"]
+
+    assert len(rows) == 4
+    assert reduced.consumption_change == -.5
+    assert reduced.relative_consumption_change == -.25
+    assert original.loc[original.powertrain.eq("phev_35_miles") & original.year.eq(2020), "delta_mj_per_vkm"].item() == .5
+    assert scale["domain"] == [-1., 0, 1.]
+    assert scale["range"] == ["#2475a8", "#ffffff", "#b7303e"]
+    assert next(item for item in tooltips if item["field"] == "consumption_change")["title"] == "Production − catalogue median MJ/vkm"
+    assert next(item for item in tooltips if item["field"] == "relative_consumption_change")["title"] == "Change relative to catalogue"
+    assert not {"delta_mj_per_vkm", "delta_fraction"} & set(rows)
+    pd.testing.assert_frame_equal(frame, original)
+
+
+@pytest.mark.parametrize(
+    ("catalogue", "production", "expected_delta", "expected_fraction"),
+    [(np.nan, 0., np.nan, np.nan), (0., 0., 0., np.nan), (0., 1., 1., np.nan),
+     (2., np.nan, np.nan, np.nan), (2., 2., 0., 0.), (2., 0., -2., -1.)],
+)
+def test_heatmap_display_keeps_missing_and_zero_distinct(comparison, catalogue, production, expected_delta, expected_fraction):
+    panel = comparison.iloc[[0]].assign(catalogue_mj_per_vkm=catalogue, production_mj_per_vkm=production)
+    original = panel.copy(deep=True)
+    chart = heatmap_helper()(panel, years=[2020], classes=["Compact"], maximum=2.,
+                             width=900, title="Consumption change").to_dict(validate=True)
+    row = chart["data"]["values"][0]
+
+    assert row["consumption_change"] == (None if np.isnan(expected_delta) else expected_delta)
+    assert row["relative_consumption_change"] == (None if np.isnan(expected_fraction) else expected_fraction)
+    pd.testing.assert_frame_equal(panel, original)
+
+
+def test_heatmap_zero_difference_stays_white_without_a_numeric_colour_legend(comparison):
+    panel = comparison.iloc[[0]].assign(catalogue_mj_per_vkm=2., production_mj_per_vkm=2.)
+    chart = heatmap_helper()(panel, years=[2020], classes=["Compact"], maximum=0.,
+                             width=900, title="Consumption change").to_dict(validate=True)
+
+    assert chart["data"]["values"][0]["consumption_change"] == 0.
+    assert chart["layer"][0]["mark"]["color"] == "#dfe3e8"
+    assert chart["layer"][1]["encoding"]["color"] == {"value": "#ffffff"}

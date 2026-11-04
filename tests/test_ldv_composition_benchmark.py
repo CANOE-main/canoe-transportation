@@ -9,6 +9,24 @@ import pytest
 from validation import ldv_composition_benchmark as benchmark
 
 
+def reference_for(entries):
+    """Small reviewed source-link fixture, independent of live configuration."""
+    from utils.vehicle_labels import normalize_vehicle_text
+
+    canonical, links = [], []
+    for make, model, canonical_make, canonical_model, year, powertrain in entries:
+        identifier = normalize_vehicle_text(canonical_make) + "/" + normalize_vehicle_text(canonical_model)
+        canonical.append({"vehicle_id": identifier, "canonical_make": canonical_make,
+                          "canonical_model": canonical_model, "model_year_from": year,
+                          "model_year_to": year, "evidence_status": "catalogue_supported"})
+        links.append({"source": "transport_canada_izev", "source_make": make, "source_model": model,
+                      "model_year_from": year, "model_year_to": year, "observed_powertrain": powertrain,
+                      "source_vehicle_class": "", "vehicle_id": identifier, "vehicle_scope": "ldv",
+                      "link_status": "matched_rating_family", "canonical_description": canonical_model,
+                      "source_notes": ""})
+    return SimpleNamespace(canonical=pd.DataFrame(canonical).drop_duplicates(), links=pd.DataFrame(links))
+
+
 @pytest.fixture
 def setup(monkeypatch):
     fuel_map = {"All fuel types": "all", "Gasoline": "gasoline", "Diesel": "diesel",
@@ -60,6 +78,7 @@ def setup(monkeypatch):
         ("Tesla", "Model Y", "bev", 2023, "Sport utility vehicle: Small"), ("Toyota", "RAV4", "phev", 2023, "Sport utility vehicle: Small"),
     ]):
         observations.append({"source_kind": "izev", "year": year, "family_make": make, "family_model": model,
+                             "vehicle_id": make.upper() + "/" + model.replace(" ", "").upper(),
                              "observed_powertrain": powertrain, "rating_class": rating_class, "candidate_rating_classes": rating_class,
                              "candidate_powertrains": powertrain, "resolved_powertrain": powertrain,
                              "empirical_observation_id": f"i{index}", "match_status": "outside_supported_program_window", "source_count": 1, "region": "ON"})
@@ -87,6 +106,12 @@ def setup(monkeypatch):
               "benchmark_mto_passenger_cohorts": passenger, "benchmark_mto_commercial_cohorts": commercial,
               "benchmark_mto_mapped": mapped, "benchmark_izev_records": pd.DataFrame(records),
               "composition_observations": pd.DataFrame(observations)}
+    reference = reference_for([
+        (row["family_make"], row["family_model"], row["family_make"], row["family_model"],
+         row["year"], row["observed_powertrain"])
+        for row in observations if row["source_kind"] == "izev"
+    ])
+    monkeypatch.setattr(benchmark, "load_vehicle_reference", lambda captured: reference)
     return bundle, inputs, spec
 
 
@@ -381,27 +406,72 @@ def test_mto_catalogue_subset_respects_supported_predominant_class_and_final_dis
     assert cars['count'].sum()==50
 
 
-def test_benchmark_uses_reported_powertrain_observation_aliases_without_mixing_same_visible_model(setup):
-    bundle,_,spec=setup
-    policy=benchmark.load_harmonization_rules(bundle,'efficiencies')['ratings']['composition']
-    policy['izev_observation_aliases_by_powertrain']={'bev':[
-        {'make':'MINI','canonical_model':'Cooper SE 3 Door','models':['Cooper SE'],'exact_only':True},
-        {'make':'Dodge','canonical_model':'Charger Daytona','models':['Charger'],'exact_only':True}]}
-    raw=pd.DataFrame([{'province':'ON','request_year':2024,'model_year':2024,'Purchase or Lease':'Purchase',
-        'make':make,'model':model,'powertrain':powertrain,'count':count}
-        for make,model,powertrain,count in [('MINI','Cooper SE','bev',68),('MINI','Cooper SE','phev',55),('Dodge','Charger','bev',1)]])
-    matched=pd.DataFrame([{'source_kind':'izev','year':2024,'family_make':make,'family_model':model,
-        'observed_powertrain':powertrain,'candidate_rating_classes':rating_class}
-        for make,model,powertrain,rating_class in [('MINI','Cooper SE 3 Door','bev','Subcompact'),
-            ('MINI','Cooper SE','phev',''),('Dodge','Charger Daytona','bev','Full-size')]])
-    _,coverage,_,observations=benchmark._izev(bundle,raw,matched,spec,{'Subcompact':'Cars','Full-size':'Cars'},['ON'])
-    counts=coverage.set_index('powertrain')
-    assert counts.loc['bev','total_count']==69
-    assert counts.loc['bev','mapped_count']==69
-    assert counts.loc['phev','total_count']==55
-    assert counts.loc['phev','mapped_count']==0
-    assert observations['count'].sum()==124
-    mini=observations.loc[observations.source_make.eq('MINI')].set_index('powertrain')
-    assert mini.loc['bev','vehicle_group']=='Cars'
-    assert mini.loc['phev','vehicle_group']==''
-    assert mini.source_model.eq('Cooper SE').all()
+def test_benchmark_uses_reviewed_powertrain_scoped_links_without_mixing_same_visible_model(setup, monkeypatch):
+    bundle, _, spec = setup
+    reference = reference_for([
+        ("MINI", "Cooper SE", "MINI", "Cooper SE 3 Door", 2024, "bev"),
+        ("MINI", "Cooper SE", "MINI", "Cooper", 2024, "phev"),
+        ("Dodge", "Charger", "Dodge", "Charger Daytona", 2024, "bev"),
+    ])
+    monkeypatch.setattr(benchmark, "load_vehicle_reference", lambda captured: reference)
+    raw = pd.DataFrame([{
+        "province": "ON", "request_year": 2024, "model_year": 2024, "Purchase or Lease": "Purchase",
+        "make": make, "model": model, "powertrain": powertrain, "count": count,
+    } for make, model, powertrain, count in [
+        ("MINI", "Cooper SE", "bev", 68), ("MINI", "Cooper SE", "phev", 55), ("Dodge", "Charger", "bev", 1),
+    ]])
+    matched = pd.DataFrame([{
+        "source_kind": "izev", "year": 2024, "vehicle_id": identifier,
+        "observed_powertrain": powertrain, "candidate_rating_classes": rating_class,
+    } for identifier, powertrain, rating_class in [
+        ("MINI/COOPERSE3DOOR", "bev", "Subcompact"),
+        ("MINI/COOPER", "phev", ""), ("DODGE/CHARGERDAYTONA", "bev", "Full-size"),
+    ]])
+    original = raw.copy(deep=True)
+    _, coverage, _, observations = benchmark._izev(bundle, raw, matched, spec, {"Subcompact": "Cars", "Full-size": "Cars"}, ["ON"])
+    counts = coverage.set_index("powertrain")
+    assert counts.loc["bev", "total_count"] == counts.loc["bev", "mapped_count"] == 69
+    assert counts.loc["phev", "total_count"] == 55 and counts.loc["phev", "mapped_count"] == 0
+    assert observations["count"].sum() == 124
+    mini = observations.loc[observations.source_make.eq("MINI")].set_index("powertrain")
+    assert mini.loc["bev", "vehicle_group"] == "Cars" and mini.loc["phev", "vehicle_group"] == ""
+    assert mini.source_model.eq("Cooper SE").all()
+    pd.testing.assert_frame_equal(raw, original)
+
+
+def test_source_link_year_uses_original_model_year_before_request_year(setup, monkeypatch):
+    bundle, _, spec = setup
+    reference = reference_for([
+        ("Fixture", "Shared label", "Fixture", "Car family", 2022, "bev"),
+        ("Fixture", "Shared label", "Fixture", "Truck family", 2023, "bev"),
+    ])
+    monkeypatch.setattr(benchmark, "load_vehicle_reference", lambda captured: reference)
+    raw = pd.DataFrame([{
+        "province": "ON", "request_year": 2024, "model_year": year, "Purchase or Lease": "Lease",
+        "make": "Fixture", "model": "Shared label", "powertrain": "bev", "count": count,
+    } for year, count in [(2022, 4), (2023, 6)]])
+    matched = pd.DataFrame([{
+        "source_kind": "izev", "year": year, "vehicle_id": identifier,
+        "observed_powertrain": "bev", "candidate_rating_classes": vehicle_class,
+    } for year, identifier, vehicle_class in [
+        (2022, "FIXTURE/CARFAMILY", "Compact"), (2023, "FIXTURE/TRUCKFAMILY", "Sport utility vehicle: Small"),
+    ]])
+    _, _, timing, observations = benchmark._izev(bundle, raw, matched, spec, {
+        "Compact": "Cars", "Sport utility vehicle: Small": "Light trucks",
+    }, ["ON"])
+    assert observations.set_index("vehicle_group")["count"].to_dict() == {"Cars": 4, "Light trucks": 6}
+    assert set(timing.request_year) == {2024} and set(timing.model_year) == {2022, 2023}
+
+
+def test_native_duplicate_transactions_keep_counts_and_missing_rating_year_is_not_borrowed(setup):
+    bundle, inputs, _ = setup
+    raw = inputs["benchmark_izev_records"]
+    inputs["benchmark_izev_records"] = pd.concat([raw, raw.iloc[[0]]], ignore_index=True)
+    observations = inputs["composition_observations"]
+    observations.loc[observations.source_kind.eq("izev") & observations.family_model.eq("Model 3"), "year"] = 2024
+    result = benchmark.build_composition_benchmark(bundle, inputs)
+    native = result.observations.loc[result.observations.source.eq("izev")]
+    assert native["count"].sum() == 16
+    model3 = native.loc[native.source_model.eq("Model 3")]
+    assert model3["count"].sum() == 7 and model3.vehicle_group.eq("").all()
+    assert model3.status.eq("unmatched_or_ambiguous_class").all()

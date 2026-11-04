@@ -5,6 +5,7 @@ import pytest
 
 from parameterization.road_aggregation import (
     apply_vehicle_mapping,
+    assign_rating_model_families,
     build_rating_model_catalog,
     derive_aggregation_weights,
     derive_fleet_composition_weights,
@@ -35,9 +36,10 @@ def config():
 
 
 def candidate_policy() -> dict[str, object]:
-    _, rules, _ = config()
+    bundle, rules, _ = config()
     bootstrap = rules["mapping_bootstrap"]
     return {
+        "composition_rules": load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
         "candidates_per_key": int(bootstrap["candidate_rows_per_key"]),
         "similarity_scores": {
             str(name): float(score)
@@ -89,17 +91,18 @@ def test_reviewed_mapping_rejects_overlapping_model_year_ranges() -> None:
         )
 
 
-def test_compact_reviewed_mapping_expands_internal_metadata_without_mutation() -> None:
+def test_internal_mapping_validation_preserves_reviewed_metadata_without_mutation() -> None:
     _, rules, rating_rules = config()
-    compact = mapping_frame(mapping_row()).loc[:, rules["reviewed_mapping_columns"]]
-    original = compact.copy(deep=True)
-    validated = validate_vehicle_mapping(compact, rules=rules, rating_class_rules=rating_rules)
-    pd.testing.assert_frame_equal(compact, original)
+    mapping = mapping_frame(mapping_row())
+    original = mapping.copy(deep=True)
+    validated = validate_vehicle_mapping(mapping, rules=rules, rating_class_rules=rating_rules)
+    pd.testing.assert_frame_equal(mapping, original)
     assert list(validated.columns) == rules["mapping_columns"]
     assert validated.entry_type.tolist() == ["mto_crosswalk"]
     assert validated.mapping_status.tolist() == ["reviewed"]
-    assert validated.match_method.tolist() == ["reviewed_identity_and_applicability"]
-    assert validated.supporting_rating_rows.tolist() == [""]
+    assert validated.match_method.tolist() == ["human_reviewed_code_and_year_overlap"]
+    assert validated.supporting_rating_rows.tolist() == [1]
+    assert validated.review_notes.tolist() == ["fixture"]
 
 
 @pytest.mark.parametrize("scope", ["ldv_class_unresolved", "scope_unresolved"])
@@ -127,12 +130,49 @@ def test_reviewed_identity_without_fine_class_preserves_counts_and_unmapped_deno
     assert all_stock.unmapped.item() == 20
 
 
+def test_reviewed_unresolved_model_retains_make_and_native_count_without_ghost_identity() -> None:
+    _, rules, rating_rules = config()
+    mapping = mapping_frame(mapping_row(
+        mto_make_code="HOND", mto_model_code="UDY", canonical_make="Honda", canonical_model="",
+        vehicle_scope="identity_unresolved", nrcan_vehicle_class="", nlr_atb_class="", nrcan_ceud_class="",
+        review_notes="Prior Odyssey association is not supported by inspectable identity evidence.",
+    ))
+    validated = validate_vehicle_mapping(mapping, rules=rules, rating_class_rules=rating_rules)
+    stock = pd.DataFrame([{"report_year": 2025, "VEHICLE_CLASS": "PASSENGER", "MAKE": "HOND",
+                           "MODEL": "UDY", "MODEL_YEAR": 2020, "FIT_ACTIVE": 253672}])
+    mapped = apply_vehicle_mapping(stock, validated, accepted_statuses={"reviewed"})
+    assert len(mapped) == 1 and mapped.FIT_ACTIVE.sum() == 253672
+    assert mapped.canonical_make.tolist() == ["Honda"]
+    assert mapped.canonical_model.tolist() == [""]
+    assert mapped.mapping_outcome.tolist() == ["unmapped"]
+    assert not mapped.mapping_accepted.any() and not mapped.identity_supported.any()
+    assert mapped[["nrcan_vehicle_class", "nlr_atb_class", "nrcan_ceud_class"]].isna().all().all()
+    candidates = pd.DataFrame(columns=["mto_make_code", "mto_model_code", "candidate_rank", "candidate_status",
+        "canonical_make", "canonical_model", "nrcan_vehicle_class", "nlr_atb_class", "match_method", "model_similarity",
+        "rating_model_year_from", "rating_model_year_to", "overlap_years"])
+    detail, summary = unresolved_mapping_reasons(mapped, candidates, validated)
+    assert detail.unresolved_reason.tolist() == ["reviewed_identity_unresolved"]
+    assert "Odyssey" in detail.unresolved_reason_detail.item()
+    assert summary.unresolved_fit_active_stock.sum() == 253672
+
+
+def test_only_explicit_unresolved_identity_allows_blank_make_and_requires_blank_model() -> None:
+    _, rules, rating_rules = config()
+    row = mapping_row(vehicle_scope="identity_unresolved", canonical_model="", nrcan_vehicle_class="", nlr_atb_class="", nrcan_ceud_class="")
+    unknown_make = validate_vehicle_mapping(mapping_frame({**row, "canonical_make": ""}), rules=rules, rating_class_rules=rating_rules)
+    assert unknown_make.canonical_make.tolist() == [""] and unknown_make.canonical_model.tolist() == [""]
+    with pytest.raises(ValueError, match="leave canonical_model blank"):
+        validate_vehicle_mapping(mapping_frame({**row, "canonical_model": "Unverified candidate"}), rules=rules, rating_class_rules=rating_rules)
+    with pytest.raises(ValueError, match="leave canonical_model blank"):
+        validate_vehicle_mapping(mapping_frame({**row, "canonical_make": "", "canonical_model": "Unverified candidate"}), rules=rules, rating_class_rules=rating_rules)
+
+
 def test_authoritative_mapping_respects_identity_scope_body_and_year_decisions() -> None:
+    from parameterization.vehicle_reference import MTO_SOURCE, load_vehicle_reference, reference_mto_mapping
+
     bundle, rules, rating_rules = config()
-    mapping = validate_vehicle_mapping(
-        pd.read_csv(bundle.repo_root / "config/parameters/vehicle_size_class_map.csv", dtype=str, keep_default_na=False),
-        rules=rules, rating_class_rules=rating_rules,
-    )
+    reference = load_vehicle_reference(bundle)
+    mapping = reference_mto_mapping(reference, rules, rating_rules)
     samples = [
         ("LEXS", "RX5", 2018), ("DODG", "CAR", 2018), ("MAZD", "3SP", 2015),
         ("RAM", "RTR", 2020), ("HOND", "CIV", 2023), ("HYUN", "EXL", 2023),
@@ -145,12 +185,42 @@ def test_authoritative_mapping_respects_identity_scope_body_and_year_decisions()
     ])
     mapped = apply_vehicle_mapping(stock, mapping, accepted_statuses={"reviewed"})
     assert mapped.FIT_ACTIVE.sum() == 88
-    assert mapped.canonical_model.iloc[:3].tolist() == ["RX 350", "Grand Caravan", "Mazda3 5-Door"]
+    assert mapped.canonical_model.iloc[:3].tolist() == ["RX", "Caravan", "Mazda3"]
+    body = reference.links.loc[reference.links.source.eq(MTO_SOURCE)
+        & reference.links.source_make.eq("MAZD") & reference.links.source_model.eq("3SP")
+        & reference.links.model_year_from.le(2015) & reference.links.model_year_to.ge(2015)]
+    assert body.canonical_description.tolist() == ["Mazda3 5-Door"]
+    caravan = reference.links.loc[reference.links.source.eq(MTO_SOURCE)
+        & reference.links.source_make.eq("DODG") & reference.links.source_model.eq("CAR")
+        & reference.links.model_year_from.le(2018) & reference.links.model_year_to.ge(2018)]
+    assert caravan.canonical_description.tolist() == ["Grand Caravan"]
     assert mapped.nrcan_vehicle_class.iloc[2] == "Mid-size"
     assert mapped.vehicle_scope.iloc[3:5].tolist() == ["scope_unresolved", "ldv_class_unresolved"]
     assert mapped.mapping_accepted.tolist() == [True, True, True, False, False, True, True, False]
     assert mapped.canonical_model.iloc[5] == "Elantra"
     assert mapped.canonical_model.iloc[6] == "CX-30"
+
+
+def test_rx_links_accept_only_supported_year_and_class_scopes():
+    from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
+
+    bundle, rules, rating_rules = config()
+    mapping = reference_mto_mapping(load_vehicle_reference(bundle), rules, rating_rules)
+    cases = [
+        ("LEXS", "RX", 2023), ("LEXS", "RX", 2022),
+        ("LEXS", "RX0", 2014), ("LEXS", "RX0", 2012),
+        ("LEXS", "RX0", 2023), ("CHEV", "ORL", 2024),
+        ("CHEV", "SSM", 2023), ("DODG", "CSX", 2004),
+    ]
+    stock = pd.DataFrame([{"report_year": 2025, "VEHICLE_CLASS": "PASSENGER",
+        "MAKE": make, "MODEL": model, "MODEL_YEAR": year, "FIT_ACTIVE": 3}
+        for make, model, year in cases])
+    mapped = apply_vehicle_mapping(stock, mapping, accepted_statuses={"reviewed"})
+    assert mapped.FIT_ACTIVE.sum() == 24
+    assert mapped.mapping_accepted.tolist() == [True, False, True, False, True, False, False, False]
+    assert mapped.loc[mapped.mapping_accepted, "nrcan_vehicle_class"].eq("Sport utility vehicle: Small").all()
+    assert mapped.loc[mapped.MODEL.isin(["RX", "RX0"]), "canonical_model"].eq("RX").all()
+    assert mapped.loc[[1, 3], "vehicle_scope"].eq("ldv_class_unresolved").all()
 
 
 def test_reviewed_mapping_rejects_competing_class_hierarchy() -> None:
@@ -216,8 +286,8 @@ def test_candidate_generation_uses_reviewed_make_alias_without_accepting() -> No
     assert "mapping_status" not in candidates.columns
 
 
-def test_rating_catalog_exhausts_labels_and_collapses_rav4_variants() -> None:
-    _, rules, _ = config()
+def test_rating_catalog_uses_production_families_without_merging_hybrid_labels() -> None:
+    bundle, rules, _ = config()
     ratings = pd.DataFrame(
         [
             {
@@ -243,15 +313,19 @@ def test_rating_catalog_exhausts_labels_and_collapses_rav4_variants() -> None:
     catalog = build_rating_model_catalog(
         ratings,
         mapping_columns=rules["mapping_columns"],
+        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
     )
 
     rav4 = catalog.loc[catalog["canonical_model"].eq("RAV4")]
-    assert rav4["supporting_rating_rows"].item() == 3
+    assert rav4["supporting_rating_rows"].item() == 2
+    assert catalog.loc[catalog.canonical_model.eq("RAV4 Hybrid"), "supporting_rating_rows"].item() == 1
     assert "Corolla Cross" in set(catalog["canonical_model"])
 
 
-def test_rating_catalog_normalizes_pickup_variants_without_base_label() -> None:
-    _, rules, _ = config()
+def test_rating_catalog_uses_configured_pickup_root_without_base_label() -> None:
+    bundle, rules, _ = config()
+    policy = load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"]
+    policy["family_matching"]["family_patterns"] = [{"make": "Ford", "pattern": r"(?i)^Ranger\b.*$", "canonical_model": "Ranger"}]
     ratings = pd.DataFrame(
         [
             {
@@ -271,6 +345,7 @@ def test_rating_catalog_normalizes_pickup_variants_without_base_label() -> None:
     catalog = build_rating_model_catalog(
         ratings,
         mapping_columns=rules["mapping_columns"],
+        composition_rules=policy,
     )
 
     assert catalog["canonical_model"].tolist() == ["Ranger"]
@@ -278,7 +353,7 @@ def test_rating_catalog_normalizes_pickup_variants_without_base_label() -> None:
 
 
 def test_rating_catalog_casefold_ties_have_deterministic_family() -> None:
-    _, rules, _ = config()
+    bundle, rules, _ = config()
     ratings = pd.DataFrame(
         [
             {
@@ -298,10 +373,45 @@ def test_rating_catalog_casefold_ties_have_deterministic_family() -> None:
     catalog = build_rating_model_catalog(
         ratings,
         mapping_columns=rules["mapping_columns"],
+        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
     )
 
     assert catalog.loc[0, "canonical_model"].casefold() == "granturismo"
     assert catalog.loc[0, "supporting_rating_rows"] == 2
+
+
+def test_rating_catalog_keeps_year_gaps_and_epa_only_years_explicit() -> None:
+    bundle, rules, _ = config()
+    ratings = pd.DataFrame([
+        {"Model year": year, "Make": "Toyota", "Model": "Camry LE", "Vehicle class": "Mid-size",
+         "nlr_atb_class": "Midsize", "nrcan_ceud_class": "Car", "evidence_source": source}
+        for year, source in [(2010, "nrcan_fuel_consumption_ratings"), (2011, "fueleconomy_gov_vehicle_data"),
+                             (2012, "nrcan_fuel_consumption_ratings"), (2013, "nrcan_fuel_consumption_ratings"),
+                             (2015, "nrcan_fuel_consumption_ratings")]
+    ])
+    catalog = build_rating_model_catalog(ratings, mapping_columns=rules["mapping_columns"],
+        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"])
+    assert list(zip(catalog.model_year_from, catalog.model_year_to, strict=True)) == [(2010, 2010), (2011, 2011), (2012, 2013), (2015, 2015)]
+    assert catalog.loc[catalog.model_year_from.eq(2011), "review_notes"].item().startswith("EPA-only")
+    assert catalog.supporting_rating_rows.sum() == len(ratings)
+    assert set(catalog.canonical_model) == {"Camry"}
+
+
+def test_family_assignment_requires_policy_for_unlabelled_rows_and_retains_multiple_classes() -> None:
+    bundle, rules, _ = config()
+    ratings = pd.DataFrame([
+        {"Model year": 2023, "Make": "Toyota", "Model": "RAV4 AWD", "Vehicle class": size,
+         "nlr_atb_class": nlr, "nrcan_ceud_class": "Light Truck"}
+        for size, nlr in [("Sport utility vehicle: Small", "Small SUV"), ("Sport utility vehicle: Standard", "Midsize SUV")]
+    ])
+    with pytest.raises(ValueError, match="requires canonical composition_rules"):
+        assign_rating_model_families(ratings)
+    policy = load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"]
+    labelled = assign_rating_model_families(ratings, composition_rules=policy)
+    pd.testing.assert_frame_equal(labelled, assign_rating_model_families(labelled))
+    catalog = build_rating_model_catalog(labelled, mapping_columns=rules["mapping_columns"])
+    assert catalog.canonical_model.tolist() == ["RAV4", "RAV4"]
+    assert catalog.nrcan_vehicle_class.nunique() == 2
 
 
 def test_candidate_generation_supports_aliases_longer_than_six_characters() -> None:
@@ -403,7 +513,7 @@ def test_reviewed_identity_is_authoritative_independent_of_candidate_method() ->
     assert mapped.loc[0, "canonical_make"] == "Mazda"
     assert mapped.loc[0, "canonical_model"] == mapped.loc[0, "raw_canonical_model"] == "3"
     assert mapped.loc[0, "nrcan_vehicle_class"] == "Compact"
-    assert mapped.loc[0, "identity_authority"] == "reviewed_vehicle_size_class_map"
+    assert mapped.loc[0, "identity_authority"] == "reviewed_vehicle_reference"
     assert mapped.loc[0, "identity_supported"]
     assert mapped.loc[0, "match_method"] == "old_residual_fuzzy_candidate"
     assert mapped.loc[0, "MAKE"] == " mazd " and mapped.loc[0, "MODEL"] == "mz3"
@@ -436,15 +546,16 @@ def test_runtime_mapping_preserves_reviewed_labels_without_residual_evidence(tmp
     stock_file = source / "current.csv"
     pd.DataFrame([{"report_year": 2025, "VEHICLE_CLASS": "PASSENGER", "MAKE": "MAZD",
         "MODEL": "MZ3", "MODEL_YEAR": 2023, "FIT_ACTIVE": 20}]).to_csv(stock_file, index=False)
-    mapping_path = tmp_path / "vehicle_size_class_map.csv"
-    mapping_frame(mapping_row(mto_make_code="MAZD", mto_model_code="MZ3", canonical_make="Mazda",
-        canonical_model="3", nrcan_vehicle_class="Compact", nlr_atb_class="Compact", nrcan_ceud_class="Car")).to_csv(mapping_path, index=False)
+    mapping = validate_vehicle_mapping(mapping_frame(mapping_row(mto_make_code="MAZD", mto_model_code="MZ3", canonical_make="Mazda",
+        canonical_model="3", nrcan_vehicle_class="Compact", nlr_atb_class="Compact", nrcan_ceud_class="Car")),
+        rules=rules, rating_class_rules=rating_rules)
     routes = {"ontario_vehicle_population": source, "road_aggregation": tmp_path / "processed",
               "vehicle_mapping_review": tmp_path / "review"}
     monkeypatch.setattr(module, "load_config_bundle", lambda path: bundle)
     monkeypatch.setattr(module, "module_rules", lambda actual: rules)
     monkeypatch.setattr(module, "resolve_artifact_path", lambda actual, key: routes[key])
-    monkeypatch.setattr(module, "resolve_parameter_path", lambda actual, filename: mapping_path)
+    monkeypatch.setattr(module, "load_vehicle_reference", lambda actual: "reviewed two-table fixture")
+    monkeypatch.setattr(module, "reference_mto_mapping", lambda reference, actual_rules, actual_rating_rules: mapping.copy())
     monkeypatch.setattr(module, "load_wards_legacy_comparison", lambda actual: pd.DataFrame())
     def harmonization(actual, name):
         if name == module.ONTARIO_RULE_KEY:
@@ -461,7 +572,7 @@ def test_runtime_mapping_preserves_reviewed_labels_without_residual_evidence(tmp
 
     mapped = pd.read_csv(output / rules["mapped_current_stock_file"], dtype={"canonical_model": str})
     assert mapped.canonical_model.tolist() == ["3"]
-    assert mapped.identity_authority.tolist() == ["reviewed_vehicle_size_class_map"]
+    assert mapped.identity_authority.tolist() == ["reviewed_vehicle_reference"]
     assert mapped.FIT_ACTIVE.sum() == 20
 
 
@@ -543,6 +654,10 @@ def test_repository_ratings_load_with_existing_class_harmonization() -> None:
         "Midsize SUV",
         "Pickup",
     }
+    native = evidence.loc[evidence.evidence_source.eq("nrcan_fuel_consumption_ratings")]
+    assert native.vehicle_id.notna().all()
+    candidate_only = evidence.loc[evidence.reference_link_status.eq("unreviewed_auxiliary_label")]
+    assert candidate_only.vehicle_id.isna().all()
 
 
 def test_unresolved_reason_summary_has_absolute_and_relative_stock() -> None:
@@ -660,13 +775,14 @@ def test_unresolved_reason_summary_has_absolute_and_relative_stock() -> None:
     assert detail.set_index(["MAKE", "MODEL_YEAR"])[
         "unresolved_reason"
     ].to_dict() == {
-        ("FORD", 2026): "unreviewed_high_confidence_candidate",
-        ("FORD", 2014): "unreviewed_high_confidence_candidate",
+        ("FORD", 2026): "no_applicable_reviewed_interval",
+        ("FORD", 2014): "no_applicable_reviewed_interval",
         ("****", 2020): "suppressed_or_unknown_code",
         ("NOPE", 2020): "no_normalized_make_agreement",
         ("TOYT", 2024): "ambiguous_top_candidate",
     }
     assert summary["unresolved_rows"].sum() == 5
+    assert detail.loc[detail.MAKE.eq("FORD"), "unresolved_reason_detail"].str.contains("2015-2025", regex=False).all()
     assert summary["unresolved_fit_active_stock"].sum() == 150
     assert summary.groupby("VEHICLE_CLASS")[
         "share_of_unresolved_rows"

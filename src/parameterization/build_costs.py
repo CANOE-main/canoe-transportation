@@ -991,7 +991,7 @@ def prepare_cost_rows(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--scenario", default="config/scenarios/legacy_reproduction.yaml"
+        "--scenario", default="config/scenarios/default.yaml"
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")

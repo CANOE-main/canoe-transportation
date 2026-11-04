@@ -433,7 +433,7 @@ def generate_vehicle_cycle_results(bundle: ConfigBundle) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", default="config/scenarios/legacy_reproduction.yaml")
+    parser.add_argument("--scenario", default="config/scenarios/default.yaml")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--run-dir", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()

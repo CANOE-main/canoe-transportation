@@ -119,7 +119,7 @@ def test_scenario_entrypoint_dispatches_optional_comparison(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mode: str,
 ) -> None:
     reference = database(tmp_path / "reference.sqlite")
-    bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    bundle = load_config_bundle("config/scenarios/default.yaml")
     shutil.copytree(bundle.repo_root / "config/parameters", tmp_path / "config/parameters")
     shutil.copytree(bundle.repo_root / "inputs/0_manual_params", tmp_path / "inputs/0_manual_params")
     payload = bundle.scenario.model_dump(mode="python")
@@ -149,7 +149,7 @@ def test_scenario_entrypoint_dispatches_optional_comparison(
     assert report_path.exists()
     assert report["database_sha256"] == build_transport.file_sha256(Path(report["database"]))
     assert {Path(item["path"]).name for item in report["config"]["parameters"]} == {
-        "rules.yaml", "conversion.yaml", "vehicle_size_class_map.csv",
+        "rules.yaml", "conversion.yaml", "vehicle_reference.csv", "vehicle_source_links.csv",
     }
     assert report["config"]["manual_inputs"]
 
@@ -184,7 +184,10 @@ def test_unkeyed_solver_outputs_preserve_duplicate_counts(tmp_path: Path) -> Non
 def test_comparison_failure_preserves_published_database_and_cleans_candidate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    bundle = load_config_bundle("config/scenarios/default.yaml")
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
+        "BEV_PHEV_range_representation": bundle.scenario.BEV_PHEV_range_representation.model_copy(update={"mode": "none"}),
+    }))
     reference = database(tmp_path / "reference.sqlite")
     target = tmp_path / "target.sqlite"
     target.write_bytes(b"previous published database")
@@ -212,7 +215,7 @@ def test_comparison_failure_preserves_published_database_and_cleans_candidate(
 
 
 def test_comparison_rejects_using_output_as_reference_before_preparation(tmp_path: Path) -> None:
-    bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    bundle = load_config_bundle("config/scenarios/default.yaml")
     target = database(tmp_path / "target.sqlite")
     before = target.read_bytes()
     with pytest.raises(ValueError, match="must differ"):

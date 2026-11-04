@@ -1286,13 +1286,16 @@ def _build_scenario(
 ) -> tuple[dict[str, Any], Path]:
     scenario = bundle.scenario
     periods = scenario.periods
+    from parameterization.vehicle_reference import load_vehicle_reference
+
+    vehicle_parameter_paths = load_vehicle_reference(bundle).paths
     notebook_controls = {
         path: file_sha256(path)
         for path in (
             bundle.scenario_path, bundle.paths_path, bundle.sources_path,
             resolve_parameter_path(bundle, "rules.yaml"),
             resolve_parameter_path(bundle, "conversion.yaml"),
-            resolve_parameter_path(bundle, "vehicle_size_class_map.csv"),
+            *vehicle_parameter_paths,
         )
     } if scenario.notebook_diagnostics else {}
     LOGGER.info(
@@ -1377,7 +1380,7 @@ def _build_scenario(
                         for path in (
                             resolve_parameter_path(bundle, "rules.yaml"),
                             resolve_parameter_path(bundle, "conversion.yaml"),
-                            resolve_parameter_path(bundle, "vehicle_size_class_map.csv"),
+                            *vehicle_parameter_paths,
                         )
                     ],
                     "manual_inputs": [

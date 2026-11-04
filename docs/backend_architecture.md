@@ -257,6 +257,12 @@ its build identity and database hash, without running ETL or selecting another s
 Missing, changed or backend-incompatible captures fail with a rebuild instruction; the
 reader never substitutes mutable live configuration. #to-review
 
+`config/parameters/vehicle_reference.csv` and `vehicle_source_links.csv` are the two
+versioned vehicle authorities. One read-only loader validates their scoped facts and
+source links before mapping and matching. Builds calculate consumption/range summaries
+downstream and never regenerate these configuration tables; notebook bundles capture
+the same tables once as configuration. #to-review
+
 Ordinary builds preserve these snapshots and do not require notebook evidence. Only
 bundles referenced by the latest index are retained after successful publication; these
 generated files are local and excluded from Git. Production builders remain the authority
@@ -271,9 +277,8 @@ notebook uses the fingerprinted products of `parameterization.road_adoption_cons
 its fitted rates, seeds and envelopes remain provisional research outside production
 scenario wiring and SQLite insertion. #to-review
 
-The growth notebook still binds the removed `legacy_reproduction.yaml` scenario. Its
-scenario route needs repair before that research workflow can be opened; it is not part
-of the supported stock/efficiency loading commands. #to-review
+The growth notebook uses the supported `default.yaml` configuration route and remains
+separate from the captured stock/efficiency loading commands. #to-review
 
 Supported commands regenerate notebook evidence from registered/reviewed inputs. Agent
 judgments, acceptance captures, screenshots and probes are disposable development work

@@ -54,7 +54,7 @@ def test_legacy_compare_projects_common_columns_and_reports_v4_additions(
 
 def test_legacy_comparison_is_scenario_controlled() -> None:
     bundle = load_config_bundle(
-        "config/scenarios/legacy_reproduction.yaml", repo_root=REPO_ROOT
+        "config/scenarios/legacy_comparison.yaml", repo_root=REPO_ROOT
     )
 
     assert bundle.scenario.comparison.mode == "legacy"

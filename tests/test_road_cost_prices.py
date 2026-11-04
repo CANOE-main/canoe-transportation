@@ -9,7 +9,7 @@ from utils import load_config_bundle, load_harmonization_rules
 
 @pytest.mark.parametrize("trajectory", ["Mid", "Advanced", "Conservative"])
 def test_selected_atb_prices_keep_msrp_and_recover_manufacturing_cost(trajectory) -> None:
-    bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    bundle = load_config_bundle("config/scenarios/default.yaml")
     efficiency_rules = load_harmonization_rules(bundle, "efficiencies")
     cost_rules = load_harmonization_rules(bundle, "costs")
     vehicles = pd.read_csv(

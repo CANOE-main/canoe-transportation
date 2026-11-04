@@ -102,7 +102,7 @@ def prepared_modes(tmp_path_factory, legacy_bundle):
         patch.setattr(build_transport, "prepare_transport_contribution", capture)
         for mode, bundle in (
             ("legacy", legacy_bundle),
-            ("prospective", load_config_bundle("config/scenarios/legacy_reproduction.yaml", repo_root=root)),
+            ("prospective", load_config_bundle("config/scenarios/default.yaml", repo_root=root)),
         ):
             destination = directory / mode
             processed = destination / "processed"

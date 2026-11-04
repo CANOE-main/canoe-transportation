@@ -23,6 +23,8 @@ from parameterization.rating_composition import (
     _compatible, _rating_variants, aggregate_empirical_ratings, normalize_family,
 )
 from parameterization.road_aggregation import normalize_vehicle_text
+from parameterization.ldv_ev_ranges import module_rules as load_range_rules
+from parameterization.vehicle_reference import load_vehicle_reference
 from utils import (
     file_sha256, load_conversion_factors, load_harmonization_rules, load_yaml,
     resolve_input_path, write_dataframe_atomic, write_text_atomic,
@@ -484,6 +486,23 @@ def _configured_regions(repo_root: Path) -> tuple[str, ...]:
     return tuple(regions)
 
 
+def _composition_context(recorded, rules: dict, conversions: dict) -> dict:
+    """Reuse the captured production identity, range and PHEV component context."""
+    atb = pd.read_csv(recorded.paths["atb_phev"], usecols=[
+        "vehicle_weight_category", "electric_range_mi", "fleet_utility_factor"])
+    selected = atb.loc[atb.vehicle_weight_category.eq(rules["atb"]["weight_categories"]["ldv"])]
+    utility_factors = {}
+    for powertrain, archetype in rules["ldv_archetypes"].items():
+        if not powertrain.startswith("phev"):
+            continue
+        values = selected.loc[selected.electric_range_mi.eq(archetype["range_mi"]), "fleet_utility_factor"].drop_duplicates()
+        if len(values) != 1 or not np.isfinite(values.iloc[0]) or not 0 <= values.iloc[0] <= 1:
+            raise ValueError(f"Captured ATB range utility factor is missing or conflicting: {powertrain}")
+        utility_factors[powertrain] = float(values.iloc[0])
+    return {"reference": load_vehicle_reference(recorded.bundle), "range_rules": load_range_rules(recorded.bundle),
+            "conversions": conversions, "uf_by_powertrain": utility_factors}
+
+
 def assess_supplementation(*, repo_root: Path | None = None, regions: tuple[str, ...] | None = None) -> SupplementationAssessment:
     """Read pinned evidence and reconstruct the unchanged geographic policy in memory."""
     recorded = load_notebook_evidence("efficiency", repo_root=repo_root)
@@ -493,6 +512,9 @@ def assess_supplementation(*, repo_root: Path | None = None, regions: tuple[str,
         regions = _configured_regions(bundle.repo_root)
     rules = load_harmonization_rules(bundle, "efficiencies")
     spec = rules["ratings"]["composition"]
+    normalization = rules["ratings"]["hybrid_configuration_evidence"].get("family_normalization", {})
+    candidate_spec = {**spec, **normalization,
+        "family_matching": {**spec.get("family_matching", {}), **normalization.get("family_matching", {})}}
     conversions = load_conversion_factors(bundle)
     ranges = load_harmonization_rules(bundle, "ldv_ev_ranges")
     rating_class_map = load_harmonization_rules(bundle, "fueleconomy_vehicle_data")["vclass_to_nrcan"]
@@ -502,7 +524,7 @@ def assess_supplementation(*, repo_root: Path | None = None, regions: tuple[str,
         raise ValueError("Pinned EPA cache differs from the captured source registration")
     with ZipFile(cache) as archive:
         raw_epa = pd.read_csv(archive.open(adapter["archive_member"]), low_memory=False)
-    epa = prepare_epa(raw_epa, spec, rating_class_map, ranges, conversions)
+    epa = prepare_epa(raw_epa, candidate_spec, rating_class_map, ranges, conversions)
     LOGGER.info("Validated and converted %s pinned EPA rows", len(epa))
     ratings = pd.read_csv(recorded.paths["ratings"], low_memory=False)
     stock = pd.read_csv(recorded.paths["benchmark_mto_mapped"], low_memory=False)
@@ -514,7 +536,8 @@ def assess_supplementation(*, repo_root: Path | None = None, regions: tuple[str,
     weight_basis = load_harmonization_rules(bundle, "road_aggregation")["ldv_weight_basis"]
     LOGGER.info("Replaying current empirical composition for %s (native source rows unchanged)", regions)
     composition = aggregate_empirical_ratings(ratings, class_weights, stock, incentives, rules=rules,
-        composition_rules=spec, regions=list(regions), weight_basis=weight_basis)
+        composition_rules=spec, regions=list(regions), weight_basis=weight_basis,
+        **_composition_context(recorded, rules, conversions))
     # Recomputed ON rows must reconcile with the published capture before making
     # claims about other regional pools reconstructed from the same native inputs.
     captured = pd.read_csv(recorded.paths["composition_coverage"], low_memory=False)
@@ -531,9 +554,9 @@ def assess_supplementation(*, repo_root: Path | None = None, regions: tuple[str,
         if not np.allclose(shared[f"{field}_replay"], shared[f"{field}_capture"], atol=1e-10, rtol=1e-10, equal_nan=True):
             raise ValueError(f"Current composition replay differs from captured {field}")
     LOGGER.info("Replayed %s empirical descriptions in %s; captured control agrees", len(composition.observations), regions)
-    pairs = catalogue_pairs(ratings, epa, spec, conversions)
+    pairs = catalogue_pairs(ratings, epa, candidate_spec, conversions)
     LOGGER.info("Screened %s catalogue pairs", len(pairs))
-    dispositions = observation_dispositions(composition.observations, ratings, epa, spec)
+    dispositions = observation_dispositions(composition.observations, ratings, epa, candidate_spec)
     cohort_keys = ["region", "year", "rating_class", "powertrain"]
     candidates = dispositions.assign(rating_class=dispositions.epa_candidate_classes, powertrain=dispositions.epa_candidate_powertrains)
     dispositions["within_existing_rated_cohort"] = pd.MultiIndex.from_frame(candidates[cohort_keys]).isin(
@@ -570,9 +593,11 @@ def assess_supplementation(*, repo_root: Path | None = None, regions: tuple[str,
         analysis_code={name: file_sha256(path) for name, path in {
             "validation.ldv_epa_supplementation": Path(__file__),
             "parameterization.rating_composition": bundle.repo_root / "src/parameterization/rating_composition.py",
+            "parameterization.vehicle_reference": bundle.repo_root / "src/parameterization/vehicle_reference.py",
+            "parameterization.ldv_ev_ranges": bundle.repo_root / "src/parameterization/ldv_ev_ranges.py",
         }.items()},
         evidence_inputs={name: dict(path=str(recorded.paths[name]), sha256=file_sha256(recorded.paths[name]))
-            for name in ("ratings", "composition_coverage", "composition_observations", "benchmark_mto_mapped", "benchmark_izev_records", "rating_class_weights")},
+            for name in ("ratings", "composition_coverage", "composition_observations", "benchmark_mto_mapped", "benchmark_izev_records", "rating_class_weights", "atb_phev")},
         commands=["uv run python -m validation.ldv_epa_supplementation --write-report"],
         screen="Exact configured normalized year/make/model + mapped class + powertrain; stronger screen checks engine/cylinders/transmission/fuel grade or native range-rounding agreement and bucket; reciprocal unique both catalogues. Physical correspondence remains unverified.",
         holdouts="Entire EPA baseModel family across years, and entire model year, independently within powertrain and through2007/2008-10/2011-14/2015-16/2017+ revision groups; optional median ratio fitted to training only.",
@@ -607,7 +632,9 @@ def load_report(*, repo_root: Path | None = None) -> SupplementationAssessment:
     if tuple(summary["regions"]) != _configured_regions(recorded.bundle.repo_root):
         raise ValueError(f"EPA assessment diagnostic regions changed. Run: {command}")
     code_paths = {"validation.ldv_epa_supplementation": Path(__file__),
-                  "parameterization.rating_composition": recorded.bundle.repo_root / "src/parameterization/rating_composition.py"}
+                  "parameterization.rating_composition": recorded.bundle.repo_root / "src/parameterization/rating_composition.py",
+                  "parameterization.vehicle_reference": recorded.bundle.repo_root / "src/parameterization/vehicle_reference.py",
+                  "parameterization.ldv_ev_ranges": recorded.bundle.repo_root / "src/parameterization/ldv_ev_ranges.py"}
     if any(summary["analysis_code"].get(name) != file_sha256(source) for name, source in code_paths.items()):
         raise ValueError(f"EPA assessment code changed. Run: {command}")
     for name, expected in summary["evidence_inputs"].items():

@@ -878,7 +878,7 @@ def fetch_and_normalize_ratings(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", default="config/scenarios/legacy_reproduction.yaml")
+    parser.add_argument("--scenario", default="config/scenarios/default.yaml")
     parser.add_argument("--year", type=int, default=None)
     parser.add_argument("--regions", nargs="*", default=None)
     parser.add_argument("--skip-national", action="store_true")

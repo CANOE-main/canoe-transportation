@@ -15,6 +15,7 @@ from parameterization.rating_composition import (
     normalize_family,
     catalogue_family, catalogue_family_labels, median_support_weights,
 )
+from parameterization.vehicle_reference import load_vehicle_reference_frames
 
 
 @pytest.fixture
@@ -49,15 +50,36 @@ def policy():
 
 
 @pytest.fixture(scope="module")
-def production_family_policy():
-    """Isolate production naming rules from synthetic fixture consumption spreads."""
+def auxiliary_family_policy():
+    """Exercise auxiliary descriptor parsing independently of reviewed source links."""
     path = Path(__file__).resolve().parents[1] / "config" / "parameters" / "rules.yaml"
     rules = yaml.safe_load(path.read_text(encoding="utf-8"))
     policy = rules["parameterization"]["efficiencies"]["ratings"]["composition"]
+    normalization = rules["parameterization"]["efficiencies"]["ratings"]["hybrid_configuration_evidence"]["family_normalization"]
+    policy["aliases"] = normalization.get("aliases", [])
+    policy["family_matching"].update(normalization.get("family_matching", {}))
     # Existing naming fixtures intentionally span 10-100 units to prove medians,
     # not physical trim dispersion; dedicated tests below cover that policy.
     policy["family_matching"].pop("consumption_dispersion", None)
     return policy
+
+
+@pytest.fixture(scope="module")
+def reviewed_reference():
+    root = Path(__file__).resolve().parents[1] / "config" / "parameters"
+    return load_vehicle_reference_frames(
+        pd.read_csv(root / "vehicle_reference.csv", dtype=str, keep_default_na=False),
+        pd.read_csv(root / "vehicle_source_links.csv", dtype=str, keep_default_na=False),
+    )
+
+
+@pytest.fixture
+def reviewed_policy(policy):
+    """Production reference tests carry no parallel identity decisions in policy."""
+    result = deepcopy(policy)
+    result.pop("aliases", None)
+    result["family_matching"].pop("family_patterns", None)
+    return result
 
 
 def ratings(models, *, year=2023, make="Fixture", powertrain="gasoline", rating_class="Compact"):
@@ -108,7 +130,7 @@ def conversion_factors():
             "fuel_hhv": {"gasoline_mj_per_litre": 33.568202923012876}}
 
 
-def aggregate(frame, policy, *, mto=None, izev=None, regions=None, weights=None):
+def aggregate(frame, policy, *, mto=None, izev=None, regions=None, weights=None, reference=None):
     if weights is None:
         weights = pd.DataFrame([
             {"weight_basis": "all_vintages", "report_year": 2025, "nrcan_ceud_class": "Car",
@@ -122,6 +144,7 @@ def aggregate(frame, policy, *, mto=None, izev=None, regions=None, weights=None)
                "tolerances": {"weight_sum": 1e-9}},
         range_rules=range_rules(), conversions=conversion_factors(), uf_by_powertrain={"phev_35_miles": .5, "phev_50_miles": .7},
         composition_rules=policy, regions=regions or ["ON"], weight_basis="all_vintages",
+        reference=reference,
     )
 
 
@@ -375,20 +398,20 @@ def test_historical_suv_rollup_does_not_coarsen_already_split_source_year(policy
     assert result.observations.rating_class.item() == "Large SUV"
 
 
-def test_unresolved_raw_identity_does_not_poison_clear_same_family_or_drop_denominator(policy):
-    policy["unresolved_mto_keys"] = ["Fixture/code0"]
-    policy["unresolved_mto_reason"] = "Retained source-key evidence supports incompatible model families"
-    result = aggregate(ratings([("A", 7)]), policy, mto=stock([("A", 60), ("A", 40)]))
+def test_reviewed_identity_support_does_not_poison_clear_alias_or_drop_denominator(policy):
+    mapped = stock([("A", 60), ("A", 40)])
+    mapped["identity_authority"] = "reviewed_vehicle_reference"
+    mapped["identity_supported"] = [False, True]
+    result = aggregate(ratings([("A", 7)]), policy, mto=mapped)
     assert len(result.observations) == 2
-    assert result.observations.groupby("match_status").source_count.sum().to_dict() == {
-        "resolved": 40, "unresolved_mapping_identity": 60,
-    }
+    assert result.observations.match_status.eq("resolved").all()
+    assert result.observations.groupby("selection_status").source_count.sum().to_dict() == {
+        "selected": 40, "unsupported_mapping_identity": 60}
     assert result.class_audit.observed_source_count.item() == 100
     assert result.class_audit.selected_source_count.item() == 40
     assert result.class_audit.selected_source_share.item() == .4
     assert result.variants.allocated_count.sum() == 40
-    assert result.observations.loc[result.observations.match_status.eq("unresolved_mapping_identity"),
-                                   "identity_exclusion_reason"].item() == policy["unresolved_mto_reason"]
+    assert result.observations.identity_exclusion_reason.eq("").all()
 
 
 def test_izev_description_aliases_do_not_relabel_generic_mto_family(policy):
@@ -417,9 +440,14 @@ def test_izev_aliases_pair_renamed_rating_editions_without_relabeling_mto(policy
     assert result.variants.Model.item() == "RAV4 Plug-in Hybrid (Prime)"
 
 
-def test_unresolved_mapping_keys_require_evidence_reason(policy):
-    policy["unresolved_mto_keys"] = ["Fixture/code0"]
-    with pytest.raises(ValueError, match="evidence reason"):
+@pytest.mark.parametrize("key,value", [
+    ("unresolved_mto_keys", []), ("unresolved_mto_keys", ["Fixture/code0"]),
+    ("unresolved_mto_reason", ""), ("unresolved_mto_reason", "Retired reason"),
+    ("unresolved_mto_cohorts", []), ("unresolved_mto_cohorts", [{"key": "Fixture/code0"}]),
+])
+def test_retired_blacklist_policies_require_source_link_migration(policy, key, value):
+    policy[key] = value
+    with pytest.raises(ValueError, match="Retired MTO exclusion.*vehicle_source_links.csv"):
         aggregate(ratings([("A", 5)]), policy, mto=stock([("A", 100)]))
 
 
@@ -1068,7 +1096,7 @@ def test_mto_authoritative_canonical_keys_take_priority_over_raw_codes_and_legac
     mapped[["MAKE", "MODEL"]] = ["HOND", "CRV"]
     mapped["raw_canonical_model"] = "unreviewed old residual label"
     mapped["match_method"] = "automatic_exact_normalized_make_reviewed_canonical_label"
-    mapped["identity_authority"] = "reviewed_vehicle_size_class_map"
+    mapped["identity_authority"] = "reviewed_vehicle_reference"
     mapped["identity_supported"] = True
     result = aggregate(frame, policy, mto=mapped)
     assert result.observations.mapped_canonical_model.item() == "CR-V"
@@ -1110,19 +1138,15 @@ def test_mto_silverado_missing_trim_retains_gasoline_family_once(policy):
     assert result.variants.allocated_count.sum() == 100
 
 
-def test_body_evidence_and_scoped_civic_uncertainty_are_not_overridden_by_aliases(policy):
+def test_explicit_civic_body_evidence_cannot_borrow_an_available_sedan(policy):
     policy["family_matching"]["family_patterns"].append({"make": "Honda", "pattern": r"(?i)^Civic\s+(?:5Dr|Hatchback)\b.*$", "canonical_model": "Civic Hatchback"})
-    policy["unresolved_mto_cohorts"] = [{"key": "HOND/CIV", "model_year_from": 2021, "model_year_to": 2025,
-                                      "reason": "Reviewed class does not establish hatchback/sedan identity."}]
     frame = ratings([("Civic Hatchback", 7), ("Civic Sedan", 9)], make="Honda")
     mapped = stock([("Civic 5Dr", 100)], make="Honda")
     mapped[["MAKE", "MODEL"]] = ["HOND", "CIV"]
-    mapped["identity_authority"], mapped["identity_supported"] = "reviewed_vehicle_size_class_map", True
+    mapped["identity_authority"], mapped["identity_supported"] = "reviewed_vehicle_reference", True
     result = aggregate(frame, policy, mto=mapped)
-    assert result.observations.match_status.item() == "unresolved_mapping_identity"
-    assert result.variants.empty
-    assert result.observations.identity_exclusion_reason.str.contains("hatchback/sedan").all()
-    policy["unresolved_mto_cohorts"] = []
+    assert result.observations.match_status.item() == "resolved"
+    assert result.variants.Model.eq("Civic Hatchback").all()
     result = aggregate(frame.loc[frame.Model.eq("Civic Sedan")], policy, mto=mapped)
     assert not result.observations.selected.any()
     assert result.variants.empty
@@ -1245,9 +1269,9 @@ def test_standard_range_plus_does_not_pool_standard_range_and_unknown_suffix_fla
     ("Mercedes-Benz", "EQB", [("EQB 250+", 10), ("EQB 350 4MATIC SUV", 30)], "bev_200_miles", 20),
     ("Volvo", "V60", [("V60 T8 AWD Recharge", 10), ("V60 T8 AWD Polestar Engineered", 30)], "phev_50_miles", 20),
 ])
-def test_production_reviewed_families_resolve_unspecified_configurations_to_median(production_family_policy, make, description, models, powertrain, expected):
+def test_auxiliary_reviewed_families_resolve_unspecified_configurations_to_median(auxiliary_family_policy, make, description, models, powertrain, expected):
     frame = ratings(models, make=make, powertrain=powertrain)
-    result = aggregate(frame, production_family_policy,
+    result = aggregate(frame, auxiliary_family_policy,
                        izev=incentives([(description, 100)], make=make, powertrain=powertrain.split("_")[0]))
     assert result.observations.match_status.item() == "resolved"
     assert result.observations.matched_family_model.item() == description
@@ -1277,9 +1301,9 @@ def test_production_reviewed_families_resolve_unspecified_configurations_to_medi
     ("BMW", 'i4 eDrive35 (18" Wheels)', ['i4 eDrive35 Gran Coupe (18" Wheels)', 'i4 eDrive35 Gran Coupe (19" Wheels)',
                                          'i4 M50 Gran Coupe (18" Wheels)'], {'i4 eDrive35 Gran Coupe (18" Wheels)'}),
 ])
-def test_production_family_patterns_preserve_named_motor_trim_and_wheel_attributes(production_family_policy, make, description, models, expected):
+def test_auxiliary_family_patterns_preserve_named_motor_trim_and_wheel_attributes(auxiliary_family_policy, make, description, models, expected):
     frame = ratings([(model, 10 + 5 * index) for index, model in enumerate(models)], make=make, powertrain="bev_300_miles")
-    result = aggregate(frame, production_family_policy, izev=incentives([(description, 100)], make=make))
+    result = aggregate(frame, auxiliary_family_policy, izev=incentives([(description, 100)], make=make))
     assert result.observations.match_status.item() == "resolved"
     assert set(result.variants.Model) == expected
     assert result.variants.allocated_count.sum() == 100
@@ -1287,29 +1311,29 @@ def test_production_family_patterns_preserve_named_motor_trim_and_wheel_attribut
 
 
 @pytest.mark.parametrize("description", ['i4 eDrive35 (21" Wheels)', 'i4 eDrive35 (18" Winter Wheels)', "i4 eDrive35 Ultra"])
-def test_unsupported_explicit_wheel_or_trim_evidence_flags_after_family_reduction(production_family_policy, description):
+def test_unsupported_explicit_wheel_or_trim_evidence_flags_after_family_reduction(auxiliary_family_policy, description):
     frame = ratings([('i4 eDrive35 Gran Coupe (18" Wheels)', 10), ('i4 eDrive35 Gran Coupe (19" Wheels)', 20)],
                     make="BMW", powertrain="bev_300_miles")
-    result = aggregate(frame, production_family_policy, izev=incentives([(description, 100)], make="BMW"))
+    result = aggregate(frame, auxiliary_family_policy, izev=incentives([(description, 100)], make="BMW"))
     assert result.observations.match_status.item() == "conflicting_or_unverified_configuration"
     assert result.observations.configuration_status.str.startswith("unverified_explicit_").all()
     assert not result.observations.selected.any()
     assert result.variants.empty
 
 
-def test_production_volvo_family_is_rechecked_after_range_suffix_normalization(production_family_policy):
+def test_auxiliary_volvo_family_is_rechecked_after_range_suffix_normalization(auxiliary_family_policy):
     models = [("V60 T8 AWD Recharge", 4), ("V60 T8 AWD Recharge Extended Range", 8)]
     frame = ratings(models, year=2022, make="Volvo", powertrain="phev_50_miles")
-    labelled = catalogue_family_labels(frame, production_family_policy)
+    labelled = catalogue_family_labels(frame, auxiliary_family_policy)
     assert labelled.family_model.eq("V60").all()
     assert labelled.family_key.eq("VOLVO/V60").all()
-    result = aggregate(frame, production_family_policy,
+    result = aggregate(frame, auxiliary_family_policy,
                        izev=incentives([("V60", 100)], year=2022, make="Volvo", powertrain="phev"))
     assert result.observations.match_status.item() == "resolved"
     assert result.observations.observed_family_native_median.item() == 6.
     assert set(result.variants.Model) == {model for model, _ in models}
     assert result.variants.allocated_count.sum() == 100
-    explicit = aggregate(frame, production_family_policy,
+    explicit = aggregate(frame, auxiliary_family_policy,
                          izev=incentives([("V60 T8 AWD Recharge Extended Range", 100)], year=2022, make="Volvo", powertrain="phev"))
     assert explicit.observations.match_status.item() == "resolved"
     assert explicit.variants.Model.tolist() == ["V60 T8 AWD Recharge Extended Range"]
@@ -1325,9 +1349,9 @@ def test_production_volvo_family_is_rechecked_after_range_suffix_normalization(p
     ("Volvo", 2024, "XC60", ["XC60 T8 AWD Recharge"], "phev_50_miles"),
     ("Kia", 2023, "Soul EV", ["Soul EV (120 Ah)", "Soul EV (180 Ah)"], "bev_200_miles"),
 ])
-def test_remaining_reviewed_electrified_names_resolve_native_year_family(production_family_policy, make, year, description, models, powertrain):
+def test_remaining_reviewed_electrified_names_resolve_native_year_family(auxiliary_family_policy, make, year, description, models, powertrain):
     frame = ratings([(model, 10 + 10 * index) for index, model in enumerate(models)], year=year, make=make, powertrain=powertrain)
-    result = aggregate(frame, production_family_policy,
+    result = aggregate(frame, auxiliary_family_policy,
                        izev=incentives([(description, 100)], year=year, make=make, powertrain=powertrain.split("_")[0]))
     assert result.observations.match_status.item() == "resolved"
     assert result.observations.matched_family_model.item() == description
@@ -1345,25 +1369,25 @@ def test_remaining_reviewed_electrified_names_resolve_native_year_family(product
     ("Volvo", "S60 T8 AWD Polestar Engineered", ["S60 T8 AWD Recharge", "S60 T8 AWD Polestar Engineered"], "phev_50_miles", {"S60 T8 AWD Polestar Engineered"}),
     ("Volvo", "XC60 T8 AWD Recharge", ["XC60 T8 AWD Recharge", "XC60 T8 FWD Recharge"], "phev_50_miles", {"XC60 T8 AWD Recharge"}),
 ])
-def test_remaining_family_patterns_preserve_native_battery_drive_and_trim_evidence(production_family_policy, make, description, models, powertrain, expected):
+def test_remaining_family_patterns_preserve_native_battery_drive_and_trim_evidence(auxiliary_family_policy, make, description, models, powertrain, expected):
     frame = ratings([(model, 10 + 10 * index) for index, model in enumerate(models)], make=make, powertrain=powertrain)
-    result = aggregate(frame, production_family_policy,
+    result = aggregate(frame, auxiliary_family_policy,
                        izev=incentives([(description, 100)], make=make, powertrain=powertrain.split("_")[0]))
     assert result.observations.match_status.item() == "resolved"
     assert set(result.variants.Model) == expected
     assert result.variants.allocated_count.sum() == 100
 
 
-def test_bmw_x3_explicit_engine_and_propulsion_suffix_are_not_erased(production_family_policy):
+def test_bmw_x3_explicit_engine_and_propulsion_suffix_are_not_erased(auxiliary_family_policy):
     frame = ratings([("X3 xDrive30e", 5), ("X3 xDrive30e", 10)], year=2022, make="BMW", powertrain="phev_35_miles")
     frame["Engine size (L)"] = [2., 3.]
-    matched = aggregate(frame, production_family_policy,
+    matched = aggregate(frame, auxiliary_family_policy,
                         izev=incentives([("X3 xDrive30e 2.0L", 100)], year=2022, make="BMW", powertrain="phev"))
     assert matched.observations.match_status.item() == "resolved"
     assert matched.variants["Engine size (L)"].tolist() == [2.]
     assert matched.variants.allocated_count.sum() == 100
     for description in ("X3 xDrive30e 4.0L", "X3 xDrive30i"):
-        unresolved = aggregate(frame, production_family_policy,
+        unresolved = aggregate(frame, auxiliary_family_policy,
                                izev=incentives([(description, 100)], year=2022, make="BMW", powertrain="phev"))
         assert unresolved.observations.match_status.item() == "conflicting_or_unverified_configuration"
         assert unresolved.variants.empty
@@ -1377,9 +1401,9 @@ def test_bmw_x3_explicit_engine_and_propulsion_suffix_are_not_erased(production_
     ("Kia", "Soul EV (90 Ah)", "Soul EV (120 Ah)", "bev_200_miles"),
     ("Kia", "Soul EV (120 kWh)", "Soul EV (120 Ah)", "bev_200_miles"),
 ])
-def test_remaining_family_patterns_never_override_model_number_or_battery_unit_conflicts(production_family_policy, make, description, catalogue_model, powertrain):
+def test_remaining_family_patterns_never_override_model_number_or_battery_unit_conflicts(auxiliary_family_policy, make, description, catalogue_model, powertrain):
     frame = ratings([(catalogue_model, 10)], make=make, powertrain=powertrain)
-    result = aggregate(frame, production_family_policy,
+    result = aggregate(frame, auxiliary_family_policy,
                        izev=incentives([(description, 100)], make=make, powertrain=powertrain.split("_")[0]))
     assert not result.observations.selected.any()
     assert result.observations.match_status.item() in {"unmatched_ratings", "conflicting_or_unverified_configuration"}
@@ -1495,12 +1519,12 @@ def test_native_identical_izev_rows_are_legitimate_separate_counted_observations
     ('Acura','RDX',['RDX SH-AWD','RDX SH-AWD A-SPEC'],'gasoline'),
     ('Acura','MDX',['MDX SH-AWD','MDX SH-AWD Elite','MDX SH-AWD A-SPEC'],'gasoline'),
     ('Toyota','Camry',['Camry LE/SE','Camry XSE','Camry XSE V6','Camry TRD','Camry AWD SE','Camry AWD XSE'],'gasoline')])
-def test_complete_production_family_candidates_precede_representative_medians(production_family_policy,make,description,models,powertrain):
+def test_complete_production_family_candidates_precede_representative_medians(auxiliary_family_policy,make,description,models,powertrain):
     frame=ratings([(model,8+i*.1) for i,model in enumerate(models)],make=make,powertrain=powertrain)
     if powertrain=='gasoline':
-        result=aggregate(frame,production_family_policy,mto=stock([(description,100)],make=make))
+        result=aggregate(frame,auxiliary_family_policy,mto=stock([(description,100)],make=make))
     else:
-        result=aggregate(frame,production_family_policy,izev=incentives([(description,100)],make=make))
+        result=aggregate(frame,auxiliary_family_policy,izev=incentives([(description,100)],make=make))
     row=result.observations.iloc[0]
     assert row.match_status=='resolved'
     assert row.candidate_variant_count==len(models)
@@ -1537,13 +1561,13 @@ def test_unresolved_gasoline_hybrid_evidence_is_not_an_incompatible_propulsion_e
     ('Caravan',{'Caravan SE','Caravan Sport','Grand Caravan SE','Grand Caravan Sport'},11.5),
     ('Grand Caravan',{'Grand Caravan SE','Grand Caravan Sport'},12.5),
 ])
-def test_generic_caravan_family_combines_wheelbases_but_explicit_grand_retains_scope(production_family_policy,description,expected_models,expected_median):
+def test_generic_caravan_family_combines_wheelbases_but_explicit_grand_retains_scope(auxiliary_family_policy,description,expected_models,expected_median):
     frame=ratings([('Caravan SE',10),('Caravan Sport',11),('Grand Caravan SE',12),('Grand Caravan Sport',13)],
         year=2007,make='Dodge',rating_class='Minivan')
     weights=pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,'nrcan_ceud_class':'Light Truck',
         'nrcan_vehicle_class':'Minivan','aggregation_weight':1.}])
     mapped=stock([(description,100)],year=2007,make='Dodge',rating_class='Minivan')
-    result=aggregate(frame,production_family_policy,mto=mapped,weights=weights)
+    result=aggregate(frame,auxiliary_family_policy,mto=mapped,weights=weights)
     assert result.observations.match_status.item()=='resolved'
     assert result.observations.candidate_variant_count.item()==4
     assert set(result.variants.Model)==expected_models
@@ -1551,12 +1575,12 @@ def test_generic_caravan_family_combines_wheelbases_but_explicit_grand_retains_s
     assert result.variants.allocated_count.sum()==100
     assert result.class_audit.selected_source_count.item()==100
     assert result.class_audit.native_class_mean.item()==expected_median
-    assert catalogue_family('Jeep','Grand Cherokee',production_family_policy)[1]=='Grand Cherokee'
-    assert catalogue_family('Jeep','Cherokee',production_family_policy)[1]=='Cherokee'
-    assert catalogue_family('Chrysler','Grand Caravan',production_family_policy)[1]=='Grand Caravan'
+    assert catalogue_family('Jeep','Grand Cherokee',auxiliary_family_policy)[1]=='Grand Cherokee'
+    assert catalogue_family('Jeep','Cherokee',auxiliary_family_policy)[1]=='Cherokee'
+    assert catalogue_family('Chrysler','Grand Caravan',auxiliary_family_policy)[1]=='Grand Caravan'
 
 
-def test_production_f150_family_has_complete_gasoline_ffv_modes_without_other_propulsion(production_family_policy):
+def test_auxiliary_f150_family_has_complete_gasoline_ffv_modes_without_other_propulsion(auxiliary_family_policy):
     frame=ratings([('F-150',10),('F-150 FFV',11),('F-150 FFV',17),('F-150 4WD',12),
         ('F-150 Pickup 4WD',13),('F-150 Hybrid 4WD',8),('F-150 Diesel 4WD',7),('F-150 Lightning 4WD',20)],
         make='Ford',rating_class='Pickup truck: Standard')
@@ -1567,7 +1591,7 @@ def test_production_f150_family_has_complete_gasoline_ffv_modes_without_other_pr
     frame.loc[frame.powertrain.eq('bev_300_miles'),['native_unit','range_km']]=['kWh/100 km',500.]
     weights=pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,'nrcan_ceud_class':'Light Truck',
         'nrcan_vehicle_class':'Pickup truck: Standard','aggregation_weight':1.}])
-    result=aggregate(frame,production_family_policy,mto=stock([('F-150',100)],make='Ford',rating_class='Pickup truck: Standard'),weights=weights)
+    result=aggregate(frame,auxiliary_family_policy,mto=stock([('F-150',100)],make='Ford',rating_class='Pickup truck: Standard'),weights=weights)
     assert result.observations.match_status.item()=='resolved'
     assert result.observations.candidate_variant_count.item()==4
     assert set(result.variants.Model)=={'F-150','F-150 FFV','F-150 4WD','F-150 Pickup 4WD'}
@@ -1575,7 +1599,7 @@ def test_production_f150_family_has_complete_gasoline_ffv_modes_without_other_pr
     assert result.variants.powertrain.eq('gasoline').all()
     assert result.variants.allocated_count.sum()==100
     assert result.class_audit.loc[result.class_audit.powertrain.eq('gasoline'),'native_class_mean'].item()==11.5
-    assert catalogue_family('Ford','F-150 Lightning 4WD',production_family_policy)[1]=='F-150 Lightning'
+    assert catalogue_family('Ford','F-150 Lightning 4WD',auxiliary_family_policy)[1]=='F-150 Lightning'
 
 
 @pytest.mark.parametrize('make,description,models',[
@@ -1584,9 +1608,9 @@ def test_production_f150_family_has_complete_gasoline_ffv_modes_without_other_pr
     ('Nissan','Sentra',['Sentra','Sentra (Turbo)','Sentra Nismo','Sentra SR']),
     ('Nissan','Rogue',['Rogue','Rogue AWD','Rogue AWD SL/Platinum']),
 ])
-def test_native_style_combined_configuration_labels_do_not_shorten_family_candidate_sets(production_family_policy,make,description,models):
+def test_native_style_combined_configuration_labels_do_not_shorten_family_candidate_sets(auxiliary_family_policy,make,description,models):
     frame=ratings([(model,8+i*.2) for i,model in enumerate(models)],make=make)
-    result=aggregate(frame,production_family_policy,mto=stock([(description,100)],make=make))
+    result=aggregate(frame,auxiliary_family_policy,mto=stock([(description,100)],make=make))
     assert result.observations.match_status.item()=='resolved'
     assert result.observations.candidate_variant_count.item()==len(models)
     assert set(result.variants.Model)==set(models)
@@ -1596,18 +1620,18 @@ def test_native_style_combined_configuration_labels_do_not_shorten_family_candid
 
 @pytest.mark.parametrize('suffix',['LE/XLE','SR/Platinum','Limited/SE','(MDS)','(FuelSaverMDS)',
     '(Fuel Saver MDS)','(Stop/Start)','(Without Stop-Start)','(LT Tire Pkg)','(Payload Pkg)','(Turbo)'])
-def test_recognized_combined_trims_and_neutral_parentheticals_are_configuration_metadata(production_family_policy,suffix):
-    assert catalogue_family('Fixture','Family '+suffix,production_family_policy)==('Fixture','Family')
+def test_recognized_combined_trims_and_neutral_parentheticals_are_configuration_metadata(auxiliary_family_policy,suffix):
+    assert catalogue_family('Fixture','Family '+suffix,auxiliary_family_policy)==('Fixture','Family')
 
 
-def test_new_conventional_roots_keep_named_propulsion_and_body_families_distinct(production_family_policy):
+def test_new_conventional_roots_keep_named_propulsion_and_body_families_distinct(auxiliary_family_policy):
     for make,model,expected in [
         ('Toyota','RAV4 Hybrid AWD','RAV4 Hybrid'),('Toyota','RAV4 Prime','RAV4 Prime'),
         ('Nissan','Rogue Sport AWD','Rogue Sport'),('Nissan','Rogue Hybrid AWD','Rogue Hybrid'),
         ('Toyota','Corolla Hatchback','Corolla Hatchback'),('Toyota','Corolla Cross AWD','Corolla Cross')]:
-        assert catalogue_family(make,model,production_family_policy)==(make,expected)
+        assert catalogue_family(make,model,auxiliary_family_policy)==(make,expected)
     plain=ratings([('Rogue',8),('Rogue AWD SL/Platinum',9),('Rogue Sport AWD',18)],make='Nissan')
-    result=aggregate(plain,production_family_policy,mto=stock([('Rogue',100)],make='Nissan'))
+    result=aggregate(plain,auxiliary_family_policy,mto=stock([('Rogue',100)],make='Nissan'))
     assert set(result.variants.Model)=={'Rogue','Rogue AWD SL/Platinum'}
     assert result.observations.candidate_variant_count.item()==2
     assert result.class_audit.native_class_mean.item()==8.5
@@ -1618,38 +1642,38 @@ def test_new_conventional_roots_keep_named_propulsion_and_body_families_distinct
     ('Nissan','Rogue','Rogue Sport AWD'),('Nissan','Rogue Sport','Rogue AWD'),
     ('Toyota','Corolla','Corolla Hatchback'),('Toyota','Corolla','Corolla Cross AWD'),
     ('Toyota','Corolla Cross','Corolla Hatchback')])
-def test_absent_known_family_cannot_borrow_a_distinct_configured_body_family(production_family_policy,make,observed,catalogue_model):
+def test_absent_known_family_cannot_borrow_a_distinct_configured_body_family(auxiliary_family_policy,make,observed,catalogue_model):
     frame=ratings([(catalogue_model,8)],make=make)
-    result=aggregate(frame,production_family_policy,mto=stock([(observed,100)],make=make))
+    result=aggregate(frame,auxiliary_family_policy,mto=stock([(observed,100)],make=make))
     assert not result.observations.match_status.eq('resolved').any()
     assert not result.observations.selected.any()
     assert result.variants.empty
     assert result.class_audit.selected_source_count.item()==0
 
 
-def test_elantra_gt_retains_its_body_family_and_cannot_replace_absent_sedan(production_family_policy):
-    assert catalogue_family('Hyundai','Elantra GT',production_family_policy)==('Hyundai','Elantra GT')
-    assert catalogue_family('Hyundai','Elantra Touring',production_family_policy)==('Hyundai','Elantra Touring')
+def test_elantra_gt_retains_its_body_family_and_cannot_replace_absent_sedan(auxiliary_family_policy):
+    assert catalogue_family('Hyundai','Elantra GT',auxiliary_family_policy)==('Hyundai','Elantra GT')
+    assert catalogue_family('Hyundai','Elantra Touring',auxiliary_family_policy)==('Hyundai','Elantra Touring')
     frame=ratings([('Elantra GT',8),('Elantra GT N Line',9)],make='Hyundai')
-    generic=aggregate(frame,production_family_policy,mto=stock([('Elantra',100)],make='Hyundai'))
+    generic=aggregate(frame,auxiliary_family_policy,mto=stock([('Elantra',100)],make='Hyundai'))
     assert not generic.observations.selected.any()
     assert generic.variants.empty
-    explicit=aggregate(frame,production_family_policy,mto=stock([('Elantra GT',100)],make='Hyundai'))
+    explicit=aggregate(frame,auxiliary_family_policy,mto=stock([('Elantra GT',100)],make='Hyundai'))
     assert explicit.observations.match_status.item()=='resolved'
     assert set(explicit.variants.Model)==set(frame.Model)
     assert explicit.observations.observed_family_native_median.item()==8.5
     assert explicit.variants.allocated_count.sum()==100
 
 
-def test_isg_equipment_does_not_omit_elantra_configurations_but_explicit_equipment_constrains(production_family_policy):
+def test_isg_equipment_does_not_omit_elantra_configurations_but_explicit_equipment_constrains(auxiliary_family_policy):
     frame=ratings([('Elantra',6.5),('Elantra (ISG)',6.1),('Elantra (ISS)',6.3)],year=2023,make='Hyundai')
-    generic=aggregate(frame,production_family_policy,mto=stock([('Elantra',100)],make='Hyundai'))
+    generic=aggregate(frame,auxiliary_family_policy,mto=stock([('Elantra',100)],make='Hyundai'))
     assert generic.observations.match_status.item()=='resolved'
     assert generic.observations.candidate_variant_count.item()==3
     assert set(generic.variants.Model)==set(frame.Model)
     assert generic.observations.observed_family_native_median.item()==6.3
     assert generic.variants.allocated_count.sum()==100
-    explicit=aggregate(frame,production_family_policy,mto=stock([('Elantra (ISG)',100)],make='Hyundai'))
+    explicit=aggregate(frame,auxiliary_family_policy,mto=stock([('Elantra (ISG)',100)],make='Hyundai'))
     assert set(explicit.variants.Model)=={'Elantra (ISG)'}
     assert explicit.observations.observed_family_native_median.item()==6.1
     assert explicit.variants.allocated_count.sum()==100
@@ -1663,14 +1687,14 @@ def test_isg_equipment_does_not_omit_elantra_configurations_but_explicit_equipme
     '(17" Wheels)','(19" and 20" Wheels)','(21" Aero Design Wheels)','(21" All-Season Tire)',
     '(20" Wheels AT)','(22" Wheels UHP)','(All-Terrain Tire)','(Falken Tire)','(Pirelli Tire)',
     '(Performance Tire)','(Performance Pack)','(Performance Pkg)','(Import)','(modified)','(Refresh)'])
-def test_known_catalogue_equipment_parentheses_are_family_metadata(production_family_policy,suffix):
-    assert catalogue_family('Fixture','Family '+suffix,production_family_policy)==('Fixture','Family')
+def test_known_catalogue_equipment_parentheses_are_family_metadata(auxiliary_family_policy,suffix):
+    assert catalogue_family('Fixture','Family '+suffix,auxiliary_family_policy)==('Fixture','Family')
 
 
 @pytest.mark.parametrize('suffix',['(2-Door)','(4-Door)','(Coupe)','(Convertible)','(Hatchback)',
     '(Wagon)','(Cargo)','(Passenger)','(LWB)','(SWB)','(Prime)','(Prime SE)','(Prime XSE)','(Unknown equipment)'])
-def test_body_identity_and_unknown_parentheses_are_not_stripped(production_family_policy,suffix):
-    assert catalogue_family('Fixture','Family '+suffix,production_family_policy)==('Fixture','Family '+suffix)
+def test_body_identity_and_unknown_parentheses_are_not_stripped(auxiliary_family_policy,suffix):
+    assert catalogue_family('Fixture','Family '+suffix,auxiliary_family_policy)==('Fixture','Family '+suffix)
 
 
 @pytest.mark.parametrize('description,expected',[
@@ -1678,10 +1702,10 @@ def test_body_identity_and_unknown_parentheses_are_not_stripped(production_famil
     ('Family (120 Ah)',{'Family (120 Ah) (18" Wheels)','Family (120 Ah) (19" Wheels)'}),
     ('Family (120 Ah) (18" Wheels)',{'Family (120 Ah) (18" Wheels)'}),
 ])
-def test_ev_equipment_parentheses_complete_candidates_without_erasing_explicit_attributes(production_family_policy,description,expected):
+def test_ev_equipment_parentheses_complete_candidates_without_erasing_explicit_attributes(auxiliary_family_policy,description,expected):
     models=['Family (120 Ah) (18" Wheels)','Family (120 Ah) (19" Wheels)','Family (180 Ah) (19" Wheels)']
     frame=ratings([(model,18+i) for i,model in enumerate(models)],powertrain='bev_300_miles')
-    result=aggregate(frame,production_family_policy,izev=incentives([(description,100)]))
+    result=aggregate(frame,auxiliary_family_policy,izev=incentives([(description,100)]))
     assert result.observations.match_status.item()=='resolved'
     assert result.observations.candidate_variant_count.item()==3
     assert set(result.variants.Model)==expected
@@ -1689,7 +1713,7 @@ def test_ev_equipment_parentheses_complete_candidates_without_erasing_explicit_a
     assert result.variants.variant_weight.sum()==pytest.approx(1.)
 
 
-def test_reported_bev_mini_alias_recovers_68_native_observations_without_hiding_55_phev_catalogue_gap(production_family_policy):
+def test_reviewed_mini_source_links_recover_bev_counts_and_preserve_phev_rating_gap(reviewed_policy, reviewed_reference):
     bev=ratings([('Cooper SE 3 Door',19.1)],year=2024,make='MINI',powertrain='bev_150_miles',rating_class='Subcompact')
     bev['range_km']=183.
     prior_phev=ratings([('Cooper SE Countryman ALL4',3.)],year=2023,make='MINI',powertrain='phev_35_miles',rating_class='Mid-size')
@@ -1700,7 +1724,8 @@ def test_reported_bev_mini_alias_recovers_68_native_observations_without_hiding_
     records=pd.concat([bev_records,phev_records],ignore_index=True)
     weights=pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,'nrcan_ceud_class':'Car',
         'nrcan_vehicle_class':label,'aggregation_weight':.5} for label in ['Subcompact','Mid-size']])
-    result=aggregate(pd.concat([bev,prior_phev],ignore_index=True),production_family_policy,izev=records,weights=weights)
+    result=aggregate(pd.concat([bev,prior_phev],ignore_index=True),reviewed_policy,
+        izev=records,weights=weights,reference=reviewed_reference)
     observations=result.observations.set_index('observed_powertrain')
     assert observations.loc['bev','family_model']=='Cooper SE 3 Door'
     assert observations.loc['bev','match_status']=='resolved'
@@ -1710,6 +1735,7 @@ def test_reported_bev_mini_alias_recovers_68_native_observations_without_hiding_
     assert observations.loc['phev','family_model']=='Cooper SE'
     assert observations.loc['phev','source_count']==55
     assert observations.loc['phev','source_rows']==55
+    assert observations.loc['phev','vehicle_id']=='MINI/COOPERSECOUNTRYMAN'
     assert observations.loc['phev','match_status']=='target_year_rating_unavailable'
     assert not observations.loc['phev','selected']
     assert result.variants.allocated_count.sum()==68
@@ -1718,7 +1744,135 @@ def test_reported_bev_mini_alias_recovers_68_native_observations_without_hiding_
     assert bev.Model.item()=='Cooper SE 3 Door'  # Native evidence was not rewritten.
 
 
-def test_reported_bev_charger_alias_uses_all_five_daytona_configurations_without_rewriting_gasoline(production_family_policy):
+def test_reported_mini_phev_link_supports_historical_family_without_inventing_own_year_rating(reviewed_policy, reviewed_reference):
+    earlier = ratings([("Cooper SE Countryman ALL4", 3.5)], year=2018, make="MINI",
+        powertrain="phev_35_miles", rating_class="Mid-size")
+    later = ratings([("Cooper SE Countryman ALL4", 3.6)], year=2019, make="MINI",
+        powertrain="phev_35_miles", rating_class="Mid-size")
+    later.source_row += 100
+    native = pd.concat([earlier, later], ignore_index=True)
+    records = incentives([("Cooper SE", 1)] * 55, year=2024, make="MINI", powertrain="phev")
+    weights = pd.DataFrame([dict(weight_basis="all_vintages", report_year=2025, nrcan_ceud_class="Car",
+        nrcan_vehicle_class="Mid-size", aggregation_weight=1.)])
+    result = aggregate(native, reviewed_policy, izev=records, weights=weights, reference=reviewed_reference)
+    own = result.observations.loc[result.observations.composition_basis.eq("observed_model_year")]
+    historical = result.observations.loc[result.observations.composition_basis.eq("historical_pooled_model_year_window")]
+    assert own.vehicle_id.item() == "MINI/COOPERSECOUNTRYMAN"
+    assert own.source_count.item() == 55 and not own.selected.any()
+    assert own.match_status.item() == "target_year_rating_unavailable"
+    assert historical.groupby("year").source_count.sum().to_dict() == {2018: 55, 2019: 55}
+    assert historical.selected.all() and historical.source_rows.eq(55).all()
+    assert result.variants.allocated_count.sum() == 110
+    assert records["count"].sum() == 55 and len(records) == 55
+    assert native.Model.eq("Cooper SE Countryman ALL4").all()
+
+
+def test_m2_cs_is_in_complete_compatible_family_median_without_m240i(reviewed_policy, reviewed_reference):
+    native = ratings([("M2 Coupe", 12.5), ("M2 Coupe", 12.6), ("M2 Coupe CS", 12.7),
+        ("M240i xDrive Coupe", 9.)], year=2026, make="BMW", rating_class="Subcompact")
+    native["Transmission"], native["Engine size (L)"], native["Cylinders"] = ["AS8", "M6", "AS8", "AS8"], 3., 6.
+    native["Fuel type"] = "Z"
+    links = reviewed_reference.links.loc[reviewed_reference.links.source.eq("ontario_ministry_transport_vehicle_population")
+        & reviewed_reference.links.vehicle_id.eq("BMW/M2")].iloc[[0]].copy()
+    links["source_make"], links["source_model"] = "BMW", "code0"
+    links["model_year_from"], links["model_year_to"] = 2026, 2026
+    links["source_vehicle_class"], links["vehicle_scope"] = "Subcompact", "ldv"
+    links["canonical_description"], links["link_status"] = "M2", "reviewed_mapping"
+    reference = load_vehicle_reference_frames(reviewed_reference.canonical,
+        pd.concat([reviewed_reference.links, links], ignore_index=True))
+    weights = pd.DataFrame([dict(weight_basis="all_vintages", report_year=2025, nrcan_ceud_class="Car",
+        nrcan_vehicle_class="Subcompact", aggregation_weight=1.)])
+    mapped = stock([("M2", 80)], year=2026, make="BMW", rating_class="Subcompact")
+    result = aggregate(native, reviewed_policy, mto=mapped, weights=weights, reference=reference)
+    row = result.observations.iloc[0]
+    assert row.match_status == "resolved" and row.selected
+    assert row.candidate_variant_count == row.matched_variant_count == 3
+    assert row.observed_family_native_median == pytest.approx(12.6)
+    assert row.consumption_relative_p90_p10_span == pytest.approx(.16 / 12.6)
+    assert set(result.variants.Model) == {"M2 Coupe", "M2 Coupe CS"}
+    assert result.variants.allocated_count.sum() == 80
+    assert native.Model.tolist()[-1] == "M240i xDrive Coupe"
+
+
+def test_previously_unregistered_izev_label_outside_program_window_is_expected_exclusion(reviewed_policy, reviewed_reference):
+    frame = ratings([("Cooper SE 3 Door", 19.1)], year=2024, make="MINI",
+        powertrain="bev_150_miles", rating_class="Subcompact")
+    weights = pd.DataFrame([dict(weight_basis="all_vintages", report_year=2025, nrcan_ceud_class="Car",
+        nrcan_vehicle_class="Subcompact", aggregation_weight=1.)])
+    observed = incentives([("Unregistered future label", 7)], year=2025, make="MINI")
+    result = aggregate(frame, reviewed_policy, izev=observed, weights=weights, reference=reviewed_reference)
+    assert result.observations.match_status.item() == "outside_supported_program_window"
+    assert not result.observations.selected.any()
+    assert result.observations.source_count.item() == 7
+
+
+def test_configuration_uncertain_alias_cannot_inherit_or_taint_accepted_family_count(reviewed_policy, reviewed_reference):
+    links = reviewed_reference.links.loc[reviewed_reference.links.source.eq("ontario_ministry_transport_vehicle_population")
+        & reviewed_reference.links.vehicle_id.eq("TOYOTA/CAMRY")].iloc[[0]].copy()
+    links["source_make"], links["source_model"] = "Toyota", "code0"
+    links["model_year_from"], links["model_year_to"] = 2023, 2023
+    links["source_vehicle_class"], links["vehicle_scope"] = "Mid-size", "ldv"
+    links["canonical_description"], links["link_status"] = "Camry", "reviewed_mapping"
+    unknown = links.copy()
+    unknown["source_model"], unknown["link_status"] = "code1", "configuration_unresolved"
+    reference = load_vehicle_reference_frames(reviewed_reference.canonical,
+        pd.concat([reviewed_reference.links, links, unknown], ignore_index=True))
+    nrcan = reviewed_reference.links.loc[reviewed_reference.links.source.eq("nrcan_fuel_consumption_ratings")
+        & reviewed_reference.links.vehicle_id.eq("TOYOTA/CAMRY")
+        & reviewed_reference.links.model_year_from.le(2023) & reviewed_reference.links.model_year_to.ge(2023)
+        & reviewed_reference.links.source_vehicle_class.eq("Mid-size")]
+    native = ratings([(nrcan.source_model.iloc[0], 8.)], make="Toyota", rating_class="Mid-size")
+    counts = stock([("Camry", 100), ("Camry", 50)], make="Toyota", rating_class="Mid-size")
+    weights = pd.DataFrame([dict(weight_basis="all_vintages", report_year=2025, nrcan_ceud_class="Car",
+        nrcan_vehicle_class="Mid-size", aggregation_weight=1.)])
+    result = aggregate(native, reviewed_policy, mto=counts, weights=weights, reference=reference)
+    assert len(result.observations) == 2
+    observations = result.observations.set_index("reference_link_status")
+    assert observations.loc["reviewed_mapping", "selected"]
+    assert observations.loc["reviewed_mapping", "source_count"] == 100
+    pending = observations.loc["configuration_unresolved"]
+    assert pending.match_status == "conflicting_or_unverified_configuration"
+    assert pending.configuration_status == "unverified_source_body_or_performance"
+    assert "does not establish the specific body or performance" in pending.match_reason
+    assert not pending.selected and pending.source_count == 50
+    assert result.variants.allocated_count.sum() == 100
+    assert counts.mapping_accepted.all() and counts.FIT_ACTIVE.sum() == 150
+    assert result.class_audit.observed_source_count.item() == 150
+    assert result.class_audit.selected_source_share.item() == pytest.approx(2 / 3)
+
+
+@pytest.mark.parametrize("key", ["aliases", "izev_aliases", "izev_observation_aliases_by_powertrain", "family_matching.family_patterns"])
+def test_production_reference_rejects_parallel_identity_overrides(reviewed_policy, reviewed_reference, key):
+    if key == "family_matching.family_patterns":
+        reviewed_policy["family_matching"]["family_patterns"] = []
+    else:
+        reviewed_policy[key] = {} if key == "izev_observation_aliases_by_powertrain" else []
+    with pytest.raises(ValueError, match="Production vehicle identity overrides.*vehicle_source_links.csv"):
+        aggregate(ratings([("Unregistered", 8.)]), reviewed_policy, reference=reviewed_reference)
+
+
+def test_canadian_ioniq_name_transition_reuses_identity_without_pooling_years(reviewed_policy, reviewed_reference):
+    earlier = ratings([("IONIQ Electric Plus", 3.5)], year=2020, make="Hyundai",
+        powertrain="phev_35_miles", rating_class="Mid-size")
+    later = ratings([("IONIQ Plug-in Hybrid", 3.9)], year=2021, make="Hyundai",
+        powertrain="phev_35_miles", rating_class="Mid-size")
+    later.source_row += 100
+    later["range_km"] = 55.
+    native = pd.concat([earlier, later], ignore_index=True)
+    weights = pd.DataFrame([dict(weight_basis="all_vintages", report_year=2025, nrcan_ceud_class="Car",
+        nrcan_vehicle_class="Mid-size", aggregation_weight=1.)])
+    records = incentives([("Ioniq Plug-In hybrid", 192)], year=2020, make="Hyundai", powertrain="phev")
+    result = aggregate(native, reviewed_policy, izev=records, weights=weights, reference=reviewed_reference)
+    selected = result.observations.loc[result.observations.selected]
+    assert selected.vehicle_id.item() == "HYUNDAI/IONIQPLUGINHYBRID"
+    assert selected.source_count.item() == 192
+    assert selected.observed_family_range_median_km.item() == 40.
+    assert result.variants.allocated_count.sum() == 192
+    assert result.variants.Model.eq("IONIQ Electric Plus").all()
+    assert native.Model.tolist() == ["IONIQ Electric Plus", "IONIQ Plug-in Hybrid"]
+
+
+def test_reviewed_charger_link_uses_all_daytona_configurations_without_rewriting_gasoline(reviewed_policy, reviewed_reference):
     models=[('Charger Daytona R/T AWD 2Dr (18" Nexen Tire)',24.1),
         ('Charger Daytona R/T AWD 2Dr (20" Nexen Tire)',21.5),
         ('Charger Daytona R/T AWD 2Dr (20" Goodyear Tire)',24.6),
@@ -1731,8 +1885,18 @@ def test_reported_bev_charger_alias_uses_all_five_daytona_configurations_without
     gas.source_row+=100
     weights=pd.DataFrame([{'weight_basis':'all_vintages','report_year':2025,'nrcan_ceud_class':'Car',
         'nrcan_vehicle_class':'Full-size','aggregation_weight':1.}])
-    result=aggregate(pd.concat([bev,gas],ignore_index=True),production_family_policy,
-        izev=incentives([('Charger',1)],year=2024,make='Dodge'),mto=stock([('Charger',100)],year=2023,make='Dodge',rating_class='Full-size'),weights=weights)
+    mto_link = reviewed_reference.links.loc[reviewed_reference.links.source.eq('ontario_ministry_transport_vehicle_population')
+        & reviewed_reference.links.vehicle_id.eq('DODGE/CHARGER')].iloc[[0]].copy()
+    mto_link['source_make'], mto_link['source_model'] = 'Dodge', 'code0'
+    mto_link['model_year_from'], mto_link['model_year_to'] = 2023, 2023
+    mto_link['source_vehicle_class'], mto_link['vehicle_scope'] = 'Full-size', 'ldv'
+    mto_link['canonical_description'] = 'Charger'
+    reference = load_vehicle_reference_frames(reviewed_reference.canonical,
+        pd.concat([reviewed_reference.links, mto_link], ignore_index=True))
+    result=aggregate(pd.concat([bev,gas],ignore_index=True),reviewed_policy,
+        izev=incentives([('Charger',1)],year=2024,make='Dodge'),
+        mto=stock([('Charger',100)],year=2023,make='Dodge',rating_class='Full-size'),
+        weights=weights,reference=reference)
     observations=result.observations.set_index('source_kind')
     assert observations.loc['izev','family_model']=='Charger Daytona'
     assert observations.loc['izev','candidate_variant_count']==5
@@ -1752,6 +1916,57 @@ def test_reported_bev_charger_alias_uses_all_five_daytona_configurations_without
     assert set(bev.Model)=={name for name,_ in models}
 
 
+@pytest.mark.parametrize("make,family,sibling,size,year,boundary", [
+    ("Honda", "Accord", "Accord Coupe", "Compact", 1995, False),
+    ("Honda", "Civic", "Civic Coupe", "Subcompact", 1995, False),
+    ("Toyota", "Corolla", "Corolla Cross", "Compact", 2023, True),
+])
+def test_reviewed_boundary_facts_preserve_generic_body_ambiguity(reviewed_policy, make, family, sibling, size, year, boundary):
+    from parameterization.vehicle_reference import CANONICAL_COLUMNS, SOURCE_LINK_COLUMNS
+
+    def fact(model, powertrain, status):
+        return dict(vehicle_id=make.upper() + "/" + model.replace(" ", "").upper(), canonical_make=make,
+            canonical_model=model, family_boundary=boundary, model_year_from=year, model_year_to=year, vehicle_scope="ldv",
+            nrcan_vehicle_class=size, powertrain=powertrain, evidence_status=status,
+            evidence_source="Reviewed fixture", notes="")
+
+    facts = [fact(family, "gasoline", "catalogue_supported"),
+             fact(sibling, "unknown", "propulsion_unresolved")]
+
+    def source(model, identifier, description, source="nrcan_fuel_consumption_ratings"):
+        return dict(source=source, source_make=make, source_model=model, model_year_from=year,
+            model_year_to=year, observed_powertrain="", source_vehicle_class=size, vehicle_id=identifier,
+            vehicle_scope="ldv", link_status="reviewed_mapping", evidence_source="Reviewed fixture",
+            source_notes="", wards_notes="", canonical_description=description)
+
+    links = [source(family + " Sedan", facts[0]["vehicle_id"], family + " Sedan"),
+             source(sibling, facts[1]["vehicle_id"], sibling),
+             source("code0", facts[0]["vehicle_id"], family, "ontario_ministry_transport_vehicle_population")]
+    ref = load_vehicle_reference_frames(pd.DataFrame(facts, columns=CANONICAL_COLUMNS),
+        pd.DataFrame(links, columns=SOURCE_LINK_COLUMNS))
+    gas = ratings([(family + " Sedan", 8)], year=year, make=make, rating_class=size)
+    unknown = ratings([(sibling, 7)], year=year, make=make, rating_class=size)
+    unknown["included"], unknown["propulsion_resolved"], unknown["Fuel type"] = False, False, "X"
+    unknown.source_row += 10
+    frame = pd.concat([gas, unknown], ignore_index=True)
+    weights = pd.DataFrame([dict(weight_basis="all_vintages", report_year=2025, nrcan_ceud_class="Car",
+        nrcan_vehicle_class=size, aggregation_weight=1.)])
+    mapped = stock([(family, 100)], year=year, make=make, rating_class=size)
+    generic = aggregate(frame, reviewed_policy, mto=mapped, weights=weights, reference=ref)
+    if boundary:
+        assert generic.observations.match_status.item() == "resolved"
+        assert generic.variants.allocated_count.sum() == 100
+    else:
+        assert generic.observations.match_status.item() == "ambiguous_model_family"
+        assert not generic.observations.selected.any() and generic.variants.empty
+    links[-1]["canonical_description"] = family + " Sedan"
+    explicit_ref = load_vehicle_reference_frames(pd.DataFrame(facts, columns=CANONICAL_COLUMNS),
+        pd.DataFrame(links, columns=SOURCE_LINK_COLUMNS))
+    explicit = aggregate(frame, reviewed_policy, mto=mapped, weights=weights, reference=explicit_ref)
+    assert explicit.observations.match_status.item() == "resolved"
+    assert explicit.variants.allocated_count.sum() == 100
+
+
 @pytest.mark.parametrize('invalid',[None,[],{'gasoline':[]},{'bev':{}},{'bev':[{}]},
     {'bev':[{'make':'MINI','canonical_model':'Cooper SE 3 Door','models':'Cooper SE'}]},
     {'bev':[{'make':'MINI','canonical_model':'Cooper SE 3 Door','models':['Cooper SE'],'exact_only':'true'}]},
@@ -1764,7 +1979,7 @@ def test_observation_only_alias_policy_rejects_invalid_shapes_or_unreported_powe
         aggregate(ratings([('A',8)]),policy)
 
 
-def test_actual_hev_power_variants_receive_one_annual_family_vote_without_mto_weighting(production_family_policy):
+def test_actual_hev_power_variants_receive_one_annual_family_vote_without_mto_weighting(auxiliary_family_policy):
     from parameterization.road_efficiencies import distinct_rating_models
 
     native = [
@@ -1785,7 +2000,7 @@ def test_actual_hev_power_variants_receive_one_annual_family_vote_without_mto_we
     ], ignore_index=True)
     frame['source_row'] = np.arange(len(frame)) + 2
     rules = {
-        'ratings': {'fields': {'make': 'Make', 'model': 'Model'}, 'composition': production_family_policy},
+        'ratings': {'fields': {'make': 'Make', 'model': 'Model'}, 'composition': auxiliary_family_policy},
         'historical_suv': {'source_label': 'SUV', 'combined_weight_classes': ['Small SUV', 'Large SUV']},
         'tolerances': {'weight_sum': 1e-9},
     }
@@ -1804,7 +2019,7 @@ def test_actual_hev_power_variants_receive_one_annual_family_vote_without_mto_we
     for count in [1, 1_000_000]:
         result = aggregate_empirical_ratings(
             frame, weights, stock([('F-PACE', count)], year=2021, make='Jaguar', rating_class=size),
-            pd.DataFrame(), rules=rules, composition_rules=production_family_policy,
+            pd.DataFrame(), rules=rules, composition_rules=auxiliary_family_policy,
             regions=['ON'], weight_basis='all_vintages',
         )
         assert result.class_audit.native_class_mean.item() == 7.5
@@ -1828,8 +2043,8 @@ def test_actual_hev_power_variants_receive_one_annual_family_vote_without_mto_we
     ('Porsche', ['Boxster', '718 Boxster', '718 Boxster S'], 'Boxster'),
     ('Porsche', ['Cayman', '718 Cayman', '718 Cayman GT4'], 'Cayman'),
 ])
-def test_native_power_codes_and_reviewed_prefix_transitions_preserve_family_roots(production_family_policy, make, models, expected):
-    assert {catalogue_family(make, model, production_family_policy)[1] for model in models} == {expected}
+def test_native_power_codes_and_reviewed_prefix_transitions_preserve_family_roots(auxiliary_family_policy, make, models, expected):
+    assert {catalogue_family(make, model, auxiliary_family_policy)[1] for model in models} == {expected}
 
 
 @pytest.mark.parametrize('make,left,right', [
@@ -1845,24 +2060,24 @@ def test_native_power_codes_and_reviewed_prefix_transitions_preserve_family_root
     ('Porsche', '718 Boxster', '718 Cayman'),
     ('Porsche', '718 Boxster', '718 Spyder'),
 ])
-def test_power_variant_grouping_preserves_body_generation_and_model_boundaries(production_family_policy, make, left, right):
-    assert catalogue_family(make, left, production_family_policy) != catalogue_family(make, right, production_family_policy)
+def test_power_variant_grouping_preserves_body_generation_and_model_boundaries(auxiliary_family_policy, make, left, right):
+    assert catalogue_family(make, left, auxiliary_family_policy) != catalogue_family(make, right, auxiliary_family_policy)
 
 
-def test_z4_power_variants_contribute_complete_family_once_and_preserve_explicit_trim(production_family_policy):
+def test_z4_power_variants_contribute_complete_family_once_and_preserve_explicit_trim(auxiliary_family_policy):
     frame = ratings([('Z4 sDrive30i', 8.5), ('Z4 M40i', 9.3)], year=2020, make='BMW')
-    generic = aggregate(frame, production_family_policy, mto=stock([('Z4', 155)], year=2020, make='BMW'))
+    generic = aggregate(frame, auxiliary_family_policy, mto=stock([('Z4', 155)], year=2020, make='BMW'))
     assert generic.observations.match_status.item() == 'resolved'
     assert generic.observations.candidate_variant_count.item() == 2
     assert generic.observations.observed_family_native_median.item() == 8.9
     assert generic.variants.allocated_count.sum() == 155
-    explicit = aggregate(frame, production_family_policy, mto=stock([('Z4 M40i', 155)], year=2020, make='BMW'))
+    explicit = aggregate(frame, auxiliary_family_policy, mto=stock([('Z4 M40i', 155)], year=2020, make='BMW'))
     assert explicit.variants.Model.tolist() == ['Z4 M40i']
     assert explicit.variants.allocated_count.sum() == 155
 
 
 @pytest.mark.parametrize('make,family', [('Lamborghini', 'Huracan'), ('Audi', 'R8')])
-def test_unresolved_propulsion_cannot_select_one_unspecified_body_family(production_family_policy, make, family):
+def test_unresolved_propulsion_cannot_select_one_unspecified_body_family(auxiliary_family_policy, make, family):
     frame = ratings([(family + ' Spyder', 15.7), (family + ' Coupe', 15.7)], make=make, rating_class='Two-seater')
     frame['Fuel type'] = 'Z'
     frame['propulsion_resolved'] = [True, False]
@@ -1871,31 +2086,31 @@ def test_unresolved_propulsion_cannot_select_one_unspecified_body_family(product
         'weight_basis': 'all_vintages', 'report_year': 2025, 'nrcan_ceud_class': 'Car',
         'nrcan_vehicle_class': 'Two-seater', 'aggregation_weight': 1.,
     }])
-    generic = aggregate(frame, production_family_policy,
+    generic = aggregate(frame, auxiliary_family_policy,
         mto=stock([(family, 100)], make=make, rating_class='Two-seater'), weights=weights)
     assert generic.observations.match_status.item() == 'ambiguous_model_family'
     assert generic.observations.configuration_status.item() == 'unresolved_propulsion_competing_family'
     assert generic.observations.family_candidate_count.item() == 2
     assert 'propulsion evidence is unresolved' in generic.observations.match_reason.item()
     assert generic.variants.empty
-    explicit = aggregate(frame, production_family_policy,
+    explicit = aggregate(frame, auxiliary_family_policy,
         mto=stock([(family + ' Spyder', 100)], make=make, rating_class='Two-seater'), weights=weights)
     assert explicit.observations.match_status.item() == 'resolved'
     assert explicit.variants.Model.tolist() == [family + ' Spyder']
     assert explicit.variants.allocated_count.sum() == 100
-    unresolved = aggregate(frame, production_family_policy,
+    unresolved = aggregate(frame, auxiliary_family_policy,
         mto=stock([(family + ' Coupe', 100)], make=make, rating_class='Two-seater'), weights=weights)
     assert unresolved.observations.match_status.item() == 'unresolved_propulsion_evidence'
     assert unresolved.variants.empty
 
 
 @pytest.mark.parametrize('other_powertrain,fuel', [('hev', 'Z'), ('diesel', 'D'), ('ethanol', 'E')])
-def test_positive_other_propulsion_does_not_create_unknown_body_identity_conflict(production_family_policy, other_powertrain, fuel):
+def test_positive_other_propulsion_does_not_create_unknown_body_identity_conflict(auxiliary_family_policy, other_powertrain, fuel):
     frame = ratings([('Huracan Spyder', 15.7), ('Huracan Coupe', 15.7)], make='Lamborghini')
     frame['propulsion_resolved'] = [True, True]
     frame['powertrain'] = ['gasoline', other_powertrain]
     frame['Fuel type'] = ['Z', fuel]
-    result = aggregate(frame, production_family_policy, mto=stock([('Huracan', 100)], make='Lamborghini'))
+    result = aggregate(frame, auxiliary_family_policy, mto=stock([('Huracan', 100)], make='Lamborghini'))
     assert result.observations.match_status.item() == 'resolved'
     assert result.variants.Model.tolist() == ['Huracan Spyder']
     assert result.variants.allocated_count.sum() == 100

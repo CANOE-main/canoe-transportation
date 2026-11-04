@@ -34,6 +34,7 @@ from parameterization.road_efficiencies import (
     select_atb_consumption,
 )
 from parameterization.rating_composition import aggregate_empirical_ratings
+from parameterization.vehicle_reference import attach_catalogue_identities, load_vehicle_reference
 from parameterization.road_fleet_weights import MTO, aggregation_component, load_fleet_aggregation_evidence
 from utils import (
     ConfigBundle,
@@ -705,6 +706,8 @@ def prepare_efficiency_rows(
         if len(factors) != 1 or not np.isfinite(factors.iloc[0]) or not 0 <= factors.iloc[0] <= 1:
             raise ValueError(f"Missing or inconsistent ATB range utility factor: {powertrain}")
         utility_factors[powertrain] = float(factors.iloc[0])
+    reference = load_vehicle_reference(bundle)
+    paths.extend(reference.paths)
     classified = classify_ratings(
         ratings,
         epa,
@@ -716,6 +719,7 @@ def prepare_efficiency_rows(
         range_rules=range_rules,
         uf_by_powertrain=utility_factors,
     )
+    classified = attach_catalogue_identities(classified, reference)
     LOGGER.info("NRCan classification/inclusion counts: %s",
                 classified.groupby(["classification_method", "included"]).size().to_dict())
     aggregation = load_harmonization_rules(bundle, "road_aggregation")
@@ -738,7 +742,10 @@ def prepare_efficiency_rows(
         rules=rules, composition_rules=rules["ratings"]["composition"],
         regions=list(scenario.geography.regions), weight_basis=aggregation["ldv_weight_basis"],
         range_rules=range_rules, conversions=conversions, uf_by_powertrain=utility_factors,
+        reference=reference,
     )
+    LOGGER.info("Authoritative vehicle reference: %s identities, %s scoped facts, %s source links (read-only)",
+                reference.canonical.vehicle_id.nunique(), len(reference.canonical), len(reference.links))
     rating_audit = composition.class_audit
     LOGGER.info("NRCan composition: %s", rating_audit.aggregation_method.value_counts().to_dict())
     for region, observations in composition.observations.groupby("region", sort=True):
@@ -1149,6 +1156,13 @@ def prepare_efficiency_rows(
     audit["rating_index_fallbacks"] = sum(not finding[-1].startswith("omitted_annual_consumption=")
                                            for finding in evidence.findings)
     audit["rating_aggregation"] = "identity_supported_gasoline_izev_and_median_catalogue"
+    audit["vehicle_reference"] = {
+        "identities": int(reference.canonical.vehicle_id.nunique()),
+        "reviewed_scope_rows": len(reference.canonical), "source_links": len(reference.links),
+        "tables": [{"path": str(path.relative_to(bundle.repo_root)), "sha256": file_sha256(path)}
+                   for path in reference.paths],
+        "native_rows_unchanged": len(classified) == sum(len(frame) for frame in ratings),
+    }
     audit["rating_composition_methods"] = rating_audit.aggregation_method.value_counts().to_dict()
     audit["rating_composition_observation_dispositions"] = composition.observations.groupby(
         ["region", "source_kind", "composition_basis", "selection_status"], as_index=False,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 
 import pandas as pd
@@ -16,6 +17,13 @@ _UNRESOLVED_PATTERN = re.compile(
     r"^(?:model\s+)?(?:unresolved|unknown|not\s+resolved|n/?a)(?:\b|\s|$)",
     flags=re.IGNORECASE,
 )
+
+
+def normalize_vehicle_text(value: object) -> str:
+    """Return deterministic ASCII alphanumeric make/model text."""
+    normalized = unicodedata.normalize("NFKD", str(value))
+    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^A-Z0-9]+", "", ascii_text.upper())
 
 
 def normalize_vehicle_label(value: object) -> str:
