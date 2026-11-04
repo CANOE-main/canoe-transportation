@@ -1802,7 +1802,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--scenario",
-        default="config/scenarios/legacy_reproduction.yaml",
+        default="config/scenarios/default.yaml",
     )
     parser.add_argument(
         "--year",

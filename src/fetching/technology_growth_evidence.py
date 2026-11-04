@@ -375,7 +375,7 @@ def extract_paper_pages(bundle: ConfigBundle, *, persist: bool = True) -> pd.Dat
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--scenario", default="config/scenarios/legacy_reproduction.yaml"
+        "--scenario", default="config/scenarios/default.yaml"
     )
     parser.add_argument("--download-missing", action="store_true")
     parser.add_argument("--papers-dir", type=Path)

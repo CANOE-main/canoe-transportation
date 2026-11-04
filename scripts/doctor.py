@@ -15,7 +15,7 @@ SCRIPT_SRC = str(SCRIPT_REPO_ROOT / "src")
 if SCRIPT_SRC not in sys.path:
     sys.path.insert(0, SCRIPT_SRC)
 
-DEFAULT_SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+DEFAULT_SCENARIO = "config/scenarios/default.yaml"
 REQUIRED_IMPORTS = ("fetching", "parameterization", "utils", "validation")
 
 

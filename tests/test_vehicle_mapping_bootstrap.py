@@ -5,9 +5,9 @@ import pandas as pd
 import pytest
 
 import parameterization.road_aggregation as road_aggregation
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from parameterization.vehicle_mapping_bootstrap import (
     apply_high_stock_temporal_gate,
-    apply_reviewed_class_overrides,
     automatically_supported_years as _automatically_supported_years,
     collapse_supported_years,
     derive_mapping_model_year_floor,
@@ -17,13 +17,14 @@ from parameterization.vehicle_mapping_bootstrap import (
     reconcile_manual_supported_years,
     reviewed_strong_candidate_years as _reviewed_strong_candidate_years,
     reviewed_crosswalk_seed,
+    reviewed_label_hints,
+    unreviewed_supported_years,
 )
 from utils import (
     load_config_bundle,
     load_harmonization_rules,
     resolve_artifact_path,
     resolve_input_path,
-    resolve_parameter_path,
 )
 
 
@@ -45,6 +46,7 @@ def automatically_supported_years(
     road_rules = road_aggregation.module_rules(bundle)
     rules = _bootstrap_rules()
     policy: dict[str, object] = {
+        "composition_rules": load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
         "canonical_aliases": road_rules["canonical_aliases"],
         "model_match_priority": rules["accepted_model_match_methods"],
         "evidence_source_priority": rules["evidence_source_priority"],
@@ -658,35 +660,6 @@ def test_similarity_promotion_supersedes_lower_impact_manual_arbitration() -> No
     )
 
 
-def test_reviewed_class_override_replaces_ambiguous_candidate_hierarchy() -> None:
-    supported = pd.DataFrame(
-        {
-            "mto_make_code": ["FORD"],
-            "mto_model_code": ["F/L"],
-            "canonical_make": ["Ford"],
-            "canonical_model": ["Bronco"],
-            "nrcan_vehicle_class": ["Sport utility vehicle: Standard"],
-            "nlr_atb_class": ["Midsize SUV"],
-            "nrcan_ceud_class": ["Light Truck"],
-        }
-    )
-
-    overridden = apply_reviewed_class_overrides(
-        supported,
-        {
-            "FORD/F/L": {
-                "canonical_model": "F-Series",
-                "nrcan_vehicle_class": "Pickup truck: Standard",
-                "nlr_atb_class": "Pickup",
-            }
-        },
-    )
-
-    assert overridden.loc[0, "canonical_model"] == "F-Series"
-    assert overridden.loc[0, "nrcan_vehicle_class"] == "Pickup truck: Standard"
-    assert overridden.loc[0, "nlr_atb_class"] == "Pickup"
-
-
 def test_bootstrap_pools_historical_editions_by_make_model_vintage() -> None:
     stock = pd.DataFrame(
         {
@@ -762,11 +735,8 @@ def test_runtime_reads_but_does_not_overwrite_reviewed_mapping(
 ) -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     rules = road_aggregation.module_rules(bundle)
-    mapping_path = resolve_parameter_path(
-        bundle,
-        rules["vehicle_size_class_map_file"],
-    )
-    before = mapping_path.read_bytes()
+    reference = load_vehicle_reference(bundle)
+    before = {path: path.read_bytes() for path in reference.paths}
     written_paths: list[Path] = []
 
     def capture_write(_frame: pd.DataFrame, path: Path) -> None:
@@ -793,8 +763,8 @@ def test_runtime_reads_but_does_not_overwrite_reviewed_mapping(
 
     road_aggregation.build_road_aggregation_artifacts(SCENARIO)
 
-    assert mapping_path.read_bytes() == before
-    assert mapping_path.resolve() not in written_paths
+    assert all(path.read_bytes() == content for path, content in before.items())
+    assert not set(path.resolve() for path in reference.paths).intersection(written_paths)
     assert written_paths
     runtime_dir = resolve_artifact_path(bundle, "road_aggregation")
     review_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
@@ -809,6 +779,72 @@ def test_mapping_diagnostics_remain_explicitly_callable(monkeypatch) -> None:
     assert road_aggregation.parse_args().mapping_diagnostics is True
 
 
+def test_bootstrap_exports_proposals_with_notes_without_changing_authority(tmp_path, monkeypatch) -> None:
+    from types import SimpleNamespace
+    from parameterization import vehicle_mapping_bootstrap as bootstrap
+
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    rules = dict(road_aggregation.module_rules(bundle))
+    rules["bootstrap_evidence_file"] = None
+    mapping = pd.DataFrame([{column: "" for column in rules["mapping_columns"]}])
+    mapping["entry_type"], mapping["mapping_status"] = "mto_crosswalk", "reviewed"
+    mapping["review_notes"] = "Reviewed MTO identity and year applicability."
+    destination = tmp_path / "reviewed_mapping.csv"
+    monkeypatch.setattr(bootstrap, "parse_args", lambda: SimpleNamespace(
+        scenario=SCENARIO, output=destination,
+    ))
+    monkeypatch.setattr(bootstrap, "module_rules", lambda _bundle: rules)
+    monkeypatch.setattr(bootstrap, "build_bootstrap_mapping", lambda _bundle: (mapping, *[pd.DataFrame() for _ in range(4)]))
+    monkeypatch.setattr(bootstrap, "bootstrap_coverage", lambda *_args: pd.DataFrame())
+    bootstrap.main()
+    exported = pd.read_csv(destination, keep_default_na=False)
+    assert list(exported) == rules["mapping_columns"]
+    assert exported.review_notes.tolist() == mapping.review_notes.tolist()
+    assert exported.mapping_status.tolist() == ["proposed"]
+    assert mapping.mapping_status.tolist() == ["reviewed"]
+
+
+@pytest.mark.parametrize("filename", ["vehicle_reference.csv", "vehicle_source_links.csv", "other.csv"])
+def test_bootstrap_cannot_write_parameter_configuration(filename, monkeypatch):
+    from types import SimpleNamespace
+    from parameterization import vehicle_mapping_bootstrap as bootstrap
+
+    monkeypatch.setattr(bootstrap, "parse_args", lambda: SimpleNamespace(
+        scenario=SCENARIO, output=REPO_ROOT / "config/parameters" / filename,
+    ))
+    monkeypatch.setattr(bootstrap, "build_bootstrap_mapping", lambda *_args: pytest.fail("proposal processing before output safety check"))
+    with pytest.raises(ValueError, match="proposals only"):
+        bootstrap.main()
+
+
+def test_bootstrap_default_scenario_is_a_supported_existing_entrypoint(monkeypatch) -> None:
+    from parameterization import vehicle_mapping_bootstrap as bootstrap
+
+    monkeypatch.setattr(sys, "argv", ["vehicle_mapping_bootstrap", "--output", "tmp/unused-bootstrap.csv"])
+    selected = bootstrap.parse_args().scenario
+    assert (REPO_ROOT / selected).is_file()
+    assert load_config_bundle(selected, repo_root=REPO_ROOT).scenario is not None
+
+
+def test_rebuild_preserves_unresolved_identity_intervals_and_rejects_positive_proposals():
+    reviewed = pd.DataFrame({
+        "entry_type": ["mto_crosswalk", "mto_crosswalk"], "mto_make_code": ["HOND", "HOND"],
+        "mto_model_code": ["UDY", "CRV"], "canonical_make": ["Honda", "Honda"], "canonical_model": ["", "CR-V"],
+        "vehicle_scope": ["identity_unresolved", "ldv"], "model_year_from": [2020, 2019], "model_year_to": [2021, 2022],
+    })
+    seed = reviewed_crosswalk_seed(reviewed, policy="rebuild")
+    assert seed.mto_model_code.tolist() == ["UDY"]
+    assert seed.canonical_model.tolist() == [""]
+    assert reviewed_label_hints(reviewed).mto_model_code.tolist() == ["CRV"]
+    proposals = pd.DataFrame({
+        "mto_make_code": ["HOND"] * 5, "mto_model_code": ["UDY"] * 4 + ["CRV"],
+        "model_year": [2019, 2020, 2021, 2022, 2020], "canonical_model": ["Odyssey"] * 4 + ["CR-V"],
+    })
+    remaining = unreviewed_supported_years(proposals, seed)
+    assert remaining.loc[remaining.mto_model_code.eq("UDY"), "model_year"].tolist() == [2019, 2022]
+    assert remaining.loc[remaining.mto_model_code.eq("CRV"), "model_year"].tolist() == [2020]
+
+
 def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     rules = road_aggregation.module_rules(bundle)
@@ -816,14 +852,8 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
         bundle,
         "nrcan_fuel_consumption_ratings",
     )["vehicle_class_harmonization"]
-    mapping_path = resolve_parameter_path(
-        bundle,
-        rules["vehicle_size_class_map_file"],
-    )
-    mapping = pd.read_csv(mapping_path, dtype=str, keep_default_na=False)
-    mapping = road_aggregation.validate_vehicle_mapping(
-        mapping,
-        rules=rules,
+    mapping = reference_mto_mapping(
+        load_vehicle_reference(bundle), road_rules=rules,
         rating_class_rules=rating_rules,
     )
 
@@ -834,6 +864,7 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
     expected_catalog = road_aggregation.build_rating_model_catalog(
         ratings,
         mapping_columns=rules["mapping_columns"],
+        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
     )
     assert len(expected_catalog) >= 500
     assert expected_catalog["supporting_rating_rows"].sum() == len(ratings)

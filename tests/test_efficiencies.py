@@ -865,14 +865,14 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     payload["geography"]["regions"] = ["ON"]
     routes = dict(bundle.paths.artifacts)
     for family in routes:
-        if family.startswith(("efficiencies_", "ldv_range_")) or family == "existing_capacity_interim":
+        if family.startswith(("efficiencies_", "ldv_range_")) or family in {"existing_capacity_interim", "vehicle_reference"}:
             routes[family] = routes[family].model_copy(update={"path": str(tmp_path / family)})
     configured = replace(bundle, scenario=type(bundle.scenario).model_validate(payload),
                          paths=bundle.paths.model_copy(update={"artifacts": routes}))
     original_path = layer.resolve_artifact_path
 
     def output_path(b, family, *parts):
-        if family.startswith(("efficiencies_", "ldv_range_")) or family == "existing_capacity_interim":
+        if family.startswith(("efficiencies_", "ldv_range_")) or family in {"existing_capacity_interim", "vehicle_reference"}:
             return tmp_path / family / Path(*parts)
         return original_path(b, family, *parts)
 

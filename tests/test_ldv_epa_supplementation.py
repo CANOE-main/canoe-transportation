@@ -55,6 +55,37 @@ def test_native_electricity_and_mpge_share_energy_boundary_without_hhv_rescaling
     assert "epa_mj_per_vkm" not in raw
 
 
+def test_replay_context_uses_captured_atb_factors_and_reviewed_reference(tmp_path, monkeypatch):
+    from validation import ldv_epa_supplementation as module
+
+    path = tmp_path / "atb.csv"
+    pd.DataFrame({"vehicle_weight_category": ["LDV", "LDV", "LDV", "MDV"],
+        "electric_range_mi": [35, 35, 50, 35], "fleet_utility_factor": [.57, .57, .69, .1]}).to_csv(path, index=False)
+    bundle, reference, ranges, conversions = object(), object(), object(), {"captured": True}
+    recorded = SimpleNamespace(bundle=bundle, paths={"atb_phev": path})
+    rules = {"atb": {"weight_categories": {"ldv": "LDV"}}, "ldv_archetypes": {
+        "phev_35_miles": {"range_mi": 35}, "phev_50_miles": {"range_mi": 50}, "gasoline": {}}}
+    monkeypatch.setattr(module, "load_vehicle_reference", lambda selected: reference if selected is bundle else None)
+    monkeypatch.setattr(module, "load_range_rules", lambda selected: ranges if selected is bundle else None)
+    context = module._composition_context(recorded, rules, conversions)
+    assert context["reference"] is reference and context["range_rules"] is ranges
+    assert context["conversions"] is conversions
+    assert context["uf_by_powertrain"] == {"phev_35_miles": .57, "phev_50_miles": .69}
+
+
+@pytest.mark.parametrize("values", [[], [.4, .6], [float("nan")], [1.2]])
+def test_replay_context_rejects_missing_or_conflicting_captured_utility_factors(tmp_path, values):
+    from validation import ldv_epa_supplementation as module
+
+    path = tmp_path / "atb.csv"
+    pd.DataFrame([{"vehicle_weight_category": "LDV", "electric_range_mi": 35, "fleet_utility_factor": value}
+        for value in values], columns=["vehicle_weight_category", "electric_range_mi", "fleet_utility_factor"]).to_csv(path, index=False)
+    recorded = SimpleNamespace(paths={"atb_phev": path})
+    rules = {"atb": {"weight_categories": {"ldv": "LDV"}}, "ldv_archetypes": {"phev_35_miles": {"range_mi": 35}}}
+    with pytest.raises(ValueError, match="Captured ATB range utility factor"):
+        module._composition_context(recorded, rules, {})
+
+
 def test_mpg_uses_fuel_hhv_and_unrounded_adjusted_mpg(conversions, ranges):
     raw = pd.DataFrame([native_epa(atvType="", fuelType1="Regular Gasoline", comb08=30, comb08U=30.4)])
     result = prepare_epa(raw, {}, {}, ranges, conversions).iloc[0]
@@ -256,6 +287,10 @@ def test_report_reader_rejects_tampered_exports_and_changed_analysis(tmp_path, m
     owner = tmp_path / "src/parameterization/rating_composition.py"
     owner.parent.mkdir(parents=True)
     owner.write_text("# captured owning implementation\n", encoding="utf-8")
+    reference_owner = owner.with_name("vehicle_reference.py")
+    range_owner = owner.with_name("ldv_ev_ranges.py")
+    reference_owner.write_text("# captured vehicle reference\n", encoding="utf-8")
+    range_owner.write_text("# captured range allocation\n", encoding="utf-8")
     cache = tmp_path / "pinned.zip"
     cache.write_bytes(b"pinned")
     table = tmp_path / "table.csv"
@@ -266,7 +301,9 @@ def test_report_reader_rejects_tampered_exports_and_changed_analysis(tmp_path, m
     recorded = SimpleNamespace(metadata={"build_id": "build"}, bundle=SimpleNamespace(repo_root=tmp_path, sources=sources), paths={})
     summary = {"build": {"build_id": "build"}, "regions": ["ON"], "analysis_code": {
         "validation.ldv_epa_supplementation": file_sha256(Path(module.__file__)),
-        "parameterization.rating_composition": file_sha256(owner)}, "evidence_inputs": {},
+        "parameterization.rating_composition": file_sha256(owner),
+        "parameterization.vehicle_reference": file_sha256(reference_owner),
+        "parameterization.ldv_ev_ranges": file_sha256(range_owner)}, "evidence_inputs": {},
         "epa_input": {"sha256": file_sha256(cache)}, "exports": {"table": {"file": "table.csv", "rows": 1, "sha256": file_sha256(table)}}}
     summary_path = tmp_path / "summary.json"
     summary_path.write_text(json.dumps(summary), encoding="utf-8")

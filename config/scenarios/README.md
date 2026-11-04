@@ -139,7 +139,7 @@ Historical stock, MHDVs, motorcycles and shared charging shapes retain their exi
 
 Declare both embodied fields even when the layer is disabled. Generate the complete
 registered source bank explicitly on Windows with desktop Excel:
-`uv run python -m fetching.greet_automation --scenario config/scenarios/legacy_reproduction.yaml`.
+`uv run python -m fetching.greet_automation --scenario config/scenarios/default.yaml`.
 The runner uses disposable copies of the configured pair and publishes gas,
 exclusion, case and report evidence with a manifest. Ordinary preparation and the
 native scenario build validate and read this bank offline, without starting Excel. After

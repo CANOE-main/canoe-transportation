@@ -71,7 +71,7 @@ def _():
 
 @app.cell
 def _(load_config_bundle, load_diagnostic_config, load_diagnostic_tables):
-    growth_bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml")
+    growth_bundle = load_config_bundle("config/scenarios/default.yaml")
     growth_config = load_diagnostic_config(growth_bundle)
     growth_tables = load_diagnostic_tables(growth_bundle)
     return growth_bundle, growth_config, growth_tables
@@ -90,24 +90,19 @@ def _(growth_bundle, growth_tables, json, mo, resolve_artifact_path):
                 r"""
                 # Technology growth constraints: evidence and calibration
 
-                **Research diagnostic · CANOE transportation v2.0 · snapshot 7 October 2026**
+                **Research diagnostic · provisional rates and seeds**
 
-                The purpose is to represent adoption inertia and bound rapid substitution.
-                Constant rates are an MVP approximation: they preserve neither eventual
-                saturation nor the timing of an S-curve. Every candidate below requires
-                review. Existing production growth inputs, scenario wiring, technology
-                groups and SQLite insertion are deferred.
+                Explore bounds on deployment using observed growth, curve fits and
+                Canadian stock or registration references. Constant-rate bounds do not
+                prescribe eventual saturation or the timing of an S-curve. Candidate
+                values require review before use in a production scenario.
 
-                The trace is **pinned raw files → native observations and definitions →
-                curation audit → observed/fitted measures → Canadian deployment references
-                → provisional rate and seed interpretation**. Widgets consume persisted
-                evidence; they do not acquire data or refit on each interaction.
-
-                Complete normalized tables are under
-                `inputs/1_interim/technology_growth/`; complete audit, fit, calibration
-                and seed tables are under `inputs/validation/technology_growth/`.
-                Table captions identify previews so display limits are distinct from
-                analytical exclusions.
+                The evidence chain is **registered files → native observations →
+                curation and fits → Canadian references → candidate rates and seeds**.
+                Widgets read persisted tables; they do not fetch data or refit curves.
+                Full normalized tables are in `inputs/1_interim/technology_growth/`;
+                audits and calibration tables are in `inputs/validation/technology_growth/`.
+                Captions identify bounded previews.
 
                 Reproduce from the repository root:
 
@@ -119,10 +114,15 @@ def _(growth_bundle, growth_tables, json, mo, resolve_artifact_path):
                 uv run marimo run docs/insights/growth_constraint_diagnosis.py
                 ```
 
-                A changed upstream file is rejected by checksum. A new observation release
-                needs a reviewed registry update; cached originals are never repaired in
-                place. Rebuild if the diagnostic reports a stale handoff. SciPy belongs to
-                the development dependency group; this analysis is not an ETL prerequisite.
+                Before refreshing, run the normal scenario build or its prerequisite
+                and existing-capacity preparation for the selected scenario. Shared
+                stock, fuel-share and cohort tables must match that scenario; another
+                scenario's processed outputs are incompatible.
+
+                Checksums fix the source editions. Refreshing them requires a reviewed
+                registry update; changed caches are rejected. Rebuild a stale handoff
+                explicitly. This optional analysis uses the development dependency group
+                and runs separately from scenario preparation.
                 """
             ),
             mo.hstack(
@@ -146,7 +146,7 @@ def _(growth_bundle, growth_tables, json, mo, resolve_artifact_path):
                 justify="space-around",
             ),
             mo.callout(
-                "No accepted growth parameters or database rows are produced. These plots are binding upper-bound envelopes, not deployment forecasts or a solver run.",
+                "These are upper-bound demonstrations. They do not publish growth parameters, run a solver or forecast deployment.",
                 kind="warn",
             ),
         ]
@@ -162,10 +162,9 @@ def _(growth_tables, inspect_table, mo):
                 """
                 ## Source identity and literature definitions
 
-                The source manifest records registered identity, native filename, hash,
-                byte size and access route. Supplied PDFs are evidence, not instructions.
-                HATCH national and aggregate releases have different grains; the 2023
-                aggregate estimates cannot be silently attached to every national series.
+                The manifest identifies each registered file, hash and access route.
+                HATCH national series and aggregate estimates have different grains;
+                an aggregate estimate cannot stand in for every national series.
                 """
             ),
             inspect_table(growth_tables["source_manifest"], 100),
@@ -384,28 +383,17 @@ def _(growth_config, growth_tables, inspect_table, mo):
                 """
                 ## Curation: inspect exclusions before interpreting rates
 
-                The legacy **Obtain growth rates** workflow restricted geography, required
-                20 positive observations, erased zeros, rejected long gaps, merged stock
-                and cumulative labels, clipped small observations in native units, and
-                selected each technology's fastest country. Those choices can privilege
-                mature, fast and well-recorded series. A missing comma also combined
-                `Copper|Refining` and `Crude Oil` in its exclusion list. The historical audit
-                records that literal behavior, without adopting it.
+                Native observations retain zeros, missing years and exclusion reasons.
+                Shares, annual output and active stock have separate uses; performance
+                metrics and average unit size are not direct deployment levels. The
+                historical screen is shown only as a comparison with the configured
+                research screen.
 
-                This diagnostic retains all observations, zeros and interior missing years.
-                Shares and annual output are reconsidered for quantity-specific uses.
-                Performance metrics and average size of a new unit are unsuitable as direct
-                deployment levels. Negative data, empty series, duplicate keys, suppressed
-                observations, rounded zero shares and long gaps are visible. No interpolation,
-                positive floor or clipping creates early observations.
-
-                The configurable research fit screen requires ten observations. Windows
-                span seven or ten **year intervals** (normally eight or eleven annual
-                observations), require endpoints, and allow at most one missing interior
-                year. A window containing zero has undefined log growth and remains an
-                excluded row. This is a transparent comparison of methods, not a literal
-                replication of Odenweller's wind/solar sample. Fit $R^2$ is a screen, not
-                evidence of an identifiable ceiling or a transferable rate.
+                Fit and window eligibility follow the controls below. Windows span
+                **year intervals**, require observed endpoints and enforce the configured
+                gap limit. A zero-containing window has no log-growth estimate. No
+                interpolation, positive floor or clipping creates early observations.
+                Fit $R^2$ alone cannot establish an identifiable ceiling or transferable rate.
                 """
             ),
             inspect_table(curation_summary),
@@ -984,30 +972,26 @@ def _(growth_tables, inspect_table, mo, reference_region, reference_target):
                 """
                 ## Canadian starting deployment participates in calibration
 
-                The 24 legacy target families cover cars (including the legacy diesel-car
-                exception), passenger/freight light trucks, and medium/heavy trucks.
-                Current BEV/PHEV range alternatives are grouped only for this diagnostic;
-                the table reconciles legacy selected names, current existing names and
-                future siblings. Range shares must not multiply one physical fleet several
-                times. FCEV/FCHEV grouping remains a representation question for review.
+                Configured targets cover cars, passenger/freight light trucks and
+                medium/heavy trucks. BEV/PHEV range alternatives are grouped only for
+                this diagnostic. Associations between existing and future technologies
+                identify one physical fleet; range alternatives must not multiply it.
+                FCEV/FCHEV grouping requires review.
 
-                Reference stock is **2023**, in **thousand vehicles**, from current processed
-                road existing capacity. It combines CEUD class totals, MTO age evidence,
-                cohort eligibility/redistribution and fuel composition inferred from source
-                registration evidence. It is not a direct census of each powertrain. The
-                uncleaned cohort audit conserves class stock; processed stock omits rows
-                below the configured 0.001 k-vehicle threshold, explicitly reconciled here.
+                Reference stock is in **thousand vehicles**, with its year shown below.
+                It combines processed CEUD totals, MTO age evidence, cohort handling and
+                inferred registration fuel shares. The cohort audit conserves class stock;
+                processed stock also applies the configured small-row threshold, reconciled
+                here. These are inferred powertrain references, not a direct census.
 
-                Fuel shares vary by source year/cohort. AB and NL use Canada proxies;
-                BC/BCT and PE/PEI aliases are explicit. Passenger and freight light trucks
-                share an unallocated registration pool. The medium-truck latest-vintage
-                BEV dashboard override comes from 2026 YTD sales-share evidence, despite
-                the 2023 stock reference. StatCan 23-10-0308 measures **registered stock**,
-                not new sales; it must not be reused as a gross-additions history.
+                Fuel evidence varies by cohort and source year. AB/NL Canada proxies and
+                BC/BCT, PE/PEI aliases are explicit. Passenger and freight light trucks
+                share an unallocated registration pool. The medium-truck BEV dashboard
+                override retains its own reporting year and YTD sales coverage. StatCan
+                23-10-0308 is **registered stock**; it cannot supply gross-additions history.
 
-                Missing FCEV/CNG representation is not measured zero. The legacy artificial
-                initial floor based on an assumed ceiling is not retained as observed deployment.
-                Surviving 2015/2020 cohorts are also not original sales in those periods.
+                Missing FCEV/CNG representation does not establish zero deployment.
+                Surviving cohorts do not measure original sales in those periods.
                 """
             ),
             inspect_table(region_references),
@@ -1023,7 +1007,7 @@ def _(growth_tables, inspect_table, mo, reference_region, reference_target):
                     "Underlying Canadian observations, units, source rows and proxy flags": inspect_table(
                         selected_domestic, 1000
                     ),
-                    "All target-to-v2 technology associations (diagnostic only)": inspect_table(
+                    "Target-to-technology associations (diagnostic only)": inspect_table(
                         growth_tables["target_members"], 350
                     ),
                 }
@@ -1291,7 +1275,7 @@ def _(
                 period-additions deltas. Annual sales rates compared between unequal
                 period totals also require period-width normalization.
 
-                In this code snapshot the first stock reference uses adjusted existing
+                In the pinned implementation the first stock reference uses adjusted existing
                 capacity, life fractions and the last existing period. The first new-capacity
                 reference uses only the last existing vintage; delta uses the last two.
                 Existing `_EX` and future `_N` identifiers must be associated explicitly
@@ -1655,20 +1639,15 @@ def _(
                 r"""
                 ## Constant growth versus S-curve stages
 
-                All curves below start at the selected 2023 deployment and share the same
-                **early continuous coefficient** $k=\ln(1+b)$. Three arbitrary ceiling
-                multiples expose how local growth at the same $C_0$ changes with unknown
-                maturity. They are not target saturation estimates or recommendations.
-                The dashed line is the 2023 class-stock reference, not a future fleet cap.
+                Curves start at the selected deployment reference and share the same
+                **early continuous coefficient** $k=\ln(1+b)$. Configured ceiling multiples
+                test how unknown maturity changes local growth at the same $C_0$.
+                The dashed line marks reference-year class stock; it sets no future cap.
 
-                The constant-rate line approximates the emergence limit; a logistic local
-                rate is already smaller when $C_0/L$ is appreciable and slows thereafter.
-                Growth inertia alone can thus permit implausible mature-market expansion
-                if it is mistaken for a complete diffusion model. Calibration can use
-                observed growth windows and current shares without presuming future $L$;
-                the resulting bound must be reviewed with demand, turnover and competing
-                technologies. An early high percentage should not be extrapolated as a
-                prediction of market saturation or its date.
+                The constant-rate line approximates emergence. Logistic growth is lower
+                when $C_0/L$ is appreciable and slows with deployment. Review any bound
+                alongside demand, turnover and competing technologies; an early growth
+                fraction does not predict saturation or its date.
                 """
             ),
             constant_curve_display,
@@ -1737,14 +1716,13 @@ def _(growth_summary, inspect_table, mo, pd):
         [
             mo.md(
                 """
-                ## Review outcome and remaining decisions
+                ## Candidate interpretation and remaining decisions
 
-                Evidence supports **conditional, technology-specific constant-rate
-                candidates**, rather than one pooled emergence rate. Starting deployment
-                helps select a relevant observed phase and scale the bound; it does not
-                identify a rate by itself. FCEV, CNG, heavy-truck and missing HEV stock
-                evidence remain explicit gaps. A numerical analogue estimate in an
-                insufficient row is not a recommendation to use it.
+                Interpret each **technology-specific candidate** with its status and
+                supporting window. Starting deployment helps select an observed phase
+                and scale a bound; it does not identify the rate. FCEV, CNG, heavy-truck
+                and missing HEV stock evidence remain gaps. A numerical value in an
+                insufficient row is a sensitivity input, not an accepted parameter.
 
                 Prefer observed positive windows when saturation is unknown. Use fitted
                 logistic coefficients as a distinct early-limit sensitivity after checking
@@ -1752,11 +1730,10 @@ def _(growth_summary, inspect_table, mo, pd):
                 Current Canadian stocks are inferred and have heterogeneous source years,
                 which limits how finely rates can be differentiated across regions/classes.
 
-                Review the analogy choices, maturity match, candidate range, first-period
-                time interpretation, physical membership and seed purpose before promotion.
-                Existing capacity remains distinct from artificial allowances. All three
-                formulation demonstrations are reproducible diagnostics, not accepted
-                growth inputs; no eventual fleet saturation or timing is prescribed.
+                Before promotion, review analogue transfer, maturity, first-period timing,
+                physical membership and recurring seed purpose. Existing capacity and
+                artificial allowances remain separate. The three formulations demonstrate
+                the consequences of those choices without prescribing saturation or timing.
                 """
             ),
             inspect_table(review_recommendations),

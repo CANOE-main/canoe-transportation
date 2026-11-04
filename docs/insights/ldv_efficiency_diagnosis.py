@@ -237,23 +237,59 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
     return range_color, range_label, trajectory_chart
 
 
+@app.cell
+def heatmap_helpers(alt, pd):
+    def class_consumption_heatmap(panel, *, years, classes, maximum, width, title):
+        powertrain = panel.powertrain.iloc[0]
+        grid = pd.DataFrame([{"year": year, "rating_class": size, "powertrain": powertrain}
+                             for year in years for size in classes])
+        fields = ["year", "rating_class", "powertrain", "catalogue_mj_per_vkm", "production_mj_per_vkm",
+                  "aggregation_method", "empirical_families", "selected_source_count"]
+        plot = grid.merge(panel[[field for field in fields if field in panel]],
+                          on=["year", "rating_class", "powertrain"], how="left", validate="one_to_one")
+        plot["consumption_change"] = plot.production_mj_per_vkm - plot.catalogue_mj_per_vkm
+        plot["relative_consumption_change"] = plot.consumption_change / plot.catalogue_mj_per_vkm.where(plot.catalogue_mj_per_vkm.gt(0))
+        data = alt.Data(values=plot.astype(object).where(plot.notna(), None).to_dict("records"))
+        tooltips = ["year:O", "rating_class:N", "powertrain:N",
+            alt.Tooltip("catalogue_mj_per_vkm:Q", title="Catalogue median MJ/vkm", format=".4f"),
+            alt.Tooltip("production_mj_per_vkm:Q", title="Production MJ/vkm", format=".4f"),
+            alt.Tooltip("consumption_change:Q", title="Production − catalogue median MJ/vkm", format="+.4f"),
+            alt.Tooltip("relative_consumption_change:Q", title="Change relative to catalogue", format="+.1%"),
+            "aggregation_method:N", alt.Tooltip("empirical_families:Q", title="Source descriptions"),
+            alt.Tooltip("selected_source_count:Q", title="Contributing source count")]
+        base = alt.Chart(data).encode(
+            x=alt.X("year:O", title="Vehicle model year", sort=years, scale=alt.Scale(domain=years),
+                    axis=alt.Axis(labelAngle=0, labelOverlap=False, labelFontSize=10)),
+            y=alt.Y("rating_class:N", title=None, sort=classes, scale=alt.Scale(domain=classes),
+                    axis=alt.Axis(labelLimit=235)), tooltip=tooltips)
+        background = base.mark_rect(color="#dfe3e8", stroke="white", strokeWidth=.5)
+        effects = base.transform_filter("isValid(datum.consumption_change)").mark_rect(stroke="white", strokeWidth=.5)
+        if maximum:
+            effects = effects.encode(color=alt.Color("consumption_change:Q", title="Production − catalogue median (MJ/vkm)",
+                scale=alt.Scale(domain=[-maximum, 0, maximum], range=["#2475a8", "#ffffff", "#b7303e"], interpolate="rgb"),
+                legend=alt.Legend(orient="right", direction="vertical", gradientLength=150,
+                                  title=["Production − catalogue", "median [MJ/vkm]"], titleLimit=200)))
+        else:
+            effects = effects.encode(color=alt.value("#ffffff"))
+        return (background + effects).properties(width=width, height=max(55, 25 * len(classes)), title=title)
+
+    return (class_consumption_heatmap,)
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     # Historical and future road efficiency
 
-    Follow NRCan ratings through observed vehicle composition, cohort aggregation and ATB
-    projections. This notebook and the vehicle-stock notebook read the **same
-    latest successful `notebook_diagnostics.yaml` build**: captured ETL tables and
-    their configuration. The accompanying SQLite is recorded by path and hash;
-    these views read the captured tables, not SQLite.
-    Display years, class ordering and chart dimensions read current diagnostic
-    settings; source data and modelling rules remain tied to the recorded build.
+    Follow NRCan ratings through vehicle composition, cohort aggregation and ATB
+    projections. This notebook and the vehicle-stock notebook use the **same latest
+    successful diagnostic build**, including its captured data and modelling rules.
+    Display years, class order and chart dimensions use current diagnostic settings.
 
-    Run the prerequisite command below when inputs or the backend change, then reload.
-    Opening this notebook performs no ETL. Source years remain visible before
-    prospective model-period mapping. Comparisons with the catalogue-median
-    estimator and the independent composition benchmark are labelled diagnostic-only.
+    Rebuild with the command below after changing inputs or backend rules, then reload.
+    Opening the notebook reads captured tables; it runs no ETL. The recorded SQLite
+    path and hash identify the published database. Catalogue comparisons and independent
+    population benchmarks are diagnostic views.
     """)
     return
 
@@ -278,43 +314,50 @@ def _(composition_view_settings, load_diagnostic, refresh):
 @app.cell(hide_code=True)
 def _(diagnostic, mo):
     build = diagnostic.summary["build"]
+    vehicle_reference = diagnostic.summary["vehicle_reference"]
     mo.vstack([
         mo.md(f"""
         Evidence build: **{build['build_id']}** ·
         base year **{diagnostic.summary['base_year']}** · region **{diagnostic.summary['region']}** ·
         MTO edition **{diagnostic.summary['population_year']}** · ATB **{diagnostic.summary['atb_trajectory']}**.
-        Production NRCan basis: **documented MTO gasoline composition, iZEV PEV acquisitions,
-        and distinct-trim family medians followed by cohort medians wherever empirical weights are unavailable**; gaps remain explicit.
-        Historical period efficiencies and load factors use the
-        raw cohort-stock weights from the fleet age distribution, before lifetime
-        eligibility or redistribution. All displayed evidence belongs to this build.
+        Production uses **documented MTO gasoline composition, iZEV PEV acquisitions,
+        and hierarchical catalogue medians where empirical weights are unavailable**.
+        Historical period efficiencies and load factors use raw cohort-stock weights
+        before lifetime eligibility or redistribution.
+
+        The captured canonical/source-link tables cover **{vehicle_reference['canonical_identities']:,} identities**,
+        including **{vehicle_reference['identities_without_mto_link']:,} without MTO links**.
+        They retain **{vehicle_reference['unlinked_identity_intervals']:,} unlinked identity intervals** and
+        **{vehicle_reference['configuration_unresolved_intervals']:,} configuration-uncertain intervals**;
+        the matching review separates actionable issues from expected exclusions.
+        Inspect their year, class and powertrain scopes in the stock diagnostic.
+        Consumption and electric range use complete compatible target-year configurations;
+        ordinary builds read both authoritative tables without rewriting them.
         """),
-        mo.accordion({"Recorded build and input identity": mo.json({"build": build, "inputs": diagnostic.summary["inputs"]})}),
+        mo.accordion({"Recorded build, canonical reference and input identity": mo.json({
+            "build": build, "vehicle_reference": vehicle_reference, "inputs": diagnostic.summary["inputs"]})}),
     ])
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
+def _(composition_view, mo):
+    mo.md(f"""
     ## NRCan catalogue distributions
 
-    These are eligible Ratings observations. Distinct trims first form a median
-    within each canonical make/model family, model year, size class and powertrain/range.
-    Boxes show the middle half of family medians, with min–max whiskers;
-    black diamonds mark their descriptive mean and red crosses the cohort median. These markers
-    do not establish empirical vehicle weights. The production comparison follows.
+    Distinct eligible trims form one median per canonical family, model year, size
+    class and powertrain/range. Boxes span the middle half of family medians, with
+    min–max whiskers. Black diamonds mark their mean; red crosses mark their median.
+    These describe catalogue variation and carry no observed vehicle weights.
 
-    The measurement selector keeps native consumption, engine displacement and
-    electric motor power separate. Motor kW is not combustion-engine power.
-    PHEV native consumption is CD; no CS curve is plotted. Missing engine/motor
-    measurements remain missing. Columns include all observed size classes in the same
-    smaller-to-larger order within each body family as the composition plots. Body families
-    do not share one physical-volume scale. Rows show 2005–2025 in two-year
-    steps, trimmed to each powertrain's observed span; internal gaps stay empty.
-    Each powertrain uses one practical axis across its size classes, with four readable
-    ticks and all selected model values retained. Axis limits vary between powertrains.
-    `*` marks model years after the recorded baseline.
+    Select native consumption, engine displacement or electric motor power; motor
+    kW is separate from combustion-engine displacement. PHEV consumption shows CD
+    rates; CS rates remain in the tables. Missing measurements remain missing.
+    Rows span **{min(composition_view['distribution_years'])}–{max(composition_view['distribution_years'])}**
+    using the configured display years. Unsupported ends are trimmed and interior
+    gaps stay empty. Columns follow size order within each body family. Each
+    powertrain shares an axis across its classes; axis limits vary between powertrains.
+    Size ordering is separate within body families. `*` marks years after the build's baseline.
     """)
     return
 
@@ -466,33 +509,26 @@ def _(composition_view, diagnostic, mo):
     mo.md(f"""
     ## Observed composition behind production cohorts
 
-    Each row is a powertrain/range. Columns include **all observed size classes** within the selected vehicle
-    group, arranged from smaller to larger within each body family. This is a display sequence,
-    not a common measured volume scale across unlike bodies. The y-axis shows each vehicle model year
-    from **{min(composition_view['years'])} to {max(composition_view['years'])}**. Grey dots are distinct catalogue
-    family medians of distinct trims; grey ranges span those medians. Amber dots show the actual
-    contributing empirical source descriptions, with size proportional to their contribution.
-    Large hollow blue diamonds show the median of catalogue family medians; smaller filled red crosses show the
-    **recorded production estimate**: count-weighted composition where supported,
-    and the same hierarchical median in every other rated subclass. Both symbols remain visible
-    when estimates coincide. Tooltips identify contributors,
-    counts, geography, matching basis and remaining fallback. Consumption uses total
-    MJ per vehicle-km; source-native values remain in tooltips and tables.
+    Rows show powertrain/range groups; columns show all observed size classes in
+    size order within each body family. **Grey dots/ranges** describe catalogue
+    family medians. **Amber dots** identify contributing source descriptions,
+    sized by their selected-count weight. **Blue diamonds** mark the median of
+    family medians; **red crosses** mark production's weighted estimate or median
+    fallback. Tooltips retain counts, geography, matching basis and native units.
+    Plotted consumption is total MJ per vehicle-km.
 
-    Rows before or after a powertrain's actual catalogue support are omitted;
-    missing cohorts inside that span remain empty. Classes without production support remain empty.
-    The iZEV window is **{supported['izev_model_year_min']}–{supported['izev_model_year_max']}**;
-    displayed supported years are **{', '.join(map(str, displayed_supported_years))}**.
-    {temporal_composition} Post-window cohorts retain catalogue medians. Any class/range
-    without compatible empirical support also retains its median.
-    The y-axis years are individual target cohorts, not multi-year bins. `*` marks target years
-    after the recorded baseline; these are outside historical calibration. Ranking uses the
-    captured MTO stock snapshot pooled across vintages, with the same all-fuel outer-class
-    weights as production; it is not a powertrain-specific or new-sales distribution.
-    Display years, class order, optional column limit and chart widths read current `rules.yaml`; all consumption,
-    contributors and MTO ranking weights remain from the recorded build.
-    A common axis compares size classes within each powertrain; limits vary between
-    powertrains to retain detail without unused space or clipping catalogue tails.
+    Target model years span **{min(composition_view['years'])}–{max(composition_view['years'])}**;
+    these are annual cohorts, with `*` after the build's baseline. Unsupported ends
+    are trimmed and missing interior cohorts remain empty. The iZEV supported
+    window is **{supported['izev_model_year_min']}–{supported['izev_model_year_max']}**;
+    displayed own-year cohorts are **{', '.join(map(str, displayed_supported_years))}**.
+    {temporal_composition} Later cohorts and unsupported class/range cells use
+    hierarchical catalogue medians.
+
+    Column shares use the captured MTO snapshot pooled across vintages and fuels,
+    matching production's outer class weights. They describe mapped surviving
+    stock, not new sales or powertrain-specific shares. Each powertrain shares an
+    axis across classes; unlike body types have no common measured size scale.
     """)
     return
 
@@ -526,10 +562,10 @@ def _(diagnostic, mo):
         gasoline = gasoline.drop_duplicates(["year", "rating_class", "powertrain"])
         empirical_classes = int(gasoline.aggregation_method.eq("mto_identity_supported_weighted").sum())
         return mo.md(f"""
-        **Current rules.** iZEV includes eligible new **purchases and leases**, model years
+        **Recorded modelling rules.** iZEV includes eligible new **purchases and leases**, model years
         **{policy['izev_model_year_min']}–{policy['izev_model_year_max']}**. The **{minimum:,}-record** threshold
         applies to the whole provincial BEV/PHEV pool **before size-class/range matching**;
-        smaller pools use the whole national pool. Own-year cohorts use one source year;
+        smaller pools use the whole national pool. Own-year cohorts use one source model year;
         historical proxies use the full supported window. Clear PEV families use their median
         eligible-trim range for allocation; contradictory identities or classes remain unallocated.
         Documented MTO identities must cover **{policy['mto_selection']['minimum_resolved_count_share']:.0%}** of
@@ -537,10 +573,11 @@ def _(diagnostic, mo):
         MTO does not observe fuel; compatible gasoline trims exclude hybrids and alternative fuels.
         Gasoline-capable FFVs may contribute their X/Z ratings; E85 and diesel modes do not.
         HEVs use NRCan model signals plus compatible FuelEconomy.gov configuration evidence,
-        and always retain catalogue medians without MTO composition weights.
-        This is a coverage policy, not a confidence score. Every rated subclass
-        without empirical weights uses **distinct trim → family median → cohort median**, retaining original outer
-        class weights. Only genuinely absent rated classes require renormalization.
+        with class consumption based on catalogue family medians, without MTO make–model
+        weighting. Configured outer size-class weights still apply; MTO supplies no observed
+        HEV model or fuel shares.
+        Unweighted rated subclasses use **distinct trim → family median → cohort median**,
+        retaining their outer class weights. Only absent rated classes require renormalization.
         **{empirical_classes}/{len(gasoline)} gasoline class-year cohorts** receive MTO weights;
         the class tables show eligible/resolved and whole-mapped coverage separately.
 
@@ -552,11 +589,12 @@ def _(diagnostic, mo):
         **{policy['family_matching']['consumption_dispersion']['maximum_relative_p90_p10_span']:.0%}**.
         This central-spread rule measures representative adequacy, not statistical confidence.
 
-        Counts proxy activity weights under **equal annual distance within each CEUD class**:
-        the common VKT factor cancels. Equal use is an assumption, not measured behaviour.
+        Counts proxy activity under **equal annual distance within each CEUD class**;
+        the common VKT factor cancels. This is an assumption, not measured use.
         **Allocated own-year incentive records in the supported window:** {'; '.join(coverage)}.
-        These are eligible-record coverage shares, not market coverage or confidence estimates. Public records lack VINs;
-        repeat requests and program demonstrator exceptions mean they are not unique-vehicle counts.
+        These shares measure eligible-record matching, not market coverage. iZEV
+        lacks VINs and may contain repeat requests or demonstrators; legitimate
+        identical native rows remain acquisition records, not identifiable unique vehicles.
         """)
     policy_summary = recorded_policy()
     policy_summary
@@ -805,7 +843,7 @@ def _(composition_detail_frames, diagnostic, mo, mto_filters, pd, pev_filters, t
         coverage = view(classes, coverage_columns)
         return mo.vstack([
             mo.hstack([controls["year"], controls["rating_class"], controls["powertrain"]], widths="equal"),
-            mo.md("Native PHEV values are independent **CD Le/100 km**; **total MJ/vkm includes utility weighting**. The numeric **catalogue − production** difference is positive when production uses less energy. Sort it to inspect the most affected cohorts; target year, size and powertrain sort independently. Historical iZEV proxies use the supported source window with target-year NRCan rates; their temporal window is separate from the geographic pool. Method identifies the weights actually used; a median can remain despite an evaluated source pool."),
+            mo.md("PHEV native values show **CD Le/100 km**; total MJ/vkm includes utility weighting. This table retains **catalogue − production**, positive when production consumes less. Source model-year windows and geographic pools are separate. Method identifies the weights actually used; evaluating a source pool does not guarantee empirical support."),
             table_ui(estimates, "Recorded class estimates: consumption, catalogue size and contributing evidence"),
             (mo.md("No empirical source description contributes under these filters; the aggregate and its catalogue-median basis remain in the class table above.")
              if families.empty else mo.vstack([table_ui(family_view, "Contributing source descriptions and their actual counts"),
@@ -848,18 +886,17 @@ def ambiguity_review(composition_review_cases, composition_review_summary, diagn
         mo.md("""
         ### Matching review · ranked by source-count exposure
 
-        Each row groups one source description and source province. **Source-count exposure**
-        counts each own-year source observation once, including all legitimate native records;
-        repeated target-year and geographic applications do not increase it. Source counts are
-        acquisitions for iZEV and fit-active stock for MTO, so their totals describe different populations.
-        Every positive unmapped MTO key remains visible with an unknown assigned class,
-        including wholly unresolved keys and missing intervals for mixed-scope keys.
-        Reviewed non-light-duty vehicles and configured year-scope exclusions appear separately.
+        One row groups a source description and province. **Source-count exposure**
+        counts each own-year observation once, retaining legitimate native records.
+        Repeated target-year or geographic applications add no exposure. iZEV counts
+        acquisitions; MTO counts fit-active stock, so their totals represent different populations.
 
-        Historical proxies are separate: their pooled-window count appears once per description,
-        across all affected target years. **Do not add proxy exposure to own-year exposure.**
-        Missing proxy-era ratings and gasoline-only exclusions do not imply that supported-year
-        iZEV observations fail. All applications and candidate details remain in the audit below.
+        The main table shows identity, year, class and configuration issues. Expected
+        program/estimator exclusions and historical catalogue limits appear separately.
+        A historical proxy's pooled-window count appears once per description across
+        its affected years. **Do not add proxy exposure to own-year exposure.**
+        Proxy-era gaps and gasoline-only exclusions do not imply supported-year
+        iZEV failures. The audit retains all applications and candidate details.
         """),
         reviewed_table("Actionable matching issue", "Matching issues requiring identity, year or configuration review"),
         mo.accordion({
@@ -881,21 +918,17 @@ def _(diagnostic, mo, range_label):
     mo.md(f"""
     ## OMEGA range composition and projection anchors
 
-    **{bev_anchor}** and **{phev_anchor}** anchor each family's future trajectory to
-    the cohort-weighted NRCan consumption of its latest historical source period.
-    ATB supplies subsequent relative improvements and consumption ratios between
-    range variants. Historical cohorts retain recorded NRCan consumption; range groups
-    use matched family representatives or a hierarchical catalogue median; contradictory identities remain unallocated.
+    **{bev_anchor}** and **{phev_anchor}** provide the latest historical NRCan cohort
+    anchors. ATB supplies later relative changes and ratios between range variants.
     Existing fleet consumption combines independently aggregated range-period values
-    using the recorded OMEGA shares; ranges need not have the same observed years.
+    using recorded OMEGA shares; ranges can have different observed years.
 
     In consumption units, the projection is
     `C_range(p) = C_NRCan-anchor × C_ATB-range(p) / C_ATB-anchor({diagnostic.summary['atb_reference_year']})`.
-    Source year {diagnostic.summary['atb_reference_year']} holds the NRCan cohort anchor; subsequent points apply ATB
-    changes from that year. Thus ATB's overlapping absolute levels do not replace
-    observed historical NRCan consumption.
-    A range variant can change level at this transition: its historical NRCan
-    population and ATB's relative range comparison describe different vehicle mixes.
+    Source year {diagnostic.summary['atb_reference_year']} holds the cohort anchor;
+    subsequent points apply ATB changes from that year. A range variant can change
+    level at the transition because historical NRCan populations and ATB range
+    comparisons describe different vehicle mixes.
 
     The bars compare cars and light trucks within each powertrain family; colors
     identify range classes. The table records each projection anchor's source years,
@@ -927,47 +960,41 @@ def _(alt, chart_ui, diagnostic, mo, range_color, range_label, table_ui):
 
 
 @app.cell(hide_code=True)
-def _(diagnostic, mo):
+def _(composition_view, diagnostic, mo, range_label):
     bridge_periods = diagnostic.bundle.scenario.periods
     anchor_vintage = bridge_periods.latest_observed_vintage
     anchor_window = bridge_periods.historical_years(anchor_vintage)
+    bev_reference = range_label(diagnostic.summary["anchor_powertrains"]["bev"])
     mo.md(f"""
     ## Existing-to-future bridge
 
     **Distinct trims → family medians → empirical count weighting / cohort median fallback → energy → production periods**.
-    Lower consumption means greater efficiency. Graph 1 shows native catalogue trajectories using the median of distinct-trim family medians
-    over 2000 through the latest captured model year. Graph 2 is a heatmap of
-    **catalogue median − production (total MJ/vkm)** by size class and model year,
-    with separate panels for each range. Blue/positive means production consumes less;
-    red/negative means more. Grey cells lack a comparison; neutral cells have zero change.
-    This isolates within-class composition weighting or median fallback, before outer-class
-    and period aggregation. For PHEVs, both sides use the same utility-weighted total energy;
-    native CD Le/100 km is not subtracted from total MJ/vkm.
-    Graphs 3 and 4 span 2010–2040. Graph 4 shows the current production bridge.
-    **Final prepared period CSV** markers identify the published production values.
+    Lower consumption means greater efficiency. Graph 1 shows native catalogue trajectories
+    from {composition_view['native_year_start']} through the latest captured model year,
+    using the median of distinct-trim family medians.
+    Graph 2 displays **production − catalogue median (total MJ/vkm)** by size class
+    and model year, with separate range panels. **Blue/negative means lower production
+    consumption; red/positive means higher.** Grey cells lack a comparison; white means zero.
+    The heatmap compares within-class estimates before outer-class and period aggregation.
+    PHEV comparisons use utility-weighted total energy on both sides.
 
-    Historical PEV cohorts retain recorded source years; contradictory records
-    remain unresolved and unsupported subclasses use their hierarchical catalogue median. Existing PEV
-    consumption combines supported range periods using OMEGA shares.
-    Partial periods expose coverage; wholly empty periods require the configured
-    recorded analogue. Missing years are not interpolated. The forward anchor is
-    source year {diagnostic.summary['atb_reference_year']}, followed by ATB changes.
+    Graphs 3 and 4 span {composition_view['bridge_years'][0]}–{composition_view['bridge_years'][1]}.
+    Graph 3 labels the final NRCan source observation beside its multi-year,
+    stock-weighted cohort anchor. Graph 4 applies the recorded cohort anchor and
+    ATB ratios; **Final prepared period CSV** markers identify published parameters.
+    Detailed ATB-class selections are diagnostic recalculations using parent loads,
+    cohort counts and OMEGA shares. Light trucks use passenger service units.
+    The grey line marks the build's base year. Tooltips retain source years and vintages.
 
-    Detailed ATB classes remain diagnostic recalculations: they inherit parent
-    loads, cohort counts and OMEGA shares. Light trucks use passenger service units.
-    Graph 3 labels the NRCan trajectory endpoint contributing to each observed anchor,
-    alongside the recorded multi-year, stock-weighted cohort anchor value. These are
-    different quantities; graph 4 uses the cohort anchor and ATB range ratios.
-    The grey line marks the same base year in graphs 1, 3 and 4; their year domains differ.
-    Tooltips retain source years and model vintages.
+    Partial historical periods report coverage; wholly empty periods require a
+    configured analogue. Missing years are not interpolated.
 
     **Source year and model vintage differ.** In this {bridge_periods.period_mode} build, historical
     vintage **{anchor_vintage}** combines the **{anchor_window[0]}–{anchor_window[-1]}** observed cohorts; graph 4 places that
-    point at its last included source year, **{anchor_window[-1]}**. The **{bridge_periods.model[0]}** point is the ATB
-    projection reference using the historical cohort anchor, not a new observation
-    or an additional historical vintage. For BEVs other than BEV300, that reference
-    also applies the ATB range ratio to the shared BEV300 anchor. It does not apply
-    a {anchor_window[-1]}→{bridge_periods.model[0]} ATB time improvement. The first future parameter has vintage **{bridge_periods.model[0]}**
+    point at its last included source year, **{anchor_window[-1]}**. The **{bridge_periods.model[0]}** point is the
+    projection reference, with ATB range ratios relative to the shared **{bev_reference}**
+    anchor for other BEV ranges. No time improvement is applied between that
+    historical endpoint and the reference. The first future parameter has vintage **{bridge_periods.model[0]}**
     and uses the period source year **{bridge_periods.projection_year(bridge_periods.model[0], legacy_at_end=False)}**.
     """)
     return
@@ -1003,9 +1030,11 @@ def _(diagnostic):
 
 
 @app.cell
-def bridge_plot(COHORT, VIEW_MODES, alt, bridge_diagnostic, bridge_metric, chart_ui, class_controls, composition_heatmap_data, composition_view, family_controls, mo, pd, range_label, table_ui, trajectory_chart):
+def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, class_consumption_heatmap, class_controls, composition_heatmap_data, composition_view, family_controls, mo, pd, range_label, table_ui, trajectory_chart):
     def bridge_view(group):
         chosen_class, family = class_controls.value[group], family_controls.value[group]
+        bev_reference = range_label(bridge_diagnostic.summary["anchor_powertrains"]["bev"])
+        phev_reference = range_label(bridge_diagnostic.summary["anchor_powertrains"]["phev"])
         start, end = composition_view["bridge_years"]
         native_years = [composition_view["native_year_start"], max(bridge_diagnostic.summary["available_rating_years"])]
         rows = bridge_diagnostic.frames["bridge"]
@@ -1049,42 +1078,15 @@ def bridge_plot(COHORT, VIEW_MODES, alt, bridge_diagnostic, bridge_metric, chart
             ordered = [size for size in composition_view["class_order"].get(group, []) if size in available]
             ordered += sorted(available - set(ordered))
             maximum = float(comparison.delta_mj_per_vkm.abs().max())
-            heatmaps.append(mo.md("**2. Class consumption changes · catalogue median − production.** "
-                "Positive/blue means lower production energy use; negative/red means higher. Grey means missing; neutral means zero. "
+            heatmaps.append(mo.md("**2. Class consumption changes · production − catalogue median.** "
+                "Negative/blue means lower production consumption; positive/red means higher. Grey means missing; white means zero. "
                 + ("All comparable cells are zero under the selected aggregation policy." if maximum == 0 else
                    "The same symmetric MJ/vkm colour scale applies to every range panel.")))
             years = list(range(native_years[0], native_years[1] + 1))
-            fields = ["year", "rating_class", "powertrain", "catalogue_mj_per_vkm", "production_mj_per_vkm",
-                "delta_mj_per_vkm", "delta_fraction", "aggregation_method", "empirical_families", "selected_source_count"]
             for powertrain, panel in comparison.groupby("powertrain", sort=True):
-                grid = pd.DataFrame([{"year": year, "rating_class": size, "powertrain": powertrain}
-                    for year in years for size in ordered])
-                plot = grid.merge(panel[[field for field in fields if field in panel]], on=["year", "rating_class", "powertrain"],
-                    how="left", validate="one_to_one")
-                data = alt.Data(values=plot.astype(object).where(plot.notna(), None).to_dict("records"))
-                tooltips = ["year:O", "rating_class:N", "powertrain:N",
-                    alt.Tooltip("catalogue_mj_per_vkm:Q", title="Cohort fallback median MJ/vkm", format=".4f"),
-                    alt.Tooltip("production_mj_per_vkm:Q", title="Production MJ/vkm", format=".4f"),
-                    alt.Tooltip("delta_mj_per_vkm:Q", title="Catalogue − production MJ/vkm", format="+.4f"),
-                    alt.Tooltip("delta_fraction:Q", title="Relative reduction", format="+.1%"), "aggregation_method:N",
-                    alt.Tooltip("empirical_families:Q", title="Source descriptions"),
-                    alt.Tooltip("selected_source_count:Q", title="Contributing source count")]
-                base = alt.Chart(data).encode(
-                    x=alt.X("year:O", title="Vehicle model year", sort=years, scale=alt.Scale(domain=years),
-                        axis=alt.Axis(labelAngle=0, labelOverlap=False, labelFontSize=10)),
-                    y=alt.Y("rating_class:N", title=None, sort=ordered, scale=alt.Scale(domain=ordered),
-                        axis=alt.Axis(labelLimit=235)), tooltip=tooltips)
-                background = base.mark_rect(color="#dfe3e8", stroke="white", strokeWidth=.5)
-                effects = base.transform_filter("isValid(datum.delta_mj_per_vkm)").mark_rect(stroke="white", strokeWidth=.5)
-                if maximum:
-                    effects = effects.encode(color=alt.Color("delta_mj_per_vkm:Q", title="Catalogue − production (MJ/vkm)",
-                        scale=alt.Scale(domain=[-maximum, 0, maximum], range=["#b7303e", "#ffffff", "#2475a8"], interpolate="rgb"),
-                        legend=alt.Legend(orient="right", direction="vertical", gradientLength=150,
-                                          title=["Composition adjusted", "change [MJ/vkm]"], titleLimit=200)))
-                else:
-                    effects = effects.encode(color=alt.value("#ffffff"))
-                heatmaps.append(chart_ui((background + effects).properties(width=composition_view["heatmap_plot_width"],
-                    height=max(55, 25 * len(ordered)), title="2. Class consumption changes · " + range_label(powertrain))))
+                heatmaps.append(chart_ui(class_consumption_heatmap(panel, years=years, classes=ordered,
+                    maximum=maximum, width=composition_view["heatmap_plot_width"],
+                    title="2. Class consumption changes · " + range_label(powertrain))))
         composition_columns = {"year": "Model year", "rating_class": "Size class", "powertrain": "Powertrain / range",
             "catalogue_native_consumption": "Cohort fallback median", "production_native_consumption": "Production", "native_unit": "Native unit",
             "catalogue_mj_per_vkm": "Cohort fallback median (total MJ/vkm)", "production_mj_per_vkm": "Production (total MJ/vkm)",
@@ -1095,18 +1097,18 @@ def bridge_plot(COHORT, VIEW_MODES, alt, bridge_diagnostic, bridge_metric, chart
             mo.accordion({"Full class-composition audit": table_ui(comparison, "All captured fields · original names")})])})]
                                if not comparison.empty else [])
 
-        note = ("Medium/heavy gasoline and diesel use their own observed CEUD fleet consumption. Emerging powertrains use diesel-relative ATB ratios; these are proxies, not native CEUD observations. "
+        note = ("Medium/heavy gasoline and diesel use observed CEUD fleet consumption. Emerging powertrains use diesel-relative ATB proxy ratios. "
                 f"All future trajectories anchor to the latest existing cohort at source year {bridge_diagnostic.summary['atb_reference_year']}, then apply ATB relative improvements. "
-                "Gasoline uses diesel improvement rates. Absolute ATB levels do not replace the fleet anchor. CEUD observations describe the parent fleet, not individual vocations."
+                "Gasoline uses diesel improvement rates. CEUD describes the parent fleet rather than individual vocations."
                 if group in {"Medium trucks", "Heavy trucks"} else
                 "Each NRCan PHEV row uses total MJ/vkm = [UF × (3.6 × CD kWh + fuel HHV × CD litres) + (1 − UF) × fuel HHV × CS litres] / 100, "
-                "using NRCan rates per 100 km and the ATB range-bucket UF. CD remains an independent curve; CS remains in tables. "
-                "Description/cohort aggregation follows. This is a cross-source travel-share assumption. PHEV35 anchors future projections only."
+                "using NRCan rates per 100 km and the assigned range-bucket UF. CD remains a separate curve; CS remains in tables. "
+                f"The UF is a cross-source travel-share assumption; {phev_reference} anchors future projections."
                 if family == "phev" else
                 ("Diesel/HEV class estimates use medians of distinct-trim family medians. " if family in {"diesel", "hev"} else
                  "Production class estimates use the selected observed family counts within supported classes. ")
-                + "Unsupported rated subclasses use the same hierarchical family/cohort median; the harmonised aggregate follows recorded class weights. "
-                + ("Clear BEV families use median eligible-trim range; contradictory matches remain unresolved. Hierarchical medians fill missing empirical support. BEV300 anchors future projections; ATB supplies later relative changes and range ratios."
+                + "Unweighted rated subclasses retain hierarchical family/cohort medians and recorded outer class weights. "
+                + (f"Supported BEV families use median eligible-trim range; {bev_reference} anchors future projections, with ATB relative changes and range ratios."
                    if family == "bev" else f"The latest observed NRCan cohort anchors the {bridge_diagnostic.summary['atb_reference_year']} reference point; future periods apply ATB changes from that point."))
         period_title = "4. Production periods"
         if chosen_class != COHORT:
@@ -1140,25 +1142,21 @@ def _(diagnostic, mo):
     mo.md(f"""
     ## Independent composition benchmarks
 
-    These comparisons ask **how closely our available composition evidence resembles
-    independent published counts**. They can reveal acquisition selection and stock-coverage
-    differences; they do not validate fuel consumption, fine NRCan classes or range allocation.
-    "Independent" refers to the StatCan reference counts; our broad-class mappings still
-    reuse the catalogue/crosswalk evidence.
+    **Diagnostic only · {diagnostic.summary['region']}.** StatCan provides independent
+    population counts; the broad-class mappings reuse reviewed source links. These
+    comparisons examine coverage and selection, not consumption or range allocation.
 
-    **Validation only · {diagnostic.summary['region']}.** These counts do not set production weights.
-    Compare Cars/light trucks in annual **registered stock** with available mapped MTO
-    FIT_ACTIVE survivors. MTO coverage refers to its available cohort table, not all MTO records.
-    Compare **BEV/PHEV acquisition shares** over **{min(diagnostic.summary['benchmark_calendar_years'])}–{max(diagnostic.summary['benchmark_calendar_years'])}** with iZEV purchases plus leases,
-    using request calendar year alongside StatCan registration calendar year. Incentive eligibility,
-    incomplete class matching and timing differences can explain disagreement. iZEV acquisition
-    records are not identifiable unique vehicles; repeat incentives and demonstrator exceptions are possible.
-    The partial 2019 launch and 2025 closure years stay in the audits, outside the acquisition comparison.
+    Compare annual registered-stock Cars/light-truck shares with available mapped
+    MTO FIT_ACTIVE cohorts. Compare new BEV/PHEV shares over
+    **{min(diagnostic.summary['benchmark_calendar_years'])}–{max(diagnostic.summary['benchmark_calendar_years'])}**
+    with iZEV purchases and leases, using request calendar year alongside registration
+    calendar year. Timing, incentive eligibility and class coverage can cause differences.
+    Other request years remain in the audits; acquisition records are not identifiable unique vehicles.
 
-    MTO does not record fuel: its catalogue-compatible subset is shown only in the coverage tables,
-    with its own denominator and report year. It cannot validate a full-fleet fuel distribution.
-    StatCan's full stock powertrain mix is a separate reference. Missing or suppressed cells remain
-    missing; request year, vehicle model year, native classes and source populations remain in the tables.
+    MTO fuel is unobserved. Its catalogue-compatible subset has its own denominator
+    and report year and does not establish full-fleet fuel shares. StatCan stock
+    powertrain shares remain a separate reference. Tables retain exact populations,
+    request/model years and native classes; missing or suppressed cells remain missing.
     """)
     return
 

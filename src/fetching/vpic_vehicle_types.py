@@ -509,7 +509,7 @@ def fetch_and_normalize(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--scenario", default="config/scenarios/legacy_reproduction.yaml"
+        "--scenario", default="config/scenarios/default.yaml"
     )
     parser.add_argument("--no-download", action="store_true")
     return parser.parse_args()

@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_glider_formula_audit_surfaces_shifted_ranges_and_exact_proposal():
-    settings = registered_workbooks(load_config_bundle("config/scenarios/legacy_reproduction.yaml", repo_root=ROOT))[0].automation
+    settings = registered_workbooks(load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT))[0].automation
     original = "=IF(GREET1_Import_Export!$G$12=200,W4,IF(GREET1_Import_Export!$G$12=300,Y4,IF(GREET1_Import_Export!$G$12=400,AA4,AC4)))+(J17+IF(Vehi_Inputs!$C$76=1,J18,J19))"
     expected = original.replace("=200,W4", "=150,W4").replace("=300,Y4", "=200,Y4").replace("=400,AA4", "=300,AA4")
     cells = {"J4": original, "W3": "EV150: Lightweight Material", "Y3": "EV200: Lightweight Material",
@@ -38,7 +38,7 @@ def test_glider_formula_audit_surfaces_shifted_ranges_and_exact_proposal():
 
 @pytest.mark.parametrize("value", [2383.14, 2500.0, None, "missing", True, float("inf")])
 def test_saved_glider_inputs_are_audited_without_correcting_formula(tmp_path, value):
-    spec = registered_workbooks(load_config_bundle("config/scenarios/legacy_reproduction.yaml", repo_root=ROOT))[0].automation.lightweight_glider
+    spec = registered_workbooks(load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT))[0].automation.lightweight_glider
     path = tmp_path / "greet2.xlsx"
     book = openpyxl.Workbook()
     book.remove(book.active)
@@ -67,7 +67,7 @@ def test_saved_glider_inputs_are_audited_without_correcting_formula(tmp_path, va
 
 @pytest.fixture
 def inputs():
-    bundle = load_config_bundle("config/scenarios/legacy_reproduction.yaml", repo_root=ROOT)
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT)
     rules = load_harmonization_rules(bundle, "greet_vehicle_cycle")
     settings = registered_workbooks(bundle)[0].automation
     ranges, _ = probe_archetypes(bundle)

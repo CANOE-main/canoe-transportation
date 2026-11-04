@@ -1,7 +1,7 @@
-"""Bootstrap reviewed Ontario vehicle-size mappings from cached source evidence.
+"""Propose Ontario vehicle mappings from cached source evidence for explicit review.
 
 This is an explicit maintainer tool, not a runtime ETL stage. Ordinary fetching
-and parameterization commands only read ``vehicle_size_class_map.csv``.
+and parameterization commands only read the two authoritative vehicle tables.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from typing import Any
 import pandas as pd
 
 from fetching.vehicle_population import load_history_manifest
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from parameterization.road_aggregation import (
     ONTARIO_RULE_KEY,
     apply_vehicle_mapping,
@@ -43,7 +44,7 @@ from utils.vehicle_labels import (
 LOGGER = logging.getLogger(__name__)
 RATINGS_RULE_KEY = "nrcan_fuel_consumption_ratings"
 VPIC_MODEL_YEAR_RULE_KEY = "vpic_model_years"
-DEFAULT_SCENARIO = "config/scenarios/legacy_reproduction.yaml"
+DEFAULT_SCENARIO = "config/scenarios/legacy_comparison.yaml"
 MANUAL_DERIVED_COLUMNS = [
     "canonical_make",
     "candidate_pass_agreement",
@@ -341,8 +342,24 @@ def reviewed_crosswalk_seed(
     if policy == "preserve_all":
         return crosswalk
     if policy == "rebuild":
-        return crosswalk.iloc[0:0].copy()
+        return crosswalk.loc[crosswalk.get("vehicle_scope", pd.Series("", index=crosswalk.index)).eq("identity_unresolved")].copy()
     raise ValueError(f"Unsupported reviewed crosswalk policy: {policy}")
+
+
+def unreviewed_supported_years(supported: pd.DataFrame, reviewed: pd.DataFrame) -> pd.DataFrame:
+    """Subtract exact reviewed intervals from positive bootstrap proposals."""
+    if supported.empty or reviewed.empty:
+        return supported.copy()
+    intervals: dict[tuple[str, str], list[tuple[int, int]]] = {}
+    for row in reviewed.itertuples(index=False):
+        intervals.setdefault((str(row.mto_make_code), str(row.mto_model_code)), []).append(
+            (int(row.model_year_from), int(row.model_year_to))
+        )
+    covered = supported.apply(
+        lambda row: any(start <= int(row["model_year"]) <= end for start, end in intervals.get(
+            (str(row["mto_make_code"]), str(row["mto_model_code"])), [])), axis=1,
+    )
+    return supported.loc[~covered].copy()
 
 
 def reviewed_label_hints(
@@ -358,7 +375,8 @@ def reviewed_label_hints(
         "canonical_model",
     ]
     hints = reviewed_mapping.loc[
-        reviewed_mapping["entry_type"].eq("mto_crosswalk"), columns
+        reviewed_mapping["entry_type"].eq("mto_crosswalk")
+        & reviewed_mapping["canonical_model"].fillna("").astype(str).str.strip().ne(""), columns
     ].copy()
     hints["model_year_from"] = pd.to_numeric(
         hints["model_year_from"], errors="coerce"
@@ -425,9 +443,10 @@ def automatically_supported_years(
     minimum_model_prefix_length: int,
     minimum_model_year: int | None,
     exclude_future_model_years: bool,
+    composition_rules: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
     """Return stock years with unambiguous make/model/class evidence."""
-    rating_evidence = assign_rating_model_families(rating_evidence)
+    rating_evidence = assign_rating_model_families(rating_evidence, composition_rules=composition_rules)
     rating_evidence = (
         rating_evidence.groupby(
             [
@@ -1245,76 +1264,8 @@ def fill_stable_family_years(
     return pd.concat(output, ignore_index=True, sort=False)
 
 
-def apply_reviewed_class_overrides(
-    supported: pd.DataFrame,
-    overrides: dict[str, dict[str, str]],
-) -> pd.DataFrame:
-    """Apply narrowly reviewed hierarchy decisions after candidate inference."""
-    output = supported.copy()
-    allowed = {
-        "canonical_make",
-        "canonical_model",
-        "nrcan_vehicle_class",
-        "nlr_atb_class",
-        "nrcan_ceud_class",
-    }
-    for mto_key, values in overrides.items():
-        make_code, model_code = str(mto_key).split("/", maxsplit=1)
-        unsupported = sorted(set(values) - allowed)
-        if unsupported:
-            raise ValueError(
-                f"Unsupported reviewed class override fields for {mto_key}: "
-                + ", ".join(unsupported)
-            )
-        mask = output["mto_make_code"].eq(make_code) & output[
-            "mto_model_code"
-        ].eq(model_code)
-        for column, value in values.items():
-            output.loc[mask, column] = str(value)
-    return output
-
-
-def apply_reviewed_scope_overrides(
-    supported: pd.DataFrame,
-    overrides: dict[str, str],
-) -> pd.DataFrame:
-    """Apply reviewed non-LDV decisions and remove incompatible LDV hierarchy."""
-    output = supported.copy()
-    allowed = {"mhdv", "non_ldv_unclassified"}
-    for mto_key, scope in overrides.items():
-        if scope not in allowed:
-            raise ValueError(f"Unsupported reviewed scope override for {mto_key}: {scope}")
-        make_code, model_code = str(mto_key).split("/", maxsplit=1)
-        mask = output["mto_make_code"].eq(make_code) & output[
-            "mto_model_code"
-        ].eq(model_code)
-        output.loc[mask, "vehicle_scope"] = scope
-        output.loc[
-            mask,
-            ["nrcan_vehicle_class", "nlr_atb_class", "nrcan_ceud_class"],
-        ] = ""
-    return output
-
-
-def apply_canonical_model_overrides(
-    supported: pd.DataFrame,
-    overrides: dict[str, str],
-) -> pd.DataFrame:
-    """Apply reviewed canonical spelling before temporal corroboration."""
-    output = supported.copy()
-    for mto_key, canonical_model in overrides.items():
-        make_code, model_code = str(mto_key).split("/", maxsplit=1)
-        mask = output["mto_make_code"].eq(make_code) & output[
-            "mto_model_code"
-        ].eq(model_code)
-        output.loc[mask, "canonical_model"] = str(canonical_model)
-    return output
-
-
 def collapse_supported_years(
     supported: pd.DataFrame,
-    *,
-    canonical_model_overrides: dict[str, str] | None = None,
 ) -> pd.DataFrame:
     """Collapse contiguous, identically supported MTO years into ranges."""
     columns = [
@@ -1406,14 +1357,6 @@ def collapse_supported_years(
         ["mto_make_code", "mto_model_code", "model_year_from"],
         kind="stable",
     )
-    overrides = canonical_model_overrides or {}
-    ranges["canonical_model"] = ranges.apply(
-        lambda row: overrides.get(
-            f"{row['mto_make_code']}/{row['mto_model_code']}",
-            row["canonical_model"],
-        ),
-        axis=1,
-    )
     ranges.insert(0, "entry_type", "mto_crosswalk")
     ranges["match_method"] = (
         "automatic_"
@@ -1485,18 +1428,8 @@ def build_bootstrap_mapping(
         output_dir / str(ontario_rules["current_stock_file"]),
         low_memory=False,
     )
-    mapping_path = resolve_parameter_path(
-        bundle,
-        rules["vehicle_size_class_map_file"],
-    )
-    reviewed_mapping = pd.read_csv(
-        mapping_path,
-        dtype=str,
-        keep_default_na=False,
-    )
-    reviewed_mapping = validate_vehicle_mapping(
-        reviewed_mapping,
-        rules=rules,
+    reviewed_mapping = reference_mto_mapping(
+        load_vehicle_reference(bundle), road_rules=rules,
         rating_class_rules=load_harmonization_rules(
             bundle, "nrcan_fuel_consumption_ratings"
         )["vehicle_class_harmonization"],
@@ -1569,33 +1502,6 @@ def build_bootstrap_mapping(
         .apply(tuple, axis=1)
         .isin(reaudit_keys)
     ].copy()
-    configured_hints: list[dict[str, Any]] = []
-    for mto_key, hint in bootstrap_rules["reviewed_model_label_hints"].items():
-        make_code, model_code = str(mto_key).split("/", maxsplit=1)
-        configured_hints.append(
-            {
-                "mto_make_code": make_code,
-                "mto_model_code": model_code,
-                "model_year_from": pd.NA,
-                "model_year_to": pd.NA,
-                "canonical_make": str(hint["canonical_make"]),
-                "canonical_model": str(hint["canonical_model"]),
-            }
-        )
-    if configured_hints:
-        configured_keys = {
-            (str(row["mto_make_code"]), str(row["mto_model_code"]))
-            for row in configured_hints
-        }
-        label_hints = label_hints.loc[
-            ~label_hints[["mto_make_code", "mto_model_code"]]
-            .apply(tuple, axis=1)
-            .isin(configured_keys)
-        ].copy()
-        label_hints = pd.concat(
-            [label_hints, pd.DataFrame(configured_hints)],
-            ignore_index=True,
-        ).drop_duplicates()
     seed = validate_vehicle_mapping(
         seed,
         rules=rules,
@@ -1605,6 +1511,7 @@ def build_bootstrap_mapping(
     supported = automatically_supported_years(
         historical_stock,
         ratings,
+        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
         canonical_aliases={
             str(source): str(target)
             for source, target in rules["canonical_aliases"].items()
@@ -1635,6 +1542,7 @@ def build_bootstrap_mapping(
     manual_supported = automatically_supported_years(
         historical_stock,
         ratings,
+        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
         canonical_aliases=canonical_make_aliases,
         seed_mapping=None,
         label_hints=_manual_label_hints(manual),
@@ -1662,6 +1570,7 @@ def build_bootstrap_mapping(
         current_candidates = generate_mapping_candidates(
             current_stock,
             ratings,
+            composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
             candidates_per_key=int(bootstrap_rules["candidate_rows_per_key"]),
             similarity_scores={
                 str(name): float(score)
@@ -1681,37 +1590,6 @@ def build_bootstrap_mapping(
                 bootstrap_rules["accepted_candidate_model_similarity"]
             ),
         )
-        if not strong_supported.empty and configured_hints:
-            supported_keys = set(
-                supported[["mto_make_code", "mto_model_code"]].apply(tuple, axis=1)
-            )
-            configured_supported_keys = configured_keys & supported_keys
-            configured_approved = strong_supported.loc[
-                strong_supported[["mto_make_code", "mto_model_code"]]
-                .apply(tuple, axis=1)
-                .isin(configured_supported_keys)
-            ].copy()
-            for key, approved_rows in configured_approved.groupby(
-                ["mto_make_code", "mto_model_code"], sort=False
-            ):
-                approved_row = approved_rows.iloc[0]
-                configured_mask = supported["mto_make_code"].eq(key[0]) & supported[
-                    "mto_model_code"
-                ].eq(key[1])
-                supported.loc[
-                    configured_mask, "year_resolution"
-                ] = "approved_current_candidate_similarity"
-                supported.loc[
-                    configured_mask, "candidate_match_method"
-                ] = approved_row["candidate_match_method"]
-                supported.loc[
-                    configured_mask, "candidate_model_similarity"
-                ] = approved_row["candidate_model_similarity"]
-            strong_supported = strong_supported.loc[
-                ~strong_supported[["mto_make_code", "mto_model_code"]]
-                .apply(tuple, axis=1)
-                .isin(configured_supported_keys)
-            ].copy()
         if not strong_supported.empty:
             strong_supported = strong_supported.loc[
                 pd.to_numeric(strong_supported["model_year"], errors="coerce").ge(
@@ -1747,28 +1625,17 @@ def build_bootstrap_mapping(
     supported = supported.loc[
         pd.to_numeric(supported["model_year"], errors="coerce").ge(mapping_floor)
     ].copy()
-    supported = apply_reviewed_class_overrides(
-        supported,
-        {
-            str(key): {str(column): str(value) for column, value in values.items()}
-            for key, values in bootstrap_rules["reviewed_class_overrides"].items()
-        },
-    )
-    supported = apply_reviewed_scope_overrides(
-        supported,
-        {
-            str(key): str(value)
-            for key, value in bootstrap_rules["reviewed_scope_overrides"].items()
-        },
-    )
-    canonical_model_overrides = {
-        str(key): str(value)
-        for key, value in bootstrap_rules["canonical_model_overrides"].items()
-    }
-    supported = apply_canonical_model_overrides(
-        supported,
-        canonical_model_overrides,
-    )
+    rejected_identities = seed.loc[seed.vehicle_scope.eq("identity_unresolved")]
+    supported = unreviewed_supported_years(supported, rejected_identities)
+    if not rejected_identities.empty and not reconciliation.empty:
+        positive_keys = set(supported[["mto_make_code", "mto_model_code"]].itertuples(index=False, name=None))
+        rejected_keys = set(rejected_identities[["mto_make_code", "mto_model_code"]].itertuples(index=False, name=None)) - positive_keys
+        rejected_rows = reconciliation[["mto_make_code", "mto_model_code"]].apply(tuple, axis=1).isin(rejected_keys)
+        reconciliation.loc[rejected_rows, "selected_model_family"] = ""
+        reconciliation.loc[rejected_rows, "promotion_status"] = "not_promoted"
+        reconciliation.loc[rejected_rows, "class_evidence_status"] = "identity_unresolved"
+        reconciliation.loc[rejected_rows, "vehicle_scope"] = "identity_unresolved"
+        reconciliation.loc[rejected_rows, "reconciliation_reason"] = "reviewed_identity_unresolved"
     temporal_requests = build_temporal_request_rows(
         supported,
         current_stock,
@@ -1792,34 +1659,9 @@ def build_bootstrap_mapping(
         ),
         excluded_keys=reaudit_keys,
     )
-    for mto_key, scope in bootstrap_rules["reviewed_scope_overrides"].items():
-        make_code, model_code = str(mto_key).split("/", maxsplit=1)
-        mask = reconciliation["mto_make_code"].eq(make_code) & reconciliation[
-            "mto_model_code"
-        ].eq(model_code)
-        reconciliation.loc[mask, "vehicle_scope"] = str(scope)
-    supported_for_generation = supported
-    if not seed.empty and not supported.empty:
-        seed_ranges: dict[tuple[str, str], list[tuple[int, int]]] = {}
-        for row in seed.itertuples(index=False):
-            seed_ranges.setdefault(
-                (str(row.mto_make_code), str(row.mto_model_code)), []
-            ).append((int(row.model_year_from), int(row.model_year_to)))
-        already_reviewed = supported.apply(
-            lambda row: any(
-                start <= int(row["model_year"]) <= end
-                for start, end in seed_ranges.get(
-                    (str(row["mto_make_code"]), str(row["mto_model_code"])),
-                    [],
-                )
-            ),
-            axis=1,
-        )
-        supported_for_generation = supported.loc[~already_reviewed].copy()
-    generated = collapse_supported_years(
-        supported_for_generation,
-        canonical_model_overrides=canonical_model_overrides,
-    )
+    supported = unreviewed_supported_years(supported, rejected_identities)
+    supported_for_generation = unreviewed_supported_years(supported, seed)
+    generated = collapse_supported_years(supported_for_generation)
     combined = pd.concat([seed, generated], ignore_index=True)
     combined = validate_vehicle_mapping(
         combined,
@@ -1877,12 +1719,7 @@ def parse_args() -> argparse.Namespace:
         "--output",
         type=Path,
         required=True,
-        help="Requested reviewed CSV output path.",
-    )
-    parser.add_argument(
-        "--replace-reviewed-config",
-        action="store_true",
-        help="Required when --output is the configured reviewed mapping path.",
+        help="Proposal CSV output outside config/parameters; authoritative tables are never overwritten.",
     )
     return parser.parse_args()
 
@@ -1891,6 +1728,10 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
     bundle = load_config_bundle(args.scenario)
+    output_path = (args.output if args.output.is_absolute() else bundle.repo_root / args.output).resolve()
+    parameters = resolve_parameter_path(bundle, "rules.yaml").parent.resolve()
+    if output_path.is_relative_to(parameters):
+        raise ValueError("Mapping bootstrap emits proposals only; it cannot write authoritative parameter configuration")
     (
         mapping,
         supported,
@@ -1898,27 +1739,9 @@ def main() -> None:
         eligible_requests,
         temporal_requests,
     ) = build_bootstrap_mapping(bundle)
-    configured_path = resolve_parameter_path(
-        bundle,
-        module_rules(bundle)["vehicle_size_class_map_file"],
-    ).resolve()
-    output_path = (
-        args.output
-        if args.output.is_absolute()
-        else bundle.repo_root / args.output
-    ).resolve()
-    if output_path == configured_path and not args.replace_reviewed_config:
-        raise ValueError(
-            "Refusing to replace reviewed configuration without "
-            "--replace-reviewed-config"
-        )
-    # Requested crosswalk replacements use the compact reviewed contract. Full
-    # candidate-generation metadata remains in the separate evidence exports.
-    reviewed_columns = module_rules(bundle).get("reviewed_mapping_columns")
-    write_dataframe_atomic(
-        mapping.loc[:, reviewed_columns] if reviewed_columns else mapping,
-        output_path,
-    )
+    proposal = mapping.copy()
+    proposal.loc[proposal.entry_type.eq("mto_crosswalk"), "mapping_status"] = "proposed"
+    write_dataframe_atomic(proposal, output_path)
     bootstrap_file = module_rules(bundle).get("bootstrap_evidence_file")
     if bootstrap_file:
         interim_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
@@ -1941,7 +1764,7 @@ def main() -> None:
         )
     coverage = bootstrap_coverage(bundle, mapping)
     LOGGER.info(
-        "Wrote %d reviewed mapping ranges (%d automatically supported years) to %s",
+        "Wrote %d proposed mapping ranges (%d automatically supported years) to %s",
         len(mapping),
         len(supported),
         output_path,

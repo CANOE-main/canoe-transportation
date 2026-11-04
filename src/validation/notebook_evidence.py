@@ -186,12 +186,15 @@ def stage_notebook_evidence(bundle: ConfigBundle, report: dict) -> NotebookPubli
                 "sources": bundle.sources_path,
                 "rules": resolve_parameter_path(bundle, "rules.yaml"),
                 "conversion": resolve_parameter_path(bundle, "conversion.yaml"),
-                "mapping": resolve_parameter_path(bundle, load_harmonization_rules(
-                    bundle, "road_aggregation",
-                )["vehicle_size_class_map_file"]),
+                "vehicle_reference": resolve_parameter_path(bundle, load_harmonization_rules(
+                    bundle, "vehicle_reference",
+                )["canonical_file"]),
+                "vehicle_source_links": resolve_parameter_path(bundle, load_harmonization_rules(
+                    bundle, "vehicle_reference",
+                )["source_links_file"]),
             }
             for key, path in config_sources.items():
-                relative = (f"config/parameters/{path.name}" if key in {"rules", "conversion", "mapping"}
+                relative = (f"config/parameters/{path.name}" if key in {"rules", "conversion", "vehicle_reference", "vehicle_source_links"}
                             else f"config/{key}.yaml")
                 config[key] = _copy_evidence(path, profile_dir / relative, bundle.repo_root, relative)
             manifest = NotebookManifest(
@@ -335,6 +338,12 @@ def load_notebook_evidence(profile: Profile, *, repo_root: Path | None = None) -
         if not path.is_file() or file_sha256(path) != evidence.sha256:
             raise ValueError(f"Missing or changed recorded notebook evidence: {path}. Rebuild with: {command}")
         resolved[key] = path
+    required_parameters = {"rules", "conversion", "vehicle_reference", "vehicle_source_links"}
+    if missing := required_parameters - set(manifest.config):
+        raise ValueError(
+            "Recorded notebook evidence predates the two authoritative vehicle tables "
+            f"({', '.join(sorted(missing))}). Rebuild with: {command}"
+        )
     try:
         bundle = load_config_bundle(
             resolved["config:scenario"], repo_root=root,
@@ -350,8 +359,8 @@ def load_notebook_evidence(profile: Profile, *, repo_root: Path | None = None) -
             f"Run this command from the repository root: {root}\n{exc}"
         ) from exc
     parameter_dir = resolved["config:rules"].parent
-    if (resolved["config:conversion"].parent != parameter_dir
-            or not resolved["config:mapping"].is_relative_to(parameter_dir)):
+    if any(resolved[f"config:{key}"].parent != parameter_dir
+           for key in required_parameters):
         raise ValueError("Recorded notebook parameters must share their verified directory")
     # Bind reads to verified files here, rather than persisting an absolute release
     # location. A moved/copied workspace then reads its own captured parameters.

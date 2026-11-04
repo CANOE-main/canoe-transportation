@@ -13,6 +13,7 @@ from canoe_schema.v4_0 import ExistingCapacity
 
 from parameterization.road_efficiencies import prepare_bus_annual_efficiency_evidence
 from parameterization.ceud_inputs import read_ceud_input
+from parameterization.vehicle_reference import load_vehicle_reference
 from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames,
     fixed_existing_lifetimes,
@@ -36,7 +37,6 @@ from utils import (
     file_sha256,
     resolve_artifact_path,
     resolve_input_path,
-    resolve_parameter_path,
     write_dataframe_atomic,
 )
 from validation.insertion import (
@@ -303,12 +303,7 @@ def build_existing_capacity_artifacts(
         / dashboard_rules["output_file"]
     )
     lifetime_file = resolve_input_path(bundle, "manual", "lifetime_process.csv")
-    mapping_file = resolve_parameter_path(
-        bundle,
-        load_harmonization_rules(bundle, "road_aggregation")[
-            "vehicle_size_class_map_file"
-        ],
-    )
+    vehicle_reference = load_vehicle_reference(bundle)
     bus_efficiency, bus_evidence_files = prepare_bus_annual_efficiency_evidence(
         bundle, provincial
     )
@@ -333,7 +328,7 @@ def build_existing_capacity_artifacts(
             truck_file,
             dashboard_file,
             lifetime_file,
-            mapping_file,
+            *vehicle_reference.paths,
             bus_lifetime_file,
             *bus_evidence_files,
         ],
@@ -875,7 +870,7 @@ def prepare_existing_capacity_rows(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--scenario", default="config/scenarios/legacy_reproduction.yaml"
+        "--scenario", default="config/scenarios/default.yaml"
     )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")

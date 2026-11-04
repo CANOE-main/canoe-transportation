@@ -20,8 +20,9 @@ from fetching.nlr_atb_autonomie import configured_trajectory
 from parameterization.build_efficiencies import aggregate_consumption_period, combine_range_observations
 from parameterization.road_aggregation import nrcan_to_nlr_map
 from parameterization.road_efficiencies import ProjectionAnchorUnavailable, RoadEfficiencyEvidence, ceud_series, observed_value, positive, rating_class_statistics, select_atb_consumption
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from utils import (ConfigBundle, file_sha256, load_conversion_factors, load_harmonization_rules, load_yaml,
-                   resolve_artifact_path, resolve_input_path, resolve_parameter_path, resolve_repo_path, write_dataframe_atomic, write_text_atomic)
+                   resolve_artifact_path, resolve_input_path, resolve_repo_path, write_dataframe_atomic, write_text_atomic)
 from validation.config_models import PathsConfig
 from validation.ldv_composition_benchmark import build_composition_benchmark, collect_composition_benchmark_inputs
 
@@ -455,11 +456,10 @@ def _mto_mapping_year_review(diagnostic: LDVEfficiencyDiagnostic) -> pd.DataFram
     if mapped.empty:
         return pd.DataFrame()
     rules = load_harmonization_rules(diagnostic.bundle, "road_aggregation")
-    crosswalk = pd.read_csv(resolve_parameter_path(diagnostic.bundle, rules["vehicle_size_class_map_file"]), low_memory=False)
-    # The compact sheet has implicit metadata; older captures have it explicitly.
-    for field, value in (("entry_type", "mto_crosswalk"), ("mapping_status", "reviewed")):
-        if field not in crosswalk:
-            crosswalk[field] = value
+    crosswalk = reference_mto_mapping(
+        load_vehicle_reference(diagnostic.bundle), rules,
+        load_harmonization_rules(diagnostic.bundle, "nrcan_fuel_consumption_ratings")["vehicle_class_harmonization"],
+    )
     reviewed = crosswalk.loc[crosswalk.entry_type.eq("mto_crosswalk")
         & crosswalk.mapping_status.isin(rules["accepted_mapping_statuses"])].copy()
     keys = ["mto_make_code", "mto_model_code"]
@@ -490,7 +490,10 @@ def _mto_mapping_year_review(diagnostic: LDVEfficiencyDiagnostic) -> pd.DataFram
             else:
                 current = family.loc[applicable]
                 scopes = set(current.vehicle_scope)
-                if scopes == {"ldv_class_unresolved"}:
+                if "identity_unresolved" in scopes:
+                    status = "unresolved_mapping_identity"
+                    reason = "Reviewed evidence does not establish this source key's canonical identity; no model, class or propulsion allocation is accepted."
+                elif scopes == {"ldv_class_unresolved"}:
                     status = "unresolved_reviewed_size_class"
                     reason = "Reviewed evidence establishes the light-duty family, but not a defensible fine size class."
                 elif "scope_unresolved" in scopes:
@@ -500,7 +503,7 @@ def _mto_mapping_year_review(diagnostic: LDVEfficiencyDiagnostic) -> pd.DataFram
                     status = "unresolved_mapping_identity"
                     reason = "A reviewed interval exists, but this captured observation has no accepted mapping; reconcile its mapping outcome."
                 notes = _joined(current.review_notes) if "review_notes" in current else ""
-                if notes and status in {"unresolved_reviewed_size_class", "unresolved_reviewed_vehicle_scope"}:
+                if notes and status in {"unresolved_mapping_identity", "unresolved_reviewed_size_class", "unresolved_reviewed_vehicle_scope"}:
                     reason += " " + notes
         record = row.to_dict()
         record.update(empirical_observation_id=f"mto_mapping:{row.report_year}:{index}",
@@ -1315,12 +1318,22 @@ def load_diagnostic(*, repo_root: Path | None = None) -> LDVEfficiencyDiagnostic
         raise ValueError("Recorded efficiency evidence predates the production family-median matching method. "
                          "Rebuild the evidence explicitly, then reload this notebook: "
                          + prepare_command(recorded.bundle.repo_root))
+    reference = load_vehicle_reference(recorded.bundle)
     inputs = {name: pd.read_csv(path, low_memory=False) for name, path in recorded.paths.items()
               if path.name.lower().endswith((".csv", ".csv.gz"))}
     view = composition_view_settings(recorded.bundle)
     frames, summary = build_diagnostic_frames(recorded.bundle, inputs, bridge_years=view["bridge_years"])
     summary["build"] = recorded.metadata
     summary["inputs"] = {name: {"path": str(path), "sha256": file_sha256(path)} for name, path in recorded.paths.items()}
+    canonical, links = reference.canonical, reference.links
+    linked_ids = set(links.loc[links.source.eq("ontario_ministry_transport_vehicle_population"), "vehicle_id"].dropna())
+    summary["vehicle_reference"] = {
+        "canonical_identities": canonical.vehicle_id.nunique(), "reviewed_scope_rows": len(canonical),
+        "source_link_intervals": len(links),
+        "identities_without_mto_link": int(canonical.loc[~canonical.vehicle_id.isin(linked_ids), "vehicle_id"].nunique()),
+        "unlinked_identity_intervals": int(links.vehicle_id.isna().sum()),
+        "configuration_unresolved_intervals": int(links.link_status.eq("configuration_unresolved").sum()),
+    }
     return LDVEfficiencyDiagnostic(recorded.bundle, frames, summary, inputs)
 
 

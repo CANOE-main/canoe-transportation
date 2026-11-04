@@ -14,8 +14,8 @@ from canoe_schema.v4_0 import LifetimeSurvivalCurve, LifetimeTech
 from fetching.vehicle_population import load_history_manifest
 from parameterization.road_aggregation import (
     apply_vehicle_mapping,
-    validate_vehicle_mapping,
 )
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from parameterization.road_fleet_weights import aggregation_component, load_ldv_aggregation_weights
 from utils import (
     ConfigBundle,
@@ -23,7 +23,6 @@ from utils import (
     load_harmonization_rules,
     resolve_artifact_path,
     resolve_input_path,
-    resolve_parameter_path,
     write_dataframe_atomic,
 )
 from validation.insertion import validate_parameter_rows
@@ -2049,15 +2048,8 @@ def _derive_mto_diagnostic_outputs(
         status_columns=status_columns,
     )
 
-    mapping_path = resolve_parameter_path(
-        bundle,
-        road_rules["vehicle_size_class_map_file"],
-    )
-    mapping = pd.read_csv(mapping_path, dtype=str, keep_default_na=False)
-    mapping = validate_vehicle_mapping(
-        mapping,
-        rules=road_rules,
-        rating_class_rules=rating_rules["vehicle_class_harmonization"],
+    mapping = reference_mto_mapping(
+        load_vehicle_reference(bundle), road_rules, rating_rules["vehicle_class_harmonization"],
     )
     accepted_statuses = {
         str(status) for status in road_rules["accepted_mapping_statuses"]
@@ -2304,7 +2296,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--scenario",
-        default="config/scenarios/legacy_reproduction.yaml",
+        default="config/scenarios/default.yaml",
     )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(

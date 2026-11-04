@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _bus_inputs():
     bundle = load_config_bundle(
-        "config/scenarios/legacy_reproduction.yaml", repo_root=ROOT
+        "config/scenarios/default.yaml", repo_root=ROOT
     )
     family = load_harmonization_rules(bundle, "road_stocks_and_demands")
     rules = family["bus_existing_capacity"]
@@ -161,7 +161,7 @@ def test_prospective_bus_cohorts_also_survive_on_the_model_vintage() -> None:
 
 def test_bus_capacity_has_efficiency_and_lifetime_in_standalone_sqlite(tmp_path: Path) -> None:
     bundle = load_config_bundle(
-        "config/scenarios/legacy_reproduction.yaml", repo_root=ROOT
+        "config/scenarios/default.yaml", repo_root=ROOT
     )
     database = tmp_path / "transport.sqlite"
     report = bootstrap_database(

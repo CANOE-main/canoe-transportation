@@ -1504,7 +1504,7 @@ def _prepare_representative_blend(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--scenario", default="config/scenarios/legacy_reproduction.yaml"
+        "--scenario", default="config/scenarios/default.yaml"
     )
     parser.add_argument("--evidence-only", action="store_true")
     args = parser.parse_args()

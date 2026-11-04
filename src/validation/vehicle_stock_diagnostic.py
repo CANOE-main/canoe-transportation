@@ -8,17 +8,18 @@ from typing import Any
 import pandas as pd
 
 from fetching.vehicle_population import load_history_manifest
+from parameterization.road_aggregation import apply_vehicle_mapping, unresolved_mapping_reasons
 from parameterization.road_lifetimes_survival import (
     median_equivalent_lifetimes,
     transform_source_survival_curves,
     validate_accepted_survival_inputs,
 )
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from utils import (
     ConfigBundle,
     load_harmonization_rules,
     resolve_artifact_path,
     resolve_input_path,
-    resolve_parameter_path,
 )
 
 
@@ -27,6 +28,50 @@ def _validate_history_coverage(manifest: pd.DataFrame, statuses: pd.DataFrame) -
     status_years = set(pd.to_numeric(statuses["report_year"], errors="raise"))
     if history_years != status_years:
         raise ValueError("Incomplete Ontario registration-status history in diagnostic evidence")
+
+
+def _historical_mapping_evidence(
+    statuses: pd.DataFrame, mapping: pd.DataFrame, latest_detail: pd.DataFrame,
+    *, accepted_statuses: set[str],
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Apply captured year scopes to each edition; candidate hints remain advisory."""
+    columns = ["report_year", "VEHICLE_CLASS", "MAKE", "MODEL", "MODEL_YEAR", "native_count"]
+    stock = statuses.loc[
+        statuses.stock_status.eq("FIT_ACTIVE") & statuses.VEHICLE_CLASS.isin(["PASSENGER", "COMMERCIAL"]),
+        columns,
+    ].rename(columns={"native_count": "FIT_ACTIVE"})
+    mapped = apply_vehicle_mapping(stock, mapping, accepted_statuses=accepted_statuses)
+    names = {"MAKE": "mto_make_code", "MODEL": "mto_model_code",
+        "candidate_status": "candidate_status", "candidate_canonical_make": "canonical_make",
+        "candidate_canonical_model": "canonical_model", "candidate_nrcan_vehicle_class": "nrcan_vehicle_class",
+        "candidate_nlr_atb_class": "nlr_atb_class", "candidate_match_method": "match_method",
+        "candidate_model_similarity": "model_similarity", "rating_model_year_from": "rating_model_year_from",
+        "rating_model_year_to": "rating_model_year_to", "overlap_years": "overlap_years",
+        "rating_model_labels": "rating_model_labels"}
+    candidates = latest_detail.reindex(columns=list(names)).rename(columns=names)
+    candidates = candidates.drop_duplicates(["mto_make_code", "mto_model_code"]).assign(candidate_rank=1)
+    detail, _ = unresolved_mapping_reasons(mapped, candidates, mapping)
+    detail = detail.reindex(columns=list(dict.fromkeys([
+        *detail.columns, "unresolved_reason", "unresolved_reason_detail",
+    ])))
+    latest_keys = set(stock.loc[stock.report_year.eq(stock.report_year.max()) & stock.FIT_ACTIVE.gt(0),
+                               ["VEHICLE_CLASS", "MAKE", "MODEL"]].itertuples(index=False, name=None))
+    absent = pd.Series([key not in latest_keys for key in detail[["VEHICLE_CLASS", "MAKE", "MODEL"]]
+                        .itertuples(index=False, name=None)], index=detail.index)
+    specific_reason = detail.unresolved_reason.isin([
+        "reviewed_identity_unresolved", "reviewed_family_class_unresolved",
+        "reviewed_family_scope_unresolved", "no_applicable_reviewed_interval",
+        "suppressed_or_unknown_code",
+    ])
+    detail.loc[absent & ~specific_reason, "unresolved_reason"] = "not_present_in_latest_snapshot"
+    detail.loc[absent & ~specific_reason, "unresolved_reason_detail"] = (
+        "Historical source key is absent from the latest edition; no current candidate evidence establishes its identity."
+    )
+    keys = ["report_year", "VEHICLE_CLASS", "MAKE", "MODEL", "MODEL_YEAR"]
+    outcomes = mapped.loc[:, [*keys, "FIT_ACTIVE", "mapping_outcome"]].merge(
+        detail[[*keys, "unresolved_reason"]], on=keys, how="left", validate="one_to_one",
+    )
+    return outcomes.rename(columns={"FIT_ACTIVE": "native_count"}), detail
 
 
 def collect_stock_inputs(bundle: ConfigBundle) -> dict[str, Path]:
@@ -74,7 +119,6 @@ def collect_stock_inputs(bundle: ConfigBundle) -> dict[str, Path]:
         "transition_mapping_coverage": validation_dir / lifetime["transition_mapping_coverage_file"],
         "mto_survival_decision": validation_dir / lifetime["mto_survival_decision_file"],
         "legacy_survival": validation_dir / lifetime["legacy_survival_curves_file"],
-        "mapping_config": resolve_parameter_path(bundle, road["vehicle_size_class_map_file"]),
         "source_manifest": source_dir / ontario["manifest_file"],
         "nhtsa_survival_input": assorted_dir / assorted["nhtsa_cafe"]["output_file"],
         "eia_survival_input": assorted_dir / assorted["eia_nems"]["output_file"],
@@ -118,7 +162,21 @@ def load_stock_diagnostic(*, repo_root: Path | None = None) -> dict[str, Any]:
         key: pd.read_csv(path, low_memory=False)
         for key, path in recorded.paths.items()
     }
+    reference = load_vehicle_reference(recorded.bundle)
+    road_rules = load_harmonization_rules(recorded.bundle, "road_aggregation")
+    frames.update({
+        "vehicle_reference_canonical": reference.canonical,
+        "vehicle_reference_links": reference.links,
+        "mapping_config": reference_mto_mapping(
+            reference, road_rules,
+            load_harmonization_rules(recorded.bundle, "nrcan_fuel_consumption_ratings")["vehicle_class_harmonization"],
+        ),
+    })
     _validate_history_coverage(frames["source_manifest"], frames["status_long"])
+    frames["mapping_history"], frames["unresolved_history"] = _historical_mapping_evidence(
+        frames["status_long"], frames["mapping_config"], frames["unresolved_reason_detail"],
+        accepted_statuses=set(road_rules["accepted_mapping_statuses"]),
+    )
     heavy_curves, heavy_medians, interpolation = _heavy_truck_comparison(recorded.bundle, frames)
     scenario_name = recorded.bundle.scenario.scenario.name
     switches = {
@@ -132,7 +190,6 @@ def load_stock_diagnostic(*, repo_root: Path | None = None) -> dict[str, Any]:
             for switch, value in switches.items()
         ]),
         "build_metadata": recorded.metadata,
-        "composition_rules": load_harmonization_rules(recorded.bundle, "efficiencies")["ratings"]["composition"],
         "heavy_truck_survival": heavy_curves,
         "heavy_truck_medians": heavy_medians,
         "heavy_truck_median_interpolation": interpolation,

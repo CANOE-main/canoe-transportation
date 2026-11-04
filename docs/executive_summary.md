@@ -68,7 +68,7 @@ The [source registry](../config/sources.yaml) owns external identity and provena
 [harmonization rules](../config/parameters/rules.yaml) own source-layout and
 transformation contracts; reusable factors belong in
 [conversion configuration](../config/parameters/conversion.yaml); and
-[scenario YAML](../config/scenarios/legacy_reproduction.yaml) selects editions,
+[scenario YAML](../config/scenarios/default.yaml) selects editions,
 trajectories, regions, periods, outputs, and active switches. Canonical locations are
 owned by [path configuration](../config/paths.yaml). The native Python scenario command
 replays registered source inputs, prepares prerequisites and assembles the database through

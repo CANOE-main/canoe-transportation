@@ -12,10 +12,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from parameterization.rating_composition import canonical_izev_observation
+from parameterization.vehicle_reference import load_vehicle_reference, resolve_source_labels
 from parameterization.road_aggregation import (
     ceud_class_for_nlr,
-    normalize_vehicle_text,
     nrcan_to_nlr_map,
 )
 from utils import ConfigBundle, load_harmonization_rules, resolve_artifact_path, resolve_input_path
@@ -124,11 +123,11 @@ def _statcan(frame: pd.DataFrame, spec: dict, source: str, regions: list[str], g
 
 def _class_lookup(observations: pd.DataFrame, groups: dict[str, str]) -> dict[tuple, tuple[str, str | None]]:
     """Resolve only the common broad group, preserving every candidate class."""
-    _require(observations, {"source_kind", "year", "family_make", "family_model", "observed_powertrain", "candidate_rating_classes"}, "Recorded model-class evidence")
-    rows = observations.loc[observations.source_kind.eq("izev")]
+    _require(observations, {"source_kind", "year", "vehicle_id", "observed_powertrain", "candidate_rating_classes"}, "Recorded canonical model-class evidence")
+    rows = observations.loc[observations.source_kind.eq("izev") & observations.vehicle_id.notna()]
     candidates: dict[tuple, set[str]] = {}
     for row in rows.itertuples(index=False):
-        key = int(row.year), normalize_vehicle_text(row.family_make), normalize_vehicle_text(row.family_model), row.observed_powertrain
+        key = int(row.year), row.vehicle_id, row.observed_powertrain
         classes = {part.strip() for part in str(row.candidate_rating_classes).split("|")
                    if pd.notna(row.candidate_rating_classes) and part.strip()}
         candidates.setdefault(key, set()).update(classes)
@@ -152,12 +151,20 @@ def _izev(bundle: ConfigBundle, frame: pd.DataFrame, matched: pd.DataFrame, spec
     raw["model_year"] = pd.to_numeric(raw.model_year, errors="raise")
     if raw[["year", "model_year"]].isna().any().any() or raw[["year", "model_year"]].mod(1).ne(0).any().any():
         raise ValueError("iZEV benchmark needs distinct integer request and model years")
-    # Resolve hundreds of source labels once, rather than per transaction.
-    labels = {(make, model, powertrain): canonical_izev_observation(make, model, powertrain, policy)
-              for make, model, powertrain in raw[["make", "model", "powertrain"]].drop_duplicates().itertuples(index=False, name=None)}
-    keys = [(int(year), *map(normalize_vehicle_text, labels[make, model, powertrain]), powertrain)
-            for year, make, model, powertrain in raw[["model_year", "make", "model", "powertrain"]].itertuples(index=False, name=None)]
-    resolved_classes = [lookup.get(key, ("", None)) for key in keys]
+    # Resolve source descriptions once at their native model year and reported
+    # propulsion. Reindex the lookup onto every transaction; identical native
+    # purchase/lease records retain their full counts and request-year timing.
+    identity_columns = ["make", "model", "model_year", "powertrain"]
+    descriptions = raw[identity_columns].drop_duplicates()
+    labels = resolve_source_labels(
+        descriptions, load_vehicle_reference(bundle), source="transport_canada_izev",
+        make_column="make", model_column="model", year_column="model_year",
+        powertrain_column="powertrain",
+    ).set_index(identity_columns)
+    identifiers = labels.vehicle_id.reindex(pd.MultiIndex.from_frame(raw[identity_columns]))
+    keys = [(int(year), identifier, powertrain)
+            for year, identifier, powertrain in zip(raw.model_year, identifiers, raw.powertrain, strict=True)]
+    resolved_classes = [lookup.get(key, ("", None)) if pd.notna(key[1]) else ("", None) for key in keys]
     raw["rating_class"] = [classes for classes, _ in resolved_classes]
     raw["vehicle_group"] = [broad for _, broad in resolved_classes]
     outputs, coverage, timing, native_observations = [], [], [], []

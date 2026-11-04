@@ -1051,9 +1051,7 @@ parameterization:
       vocations:
         regional: [Class 8 Beverage DayCab, Class 8 Drayage DayCab, Class 8 Regional DayCab]
         long_haul: [Class 8 Longhaul Sleeper]
-    vehicle_size_class_map_file: vehicle_size_class_map.csv
-    # Reviewed crosswalk: normal ETL reads it; only the explicit development
-    # vehicle_mapping_bootstrap command may write a requested replacement.
+    # Canonical/source-link authorities are read-only; bootstrap emits proposals only.
     accepted_mapping_statuses: [reviewed]
     mapping_bootstrap:
       reviewed_crosswalk_policy: rebuild
@@ -1088,100 +1086,6 @@ parameterization:
       manual_evidence_source_selector: >-
         Reviewed two-pass MTO make/model inference using NCIC model-code
         abbreviations and NHTSA vPIC make/model examples (2026-08-12).
-      reviewed_scope_overrides:
-        FORD/DRW: mhdv
-      reviewed_model_label_hints:
-        CHEV/CZT: {canonical_make: Chevrolet, canonical_model: Cruze}
-        DODG/RPC: {canonical_make: Dodge, canonical_model: Ram 1500 Pickup}
-        FORD/EPR: {canonical_make: Ford, canonical_model: Explorer}
-        FORD/DRW: {canonical_make: Ford, canonical_model: F-250}
-        FORD/F/E: {canonical_make: Ford, canonical_model: F-150}
-        FORD/F/L: {canonical_make: Ford, canonical_model: F-150}
-        FORD/FSE: {canonical_make: Ford, canonical_model: Focus}
-        FORD/MGT: {canonical_make: Ford, canonical_model: Mustang}
-        FORD/SGT: {canonical_make: Ford, canonical_model: Mustang}
-        FORD/SPE: {canonical_make: Ford, canonical_model: Escape}
-        FORD/SRW: {canonical_make: Ford, canonical_model: F-Series}
-        FORD/TST: {canonical_make: Ford, canonical_model: Transit T150}
-        HOND/CCL: {canonical_make: Honda, canonical_model: Civic}
-        HOND/UAX: {canonical_make: Honda, canonical_model: Civic}
-        HOND/UCL: {canonical_make: Honda, canonical_model: Civic}
-        HOND/UDY: {canonical_make: Honda, canonical_model: Odyssey}
-        HYUN/ESM: {canonical_make: Hyundai, canonical_model: Elantra}
-        HYUN/SFT: {canonical_make: Hyundai, canonical_model: Santa Fe}
-        JEEP/GCK: {canonical_make: Jeep, canonical_model: Grand Cherokee}
-        MAZD/M3I: {canonical_make: Mazda, canonical_model: Mazda3}
-        MAZD/2SP: {canonical_make: Mazda, canonical_model: "2"}
-        MAZD/3GT: {canonical_make: Mazda, canonical_model: "3"}
-        MAZD/3SP: {canonical_make: Mazda, canonical_model: "3"}
-        MAZD/3TR: {canonical_make: Mazda, canonical_model: "3"}
-        MAZD/6TR: {canonical_make: Mazda, canonical_model: "6"}
-        CHEV/SSM: {canonical_make: Chevrolet, canonical_model: SS}
-        SAA/93O: {canonical_make: Saab, canonical_model: 9-3}
-        JAGU/XER: {canonical_make: Jaguar, canonical_model: XE}
-        JAGU/XET: {canonical_make: Jaguar, canonical_model: XE}
-        ACUR/TLT: {canonical_make: Acura, canonical_model: TL}
-        MASE/QSS: {canonical_make: Maserati, canonical_model: Q}
-        NISS/PFI: {canonical_make: Nissan, canonical_model: Pathfinder}
-        AUDI/TTP: {canonical_make: Audi, canonical_model: TT}
-        PORS/9/4: {canonical_make: Porsche, canonical_model: "944"}
-        RAM/RTR: {canonical_make: Ram, canonical_model: "1500"}
-        TESL/YGE: {canonical_make: Tesla, canonical_model: Model Y}
-        TOYT/MTL: {canonical_make: Toyota, canonical_model: Corolla}
-        TOYT/RG4: {canonical_make: Toyota, canonical_model: RAV4}
-      reviewed_class_overrides:
-        FORD/F/E:
-          canonical_make: Ford
-          canonical_model: F-Series
-          nrcan_vehicle_class: 'Pickup truck: Standard'
-          nlr_atb_class: Pickup
-          nrcan_ceud_class: Light Truck
-        FORD/F/L:
-          canonical_make: Ford
-          canonical_model: F-Series
-          nrcan_vehicle_class: 'Pickup truck: Standard'
-          nlr_atb_class: Pickup
-          nrcan_ceud_class: Light Truck
-        FORD/SRW:
-          canonical_make: Ford
-          canonical_model: F-Series
-          nrcan_vehicle_class: 'Pickup truck: Standard'
-          nlr_atb_class: Pickup
-          nrcan_ceud_class: Light Truck
-        FORD/DRW:
-          canonical_make: Ford
-          canonical_model: F-Series
-          nrcan_vehicle_class: 'Pickup truck: Standard'
-          nlr_atb_class: Pickup
-          nrcan_ceud_class: Light Truck
-      canonical_model_overrides:
-        AUDI/A5C: A5
-        AUDI/SQC: SQ6
-        AUDI/TTS: TTS
-        BMW/13R: 135i
-        BMW/34X: 340i
-        BMW/535: 535d
-        BMW/53G: 535i
-        BMW/540: 540i
-        BMW/550: 550i
-        BMW/650: 650i
-        BMW/75X: 750e
-        BMW/76L: 760Li
-        BMW/X12: X1
-        CHEV/EXP: Express 2500
-        DODG/RPC: Ram pickup
-        FORD/DRW: F-Series
-        FORD/F/E: F-Series
-        FORD/F/L: F-Series
-        FORD/SRW: F-Series
-        FORD/TST: Transit
-        FORD/MGT: Mustang
-        FORD/SGT: Mustang
-        CHRY/LEB: LeBaron
-        GMC/SAV: Savana 2500
-        MAZD/RX7: RX-7
-        RAM/RTR: Ram pickup
-        NISS/ARI: ARIYA
       manual_make_aliases:
         AMER: American Motors
         ASTO: Aston Martin
@@ -1219,19 +1123,6 @@ parameterization:
         WRKH: Workhorse
         WSTR: Western Star
     # Compact reviewed authority; constant generator metadata stays in evidence outputs.
-    reviewed_mapping_columns:
-      - mto_make_code
-      - mto_model_code
-      - model_year_from
-      - model_year_to
-      - canonical_make
-      - canonical_model
-      - vehicle_scope
-      - nrcan_vehicle_class
-      - nlr_atb_class
-      - nrcan_ceud_class
-      - evidence_source
-      - review_notes
     mapping_columns:
       - entry_type
       - mto_make_code
@@ -1754,8 +1645,11 @@ parameterization:
     incentive_transaction_types: [Purchase, Lease]
     fuel_map: {All fuel types: all, Gasoline: gasoline, Diesel: diesel, Battery electric: bev, Hybrid electric: hev, Plug-in hybrid electric: phev, Other fuel types: other}
     body_map: {Passenger cars: Cars, Pickup trucks: Light trucks, Multi-purpose vehicles: Light trucks, Vans: Light trucks}
+  vehicle_reference:
+    canonical_file: vehicle_reference.csv
+    source_links_file: vehicle_source_links.csv
   efficiencies:
-    transformation_version: '16'
+    transformation_version: '17'
     pev_projection_anchors:
       bev: bev_300_miles
       phev: phev_35_miles
@@ -1877,138 +1771,6 @@ parameterization:
             - '(?i)\s+(?:Turbo|Supercharged|Limited|Platinum|Ultimate|Preferred|Touring|Denali|Premier|Premium)$'
             - '(?i)\s+\d+(?:\.\d+)?\s*L(?:\s+Turbo)?$'
             - '(?i)\s+(?:A[- ]?SPEC|SH[- ]?AWD|Elite|Technology|Tech|Advance|Base|Sport|LX|EX|EX-L|LE|SE|XLE|XSE|XSE Premium|TRD|SR|SV|SL|S|GT|GT-Line|GT-Line Package [12]|Wind|Land|Light|Wave|Venture\+|Evolve\+|Engage\+|Platinum\+|Empower\+|Evolve|Engage|Platinum|e-4ORCE|e-4ORCE [A-Z]+|V6)$'
-          family_patterns:
-            - {make: Subaru, pattern: '(?i)^Outback\s+Sport\b.*$', canonical_model: Outback Sport}
-            - {make: Mitsubishi, pattern: '(?i)^Outlander\s+Sport\b.*$', canonical_model: Outlander Sport}
-            - {make: Nissan, pattern: '(?i)^Rogue\s+Sport\b.*$', canonical_model: Rogue Sport}
-            - {make: Ford, pattern: '(?i)^Bronco\s+Sport\b.*$', canonical_model: Bronco Sport}
-            - {make: Land Rover, pattern: '(?i)^Range\s+Rover\s+Sport\b.*$', canonical_model: Range Rover Sport}
-            # Power codes share one annual family vote; explicit body/generation
-            # identities remain separate, and raw labels retain trim constraints.
-            - {make: Jaguar, pattern: '(?i)^F[- ]?PACE(?:\s+(?:P\d{3}e?|20d|25t|30t|35t|S|SVR))*$', canonical_model: F-PACE}
-            - {make: Land Rover, pattern: '(?i)^Range\s+Rover\s+Velar(?:\s+(?:[PD]\d{3}|SVAutobiography|Dynamic))*$', canonical_model: Range Rover Velar}
-            - {make: Land Rover, pattern: '(?i)^New\s+Range\s+Rover(?:\s+P\d{3})?\s+LWB$', canonical_model: New Range Rover LWB}
-            - {make: Land Rover, pattern: '(?i)^New\s+Range\s+Rover(?:\s+P\d{3})?$', canonical_model: New Range Rover}
-            - {make: Land Rover, pattern: '(?i)^Range\s+Rover(?:\s+(?:P\d{3}(?:/P\d{3})?|SV))*\s+LWB$', canonical_model: Range Rover LWB}
-            - {make: Land Rover, pattern: '(?i)^Range\s+Rover(?:\s+(?:P\d{3}(?:/P\d{3})?|SV))*$', canonical_model: Range Rover}
-            - {make: Land Rover, pattern: '(?i)^Defender\s+90(?:\s+(?:P\d{3}|V8|5\.0L))*$', canonical_model: Defender 90}
-            - {make: Land Rover, pattern: '(?i)^Defender\s+110(?:\s+(?:P\d{3}(?:/P\d{3})?|V8|5\.0L|OCTA))*$', canonical_model: Defender 110}
-            - {make: Land Rover, pattern: '(?i)^Defender\s+130(?:\s+(?:P\d{3}|V8|Outbound))*$', canonical_model: Defender 130}
-            - {make: Hyundai, pattern: '(?i)^Santa\s+Fe\s+Sport\b.*$', canonical_model: Santa Fe Sport}
-            - {make: Hyundai, pattern: '(?i)^Elantra\s+Touring\b.*$', canonical_model: Elantra Touring}
-            - {make: Hyundai, pattern: '(?i)^Elantra\s+GT\b.*$', canonical_model: Elantra GT}
-            - {make: Hyundai, pattern: '(?i)^Elantra$', canonical_model: Elantra}
-            - {make: Ford, pattern: '(?i)^F[- ]?150\s+Lightning\b.*$', canonical_model: F-150 Lightning}
-            - {make: Ford, pattern: '(?i)^F[- ]?150\b(?!.*Lightning).*$', canonical_model: F-150}
-            - {make: Dodge, pattern: '(?i)^Ram\s+1500\b.*$', canonical_model: Ram 1500}
-            - {make: Acura, pattern: '(?i)^RDX\b.*$', canonical_model: RDX}
-            - {make: Acura, pattern: '(?i)^MDX\b.*$', canonical_model: MDX}
-            - {make: Toyota, pattern: '(?i)^Camry\b(?!.*Hybrid).*$', canonical_model: Camry}
-            - {make: Toyota, pattern: '(?i)^RAV4\b(?!.*(?:Hybrid|Prime|PHEV|Plug[- ]?in|\bEV\b)).*$', canonical_model: RAV4}
-            - {make: Nissan, pattern: '(?i)^Altima\b(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$', canonical_model: Altima}
-            - {make: Nissan, pattern: '(?i)^Sentra\b(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$', canonical_model: Sentra}
-            - {make: Nissan, pattern: '(?i)^Rogue\b(?!\s+Sport\b)(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$', canonical_model: Rogue}
-            - {make: Nissan, pattern: '(?i)^LEAF\b.*$', canonical_model: LEAF}
-            - {make: Nissan, pattern: '(?i)^ARIYA\b.*$', canonical_model: ARIYA}
-            - {make: Kia, pattern: '(?i)^EV6\b.*$', canonical_model: EV6}
-            - {make: Kia, pattern: '(?i)^EV9\b.*$', canonical_model: EV9}
-            - {make: Mazda, pattern: '(?i)^(?:Mazda\s*)?3\b.*$', canonical_model: Mazda3}
-            - {make: Volkswagen, pattern: '(?i)^Atlas\s+Cross\s+Sport\b.*$', canonical_model: Atlas Cross Sport}
-            - {make: Volkswagen, pattern: '(?i)^Atlas\b(?!.*Cross\s+Sport).*$', canonical_model: Atlas}
-            - {make: Volkswagen, pattern: '(?i)^Tiguan\b.*$', canonical_model: Tiguan}
-            - {make: Audi, pattern: '(?i)^Q3\b.*$', canonical_model: Q3}
-            - {make: Audi, pattern: '(?i)^Q8\b(?!.*e[- ]?tron).*$', canonical_model: Q8}
-            - {make: Toyota, pattern: '(?i)^Corolla\s+Hatchback\b.*$', canonical_model: Corolla Hatchback}
-            - {make: Toyota, pattern: '(?i)^Corolla\s+Cross\b(?!.*Hybrid).*$', canonical_model: Corolla Cross}
-            - {make: Toyota, pattern: '(?i)^Corolla\b(?!.*(?:Cross|Hatchback|Hybrid)).*$', canonical_model: Corolla}
-            - {make: Ram, pattern: '(?i)^1500\b.*$', canonical_model: '1500'}
-            - {make: Tesla, pattern: '(?i)^Model\s*3\b.*$', canonical_model: Model 3}
-            - {make: Tesla, pattern: '(?i)^Model\s*Y\b.*$', canonical_model: Model Y}
-            - {make: Tesla, pattern: '(?i)^Model\s*S\b.*$', canonical_model: Model S}
-            - {make: Tesla, pattern: '(?i)^Model\s*X\b.*$', canonical_model: Model X}
-            - {make: BMW, pattern: '(?i)^330e\b.*$', canonical_model: 330e}
-            - {make: BMW, pattern: '(?i)^i4\b.*$', canonical_model: i4}
-            - {make: BMW, pattern: '(?i)^i3\b.*$', canonical_model: i3}
-            - {make: BMW, pattern: '(?i)^X3\b.*$', canonical_model: X3}
-            - {make: BMW, pattern: '(?i)^X5(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive|\d\.\d(?:si|is|i)?))*$', canonical_model: X5}
-            - {make: BMW, pattern: '(?i)^X6(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive))*$', canonical_model: X6}
-            - {make: BMW, pattern: '(?i)^X7(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive))*$', canonical_model: X7}
-            - {make: BMW, pattern: '(?i)^Z4(?:\s+(?:sDrive\d{2}i|M\d{2}i))*$', canonical_model: Z4}
-            - {make: Polestar, pattern: '(?i)^2\b.*$', canonical_model: '2'}
-            - {make: VinFast, pattern: '(?i)^VF\s*8\b.*$', canonical_model: VF8}
-            - {make: Fisker, pattern: '(?i)^Ocean\b.*$', canonical_model: Ocean}
-            - {make: Mercedes-Benz, pattern: '(?i)^EQB\b.*$', canonical_model: EQB}
-            - {make: Mercedes-Benz, pattern: '(?i)^CLE(?:\s+\d{3})?(?:\s+4MATIC)?\s+Coupe$', canonical_model: CLE Coupe}
-            - {make: Mercedes-Benz, pattern: '(?i)^CLE(?:\s+\d{3})?(?:\s+4MATIC)?\s+Cabriolet$', canonical_model: CLE Cabriolet}
-            - {make: Mercedes-Benz, pattern: '(?i)^(?:AMG\s+)?GLC(?:\s+(?:\d{2,3}e?|S|4MATIC\+?|E|PERFORMANCE))*\s+Coupe$', canonical_model: GLC Coupe}
-            - {make: Mercedes-Benz, pattern: '(?i)^(?:AMG\s+)?GLC(?:\s+(?:\d{2,3}e?|S|4MATIC\+?|E|PERFORMANCE))*(?:\s+SUV)?$', canonical_model: GLC}
-            - {make: Mercedes-Benz, pattern: '(?i)^GLS(?:\s+(?:\d{3}|4MATIC|SUV))*$', canonical_model: GLS}
-            - {make: Volvo, pattern: '(?i)^V60(?:\s+(?:T8|AWD|Recharge|Plug[ -]?in Hybrid|PHEV|Polestar Engineered))*$', canonical_model: V60}
-            - {make: Volvo, pattern: '(?i)^S60(?:\s+(?:T8|AWD|Recharge|Plug[ -]?in Hybrid|PHEV|Polestar Engineered))*$', canonical_model: S60}
-            - {make: Volvo, pattern: '(?i)^XC60\b.*$', canonical_model: XC60}
-            - {make: Volvo, pattern: '(?i)^XC90\b.*$', canonical_model: XC90}
-            - {make: Kia, pattern: '(?i)^Soul\s+(?:EV|Electric)\b.*$', canonical_model: Soul EV}
-            - {make: Audi, pattern: '(?i)^Q4\s+(?:\d+\s+)?(?:Sportback\s+e[- ]?tron|e[- ]?tron\s+Sportback)\b.*$', canonical_model: Q4 Sportback e-tron}
-            - {make: Audi, pattern: '(?i)^Q4\s+(?:\d+\s+)?e[- ]?tron\b(?!.*Sportback).*$', canonical_model: Q4 e-tron}
-            - {make: Audi, pattern: '(?i)^(?:RS\s+)?e[- ]?tron\s+GT\b.*$', canonical_model: e-tron GT}
-            - {make: Ford, pattern: '(?i)^(?:Mustang\s+)?Mach[- ]?E\b.*$', canonical_model: Mustang Mach-E}
-            - {make: Dodge, pattern: '(?i)^(?:Grand\s+)?Caravan\b.*$', canonical_model: Caravan}
-            - {make: Dodge, pattern: '(?i)^Charger\s+Daytona\b.*$', canonical_model: Charger Daytona}
-            - {make: Hyundai, pattern: '(?i)^Kona\s+(?:EV|Electric)\b.*$', canonical_model: Kona Electric}
-            - {make: Hyundai, pattern: '(?i)^Tucson\s+(?:PHEV|Plug[- ]?in Hybrid)\b.*$', canonical_model: Tucson Plug-in Hybrid}
-            - {make: Hyundai, pattern: '(?i)^Santa Fe\s+(?:PHEV|Plug[- ]?in Hybrid)\b.*$', canonical_model: Santa Fe Plug-in Hybrid}
-            - {make: Hyundai, pattern: '(?i)^IONIQ\s*5\b.*$', canonical_model: IONIQ 5}
-            - {make: Hyundai, pattern: '(?i)^IONIQ\s*6\b.*$', canonical_model: IONIQ 6}
-            - {make: Toyota, pattern: '(?i)^RAV4\s+(?:Prime|PHEV|Plug[- ]?in Hybrid)\b.*$', canonical_model: RAV4 Prime}
-            - {make: Toyota, pattern: '(?i)^Prius\s+(?:Prime|PHEV|Plug[- ]?in Hybrid)\b.*$', canonical_model: Prius Prime}
-            - {make: Honda, pattern: '(?i)^CR[- ]?V\b.*$', canonical_model: CR-V}
-            - {make: Honda, pattern: '(?i)^Civic\s+(?:Hatchback|5\s*(?:Dr|Door))\b.*$', canonical_model: Civic Hatchback}
-            - {make: Honda, pattern: '(?i)^Civic\s+Sedan\b.*$', canonical_model: Civic Sedan}
-            - {make: Mazda, pattern: '(?i)^CX[- ]?5\b.*$', canonical_model: CX-5}
-            - {make: Mazda, pattern: '(?i)^CX[- ]?9\b.*$', canonical_model: CX-9}
-            - {make: Chevrolet, pattern: '(?i)^Silverado\s+1500\b.*$', canonical_model: Silverado 1500}
-            - {make: Chevrolet, pattern: '(?i)^Silverado\s+2500\b.*$', canonical_model: Silverado 2500}
-            - {make: Chevrolet, pattern: '(?i)^Silverado\s+3500\b.*$', canonical_model: Silverado 3500}
-            - {make: Chevrolet, pattern: '(?i)^Silverado\b(?!\s+(?:1500|2500|3500)\b).*$', canonical_model: Silverado}
-            - {make: Volkswagen, pattern: '(?i)^(?:Golf\s+)?GTI\b.*$', canonical_model: Golf GTI}
-            - {make: Volkswagen, pattern: '(?i)^ID[ .-]?4\b.*$', canonical_model: ID.4}
-            - {make: Porsche, pattern: '(?i)^Taycan\b.*\bCross\s+Turismo\b.*$', canonical_model: Taycan Cross Turismo}
-            - {make: Porsche, pattern: '(?i)^Taycan\b.*\bSport\s+Turismo\b.*$', canonical_model: Taycan Sport Turismo}
-            - {make: Porsche, pattern: '(?i)^Taycan\b(?!.*(?:Cross|Sport)\s+Turismo).*$', canonical_model: Taycan}
-            - {make: Porsche, pattern: '(?i)^(?:718\s+)?Boxster\b.*$', canonical_model: Boxster}
-            - {make: Porsche, pattern: '(?i)^(?:718\s+)?Cayman\b.*$', canonical_model: Cayman}
-        unresolved_mto_cohorts: []
-        aliases:
-          - {make: Mazda, canonical_model: Mazda3, models: ['3', Mazda3]}
-          - {make: Mazda, canonical_model: Mazda2, models: ['2', Mazda2]}
-          - {make: Mazda, canonical_model: Mazda6, models: ['6', Mazda6]}
-        # PEV eligibility/propulsion is observed in iZEV. These translations do
-        # not relabel generic MTO families or resolve unobserved range shares.
-        izev_aliases:
-          - {make: Chevrolet, canonical_model: Bolt EV, models: [Bolt], exact_only: true}
-          - {"make":"Ford","canonical_model":"Mustang Mach-E","models":["Mach E","Mach-E"]}
-          - {"make":"Ford","canonical_model":"Escape Plug-in Hybrid","models":["Escape PHEV"]}
-          - {"make":"Hyundai","canonical_model":"Tucson Plug-in Hybrid","models":["Tucson PHEV"]}
-          - {"make":"Hyundai","canonical_model":"Santa Fe Plug-in Hybrid","models":["Santa Fe PHEV"]}
-          - {"make":"Hyundai","canonical_model":"Kona Electric","models":["Kona EV"]}
-          - {"make":"Hyundai","canonical_model":"IONIQ Plug-in Hybrid","models":["IONIQ Electric Plus"]}
-          - {"make":"Kia","canonical_model":"Niro Plug-in Hybrid","models":["Niro PHEV"]}
-          - {"make":"Kia","canonical_model":"Sorento Plug-in Hybrid","models":["Sorento PHEV"]}
-          - {"make":"Kia","canonical_model":"Optima Plug-in Hybrid","models":["Optima PHEV"]}
-          - {"make":"Toyota","canonical_model":"RAV4 Prime","models":["RAV4 Plug-in Hybrid (Prime)"]}
-          - {make: Toyota, canonical_model: RAV4 Prime, models: ['RAV4 Plug-In Hybrid']}
-          - {make: Toyota, canonical_model: Prius Prime, models: ['Prius Plug-In Hybrid']}
-          - {"make":"Toyota","canonical_model":"Prius Prime SE","models":["Prius Plug-in Hybrid SE (Prime SE)"]}
-          - {"make":"Toyota","canonical_model":"Prius Prime XSE","models":["Prius Plug-in Hybrid XSE (Prime XSE)"]}
-          - {"make":"Subaru","canonical_model":"Crosstrek Hybrid AWD","models":["Crosstrek Plug-In Hybrid"]}
-          - {"make":"MINI","canonical_model":"Cooper SE 3 Door","models":["3 Door","3 Door Hatch"]}
-          - {"make":"MINI","canonical_model":"Cooper SE Countryman ALL4","models":["Countryman","Countryman All4"]}
-        # Source-reported propulsion qualifies these observation names only;
-        # native Ratings and MTO identities do not use this translation.
-        izev_observation_aliases_by_powertrain:
-          bev:
-            - {make: MINI, canonical_model: Cooper SE 3 Door, models: [Cooper SE], exact_only: true}
-            - {make: Dodge, canonical_model: Charger Daytona, models: [Charger], exact_only: true}
         variant_identity_columns: [Model, Engine size (L), Cylinders, Transmission, Motor (kW), Fuel type, Fuel type 1, Fuel type 2, native_consumption, consumption_mj_per_vkm, native_unit, range_km]
       fields:
         year: Model year
@@ -2029,6 +1791,334 @@ parameterization:
       hybrid_evidence_label: Hybrid
       evidence_join: compatible_year_family_configuration
       hybrid_configuration_evidence:
+        # Candidate comparison for auxiliary propulsion evidence only; canonical IDs
+        # and accepted source identities come from the two authoritative CSVs.
+        family_normalization:
+          aliases:
+          - make: Mazda
+            canonical_model: Mazda3
+            models:
+            - '3'
+            - Mazda3
+          - make: Mazda
+            canonical_model: Mazda2
+            models:
+            - '2'
+            - Mazda2
+          - make: Mazda
+            canonical_model: Mazda6
+            models:
+            - '6'
+            - Mazda6
+          family_matching:
+            trim_suffix_patterns:
+            - (?i)\s+(?:\(FFV\)|FFV)$
+            - (?i)\s+\((?:ISG|ISS|i-ELOOP|Cylinder\s+Deactivation|SIDI(?:\s+with\s+(?:Start[- /]?Stop|Stop[- /]?Start)(?:\s+System)?)?|GDI|MPI|(?:(?:No|Without)\s+)?(?:AFM|DFM|DMS)|(?:Fuel\s*Saver\s*)?MDS|(?:LE2|LUV)\s+Engine|EcoBoost|Supercharged|Turbo(?:\s+Plus)?|ULEV)\)$
+            - (?i)\s+\((?:(?:(?:No|Without)\s+)?(?:Start[- /]?Stop|Stop[- /]?Start)(?:\s+System)?|SIL|Autostick|With\s+Sport\s+Mode|Part-Time\s+4WD|High\s+(?:Output|Performance|Power)|Low\s+Power|Import|modified|Refresh|LFP|Range\s+Setup|pre-\d{1,2}/\d{1,2}(?:/\d{2})?)\)$
+            - (?i)\s+\((?:\d+(?:\.\d+)?(?:/\d+(?:\.\d+)?)?\s*(?:Ah|kWh)(?:\s+pre-\d{1,2}/\d{1,2}(?:/\d{2})?)?|\d+(?:\.\d+)?\s*kW(?:\s+Charger)?|20M\s+Battery|\d+[-
+              ]?mode|Performance\s+Battery(?:\s+Plus)?(?:,\s*\d+"\s+AS\s+Tire)?)\)$
+            - (?i)\s+\((?:\d+"(?:\s+(?:and|or)\s+\d+")?\s+(?:(?:Aero\s+Design|All-Season|Nexen|Goodyear)\s+)?(?:Wheels|Tire)(?:\s+(?:AT|UHP))?|(?:All-Terrain|Falken|Pirelli|Performance)\s+Tire|LT\s+Tire\s+Pkg|Payload\s+Pkg|Performance(?:\s+(?:Pack|Pkg))?|(?:Long|Extended|Standard)\s+Range)\)$
+            - (?i)\s+(?:LE|SE|XLE|XSE|Limited|Premium|Platinum|SR|SV|SL|Sport|S|GT|LX|EX)(?:/(?:LE|SE|XLE|XSE|Limited|Premium|Platinum|SR|SV|SL|Sport|S|GT|LX|EX))+$
+            - (?i)\s+(?:AWD|FWD|RWD|4WD|4X4|2WD|QUATTRO|4MATIC|XDRIVE|ALL4)$
+            - '(?i)\s+(?:Standard Range(?: Plus)?|Long Range|Extended Range|Short Range|Performance|High Power|Low
+              Power)$'
+            - (?i)\s+(?:Turbo|Supercharged|Limited|Platinum|Ultimate|Preferred|Touring|Denali|Premier|Premium)$
+            - (?i)\s+\d+(?:\.\d+)?\s*L(?:\s+Turbo)?$
+            - (?i)\s+(?:A[- ]?SPEC|SH[- ]?AWD|Elite|Technology|Tech|Advance|Base|Sport|LX|EX|EX-L|LE|SE|XLE|XSE|XSE
+              Premium|TRD|SR|SV|SL|S|GT|GT-Line|GT-Line Package [12]|Wind|Land|Light|Wave|Venture\+|Evolve\+|Engage\+|Platinum\+|Empower\+|Evolve|Engage|Platinum|e-4ORCE|e-4ORCE
+              [A-Z]+|V6)$
+            family_patterns:
+            - make: Subaru
+              pattern: (?i)^Outback\s+Sport\b.*$
+              canonical_model: Outback Sport
+            - make: Mitsubishi
+              pattern: (?i)^Outlander\s+Sport\b.*$
+              canonical_model: Outlander Sport
+            - make: Nissan
+              pattern: (?i)^Rogue\s+Sport\b.*$
+              canonical_model: Rogue Sport
+            - make: Ford
+              pattern: (?i)^Bronco\s+Sport\b.*$
+              canonical_model: Bronco Sport
+            - make: Land Rover
+              pattern: (?i)^Range\s+Rover\s+Sport\b.*$
+              canonical_model: Range Rover Sport
+            - make: Jaguar
+              pattern: (?i)^F[- ]?PACE(?:\s+(?:P\d{3}e?|20d|25t|30t|35t|S|SVR))*$
+              canonical_model: F-PACE
+            - make: Land Rover
+              pattern: (?i)^Range\s+Rover\s+Velar(?:\s+(?:[PD]\d{3}|SVAutobiography|Dynamic))*$
+              canonical_model: Range Rover Velar
+            - make: Land Rover
+              pattern: (?i)^New\s+Range\s+Rover(?:\s+P\d{3})?\s+LWB$
+              canonical_model: New Range Rover LWB
+            - make: Land Rover
+              pattern: (?i)^New\s+Range\s+Rover(?:\s+P\d{3})?$
+              canonical_model: New Range Rover
+            - make: Land Rover
+              pattern: (?i)^Range\s+Rover(?:\s+(?:P\d{3}(?:/P\d{3})?|SV))*\s+LWB$
+              canonical_model: Range Rover LWB
+            - make: Land Rover
+              pattern: (?i)^Range\s+Rover(?:\s+(?:P\d{3}(?:/P\d{3})?|SV))*$
+              canonical_model: Range Rover
+            - make: Land Rover
+              pattern: (?i)^Defender\s+90(?:\s+(?:P\d{3}|V8|5\.0L))*$
+              canonical_model: Defender 90
+            - make: Land Rover
+              pattern: (?i)^Defender\s+110(?:\s+(?:P\d{3}(?:/P\d{3})?|V8|5\.0L|OCTA))*$
+              canonical_model: Defender 110
+            - make: Land Rover
+              pattern: (?i)^Defender\s+130(?:\s+(?:P\d{3}|V8|Outbound))*$
+              canonical_model: Defender 130
+            - make: Hyundai
+              pattern: (?i)^Santa\s+Fe\s+Sport\b.*$
+              canonical_model: Santa Fe Sport
+            - make: Hyundai
+              pattern: (?i)^Elantra\s+Touring\b.*$
+              canonical_model: Elantra Touring
+            - make: Hyundai
+              pattern: (?i)^Elantra\s+GT\b.*$
+              canonical_model: Elantra GT
+            - make: Hyundai
+              pattern: (?i)^Elantra$
+              canonical_model: Elantra
+            - make: Ford
+              pattern: (?i)^F[- ]?150\s+Lightning\b.*$
+              canonical_model: F-150 Lightning
+            - make: Ford
+              pattern: (?i)^F[- ]?150\b(?!.*Lightning).*$
+              canonical_model: F-150
+            - make: Dodge
+              pattern: (?i)^Ram\s+1500\b.*$
+              canonical_model: Ram 1500
+            - make: Acura
+              pattern: (?i)^RDX\b.*$
+              canonical_model: RDX
+            - make: Acura
+              pattern: (?i)^MDX\b.*$
+              canonical_model: MDX
+            - make: Toyota
+              pattern: (?i)^Camry\b(?!.*Hybrid).*$
+              canonical_model: Camry
+            - make: Toyota
+              pattern: (?i)^RAV4\b(?!.*(?:Hybrid|Prime|PHEV|Plug[- ]?in|\bEV\b)).*$
+              canonical_model: RAV4
+            - make: Nissan
+              pattern: (?i)^Altima\b(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$
+              canonical_model: Altima
+            - make: Nissan
+              pattern: (?i)^Sentra\b(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$
+              canonical_model: Sentra
+            - make: Nissan
+              pattern: (?i)^Rogue\b(?!\s+Sport\b)(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$
+              canonical_model: Rogue
+            - make: Nissan
+              pattern: (?i)^LEAF\b.*$
+              canonical_model: LEAF
+            - make: Nissan
+              pattern: (?i)^ARIYA\b.*$
+              canonical_model: ARIYA
+            - make: Kia
+              pattern: (?i)^EV6\b.*$
+              canonical_model: EV6
+            - make: Kia
+              pattern: (?i)^EV9\b.*$
+              canonical_model: EV9
+            - make: Mazda
+              pattern: (?i)^(?:Mazda\s*)?3\b.*$
+              canonical_model: Mazda3
+            - make: Volkswagen
+              pattern: (?i)^Atlas\s+Cross\s+Sport\b.*$
+              canonical_model: Atlas Cross Sport
+            - make: Volkswagen
+              pattern: (?i)^Atlas\b(?!.*Cross\s+Sport).*$
+              canonical_model: Atlas
+            - make: Volkswagen
+              pattern: (?i)^Tiguan\b.*$
+              canonical_model: Tiguan
+            - make: Audi
+              pattern: (?i)^Q3\b.*$
+              canonical_model: Q3
+            - make: Audi
+              pattern: (?i)^Q8\b(?!.*e[- ]?tron).*$
+              canonical_model: Q8
+            - make: Toyota
+              pattern: (?i)^Corolla\s+Hatchback\b.*$
+              canonical_model: Corolla Hatchback
+            - make: Toyota
+              pattern: (?i)^Corolla\s+Cross\b(?!.*Hybrid).*$
+              canonical_model: Corolla Cross
+            - make: Toyota
+              pattern: (?i)^Corolla\b(?!.*(?:Cross|Hatchback|Hybrid)).*$
+              canonical_model: Corolla
+            - make: Ram
+              pattern: (?i)^1500\b.*$
+              canonical_model: '1500'
+            - make: Tesla
+              pattern: (?i)^Model\s*3\b.*$
+              canonical_model: Model 3
+            - make: Tesla
+              pattern: (?i)^Model\s*Y\b.*$
+              canonical_model: Model Y
+            - make: Tesla
+              pattern: (?i)^Model\s*S\b.*$
+              canonical_model: Model S
+            - make: Tesla
+              pattern: (?i)^Model\s*X\b.*$
+              canonical_model: Model X
+            - make: BMW
+              pattern: (?i)^330e\b.*$
+              canonical_model: 330e
+            - make: BMW
+              pattern: (?i)^i4\b.*$
+              canonical_model: i4
+            - make: BMW
+              pattern: (?i)^i3\b.*$
+              canonical_model: i3
+            - make: BMW
+              pattern: (?i)^X3\b.*$
+              canonical_model: X3
+            - make: BMW
+              pattern: (?i)^X5(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive|\d\.\d(?:si|is|i)?))*$
+              canonical_model: X5
+            - make: BMW
+              pattern: (?i)^X6(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive))*$
+              canonical_model: X6
+            - make: BMW
+              pattern: (?i)^X7(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive))*$
+              canonical_model: X7
+            - make: BMW
+              pattern: (?i)^Z4(?:\s+(?:sDrive\d{2}i|M\d{2}i))*$
+              canonical_model: Z4
+            - make: Polestar
+              pattern: (?i)^2\b.*$
+              canonical_model: '2'
+            - make: VinFast
+              pattern: (?i)^VF\s*8\b.*$
+              canonical_model: VF8
+            - make: Fisker
+              pattern: (?i)^Ocean\b.*$
+              canonical_model: Ocean
+            - make: Mercedes-Benz
+              pattern: (?i)^EQB\b.*$
+              canonical_model: EQB
+            - make: Mercedes-Benz
+              pattern: (?i)^CLE(?:\s+\d{3})?(?:\s+4MATIC)?\s+Coupe$
+              canonical_model: CLE Coupe
+            - make: Mercedes-Benz
+              pattern: (?i)^CLE(?:\s+\d{3})?(?:\s+4MATIC)?\s+Cabriolet$
+              canonical_model: CLE Cabriolet
+            - make: Mercedes-Benz
+              pattern: (?i)^(?:AMG\s+)?GLC(?:\s+(?:\d{2,3}e?|S|4MATIC\+?|E|PERFORMANCE))*\s+Coupe$
+              canonical_model: GLC Coupe
+            - make: Mercedes-Benz
+              pattern: (?i)^(?:AMG\s+)?GLC(?:\s+(?:\d{2,3}e?|S|4MATIC\+?|E|PERFORMANCE))*(?:\s+SUV)?$
+              canonical_model: GLC
+            - make: Mercedes-Benz
+              pattern: (?i)^GLS(?:\s+(?:\d{3}|4MATIC|SUV))*$
+              canonical_model: GLS
+            - make: Volvo
+              pattern: (?i)^V60(?:\s+(?:T8|AWD|Recharge|Plug[ -]?in Hybrid|PHEV|Polestar Engineered))*$
+              canonical_model: V60
+            - make: Volvo
+              pattern: (?i)^S60(?:\s+(?:T8|AWD|Recharge|Plug[ -]?in Hybrid|PHEV|Polestar Engineered))*$
+              canonical_model: S60
+            - make: Volvo
+              pattern: (?i)^XC60\b.*$
+              canonical_model: XC60
+            - make: Volvo
+              pattern: (?i)^XC90\b.*$
+              canonical_model: XC90
+            - make: Kia
+              pattern: (?i)^Soul\s+(?:EV|Electric)\b.*$
+              canonical_model: Soul EV
+            - make: Audi
+              pattern: (?i)^Q4\s+(?:\d+\s+)?(?:Sportback\s+e[- ]?tron|e[- ]?tron\s+Sportback)\b.*$
+              canonical_model: Q4 Sportback e-tron
+            - make: Audi
+              pattern: (?i)^Q4\s+(?:\d+\s+)?e[- ]?tron\b(?!.*Sportback).*$
+              canonical_model: Q4 e-tron
+            - make: Audi
+              pattern: (?i)^(?:RS\s+)?e[- ]?tron\s+GT\b.*$
+              canonical_model: e-tron GT
+            - make: Ford
+              pattern: (?i)^(?:Mustang\s+)?Mach[- ]?E\b.*$
+              canonical_model: Mustang Mach-E
+            - make: Dodge
+              pattern: (?i)^(?:Grand\s+)?Caravan\b.*$
+              canonical_model: Caravan
+            - make: Dodge
+              pattern: (?i)^Charger\s+Daytona\b.*$
+              canonical_model: Charger Daytona
+            - make: Hyundai
+              pattern: (?i)^Kona\s+(?:EV|Electric)\b.*$
+              canonical_model: Kona Electric
+            - make: Hyundai
+              pattern: (?i)^Tucson\s+(?:PHEV|Plug[- ]?in Hybrid)\b.*$
+              canonical_model: Tucson Plug-in Hybrid
+            - make: Hyundai
+              pattern: (?i)^Santa Fe\s+(?:PHEV|Plug[- ]?in Hybrid)\b.*$
+              canonical_model: Santa Fe Plug-in Hybrid
+            - make: Hyundai
+              pattern: (?i)^IONIQ\s*5\b.*$
+              canonical_model: IONIQ 5
+            - make: Hyundai
+              pattern: (?i)^IONIQ\s*6\b.*$
+              canonical_model: IONIQ 6
+            - make: Toyota
+              pattern: (?i)^RAV4\s+(?:Prime|PHEV|Plug[- ]?in Hybrid)\b.*$
+              canonical_model: RAV4 Prime
+            - make: Toyota
+              pattern: (?i)^Prius\s+(?:Prime|PHEV|Plug[- ]?in Hybrid)\b.*$
+              canonical_model: Prius Prime
+            - make: Honda
+              pattern: (?i)^CR[- ]?V\b.*$
+              canonical_model: CR-V
+            - make: Honda
+              pattern: (?i)^Civic\s+(?:Hatchback|5\s*(?:Dr|Door))\b.*$
+              canonical_model: Civic Hatchback
+            - make: Honda
+              pattern: (?i)^Civic\s+Sedan\b.*$
+              canonical_model: Civic Sedan
+            - make: Mazda
+              pattern: (?i)^CX[- ]?5\b.*$
+              canonical_model: CX-5
+            - make: Mazda
+              pattern: (?i)^CX[- ]?9\b.*$
+              canonical_model: CX-9
+            - make: Chevrolet
+              pattern: (?i)^Silverado\s+1500\b.*$
+              canonical_model: Silverado 1500
+            - make: Chevrolet
+              pattern: (?i)^Silverado\s+2500\b.*$
+              canonical_model: Silverado 2500
+            - make: Chevrolet
+              pattern: (?i)^Silverado\s+3500\b.*$
+              canonical_model: Silverado 3500
+            - make: Chevrolet
+              pattern: (?i)^Silverado\b(?!\s+(?:1500|2500|3500)\b).*$
+              canonical_model: Silverado
+            - make: Volkswagen
+              pattern: (?i)^(?:Golf\s+)?GTI\b.*$
+              canonical_model: Golf GTI
+            - make: Volkswagen
+              pattern: (?i)^ID[ .-]?4\b.*$
+              canonical_model: ID.4
+            - make: Porsche
+              pattern: (?i)^Taycan\b.*\bCross\s+Turismo\b.*$
+              canonical_model: Taycan Cross Turismo
+            - make: Porsche
+              pattern: (?i)^Taycan\b.*\bSport\s+Turismo\b.*$
+              canonical_model: Taycan Sport Turismo
+            - make: Porsche
+              pattern: (?i)^Taycan\b(?!.*(?:Cross|Sport)\s+Turismo).*$
+              canonical_model: Taycan
+            - make: Porsche
+              pattern: (?i)^(?:718\s+)?Boxster\b.*$
+              canonical_model: Boxster
+            - make: Porsche
+              pattern: (?i)^(?:718\s+)?Cayman\b.*$
+              canonical_model: Cayman
         numeric_fields: {'Engine size (L)': displ, Cylinders: cylinders}
         displacement_tolerance_l: 0.05
         # The conventional NRCan resource covers combustion and non-plug-in

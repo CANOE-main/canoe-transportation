@@ -128,7 +128,7 @@ def build_lifetime_parameter_artifacts(scenario_path: str | Path) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", default="config/scenarios/legacy_reproduction.yaml")
+    parser.add_argument("--scenario", default="config/scenarios/default.yaml")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     print(build_lifetime_parameter_artifacts(args.scenario))

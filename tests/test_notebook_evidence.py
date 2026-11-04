@@ -55,10 +55,28 @@ def test_capture_does_not_publish_until_build_succeeds(prepared):
     assert loaded.metadata["build_id"] == "notebook_diagnostics-20261017T150000Z"
     # Configuration refers to this native CSV name; only data copies use .csv.gz.
     mapping = loaded.bundle.paths.config.parameters
-    recorded_map = Path(mapping) / "vehicle_size_class_map.csv"
-    source_map = bundle.repo_root / "config/parameters/vehicle_size_class_map.csv"
-    assert recorded_map.read_bytes() == source_map.read_bytes()
-    assert not pd.read_csv(recorded_map).empty
+    reference = load_harmonization_rules(bundle, "vehicle_reference")
+    for key in ("canonical_file", "source_links_file"):
+        recorded_map = Path(mapping) / reference[key]
+        source_map = bundle.repo_root / "config/parameters" / reference[key]
+        assert recorded_map.read_bytes() == source_map.read_bytes()
+        assert not pd.read_csv(recorded_map).empty
+    assert {"vehicle_reference", "vehicle_source_links"} <= loaded.metadata["config"].keys()
+    assert "mapping" not in loaded.metadata["config"]
+    assert "vehicle_reference_notes" not in loaded.metadata["config"]
+
+
+def test_old_capture_without_authoritative_tables_requires_rebuild_not_live_fallback(prepared, monkeypatch):
+    bundle, report, _ = prepared
+    publication = layer.stage_notebook_evidence(bundle, report)
+    layer.publish_notebook_evidence(publication)
+    manifest_path = publication.index_path.parent / publication.bundles["vehicle_stock"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    del manifest["config"]["vehicle_source_links"]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(layer, "load_config_bundle", lambda *args, **kwargs: pytest.fail("Read unverified configuration"))
+    with pytest.raises(ValueError, match="two authoritative vehicle tables.*Rebuild with"):
+        layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
 
 
 def test_directory_rename_permission_falls_back_to_verified_copy_before_publication(prepared, monkeypatch):

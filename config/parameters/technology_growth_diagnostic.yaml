@@ -1,7 +1,7 @@
 # Research controls only. No production module or scenario consumes these values.
 version: 1
 diagnostic_only: true
-scenario: config/scenarios/legacy_reproduction.yaml
+scenario: config/scenarios/default.yaml
 snapshot_year: 2026
 legacy_notebook: legacy_backend/model_constraints[deprecated]/growth_rates.ipynb
 source_assets:

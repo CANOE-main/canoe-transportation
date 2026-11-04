@@ -2,7 +2,7 @@
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.23.15"
 app = marimo.App(width="full")
 
 
@@ -12,7 +12,6 @@ def _():
     import marimo as mo
     import pandas as pd
 
-    from parameterization.rating_composition import canonical_family
     from validation.notebook_evidence import prepare_command
     from validation.vehicle_stock_diagnostic import load_stock_diagnostic
 
@@ -74,7 +73,6 @@ def _():
         STATUS_COLORS,
         STATUS_ORDER,
         alt,
-        canonical_family,
         chart_ui,
         load_stock_diagnostic,
         mo,
@@ -93,6 +91,7 @@ def introduction(mo, prepare_command):
             | Evidence question | What is shown |
             |---|---|
             | Mapped fit-active stock | How much of the latest Ontario stock is covered by the reviewed map. |
+            | Canonical vehicle reference | Rated and historical identities, exact model-year attributes and source linkages, including families without MTO codes. |
             | Stock that cannot be mapped reliably | Which evidence limits leave make-model keys unresolved. |
             | Class and vintage weights | What the accepted mapped stock implies for class shares and fleet age. |
             | Report A versus Report 5 age profiles | How mapped Car/Light Truck shapes compare with broader Passenger/Commercial stock. |
@@ -117,52 +116,36 @@ def introduction(mo, prepare_command):
             | Topic | Owner or generator | Interpretation in this notebook |
             |---|---|---|
             | Ontario Report A, 4, and 5 evidence | `fetching.vehicle_population` | `FIT_ACTIVE` is the administrative proxy for vehicles available for road use; Report A supplies make-model-vintage cohorts, Report 4 supplies GVWR evidence, and Report 5 supplies Passenger/Commercial model-year totals. |
-            | Reviewed vehicle mapping | `config/parameters/vehicle_size_class_map.csv`, read by `parameterization.road_aggregation` | Only accepted `reviewed` ranges attach an LDV class. The consolidated, version-controlled map is runtime read-only and is reused across scenario builds. |
+            | Canonical identities and source links | Two reviewed tables in `config/parameters/`, read by `parameterization.vehicle_reference` | Canonical year/class/powertrain scopes and source links are fixed configuration inputs. Reviewed links retain historical or unrated identities. Catalogue powertrains do not establish MTO propulsion. |
             | Mapping review evidence | `parameterization.road_aggregation --mapping-diagnostics` | Candidate, coverage, and unresolved-key tables are explicit review diagnostics. Row coverage counts make-model-vintage rows; stock coverage sums `FIT_ACTIVE`. |
             | Mapped-fleet composition | `parameterization.road_aggregation` | Class and vintage composition is conditional on accepted mapped LDV stock. Unmapped stock remains visible in coverage diagnostics and is not imputed across mapped classes. |
             | Existing-fleet age weights | `parameterization.road_stocks_and_demands` | The raw comparison charts use the latest snapshot and a common model-year floor of 2000. The downstream stock-cohort cutoff is separate from technology lifetimes: `survival_curve_max_age` only bounds represented cohorts when curves are enabled. |
-            | MHDV weight-class shares | `fetching.vehicle_population` and `parameterization.road_aggregation`, compared with `inputs/0_manual_params/vehicle_class_market_shares.csv` | Report 4 and Wards are alternative diagnostic bases for combining NLR ATB MHDV efficiency and cost parameters only. |
+            | MHDV weight-class shares | `parameterization.road_fleet_weights`, Report 4 and registered Wards class shares | The scenario selects the regional GVWR source for efficiencies, costs and utilization. This view compares the sources' different coverage. |
             | NRCan CEUD comparison | `fetching.nrcan_ceud` | CEUD is an external plausibility benchmark. MTO stock is the accepted mapped subset; the MTO “sales” series is a same-model-year registration proxy. |
             | Accepted lifetime inputs | `parameterization.road_lifetimes_survival` | NHTSA CAFE supplies car, light-truck, and medium-truck survival evidence. `heavy_truck_survival_source` selects NEMS or EPA MOVES5 for heavy trucks. The selected source supplies both fixed median-equivalent lifetimes and survival curves, according to `survival_curves`. |
-            | MTO apparent-retention diagnostics | `parameterization.road_lifetimes_survival --mto-diagnostics` | A rate compares the same source category, make code, model code, and vintage in consecutive editions. Starting ages 0–35 are eligible, transition coverage sums starting exposure, and rates above 100% retention remain visible. These independently derived diagnostics do not become accepted parameters; future SAAQ evidence can reopen the source decision. |
+            | MTO apparent-retention diagnostics | `parameterization.road_lifetimes_survival --mto-diagnostics` | Consecutive editions supply raw make-model-vintage transitions within the captured age window. Primary pooled curves retain series present in the latest snapshot. Growth remains visible; these diagnostic curves do not select accepted lifetime parameters. |
             """),
             mo.md(f"""
             ### Prepare once, then reload after updated builds
 
-            Run the offline preset before using either diagnostic notebook:
+            Prepare the stock and efficiency evidence with the offline preset:
 
             ```text
             {prepare_command()}
             ```
 
             This build prepares production parameters, complete registered Ontario history,
-            mapping diagnostics, MTO retention evidence, and both heavy-truck survival
-            schedules, then records their inputs together. It reads the reviewed vehicle
-            map; the separate maintainer mapping bootstrap is not a prerequisite.
+            mapping diagnostics, MTO retention evidence and heavy-truck survival
+            schedules, then records their inputs and configuration together.
             """),
             mo.md("""
-            ### Mapping bootstrap and promotion policy
+            ### Mapping proposals and accepted decisions
 
-            The development-only bootstrap pools positive fit-active stock by MTO
-            make/model/model-year across all available Report A editions. It normalizes
-            punctuation and case, resolves configured make aliases, and compares each MTO
-            model label with canonical model families assembled from NRCan Fuel
-            Consumption Ratings and FuelEconomy.gov.
-
-            Candidates are ranked within the normalized make; ties at the best score remain
-            ambiguous. The best unambiguous family is resolved to one NRCan → NLR ATB →
-            CEUD hierarchy, checked against exact-year public evidence and the dedicated
-            vPIC temporal audit where applicable, and collapsed into non-overlapping
-            vintage ranges. Ordinary backend runs only read the reviewed CSV and never
-            repeat this inference.
-
-            Model similarity is deterministic. After punctuation, spacing, and case are
-            normalized, identical labels score **1.00**, a prefix relationship scores
-            **0.95**, and an MTO label contained within the canonical family scores
-            **0.90**. All other pairs use Python's sequence-matching ratio on a 0–1 scale.
-            Every unambiguous rank-one candidate scoring **at least 0.70** is promoted;
-            explicit configured make/model corrections remain stronger than this generic
-            rule. Original scores and match methods remain in the generated evidence.
+            The optional bootstrap ranks candidate families for review. Similarity
+            scores help find labels; they do not establish identity, model year,
+            vehicle class or fuel. Proposals cannot overwrite either authoritative
+            table. Production uses reviewed source links and their year intervals.
+            NRCan and FuelEconomy.gov retain distinct catalogue coverage.
             """),
         ]
     )
@@ -177,7 +160,7 @@ def _(mo):
 
 
 @app.cell
-def _(canonical_family, load_stock_diagnostic, reload_evidence):
+def captured_vehicle_evidence(load_stock_diagnostic, reload_evidence):
     reload_evidence.value
     evidence = load_stock_diagnostic()
     for _key in ["mapped_fleet", "mapping_config", "vehicle_class_evidence"]:
@@ -188,23 +171,6 @@ def _(canonical_family, load_stock_diagnostic, reload_evidence):
             _raw = f"raw_canonical_{_field}"
             if _raw not in _frame:
                 _frame[_raw] = _frame[f"canonical_{_field}"]
-        _has_identity = _frame[["canonical_make", "canonical_model"]].notna().all(axis=1)
-        _canonical = [
-            canonical_family(_make, _model, evidence["composition_rules"])
-            for _make, _model in zip(
-                _frame.loc[_has_identity, "canonical_make"],
-                _frame.loc[_has_identity, "canonical_model"],
-                strict=True,
-            )
-        ]
-        _frame.loc[_has_identity, "canonical_make"] = [_pair[0] for _pair in _canonical]
-        _frame.loc[_has_identity, "canonical_model"] = [_pair[1] for _pair in _canonical]
-        _native_fields = ("MAKE", "MODEL") if "MAKE" in _frame else ("mto_make_code", "mto_model_code")
-        if set(_native_fields).issubset(_frame.columns):
-            _native_keys = _frame[_native_fields[0]].astype(str) + "/" + _frame[_native_fields[1]].astype(str)
-            _excluded_identity = _native_keys.isin(evidence["composition_rules"].get("unresolved_mto_keys", []))
-            _frame["composition_identity_excluded"] = _excluded_identity
-            _frame.loc[_excluded_identity, "canonical_model"] = "Unresolved family (G/GLS/GLE/AMG GT)"
         evidence[_key] = _frame
     return (evidence,)
 
@@ -230,6 +196,123 @@ def _(evidence, mo):
             ),
         ]
     )
+    return
+
+
+@app.cell(hide_code=True)
+def canonical_reference_controls(evidence, mo):
+    reference_canonical = evidence["vehicle_reference_canonical"]
+    _link_decisions = evidence["vehicle_reference_links"]
+    _identity_gaps = int(_link_decisions.vehicle_id.isna().sum())
+    _configuration_gaps = int(_link_decisions.link_status.eq("configuration_unresolved").sum())
+    reference_years = sorted({year for row in reference_canonical.itertuples(index=False)
+                              for year in range(int(row.model_year_from), int(row.model_year_to) + 1)}, reverse=True)
+    reference_make = mo.ui.dropdown(
+        options=["All makes", *sorted(reference_canonical.canonical_make.unique())],
+        value="All makes", label="Reference make",
+    )
+    reference_year = mo.ui.dropdown(
+        options={"All model years": None, **{str(year): year for year in reference_years}},
+        value=str(reference_years[0]) if reference_years else "All model years", label="Reference model year",
+    )
+    reference_powertrain = mo.ui.dropdown(
+        options={"All powertrains": None, "Gasoline": "gasoline", "Diesel": "diesel", "HEV": "hev", "PHEV": "phev", "BEV": "bev", "Unresolved": "unknown"},
+        value="All powertrains", label="Reference powertrain",
+    )
+    mo.vstack([
+        mo.md(f"""
+        ## Canonical vehicle reference
+
+        One reviewed row describes a canonical identity and its supported year,
+        class and powertrain scope. Families without MTO codes are included. Both
+        tables are captured configuration inputs; ordinary builds do not rewrite them.
+        Consumption, representative electric range and range allocation are calculated
+        downstream from eligible target-year configurations, as shown in the efficiency diagnostic.
+
+        Across the full source-link table, **{_identity_gaps:,} intervals lack an accepted identity**;
+        **{_configuration_gaps:,} retain an identity with unresolved configuration**.
+        A supported stock size class can remain usable while efficiency matching needs more specific evidence.
+        """),
+        mo.hstack([reference_make, reference_year, reference_powertrain]),
+    ])
+    return reference_make, reference_powertrain, reference_year
+
+
+@app.cell(hide_code=True)
+def canonical_reference_audit_controls(
+    evidence,
+    mo,
+    reference_make,
+    reference_powertrain,
+    reference_year,
+):
+    audit_choices = evidence["vehicle_reference_canonical"].copy()
+    if reference_make.value != "All makes":
+        audit_choices = audit_choices.loc[audit_choices.canonical_make.eq(reference_make.value)]
+    if reference_year.value is not None:
+        audit_choices = audit_choices.loc[audit_choices.model_year_from.le(reference_year.value)
+                                          & audit_choices.model_year_to.ge(reference_year.value)]
+    if reference_powertrain.value is not None:
+        audit_choices = audit_choices.loc[audit_choices.powertrain.eq(reference_powertrain.value)]
+    audit_choices = audit_choices.drop_duplicates("vehicle_id").sort_values(["canonical_make", "canonical_model"])
+    reference_audit_family = mo.ui.dropdown(
+        options={"Select an identity for source details": None, **{
+            f"{row.canonical_make} / {row.canonical_model}": row.vehicle_id for row in audit_choices.itertuples(index=False)
+        }}, value="Select an identity for source details", label="Source linkage and decision audit",
+    )
+    reference_audit_family
+    return (reference_audit_family,)
+
+
+@app.cell(hide_code=True)
+def canonical_reference_inventory(
+    evidence,
+    mo,
+    reference_audit_family,
+    reference_make,
+    reference_powertrain,
+    reference_year,
+):
+    reference_view = evidence["vehicle_reference_canonical"].copy()
+    if reference_make.value != "All makes":
+        reference_view = reference_view.loc[reference_view.canonical_make.eq(reference_make.value)]
+    if reference_year.value is not None:
+        reference_view = reference_view.loc[reference_view.model_year_from.le(reference_year.value)
+                                            & reference_view.model_year_to.ge(reference_year.value)]
+    if reference_powertrain.value is not None:
+        reference_view = reference_view.loc[reference_view.powertrain.eq(reference_powertrain.value)]
+    reference_ids = {reference_audit_family.value} if reference_audit_family.value is not None else set()
+    columns = {
+        "canonical_make": "Make", "canonical_model": "Canonical model",
+        "model_year_from": "First model year", "model_year_to": "Last model year",
+        "vehicle_scope": "Scope", "nrcan_vehicle_class": "NRCan size class",
+        "powertrain": "Supported powertrain", "evidence_status": "Evidence status",
+    }
+    displayed = reference_view[[column for column in columns if column in reference_view]].copy()
+    if "powertrain" in displayed:
+        displayed["powertrain"] = displayed.powertrain.map({"gasoline": "Gasoline", "diesel": "Diesel", "hev": "HEV", "phev": "PHEV", "bev": "BEV"}).fillna("Unresolved")
+    if "evidence_status" in displayed:
+        displayed["evidence_status"] = displayed.evidence_status.map({
+            "catalogue_supported": "Catalogue-supported", "propulsion_unresolved": "Propulsion unresolved",
+            "reviewed_identity": "Reviewed identity", "source_reported": "Source-reported",
+            "model_not_produced": "Model not produced in this interval",
+        })
+    displayed = displayed.replace(r"^\s*$", None, regex=True).dropna(axis=1, how="all").rename(columns=columns)
+    notes_columns = [column for column in ["canonical_make", "canonical_model", "model_year_from", "model_year_to", "evidence_source", "notes"] if column in reference_view]
+    reference_notes = reference_view.loc[reference_view.vehicle_id.isin(reference_ids), notes_columns].replace(r"^\s*$", None, regex=True).dropna(axis=1, how="all")
+    reference_links = evidence["vehicle_reference_links"]
+    reference_links = reference_links.loc[reference_links.vehicle_id.isin(reference_ids)].copy()
+    if reference_year.value is not None:
+        reference_links = reference_links.loc[
+            reference_links.model_year_from.le(reference_year.value) & reference_links.model_year_to.ge(reference_year.value)
+        ]
+    mo.vstack([
+        mo.ui.table(displayed, selection=None, pagination=True, page_size=15, label="Reviewed canonical identity / year / class / powertrain scopes"),
+        mo.accordion({
+            "Reviewed decisions by source": mo.ui.table(reference_notes, selection=None, pagination=True, page_size=10),
+            "Source linkage audit — intervals, not composition weights": mo.ui.table(reference_links.replace(r"^\s*$", None, regex=True).dropna(axis=1, how="all"), selection=None, pagination=True, page_size=10),
+        }),
+    ])
     return
 
 
@@ -451,26 +534,17 @@ def _(STATUS_COLORS, STATUS_ORDER, alt, chart_ui, evidence, mo, pd):
         registration_status_output = mo.vstack(
             [
                 mo.md("""
-                **Summary:** This subsection defines the Report A registration-status
+                This view defines the Report A registration-status
                 context used by the later mapping and transition diagnostics.
 
                 The percentage bars use every fetched Report A edition and their
                 eight registration statuses. Passenger and Commercial use the same
                 status order and colors. 
-                The MTO vehicle population dictionary provides codes and short labels, not complete
-                lifecycle definitions. The interpretations below are working inferences,
-                not source-authored lifecycle transitions. A vehicle can move among these
-                administrative buckets, leave Ontario, re-enter the active stock, or be
-                recoded between editions.
-
-                - **FIT_ACTIVE:** registered, insured, and currently allowed on public roads with valid plates.
-                - **FIT_INACTIVE:** meets fit requirements, but is not currently plated or insured for active road use.
-                - **UNFIT:** fails fit or safety requirements and cannot currently have plates attached.
-                - **WRECKED:** declared heavily damaged, dismantled, or written off.
-                - **OUT_OF_PROV:** an out-of-province record pending or associated with Ontario registration.
-                - **SOLD:** an ownership transfer has been recorded.
-                - **SUSPENDED:** registration or plate privileges are currently suspended.
-                - **TEMPORARY:** a short-term permit or other temporary registration condition.
+                The dictionary supplies administrative codes and short labels. This
+                notebook uses `FIT_ACTIVE` as the stock proxy and shows the other
+                statuses separately. Status counts do not identify vehicle-level
+                transitions, insurance histories or physical retirement. Migration,
+                registration changes and recoding can change these totals.
                 """),
                 mo.ui.tabs(
                     {
@@ -570,99 +644,21 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
                 mapping_status_totals[_column], errors="coerce"
             )
         mapping_config = evidence["mapping_config"].copy()
-        accepted_mapping_ranges = mapping_config.loc[
-            mapping_config["entry_type"].eq("mto_crosswalk"),
-            [
-                "mto_make_code",
-                "mto_model_code",
-                "model_year_from",
-                "model_year_to",
-                "vehicle_scope",
-            ],
-        ].copy()
-        for _column in ["model_year_from", "model_year_to"]:
-            accepted_mapping_ranges[_column] = pd.to_numeric(
-                accepted_mapping_ranges[_column], errors="coerce"
-            ).astype(int)
-        accepted_mapping_years = accepted_mapping_ranges.assign(
-            MODEL_YEAR=accepted_mapping_ranges.apply(
-                lambda row: list(
-                    range(int(row["model_year_from"]), int(row["model_year_to"]) + 1)
-                ),
-                axis=1,
-            )
-        ).explode("MODEL_YEAR")
-        accepted_mapping_years["MODEL_YEAR"] = accepted_mapping_years[
-            "MODEL_YEAR"
-        ].astype(int)
-        accepted_mapping_years["mapping_outcome"] = accepted_mapping_years[
-            "vehicle_scope"
-        ].map({"ldv": "mapped_ldv", "mhdv": "mapped_non_ldv", "non_ldv_unclassified": "mapped_non_ldv"})
-        accepted_mapping_years = accepted_mapping_years[
-            ["mto_make_code", "mto_model_code", "MODEL_YEAR", "mapping_outcome"]
-        ].drop_duplicates()
-        mapping_model_year_floor = int(
-            accepted_mapping_ranges["model_year_from"].min()
-        )
-        mapping_row_source = mapping_status_totals.loc[
-            mapping_status_totals["stock_status"].eq("FIT_ACTIVE")
-            & mapping_status_totals["VEHICLE_CLASS"].isin(
-                ["PASSENGER", "COMMERCIAL"]
-            )
-        ].merge(
-            accepted_mapping_years,
-            left_on=["MAKE", "MODEL", "MODEL_YEAR"],
-            right_on=["mto_make_code", "mto_model_code", "MODEL_YEAR"],
-            how="left",
-            validate="many_to_one",
-        )
-        mapping_row_source["mapping_outcome"] = mapping_row_source[
-            "mapping_outcome"
-        ].fillna("unmapped")
-        mapping_row_source.loc[
-            mapping_row_source["MODEL_YEAR"].lt(mapping_model_year_floor),
-            "mapping_outcome",
-        ] = "out_of_scope"
+        mapping_row_source = evidence["mapping_history"].copy()
         mapping_reason_labels = {
+            "reviewed_identity_unresolved": "Reviewed model identity unresolved",
+            "reviewed_family_class_unresolved": "Family known; size class unresolved",
+            "reviewed_family_scope_unresolved": "Family known; vehicle scope unresolved",
             "weak_model_label_agreement": "Weak model-label agreement",
             "ambiguous_top_candidate": "Ambiguous best candidate",
             "no_normalized_make_agreement": "No normalized make agreement",
             "suppressed_or_unknown_code": "Suppressed or unknown source code",
             "no_model_label_candidate": "No model-family candidate",
             "not_present_in_latest_snapshot": "Not present in latest snapshot",
-            "unreviewed_high_confidence_candidate": "Strong label candidate",
+            "unreviewed_high_confidence_candidate": "Label candidate; identity/class unreviewed",
+            "no_applicable_reviewed_interval": "No applicable reviewed year interval",
         }
-        latest_reason_keys = (
-            evidence["unresolved_reason_detail"][["VEHICLE_CLASS", "MAKE", "MODEL", "unresolved_reason"]]
-            .drop_duplicates()
-            .groupby(["VEHICLE_CLASS", "MAKE", "MODEL"], as_index=False)["unresolved_reason"]
-            .first()
-        )
-        latest_report_year = int(mapping_row_source["report_year"].max())
-        latest_keys = mapping_row_source.loc[
-            mapping_row_source["report_year"].eq(latest_report_year),
-            ["VEHICLE_CLASS", "MAKE", "MODEL"],
-        ].drop_duplicates().assign(present_in_latest=True)
-        mapping_row_source = mapping_row_source.merge(
-            latest_reason_keys,
-            on=["VEHICLE_CLASS", "MAKE", "MODEL"],
-            how="left",
-            validate="many_to_one",
-        ).merge(
-            latest_keys,
-            on=["VEHICLE_CLASS", "MAKE", "MODEL"],
-            how="left",
-            validate="many_to_one",
-        )
-        mapping_row_source["row_reason"] = mapping_row_source[
-            "unresolved_reason"
-        ].fillna("no_model_label_candidate")
-        mapping_row_source["present_in_latest"] = (
-            mapping_row_source["present_in_latest"].fillna(False).astype(bool)
-        )
-        mapping_row_source.loc[
-            ~mapping_row_source["present_in_latest"], "row_reason"
-        ] = "not_present_in_latest_snapshot"
+        mapping_row_source["row_reason"] = mapping_row_source["unresolved_reason"].fillna("no_model_label_candidate")
         mapping_row_source.loc[mapping_row_source["mapping_outcome"].eq("mapped_ldv"), "row_reason"] = "mapped_ldv"
         mapping_row_source.loc[mapping_row_source["mapping_outcome"].eq("mapped_non_ldv"), "row_reason"] = "mapped_non_ldv"
         mapping_row_source.loc[mapping_row_source["mapping_outcome"].eq("out_of_scope"), "row_reason"] = "out_of_scope"
@@ -840,32 +836,38 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             alt.Chart(family_use_summary)
             .mark_bar()
             .encode(
-                x=alt.X("share:Q", title="Share of canonical make-model families", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
+                x=alt.X("share:Q", title="Share of NRCan/EPA class-evidence families", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
                 y=alt.Y("nlr_atb_class:N", title=None, sort=NLR_ORDER, axis=alt.Axis(labelLimit=150)),
                 color=alt.Color("family_status:N", title="Family use", scale=alt.Scale(domain=["Matched to an MTO make-model key", "Unused normalized evidence"], range=["#457b9d", "#d9d9d9"])),
                 order=alt.Order("family_status:N", sort="descending"),
                 tooltip=["nlr_atb_class:N", "family_status:N", alt.Tooltip("normalized_family_count:Q", format=","), alt.Tooltip("share:Q", format=".2%")],
             )
-            .properties(width=700, height=190, title="Canonical make-model evidence families by NLR ATB class")
+            .properties(width=700, height=190, title="NRCan/EPA class-evidence families by NLR ATB class")
         )
 
         passenger_stock = coverage.loc[coverage["vehicle_class"].eq("PASSENGER") & coverage["measure"].eq("fit_active_stock")].iloc[0]
         commercial_stock = coverage.loc[coverage["vehicle_class"].eq("COMMERCIAL") & coverage["measure"].eq("fit_active_stock")].iloc[0]
         crosswalk_count = int(mapping_config["entry_type"].eq("mto_crosswalk").sum())
-        used_family_count = int(family_use["used_by_crosswalk"].fillna(False).sum())
+        reference_mto_links = evidence["vehicle_reference_links"]
+        reference_mto_links = reference_mto_links.loc[reference_mto_links.source.eq("ontario_ministry_transport_vehicle_population")]
+        used_family_count = reference_mto_links.vehicle_id.dropna().nunique()
         mapping_progress_output = mo.vstack([
             mo.md("""
-            **Summary:** This subsection measures reviewed mapping coverage by source
+            This view measures reviewed mapping coverage by source
             category, stock, row, model year, and supporting model-family evidence.
 
             This measures the usable scale of the reviewed map and the
             evidence breadth behind it. A Report A *row* is one make/model/model-year
             cohort; fit-active stock is the vehicle count carried by those rows.
+            The NRCan/EPA chart is auxiliary class evidence for review, separate from
+            the canonical inventory above. The identity total counts distinct canonical
+            IDs linked to MTO across all reviewed scopes, including unrated identities;
+            reviewed interval rows are a different count.
             """),
             mo.hstack([
                 mo.stat(f"{passenger_stock['mapped_ldv_share']:.2%}", "Passenger LDV fit-active coverage", f"{int(passenger_stock['mapped_ldv']):,} LDV; {int(passenger_stock['mapped_non_ldv']):,} non-LDV", bordered=True),
                 mo.stat(f"{commercial_stock['mapped_ldv_share']:.2%}", "Commercial LDV fit-active coverage", f"{int(commercial_stock['mapped_ldv']):,} LDV; {int(commercial_stock['mapped_non_ldv']):,} non-LDV", bordered=True),
-                mo.stat(f"{used_family_count:,}", "Canonical families matched", f"Across {crosswalk_count:,} accepted MTO ranges", bordered=True),
+                mo.stat(f"{used_family_count:,}", "Unique canonical families linked", f"Across {crosswalk_count:,} reviewed MTO intervals", bordered=True),
             ], widths="equal"),
             mo.ui.tabs({
                 "Passenger row coverage": chart_ui(edition_row_coverage_chart("PASSENGER")),
@@ -885,8 +887,8 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             """),
 
             mo.md("""
-            A reviewed MTO crosswalk is an accepted MTO make/model code, not a source-row
-            count: several MTO keys can resolve to one normalized family. This chart uses
+            A source link covers a make/model code and a reviewed year interval.
+            Several keys can resolve to one canonical family. This chart uses
             the unified NRCan and FuelEconomy.gov family catalogue, deduplicates by
             canonical make, canonical model, and NLR ATB class, and then asks whether any
             accepted MTO key points to each family.
@@ -916,8 +918,8 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             **Unused normalized evidence** means the canonical family exists in the
             combined evidence catalogue but no reviewed MTO make/model code currently
             points to it; it does not mean its source rows are unused elsewhere.
-            Model variants such as RAV4 AWD, Hybrid, and trim labels are collapsed into
-            their canonical Ratings family.
+            Source labels follow the reviewed identities; model-year, class and
+            powertrain distinctions remain where the reference supports them.
             """),
             mo.ui.tabs({
                 "Coverage": mo.ui.table(coverage, selection=None, pagination=False, page_size=10, format_mapping={"mapped_ldv_share": "{:.2%}", "mapped_non_ldv_share": "{:.2%}", "unmapped_share": "{:.2%}", "out_of_scope_share": "{:.2%}"}),
@@ -947,66 +949,25 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
         for _column in ["unresolved_rows", "unresolved_fit_active_stock", "share_of_unresolved_rows", "share_of_unresolved_stock", "share_of_total_rows", "share_of_total_stock"]:
             unmapped_reason_summary[_column] = pd.to_numeric(unmapped_reason_summary[_column], errors="coerce")
         reason_labels = {
+            "reviewed_identity_unresolved": "Reviewed model identity unresolved",
+            "reviewed_family_class_unresolved": "Family known; size class unresolved",
+            "reviewed_family_scope_unresolved": "Family known; vehicle scope unresolved",
             "weak_model_label_agreement": "Weak model-label agreement",
             "ambiguous_top_candidate": "Ambiguous best candidate",
             "no_normalized_make_agreement": "No normalized make agreement",
             "suppressed_or_unknown_code": "Suppressed or unknown source code",
             "no_model_label_candidate": "No model-family candidate",
             "not_present_in_latest_snapshot": "Not present in latest snapshot",
-            "unreviewed_high_confidence_candidate": "Strong label candidate, crosswalk not accepted",
+            "unreviewed_high_confidence_candidate": "Label candidate; identity/class unreviewed",
+            "no_applicable_reviewed_interval": "No applicable reviewed year interval",
         }
         unmapped_reason_summary["reason_label"] = unmapped_reason_summary["unresolved_reason"].map(reason_labels).fillna(unmapped_reason_summary["unresolved_reason"])
         reason_order = list(reason_labels.values())
-        reason_colors = ["#457b9d", "#e76f51", "#f4a261", "#8d99ae", "#90be6d", "#577590", "#9b5de5"]
+        reason_colors = ["#b2182b", "#ef8a62", "#fddbc7", "#457b9d", "#e76f51", "#f4a261", "#8d99ae", "#90be6d", "#577590", "#9b5de5", "#6c757d"]
         unmapped_reason_summary["reason_order"] = unmapped_reason_summary[
             "reason_label"
         ].map({reason: index for index, reason in enumerate(reason_order)})
-        unmapped_reason_keys = (
-            evidence["unresolved_reason_detail"][
-                ["VEHICLE_CLASS", "MAKE", "MODEL", "unresolved_reason"]
-            ]
-            .drop_duplicates()
-            .groupby(["VEHICLE_CLASS", "MAKE", "MODEL"], as_index=False)[
-                "unresolved_reason"
-            ]
-            .first()
-        )
-        unmapped_mapping_keys = (
-            evidence["mapping_config"].loc[
-                evidence["mapping_config"]["entry_type"].eq("mto_crosswalk"),
-                ["mto_make_code", "mto_model_code"],
-            ]
-            .drop_duplicates()
-            .assign(mapping_accepted=True)
-        )
-        unmapped_edition_source = evidence["status_long"].copy()
-        for _column in ["report_year", "native_count"]:
-            unmapped_edition_source[_column] = pd.to_numeric(
-                unmapped_edition_source[_column], errors="coerce"
-            )
-        unmapped_edition_source = unmapped_edition_source.loc[
-            unmapped_edition_source["stock_status"].eq("FIT_ACTIVE")
-            & unmapped_edition_source["VEHICLE_CLASS"].isin(
-                ["PASSENGER", "COMMERCIAL"]
-            )
-        ].merge(
-            unmapped_mapping_keys,
-            left_on=["MAKE", "MODEL"],
-            right_on=["mto_make_code", "mto_model_code"],
-            how="left",
-            validate="many_to_one",
-        )
-        unmapped_edition_source = unmapped_edition_source.loc[
-            ~unmapped_edition_source["mapping_accepted"].fillna(False).astype(bool)
-        ].merge(
-            unmapped_reason_keys,
-            on=["VEHICLE_CLASS", "MAKE", "MODEL"],
-            how="left",
-            validate="many_to_one",
-        )
-        unmapped_edition_source["unresolved_reason"] = unmapped_edition_source[
-            "unresolved_reason"
-        ].fillna("not_present_in_latest_snapshot")
+        unmapped_edition_source = evidence["unresolved_history"].rename(columns={"FIT_ACTIVE": "native_count"}).copy()
         unmapped_edition_reason_summary = (
             unmapped_edition_source.groupby(
                 ["VEHICLE_CLASS", "report_year", "unresolved_reason"], as_index=False
@@ -1030,16 +991,6 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
                 ["VEHICLE_CLASS", "report_year"]
             )["unresolved_fit_active_stock"].transform("sum")
         )
-        strong_candidate_stock = int(
-            unmapped_reason_summary.loc[
-                unmapped_reason_summary["unresolved_reason"].eq(
-                    "unreviewed_high_confidence_candidate"
-                ),
-                "unresolved_fit_active_stock",
-            ].sum()
-        )
-
-
         def unmapped_share_chart(vehicle_class: str) -> alt.Chart:
             rows = unmapped_edition_reason_summary.loc[
                 unmapped_edition_reason_summary["VEHICLE_CLASS"].eq(vehicle_class)
@@ -1063,17 +1014,16 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
 
 
         unmapped_reasons_output = mo.vstack([
-            mo.md(f"""
-            **Summary:** This subsection partitions unresolved `FIT_ACTIVE` stock by the
+            mo.md("""
+            This view partitions unresolved `FIT_ACTIVE` stock by the
             specific evidence limitation that prevents reviewed mapping.
 
             Each horizontal bar partitions one category and edition's
             unmapped fit-active stock, so every bar sums to 100%. Reason labels are
-            assigned from the latest candidate pass by MTO make/model key and projected
-            back to earlier editions. A historical key absent from the 2025 snapshot is
-            kept visible as **Not present in latest snapshot** rather than assigned a
-            speculative current-fleet reason. Absolute stock remains in the tooltip and
-            latest table.
+            calculated for each source row using the captured year-scoped links.
+            Label candidates remain hints from the latest review pass. Historical keys
+            without current evidence are labelled separately. Tooltips retain absolute
+            stock; each edition's bar has its own denominator.
 
             - **Weak model-label agreement:** make evidence exists, but only substring
               or general similarity supports the model.
@@ -1087,13 +1037,13 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
               canonical model family was generated for the MTO label.
             - **Not present in latest snapshot:** the historical key does not occur in
               the latest fleet snapshot. This lowers its priority for current fleet
-              composition and age weights, but it does **not** exclude an otherwise
-              eligible historical key from the cohort-transition survival estimator.
-            - **Strong label candidate, crosswalk not accepted:** this is not a runtime
-              error or a failed model-year test. After the approved strong candidates were
-              promoted, this reason now carries {strong_candidate_stock:,} FIT_ACTIVE
-              vehicles. A future nonzero value would still require reviewed acceptance;
-              candidate strength alone does not change runtime mapping.
+              composition and age weights. Raw transitions remain visible;
+              primary pooled survival curves require the same make-model-vintage series in the latest snapshot.
+            - **Label candidate; identity/class unreviewed:** an exact/prefix hint has
+              no authoritative source link. This is a review lead, not an approval queue.
+            - **No applicable reviewed year interval:** the key is reviewed for other
+              model years. Check the recorded intervals and supporting year evidence;
+              this alone does not establish model nonexistence or a missing rating.
             """),
             mo.vstack([
                 chart_ui(unmapped_share_chart("PASSENGER")),
@@ -1123,69 +1073,18 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
         unresolved_detail["FIT_ACTIVE"] = pd.to_numeric(unresolved_detail["FIT_ACTIVE"], errors="coerce")
         unresolved_detail["MODEL_YEAR"] = pd.to_numeric(unresolved_detail["MODEL_YEAR"], errors="coerce").astype("Int64")
         unresolved_detail["candidate_model_similarity"] = pd.to_numeric(unresolved_detail["candidate_model_similarity"], errors="coerce")
-        historical_status = evidence["status_long"].copy()
-        for column in ["report_year", "MODEL_YEAR", "native_count"]:
-            historical_status[column] = pd.to_numeric(
-                historical_status[column], errors="coerce"
-            )
-        historical_status = historical_status.loc[
-            historical_status["stock_status"].eq("FIT_ACTIVE")
-            & historical_status["VEHICLE_CLASS"].isin(["PASSENGER", "COMMERCIAL"])
-            & historical_status["native_count"].gt(0)
+        current_reason_stock = unresolved_detail.groupby("unresolved_reason", as_index=False)["FIT_ACTIVE"].sum()
+        expired_rows = evidence["unresolved_history"].loc[
+            evidence["unresolved_history"].unresolved_reason.eq("not_present_in_latest_snapshot")
+            & evidence["unresolved_history"].FIT_ACTIVE.gt(0)
         ].copy()
-        latest_snapshot_year = int(historical_status["report_year"].max())
-        current_key_set = set(
-            historical_status.loc[
-                historical_status["report_year"].eq(latest_snapshot_year),
-                ["VEHICLE_CLASS", "MAKE", "MODEL"],
-            ].apply(tuple, axis=1)
-        )
-        accepted_key_set = set(
-            evidence["mapping_config"].loc[
-                evidence["mapping_config"]["entry_type"].eq("mto_crosswalk"),
-                ["mto_make_code", "mto_model_code"],
-            ].apply(tuple, axis=1)
-        )
-        expired_rows = historical_status.loc[
-            ~historical_status[["VEHICLE_CLASS", "MAKE", "MODEL"]]
-            .apply(tuple, axis=1)
-            .isin(current_key_set)
-            & ~historical_status[["MAKE", "MODEL"]]
-            .apply(tuple, axis=1)
-            .isin(accepted_key_set)
-        ].rename(columns={"native_count": "FIT_ACTIVE"})
-        expired_rows["unresolved_reason"] = "not_present_in_latest_snapshot"
-        expired_rows["unresolved_reason_detail"] = (
-            "Historical MTO key is absent from the latest snapshot and has no accepted crosswalk."
-        )
-        for column in [
-            "candidate_status",
-            "candidate_canonical_make",
-            "candidate_canonical_model",
-            "candidate_nrcan_vehicle_class",
-            "candidate_nlr_atb_class",
-            "candidate_match_method",
-            "candidate_model_similarity",
-            "rating_model_year_from",
-            "rating_model_year_to",
-            "overlap_years",
-            "rating_model_labels",
-            "manual_canonical_make",
-            "candidate_pass_agreement",
-            "agreed_model_candidate",
-            "highest_confidence_candidate",
-            "vpic_second_pass_candidate",
-        ]:
-            expired_rows[column] = pd.NA
         unresolved_detail = pd.concat(
             [unresolved_detail, expired_rows[unresolved_detail.columns]],
             ignore_index=True,
         )
         unresolved_detail["mapping_key"] = unresolved_detail["VEHICLE_CLASS"].astype(str) + " / " + unresolved_detail["MAKE"].astype(str) + "/" + unresolved_detail["MODEL"].astype(str)
         top_reason_codes = (
-            unresolved_detail.groupby("unresolved_reason", as_index=False)["FIT_ACTIVE"]
-            .sum()
-            .nlargest(3, "FIT_ACTIVE")["unresolved_reason"]
+            current_reason_stock.nlargest(3, "FIT_ACTIVE")["unresolved_reason"]
             .tolist()
         )
         no_make_agreement_code = "no_normalized_make_agreement"
@@ -1220,7 +1119,7 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
         unresolved_tabs = {}
         for reason_code in top_reason_codes:
             reason_rows = unresolved_detail.loc[unresolved_detail["unresolved_reason"].eq(reason_code)].copy()
-            key_columns = ["VEHICLE_CLASS", "MAKE", "MODEL", "mapping_key", "unresolved_reason", "unresolved_reason_detail"]
+            key_columns = ["VEHICLE_CLASS", "MAKE", "MODEL", "mapping_key", "unresolved_reason"]
             key_totals = (
                 reason_rows.groupby(key_columns, as_index=False, dropna=False)
                 .agg(
@@ -1228,6 +1127,7 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
                     model_year_from=("MODEL_YEAR", "min"),
                     model_year_to=("MODEL_YEAR", "max"),
                     observed_model_years=("MODEL_YEAR", "nunique"),
+                    unresolved_reason_detail=("unresolved_reason_detail", first_present),
                     candidate_canonical_make=("candidate_canonical_make", first_present),
                     candidate_canonical_model=("candidate_canonical_model", first_present),
                     candidate_nrcan_vehicle_class=("candidate_nrcan_vehicle_class", first_present),
@@ -1243,7 +1143,7 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
             year_rows = (
                 reason_rows.groupby(["mapping_key", "MODEL_YEAR"], as_index=False)["FIT_ACTIVE"]
                 .sum()
-                .merge(key_totals[["mapping_key", "fit_active_stock"]], on="mapping_key", how="inner")
+                .merge(key_totals[["mapping_key", "fit_active_stock"]], on="mapping_key", how="inner", validate="many_to_one")
             )
             family_order = key_totals.sort_values("fit_active_stock", ascending=False)["mapping_key"].tolist()
             stock_axis_title = (
@@ -1276,7 +1176,9 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
             }:
                 visible_columns = ["VEHICLE_CLASS", "MAKE", "MODEL", "fit_active_stock", "model_year_from", "model_year_to", "observed_model_years", "unresolved_reason_detail"]
             else:
-                visible_columns = ["VEHICLE_CLASS", "MAKE", "MODEL", "fit_active_stock", "model_year_from", "model_year_to", "observed_model_years", "candidate_canonical_make", "candidate_canonical_model", "candidate_nrcan_vehicle_class", "candidate_match_method", "candidate_model_similarity", "rating_model_year_from", "rating_model_year_to", "overlap_years", "rating_model_labels"]
+                visible_columns = ["VEHICLE_CLASS", "MAKE", "MODEL", "fit_active_stock", "model_year_from", "model_year_to", "observed_model_years", "candidate_canonical_make", "candidate_canonical_model", "candidate_nrcan_vehicle_class", "unresolved_reason_detail"]
+            key_totals = key_totals.dropna(axis=1, how="all")
+            visible_columns = [column for column in visible_columns if column in key_totals]
             unresolved_tabs[reason_labels.get(reason_code, reason_code)] = mo.vstack([
                 chart_ui(reason_chart),
                 mo.ui.table(key_totals, selection=None, pagination=True, page_size=10, visible_columns=visible_columns, freeze_columns_left=["VEHICLE_CLASS", "MAKE", "MODEL"], wrapped_columns=[column for column in ["unresolved_reason_detail", "rating_model_labels"] if column in visible_columns], label=f"Top 20 unresolved make-model keys: {reason_labels.get(reason_code, reason_code)}"),
@@ -1284,41 +1186,23 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
 
         highest_unresolved_output = mo.vstack([
             mo.md("""
-            **Summary:** This subsection ranks the highest-stock unresolved MTO make-model
+            This view ranks the highest-stock unresolved MTO make-model
             keys within each evidence-limitation category.
 
-            - **New review:** `HOND/UDY`→Odyssey, `FORD/SPE`→Escape, `HOND/UCL,UAX`→Civic, `TOYT/MTL`→Corolla, and `NISS/PFI`→Pathfinder have repeated explicit model/VIN-family associations.
-            - **Ford correction:** `EPR`→Explorer and `SPE`→Escape have repeated VIN-family support; `CPE` is a multi-model coupe/body code, while `CEP` and `CPS` lack direct model evidence and remain unresolved.
-            - **Class only:** `FORD/SRW`→F-Series/standard pickup; SRW identifies a configuration, not one exact model.
-            - **Still unresolved:** `FORD/COF` spans Ford commercial models; `HOND/UCS` lacks reliable model/VIN resolution; `NISS/CXT` has early X-Trail evidence but unresolved later use through 2026.
-            - **Earlier reviews retained:** `CHEV/{CZT,SSM}`, `DODG/RPC`, `FORD/{DRW,F/E,F/L,FSE,MGT,SGT,TST}`, `HOND/CCL`, `HYUN/{ESM,SFT}`, `JEEP/GCK`, `MAZD/{M3I,3TR,3SP,3GT,6TR}`, `RAM/RTR`, `TESL/YGE`, and `TOYT/RG4`.
+            Each bar shows one MTO make/model key within a source category, split
+            by model year. Tables rank current unresolved stock; the historical-only
+            tab instead sums exposure across editions. Those two totals describe
+            different populations and must not be added together.
 
-            One bar represents one Passenger/Commercial MTO make-model
-            key, with model-year stock shown as colored segments. This exposes twenty
-            high-impact keys per reason without repeating one table row for every year.
-            For `no normalized make agreement`, candidate columns are omitted because
-            no Ratings candidate can exist until make agreement succeeds; showing those
-            structurally missing values as NaNs was misleading.
+            Candidate names and classes are review hints. Exact/prefix agreement
+            supports discovery; accepted identity and year/class scope come from
+            the captured source-link table. The details column gives one source-row
+            explanation per key; the reference audit retains exact year decisions.
+            Full candidate labels and scores remain available in the table.
 
-            `candidate_canonical_make` and `candidate_canonical_model` identify the
-            highest-ranked normalized Ratings family; `candidate_nrcan_vehicle_class`
-            is that family's source body-size class. `candidate_match_method` records
-            the implemented label test: `exact_normalized` = identical normalized
-            labels, `normalized_prefix` = either label starts with the other,
-            `normalized_substring` = the MTO label occurs within the family label, and
-            `string_similarity` = the fallback sequence comparison.
-            `candidate_model_similarity` is the resulting 0-1 score (1.00 exact, 0.95
-            prefix, 0.90 substring, otherwise the sequence-similarity ratio). The
-            approved bootstrap promotes an unambiguous rank-one candidate at 0.70 or
-            above. Ratings year bounds and `overlap_years` remain provenance and
-            diagnostics; model year does not change the candidate similarity rank.
-
-            The strong-candidate review gate contains no FIT_ACTIVE stock after all
-            unambiguous exact/prefix candidates and the broader 0.70+ candidate set are
-            promoted. The **Not present in latest snapshot** tab
-            instead shows historical exposure summed across observed editions; those
-            keys are lower priority for latest-fleet composition, but latest presence is
-            never used to exclude a mapped historical key from survival estimation.
+            Historical keys absent from the latest edition remain in raw transition
+            evidence. Primary pooled MTO survival curves apply their separate
+            latest-snapshot presence condition.
             Chart data retain every observed model year, while the color legend labels
             only five-year intervals from 1980 onward to keep it compact.
             """),
@@ -1515,7 +1399,7 @@ def _(NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
 
         mapped_composition_output = mo.vstack([
             mo.md("""
-            **Summary:** This subsection shows how accepted mapped `FIT_ACTIVE` stock is
+            This view shows how accepted mapped `FIT_ACTIVE` stock is
             distributed across source-native NRCan classes in each Report A edition.
 
             Each horizontal bar is one Report A edition and partitions the
@@ -1677,7 +1561,7 @@ def _(NLR_ORDER, NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
 
         age_distribution_output = mo.vstack([
             mo.md("""
-            **Summary:** This subsection shows the model-year distribution of the latest
+            This view shows the model-year distribution of the latest
             accepted mapped Car and Light Truck stock.
 
             This uses only accepted `FIT_ACTIVE` stock from the latest
@@ -1871,7 +1755,7 @@ def _(alt, chart_ui, evidence, mo, pd):
 
         top_mapped_output = mo.vstack([
             mo.md("""
-            **Summary:** This subsection identifies the highest-stock accepted mapped
+            This view identifies the highest-stock accepted mapped
             families and shows their exact model-year composition.
 
             Each heat-map cell is the accepted fit-active stock for one
@@ -1886,18 +1770,16 @@ def _(alt, chart_ui, evidence, mo, pd):
             that model-year/size-class cohort. All qualifying families use fit-active
             counts; other cohorts use distinct-model catalogue medians. Report A does
             not observe propulsion or trim. PEV composition uses eligible iZEV purchase
-            and lease records only when the compatible rated range is unambiguous.
+            and lease records with supported family identities; compatible configurations
+            supply representative consumption and range in the efficiency workflow.
             Matched abbreviated MTO make/model keys are retained as list-form tooltips and
             table columns; keeping them out of the categorical axis preserves heat-map
             alignment and readability when many keys resolve to one normalized family.
-            Configured identity aliases from the captured build merge naming duplicates
-            before ranking, including `Mazda 3` and `Mazda Mazda3`. Original labels,
-            source keys, counts and model-year ranges remain in **Identity merges**;
-            this relabeling preserves every stock count and class/vintage distinction.
-            The unresolved Mercedes bucket retains its accepted class and raw keys;
-            it is not a resolved model family. Its original mappings list incompatible
-            G/GLS/GLE/AMG GT identities. These counts are excluded from consumption
-            composition, with the evidence retained in **Unresolved identities**.
+            Canonical family names and source links follow the two reviewed tables
+            captured with this build. Source labels, keys, counts and model-year ranges
+            remain in **Source identity details**. Identity and configuration uncertainty
+            are inspectable in the canonical reference audit above; a valid stock class
+            does not establish an otherwise unsupported consumption configuration.
             """),
             mo.vstack([
                 chart_ui(top_family_heatmap("Car")),
@@ -1905,25 +1787,15 @@ def _(alt, chart_ui, evidence, mo, pd):
             ]),
             mo.md("""
             A blank model-year cell means no accepted FIT_ACTIVE observation exists for
-            that normalized family in the latest Report A; it does not by itself mean a
-            vintage was rejected. The cited examples are source-data absences: `TOYT/COR`
-            is observed in 2003, 2008, and 2020-2026, while Elantra observations are split
-            between `HYUN/ELA` and `HYUN/ESM`. The rebuilt crosswalk now covers Corolla
-            continuously from 2003-2026 and Elantra continuously within its reviewed
-            Compact/Midsize class intervals, so future observations inside those ranges
-            will map without requiring an exact Ratings model year.
+            that normalized family in the latest Report A. This alone does not establish
+            a rejected vintage or a gap in reviewed applicability; inspect the captured
+            source-link intervals to distinguish those cases.
             """),
             mo.ui.tabs({
                 "Family totals": mo.ui.table(top_20_families.sort_values(["nrcan_ceud_class", "family_rank"]), selection=None, pagination=True, page_size=10, freeze_columns_left=["nrcan_ceud_class", "normalized_make_model"]),
                 "Exact model-year stock": mo.ui.table(top_heatmap_data.sort_values(["nrcan_ceud_class", "family_rank", "model_year"]), selection=None, pagination=True, page_size=10, visible_columns=["nrcan_ceud_class", "normalized_make_model", "matched_mto_keys", "model_year", "fit_active_stock", "nrcan_vehicle_class", "nlr_atb_class"], freeze_columns_left=["nrcan_ceud_class", "normalized_make_model"]),
                 "Crosswalk intervals": mo.ui.table(top_crosswalk_interval_table, selection=None, pagination=True, page_size=10, label="Accepted crosswalk intervals for top mapped families"),
-                "Identity merges": mo.ui.table(identity_merge_evidence, selection=None, pagination=True, page_size=10, label="Original naming aliases and conserved merged-family stock"),
-                "Unresolved identities": mo.ui.table(
-                    top_source.loc[top_source.composition_identity_excluded,
-                        ["MAKE", "MODEL", "MODEL_YEAR", "raw_canonical_make", "raw_canonical_model",
-                         "canonical_model", "nrcan_vehicle_class", "FIT_ACTIVE"]],
-                    selection=None, pagination=True, page_size=10,
-                    label="Accepted class mappings whose model identity cannot support consumption weights"),
+                "Source identity details": mo.ui.table(identity_merge_evidence, selection=None, pagination=True, page_size=10, label="Captured source labels and conserved family stock"),
             }),
         ])
         return top_mapped_output
@@ -2111,7 +1983,7 @@ def _(alt, chart_ui, evidence, mo, pd):
         least_mapped_output = mo.vstack(
             [
                 mo.md("""
-                **Summary:** This subsection samples mapped families from the first three
+                This view samples mapped families from the first three
                 within-class stock quartiles to expose lower-volume mapping examples.
 
                 Each heat map draws ten random Car families and ten random
@@ -2372,7 +2244,7 @@ def _(alt, chart_ui, evidence, mo, pd):
         age_comparison_output = mo.vstack(
             [
                 mo.md("""
-                **Summary:** This subsection compares the 2000+ fleet-age shapes implied
+                This view compares the 2000+ fleet-age shapes implied
                 by mapped Report A classes and unmapped Report 5 source classes.
 
                 Both series are reconstructed from absolute `FIT_ACTIVE` counts, filtered
@@ -2581,7 +2453,7 @@ def _(alt, chart_ui, evidence, mo, pd):
         mhdv_weight_output = mo.vstack(
             [
                 mo.md("""
-                **Summary:** This subsection compares Report 4 and Wards shares for
+                This view compares Report 4 and Wards shares for
                 disaggregating medium-duty truck NLR ATB parameters.
 
                 Report 4 assigns the latest Ontario Commercial `FIT_ACTIVE` stock to EPA
@@ -2843,7 +2715,7 @@ def _(alt, chart_ui, evidence, mo, pd):
         missing_ceud_years = sorted(set(comparison_years) - observed_ceud_years)
         coverage_note = (
             mo.md(
-                "NRCan CEUD covers every requested comparison year from 2016 through 2023."
+                "NRCan CEUD covers all requested comparison years."
             )
             if not missing_ceud_years
             else mo.callout(
@@ -2861,7 +2733,7 @@ def _(alt, chart_ui, evidence, mo, pd):
         validation_output = mo.vstack(
             [
                 mo.md("""
-                **Summary:** This subsection compares mapped Ontario MTO stock and a
+                This view compares mapped Ontario MTO stock and a
                 same-model-year registration proxy with NRCan CEUD stock and sales.
 
                 This visual check compares only accepted mapped `FIT_ACTIVE` MTO rows
@@ -2922,8 +2794,14 @@ def heavy_truck_survival_comparison_data(evidence):
 
 @app.cell
 def heavy_truck_survival_comparison_chart(
-    alt, chart_ui, heavy_truck_median_interpolation, heavy_truck_medians,
-    heavy_truck_selected_source, heavy_truck_survival, mo, pd,
+    alt,
+    chart_ui,
+    heavy_truck_median_interpolation,
+    heavy_truck_medians,
+    heavy_truck_selected_source,
+    heavy_truck_survival,
+    mo,
+    pd,
 ):
     def _build_view():
         source_labels = {
@@ -3086,126 +2964,61 @@ def _(evidence, mo, pd):
         maximum_recurrence_error = max(recurrence_errors, default=0.0)
         mto_retention_method_output = mo.vstack([
             mo.md(r"""
-            **Execution boundary.** Everything in this section derived from Report A is
-            MTO diagnostic evidence published to interim or validation routes. The default
-            accepted lifetime build publishes NHTSA CAFE schedules for cars, light trucks,
-            and medium trucks, plus the selected NEMS or EPA MOVES5 heavy-truck schedule;
-            this notebook cannot promote an MTO curve into those
-            accepted lifetime products. The MTO gates organize evidence quality for future
-            review, including later comparison with Quebec SAAQ, but a source change would
-            require a separate reviewed decision at the owning configuration/runtime
-            interface.
+            **Source boundary.** Accepted lifetime parameters use NHTSA CAFE for
+            cars, light trucks and medium trucks, plus the scenario's selected heavy-
+            truck schedule. This section independently derives MTO apparent retention;
+            its quality gates do not select a production lifetime source.
 
-            The raw transition file is the audit-grain estimator input. Class mapping is
-            deliberately absent from it: Passenger/Commercial, MTO make-model key,
-            vintage, report-year pair, and both FIT_ACTIVE counts are preserved before
-            any class claim is attached. A row exists only when both consecutive editions
-            contain the same strictly FIT_ACTIVE key, starting exposure is positive, and
-            starting age is between 0 and the configured maximum of 35. No model-year
-            floor is applied at this survival interface; the separate 2000 floor remains
-            limited to existing-fleet weights and age-distribution aggregation. Older
-            source vintages are retained whenever they contribute a transition in the
-            supported age window.
+            A raw transition requires the same source category, make/model code and
+            vintage in consecutive editions, positive starting `FIT_ACTIVE` stock and
+            a starting age inside the captured window. A missing next-year row supplies
+            no transition, rather than an assumed zero terminal stock. The raw table
+            retains every eligible pair before mapping. The primary class pool then
+            requires accepted class evidence and latest-snapshot presence of that series.
+            This survivorship condition is separate from current-fleet composition weights.
 
-            Variable meanings:
+            For category $p$, make/model key $k$, vintage $v$, report year $t$
+            and starting stock $N$:
 
-            - $p$: Report A source category, Passenger or Commercial.
-            - $k$: stable abbreviated MTO make-model key.
-            - $v$: model-year vintage of that key.
-            - $t$: report year at the beginning of a one-year transition.
-            - $a=t-v$: vehicle age at the beginning of the transition.
-            - $N_{p,k,v,t}$: observed FIT_ACTIVE stock at the start of the transition.
-            - $D$: apparent retirements, equal to starting stock minus next-year stock;
-              it can be negative when registrations grow.
-            - $q$: empirical one-year apparent retirement rate; $r=1-q$ is the
-              corresponding survival factor.
-            - $c$: reviewed target vehicle class, and $m(k,v)$ is the class assigned
-              to a particular MTO key and vintage.
-            - $E$: pooled starting exposure—the sum of beginning-of-transition stock
-              contributing to a class-vintage-age estimate.
-            - $S$ and $F$: cumulative survival and cumulative scrappage implied by the
-              sequence of pooled annual rates.
+            $$
+            a=t-v,\qquad D_{p,k,v,t}=N_{p,k,v,t}-N_{p,k,v,t+1},\qquad
+            r_{p,k,v,t}=\frac{N_{p,k,v,t+1}}{N_{p,k,v,t}},\qquad q_{p,k,v,t}=1-r_{p,k,v,t}.
+            $$
 
-            For each eligible transition the backend executes:
+            Negative apparent retirement $q$ and retention $r>1$ remain visible.
+            They mix physical retirement with migration, registration changes and
+            recoding because the source has no vehicle-level linkage.
 
-            \[
-            a=t-v,
-            \qquad
-            D_{p,k,v,t}=N_{p,k,v,t}-N_{p,k,v,t+1},
-            \qquad
-            r_{p,k,v,t}=\frac{N_{p,k,v,t+1}}{N_{p,k,v,t}},
-            \qquad
-            q_{p,k,v,t}=\frac{D_{p,k,v,t}}{N_{p,k,v,t}}=1-r_{p,k,v,t}.
-            \]
+            Within each accepted class and age, sum apparent retirements and starting
+            exposure across eligible series and vintages before dividing:
 
-            Raw growth cases retain \(q<0\) and \(r>1\); they are never clipped. Only
-            after these quantities exist does the reviewed crosswalk attach class labels.
-            Because no vehicle-level identifier links editions, apparent retirements mix
-            physical retirement with administrative status changes, migration, imports,
-            re-registration, and coding changes. Requiring both observed endpoints avoids
-            inventing a zero terminal cohort, but it also means a series absent from the
-            next edition contributes no transition rather than a 100% retirement event.
+            $$
+            q_{c,a}=\frac{\sum D_{p,k,v,t}}{\sum N_{p,k,v,t}},\qquad r_{c,a}=1-q_{c,a}.
+            $$
 
-            For class \(c\), vintage \(v\), and age \(a\), the backend pools counts—not
-            percentages—and then aggregates vintages with starting exposure:
+            Cumulative survival uses an age-zero baseline and the actual annual factors:
 
-            \[
-            E_{c,v,a}=\sum_{p,k:m(k,v)=c}N_{p,k,v,v+a},
-            \qquad
-            D_{c,v,a}=\sum_{p,k:m(k,v)=c}
-            \left(N_{p,k,v,v+a}-N_{p,k,v,v+a+1}\right),
-            \]
+            $$
+            S_c(0)=1,\qquad S_c(a+1)=S_c(a)r_{c,a},\qquad F_c(a)=1-S_c(a).
+            $$
 
-            \[
-            q_{c,a}=\frac{\sum_v D_{c,v,a}}{\sum_v E_{c,v,a}},
-            \qquad r_{c,a}=1-q_{c,a}.
-            \]
+            The age-zero rate determines survival at age one; the final annual rate
+            determines the following age's terminal point. No smoothing, clipping or
+            NHTSA calibration enters this calculation. NHTSA is comparison evidence.
+            The recurrence check below verifies this product directly.
 
-            Cumulative MTO survival is an actual product of those empirical annual
-            factors with an explicit age-zero baseline:
+            Quality gates assess mapped exposure, annual-rate bounds, age continuity,
+            monotonicity and vintage/transition support using the captured rules. The
+            decision and supporting metrics appear in the following audit views.
 
-            \[
-            S_c(0)=1,
-            \qquad S_c(a+1)=S_c(a)r_{c,a},
-            \qquad F_c(a)=1-S_c(a).
-            \]
-
-            This follows the NHTSA indexing convention that a vehicle is age zero in its
-            production year and survival is 100% at that baseline. Age zero is also the
-            first empirical MTO starting age:
-            the age-0 rate updates survival at age 1, the age-1 rate updates survival at
-            age 2, and so on. The terminal row after the oldest observed rate shows the
-            effect of that final annual factor. Thus, the configured age-35 transition
-            ceiling produces a terminal cumulative point at age 36. Unlike NHTSA's richer
-            dynamic method, the MTO calculation uses every available early transition,
-            including age 0 to 1; it does not discard ages before 2. Source-reported
-            pre-2000 vintages remain eligible, but observations whose starting age exceeds
-            35 are excluded before mapping and pooling because that sparse tail is outside
-            the selected forward-model evidence horizon.
-
-            The recurrence is checked directly against the generated class-age output.
-            NHTSA values are loaded only after the MTO transition, mapping, pooling, and
-            cumulative-product outputs have been constructed. They are comparison evidence
-            and are not parameters, targets, calibration points, or force-fitting inputs
-            for the MTO curves. The decision gate requires, for both Car and Light Truck:
-            at least 50% mapped starting exposure; at least 80% of annual retirement rates
-            within [0, 1]; no internal age gaps; non-increasing cumulative survival within
-            a tolerance of \(10^{-12}\); at least three vintages and ten transitions at
-            every observed age; and at least ten ages overlapping the legacy comparison.
-            These gates do not automatically select a parameter source. The current
-            modelling decision retains NHTSA CAFE for LDVs even where the independently
-            derived MTO shape appears similar.
-
-            #### Implemented source-to-diagnostic stages
-
-            | Stage | Grain | Purpose |
-            |---|---|---|
-            | Raw annual snapshot | source category x MTO make-model x vintage x report year | Preserve each observed fit-active Report A cohort count before mapping. |
-            | Raw key transition | same make-model-vintage in consecutive report years, starting age 0-35 | Calculate un-clipped apparent retirements, annual survival factor, and retirement rate. |
-            | Mapped key transition | eligible raw transition plus reviewed vintage-range crosswalk | Attach class evidence without recomputing or filtering the raw rate by latest-snapshot presence. |
-            | NLR and CEUD class-vintage | class x vintage x age | Sum starting exposure and apparent retirements. |
-            | Final CEUD class-age | Car/Light Truck x age | Sum across vintages, calculate annual rates, support counts, and the cumulative product. |
-            | Decision gate | class-level diagnostic | Report coverage, bounds, continuity, monotonicity, support, and comparison readiness without publishing a parameter schedule. |
+            | Stage | Grain and treatment |
+            |---|---|
+            | Raw snapshot | Source category, MTO key, vintage and report year; preserve observed stock. |
+            | Raw transition | Consecutive eligible pairs; calculate un-clipped apparent retirements and retention. |
+            | Mapping | Attach reviewed year-specific class evidence without changing raw rates. |
+            | Primary pool | Keep accepted-class series present in the latest snapshot; sum counts before calculating rates. |
+            | Class-age curve | Compound the annual factors from an age-zero baseline. |
+            | Decision audit | Assess evidence quality without publishing a lifetime schedule. |
             """),
             mo.stat(f"{maximum_recurrence_error:.3g}", "Maximum cumulative-survival recurrence error", "Zero within numerical precision confirms the displayed curve is the product of the empirical annual factors", bordered=True, target_direction="decrease"),
             mo.ui.table(transition_support, selection=None, pagination=False, page_size=10, format_mapping={"share_survival_factor_above_one": "{:.2%}"}, label="Passenger and Commercial audit support"),
@@ -3237,7 +3050,7 @@ def _(alt, chart_ui, evidence, mo, pd):
         rate_rows = rate_rows.loc[
             rate_rows["annual_retirement_rate"].notna()
         ].copy()
-        display_minimum = -0.35 # covers rates from 5th percentile to 95th percentile for all classes and ages below 30
+        display_minimum = -0.35  # Display window; the estimator retains the full distribution.
         display_maximum = 0.40
         bin_width = 0.02
         central_rates = rate_rows.loc[
@@ -3422,7 +3235,7 @@ def _(alt, chart_ui, evidence, mo, pd):
 
         rate_distribution_output = mo.vstack([
             mo.md("""
-            **Summary:** This subsection shows the unweighted distribution of raw annual
+            This view shows the unweighted distribution of raw annual
             apparent retirement rates at each starting age before class pooling.
 
             Each small histogram describes the cross-sectional distribution of raw
@@ -3436,7 +3249,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             observations diminish. Axis titles and subplot headers are omitted to keep
             the grid compact.
 
-            The histogram window is -35% to +40% since it covers 90% of the data. 
+            The histogram window is -35% to +40%.
             This is display-only: no raw value is clipped or discarded from the
             estimator. The table reports full-range minima, maxima, quantiles, negative
             growth-case counts, and observations outside the displayed window. Very large
@@ -3569,7 +3382,7 @@ def passenger_status_proxy(
 
         status_proxy_output = mo.vstack([
             mo.md("""
-            **Summary:** This subsection compares the two fit-status buckets by source
+            This view compares the two fit-status buckets by source
             category and vehicle age without treating either as physical retirement.
 
             Passenger and Commercial remain separate, and this comparison
@@ -3724,7 +3537,7 @@ def _(alt, chart_ui, evidence, mo, pd):
         decision_outcome = str(decision["decision_outcome"].iloc[0])
         survival_comparison_output = mo.vstack([
             mo.md(f"""
-            **Summary:** This subsection compares independently derived MTO apparent
+            This view compares independently derived MTO apparent
             survival with accepted NHTSA CAFE curves and audits the MTO evidence scope.
 
             **Decision: {decision_outcome}.** This is the diagnostic decision recorded by

@@ -1,121 +1,121 @@
 report_year,nrcan_ceud_class,nlr_atb_class,model_year,age,cutoff_basis,cutoff_age,fit_active_stock,age_distribution
-2025,Car,Compact,2025,0,configured_historical_vintage_coverage,23.0,43671,0.06060257031166521
-2025,Car,Compact,2024,1,configured_historical_vintage_coverage,23.0,38330,0.0531908250336866
-2025,Car,Compact,2023,2,configured_historical_vintage_coverage,23.0,36456,0.05059026134693657
-2025,Car,Compact,2022,3,configured_historical_vintage_coverage,23.0,38912,0.05399847074643394
-2025,Car,Compact,2021,4,configured_historical_vintage_coverage,23.0,24470,0.033957200328054035
-2025,Car,Compact,2020,5,configured_historical_vintage_coverage,23.0,19489,0.02704502971775419
-2025,Car,Compact,2019,6,configured_historical_vintage_coverage,23.0,23072,0.03201718536856815
-2025,Car,Compact,2018,7,configured_historical_vintage_coverage,23.0,44201,0.061338055239081174
-2025,Car,Compact,2017,8,configured_historical_vintage_coverage,23.0,24479,0.033969689694746
-2025,Car,Compact,2016,9,configured_historical_vintage_coverage,23.0,33658,0.04670745601314436
-2025,Car,Compact,2015,10,configured_historical_vintage_coverage,23.0,64445,0.08943080405155056
-2025,Car,Compact,2014,11,configured_historical_vintage_coverage,23.0,45537,0.0631920323391335
-2025,Car,Compact,2013,12,configured_historical_vintage_coverage,23.0,36371,0.05047230621706797
-2025,Car,Compact,2012,13,configured_historical_vintage_coverage,23.0,61162,0.08487496062380223
-2025,Car,Compact,2011,14,configured_historical_vintage_coverage,23.0,25102,0.03483423141131231
-2025,Car,Compact,2010,15,configured_historical_vintage_coverage,23.0,28289,0.03925685492767963
-2025,Car,Compact,2009,16,configured_historical_vintage_coverage,23.0,26713,0.0370698280491748
-2025,Car,Compact,2008,17,configured_historical_vintage_coverage,23.0,26732,0.03709619448996896
-2025,Car,Compact,2007,18,configured_historical_vintage_coverage,23.0,20437,0.02836057634264161
-2025,Car,Compact,2006,19,configured_historical_vintage_coverage,23.0,21005,0.02914879415164589
-2025,Car,Compact,2005,20,configured_historical_vintage_coverage,23.0,13450,0.01866466466744286
-2025,Car,Compact,2004,21,configured_historical_vintage_coverage,23.0,9995,0.013870135565136905
-2025,Car,Compact,2003,22,configured_historical_vintage_coverage,23.0,9109,0.012640626799683048
-2025,Car,Compact,2002,23,configured_historical_vintage_coverage,23.0,5528,0.007671246563689525
-2025,Car,Midsize,2025,0,configured_historical_vintage_coverage,23.0,32868,0.04307969770288797
-2025,Car,Midsize,2024,1,configured_historical_vintage_coverage,23.0,30767,0.04032594192603001
-2025,Car,Midsize,2023,2,configured_historical_vintage_coverage,23.0,38342,0.05025440456748602
-2025,Car,Midsize,2022,3,configured_historical_vintage_coverage,23.0,29169,0.03823146228232747
-2025,Car,Midsize,2021,4,configured_historical_vintage_coverage,23.0,38146,0.04999750969253878
-2025,Car,Midsize,2020,5,configured_historical_vintage_coverage,23.0,61121,0.08011056965127832
-2025,Car,Midsize,2019,6,configured_historical_vintage_coverage,23.0,74519,0.09767116931731498
-2025,Car,Midsize,2018,7,configured_historical_vintage_coverage,23.0,74366,0.09747063403227962
-2025,Car,Midsize,2017,8,configured_historical_vintage_coverage,23.0,73558,0.09641159801719099
-2025,Car,Midsize,2016,9,configured_historical_vintage_coverage,23.0,51995,0.0681492297085816
-2025,Car,Midsize,2015,10,configured_historical_vintage_coverage,23.0,46239,0.060604908789212514
-2025,Car,Midsize,2014,11,configured_historical_vintage_coverage,23.0,44119,0.05782624993774231
-2025,Car,Midsize,2013,12,configured_historical_vintage_coverage,23.0,23601,0.030933550732805737
-2025,Car,Midsize,2012,13,configured_historical_vintage_coverage,23.0,21137,0.027704015162040376
-2025,Car,Midsize,2011,14,configured_historical_vintage_coverage,23.0,13564,0.017778173896859328
-2025,Car,Midsize,2010,15,configured_historical_vintage_coverage,23.0,20109,0.026356627756704824
-2025,Car,Midsize,2009,16,configured_historical_vintage_coverage,23.0,15953,0.020909407857313246
-2025,Car,Midsize,2008,17,configured_historical_vintage_coverage,23.0,17050,0.022347232744135324
-2025,Car,Midsize,2007,18,configured_historical_vintage_coverage,23.0,16153,0.021171545484810435
-2025,Car,Midsize,2006,19,configured_historical_vintage_coverage,23.0,11368,0.014899902746940199
-2025,Car,Midsize,2005,20,configured_historical_vintage_coverage,23.0,10050,0.013172415781733726
-2025,Car,Midsize,2004,21,configured_historical_vintage_coverage,23.0,6375,0.008355636876472885
-2025,Car,Midsize,2003,22,configured_historical_vintage_coverage,23.0,7055,0.009246904809963328
-2025,Car,Midsize,2002,23,configured_historical_vintage_coverage,23.0,5334,0.006991210525350019
-2025,Light Truck,Midsize SUV,2025,0,configured_historical_vintage_coverage,23.0,82137,0.09213368958763789
-2025,Light Truck,Midsize SUV,2024,1,configured_historical_vintage_coverage,23.0,68121,0.07641183715499081
-2025,Light Truck,Midsize SUV,2023,2,configured_historical_vintage_coverage,23.0,53276,0.059760089198181036
-2025,Light Truck,Midsize SUV,2022,3,configured_historical_vintage_coverage,23.0,38904,0.04363890889267278
-2025,Light Truck,Midsize SUV,2021,4,configured_historical_vintage_coverage,23.0,43440,0.04872697414912877
-2025,Light Truck,Midsize SUV,2020,5,configured_historical_vintage_coverage,23.0,59483,0.06672252770056691
-2025,Light Truck,Midsize SUV,2019,6,configured_historical_vintage_coverage,23.0,75328,0.08449598316541372
-2025,Light Truck,Midsize SUV,2018,7,configured_historical_vintage_coverage,23.0,64013,0.07180386271197467
-2025,Light Truck,Midsize SUV,2017,8,configured_historical_vintage_coverage,23.0,72839,0.08170405317790955
-2025,Light Truck,Midsize SUV,2016,9,configured_historical_vintage_coverage,23.0,52167,0.05851611557176797
-2025,Light Truck,Midsize SUV,2015,10,configured_historical_vintage_coverage,23.0,44228,0.04961087966546195
-2025,Light Truck,Midsize SUV,2014,11,configured_historical_vintage_coverage,23.0,42099,0.04722276438085111
-2025,Light Truck,Midsize SUV,2013,12,configured_historical_vintage_coverage,23.0,33213,0.03725527146443402
-2025,Light Truck,Midsize SUV,2012,13,configured_historical_vintage_coverage,23.0,32415,0.03636014887302046
-2025,Light Truck,Midsize SUV,2011,14,configured_historical_vintage_coverage,23.0,32391,0.03633322789282758
-2025,Light Truck,Midsize SUV,2010,15,configured_historical_vintage_coverage,23.0,26794,0.030055030970344298
-2025,Light Truck,Midsize SUV,2009,16,configured_historical_vintage_coverage,23.0,13052,0.014640526394899371
-2025,Light Truck,Midsize SUV,2008,17,configured_historical_vintage_coverage,23.0,14609,0.016387024984913033
-2025,Light Truck,Midsize SUV,2007,18,configured_historical_vintage_coverage,23.0,12673,0.014215399249353335
-2025,Light Truck,Midsize SUV,2006,19,configured_historical_vintage_coverage,23.0,10678,0.011977592770819452
-2025,Light Truck,Midsize SUV,2005,20,configured_historical_vintage_coverage,23.0,8694,0.009752125074873975
-2025,Light Truck,Midsize SUV,2004,21,configured_historical_vintage_coverage,23.0,5673,0.006363446693094095
-2025,Light Truck,Midsize SUV,2003,22,configured_historical_vintage_coverage,23.0,3228,0.0036208718359435465
-2025,Light Truck,Midsize SUV,2002,23,configured_historical_vintage_coverage,23.0,2043,0.002291648438919661
-2025,Light Truck,Pickup,2025,0,configured_historical_vintage_coverage,23.0,73350,0.07160316908695466
-2025,Light Truck,Pickup,2024,1,configured_historical_vintage_coverage,23.0,75639,0.0738376565312633
-2025,Light Truck,Pickup,2023,2,configured_historical_vintage_coverage,23.0,56297,0.054956286436104784
-2025,Light Truck,Pickup,2022,3,configured_historical_vintage_coverage,23.0,58048,0.05666558635527667
-2025,Light Truck,Pickup,2021,4,configured_historical_vintage_coverage,23.0,54275,0.0529824403843826
-2025,Light Truck,Pickup,2020,5,configured_historical_vintage_coverage,23.0,44623,0.043560302851631594
-2025,Light Truck,Pickup,2019,6,configured_historical_vintage_coverage,23.0,62351,0.06086611037137982
-2025,Light Truck,Pickup,2018,7,configured_historical_vintage_coverage,23.0,70363,0.06868730451895556
-2025,Light Truck,Pickup,2017,8,configured_historical_vintage_coverage,23.0,78922,0.0770424718565867
-2025,Light Truck,Pickup,2016,9,configured_historical_vintage_coverage,23.0,55198,0.05388345913103917
-2025,Light Truck,Pickup,2015,10,configured_historical_vintage_coverage,23.0,50291,0.049093319380395864
-2025,Light Truck,Pickup,2014,11,configured_historical_vintage_coverage,23.0,41581,0.04059074810912967
-2025,Light Truck,Pickup,2013,12,configured_historical_vintage_coverage,23.0,32330,0.03156006075775384
-2025,Light Truck,Pickup,2012,13,configured_historical_vintage_coverage,23.0,33317,0.032523555343831875
-2025,Light Truck,Pickup,2011,14,configured_historical_vintage_coverage,23.0,43305,0.04227369103354562
-2025,Light Truck,Pickup,2010,15,configured_historical_vintage_coverage,23.0,36048,0.035189516554145074
-2025,Light Truck,Pickup,2009,16,configured_historical_vintage_coverage,23.0,26260,0.02563461786262344
-2025,Light Truck,Pickup,2008,17,configured_historical_vintage_coverage,23.0,30663,0.02993276037782264
-2025,Light Truck,Pickup,2007,18,configured_historical_vintage_coverage,23.0,26310,0.025683427112171465
-2025,Light Truck,Pickup,2006,19,configured_historical_vintage_coverage,23.0,19325,0.018864774950312184
-2025,Light Truck,Pickup,2005,20,configured_historical_vintage_coverage,23.0,17567,0.017148641736203576
-2025,Light Truck,Pickup,2004,21,configured_historical_vintage_coverage,23.0,15045,0.014686703189001128
-2025,Light Truck,Pickup,2003,22,configured_historical_vintage_coverage,23.0,13802,0.013473305245237193
-2025,Light Truck,Pickup,2002,23,configured_historical_vintage_coverage,23.0,9486,0.00926009082425156
-2025,Light Truck,Small SUV,2025,0,configured_historical_vintage_coverage,23.0,183348,0.0747159154582334
-2025,Light Truck,Small SUV,2024,1,configured_historical_vintage_coverage,23.0,206151,0.0840083376291548
-2025,Light Truck,Small SUV,2023,2,configured_historical_vintage_coverage,23.0,145593,0.059330422362450515
-2025,Light Truck,Small SUV,2022,3,configured_historical_vintage_coverage,23.0,140510,0.05725905535395192
-2025,Light Truck,Small SUV,2021,4,configured_historical_vintage_coverage,23.0,147862,0.06025505973059596
-2025,Light Truck,Small SUV,2020,5,configured_historical_vintage_coverage,23.0,148374,0.060463704213844296
-2025,Light Truck,Small SUV,2019,6,configured_historical_vintage_coverage,23.0,188114,0.07665810219097083
-2025,Light Truck,Small SUV,2018,7,configured_historical_vintage_coverage,23.0,188779,0.07692909551393985
-2025,Light Truck,Small SUV,2017,8,configured_historical_vintage_coverage,23.0,181395,0.07392005085709279
-2025,Light Truck,Small SUV,2016,9,configured_historical_vintage_coverage,23.0,172262,0.07019827338539937
-2025,Light Truck,Small SUV,2015,10,configured_historical_vintage_coverage,23.0,154729,0.06305342236041298
-2025,Light Truck,Small SUV,2014,11,configured_historical_vintage_coverage,23.0,125586,0.051177394674268066
-2025,Light Truck,Small SUV,2013,12,configured_historical_vintage_coverage,23.0,110655,0.0450928814332898
-2025,Light Truck,Small SUV,2012,13,configured_historical_vintage_coverage,23.0,76627,0.031226173472402488
-2025,Light Truck,Small SUV,2011,14,configured_historical_vintage_coverage,23.0,80788,0.03292181740755155
-2025,Light Truck,Small SUV,2010,15,configured_historical_vintage_coverage,23.0,71879,0.029291321897279267
-2025,Light Truck,Small SUV,2009,16,configured_historical_vintage_coverage,23.0,42041,0.017132075625475
-2025,Light Truck,Small SUV,2008,17,configured_historical_vintage_coverage,23.0,34960,0.014246506121800293
-2025,Light Truck,Small SUV,2007,18,configured_historical_vintage_coverage,23.0,23374,0.00952510967079405
-2025,Light Truck,Small SUV,2006,19,configured_historical_vintage_coverage,23.0,12567,0.0051211625409800995
-2025,Light Truck,Small SUV,2005,20,configured_historical_vintage_coverage,23.0,7817,0.00318549594834419
-2025,Light Truck,Small SUV,2004,21,configured_historical_vintage_coverage,23.0,4368,0.0017799982477123477
-2025,Light Truck,Small SUV,2003,22,configured_historical_vintage_coverage,23.0,3740,0.0015240827487280632
-2025,Light Truck,Small SUV,2002,23,configured_historical_vintage_coverage,23.0,2416,0.000984541155328075
+2025,Car,Compact,2025,0,configured_historical_vintage_coverage,23.0,20924,0.03645670896485876
+2025,Car,Compact,2024,1,configured_historical_vintage_coverage,23.0,25973,0.04525378044084671
+2025,Car,Compact,2023,2,configured_historical_vintage_coverage,23.0,20032,0.03490254224737386
+2025,Car,Compact,2022,3,configured_historical_vintage_coverage,23.0,26296,0.0458165560571557
+2025,Car,Compact,2021,4,configured_historical_vintage_coverage,23.0,15571,0.02712996632057999
+2025,Car,Compact,2020,5,configured_historical_vintage_coverage,23.0,17893,0.031175678336274982
+2025,Car,Compact,2019,6,configured_historical_vintage_coverage,23.0,22925,0.03994313004298351
+2025,Car,Compact,2018,7,configured_historical_vintage_coverage,23.0,29468,0.05134325653682173
+2025,Car,Compact,2017,8,configured_historical_vintage_coverage,23.0,18227,0.03175761968564713
+2025,Car,Compact,2016,9,configured_historical_vintage_coverage,23.0,23828,0.04151646249353157
+2025,Car,Compact,2015,10,configured_historical_vintage_coverage,23.0,48895,0.08519168346572209
+2025,Car,Compact,2014,11,configured_historical_vintage_coverage,23.0,33559,0.058471166896945856
+2025,Car,Compact,2013,12,configured_historical_vintage_coverage,23.0,35689,0.06218234975372033
+2025,Car,Compact,2012,13,configured_historical_vintage_coverage,23.0,47714,0.08313398067048704
+2025,Car,Compact,2011,14,configured_historical_vintage_coverage,23.0,24199,0.04216287039957069
+2025,Car,Compact,2010,15,configured_historical_vintage_coverage,23.0,26796,0.046687725741844543
+2025,Car,Compact,2009,16,configured_historical_vintage_coverage,23.0,27569,0.0480345540743735
+2025,Car,Compact,2008,17,configured_historical_vintage_coverage,23.0,27733,0.048320297730951436
+2025,Car,Compact,2007,18,configured_historical_vintage_coverage,23.0,21099,0.036761618354499856
+2025,Car,Compact,2006,19,configured_historical_vintage_coverage,23.0,21299,0.03711008622837539
+2025,Car,Compact,2005,20,configured_historical_vintage_coverage,23.0,13366,0.023288108011102187
+2025,Car,Compact,2004,21,configured_historical_vintage_coverage,23.0,9930,0.01730142993792045
+2025,Car,Compact,2003,22,configured_historical_vintage_coverage,23.0,9185,0.01600338710773407
+2025,Car,Compact,2002,23,configured_historical_vintage_coverage,23.0,5771,0.01005504050067864
+2025,Car,Midsize,2025,0,configured_historical_vintage_coverage,23.0,47499,0.06345061034093065
+2025,Car,Midsize,2024,1,configured_historical_vintage_coverage,23.0,38008,0.050772243580666794
+2025,Car,Midsize,2023,2,configured_historical_vintage_coverage,23.0,48330,0.06456068544131831
+2025,Car,Midsize,2022,3,configured_historical_vintage_coverage,23.0,38017,0.050784266054678215
+2025,Car,Midsize,2021,4,configured_historical_vintage_coverage,23.0,39155,0.052304441101899815
+2025,Car,Midsize,2020,5,configured_historical_vintage_coverage,23.0,53361,0.07128124841370134
+2025,Car,Midsize,2019,6,configured_historical_vintage_coverage,23.0,63783,0.08520327331892417
+2025,Car,Midsize,2018,7,configured_historical_vintage_coverage,23.0,60525,0.08085113772679062
+2025,Car,Midsize,2017,8,configured_historical_vintage_coverage,23.0,62720,0.08378328555513107
+2025,Car,Midsize,2016,9,configured_historical_vintage_coverage,23.0,46023,0.06147892460305798
+2025,Car,Midsize,2015,10,configured_historical_vintage_coverage,23.0,46402,0.061985204341983284
+2025,Car,Midsize,2014,11,configured_historical_vintage_coverage,23.0,46007,0.06145755131592657
+2025,Car,Midsize,2013,12,configured_historical_vintage_coverage,23.0,26300,0.03513234072225681
+2025,Car,Midsize,2012,13,configured_historical_vintage_coverage,23.0,18840,0.025167045597236433
+2025,Car,Midsize,2011,14,configured_historical_vintage_coverage,23.0,15644,0.02089773149273709
+2025,Car,Midsize,2010,15,configured_historical_vintage_coverage,23.0,17347,0.023172650741786645
+2025,Car,Midsize,2009,16,configured_historical_vintage_coverage,23.0,15949,0.02130515977867961
+2025,Car,Midsize,2008,17,configured_historical_vintage_coverage,23.0,14461,0.01931744407545839
+2025,Car,Midsize,2007,18,configured_historical_vintage_coverage,23.0,15664,0.020924448101651352
+2025,Car,Midsize,2006,19,configured_historical_vintage_coverage,23.0,9897,0.013220713921223407
+2025,Car,Midsize,2005,20,configured_historical_vintage_coverage,23.0,8642,0.011544246711853359
+2025,Car,Midsize,2004,21,configured_historical_vintage_coverage,23.0,5457,0.007289626742256859
+2025,Car,Midsize,2003,22,configured_historical_vintage_coverage,23.0,5996,0.008009639352496266
+2025,Car,Midsize,2002,23,configured_historical_vintage_coverage,23.0,4571,0.0061060809673549755
+2025,Light Truck,Midsize SUV,2025,0,configured_historical_vintage_coverage,23.0,53405,0.07462686567164178
+2025,Light Truck,Midsize SUV,2024,1,configured_historical_vintage_coverage,23.0,44777,0.06257030548036896
+2025,Light Truck,Midsize SUV,2023,2,configured_historical_vintage_coverage,23.0,35583,0.04972283046894541
+2025,Light Truck,Midsize SUV,2022,3,configured_historical_vintage_coverage,23.0,24500,0.03423571217966902
+2025,Light Truck,Midsize SUV,2021,4,configured_historical_vintage_coverage,23.0,27020,0.03775709971814926
+2025,Light Truck,Midsize SUV,2020,5,configured_historical_vintage_coverage,23.0,38201,0.05338116085614433
+2025,Light Truck,Midsize SUV,2019,6,configured_historical_vintage_coverage,23.0,44327,0.06194148627706892
+2025,Light Truck,Midsize SUV,2018,7,configured_historical_vintage_coverage,23.0,37023,0.05173505191950555
+2025,Light Truck,Midsize SUV,2017,8,configured_historical_vintage_coverage,23.0,54977,0.07682354075516994
+2025,Light Truck,Midsize SUV,2016,9,configured_historical_vintage_coverage,23.0,55249,0.07720362702916464
+2025,Light Truck,Midsize SUV,2015,10,configured_historical_vintage_coverage,23.0,48489,0.06775736521959065
+2025,Light Truck,Midsize SUV,2014,11,configured_historical_vintage_coverage,23.0,45890,0.06412558497653106
+2025,Light Truck,Midsize SUV,2013,12,configured_historical_vintage_coverage,23.0,35725,0.04992125786198676
+2025,Light Truck,Midsize SUV,2012,13,configured_historical_vintage_coverage,23.0,34665,0.048440039294213325
+2025,Light Truck,Midsize SUV,2011,14,configured_historical_vintage_coverage,23.0,34520,0.04823741977314998
+2025,Light Truck,Midsize SUV,2010,15,configured_historical_vintage_coverage,23.0,29040,0.04057979925296279
+2025,Light Truck,Midsize SUV,2009,16,configured_historical_vintage_coverage,23.0,13897,0.019419334373912668
+2025,Light Truck,Midsize SUV,2008,17,configured_historical_vintage_coverage,23.0,16423,0.02294910616843691
+2025,Light Truck,Midsize SUV,2007,18,configured_historical_vintage_coverage,23.0,12357,0.017267375322619186
+2025,Light Truck,Midsize SUV,2006,19,configured_historical_vintage_coverage,23.0,10586,0.014792622413631683
+2025,Light Truck,Midsize SUV,2005,20,configured_historical_vintage_coverage,23.0,8399,0.011736561085593473
+2025,Light Truck,Midsize SUV,2004,21,configured_historical_vintage_coverage,23.0,5421,0.0075751753357545205
+2025,Light Truck,Midsize SUV,2003,22,configured_historical_vintage_coverage,23.0,3121,0.004361210518887632
+2025,Light Truck,Midsize SUV,2002,23,configured_historical_vintage_coverage,23.0,2032,0.002839468046901528
+2025,Light Truck,Pickup,2025,0,configured_historical_vintage_coverage,23.0,24439,0.10402850259230566
+2025,Light Truck,Pickup,2024,1,configured_historical_vintage_coverage,23.0,22690,0.09658360505010088
+2025,Light Truck,Pickup,2023,2,configured_historical_vintage_coverage,23.0,15170,0.06457352528030103
+2025,Light Truck,Pickup,2022,3,configured_historical_vintage_coverage,23.0,12539,0.05337425402041494
+2025,Light Truck,Pickup,2021,4,configured_historical_vintage_coverage,23.0,13506,0.05749044379932404
+2025,Light Truck,Pickup,2020,5,configured_historical_vintage_coverage,23.0,13010,0.055379140665571286
+2025,Light Truck,Pickup,2019,6,configured_historical_vintage_coverage,23.0,12752,0.05428092250325634
+2025,Light Truck,Pickup,2018,7,configured_historical_vintage_coverage,23.0,10548,0.04489924486859692
+2025,Light Truck,Pickup,2017,8,configured_historical_vintage_coverage,23.0,10859,0.04622306598673625
+2025,Light Truck,Pickup,2016,9,configured_historical_vintage_coverage,23.0,7285,0.031009764776993607
+2025,Light Truck,Pickup,2015,10,configured_historical_vintage_coverage,23.0,7276,0.030971454841098898
+2025,Light Truck,Pickup,2014,11,configured_historical_vintage_coverage,23.0,5608,0.023871346721946487
+2025,Light Truck,Pickup,2013,12,configured_historical_vintage_coverage,23.0,4366,0.018584575568476883
+2025,Light Truck,Pickup,2012,13,configured_historical_vintage_coverage,23.0,4524,0.019257127776406188
+2025,Light Truck,Pickup,2011,14,configured_historical_vintage_coverage,23.0,8958,0.038131156193865305
+2025,Light Truck,Pickup,2010,15,configured_historical_vintage_coverage,23.0,10944,0.04658488204796404
+2025,Light Truck,Pickup,2009,16,configured_historical_vintage_coverage,23.0,7303,0.031086384648783022
+2025,Light Truck,Pickup,2008,17,configured_historical_vintage_coverage,23.0,10632,0.04525680427028085
+2025,Light Truck,Pickup,2007,18,configured_historical_vintage_coverage,23.0,10036,0.04271983518214246
+2025,Light Truck,Pickup,2006,19,configured_historical_vintage_coverage,23.0,6240,0.026561555553663706
+2025,Light Truck,Pickup,2005,20,configured_historical_vintage_coverage,23.0,5740,0.024433225781735526
+2025,Light Truck,Pickup,2004,21,configured_historical_vintage_coverage,23.0,4055,0.01726075445033755
+2025,Light Truck,Pickup,2003,22,configured_historical_vintage_coverage,23.0,3721,0.01583903016268953
+2025,Light Truck,Pickup,2002,23,configured_historical_vintage_coverage,23.0,2725,0.01159939725700859
+2025,Light Truck,Small SUV,2025,0,configured_historical_vintage_coverage,23.0,214752,0.07835302204517908
+2025,Light Truck,Small SUV,2024,1,configured_historical_vintage_coverage,23.0,230078,0.08394476701549095
+2025,Light Truck,Small SUV,2023,2,configured_historical_vintage_coverage,23.0,172426,0.0629102321708857
+2025,Light Truck,Small SUV,2022,3,configured_historical_vintage_coverage,23.0,157950,0.05762861268829178
+2025,Light Truck,Small SUV,2021,4,configured_historical_vintage_coverage,23.0,172259,0.06284930163388701
+2025,Light Truck,Small SUV,2020,5,configured_historical_vintage_coverage,23.0,174662,0.06372604463034136
+2025,Light Truck,Small SUV,2019,6,configured_historical_vintage_coverage,23.0,227863,0.0831366164798495
+2025,Light Truck,Small SUV,2018,7,configured_historical_vintage_coverage,23.0,224553,0.08192895134532437
+2025,Light Truck,Small SUV,2017,8,configured_historical_vintage_coverage,23.0,206566,0.07536633117169787
+2025,Light Truck,Small SUV,2016,9,configured_historical_vintage_coverage,23.0,178817,0.06524201098500963
+2025,Light Truck,Small SUV,2015,10,configured_historical_vintage_coverage,23.0,162630,0.05933612713831524
+2025,Light Truck,Small SUV,2014,11,configured_historical_vintage_coverage,23.0,132490,0.048339442197352187
+2025,Light Truck,Small SUV,2013,12,configured_historical_vintage_coverage,23.0,117678,0.04293523193373092
+2025,Light Truck,Small SUV,2012,13,configured_historical_vintage_coverage,23.0,82437,0.030077429212945296
+2025,Light Truck,Small SUV,2011,14,configured_historical_vintage_coverage,23.0,83086,0.030314219144155812
+2025,Light Truck,Small SUV,2010,15,configured_historical_vintage_coverage,23.0,72466,0.026439474815256422
+2025,Light Truck,Small SUV,2009,16,configured_historical_vintage_coverage,23.0,42296,0.015431844268844502
+2025,Light Truck,Small SUV,2008,17,configured_historical_vintage_coverage,23.0,35584,0.012982947476417693
+2025,Light Truck,Small SUV,2007,18,configured_historical_vintage_coverage,23.0,22616,0.008251527094386875
+2025,Light Truck,Small SUV,2006,19,configured_historical_vintage_coverage,23.0,11928,0.00435197272647005
+2025,Light Truck,Small SUV,2005,20,configured_historical_vintage_coverage,23.0,7735,0.0028221419382332188
+2025,Light Truck,Small SUV,2004,21,configured_historical_vintage_coverage,23.0,4199,0.0015320199093266044
+2025,Light Truck,Small SUV,2003,22,configured_historical_vintage_coverage,23.0,3587,0.0013087295581696904
+2025,Light Truck,Small SUV,2002,23,configured_historical_vintage_coverage,23.0,2168,0.0007910024204382183

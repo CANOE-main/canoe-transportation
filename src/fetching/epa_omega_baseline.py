@@ -284,7 +284,7 @@ def required_inputs(bundle: ConfigBundle) -> list[Path]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--scenario", default="config/scenarios/legacy_reproduction.yaml"
+        "--scenario", default="config/scenarios/default.yaml"
     )
     parser.add_argument("--verify-legacy-identity", action="store_true")
     args = parser.parse_args()
