@@ -28,7 +28,7 @@ def truck():
     atb = pd.DataFrame([
         {"region": "ON", "mode": mode, "powertrain": fuel, "year": year, "weighted_consumption": value}
         for fuel, values in {"diesel": [200, 100], "gasoline": [300, 20], "bev": [50, 20], "fcev": [80, 24]}.items()
-        for year, value in zip([2025, 2030], values)
+        for year, value in zip([2023, 2030], values)
     ])
     stock = pd.DataFrame([
         {"region": "ON", "road_class": mode, "powertrain": fuel, "vintage_year": year, "raw_capacity": count}
@@ -38,7 +38,7 @@ def truck():
     return RoadEfficiencyEvidence(
         ceud=ceud, loads=loads, rating_audit=pd.DataFrame(columns=["year", "native_class_mean", "weight", "class_mean_mj_per_vkm", "ceud_class", "powertrain"]),
         atb_audit=atb, gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=2023, rules=rules,
-        conversions=conversion, projection_years=(2021, 2022, 2023), projection_reference_year=2025,
+        conversions=conversion, projection_years=(2021, 2022, 2023), projection_reference_year=2023,
         cohort_stock=stock,
     )
 
@@ -59,7 +59,7 @@ def test_existing_emerging_uses_same_year_diesel_and_reference_year_relative_lev
     assert electric["treatment"] == "CEUD_diesel_fleet_ATB_relative_powertrain"
     assert electric["consumption_index"] == .25
     assert electric["source_fuel"] == "diesel"
-    assert electric["projection_reference_year"] == 2025
+    assert electric["projection_reference_year"] == 2023
 
 
 @pytest.mark.parametrize("fuel,expected_litres,rate", [("gasoline", 24, .5), ("diesel", 26, .5), ("bev", 15 * .25, .4)])
@@ -70,7 +70,7 @@ def test_latest_existing_period_connects_exactly_to_future_reference(truck, fuel
     assert anchor["stock_powertrain"] == fuel and not anchor["stock_proxy"]
     first = truck.derive_consumption("ON", "medium_trucks", fuel, 2025)
     future = truck.derive_consumption("ON", "medium_trucks", fuel, 2030)
-    assert first["native_intensity"] == anchor["native_intensity"]
+    assert first["native_intensity"] == pytest.approx(anchor["native_intensity"] * (1 + (rate - 1) * 2 / 7))
     assert future["native_intensity"] == pytest.approx(anchor["native_intensity"] * rate)
     assert future["load_factor"] == first["load_factor"] == anchor["load_factor"]
     assert future["treatment"] == "CEUD_cohort_anchor_ATB_relative_projection"
@@ -110,6 +110,28 @@ def test_no_registered_positive_anchor_stock_fails_instead_of_using_atb_level(tr
     truck.cohort_stock["raw_capacity"] = 0
     with pytest.raises(ValueError, match="No positive own or configured-analogue cohort stock"):
         truck.derive_consumption("ON", "medium_trucks", "bev", 2030)
+
+
+def test_later_base_year_keeps_held_ceud_out_of_the_truck_projection_anchor(truck):
+    ceud = pd.concat([truck.ceud, truck.ceud.loc[truck.ceud.year.eq(2023)].assign(year=2024, value=9999)], ignore_index=True)
+    stock = pd.concat([truck.cohort_stock, truck.cohort_stock.loc[truck.cohort_stock.vintage_year.eq(2023)].assign(
+        vintage_year=2024, raw_capacity=9999)], ignore_index=True)
+    inputs = RoadEfficiencyEvidence(
+        ceud=ceud, loads=truck.loads,
+        rating_audit=pd.DataFrame(columns=["year", "native_class_mean", "weight", "class_mean_mj_per_vkm", "ceud_class", "powertrain"]),
+        atb_audit=truck.atb, gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=2025,
+        rules=truck.rules, conversions=truck.conversions,
+        projection_years=(2021, 2022, 2023, 2024, 2025), projection_reference_year=2023,
+        cohort_stock=stock,
+    )
+    anchor = inputs.projection_anchor("ON", "medium_trucks", "diesel")
+    assert anchor["included_years"] == [2021, 2022, 2023]
+    reference = truck.projection_anchor("ON", "medium_trucks", "diesel")
+    assert anchor["native_intensity"] == reference["native_intensity"]
+    target = inputs.derive_consumption("ON", "medium_trucks", "diesel", 2025)
+    assert target["native_intensity"] == pytest.approx(reference["native_intensity"] * (1 - .5 * 2 / 7))
+    assert target["projection_source_years"] == [2021, 2022, 2023]
+    assert target["load_factor"] == reference["load_factor"]
 
 
 @pytest.mark.parametrize("mode,region,aggregation", [

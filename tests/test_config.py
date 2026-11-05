@@ -266,21 +266,15 @@ def test_shared_energy_conversion_is_not_scenario_local() -> None:
 
 def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     status = run_smoke_validation(SCENARIO)
+    selected = load_config_bundle(SCENARIO).scenario
 
     assert status["ok"] is True
     assert status["scenario"] == "baseline"
-    assert status["periods"] == {
-        "period_mode": "prospective",
-        "base_year": 2023,
-        "existing": [2000, 2005, 2010, 2015, 2020],
-        "model": [2025, 2030, 2035, 2040, 2045],
-        "step": 5,
-    }
+    assert status["periods"] == selected.periods.model_dump(mode="json")
     assert status["packaged_schema"]["package_commit"].startswith("1e68c377")
     assert status["reference_sqlite_exists"] is True
     assert "cer_canadas_energy_future" in status["active_sources"]
     assert "wards_intelligence_sales_shares" in status["active_sources"]
-    selected = load_config_bundle(SCENARIO).scenario
     assert status["parameter_options"]["lifetimes"] == selected.lifetimes.model_dump()
     assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_sales_shares"
     assert status["parameter_options"]["charging_profiles"]["travel_behavior_source"] == "nhts"
@@ -291,6 +285,11 @@ def _write_config_copy(tmp_path: Path) -> tuple[Path, Path, Path]:
     config_dir = tmp_path / "config"
     scenario_dir = config_dir / "scenarios"
     scenario_dir.mkdir(parents=True)
+    parameter_dir = config_dir / "parameters"
+    parameter_dir.mkdir()
+    (parameter_dir / "rules.yaml").write_text(
+        (REPO_ROOT / "config/parameters/rules.yaml").read_text(encoding="utf-8"), encoding="utf-8",
+    )
     paths = config_dir / "paths.yaml"
     sources = config_dir / "sources.yaml"
     scenario = scenario_dir / "scenario.yaml"
@@ -342,7 +341,7 @@ def test_source_registry_rejects_obsolete_aggregation_selections(tmp_path: Path)
 
 
 @pytest.mark.parametrize("selection", ["unknown", "inactive"])
-def test_heavy_truck_survival_source_is_checked_before_io(tmp_path: Path, selection: str) -> None:
+def test_road_lifetime_survival_source_is_checked_before_io(tmp_path: Path, selection: str) -> None:
     _, sources, scenario = _write_config_copy(tmp_path)
     payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
     source_payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
@@ -351,10 +350,10 @@ def test_heavy_truck_survival_source_is_checked_before_io(tmp_path: Path, select
         selected = "unregistered_survival"
     else:
         source_payload["sources"][selected]["status"] = "inactive"
-    payload["lifetimes"]["heavy_truck_survival_source"] = selected
+    payload["lifetimes"]["road_lifetime_survival_source"] = "moves" if selection == "inactive" else selected
     sources.write_text(yaml.safe_dump(source_payload, sort_keys=False), encoding="utf-8")
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-    with pytest.raises((ValueError, ValidationError), match="heavy_truck_survival_source"):
+    with pytest.raises((ValueError, ValidationError), match="road_lifetime_survival_source"):
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
@@ -463,7 +462,7 @@ def test_invalid_scenario_choices_are_rejected(
         ("comparison", "include_provenance"),
         ("lifetimes", "survival_curves"),
         ("lifetimes", "survival_curve_max_age"),
-        ("lifetimes", "heavy_truck_survival_source"),
+        ("lifetimes", "road_lifetime_survival_source"),
         ("existing_capacity", "vehicle_population_year"),
         ("existing_capacity", "cleanup_tolerance"),
         ("demand", "cer_scenario"),

@@ -703,19 +703,32 @@ fetching:
       value_bounds: {minimum: 0.0, maximum: 1.0}
       unit: annual scrappage-rate fraction
     epa_moves5:
+      # Internal adapter key retained for existing callers; the pinned release is MOVES6.
       source_id: epa_moves_heavy_truck_survival
       component_id: heavy_truck_survival_rates
-      output_file: epa_moves5_heavy_truck_survival_rates.csv
-      document_title: Population and Activity of Onroad Vehicles in MOVES5
-      document_id: EPA-420-R-24-019
-      pdf_page: 192
-      source_page: 190
+      output_file: epa_moves6_survival_rates.csv
+      document_title: Population and Activity of Onroad Vehicles in MOVES6
+      document_id: EPA-420-R-26-010
+      pdf_page: 189
+      source_page: 187
       source_table: Table C-1
       table_title: Table C-1 Vehicle survival rate by age
       source_vehicle_class_label: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
       class_header_fragments: [Heavy-duty Vehicles, '(Buses, Single Unit Trucks', 'and Combination Trucks)']
       expected_rate_columns: 4
       selected_rate_column: 4
+      class_columns:
+        cars: Passenger Cars
+        light_trucks: Light-duty Trucks (Passenger and Light Commercial)
+        heavy_trucks: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+      selected_rate_columns:
+        cars: 2
+        light_trucks: 3
+        heavy_trucks: 4
+      component_ids:
+        cars: car_survival_rates
+        light_trucks: light_truck_survival_rates
+        heavy_trucks: heavy_truck_survival_rates
       expected_ages: {start: 0, end: 40}
       value_bounds: {minimum: 0.0, maximum: 1.0}
       unit: annual survival-rate fraction
@@ -894,12 +907,14 @@ fetching:
 # MODEL PARAMETERS: harmonization, allocation, mappings, and parameter artifacts.
 parameterization:
   ceud_inputs:
+    cagr: {history_start_year: 2013, excluded_years: [2020, 2021], zero_endpoint: constant}
     audit_file: ceud_extension_audit.csv
     manifest_file: ceud_parameter_inputs_manifest.json
 
   # Opt-in researcher comparisons; these references never parameterize production.
   charging_cost_comparison:
     reference_route: transportation_validation_charging_inputs
+    legacy_baseline: legacy_backend/canoe_on_12d_baseline.sqlite
     report_route: charging_cost_comparison_report
     files: {cost_invest: CostInvest.csv, cost_fixed: CostFixed.csv, cost_variable: CostVariable_ALL.csv}
     groups:
@@ -931,15 +946,11 @@ parameterization:
   transportation_research:
     reference_route: transportation_validation_researcher_inputs
     report_route: transportation_research_report
+    notebook_scenario: config/scenarios/researcher_sales_2025.yaml
+    comparison_significance_percent: 5.0
     reference_sqlite: canoe_ON_16d.sqlite
     reference_notebook: Update data_20260618_fixed lifetime (1).ipynb
     legacy_baseline: legacy_backend/canoe_on_12d_baseline.sqlite
-    notebook_replay:
-      sales_start_year: 2005
-      sales_end_year: 2025
-      calibration_year: 2023
-      vintage_step: 5
-      extension_policy: constant
     energy_series:
       cars: {table_id: 20, raw_series: Car Energy Use (PJ)}
       passenger_light_trucks: {table_id: 34, raw_series: Passenger Light Truck Energy Use (PJ)}
@@ -1082,10 +1093,6 @@ parameterization:
       evidence_source_priority:
         - nrcan_fuel_consumption_ratings
         - fueleconomy_gov_vehicle_data
-      manual_evidence_file: mapped_mto_make_model_keys.csv
-      manual_evidence_source_selector: >-
-        Reviewed two-pass MTO make/model inference using NCIC model-code
-        abbreviations and NHTSA vPIC make/model examples (2026-08-12).
       manual_make_aliases:
         AMER: American Motors
         ASTO: Aston Martin
@@ -1190,8 +1197,7 @@ parameterization:
       activity_to_billion_factor: 0.001
       region_output_map: {NL: NLLAB, PE: PEI}
       car_extrapolation:
-        history_start_year: 2013
-        method: endpoint_cagr_anchored_to_base_year
+        method: observed_nonpandemic_cagr  # Shared estimation controls: ceud_inputs.cagr.
       activity_series:
         cars:
           table_id: 20
@@ -1252,27 +1258,63 @@ parameterization:
       ineligible_cohort_redistribution: proportional_to_eligible_capacity
       survival_curve_classes: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
       fixed_lifetime_sources:
-        cars: {kind: ceud_median, target_class: Car}
-        passenger_light_trucks: {kind: ceud_median, target_class: Light Truck}
-        freight_light_trucks: {kind: ceud_median, target_class: Light Truck}
-        medium_trucks:
-          # One NHTSA CAFE 2b/3 curve for every GVWR class, including Class 2/2b.
-          kind: source_median_equal
-          source_id: nhtsa_cafe_ldv_survival
-          source_classes:
-          - 2b/3 Trucks
-          curve_source_class: 2b/3 Trucks
-        heavy_trucks:
-          # The scenario selects one schedule for fixed medians, curves and stock cutoffs.
-          kind: source_median_equal
-          source_options:
-            eia_nems_hd_truck_scrappage:
-              source_classes: [Cls 7-8]
-              curve_source_class: Cls 7-8
-            epa_moves_heavy_truck_survival:
-              source_classes: ['Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)']
-              curve_source_class: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
-        motorcycles: {kind: manual, category: motorcycles}
+        motorcycles:
+          kind: manual
+          category: motorcycles
+      survival_source_profiles:
+        nhtsa_nems:
+          cars:
+            kind: ceud_median
+            target_class: Car
+          passenger_light_trucks:
+            kind: ceud_median
+            target_class: Light Truck
+          freight_light_trucks:
+            kind: ceud_median
+            target_class: Light Truck
+          medium_trucks:
+            kind: source_median_equal
+            source_id: nhtsa_cafe_ldv_survival
+            source_classes:
+            - 2b/3 Trucks
+            curve_source_class: 2b/3 Trucks
+          heavy_trucks:
+            kind: source_median_equal
+            source_id: eia_nems_hd_truck_scrappage
+            source_classes:
+            - Cls 7-8
+            curve_source_class: Cls 7-8
+        moves:
+          cars:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Passenger Cars
+            curve_source_class: Passenger Cars
+          passenger_light_trucks:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Light-duty Trucks (Passenger and Light Commercial)
+            curve_source_class: Light-duty Trucks (Passenger and Light Commercial)
+          freight_light_trucks:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Light-duty Trucks (Passenger and Light Commercial)
+            curve_source_class: Light-duty Trucks (Passenger and Light Commercial)
+          medium_trucks:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+            curve_source_class: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+          heavy_trucks:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+            curve_source_class: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
       region_output_map: {NL: NLLAB, PE: PEI}
       share_region_proxy: {BCT: BC, AB: Canada, NL: Canada}
       report5_age_classes: {medium_trucks: COMMERCIAL, heavy_trucks: COMMERCIAL, motorcycles: MOTORCYCLE}
@@ -1649,12 +1691,14 @@ parameterization:
     canonical_file: vehicle_reference.csv
     source_links_file: vehicle_source_links.csv
   efficiencies:
-    transformation_version: '17'
+    projection_reference_year: 2023
+    projection_interpolation: linear_consumption
+    transformation_version: '18'
     pev_projection_anchors:
       bev: bev_300_miles
       phev: phev_35_miles
     ldv_projection_baseline: latest_observed_cohort
-    ldv_projection_reference: first_model_period
+    ldv_projection_reference: aligned_observation_year
     ldv_future_load_factor: anchor_cohort
     projection_missing_stock: configured_analogue
     files:
@@ -1685,8 +1729,8 @@ parameterization:
     missing_rating_classes: renormalize_observed
     missing_annual_rating: observed_years_with_explicit_period_fallback
     source_point_selection: previous_observation_clamped
-    historical_rating_observations: through_base_year
-    historical_rating_baseline: latest_own_observation_indexed_to_base_year
+    historical_rating_observations: through_projection_reference_year
+    historical_rating_baseline: latest_own_observation_indexed_to_reference_year
     unknown_powertrain: error
     region_output_map: {NL: NLLAB, PE: PEI}
     existing_suffix: _EX
@@ -2224,7 +2268,7 @@ parameterization:
         medium_trucks: [gasoline, diesel]
         heavy_trucks: [diesel]
       reference_fuel: diesel
-      emerging_ratio_year: first_model_period
+      emerging_ratio_year: aligned_observation_year
       future_baseline: latest_observed_cohort
       future_load_factor: anchor_cohort
       missing_stock: reference_fuel_cohort

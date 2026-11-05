@@ -22,7 +22,7 @@ periods:
   step: 5  # Years per model period.
 
 sources:
-  nrcan_ceud_beyond_observed: error  # error | constant; source edition remains unchanged.
+  nrcan_ceud_beyond_observed: error  # error | constant | extrapolated; source edition remains unchanged.
   # Registered source years/editions to replay.
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
@@ -68,8 +68,8 @@ comparison:
 
 lifetimes:
   survival_curves: true  # true: road curves; false: road median lifetimes.
-  # NEMS or MOVES5; controls heavy-truck medians and curves.
-  heavy_truck_survival_source: eia_nems_hd_truck_scrappage  # eia_nems_hd_truck_scrappage | epa_moves_heavy_truck_survival
+  # NHTSA+NEMS or MOVES for cars and trucks; medium trucks share heavy MOVES rates.
+  road_lifetime_survival_source: nhtsa_nems  # nhtsa_nems | moves
   survival_curve_max_age: 25  # Curve mode: maximum road survival/stock age.
 
 existing_capacity:

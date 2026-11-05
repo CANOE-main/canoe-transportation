@@ -236,11 +236,14 @@ def build_existing_capacity_artifacts(
             "Selected regional stock-age source has no implemented adapter"
         )
     lifetime_sources = {
-        "nhtsa_cafe_ldv_survival",
-        bundle.scenario.lifetimes.heavy_truck_survival_source,
         "canada_energy_policy_simulator",
         "emrg_sfu_cims_model",
     }
+    selected_lifetime_rules = resolved_road_lifetime_rules(bundle)["fixed_lifetime_sources"]
+    lifetime_sources.update(selector["source_id"] for selector in selected_lifetime_rules.values()
+                            if "source_id" in selector)
+    if any(selector["kind"] == "ceud_median" for selector in selected_lifetime_rules.values()):
+        lifetime_sources.add("nhtsa_cafe_ldv_survival")
     inactive_lifetimes = sorted(lifetime_sources - available_sources)
     if inactive_lifetimes:
         raise ValueError(
@@ -426,6 +429,7 @@ def build_existing_capacity_artifacts(
         "input_content_digest": input_digest.hexdigest(),
         "road_stock_method": scenario.existing_capacity.road_stock_method,
         "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
+        "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None,
     }
     rows: list[ExistingCapacity] = []
     contexts: list[ResolvedProvenance] = []
@@ -449,15 +453,17 @@ def build_existing_capacity_artifacts(
         sales_based = input_regions[region] in sales_regions and road_class in road_rules["ceud_sales_series"]
         if not sales_based:
             components.append((selected_sources[input_regions[region]], mto_component))
-        elif road_class in road_rules["statcan_ldv_source_types"]:
+        elif (road_class in road_rules["statcan_ldv_source_types"]
+              and road_rules["fixed_lifetime_sources"][road_class]["kind"] == "ceud_median"):
             # Report A still supplies class weights for NHTSA survival, not ages.
             components.append((selected_sources[input_regions[region]], "A"))
-        if road_class in road_rules["statcan_ldv_source_types"]:
+        if (road_class in road_rules["statcan_ldv_source_types"]
+                and (not sales_based or road_rules["fixed_lifetime_sources"][road_class]["kind"] == "ceud_median")):
             mapping_candidates = (
                 "nrcan_fuel_consumption_ratings",
                 "fueleconomy_gov_vehicle_data",
             )
-            target_class = road_rules["fixed_lifetime_sources"][road_class]["target_class"]
+            target_class = "Car" if road_class == "cars" else "Light Truck"
             evidence = accepted_mapping.loc[
                 accepted_mapping.nrcan_ceud_class.eq(target_class), "evidence_source",
             ].fillna("")
@@ -476,13 +482,12 @@ def build_existing_capacity_artifacts(
                 for component_key in bundle.sources.sources[source_key].components
                 if source_key != "fueleconomy_gov_vehicle_data" or component_key == "vehicles"
             )
-            components.append(survival_source_component(
-                assorted_rules, str(assorted_rules["nhtsa_cafe"]["source_id"]),
-            ))
-        elif road_class in {"medium_trucks", "heavy_trucks"}:
+        if road_class in road_rules["survival_curve_classes"]:
+            selector = road_rules["fixed_lifetime_sources"][road_class]
             components.append(survival_source_component(
                 assorted_rules,
-                str(road_rules["fixed_lifetime_sources"][road_class]["source_id"]),
+                str(assorted_rules["nhtsa_cafe"]["source_id"]) if selector["kind"] == "ceud_median" else str(selector["source_id"]),
+                selector.get("curve_source_class"),
             ))
         elif road_class == "motorcycles":
             components.append(

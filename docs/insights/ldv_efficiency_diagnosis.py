@@ -12,7 +12,7 @@ def _():
     import marimo as mo
     import pandas as pd
 
-    from validation.ldv_efficiency_diagnostic import COHORT, VIEW_MODES, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, load_diagnostic, nrcan_anchor_endpoints, practical_axis, supported_display_years
+    from validation.ldv_efficiency_diagnostic import COHORT, VIEW_MODES, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, load_diagnostic, nrcan_anchor_endpoints, practical_axis, production_trajectory_data, supported_display_years
 
     def chart_ui(chart):
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
@@ -56,11 +56,11 @@ def _():
         return rows[fields].sort_values([field for field in ("year", "Make", "Model", "source_row") if field in fields],
                                         kind="stable").rename(columns=columns)
 
-    return COHORT, VIEW_MODES, alt, chart_ui, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, gasoline_hev_classification_view, load_diagnostic, mo, nrcan_anchor_endpoints, pd, practical_axis, supported_display_years, table_ui
+    return COHORT, VIEW_MODES, alt, chart_ui, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, gasoline_hev_classification_view, load_diagnostic, mo, nrcan_anchor_endpoints, pd, practical_axis, production_trajectory_data, supported_display_years, table_ui
 
 
 @app.cell
-def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints, pd):
+def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints, pd, production_trajectory_data):
     def range_label(value):
         return str(value).replace("_miles", "").replace("_existing_representative", " existing").replace("_", " ").upper()
 
@@ -83,12 +83,17 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
             plot = plot.loc[plot.year.between(*year_domain)].copy()
         if not native and "stage" in plot and plot.stage.eq("Harmonised before indexing").all():
             plot = nrcan_anchor_endpoints(diagnostic, plot)
+        indexed = "sample_kind" in plot and plot.sample_kind.isin(["curve", "period", "base_year_anchor"]).any()
+        if indexed:
+            trajectory = production_trajectory_data(plot)
+            plot = pd.concat([trajectory["reference"], trajectory["anchors"], trajectory["periods"]], ignore_index=True)
         plot["range_label"] = plot.powertrain.map(range_label)
         plot["style_category"] = plot.range_label if native else plot.series
         plot["marker_category"] = plot.style_category
-        indexed = "sample_kind" in plot and plot.sample_kind.isin(["curve", "period", "base_year_anchor"]).any()
         if indexed:
-            plot["marker_category"] = plot.marker_source.fillna("")
+            plot["marker_category"] = plot.marker_source.fillna("").replace({
+                "Production range component": "NRCan range aggregate",
+            })
         plot["curve"] = (plot.series + " / " + plot.powertrain + " / "
                          + plot.get("source_class", pd.Series("", index=plot.index)).fillna("") + " / "
                          + plot.get("index_segment", pd.Series("", index=plot.index)).fillna("").astype(str))
@@ -119,18 +124,20 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
         base_year = diagnostic.summary["base_year"]
         anchors = plot.powertrain.str.startswith(("bev", "phev"))
         nrcan_anchors = plot.get("nrcan_anchor_window", pd.Series("", index=plot.index)).ne("")
+        plot["label_align"] = "left"
+        plot.loc[nrcan_anchors, "label_align"] = "right"
         if indexed:
             anchors &= plot.sample_kind.eq("base_year_anchor") & plot.series.eq("Production method")
         else:
             anchors &= (plot.year.eq(diagnostic.summary["atb_reference_year"])
                         & plot.series.str.contains("ATB", regex=False) & (not native))
             anchors |= nrcan_anchors
-        for _, panel in plot.groupby(facet, dropna=False):
+        for _, panel in plot.groupby([facet, "label_align"], dropna=False):
             selected = panel.loc[anchors].drop_duplicates(["range_label", "series"]).sort_values("value")
             if selected.empty:
                 continue
             span = max(float(panel.value.max() - panel.value.min()), abs(float(panel.value.mean())) * .25, .01)
-            gap = span * (30 if nrcan_anchors.any() else 18) / 290
+            gap = span * (32 if nrcan_anchors.any() else 26) / 290
             positions = []
             for value in selected.value:
                 positions.append(max(float(value), positions[-1] + gap) if positions else float(value))
@@ -140,14 +147,15 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
             ranks = {index: rank for rank, index in enumerate(ranked.sort_values("value", ascending=not service).index, 1)}
             for rank, (index, row) in enumerate(selected.iterrows(), 1):
                 plot.loc[index, "label_value"] = positions[rank - 1] - shift
-                plot.loc[index, "label_year"] = row.year - 7 if nrcan_anchors.loc[index] else row.year + 1
+                plot.loc[index, "label_year"] = row.year - .6 if nrcan_anchors.loc[index] else row.year + .8
                 rank_label = f"{ranks[index]}. " if index in ranks else ""
                 plot.loc[index, "base_label"] = (f"{row.range_label} · {row.value:.3g}\n"
                     f"Cohort anchor: {row.nrcan_anchor_consumption:.3g}"
                     if nrcan_anchors.loc[index] else f"{rank_label}{row.range_label} · {row.value:.3g}")
         tooltip_fields = ["series:N", "source_class:N", "atb_class:N", "powertrain:N", "year:Q", "vintage:O",
                           "value:Q", "units:N", "time_basis:N", "treatment:N", "analogue:N", "native_basis:N",
-                          "source_fuel:N", "consumption_index:Q", "historical_index_anchor:N", "projection_anchor_powertrain:N", "calibration_observation:N",
+                          "source_fuel:N", "consumption_index:Q", "index_reference_year:O", "index_reference_status:N",
+                          "historical_index_anchor:N", "projection_anchor_powertrain:N", "calibration_observation:N",
                           "observation_basis:N", "source_treatments:N", "cohort_stock_coverage:Q", "candidate_year_count:Q", "included_year_count:Q",
                           "sample_kind:N", "marker_source:N", "source_year_start:O", "source_year_end:O", "source_years:N",
                           "weighted_source_year:Q", "model_vintage:O", "load_factor:Q"]
@@ -156,8 +164,18 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
                            "cohort_stock_coverage:Q": {"title": "Included cohort stock", "format": ".1%"},
                            "candidate_year_count:Q": {"title": "Candidate years", "format": "d"},
                            "included_year_count:Q": {"title": "Included years", "format": "d"}}
-        tooltips = [alt.Tooltip(field, **tooltip_options.get(field, {}))
-                    for field in tooltip_fields if field.split(":")[0] in plot and plot[field.split(":")[0]].notna().any()]
+        tooltip_fields = [field for field in tooltip_fields
+                          if field.split(":")[0] in plot and plot[field.split(":")[0]].notna().any()]
+        tooltips = [alt.Tooltip(field, **tooltip_options.get(field, {})) for field in tooltip_fields]
+
+        def inline_data(frame, fields):
+            selected = frame[[field for field in dict.fromkeys(fields) if field in frame]]
+            return alt.Data(values=selected.astype(object).where(selected.notna(), None).to_dict("records"))
+
+        # Complete provenance stays in audit tables; marks share a compact dataset.
+        tooltip_columns = [field.split(":")[0] for field in tooltip_fields]
+        chart_fields = ["year", "value", facet, "range_label", "curve", "style_category", "marker_category",
+                        "sample_kind", "base_label", "label_year", "label_value", "label_align", *tooltip_columns]
         first_year, last_year = year_domain if year_domain is not None else composition_view["bridge_years"]
         tick_years = set(range((first_year // 5 + 1) * 5, last_year + 1, 5)) | {first_year, last_year}
         tick_years = {year for year in tick_years if year in {first_year, last_year}
@@ -166,8 +184,8 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
             tick_years.add(base_year)
         if indexed:
             tick_years.update(plot.loc[plot.sample_kind.isin(["period", "base_year_anchor"]), "year"])
-        data = alt.Data(values=plot.astype(object).where(plot.notna(), None).to_dict("records"))
-        base = alt.Chart(data).encode(
+        data = inline_data(plot, chart_fields)
+        base = alt.Chart().encode(
             x=alt.X("year:Q", title="Source year", scale=alt.Scale(domain=[first_year, last_year], nice=False),
                     axis=alt.Axis(format="d", values=sorted(tick_years), labelOverlap=False)),
             y=alt.Y("value:Q", title=y_title, scale=alt.Scale(zero=False, domain=y_domain if y_domain is not None else alt.Undefined)),
@@ -176,14 +194,25 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
         )
         lines = base.mark_line(strokeWidth=2.4)
         if indexed:
-            lines = lines.transform_filter(
-                alt.FieldOneOfPredicate(field="sample_kind", oneOf=["period", "base_year_anchor"])
+            segments = pd.concat([trajectory["solid"].assign(connection_kind="Production trajectory"),
+                                  trajectory["indexing"].assign(connection_kind="ATB indexing"),
+                                  trajectory["reference"].assign(connection_kind="Reference-only NRCan aggregates")], ignore_index=True)
+            segments["range_label"] = segments.trajectory_powertrain.map(range_label)
+            segment_data = inline_data(segments, ["year", "value", facet, "range_label", "trajectory_id",
+                                                  "connection_kind", *tooltip_columns])
+            line_patterns = {"Production trajectory": [], "ATB indexing": [6, 4],
+                             "Reference-only NRCan aggregates": [2, 3]}
+            line_styles = [name for name in line_patterns if name in set(segments.connection_kind)]
+            segment_base = alt.Chart(segment_data).encode(
+                x=base.encoding.x, y=base.encoding.y, color=color, detail="trajectory_id:N", order="year:Q",
+                tooltip=tooltips,
             )
-            if plot.series.nunique() > 1:
-                methods = sorted(plot.series.unique())
-                lines = lines.encode(strokeDash=alt.StrokeDash("series:N", title="Aggregation method",
-                    scale=alt.Scale(domain=methods, range=[[8, 4] if "Catalogue" in name or "catalogue" in name else [] for name in methods]),
-                    legend=alt.Legend(orient="right", symbolType="stroke", symbolSize=420, labelLimit=310)))
+            lines = segment_base.mark_line(strokeWidth=2.2).encode(
+                strokeDash=alt.StrokeDash("connection_kind:N", title="Trajectory / line evidence", sort=line_styles,
+                    scale=alt.Scale(domain=line_styles, range=[line_patterns[name] for name in line_styles]),
+                    legend=alt.Legend(orient="right", symbolType="stroke", symbolStrokeWidth=3,
+                                      symbolSize=500, labelLimit=310)),
+            )
         else:
             lines = lines.encode(
                 strokeDash=alt.StrokeDash("style_category:N", title=style_title, sort=styles,
@@ -191,7 +220,7 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
                     legend=alt.Legend(orient="right", symbolType="stroke", symbolStrokeWidth=3,
                                       symbolSize=500, labelLimit=310)),
             )
-        marker_order = {"Final prepared period CSV": "diamond", "Recalculated period": "circle", "Production range component": "square",
+        marker_order = {"Final prepared period CSV": "diamond", "Recalculated period": "circle", "NRCan range aggregate": "square",
                         "Cohort fallback median": "cross",
                         "ATB class recalculation": "cross", "NRCan-cohort projection anchor": "triangle-up",
                         "CEUD-cohort projection anchor": "triangle-up",
@@ -212,21 +241,24 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
                 | (alt.datum.year == int(plot.year.min())) | (alt.datum.year == int(plot.year.max()))
                 | (alt.datum.base_label != "")
             )
-        boundary = alt.Chart(data).transform_aggregate(rows="count()").mark_rule(
+        boundary = alt.Chart().transform_aggregate(rows="count()").mark_rule(
             color="#9299a1", strokeWidth=1, strokeDash=[4, 4]).encode(x=alt.datum(base_year))
-        labels = alt.Chart(data).transform_filter(alt.datum.base_label != "")
+        labels = alt.Chart().transform_filter(alt.datum.base_label != "")
         leaders = labels.mark_rule(strokeWidth=.8, opacity=.8).encode(
             x=alt.X("year:Q"), x2="label_year:Q", y=alt.Y("value:Q"), y2="label_value:Q", color=color,
         )
-        text = labels.mark_text(align="left", baseline="middle", dx=4, fontSize=11, fontWeight=600, lineBreak="\n").encode(
-            x=alt.X("label_year:Q"), y=alt.Y("label_value:Q"), text="base_label:N", color=color,
-            tooltip=["powertrain:N", alt.Tooltip("value:Q", format=".5g"), "units:N", "series:N"],
-        )
-        halo = labels.mark_text(align="left", baseline="middle", dx=4, fontSize=11, fontWeight=600, lineBreak="\n",
-                                color="white", stroke="white", strokeWidth=3).encode(
-            x=alt.X("label_year:Q"), y=alt.Y("label_value:Q"), text="base_label:N",
-        )
-        chart = alt.layer(lines, points, boundary, leaders, halo, text).resolve_legend(
+        annotations = []
+        for alignment, offset in (("left", 4), ("right", -4)):
+            selected_labels = labels.transform_filter(alt.datum.label_align == alignment)
+            halo = selected_labels.mark_text(align=alignment, baseline="middle", dx=offset, fontSize=11,
+                    fontWeight=600, lineBreak="\n", color="white", stroke="white", strokeWidth=3).encode(
+                x=alt.X("label_year:Q"), y=alt.Y("label_value:Q"), text="base_label:N")
+            text = selected_labels.mark_text(align=alignment, baseline="middle", dx=offset, fontSize=11,
+                    fontWeight=600, lineBreak="\n").encode(
+                x=alt.X("label_year:Q"), y=alt.Y("label_value:Q"), text="base_label:N", color=color,
+                tooltip=["powertrain:N", alt.Tooltip("value:Q", format=".5g"), "units:N", "series:N"])
+            annotations.extend([halo, text])
+        chart = alt.layer(lines, points, boundary, leaders, *annotations, data=data).resolve_legend(
             strokeDash="independent", shape="independent", color="shared",
         ).properties(width=width, height=290)
         if faceted:
@@ -378,7 +410,7 @@ def distribution_plot(alt, chart_ui, composition_class_columns, composition_view
     representative_years = composition_view["distribution_years"]
     ranked = composition_class_columns(diagnostic, distribution_group.value, composition_view)
     classes = ranked.nrcan_vehicle_class.tolist()
-    year_labels = {year: str(year) + ("*" if year > diagnostic.summary["base_year"] else "")
+    year_labels = {year: str(year) + ("*" if year > diagnostic.summary["atb_reference_year"] else "")
                    for year in representative_years}
     family_panels = []
 
@@ -637,7 +669,7 @@ def composition_plot(alt, chart_ui, composition_class_columns, composition_view,
             selected = families.loc[families.powertrain.eq(powertrain)]
             estimates = summaries.loc[summaries.powertrain.eq(powertrain)]
             panel_years = supported_display_years(pd.concat([catalogue, selected, estimates], ignore_index=True), years)
-            year_labels = [str(year) + ("*" if year > diagnostic.summary["base_year"] else "") for year in panel_years]
+            year_labels = [str(year) + ("*" if year > diagnostic.summary["atb_reference_year"] else "") for year in panel_years]
             records = []
             for item in catalogue.to_dict("records"):
                 records.append({**item, "evidence_kind": kinds[0], "value": item["family_median_mj_per_vkm"],
@@ -918,15 +950,20 @@ def _(diagnostic, mo, range_label):
     mo.md(f"""
     ## OMEGA range composition and projection anchors
 
-    **{bev_anchor}** and **{phev_anchor}** provide the latest historical NRCan cohort
-    anchors. ATB supplies later relative changes and ratios between range variants.
+    **{bev_anchor}** and **{phev_anchor}** provide the historical NRCan cohort
+    anchors through {diagnostic.summary['atb_reference_year']}. ATB supplies later
+    relative changes and ratios between range variants.
     Existing fleet consumption combines independently aggregated range-period values
     using recorded OMEGA shares; ranges can have different observed years.
 
     In consumption units, the projection is
     `C_range(p) = C_NRCan-anchor × C_ATB-range(p) / C_ATB-anchor({diagnostic.summary['atb_reference_year']})`.
     Source year {diagnostic.summary['atb_reference_year']} holds the cohort anchor;
-    subsequent points apply ATB changes from that year. A range variant can change
+    annual 2024–2025 values and later points apply ATB changes from that year.
+    Annual points between reported ATB years use linear consumption interpolation.
+    A 2025 base year combines the observed 2021–2023 cohort with those projected
+    2024–2025 values. Later NRCan observations remain visible in the source views.
+    A range variant can change
     level at the transition because historical NRCan populations and ATB range
     comparisons describe different vehicle mixes.
 
@@ -980,8 +1017,16 @@ def _(composition_view, diagnostic, mo, range_label):
 
     Graphs 3 and 4 span {composition_view['bridge_years'][0]}–{composition_view['bridge_years'][1]}.
     Graph 3 labels the final NRCan source observation beside its multi-year,
-    stock-weighted cohort anchor. Graph 4 applies the recorded cohort anchor and
-    ATB ratios; **Final prepared period CSV** markers identify published parameters.
+    stock-weighted cohort anchor. Graph 4 shows prepared production trajectories
+    alongside dotted **Reference-only NRCan aggregates** for historical ranges.
+    Historical range references end with the existing cohorts. Solid trajectories
+    connect each series' prepared production periods. **Dashed segments show ATB indexing** from the {diagnostic.summary['atb_reference_year']}
+    cohort reference to the first later **new-vehicle parameter of the same range
+    or powertrain**. Existing cohort averages and range-blended representatives
+    retain their solid production path. Triangular reference
+    markers identify the ATB reference levels. Historical reference squares and
+    **Final prepared period CSV** diamonds distinguish calculated aggregates from
+    published parameters. The audit table retains source details and model vintages.
     Detailed ATB-class selections are diagnostic recalculations using parent loads,
     cohort counts and OMEGA shares. Light trucks use passenger service units.
     The grey line marks the build's base year. Tooltips retain source years and vintages.
@@ -989,13 +1034,16 @@ def _(composition_view, diagnostic, mo, range_label):
     Partial historical periods report coverage; wholly empty periods require a
     configured analogue. Missing years are not interpolated.
 
-    **Source year and model vintage differ.** In this {bridge_periods.period_mode} build, historical
-    vintage **{anchor_vintage}** combines the **{anchor_window[0]}–{anchor_window[-1]}** observed cohorts; graph 4 places that
-    point at its last included source year, **{anchor_window[-1]}**. The **{bridge_periods.model[0]}** point is the
-    projection reference, with ATB range ratios relative to the shared **{bev_reference}**
-    anchor for other BEV ranges. No time improvement is applied between that
-    historical endpoint and the reference. The first future parameter has vintage **{bridge_periods.model[0]}**
-    and uses the period source year **{bridge_periods.projection_year(bridge_periods.model[0], legacy_at_end=False)}**.
+    **Source year and model vintage differ.** In this {bridge_periods.period_mode} build,
+    historical vintage **{anchor_vintage}** represents the
+    **{anchor_window[0]}–{anchor_window[-1]}** cohort window. The observed NRCan/CEUD
+    anchor aligns with ATB at **{diagnostic.summary['atb_reference_year']}**.
+    Later annual values apply ATB consumption changes from that aligned year.
+    A 2025 base year therefore combines observed 2021–2023 values with projected
+    2024–2025 values in vintage 2020. Other BEV ranges use ATB range ratios relative
+    to the shared **{bev_reference}** anchor at the same reference year.
+    The first future parameter has vintage **{bridge_periods.model[0]}** and uses
+    source year **{bridge_periods.projection_year(bridge_periods.model[0], legacy_at_end=True)}**.
     """)
     return
 

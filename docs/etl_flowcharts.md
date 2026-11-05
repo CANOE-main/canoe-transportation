@@ -315,7 +315,7 @@ flowchart LR
       Car, light- and medium-truck survival rates`")]
     s3[("`**EIA NEMS model**
       HD truck scrappage rates (Class 7–8)`")]
-    s7[("`**EPA MOVES5 model**
+    s7[("`**EPA MOVES6 model**
       Cars, light and heavy truck survival rates (Table C-1)`")]
   end
 

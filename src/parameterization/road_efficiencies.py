@@ -210,17 +210,23 @@ def _configuration_hybrid_evidence(frame: pd.DataFrame, epa: pd.DataFrame, spec:
     def norm(value):
         return re.sub(normalization, "", str(value).lower())
 
+    @cache
+    def base_identity(make, model):
+        label = re.sub(policy.get("identity_signal_pattern", r"(?!)"), " ", model)
+        # Family normalization is independent of model year. Regional aliases
+        # below still resolve separately for each configured year interval.
+        return catalogue_family(
+            make, " ".join(label.split()), policy.get("family_normalization", spec["composition"]),
+        )
+
     identities = {}
 
     def identity(make, model, year):
         pair = str(make), str(model), int(year)
         if pair not in identities:
-            label = re.sub(policy.get("identity_signal_pattern", r"(?!)"), " ", pair[1])
             # This normalizes auxiliary physical-configuration candidates only;
             # canonical identities are resolved separately from reviewed source links.
-            make_label, model_label = catalogue_family(
-                pair[0], " ".join(label.split()), policy.get("family_normalization", spec["composition"]),
-            )
+            make_label, model_label = base_identity(*pair[:2])
             for alias in policy.get("model_aliases", []):
                 if (alias.get("model_year_from", pair[2]) <= pair[2] <= alias.get("model_year_to", pair[2])
                         and norm(alias["make"]) == norm(make_label)
@@ -234,16 +240,29 @@ def _configuration_hybrid_evidence(frame: pd.DataFrame, epa: pd.DataFrame, spec:
     evidence["make_key"] = evidence.make.fillna("").map(norm)
     evidence["model_key"] = evidence.model.fillna("").map(norm)
     evidence["family_key"] = [identity(*pair)[1] for pair in zip(evidence.make, evidence.model, evidence.year, strict=True)]
-    exact = {key: rows for key, rows in evidence.groupby(["year", "make_key", "model_key"])}
-    families = {key: rows for key, rows in evidence.groupby(["year", "make_key", "family_key"])}
-    cache = {}
+    # Keep candidate positions instead of materializing thousands of tiny
+    # DataFrames. Every predicate below still applies to the same source rows.
+    exact = evidence.groupby(["year", "make_key", "model_key"]).indices
+    families = evidence.groupby(["year", "make_key", "family_key"]).indices
+    resolved = {}
     results = []
     numeric_fields = policy.get("numeric_fields", {})
-    for row in frame.to_dict("records"):
+    numeric_values = {field: pd.to_numeric(evidence[field], errors="coerce").to_numpy(dtype=float, na_value=np.nan)
+                      for field in numeric_fields.values() if field in evidence}
+    technologies = evidence.atvType.fillna("").to_numpy() if "atvType" in evidence else None
+    eligible = (~evidence.atvType.isin(policy.get("excluded_epa_technologies", []))).to_numpy() if technologies is not None else None
+    if eligible is not None and "fuelType1" in evidence:
+        eligible = eligible & evidence.fuelType1.isin(policy.get("gasoline_fuels", [])).to_numpy()
+    drive_masks = {}
+    transmission = policy.get("transmission", {})
+    transmission_properties, transmission_is_text = None, None
+    columns = ["year", spec["fields"]["make"], spec["fields"]["model"], "Transmission", *numeric_fields]
+    columns = list(dict.fromkeys(column for column in columns if column in frame))
+    for row in frame[columns].to_dict("records"):
         make, model = str(row[spec["fields"]["make"]]), str(row[spec["fields"]["model"]])
         cache_key = (row["year"], make, model, str(row.get("Transmission")),
                      *(str(row.get(field)) for field in numeric_fields))
-        if cache_key not in cache:
+        if cache_key not in resolved:
             key = (row["year"], norm(make), norm(model))
             candidates = exact.get(key)
             route = "exact_epa"
@@ -252,50 +271,70 @@ def _configuration_hybrid_evidence(frame: pd.DataFrame, epa: pd.DataFrame, spec:
                 candidates = families.get((row["year"], *family))
                 route = "configuration_epa"
             if candidates is None:
-                cache[cache_key] = (None, False, "unverified_source_fuel")
+                resolved[cache_key] = (None, False, "unverified_source_fuel")
             else:
                 selected = candidates
                 filters = 0
                 for source_field, evidence_field in numeric_fields.items():
                     value = pd.to_numeric(row.get(source_field), errors="coerce")
-                    if pd.notna(value) and evidence_field in selected:
-                        values = pd.to_numeric(selected[evidence_field], errors="coerce")
+                    if pd.notna(value) and evidence_field in numeric_values:
+                        values = numeric_values[evidence_field][selected]
                         tolerance = policy["displacement_tolerance_l"] if evidence_field == "displ" else 0
-                        selected = selected.loc[(values - value).abs().le(tolerance)]
+                        selected = selected[np.abs(values - value) <= tolerance]
                         filters += 1
                 for drive, pattern in policy.get("drive_patterns", {}).items():
-                    if re.search(pattern, model) and "drive" in selected:
-                        labels = policy.get("compatible_drive_labels", {}).get(drive, [drive])
-                        selected = selected.loc[selected.drive.isin(labels)]
+                    if re.search(pattern, model) and "drive" in evidence:
+                        if drive not in drive_masks:
+                            labels = policy.get("compatible_drive_labels", {}).get(drive, [drive])
+                            drive_masks[drive] = evidence.drive.isin(labels).to_numpy()
+                        selected = selected[drive_masks[drive][selected]]
                         break
-                if "fuelType1" in selected:
-                    # EPA FFVs may list gasoline as their conventional fuel.
-                    selected = selected.loc[selected.fuelType1.isin(policy.get("gasoline_fuels", []))]
-                selected = selected.loc[~selected.atvType.isin(policy.get("excluded_epa_technologies", []))]
-                transmission = policy.get("transmission", {})
+                if eligible is None:
+                    # An unmatched/empty source never required this column.
+                    # Preserve the existing missing-column error once matched.
+                    getattr(evidence, "atvType")
+                # EPA FFVs may list gasoline as their conventional fuel.
+                selected = selected[eligible[selected]]
                 code = str(row.get("Transmission", ""))
-                if transmission and code and code != "nan" and "trany" in selected:
-                    epa_transmission = selected.trany.fillna("")
+                if transmission and code and code != "nan" and "trany" in evidence:
                     cvt = bool(re.search(transmission["nrcan_cvt_pattern"], code))
                     manual = bool(re.search(transmission["nrcan_manual_pattern"], code))
-                    selected = selected.loc[
-                        epa_transmission.str.contains(transmission["epa_cvt_pattern"]).eq(cvt)
-                        & epa_transmission.str.contains(transmission["epa_manual_pattern"]).eq(manual)
-                    ]
                     # CVT simulated ratios are not physical gear counts.
                     speed = re.search(r"\d+", code) if not cvt else None
-                    if speed:
-                        speeds = selected.trany.fillna("").str.extract(r"(\d+)(?:-spd|\))", expand=False)
-                        selected = selected.loc[speeds.eq(speed[0])]
-                labels = set(selected.atvType.fillna(""))
+                    if transmission_is_text is None:
+                        text_dtype = (pd.api.types.is_string_dtype(evidence.trany.dtype)
+                                      or pd.api.types.is_object_dtype(evidence.trany.dtype))
+                        transmission_is_text = text_dtype and evidence.trany.dropna().map(lambda value: isinstance(value, str)).all()
+                    if transmission_is_text:
+                        if transmission_properties is None:
+                            labels = evidence.trany.fillna("")
+                            cvt_labels = labels.str.contains(transmission["epa_cvt_pattern"])
+                            manual_labels = labels.str.contains(transmission["epa_manual_pattern"])
+                            speeds = labels.str.extract(r"(\d+)(?:-spd|\))", expand=False).to_numpy(dtype=object, na_value=None)
+                            transmission_properties = (cvt_labels.to_numpy(), manual_labels.to_numpy(), speeds)
+                        cvt_labels, manual_labels, speeds = transmission_properties
+                        selected = selected[(cvt_labels[selected] == cvt) & (manual_labels[selected] == manual)]
+                        if speed:
+                            selected = selected[speeds[selected] == speed[0]]
+                    else:
+                        # Preserve pandas' existing validation and matching for
+                        # malformed or mixed-type transmission evidence.
+                        labels = evidence.iloc[selected].trany.fillna("")
+                        mask = (labels.str.contains(transmission["epa_cvt_pattern"]).eq(cvt)
+                                & labels.str.contains(transmission["epa_manual_pattern"]).eq(manual))
+                        selected = selected[mask.to_numpy(dtype=bool, na_value=False)]
+                        if speed:
+                            speeds = evidence.iloc[selected].trany.fillna("").str.extract(r"(\d+)(?:-spd|\))", expand=False)
+                            selected = selected[speeds.eq(speed[0]).to_numpy(dtype=bool, na_value=False)]
+                labels = set(technologies[selected])
                 if route == "configuration_epa" and filters < len(numeric_fields):
                     labels = set()
                 hybrid = labels == {spec["hybrid_evidence_label"]}
                 conventional = bool(labels) and not labels.intersection({spec["hybrid_evidence_label"], "Plug-in Hybrid", "EV"})
                 value = True if hybrid else False if conventional else None
-                cache[cache_key] = (value, value is None and bool(labels),
+                resolved[cache_key] = (value, value is None and bool(labels),
                                     route + ("_hybrid" if hybrid else "_conventional" if conventional else "_unresolved"))
-        results.append(cache[cache_key])
+        results.append(resolved[cache_key])
     return pd.DataFrame(results, index=frame.index, columns=["epa_hybrid", "ambiguous_epa_match", "epa_classification_method"])
 
 
@@ -867,11 +906,18 @@ class RoadEfficiencyEvidence:
         self.base_year, self.gcam, self.regen = base_year, gcam, regen
         self.pev_projection_anchors = rules["pev_projection_anchors"]
         self.projection_years = tuple(projection_years)
-        self.projection_reference_year = projection_reference_year
+        configured_reference = rules["projection_reference_year"]
+        if (isinstance(configured_reference, bool) or not isinstance(configured_reference, int)
+                or configured_reference <= 0):
+            raise ValueError("Efficiency projection reference must be a positive model year")
+        if projection_reference_year is not None and projection_reference_year != configured_reference:
+            raise ValueError("Efficiency projection reference must match its configured observation year")
+        self.projection_reference_year = min(base_year, configured_reference)
+        self.observation_end_year = self.projection_reference_year
         self.cohort_stock = None if cohort_stock is None else cohort_stock.copy(deep=True)
         for key, expected in {
             "ldv_projection_baseline": "latest_observed_cohort",
-            "ldv_projection_reference": "first_model_period",
+            "ldv_projection_reference": "aligned_observation_year",
             "ldv_future_load_factor": "anchor_cohort",
             "projection_missing_stock": "configured_analogue",
         }.items():
@@ -884,14 +930,14 @@ class RoadEfficiencyEvidence:
             for family, anchor in self.pev_projection_anchors.items()
         ):
             raise ValueError("PEV projection anchors must name one configured range per family")
-        if rules["historical_rating_observations"] != "through_base_year":
+        if rules["historical_rating_observations"] != "through_projection_reference_year":
             raise ValueError("Unsupported historical ratings observation window")
         if (
             rules["historical_rating_baseline"]
-            != "latest_own_observation_indexed_to_base_year"
+            != "latest_own_observation_indexed_to_reference_year"
         ):
             raise ValueError("Unsupported historical ratings baseline treatment")
-        rated = rating_audit.loc[rating_audit.year.le(base_year)].copy()
+        rated = rating_audit.loc[rating_audit.year.le(self.observation_end_year)].copy()
         rated["weighted_native"] = rated.native_class_mean * rated.weight
         rated["weighted_mj"] = rated.class_mean_mj_per_vkm * rated.weight
         self.ratings = rated.groupby(
@@ -903,21 +949,52 @@ class RoadEfficiencyEvidence:
         self.atb = atb_audit.groupby(
             ["region", "mode", "powertrain", "year"], as_index=False
         ).weighted_consumption.sum()
+        self._rating_positions = self.ratings.groupby(["ceud_class", "powertrain"]).indices
+        self._regional_rating_positions = (
+            self.ratings.groupby(["region", "ceud_class", "powertrain"]).indices
+            if "region" in self.ratings else None
+        )
+        self._atb_positions = self.atb.groupby(["region", "mode", "powertrain"]).indices
         self.findings: set[tuple[str, str, str, int, str]] = set()
         # Instance-local caches cannot retain evidence from unrelated preparation runs.
         self.atb_value = cache(self.atb_value)
         self.rating = cache(self.rating)
         self.projection_anchor = cache(self.projection_anchor)
         self.derive_consumption = cache(self.derive_consumption)
+        # CEUD and load evidence stay fixed within the same preparation run.
+        self._load_value = cache(self._load_value)
+        self._ceud_series = cache(self._ceud_series)
+        self._ceud_value = cache(self._ceud_value)
+
+    def _load_value(self, region: str, mode: str, year: int) -> float:
+        columns = [name for name in ("year", "load_factor") if name in self.loads]
+        series = self.loads.loc[self.loads.region.eq(region) & self.loads["mode"].eq(mode), columns]
+        return require_observed_value(series, year, "load_factor")
+
+    def _ceud_series(self, region: str, table: int, label: str, unit: str) -> pd.DataFrame:
+        # Source-native metadata is retained on self.ceud. Selecting only the
+        # numerical contract avoids copying wide string blocks for every year.
+        columns = [name for name in ("table_id", "raw_series", "unit", "year", "value") if name in self.ceud]
+        regional = self.ceud.loc[self.ceud.region.eq(region), columns]
+        return ceud_series(regional, table, label, unit)
+
+    def _ceud_value(self, region: str, table: int, label: str, unit: str, year: int) -> float:
+        return require_observed_value(self._ceud_series(region, table, label, unit), year, "value")
+
+    def _atb_series(self, region: str, mode: str, powertrain: str) -> pd.DataFrame:
+        # Positions are source-group metadata. Read current values so callers
+        # clearing atb_value after a numerical sensitivity see that change.
+        return self.atb.iloc[self._atb_positions.get((region, mode, powertrain), [])]
 
     def atb_value(self, region: str, mode: str, powertrain: str, year: int) -> float:
-        series = self.atb.loc[
-            self.atb.region.eq(region)
-            & self.atb["mode"].eq(mode)
-            & self.atb.powertrain.eq(powertrain)
-        ]
+        series = self._atb_series(region, mode, powertrain)
         value = observed_value(series, year, "weighted_consumption")
         if value is None:
+            if (self.rules["road_classes"][mode]["pathway"] in {"ldv", "mhdv"}
+                    and year > self.projection_reference_year):
+                if self.rules["projection_interpolation"] != "linear_consumption":
+                    raise ValueError("Unsupported ATB bridge interpolation")
+                return interpolate(series, year, "weighted_consumption")
             raise ValueError(f"Missing exact ATB consumption: {region}/{mode}/{powertrain}/{year}")
         return value
 
@@ -925,15 +1002,14 @@ class RoadEfficiencyEvidence:
         self, mode: str, powertrain: str, year: int, column: str, *, region: str | None = None,
     ) -> float | None:
         weights = self.rules["road_classes"][mode]["weights"]
-        series = self.ratings.loc[
-            self.ratings.ceud_class.eq(weights) & self.ratings.powertrain.eq(powertrain)
-        ]
+        positions = (self._regional_rating_positions.get((region, weights, powertrain), [])
+                     if region is not None and self._regional_rating_positions is not None
+                     else self._rating_positions.get((weights, powertrain), []))
+        series = self.ratings.iloc[positions]
         if "region" in series:
             if region is None:
                 if series.region.nunique() > 1:
                     raise ValueError("Regional composition requires an explicit region")
-            else:
-                series = series.loc[series.region.eq(region)]
         return observed_value(series, year, column)
 
     def period_observations(
@@ -984,7 +1060,8 @@ class RoadEfficiencyEvidence:
     ) -> tuple[float, str]:
         if powertrain in seen:
             raise ValueError(f"Cyclic/missing LDV rating analogue: {mode}/{powertrain}")
-        value = self.rating(mode, powertrain, self.base_year, "mj", region=region)
+        base_year = self.observation_end_year
+        value = self.rating(mode, powertrain, base_year, "mj", region=region)
         if value is not None:
             return value, powertrain
         observed = self.ratings.loc[
@@ -997,15 +1074,15 @@ class RoadEfficiencyEvidence:
         if not observed.empty:
             latest = observed.loc[observed.year.idxmax()]
             index, evidence = self.historical_rating_ratio(
-                mode, powertrain, self.base_year, int(latest.year), region=region,
+                mode, powertrain, base_year, int(latest.year), region=region,
             )
             self.findings.add(
                 (
                     region,
                     mode,
                     powertrain,
-                    self.base_year,
-                    f"latest_own_rating_year={int(latest.year)};base_year_index={evidence}",
+                    base_year,
+                    f"latest_own_rating_year={int(latest.year)};reference_year_index={evidence}",
                 )
             )
             return float(latest.mj) * index, evidence
@@ -1014,8 +1091,8 @@ class RoadEfficiencyEvidence:
             analogue = self.rules["ldv_incumbent_fallback"]
         base, evidence = self.ldv_baseline(region, mode, analogue, (*seen, powertrain))
         return base * self.atb_value(
-            region, mode, powertrain, self.base_year
-        ) / self.atb_value(region, mode, analogue, self.base_year), evidence
+            region, mode, powertrain, base_year
+        ) / self.atb_value(region, mode, analogue, base_year), evidence
 
     def projection_anchor(self, region: str, mode: str, powertrain: str) -> dict:
         """Use observed annual consumption and raw cohort counts for projection.
@@ -1028,15 +1105,20 @@ class RoadEfficiencyEvidence:
         if pathway not in {"ldv", "mhdv"}:
             raise ValueError(f"Cohort projection anchors apply only to LDV and MD/HD trucks: {mode}")
         label = "LDV" if pathway == "ldv" else "MD/HD"
-        years = self.projection_years
+        candidate_years = self.projection_years
+        if (not candidate_years or len(set(candidate_years)) != len(candidate_years)
+                or any(not isinstance(year, (int, np.integer)) or isinstance(year, bool)
+                       or year < 1 or year > self.base_year for year in candidate_years)):
+            raise ValueError(f"{label} projection requires distinct observed cohort years through base_year")
+        years = tuple(year for year in candidate_years if year <= self.observation_end_year)
         if (not years or len(set(years)) != len(years)
                 or any(not isinstance(year, (int, np.integer)) or isinstance(year, bool)
                        or year < 1 or year > self.base_year for year in years)):
             raise ValueError(f"{label} projection requires distinct observed cohort years through base_year")
         reference = self.projection_reference_year
         if (not isinstance(reference, (int, np.integer)) or isinstance(reference, bool)
-                or reference <= self.base_year):
-            raise ValueError(f"{label} projection requires its first model period after base_year")
+                or reference != self.observation_end_year):
+            raise ValueError(f"{label} projection requires its aligned observation reference year")
         required = {"region", "road_class", "powertrain", "vintage_year", "raw_capacity"}
         if self.cohort_stock is None or not required.issubset(self.cohort_stock):
             raise ValueError(f"{label} projection requires registered raw cohort stock evidence")
@@ -1127,16 +1209,13 @@ class RoadEfficiencyEvidence:
         """Keep energy in the numerator until the caller's final service conversion."""
         spec, base = self.rules["road_classes"][mode], self.base_year
         pathway = spec["pathway"]
-        load = None if pathway in {"ldv", "mhdv"} and year > base else require_observed_value(
-            self.loads.loc[self.loads.region.eq(region) & self.loads["mode"].eq(mode)],
-            min(year, base),
-            "load_factor",
-        )
+        bridge_year = self.observation_end_year
+        load = None if pathway in {"ldv", "mhdv"} and year > bridge_year else self._load_value(region, mode, min(year, base))
         native, native_unit, index, analogue = None, "MJ/vkm", 1.0, powertrain
         index_reference = powertrain
         source_years, projection_details = {}, {}
         if pathway == "ldv":
-            if year <= base:
+            if year <= bridge_year:
                 observed = self.rating(mode, powertrain, year, "mj", region=region)
                 if observed is not None:
                     consumption, treatment = observed, "NRCan_observed_class_weighted"
@@ -1144,7 +1223,7 @@ class RoadEfficiencyEvidence:
                     if not allow_analogue:
                         return None
                     proxy = self.historical_rating_ratio(
-                        mode, powertrain, year, base, missing_ok=True, region=region,
+                        mode, powertrain, year, bridge_year, missing_ok=True, region=region,
                     )
                     if proxy is None:
                         return None
@@ -1168,12 +1247,13 @@ class RoadEfficiencyEvidence:
                     "projection_stock_powertrain": anchor["stock_powertrain"],
                     "projection_stock_coverage": anchor["cohort_stock_coverage"],
                     "projection_stock_proxy": anchor["stock_proxy"],
+                    "projection_interpolation": self.rules["projection_interpolation"],
                 }
             native = consumption
         elif pathway == "mhdv":
             truck = self.rules["mhdv_fleet_baseline"]
             for key, expected in {
-                "emerging_ratio_year": "first_model_period",
+                "emerging_ratio_year": "aligned_observation_year",
                 "future_baseline": "latest_observed_cohort",
                 "future_load_factor": "anchor_cohort",
                 "missing_stock": "reference_fuel_cohort",
@@ -1181,22 +1261,18 @@ class RoadEfficiencyEvidence:
                 if truck[key] != expected:
                     raise ValueError(f"Unsupported MD/HD fleet baseline {key}: {truck[key]}")
             reference = self.projection_reference_year
-            if year <= base:
+            if year <= bridge_year:
                 observed = powertrain in truck["observed_fuels"][mode]
                 fuel = powertrain if observed else truck["reference_fuel"]
-                series = ceud_series(
-                    self.ceud.loc[self.ceud.region.eq(region)],
-                    spec["stock_table"],
-                    spec["cs_prefix"] + "|" + self.rules["fuel_series"][fuel],
-                    "L/100 km",
-                )
+                label = spec["cs_prefix"] + "|" + self.rules["fuel_series"][fuel]
+                self._ceud_series(region, spec["stock_table"], label, "L/100 km")
                 if self.conversions is None:
                     raise ValueError("MD/HD fleet consumption requires configured fuel heating values")
                 hhv = positive(self.conversions["fuel_hhv"][fuel + "_mj_per_litre"], "CEUD fuel HHV")
-                consumption = require_observed_value(series, year, "value") * hhv * self.conversions["service"]["per_100_km_to_per_km"]
+                consumption = self._ceud_value(region, spec["stock_table"], label, "L/100 km", year) * hhv * self.conversions["service"]["per_100_km_to_per_km"]
                 if not observed:
-                    if not isinstance(reference, (int, np.integer)) or isinstance(reference, bool) or reference <= base:
-                        raise ValueError("MD/HD emerging history requires its first model period after base_year")
+                    if not isinstance(reference, (int, np.integer)) or isinstance(reference, bool) or reference != bridge_year:
+                        raise ValueError("MD/HD emerging history requires its aligned observation reference year")
                     index = self.atb_value(region, mode, powertrain, reference) / self.atb_value(region, mode, fuel, reference)
                     consumption *= index
                     projection_details["projection_reference_year"] = int(reference)
@@ -1219,6 +1295,7 @@ class RoadEfficiencyEvidence:
                     "projection_stock_coverage": anchor["cohort_stock_coverage"],
                     "projection_stock_proxy": anchor["stock_proxy"],
                     "projection_index_powertrain": index_powertrain,
+                    "projection_interpolation": self.rules["projection_interpolation"],
                 }
             native = consumption
         elif pathway in {"bus", "intercity"}:
@@ -1259,23 +1336,11 @@ class RoadEfficiencyEvidence:
                     region, selected_mode, powertrain, source_year
                 )
             if year <= base:
-                series = ceud_series(
-                    self.ceud.loc[self.ceud.region.eq(region)],
-                    spec["intensity_table"],
-                    spec["intensity"],
-                    "MJ/Pkm",
-                )
                 historic, reference = (
-                    require_observed_value(series, year, "value"),
-                    require_observed_value(series, base, "value"),
+                    self._ceud_value(region, spec["intensity_table"], spec["intensity"], "MJ/Pkm", year),
+                    self._ceud_value(region, spec["intensity_table"], spec["intensity"], "MJ/Pkm", base),
                 )
-                base_load = require_observed_value(
-                    self.loads.loc[
-                        self.loads.region.eq(region) & self.loads["mode"].eq(mode)
-                    ],
-                    base,
-                    "load_factor",
-                )
+                base_load = self._load_value(region, mode, base)
                 index = historic / reference
                 consumption *= index * load / base_load
             native, treatment = (
@@ -1285,13 +1350,7 @@ class RoadEfficiencyEvidence:
                 else "ATB_transit_REGEN_intercity_relative",
             )
         elif pathway == "motorcycle":
-            series = ceud_series(
-                self.ceud.loc[self.ceud.region.eq(region)],
-                spec["intensity_table"],
-                spec["intensity"],
-                "MJ/Pkm",
-            )
-            intensity = require_observed_value(series, min(year, base), "value")
+            intensity = self._ceud_value(region, spec["intensity_table"], spec["intensity"], "MJ/Pkm", min(year, base))
             if year > base:
                 source = self.gcam.loc[self.gcam.source_variable.eq("intensity")]
                 if set(source.source_unit) != {"MJ/vkm"}:
@@ -1316,6 +1375,15 @@ class RoadEfficiencyEvidence:
             treatment = "CEUD_service_intensity_GCAM_vehicle_intensity_index"
         else:
             raise ValueError(f"Unsupported road pathway: {pathway}")
+        if pathway in {"ldv", "mhdv"} and year > bridge_year:
+            index_powertrain = projection_details.get("projection_index_powertrain", powertrain)
+            available = self._atb_series(region, mode, index_powertrain)["year"]
+            first = int(available.loc[available.le(year)].max())
+            last = int(available.loc[available.ge(year)].min())
+            projection_source_years = [first] if first == last else [first, last]
+            weights = [1.0] if first == last else [(last - year) / (last - first), (year - first) / (last - first)]
+            projection_details["projection_atb_source_years"] = projection_source_years
+            projection_details["projection_atb_source_weights"] = weights
         if analogue != index_reference:
             self.findings.add(
                 (

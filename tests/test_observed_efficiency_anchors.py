@@ -18,7 +18,7 @@ def rules():
 
 
 def evidence(rules, *, ratings=None, counts=None, atb=None, years=(2021, 2022, 2023),
-             reference=2025, region="ON", stock_region=None, mode="cars"):
+             reference=2023, region="ON", stock_region=None, mode="cars", base_year=2023):
     ratings = ratings if ratings is not None else {"gasoline": {2021: 10, 2022: 20, 2023: 30, 2025: 0.01}}
     counts = counts if counts is not None else {"gasoline": {2021: 1, 2022: 2, 2023: 7}}
     atb = atb if atb is not None else {"gasoline": {2020: 200, 2023: 150, 2025: 100, 2030: 80}}
@@ -43,12 +43,12 @@ def evidence(rules, *, ratings=None, counts=None, atb=None, years=(2021, 2022, 2
     ], columns=["region", "road_class", "powertrain", "vintage_year", "raw_capacity"])
     return RoadEfficiencyEvidence(
         ceud=pd.DataFrame(), loads=loads, rating_audit=rating_frame, atb_audit=atb_frame,
-        gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=2023, rules=rules,
+        gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=base_year, rules=rules,
         projection_years=years, projection_reference_year=reference, cohort_stock=stock,
     )
 
 
-def test_future_incumbent_uses_unequal_observed_cohorts_and_atb_2025_reference(rules):
+def test_future_incumbent_uses_unequal_observed_cohorts_and_aligned_2023_reference(rules):
     result = evidence(rules)
     anchor = result.projection_anchor("ON", "cars", "gasoline")
     assert anchor["native_intensity"] == pytest.approx(26)
@@ -56,19 +56,44 @@ def test_future_incumbent_uses_unequal_observed_cohorts_and_atb_2025_reference(r
     assert anchor["weights"] == {2021: 0.1, 2022: 0.2, 2023: 0.7}
     assert anchor["candidate_years"] == anchor["included_years"] == [2021, 2022, 2023]
     assert anchor["cohort_stock_coverage"] == 1
-    assert anchor["atb_reference_year"] == 2025
+    assert anchor["atb_reference_year"] == 2023
     assert not anchor["stock_proxy"]
     assert result.ratings.year.max() == 2023
     first = result.derive_consumption("ON", "cars", "gasoline", 2025)
     future = result.derive_consumption("ON", "cars", "gasoline", 2030)
-    assert first["native_intensity"] == pytest.approx(26)
-    assert future["native_intensity"] == pytest.approx(26 * 80 / 100)
+    assert first["native_intensity"] == pytest.approx(26 * 100 / 150)
+    assert future["native_intensity"] == pytest.approx(26 * 80 / 150)
     assert first["load_factor"] == future["load_factor"] == pytest.approx(2.6)
-    assert future["projection_reference_year"] == 2025
+    assert future["projection_reference_year"] == 2023
     assert future["projection_source_years"] == [2021, 2022, 2023]
     assert future["treatment"] == "NRCan_cohort_anchor_ATB_relative_projection"
     assert "historical_index_anchor" not in future
     json.dumps(anchor)
+
+
+def test_extended_base_projects_2024_2025_without_sparse_later_rating_bias(rules):
+    inputs = evidence(
+        rules, base_year=2025, years=(2021, 2022, 2023, 2024, 2025),
+        ratings={"gasoline": {2021: 10, 2022: 20, 2023: 30, 2024: .001, 2025: .0001}},
+        counts={"gasoline": {2021: 1, 2022: 2, 2023: 7, 2024: 1000, 2025: 1000}},
+    )
+    anchor = inputs.projection_anchor("ON", "cars", "gasoline")
+    assert anchor["included_years"] == [2021, 2022, 2023]
+    assert anchor["native_intensity"] == 26
+    assert inputs.ratings.year.max() == 2023
+    assert inputs.derive_consumption("ON", "cars", "gasoline", 2023)["native_intensity"] == 30
+    projected = inputs.derive_consumption("ON", "cars", "gasoline", 2024)
+    assert projected["native_intensity"] == pytest.approx(26 * 125 / 150)
+    assert projected["projection_atb_source_years"] == [2023, 2025]
+    assert projected["projection_atb_source_weights"] == [.5, .5]
+    assert projected["load_factor"] == pytest.approx(2.6)
+    assert inputs.derive_consumption("ON", "cars", "gasoline", 2025)["native_intensity"] == pytest.approx(26 * 100 / 150)
+    assert inputs.derive_consumption("ON", "cars", "gasoline", 2030)["native_intensity"] == pytest.approx(26 * 80 / 150)
+
+
+def test_projection_reference_cannot_reintroduce_first_model_period_anchor(rules):
+    with pytest.raises(ValueError, match="configured observation year"):
+        evidence(rules, reference=2025)
 
 
 @pytest.mark.parametrize("family,anchor_powertrain,alternative", [
@@ -82,7 +107,7 @@ def test_each_range_keeps_own_history_and_future_ranges_use_same_year_atb_ratio(
         rules,
         ratings={anchor_powertrain: {2021: 1, 2022: 2, 2023: 4}, alternative: {2021: 9, 2022: 8, 2023: 7}},
         counts={family: {2021: 1, 2022: 2, 2023: 7}},
-        atb={anchor_powertrain: {2025: 100, 2030: 80}, alternative: {2025: 60, 2030: 40}},
+        atb={anchor_powertrain: {2023: 100, 2025: 100, 2030: 80}, alternative: {2023: 60, 2025: 60, 2030: 40}},
     )
     assert result.derive_consumption("ON", "cars", alternative, 2021)["native_intensity"] == 9
     assert result.derive_consumption("ON", "cars", anchor_powertrain, 2021)["native_intensity"] == 1
@@ -107,7 +132,7 @@ def test_ranges_do_not_require_a_common_historical_observation_year(rules):
     result = evidence(
         rules, ratings={"bev_300_miles": {2021: 2, 2023: 1}, "bev_150_miles": {2022: 3}},
         counts={"bev": {2021: 1, 2022: 2, 2023: 7}},
-        atb={"bev_300_miles": {2025: 100, 2030: 80}, "bev_150_miles": {2025: 60, 2030: 40}},
+        atb={"bev_300_miles": {2023: 100, 2025: 100, 2030: 80}, "bev_150_miles": {2023: 60, 2025: 60, 2030: 40}},
     )
     anchor_history = result.period_observations("ON", "cars", "bev_300_miles", [2021, 2022, 2023])
     other_history = result.period_observations("ON", "cars", "bev_150_miles", [2021, 2022, 2023])
@@ -132,7 +157,7 @@ def test_wholly_empty_rating_bin_uses_explicit_existing_analogue_policy(rules):
     result = evidence(
         rules, ratings={"diesel": {2020: 10}, "gasoline": {2020: 10, 2021: 12, 2022: 14, 2023: 16}},
         counts={"diesel": {2021: 1, 2022: 2, 2023: 7}},
-        atb={"diesel": {2025: 100, 2030: 80}},
+        atb={"diesel": {2023: 100, 2025: 100, 2030: 80}},
     )
     assert result.period_observations("ON", "cars", "diesel", [2021, 2022, 2023]) == {}
     anchor = result.projection_anchor("ON", "cars", "diesel")
@@ -145,7 +170,7 @@ def test_wholly_empty_rating_bin_uses_explicit_existing_analogue_policy(rules):
 def test_missing_own_stock_uses_configured_analogue_counts_and_reports_proxy(rules):
     result = evidence(
         rules, ratings={"fcev": {2021: 2, 2022: 3, 2023: 4}},
-        atb={"fcev": {2025: 100, 2030: 80}},
+        atb={"fcev": {2023: 100, 2025: 100, 2030: 80}},
     )
     anchor = result.projection_anchor("ON", "cars", "fcev")
     assert anchor["stock_powertrain"] == "gasoline"
@@ -170,7 +195,7 @@ def test_exhausted_observation_coverage_has_a_narrow_diagnostic_signal(rules):
 def test_positive_stock_without_rating_overlap_does_not_switch_weight_source(rules):
     result = evidence(rules, ratings={"diesel": {2021: 10, 2023: 30}},
                       counts={"diesel": {2022: 8}, "gasoline": {2021: 1, 2023: 7}},
-                      atb={"diesel": {2025: 100, 2030: 80}})
+                      atb={"diesel": {2023: 100, 2025: 100, 2030: 80}})
     with pytest.raises(ValueError, match="No overlap"):
         result.projection_anchor("ON", "cars", "diesel")
 
@@ -180,8 +205,8 @@ def test_stock_region_aliases_follow_the_existing_output_mapping(rules):
     assert result.projection_anchor("NL", "cars", "gasoline")["native_intensity"] == pytest.approx(26)
 
 
-@pytest.mark.parametrize("years,reference", [((), 2025), ((2021, 2021), 2025), ((2023, 2024), 2025), ((2023,), None), ((2023,), 2023)])
-def test_future_requires_explicit_observed_cohort_window_and_model_reference(rules, years, reference):
+@pytest.mark.parametrize("years,reference", [((), 2023), ((2021, 2021), 2023), ((2023, 2024), 2023)])
+def test_future_requires_valid_observed_cohort_window(rules, years, reference):
     result = evidence(rules, years=years, reference=reference)
     assert result.derive_consumption("ON", "cars", "gasoline", 2023)["native_intensity"] == 30
     with pytest.raises(ValueError, match="LDV projection requires"):

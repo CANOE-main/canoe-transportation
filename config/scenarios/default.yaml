@@ -15,7 +15,7 @@ geography:
 periods:
   # prospective: interval-end inputs; legacy: prior timing and vintage bins.
   period_mode: prospective
-  base_year: 2023  # Latest observed stock/demand year.
+  base_year: 2025  # Latest observed stock/demand year.
   # Existing-capacity vintages; legacy mode must include base_year.
   existing: [2000, 2005, 2010, 2015, 2020]
   model: [2025, 2030, 2035, 2040, 2045]
@@ -23,7 +23,7 @@ periods:
 
 outputs:
   # Use distinct database, report and log names per scenario.
-  sqlite_name: canoe_transport_baseline_no-survival_range-archetype.sqlite
+  sqlite_name: canoe_transport_baseline.sqlite
   validation_report: outputs/validation/baseline_database_bootstrap.json
   setup_log: outputs/logs/setup_smoke_baseline.json
 
@@ -36,7 +36,7 @@ comparison:
   include_provenance: false  # Scenario mode: also compare source IDs, DQ and notes.
 
 sources:
-  nrcan_ceud_beyond_observed: error  # error | constant; source edition remains unchanged.
+  nrcan_ceud_beyond_observed: constant  # error | constant | extrapolated; source edition remains unchanged.
   # Registered source years/editions to replay.
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
@@ -68,8 +68,8 @@ economics:
 
 lifetimes:
   survival_curves: false  # true: road curves; false: road median lifetimes.
-  # NEMS or MOVES5; controls heavy-truck medians and curves.
-  heavy_truck_survival_source: epa_moves_heavy_truck_survival  # eia_nems_hd_truck_scrappage | epa_moves_heavy_truck_survival
+  # NHTSA+NEMS or MOVES for cars and trucks; medium trucks share heavy MOVES rates.
+  road_lifetime_survival_source: moves  # nhtsa_nems | moves
   survival_curve_max_age: 29  # Curve mode: maximum road survival/stock age.
 
 existing_capacity:
@@ -84,7 +84,7 @@ demand:
 road_utilization:
   # Age-dependent VKT is audit-only until the SQLite schema supports it.
   vkt_schedules: false
-  vkt_max_age: 25  # Age limit when VKT schedules are enabled.
+  vkt_max_age: 29  # Age limit when VKT schedules are enabled.
 
 efficiencies:
   atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
@@ -103,7 +103,7 @@ charging_profiles:
 
 BEV_PHEV_range_representation:
   # New PEVs: constrain minimum range shares or aggregate by range subclass.
-  mode: representative_archetype  # none | new_capacity_shares | representative_archetype
+  mode: new_capacity_shares  # none | new_capacity_shares | representative_archetype
 
 # Road vehicle-cycle emissions.
 embodied_emissions: true

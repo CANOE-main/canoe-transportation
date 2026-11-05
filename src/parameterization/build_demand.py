@@ -111,6 +111,10 @@ def prepare_demand_rows(
     regions = list(scenario.geography.regions)
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
     road_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
+    road_rules = {**road_rules, "car_extrapolation": {
+        **road_rules["car_extrapolation"],
+        **load_harmonization_rules(bundle, "ceud_inputs")["cagr"],
+    }}
     offroad_rules = load_harmonization_rules(bundle, "offroad_stocks_and_demands")["demand"]
     energy_only = offroad_rules.get("energy_only_series", {})
     cer_rules = load_harmonization_rules(bundle, "cer_enerfuture")
@@ -178,7 +182,7 @@ def prepare_demand_rows(
     variant = {"base_year": base_year, "periods": periods, "step": step,
                "cer_edition": edition, "cer_scenario": selected_scenario,
                "input_content_digest": digest,
-               "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed}
+               "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed, "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None}
     source_ids = source_id_mapping(bundle.sources)
     cer_context = resolve_provenance(bundle.sources, source_key=CER,
                                      component_key="macro-indicators",

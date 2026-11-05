@@ -205,7 +205,7 @@ def test_loader_uses_captured_parameter_bundle_without_live_fallback(snapshot, m
 def test_interpretation_uses_recorded_switches(snapshot, monkeypatch):
     recorded, _ = snapshot
     lifetimes = recorded.bundle.scenario.lifetimes.model_copy(update={
-        "heavy_truck_survival_source": "epa_moves_heavy_truck_survival",
+        "road_lifetime_survival_source": "moves",
     })
     recorded.bundle = replace(recorded.bundle, scenario=recorded.bundle.scenario.model_copy(update={
         "lifetimes": lifetimes,
@@ -215,8 +215,8 @@ def test_interpretation_uses_recorded_switches(snapshot, monkeypatch):
     assert loaded["build_metadata"] is recorded.metadata
     assert loaded["heavy_truck_selected_source"] == "epa_moves_heavy_truck_survival"
     assert loaded["scenario_switches"].set_index("switch").loc[
-        "heavy_truck_survival_source", "value"
-    ] == "epa_moves_heavy_truck_survival"
+        "road_lifetime_survival_source", "value"
+    ] == "moves"
 
 
 def test_notebook_exposes_reload_without_reader_scenario_selection():

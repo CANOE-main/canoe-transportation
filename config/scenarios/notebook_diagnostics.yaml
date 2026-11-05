@@ -29,7 +29,7 @@ comparison:
   include_provenance: false
 
 sources:
-  nrcan_ceud_beyond_observed: error  # error | constant; source edition remains unchanged.
+  nrcan_ceud_beyond_observed: constant  # error | constant | extrapolated; source edition remains unchanged.
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
     nrcan_ceud_transport_national: {year: 2023}
@@ -59,7 +59,7 @@ economics:
 
 lifetimes:
   survival_curves: true
-  heavy_truck_survival_source: eia_nems_hd_truck_scrappage
+  road_lifetime_survival_source: nhtsa_nems  # nhtsa_nems | moves
   survival_curve_max_age: 29
 
 existing_capacity:

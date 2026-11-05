@@ -1253,22 +1253,25 @@ def parse_moves5_survival_table_text(
     rules: dict[str, Any],
     checksum: str,
 ) -> pd.DataFrame:
-    """Extract the configured heavy-duty column as annual conditional survival."""
+    """Extract configured Table C-1 road classes as annual conditional survival."""
     normalized = _normalize_whitespace(text)
     title = _normalize_whitespace(str(rules["table_title"]))
     if title not in normalized:
-        raise AssortedSourcesError(f"MOVES5 PDF missing table title {title!r}")
+        raise AssortedSourcesError(f"MOVES PDF missing table title {title!r}")
     for fragment in rules["class_header_fragments"]:
         if _normalize_whitespace(str(fragment)) not in normalized:
             raise AssortedSourcesError(
-                f"MOVES5 heavy-duty table header changed: {fragment!r}"
+                f"MOVES table header changed: {fragment!r}"
             )
     if text.strip().splitlines()[-1].strip() != str(rules["source_page"]):
-        raise AssortedSourcesError("MOVES5 table printed page number changed")
+        raise AssortedSourcesError("MOVES table printed page number changed")
     rate_count = int(rules["expected_rate_columns"])
-    selected_column = int(rules["selected_rate_column"])
-    if not 1 <= selected_column <= rate_count:
-        raise AssortedSourcesError("MOVES5 selected rate column is outside the table")
+    columns = rules["selected_rate_columns"]
+    classes = rules["class_columns"]
+    components = rules["component_ids"]
+    if (set(columns) != set(classes) or set(columns) != set(components)
+            or any(not 1 <= int(column) <= rate_count for column in columns.values())):
+        raise AssortedSourcesError("MOVES selected class/rate columns are incomplete or outside the table")
     number = r"[+-]?\d+(?:\.\d+)?"
     row_pattern = re.compile(
         rf"^\s*(\d+)\s+({number}(?:\s+{number}){{{rate_count - 1}}})\s*$",
@@ -1281,22 +1284,21 @@ def parse_moves5_survival_table_text(
     actual_ages = [age for age, _ in matched]
     if actual_ages != expected_ages:
         raise AssortedSourcesError(
-            f"MOVES5 age coverage changed: expected {expected_ages}, got {actual_ages}"
+            f"MOVES age coverage changed: expected {expected_ages}, got {actual_ages}"
         )
     bounds = rules["value_bounds"]
     records = []
-    for age, raw_rates in matched:
-        raw = raw_rates[selected_column - 1]
-        rate = _numeric(
-            raw,
-            context=f"MOVES5 annual survival rate age {age}",
-            minimum=float(bounds["minimum"]),
-            maximum=float(bounds["maximum"]),
-        )
-        records.append(
-            {
+    for class_key, column in columns.items():
+        for age, raw_rates in matched:
+            raw = raw_rates[int(column) - 1]
+            rate = _numeric(
+                raw, context=f"MOVES {classes[class_key]} annual survival rate age {age}",
+                minimum=float(bounds["minimum"]), maximum=float(bounds["maximum"]),
+            )
+            records.append({
                 **_provenance(request, checksum),
-                "source_vehicle_class_label": str(rules["source_vehicle_class_label"]),
+                "component_id": str(components[class_key]),
+                "source_vehicle_class_label": str(classes[class_key]),
                 "vehicle_age": age,
                 "annual_survival_rate": rate,
                 "unit": str(rules["unit"]),
@@ -1306,8 +1308,7 @@ def parse_moves5_survival_table_text(
                 "source_table": str(rules["source_table"]),
                 "source_table_title": str(rules["table_title"]),
                 "raw_value": raw,
-            }
-        )
+            })
     return pd.DataFrame(records)
 
 
@@ -1321,25 +1322,25 @@ def normalize_moves5_survival(
     digest = checksum or validate_cached_identity(request)
     pdf_page = int(rules["pdf_page"])
     if pdf_page < 1:
-        raise AssortedSourcesError("MOVES5 PDF page must use a positive one-based number")
+        raise AssortedSourcesError("MOVES PDF page must use a positive one-based number")
     try:
         reader = PdfReader(request.cache_path)
         if reader.is_encrypted and reader.decrypt("") == 0:
-            raise AssortedSourcesError(f"MOVES5 PDF is encrypted: {request.cache_path}")
+            raise AssortedSourcesError(f"MOVES PDF is encrypted: {request.cache_path}")
         if len(reader.pages) < pdf_page:
-            raise AssortedSourcesError(f"MOVES5 PDF missing configured page {pdf_page}")
+            raise AssortedSourcesError(f"MOVES PDF missing configured page {pdf_page}")
         frontmatter = _normalize_whitespace(
             " ".join(page.extract_text() or "" for page in reader.pages[:2])
         )
         for label in (rules["document_title"], rules["document_id"]):
             if _normalize_whitespace(str(label)) not in frontmatter:
-                raise AssortedSourcesError(f"MOVES5 PDF missing document identity {label!r}")
+                raise AssortedSourcesError(f"MOVES PDF missing document identity {label!r}")
         text = reader.pages[pdf_page - 1].extract_text(extraction_mode="layout") or ""
     except (PdfReadError, OSError, ValueError) as exc:
         if isinstance(exc, AssortedSourcesError):
             raise
         raise AssortedSourcesError(
-            f"MOVES5 PDF is not readable: {request.cache_path}"
+            f"MOVES PDF is not readable: {request.cache_path}"
         ) from exc
     return parse_moves5_survival_table_text(
         text, request=request, rules=rules, checksum=digest
@@ -1664,7 +1665,7 @@ def fetch_and_normalize_moves5_survival(
     download: bool = True,
     session: requests.Session | None = None,
 ) -> Path:
-    """Prepare optional MOVES5 heavy-truck annual rates, including for comparison."""
+    """Prepare optional MOVES Table C-1 car and truck annual rates."""
     bundle = load_config_bundle(scenario_path)
     all_rules = module_rules(bundle)
     rules = all_rules["epa_moves5"]
@@ -1688,7 +1689,7 @@ def fetch_and_normalize_moves5_survival(
                 stats=SelectionStats(len(rates), len(rates), 0),
                 selection=(
                     f"{rules['source_table']}; printed page {rules['source_page']}; "
-                    "heavy-duty annual conditional survival rates only"
+                    "car, light-truck and heavy-vehicle annual conditional survival rates"
                 ),
                 output_files=[str(rules["output_file"])],
                 warning_count=0,
@@ -1700,7 +1701,7 @@ def fetch_and_normalize_moves5_survival(
         preserve_unselected=True,
     )
     logging.info(
-        "MOVES5 heavy-truck survival: cache=%s; normalized %s annual rate rows",
+        "MOVES road survival: cache=%s; normalized %s annual rate rows",
         cache_status, len(rates),
     )
     return output_dir
@@ -1967,15 +1968,12 @@ def fetch_and_normalize(
         rules=rules,
         preserve_unselected=True,
     )
-    if (
-        bundle.scenario.lifetimes.heavy_truck_survival_source
-        == rules["epa_moves5"]["source_id"]
-    ):
+    if bundle.scenario.lifetimes.road_lifetime_survival_source == "moves":
         fetch_and_normalize_moves5_survival(
             scenario_path, download=download, session=session
         )
     else:
-        logging.info("Skipping unselected MOVES5 cache; preserving any prior comparison table")
+        logging.info("Skipping unselected MOVES cache; preserving any prior comparison table")
     return output_dir
 
 
@@ -1993,8 +1991,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--tc-dashboard-only", action="store_true")
     parser.add_argument(
-        "--moves5-survival", action="store_true",
-        help="Prepare the optional EPA heavy-truck survival source for use or comparison.",
+        "--moves-survival", "--moves5-survival", dest="moves5_survival", action="store_true",
+        help="Prepare the registered EPA car/truck survival source for use or comparison.",
     )
     return parser.parse_args()
 

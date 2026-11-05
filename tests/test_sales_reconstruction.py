@@ -277,7 +277,7 @@ def test_method_selection_defaults_region_overrides_and_bc_alias():
     assert all(everywhere.method_for(region) == "sales_survival" for region in ("ON", "BCT", "QC"))
 
 
-@pytest.mark.parametrize("selection", [{"ON": "sales_survival"}, {"XX": "sales_survival", "other": "stock_age"}])
+@pytest.mark.parametrize("selection", [{}, {"XX": "sales_survival", "other": "stock_age"}])
 def test_invalid_method_region_configuration_fails(selection):
     with pytest.raises(ValidationError):
         ScenarioExistingCapacity(
@@ -302,3 +302,29 @@ def test_sales_scenario_rejects_double_retirement_and_age_vkt_only_when_selected
         ScenarioConfig.model_validate(schedules)
     curves["geography"]["regions"] = ["QC"]
     ScenarioConfig.model_validate(curves)
+
+
+def test_selected_regions_all_require_stock_methods_even_after_sales_region():
+    payload = load_config_bundle("config/scenarios/default.yaml").scenario.model_dump(mode="python")
+    payload["geography"]["regions"] = ["ON", "QC"]
+    payload["existing_capacity"]["road_stock_method"] = {"ON": "sales_survival"}
+    with pytest.raises(ValueError, match="QC"):
+        ScenarioConfig.model_validate(payload)
+
+
+def test_prospective_base_year_label_retains_2030_future_endpoint():
+    payload = load_config_bundle("config/scenarios/default.yaml").scenario.model_dump(mode="python")
+    payload["geography"]["regions"] = ["ON"]
+    payload["periods"] = {
+        "period_mode": "prospective", "base_year": 2025,
+        "existing": [2000, 2005, 2010, 2015, 2020],
+        "model": [2025, 2030, 2035, 2040, 2045], "step": 5,
+    }
+    payload["sources"]["nrcan_ceud_beyond_observed"] = "constant"
+    payload["lifetimes"]["survival_curves"] = False
+    payload["road_utilization"]["vkt_schedules"] = False
+    payload["existing_capacity"]["road_stock_method"] = {"ON": "sales_survival"}
+    scenario = ScenarioConfig.model_validate(payload)
+    assert scenario.periods.model[0] == scenario.periods.base_year == 2025
+    assert scenario.periods.historical_years(2020) == list(range(2021, 2026))
+    assert scenario.periods.projection_year(2025, legacy_at_end=True) == 2030

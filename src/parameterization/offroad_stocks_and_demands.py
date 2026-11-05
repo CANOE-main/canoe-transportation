@@ -327,8 +327,8 @@ def build_offroad_existing_capacity(
         or rules["marine_powertrain_split"] != "base_year_energy"
     ):
         raise ValueError("Unsupported off-road vintage or marine allocation rule")
-    if first_model_period <= base_year:
-        raise ValueError("The first model period must follow the base year")
+    if first_model_period < base_year:
+        raise ValueError("The first model period cannot precede the base year")
     energy_rows: list[dict[str, Any]] = []
     intensity_rows: list[dict[str, Any]] = []
     excluded_rows: list[dict[str, Any]] = []

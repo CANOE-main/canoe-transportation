@@ -1,9 +1,9 @@
 region,tech,lifetime,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
 ON,T_LDV_CHRG_EX,15.0,years,"open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
-  - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.",T16,3,3,1,1,1,open-energy-outlook-transport-process-lifetimes:ON:T16:validation_baseline
+  - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.",T16,3,3,1,1,1,open-energy-outlook-transport-process-lifetimes:ON:T16:researcher_sales_2025
 ON,T_LDV_CHRG_N,15.0,years,"open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
-  - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.",T16,3,3,1,1,1,open-energy-outlook-transport-process-lifetimes:ON:T16:validation_baseline
+  - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.",T16,3,3,1,1,1,open-energy-outlook-transport-process-lifetimes:ON:T16:researcher_sales_2025
 ON,T_MHDV_CHRG_EX,15.0,years,"open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
-  - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.",T16,3,3,1,1,1,open-energy-outlook-transport-process-lifetimes:ON:T16:validation_baseline
+  - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.",T16,3,3,1,1,1,open-energy-outlook-transport-process-lifetimes:ON:T16:researcher_sales_2025
 ON,T_MHDV_CHRG_N,15.0,years,"open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
-  - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.",T16,3,3,1,1,1,open-energy-outlook-transport-process-lifetimes:ON:T16:validation_baseline
+  - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.",T16,3,3,1,1,1,open-energy-outlook-transport-process-lifetimes:ON:T16:researcher_sales_2025

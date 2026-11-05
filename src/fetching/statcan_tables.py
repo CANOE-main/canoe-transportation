@@ -430,17 +430,19 @@ def _freight_region_frames(
 ) -> list[pd.DataFrame]:
     origin_column = "GEO"
     destination_column = "Geography, destination of shipments"
-    origin = frame[origin_column].fillna("").astype(str)
-    destination = frame[destination_column].fillna("").astype(str)
+    origin = frame[origin_column].fillna("").astype(str).str.strip().str.casefold()
+    destination = frame[destination_column].fillna("").astype(str).str.strip().str.casefold()
+    origin_labels = origin.unique()
+    destination_labels = destination.unique()
     selected: list[pd.DataFrame] = []
     for region in regions:
         tokens = [str(value).casefold() for value in geography_rules[region]["freight_contains"]]
-        origin_match = origin.str.casefold().map(
-            lambda value: any(token in value for token in tokens)
-        )
-        destination_match = destination.str.casefold().map(
-            lambda value: any(token in value for token in tokens)
-        )
+        origin_match = origin.isin([
+            value for value in origin_labels if any(token in value for token in tokens)
+        ])
+        destination_match = destination.isin([
+            value for value in destination_labels if any(token in value for token in tokens)
+        ])
         keep = origin_match | destination_match
         if not keep.any():
             continue
@@ -463,8 +465,17 @@ def _select_chunk(
     geography_rules: dict[str, Any],
 ) -> list[pd.DataFrame]:
     selected = chunk
+    if request.normalizer != "freight":
+        labels_to_region = {
+            str(geography_rules[region]["label"]).strip(): region for region in regions
+        }
+        geography = selected["GEO"].fillna("").astype(str).str.strip()
+        selected = selected[geography.isin(labels_to_region)]
     for column, members in request.table_rules.get("selectors", {}).items():
-        selected = selected[selected[column].isin(members)]
+        values = selected[column].map(
+            lambda value: value.strip() if isinstance(value, str) else value
+        )
+        selected = selected[values.isin(members)]
     if request.normalizer == "freight":
         return _freight_region_frames(
             selected,
@@ -472,13 +483,9 @@ def _select_chunk(
             geography_rules=geography_rules,
         )
 
-    labels_to_region = {
-        str(geography_rules[region]["label"]).strip(): region for region in regions
-    }
-    geography = selected["GEO"].fillna("").astype(str).str.strip()
-    selected = selected[geography.isin(labels_to_region)].copy()
     if selected.empty:
         return []
+    selected = selected.copy()
     selected["scenario_region"] = (
         selected["GEO"].astype(str).str.strip().map(labels_to_region)
     )
@@ -513,20 +520,22 @@ def read_selected_table(
                     f"Required CSV columns changed for {request.table_id}: {missing}; "
                     f"available={list(chunk.columns)}"
                 )
-            for column in chunk.columns:
-                dtype = chunk[column].dtype
-                if pd.api.types.is_object_dtype(dtype) or pd.api.types.is_string_dtype(dtype):
-                    chunk[column] = chunk[column].map(
-                        lambda value: value.strip() if isinstance(value, str) else value
-                    )
-            frames.extend(
-                _select_chunk(
-                    chunk,
-                    request=request,
-                    regions=regions,
-                    geography_rules=geography_rules,
-                )
+            selected_frames = _select_chunk(
+                chunk,
+                request=request,
+                regions=regions,
+                geography_rules=geography_rules,
             )
+            for selected in selected_frames:
+                for column in selected.columns:
+                    dtype = selected[column].dtype
+                    if pd.api.types.is_object_dtype(dtype) or pd.api.types.is_string_dtype(dtype):
+                        selected[column] = selected[column].map(
+                            lambda value: value.strip() if isinstance(value, str) else value
+                        )
+                        if isinstance(dtype, pd.StringDtype):
+                            selected[column] = selected[column].astype(dtype)
+                frames.append(selected)
     if not frames:
         raise StatCanSourceError(
             f"No rows matched configured regions/selectors for {request.table_id}: {regions}"

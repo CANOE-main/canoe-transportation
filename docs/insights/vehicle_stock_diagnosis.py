@@ -98,7 +98,7 @@ def introduction(mo, prepare_command):
             | Report 4 versus Wards truck shares | How the sources distribute medium-duty stock across GVWR classes. |
             | MTO versus NRCan CEUD | Whether mapped stock and same-model-year registration proxies resemble Ontario stock and sales totals. |
             | Mapped-cohort retention | What consecutive Report A editions can—and cannot—say about apparent retirement and survival. |
-            | Heavy-truck survival sources | How NEMS and EPA MOVES5 annual factors translate into cumulative survival and median-equivalent lifetimes. |
+            | Heavy-truck survival sources | How NEMS and EPA MOVES annual factors translate into cumulative survival and median-equivalent lifetimes. |
 
             """),
             mo.md("""
@@ -122,7 +122,7 @@ def introduction(mo, prepare_command):
             | Existing-fleet age weights | `parameterization.road_stocks_and_demands` | The raw comparison charts use the latest snapshot and a common model-year floor of 2000. The downstream stock-cohort cutoff is separate from technology lifetimes: `survival_curve_max_age` only bounds represented cohorts when curves are enabled. |
             | MHDV weight-class shares | `parameterization.road_fleet_weights`, Report 4 and registered Wards class shares | The scenario selects the regional GVWR source for efficiencies, costs and utilization. This view compares the sources' different coverage. |
             | NRCan CEUD comparison | `fetching.nrcan_ceud` | CEUD is an external plausibility benchmark. MTO stock is the accepted mapped subset; the MTO “sales” series is a same-model-year registration proxy. |
-            | Accepted lifetime inputs | `parameterization.road_lifetimes_survival` | NHTSA CAFE supplies car, light-truck, and medium-truck survival evidence. `heavy_truck_survival_source` selects NEMS or EPA MOVES5 for heavy trucks. The selected source supplies both fixed median-equivalent lifetimes and survival curves, according to `survival_curves`. |
+            | Accepted lifetime inputs | `parameterization.road_lifetimes_survival` | `road_lifetime_survival_source` selects NHTSA CAFE with NEMS heavy trucks, or MOVES cars/light trucks with its heavy-vehicle rates for medium/heavy trucks. The selected class schedules supply fixed medians or survival curves according to `survival_curves`. |
             | MTO apparent-retention diagnostics | `parameterization.road_lifetimes_survival --mto-diagnostics` | Consecutive editions supply raw make-model-vintage transitions within the captured age window. Primary pooled curves retain series present in the latest snapshot. Growth remains visible; these diagnostic curves do not select accepted lifetime parameters. |
             """),
             mo.md(f"""
@@ -2773,7 +2773,7 @@ def retention_survival_section(mo):
 @app.cell(hide_code=True)
 def heavy_truck_survival_heading(mo):
     mo.md("""
-    ### Heavy-truck survival: NEMS versus EPA MOVES5
+    ### Heavy-truck survival: NEMS versus EPA MOVES
     """)
     return
 
@@ -2806,7 +2806,7 @@ def heavy_truck_survival_comparison_chart(
     def _build_view():
         source_labels = {
             "eia_nems_hd_truck_scrappage": "NEMS Class 7–8",
-            "epa_moves_heavy_truck_survival": "EPA MOVES5 heavy truck",
+            "epa_moves_heavy_truck_survival": "EPA MOVES heavy truck",
         }
         curve_rows = heavy_truck_survival.copy()
         curve_rows["evidence_source"] = curve_rows["source_id"].map(source_labels)
@@ -2868,7 +2868,7 @@ def heavy_truck_survival_comparison_chart(
             .properties(
                 width=800, height=330,
                 title=alt.TitleParams(
-                    text="NEMS and EPA MOVES5 heavy-truck cumulative survival",
+                    text="NEMS and EPA MOVES heavy-truck cumulative survival",
                     subtitle="50% survival reference; markers show the first whole-age crossing",
                 ),
             )
@@ -2881,15 +2881,20 @@ def heavy_truck_survival_comparison_chart(
         return mo.vstack([
             mo.md(f"""
             NEMS annual scrappage is converted to annual survival as `1 − scrappage`.
-            MOVES5 Table C-1 reports annual conditional survival directly. The production
+            MOVES Table C-1 reports annual conditional survival directly. The production
             parameterization multiplies each source's annual factors from a 100% age-zero
             baseline; the notebook reads that same conversion. Full source ages are shown
             before the scenario's `survival_curve_max_age` limit, without extrapolation.
 
+            For MOVES, elapsed age follows `S(0) = 1` and
+            `S(a + 1) = S(a) × annual_rate(a)`. This gives a heavy-truck median of
+            **20 years**. The earlier same-index product applied the current-age
+            rate one year early and produced a 19-year median.
+
             Fixed median-equivalent lifetimes use {median_description}. The selected scenario uses
             **{source_labels[heavy_truck_selected_source]}** for both heavy-truck fixed
-            lifetimes and survival curves. Cars, light trucks, and medium trucks retain
-            their NHTSA CAFE schedules.
+            lifetimes and survival curves. The scenario source profile also resolves the car,
+            light-truck and medium-truck schedules.
             """),
             chart_ui(heavy_truck_chart),
             mo.ui.table(
@@ -2964,10 +2969,10 @@ def _(evidence, mo, pd):
         maximum_recurrence_error = max(recurrence_errors, default=0.0)
         mto_retention_method_output = mo.vstack([
             mo.md(r"""
-            **Source boundary.** Accepted lifetime parameters use NHTSA CAFE for
-            cars, light trucks and medium trucks, plus the scenario's selected heavy-
-            truck schedule. This section independently derives MTO apparent retention;
-            its quality gates do not select a production lifetime source.
+            **Source boundary.** The scenario selects NHTSA with NEMS or MOVES
+            road-class schedules for accepted lifetime parameters. This section
+            independently derives MTO apparent retention, and the quality gates
+            assess the administrative evidence used in the displayed comparison.
 
             A raw transition requires the same source category, make/model code and
             vintage in consecutive editions, positive starting `FIT_ACTIVE` stock and
@@ -3756,45 +3761,6 @@ def _(alt, chart_ui, evidence, mo, pd):
                 title="Cumulative effect of the 1990+ sensitivity floor",
             )
         )
-        exposure_support_chart = (
-            alt.Chart(observed_scope_rates)
-            .mark_line(point=False, interpolate="linear", strokeWidth=3)
-            .encode(
-                x=alt.X("age:Q", title="Starting vehicle age", scale=alt.Scale(domain=scope_rate_age_domain)),
-                y=alt.Y(
-                    "fit_active_exposure:Q",
-                    title="Starting FIT_ACTIVE exposure",
-                    scale=alt.Scale(type="log"),
-                ),
-                color=class_encoding,
-                strokeDash=method_encoding,
-                tooltip=[
-                    "vehicle_class:N",
-                    "aggregation_method:N",
-                    "age:Q",
-                    alt.Tooltip("fit_active_exposure:Q", format=","),
-                ],
-            )
-            .properties(width=700, height=300, title="Exposure by age")
-        )
-        vintage_support_chart = (
-            alt.Chart(observed_scope_rates)
-            .mark_line(point=False, interpolate="linear", strokeWidth=3)
-            .encode(
-                x=alt.X("age:Q", title="Starting vehicle age", scale=alt.Scale(domain=scope_rate_age_domain)),
-                y=alt.Y("number_of_vintages:Q", title="Distinct vintages"),
-                color=class_encoding,
-                strokeDash=method_encoding,
-                tooltip=[
-                    "vehicle_class:N",
-                    "aggregation_method:N",
-                    "age:Q",
-                    "number_of_vintages:Q",
-                    "number_of_transitions:Q",
-                ],
-            )
-            .properties(width=700, height=300, title="Vintage support by age")
-        )
         scope_comparison_output = mo.vstack([
             mo.md("""
             #### 4. Primary MTO diagnostic vintage scope and 1990+ sensitivity
@@ -3827,8 +3793,6 @@ def _(alt, chart_ui, evidence, mo, pd):
             not truncate this evidence. Color identifies vehicle class; the separate
             line-type legend identifies the production dynamic floor and 1990+ sensitivity.
             """),
-            chart_ui(exposure_support_chart),
-            chart_ui(vintage_support_chart),
             mo.ui.table(
                 scope_curves.sort_values(
                     ["aggregation_scope", "vehicle_class", "age"]

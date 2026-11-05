@@ -121,8 +121,50 @@ def test_established_fixed_rows_insert_with_full_provenance() -> None:
         connection.close()
 
 
-def test_bus_latest_province_and_canada_fallback() -> None:
+def test_bus_latest_province_and_canada_fallback(tmp_path: Path) -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=ROOT)
+    bus_rules = load_harmonization_rules(bundle, "road_lifetimes_survival")["bus_lifetimes"]
+    statcan_rules = load_harmonization_rules(bundle, "statcan_tables")
+    table_id = str(bus_rules["statcan_table_id"])
+    members = bus_rules["powertrain_source_member"]
+    # Explicit normalized cells exercise older provincial values, suppression,
+    # the BC proxy and a later observation outside the selected fallback horizon.
+    cells = [
+        ("Canada", 2020, "diesel", 14),
+        ("Canada", 2020, "cng", 10),
+        ("Canada", 2020, "bev", 15),
+        ("Canada", 2020, "hev", 13),
+        ("ON", 2016, "diesel", 9),
+        ("ON", 2020, "diesel", 12),
+        ("ON", 2020, "cng", 11),
+        ("ON", 2016, "bev", 12),
+        ("ON", 2020, "bev", 13),
+        ("ON", 2020, "hev", 14),
+        ("BC", 2018, "diesel", 12),
+        ("BC", 2018, "cng", 14),
+        ("BC", 2018, "hev", 13),
+        ("BC", 2020, "bev", None),
+        ("BC", 2022, "bev", 17),
+    ]
+    interim = tmp_path / "interim"
+    evidence_path = (
+        interim / statcan_rules["interim_subdir"]
+        / statcan_rules["tables"][table_id]["output_file"]
+    )
+    evidence_path.parent.mkdir(parents=True)
+    pd.DataFrame([
+        {
+            "table_id": table_id,
+            "scenario_region": region,
+            "reference_period": year,
+            "public_transit_assets_average_expected_useful_life": members[powertrain],
+            "scaled_value": value,
+            "units": "Average years",
+        }
+        for region, year, powertrain, value in cells
+    ]).to_csv(evidence_path, index=False)
+    inputs = bundle.paths.inputs.model_copy(update={"interim": str(interim)})
+    bundle = replace(bundle, paths=bundle.paths.model_copy(update={"inputs": inputs}))
     rows, contexts, audit = prepare_statcan_bus_lifetimes(bundle)
     assert len(rows) == 300
     assert len(contexts) == 1

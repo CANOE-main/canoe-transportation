@@ -1,29 +1,24 @@
-"""Opt-in, read-only researcher reference and road-fleet validation reports.
-
-The supplied notebook, its saved outputs and the supplied database are separate
-evidence. Replaying its algebra with registered inputs is a method sensitivity,
-not numerical reproduction of its unavailable workbooks or a solver validation.
-"""
+"""Independent comparisons of production road parameters and legacy evidence."""
 
 import argparse
 import ast
 from contextlib import closing
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
+import logging
 from math import isclose, isfinite
 from pathlib import Path
 import subprocess
-from typing import Any, Literal, Self
+from typing import Any
 
 import pandas as pd
-from pydantic import Field, model_validator
+from pydantic import Field
 
-from parameterization.ceud_inputs import ceud_input_path, extend_ceud_to_base_year, read_ceud_input
+from parameterization.ceud_inputs import read_ceud_input
 from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames, resolved_road_lifetime_rules,
 )
-from parameterization.road_stocks_and_demands import derive_sales_survival_cohorts
 from utils import (
     ConfigBundle, file_sha256, load_config_bundle, load_harmonization_rules,
     resolve_artifact_path, resolve_configured_path, resolve_repo_path,
@@ -33,23 +28,12 @@ from validation.config_models import MappingModel
 from validation.sqlite_utils import open_sqlite_readonly, quote_identifier
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 class CeudSeries(MappingModel):
     table_id: int = Field(gt=0)
     raw_series: str = Field(min_length=1)
-
-
-class NotebookReplay(MappingModel):
-    sales_start_year: int = Field(gt=0)
-    sales_end_year: int = Field(gt=0)
-    calibration_year: int = Field(gt=0)
-    vintage_step: int = Field(gt=0)
-    extension_policy: Literal["constant"]
-
-    @model_validator(mode="after")
-    def ordered_years(self) -> Self:
-        if not self.sales_start_year <= self.calibration_year <= self.sales_end_year:
-            raise ValueError("Notebook replay calibration must lie within its sales interval")
-        return self
 
 
 class TransportationResearchRules(MappingModel):
@@ -59,7 +43,8 @@ class TransportationResearchRules(MappingModel):
     reference_notebook: str
     legacy_baseline: str
     energy_series: dict[str, CeudSeries]
-    notebook_replay: NotebookReplay
+    notebook_scenario: str = Field(min_length=1)
+    comparison_significance_percent: float = Field(ge=0, allow_inf_nan=False)
 
 
 @dataclass(frozen=True)
@@ -67,6 +52,7 @@ class TransportationResearch:
     frames: dict[str, pd.DataFrame]
     metadata: dict[str, Any]
     destination: Path
+    retained_exports: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 def _require_unique(frame: pd.DataFrame, keys: list[str], label: str) -> None:
@@ -182,61 +168,6 @@ def fleet_activity_energy(
                    "factor", "efficiency", "implied_activity_bn", "implied_vehicle_input_pj"]], pd.DataFrame(records)
 
 
-def notebook_cohort_sensitivity(sales: pd.DataFrame, curves: pd.DataFrame,
-                                replay: NotebookReplay) -> pd.DataFrame:
-    """Re-evaluate notebook bins with current sources, exposing look-ahead sales."""
-    selected = sales.loc[sales.vintage_year.between(replay.sales_start_year, replay.sales_end_year)].copy()
-    keys = ["ceud_region", "road_class", "vintage_year"]
-    _require_unique(selected, keys, "notebook replay sales")
-    expected_years = set(range(replay.sales_start_year, replay.sales_end_year + 1))
-    if selected.empty or any(set(group.vintage_year) != expected_years
-                             for _, group in selected.groupby(["ceud_region", "road_class"])):
-        raise ValueError("Notebook replay requires the full declared annual sales interval")
-    if selected.sales_k_vehicles.map(lambda value: not isfinite(value) or value < 0).any():
-        raise ValueError("Notebook replay has inadmissible annual sales")
-    selected["notebook_vintage"] = ((selected.vintage_year - 1) // replay.vintage_step) * replay.vintage_step
-    records = []
-    for (region, road_class, vintage), group in selected.groupby(
-        ["ceud_region", "road_class", "notebook_vintage"], sort=True,
-    ):
-        if group.survival_source_id.nunique() != 1 or group.survival_source_class.nunique() != 1:
-            raise ValueError("Notebook replay has ambiguous survival evidence")
-        source = curves.loc[
-            curves.source_id.eq(group.survival_source_id.iloc[0])
-            & curves.source_class.eq(group.survival_source_class.iloc[0])
-        ]
-        if source.empty or source.age.duplicated().any():
-            raise ValueError("Notebook replay lacks unique cumulative survival")
-        survival = source.set_index("age").survival_probability
-        representative_age = replay.calibration_year - int(vintage)
-        if representative_age not in survival:
-            raise ValueError("Notebook representative vintage is beyond survival coverage")
-        fraction = float(survival.loc[representative_age])
-        annual = 0.0
-        for row in group.itertuples(index=False):
-            if row.vintage_year <= replay.calibration_year:
-                age = replay.calibration_year - int(row.vintage_year)
-                if age not in survival:
-                    raise ValueError("Notebook annual cohort is beyond survival coverage")
-                annual += float(row.sales_k_vehicles) * float(survival.loc[age])
-        raw = float(group.sales_k_vehicles.sum())
-        future = float(group.loc[group.vintage_year.gt(replay.calibration_year), "sales_k_vehicles"].sum())
-        records.append({
-            "region": region, "road_class": road_class, "notebook_vintage": int(vintage),
-            "calibration_year": replay.calibration_year,
-            "first_sale_year": int(group.vintage_year.min()), "last_sale_year": int(group.vintage_year.max()),
-            "raw_sales_k_vehicles": raw, "post_calibration_sales_k_vehicles": future,
-            "representative_age": representative_age, "representative_survival": fraction,
-            "notebook_active_k_vehicles": raw * fraction,
-            "annual_active_k_vehicles": annual,
-            "notebook_minus_annual_k_vehicles": raw * fraction - annual,
-            "future_sales_contribution_k_vehicles": future * fraction,
-            "timing_and_binning_difference_without_future_sales": (raw - future) * fraction - annual,
-            "evidence_status": "current_registered_inputs_method_sensitivity_not_missing_workbook_reproduction",
-        })
-    return pd.DataFrame(records)
-
-
 def inspect_notebook(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Record executable source separately from saved outputs without executing it."""
     notebook = json.loads(path.read_text(encoding="utf-8"))
@@ -269,14 +200,43 @@ def inspect_notebook(path: Path) -> tuple[pd.DataFrame, dict[str, Any]]:
         if any(isinstance(node, ast.FunctionDef) for node in tree.body) or fixed_switches and fixed_switches[-1]["cell_index"] == index:
             cells.append({"cell_index": index, "locator_basis": "zero_based_ipynb_cells",
                           "source_sha256": hashlib.sha256(source.encode()).hexdigest(), "source": source})
+    for dependency in dependencies:
+        provided = path.parent / Path(dependency["path"]).name
+        located = provided.is_file() and provided.suffix.lower() in {".xlsx", ".xls"}
+        dependency["provided_comparison_evidence"] = str(provided) if located else None
+        dependency["provided_sha256"] = file_sha256(provided) if located else None
     return pd.DataFrame(cells), {
         "path": str(path), "sha256": file_sha256(path), "dependencies": dependencies,
         "fixed_lifetime_calls": fixed_switches, "stored_output_mentions_fixed_lifetime": stored_fixed_output,
         "source_output_conflict": stored_fixed_output and any(item["value"] is False for item in fixed_switches),
         "sqlite_dataframe_write_calls": write_calls,
-        "execution": "not executed; dependencies checked relative to notebook location",
-        "missing_dependency_count": sum(not item["present_relative_to_notebook"] for item in dependencies),
+        "execution": "source inspected; supplied comparison workbooks identified independently of original notebook paths",
+        "missing_dependency_count": sum(
+            not item["present_relative_to_notebook"] and item["provided_comparison_evidence"] is None
+            for item in dependencies
+        ),
     }
+
+
+def _legacy_annual_factors(connection) -> pd.DataFrame:
+    """Normalize the original min/max tables and the newer operator table."""
+    keys = ["region", "period", "tech", "output_comm", "operator", "factor"]
+    names = {row[0].lower(): row[0] for row in connection.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    )}
+    if "limitannualcapacityfactor" in names:
+        frame = pd.read_sql_query("SELECT * FROM LimitAnnualCapacityFactor", connection)
+    else:
+        members = []
+        for name, operator in (("minannualcapacityfactor", "ge"), ("maxannualcapacityfactor", "le")):
+            frame = pd.read_sql_query(f"SELECT * FROM {quote_identifier(names[name])}", connection)
+            members.append(frame.assign(operator=operator))
+        frame = pd.concat(members, ignore_index=True)
+    if frame.empty:
+        return pd.DataFrame(columns=keys)
+    if missing := set(keys) - set(frame):
+        raise ValueError(f"Legacy annual factors lack comparison keys: {sorted(missing)}")
+    return frame[keys]
 
 
 def compare_reference_state(reference: Path, baseline: Path, *, absolute_tolerance: float,
@@ -285,13 +245,18 @@ def compare_reference_state(reference: Path, baseline: Path, *, absolute_toleran
     specs = {
         "ExistingCapacity": (["region", "tech", "vintage"], "capacity"),
         "Demand": (["region", "period", "commodity"], "demand"),
+        "LimitAnnualCapacityFactor": (["region", "period", "tech", "output_comm", "operator"], "factor"),
         "LifetimeTech": (["region", "tech"], "lifetime"),
     }
     records = []
     with closing(open_sqlite_readonly(reference)) as current, closing(open_sqlite_readonly(baseline)) as prior:
         for table, (keys, value) in specs.items():
-            frames = [pd.read_sql_query(f"SELECT * FROM {quote_identifier(table)}", connection)
-                      for connection in (current, prior)]
+            frames = (
+                [_legacy_annual_factors(connection) for connection in (current, prior)]
+                if table == "LimitAnnualCapacityFactor" else
+                [pd.read_sql_query(f"SELECT * FROM {quote_identifier(table)}", connection)
+                 for connection in (current, prior)]
+            )
             column = "commodity" if table == "Demand" else "tech"
             frames = [frame.loc[frame[column].str.startswith("T_", na=False)] for frame in frames]
             if table == "ExistingCapacity":
@@ -359,8 +324,147 @@ def _verify_accepted_survival(transformed: pd.DataFrame, capacity_audit: dict) -
     return actual
 
 
-def build_research_report(bundle: ConfigBundle, *, database: Path | None = None,
-                          build_report: Path | None = None) -> TransportationResearch:
+def road_parameter_comparison(
+    database: Path,
+    reference: Path,
+    baseline: Path,
+    *,
+    demand_rules: dict,
+) -> dict[str, pd.DataFrame]:
+    """Compare class/cohort values while retaining each database's original keys."""
+    services = {
+        spec["commodity"]: name
+        for name, spec in demand_rules["activity_series"].items()
+        if name
+        in {
+            "cars",
+            "passenger_light_trucks",
+            "freight_light_trucks",
+            "medium_trucks",
+            "heavy_trucks",
+        }
+    }
+    compared = (("current", database), ("reference", reference), ("baseline", baseline))
+    owner_frames = []
+    for _, path in compared:
+        with closing(open_sqlite_readonly(path)) as connection:
+            efficiency = pd.read_sql_query("SELECT region, tech, output_comm FROM efficiency", connection)
+        owner_frames.append(efficiency.loc[efficiency.output_comm.isin(services)])
+    owners = pd.concat(owner_frames, ignore_index=True).drop_duplicates()
+    owners["road_class"] = owners.output_comm.map(services)
+    _require_unique(owners, ["region", "tech"], "shared road service owners")
+    summaries: dict[str, list[pd.DataFrame]] = {
+        name: [] for name in ("capacity", "utilization", "demand")
+    }
+    for label, path in compared:
+        with closing(open_sqlite_readonly(path)) as connection:
+            names = {
+                row[0].lower(): row[0]
+                for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+
+            def read(name: str) -> pd.DataFrame:
+                return pd.read_sql_query(
+                    f"SELECT * FROM {quote_identifier(names[name.lower()])}", connection
+                )
+
+            capacity = read(
+                "existing_capacity"
+                if "existing_capacity" in names
+                else "existingcapacity"
+            )
+            capacity = capacity.merge(
+                owners[["region", "tech", "road_class"]],
+                on=["region", "tech"],
+                how="inner",
+                validate="many_to_one",
+            )
+            if (
+                not capacity.units.map(lambda value: str(value).strip("() "))
+                .isin({"k vehicles", "k units"})
+                .all()
+            ):
+                raise ValueError("Compared vehicle capacity must use thousand vehicles")
+            capacity = (
+                capacity.groupby(["region", "road_class", "vintage"], as_index=False)
+                .capacity.sum()
+                .rename(columns={"capacity": label})
+            )
+            summaries["capacity"].append(capacity)
+
+            if (
+                "limit_annual_capacity_factor" in names
+                or "limitannualcapacityfactor" in names
+            ):
+                factor = read(
+                    "limit_annual_capacity_factor"
+                    if "limit_annual_capacity_factor" in names
+                    else "limitannualcapacityfactor"
+                )
+            else:
+                factor = pd.concat(
+                    [read("minannualcapacityfactor"), read("maxannualcapacityfactor")],
+                    ignore_index=True,
+                )
+            factor = factor.rename(columns={"tech_or_group": "tech"})
+            factor = factor.loc[factor.output_comm.isin(services)].copy()
+            factor["road_class"] = factor.output_comm.map(services)
+            factor["technology_kind"] = factor.tech.map(
+                lambda tech: (
+                    "existing"
+                    if tech.endswith("_EX")
+                    else "new"
+                    if tech.endswith("_N")
+                    else "unsplit"
+                )
+            )
+            bounds = (
+                factor.groupby(["region", "road_class", "technology_kind"])
+                .factor.agg(["min", "max"])
+                .reset_index()
+                .rename(columns={"min": f"{label}_minimum", "max": f"{label}_maximum"})
+            )
+            summaries["utilization"].append(bounds)
+
+            demand = read("demand")
+            demand = demand.loc[demand.commodity.isin(services)].copy()
+            demand["road_class"] = demand.commodity.map(services)
+            demand = (
+                demand.groupby(["region", "road_class", "period"], as_index=False)
+                .demand.sum()
+                .rename(columns={"demand": label})
+            )
+            summaries["demand"].append(demand)
+    keys = {
+        "capacity": ["region", "road_class", "vintage"],
+        "utilization": ["region", "road_class", "technology_kind"],
+        "demand": ["region", "road_class", "period"],
+    }
+    result = {}
+    for name, members in summaries.items():
+        combined = members[0]
+        for frame in members[1:]:
+            combined = combined.merge(
+                frame, on=keys[name], how="outer", validate="one_to_one"
+            )
+        if name != "utilization":
+            combined["relative_percent"] = (combined.current - combined.reference).div(
+                combined.reference.where(combined.reference.ne(0))
+            ) * 100
+        result[f"{name}_comparison"] = combined.sort_values(keys[name]).reset_index(
+            drop=True
+        )
+    return result
+
+
+def build_research_report(
+    bundle: ConfigBundle,
+    *,
+    database: Path | None = None,
+    build_report: Path | None = None,
+) -> TransportationResearch:
     """Read a fresh native build and capture its audit evidence before another build."""
     rules = TransportationResearchRules.model_validate(load_harmonization_rules(bundle, "transportation_research"))
     database = database or resolve_configured_path(bundle, "outputs", "sqlite", bundle.scenario.outputs.sqlite_name)
@@ -423,6 +527,10 @@ def build_research_report(bundle: ConfigBundle, *, database: Path | None = None,
     )
     frames["reference_state"] = reference_state
     frames["notebook_source_cells"], notebook_metadata = inspect_notebook(reference_dir / rules.reference_notebook)
+    frames.update(road_parameter_comparison(
+        database, reference, resolve_repo_path(bundle.repo_root, rules.legacy_baseline),
+        demand_rules=demand_rules,
+    ))
     with closing(open_sqlite_readonly(reference)) as connection:
         legacy_stock = pd.read_sql_query("SELECT region, tech, vintage, capacity, units FROM ExistingCapacity", connection)
     owner = {tech: name for name in energy_series for tech in stock_rules["fuel_technology"][name].values()}
@@ -444,21 +552,6 @@ def build_research_report(bundle: ConfigBundle, *, database: Path | None = None,
     )
     accepted_survival_sha256 = _verify_accepted_survival(
         lifetime_frames["transformed_curves"], report["existing_capacity"],
-    )
-    replay_ceud = []
-    for region in bundle.scenario.geography.regions:
-        native = pd.read_csv(ceud_input_path(bundle, region))
-        extended, _ = extend_ceud_to_base_year(native, base_year=rules.notebook_replay.sales_end_year,
-                                               policy=rules.notebook_replay.extension_policy)
-        replay_ceud.append(extended)
-    replay_sales = derive_sales_survival_cohorts(
-        pd.concat(replay_ceud, ignore_index=True), lifetime_frames["transformed_curves"],
-        regions=bundle.scenario.geography.regions, base_year=rules.notebook_replay.sales_end_year,
-        history_start=rules.notebook_replay.sales_start_year, rules=stock_rules,
-    )
-    frames["notebook_registered_sales"] = replay_sales
-    frames["notebook_method_sensitivity"] = notebook_cohort_sensitivity(
-        replay_sales, lifetime_frames["transformed_curves"], rules.notebook_replay,
     )
     frames["configured_survival_curves"] = lifetime_frames["transformed_curves"]
     try:
@@ -482,19 +575,22 @@ def build_research_report(bundle: ConfigBundle, *, database: Path | None = None,
         "build_validation": report["validation"], "build_parameter_support": report["parameter_support"],
         "cohort_audit": report["existing_capacity"], "utilization_audit": report["road_utilization"],
         "ceud_parameter_inputs": manifest, "reference_state": reference_metadata,
-        "notebook": notebook_metadata, "notebook_replay": rules.notebook_replay.model_dump(),
+        "notebook": notebook_metadata,
         "accepted_survival_sha256": accepted_survival_sha256,
         "sales_activity_closure": {"classes_checked": len(sales_rows), "passes": closure,
                                    "interpretation": "calibration check, not independent validation"},
         "limitations": [
-            "Supplied legacy database is not a verified modified-notebook output; missing workbook values prevent numeric parity.",
-            "Notebook sensitivity substitutes current registered CEUD and configured survival schedules; it is not the researcher's missing inputs.",
+            "The supplied database is the notebook-derived Ontario extract confirmed by the user. Its rows are comparison evidence.",
+            "Comparisons retain original period and vintage labels. The current scenario manifest supplies its source-year interpretation.",
+            "Utilization comparisons show the full minimum-to-maximum range by class and existing/new technology kind. Reference period rows and current vintage rows have different keys.",
+            "Workbook values and the legacy fixed_lifetime execution flag do not parameterize the current backend.",
             "Activity/energy accounting evaluates all inserted base-year cohorts before future retirement; it is not an optimization result.",
             "Vehicle input energy includes PHEV blend energy once, excluding upstream charger losses; CEUD class energy contains a different fuel/fleet boundary.",
             "Current source history omits older cohorts and fuel registration shares proxy sales composition; stock discrepancy is not rescaled away.",
         ],
         "configuration": report["config"],
         "implementation_sha256": file_sha256(Path(__file__)),
+        "comparison_significance_percent": rules.comparison_significance_percent,
         "commands": [f"uv run python src/build_transport.py --scenario {bundle.scenario_path}",
                      f"uv run python -m validation.transportation_research --scenario {bundle.scenario_path} --write-report"],
     }
@@ -502,17 +598,154 @@ def build_research_report(bundle: ConfigBundle, *, database: Path | None = None,
                                   resolve_artifact_path(bundle, rules.report_route, bundle.scenario.scenario.name))
 
 
+def _load_captured_report(path: Path) -> tuple[dict, dict[str, pd.DataFrame]]:
+    """Read only manifested, hash-verified tables inside a report directory."""
+    metadata = json.loads(path.read_text(encoding="utf-8"))
+    frames = {}
+    for filename, record in metadata["exports"].items():
+        if Path(filename).name != filename or not filename.endswith(".csv"):
+            raise ValueError(f"Invalid comparison export filename: {filename}")
+        csv_path = path.parent / filename
+        if csv_path.resolve().parent != path.parent.resolve() or not csv_path.is_file():
+            raise ValueError(f"Comparison export escapes its report directory: {filename}")
+        if file_sha256(csv_path) != record["sha256"]:
+            raise ValueError(f"Comparison export changed after capture: {csv_path}")
+        frame = pd.read_csv(csv_path)
+        if len(frame) != record["rows"]:
+            raise ValueError(f"Comparison export row count changed: {csv_path}")
+        frames[Path(filename).stem] = frame
+    return metadata, frames
+
+
+def refresh_research_comparisons(
+    bundle: ConfigBundle,
+    *,
+    database: Path | None = None,
+    build_report: Path | None = None,
+) -> TransportationResearch:
+    """Recompute DB comparisons while retaining exact captured native audit bytes."""
+    rules = TransportationResearchRules.model_validate(
+        load_harmonization_rules(bundle, "transportation_research")
+    )
+    destination = resolve_artifact_path(bundle, rules.report_route, bundle.scenario.scenario.name)
+    manifest_path = destination / "manifest.json"
+    previous_hash = file_sha256(manifest_path)
+    metadata, _ = _load_captured_report(manifest_path)
+    database = database or resolve_configured_path(bundle, "outputs", "sqlite", bundle.scenario.outputs.sqlite_name)
+    build_report = build_report or resolve_repo_path(bundle.repo_root, bundle.scenario.outputs.validation_report)
+    report = json.loads(build_report.read_text(encoding="utf-8"))
+    _verify_build(bundle, database, report)
+    if metadata["scenario"] != bundle.scenario.model_dump(mode="json") or metadata["configuration"] != report["config"]:
+        raise ValueError("Captured research report has different scenario or build configuration")
+    reference_dir = resolve_artifact_path(bundle, rules.reference_route)
+    reference = reference_dir / rules.reference_sqlite
+    baseline = resolve_repo_path(bundle.repo_root, rules.legacy_baseline)
+    identities = (
+        (database, metadata["files"]["database"]),
+        (build_report, metadata["files"]["build_report"]),
+        (reference, metadata["reference_state"]["reference"]),
+        (baseline, metadata["reference_state"]["legacy_baseline"]),
+        (reference_dir / rules.reference_notebook, metadata["notebook"]),
+    )
+    for path, captured in identities:
+        if path.resolve() != Path(captured["path"]).resolve() or file_sha256(path) != captured["sha256"]:
+            raise ValueError(f"Captured comparison identity changed: {path}")
+    for dependency in metadata["notebook"].get("dependencies", []):
+        if dependency.get("provided_comparison_evidence"):
+            path = Path(dependency["provided_comparison_evidence"])
+            if file_sha256(path) != dependency["provided_sha256"]:
+                raise ValueError(f"Captured notebook comparison evidence changed: {path}")
+    frames = road_parameter_comparison(
+        database, reference, baseline,
+        demand_rules=load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"],
+    )
+    frames["reference_state"], metadata["reference_state"] = compare_reference_state(
+        reference, baseline,
+        absolute_tolerance=bundle.scenario.comparison.absolute_tolerance,
+        relative_tolerance=bundle.scenario.comparison.relative_tolerance,
+    )
+    retained = {
+        filename: record for filename, record in metadata.pop("exports").items()
+        if Path(filename).stem not in frames
+    }
+    metadata.setdefault("comparison_refresh", []).append({
+        "prior_manifest_sha256": previous_hash,
+        "comparison_implementation_sha256": file_sha256(Path(__file__)),
+        "refreshed_frames": sorted(frames),
+        "command": f"uv run python -m validation.transportation_research --scenario {bundle.scenario_path} --refresh-comparisons --write-report",
+        "interpretation": "Direct comparisons refreshed from unchanged databases; captured native audits and their implementation identity retained.",
+    })
+    return TransportationResearch(frames, metadata, destination, retained)
+
+
 def write_research_report(result: TransportationResearch) -> Path:
     result.destination.mkdir(parents=True, exist_ok=True)
-    exports = {}
-    for name, frame in result.frames.items():
-        path = result.destination / f"{name}.csv"
-        write_dataframe_atomic(frame, path)
-        exports[path.name] = {"rows": len(frame), "sha256": file_sha256(path)}
     path = result.destination / "manifest.json"
+    previous = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    if result.retained_exports and result.metadata.get("comparison_refresh"):
+        expected = result.metadata["comparison_refresh"][-1]["prior_manifest_sha256"]
+        if not path.is_file() or file_sha256(path) != expected:
+            raise ValueError("Captured report changed while preparing the comparison refresh")
+    filenames = {f"{name}.csv" for name in result.frames} | set(result.retained_exports)
+    if any(Path(filename).name != filename for filename in filenames):
+        raise ValueError("Comparison export names must be filenames within the report directory")
+    for filename, record in result.retained_exports.items():
+        candidate = result.destination / filename
+        if (candidate.resolve().parent != result.destination.resolve() or not candidate.is_file()
+                or file_sha256(candidate) != record["sha256"]):
+            raise ValueError(f"Retained comparison export changed after capture: {filename}")
+    obsolete = []
+    for filename, record in previous.get("exports", {}).items():
+        if Path(filename).name != filename or not filename.endswith(".csv"):
+            raise ValueError(f"Invalid previously owned comparison export: {filename}")
+        if filename in filenames:
+            continue
+        candidate = result.destination / filename
+        if not candidate.exists():
+            continue
+        if candidate.resolve().parent != result.destination.resolve() or not candidate.is_file():
+            raise ValueError(f"Obsolete comparison export escapes its report directory: {filename}")
+        if file_sha256(candidate) != record.get("sha256"):
+            raise ValueError(f"Obsolete comparison export was modified after capture: {filename}")
+        obsolete.append(candidate)
+    exports = dict(result.retained_exports)
+    for name, frame in result.frames.items():
+        filename = f"{name}.csv"
+        csv_path = result.destination / filename
+        write_dataframe_atomic(frame, csv_path)
+        exports[filename] = {"rows": len(frame), "sha256": file_sha256(csv_path)}
+    for candidate in obsolete:
+        candidate.unlink()
+        LOGGER.info("Removed obsolete comparison export %s", candidate.name)
     write_text_atomic(json.dumps({**result.metadata, "exports": exports}, indent=2, sort_keys=True,
                                  allow_nan=False) + "\n", path)
     return path
+
+
+def load_validation_diagnosis(*, repo_root: Path | None = None) -> dict[str, Any]:
+    """Load configured captured comparisons and verify every exported table hash."""
+    control = load_config_bundle("config/scenarios/default.yaml", repo_root=repo_root)
+    rules = TransportationResearchRules.model_validate(
+        load_harmonization_rules(control, "transportation_research")
+    )
+    selected = load_config_bundle(rules.notebook_scenario, repo_root=control.repo_root)
+    report_directory = resolve_artifact_path(
+        selected, rules.report_route, selected.scenario.scenario.name,
+    )
+    charging_rules = load_harmonization_rules(selected, "charging_cost_comparison")
+    locations = {
+        "fleet": report_directory / "manifest.json",
+        "charging": resolve_artifact_path(selected, charging_rules["report_route"], "snapshot.json"),
+    }
+    result: dict[str, Any] = {"significance_percent": rules.comparison_significance_percent}
+    for label, path in locations.items():
+        metadata, frames = _load_captured_report(path)
+        result[label] = frames
+        result[f"{label}_metadata"] = metadata
+    required = {"capacity_comparison", "utilization_comparison", "demand_comparison"}
+    if required - set(result["fleet"]):
+        raise ValueError("The configured fleet comparison predates the direct parameter comparison. Regenerate its report.")
+    return result
 
 
 def main() -> None:
@@ -521,13 +754,15 @@ def main() -> None:
     parser.add_argument("--database", type=Path)
     parser.add_argument("--build-report", type=Path)
     parser.add_argument("--write-report", action="store_true")
+    parser.add_argument("--refresh-comparisons", action="store_true",
+                        help="Refresh database comparisons from a verified report without replaying mutable native audits")
     args = parser.parse_args()
-    result = build_research_report(load_config_bundle(args.scenario), database=args.database,
-                                   build_report=args.build_report)
+    builder = refresh_research_comparisons if args.refresh_comparisons else build_research_report
+    result = builder(load_config_bundle(args.scenario), database=args.database, build_report=args.build_report)
     if args.write_report:
         print(write_research_report(result))
     else:
-        print(result.frames["stock_activity_energy"].to_string(index=False))
+        print(result.frames["reference_state" if args.refresh_comparisons else "stock_activity_energy"].to_string(index=False))
 
 
 if __name__ == "__main__":

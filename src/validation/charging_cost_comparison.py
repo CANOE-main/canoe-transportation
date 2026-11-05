@@ -55,6 +55,7 @@ class ChargingComparisonRules(MappingModel):
     groups: dict[str, ChargerGroup]
     reference_basis: ReferenceCostBasis | None = None
     conditional_bases: list[ReferenceCostBasis] = Field(default_factory=list)
+    legacy_baseline: str | None = Field(default=None, min_length=1)
 
     @model_validator(mode="after")
     def unambiguous_scope(self) -> Self:
@@ -141,6 +142,41 @@ def _read_backend(database: Path, rules: ChargingComparisonRules) -> dict[str, p
             selected = frame.loc[frame[tech_column].isin(owners)].copy()
             frames[table] = _validate_cost_frame(selected, table) if table in COST_TABLES else selected
     return frames
+
+
+def inherited_reference_context(database: Path, rules: ChargingComparisonRules) -> pd.DataFrame:
+    """Read non-cost context inherited from the original legacy baseline."""
+    owners = {
+        tech: name for name, group in rules.groups.items()
+        for tech in group.reference_technologies
+    }
+    specifications = {
+        "CapacityToActivity": ("c2a", "capacity_to_activity"),
+        "Efficiency": ("efficiency", "efficiency"),
+        "LifetimeTech": ("lifetime", "lifetime_years"),
+        "MinAnnualCapacityFactor": ("factor", "utilization_lower"),
+        "MaxAnnualCapacityFactor": ("factor", "utilization_upper"),
+    }
+    rows = []
+    with closing(open_sqlite_readonly(database)) as connection:
+        available = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        for table, (value, parameter) in specifications.items():
+            if table not in available:
+                continue
+            frame = pd.read_sql_query(f"SELECT * FROM {quote_identifier(table)}", connection)
+            for item in frame.loc[frame.tech.isin(owners)].to_dict("records"):
+                rows.append({
+                    "region": item["region"], "tech": item["tech"],
+                    "charger_class": owners[item["tech"]], "parameter": parameter,
+                    "vintage": item.get("vintage"), "period": item.get("period"),
+                    "value": item[value], "notes": item.get("notes"),
+                    "evidence_origin": "inherited_original_legacy_baseline",
+                    "reference_table": table,
+                })
+    return pd.DataFrame(rows, columns=[
+        "region", "tech", "charger_class", "parameter", "vintage", "period",
+        "value", "notes", "evidence_origin", "reference_table",
+    ])
 
 
 def fixed_cost_ratios(reference: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -364,6 +400,11 @@ def prepare_charging_cost_comparison(
               "comparisons": comparisons, "fixed_ratios": fixed_cost_ratios(reference),
               "source_components": components, "variable_coverage": coverage,
               **{f"backend_{name}": frame for name, frame in backend.items()}}
+    inherited_identity = None
+    if rules.legacy_baseline is not None:
+        baseline = resolve_repo_path(bundle.repo_root, rules.legacy_baseline)
+        frames["reference_inherited_context"] = inherited_reference_context(baseline, rules)
+        inherited_identity = {"path": str(baseline), "sha256": file_sha256(baseline)}
     metadata = {
         "scenario": bundle.scenario.scenario.name, "scenario_path": str(bundle.scenario_path),
         "repository_commit": revision, "period_mapping": bundle.scenario.periods.audit(),
@@ -371,6 +412,7 @@ def prepare_charging_cost_comparison(
         "files": {"database": {"path": str(database), "sha256": file_sha256(database)},
                   "build_report": {"path": str(build_report), "sha256": file_sha256(build_report)},
                   "manual_charger_parameters": manual_identity,
+                  "reference_context_baseline": inherited_identity,
                   "cer_macro": {"path": str(macro_path), "sha256": file_sha256(macro_path)}},
         "build_timestamp_utc": report.get("timestamp_utc"), "build_content_verified": True,
         "component_reconciliation": {"relative_tolerance": 1e-10, "absolute_tolerance": 1e-9, "status": "passed"},
@@ -381,6 +423,7 @@ def prepare_charging_cost_comparison(
             bundle.repo_root / "src/parameterization/currency.py",
         )},
         "limitations": [
+            "Supplied cost CSV rows govern compared costs. Non-cost context is inherited explicitly from the original legacy baseline when configured.",
             "Conditional cost interpretations are sensitivities; missing metadata is not inferred from filenames or other researchers' databases.",
             "A confirmed PJ/year capacity denominator permits a dimensional conversion using capacity_to_activity; it does not establish the reference's implicit utilization or loss convention.",
             "Technology bridges compare rates, never add duplicated BEV/PHEV or MDV/HDV rates.",

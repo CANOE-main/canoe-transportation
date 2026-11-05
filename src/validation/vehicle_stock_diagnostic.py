@@ -139,10 +139,13 @@ def _heavy_truck_comparison(
         moves5=moves5,
     )
     _, transformed = transform_source_survival_curves(nhtsa, eia, moves5)
-    options = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+    profiles = load_harmonization_rules(bundle, "road_stocks_and_demands")[
         "existing_capacity"
-    ]["fixed_lifetime_sources"]["heavy_trucks"]["source_options"]
-    pairs = {(source, option["curve_source_class"]) for source, option in options.items()}
+    ]["survival_source_profiles"]
+    pairs = {
+        (profile["heavy_trucks"]["source_id"], profile["heavy_trucks"]["curve_source_class"])
+        for profile in profiles.values()
+    }
     selected = transformed.loc[
         pd.MultiIndex.from_frame(transformed[["source_id", "source_class"]]).isin(pairs)
     ].reset_index(drop=True)
@@ -193,5 +196,9 @@ def load_stock_diagnostic(*, repo_root: Path | None = None) -> dict[str, Any]:
         "heavy_truck_survival": heavy_curves,
         "heavy_truck_medians": heavy_medians,
         "heavy_truck_median_interpolation": interpolation,
-        "heavy_truck_selected_source": recorded.bundle.scenario.lifetimes.heavy_truck_survival_source,
+        "heavy_truck_selected_source": load_harmonization_rules(recorded.bundle, "road_stocks_and_demands")[
+            "existing_capacity"
+        ]["survival_source_profiles"][recorded.bundle.scenario.lifetimes.road_lifetime_survival_source][
+            "heavy_trucks"
+        ]["source_id"],
     }

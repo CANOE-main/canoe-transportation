@@ -36,6 +36,15 @@ def evidence(rules, ratings=(), atb=(), *, modes=("cars",), ceud=None, gcam=None
         rating_audit=rated, atb_audit=projected,
         gcam=pd.DataFrame() if gcam is None else gcam, regen=pd.DataFrame() if regen is None else regen,
         base_year=2023, rules=rules,
+        conversions={"fuel_hhv": {"diesel_mj_per_litre": 40, "gasoline_mj_per_litre": 34},
+                     "service": {"per_100_km_to_per_km": .01}},
+        projection_years=(2023,),
+        cohort_stock=pd.DataFrame([
+            {"region": "ON", "road_class": mode, "powertrain": fuel,
+             "vintage_year": 2023, "raw_capacity": 1.0}
+            for mode in modes for fuel in sorted({p.split("_", 1)[0] if p.startswith(("bev_", "phev_")) else p
+                                                  for p, _, _ in ratings} | {"diesel"})
+        ]),
     )
 
 
@@ -103,7 +112,7 @@ def test_empty_period_proxy_requires_explicit_opt_in(rules):
 @pytest.mark.parametrize("powertrain", ["diesel", "bev_150_miles"])
 def test_empty_period_proxy_omits_years_without_any_exact_proxy_support(rules, powertrain):
     inputs = evidence(rules, ratings=[
-        ("diesel", 2023, 1), ("bev_300_miles", 2023, 1),
+        ("diesel", 2023, 1), ("bev_300_miles", 2023, 1), ("bev_150_miles", 2023, 1),
         ("gasoline", 2012, 4), ("gasoline", 2023, 2),
     ], atb=[("cars", "bev_150_miles", 2023, 1)])
     observations = inputs.period_observations(
@@ -122,24 +131,28 @@ def test_empty_period_proxy_omits_years_without_any_exact_proxy_support(rules, p
     ("bev", ["bev_150_miles", "bev_200_miles", "bev_300_miles", "bev_400_miles"]),
     ("phev", ["phev_35_miles", "phev_50_miles"]),
 ])
-def test_pev_shared_observed_anchor_indexes_consumption_only(rules, family, ranges):
-    anchor = rules["pev_historical_anchors"][family]
-    inputs = evidence(rules, ratings=[(anchor, 2010, 9), (anchor, 2023, 6)], atb=[
+def test_pev_own_history_precedes_shared_projection_anchor(rules, family, ranges):
+    anchor = rules["pev_projection_anchors"][family]
+    inputs = evidence(rules, ratings=[
+        (powertrain, year, (rank + 1) * value)
+        for rank, powertrain in enumerate(ranges) for year, value in [(2010, 9), (2023, 6)]
+    ], atb=[
         ("cars", powertrain, year, (rank + 1) * factor)
         for rank, powertrain in enumerate(ranges) for year, factor in [(2023, 1), (2030, .8)]
     ])
     for rank, powertrain in enumerate(ranges):
         row = inputs.derive_consumption("ON", "cars", powertrain, 2010)
-        assert row["native_intensity"] == pytest.approx((rank + 1) * 1.5)
-        assert row["historical_index_anchor"] == row["analogue"] == anchor
+        assert row["native_intensity"] == pytest.approx((rank + 1) * 9)
+        assert row["analogue"] == powertrain
         assert row["native_unit"] == "MJ/vkm"
         assert row["load_factor"] == 6
         assert "efficiency" not in row
         assert inputs.derive_consumption("ON", "cars", powertrain, 2011) is None
-        assert inputs.derive_consumption("ON", "cars", powertrain, 2023)["native_intensity"] == rank + 1
-        assert inputs.derive_consumption("ON", "cars", powertrain, 2030)["native_intensity"] == pytest.approx((rank + 1) * .8)
-    with pytest.raises(ValueError, match="Missing exact ATB"):
-        inputs.atb_value("ON", "cars", ranges[0], 2027)
+        assert inputs.derive_consumption("ON", "cars", powertrain, 2023)["native_intensity"] == (rank + 1) * 6
+        anchor_rank = ranges.index(anchor) + 1
+        assert inputs.derive_consumption("ON", "cars", powertrain, 2030)["native_intensity"] == pytest.approx(
+            anchor_rank * 6 * (rank + 1) * .8 / anchor_rank)
+    assert inputs.atb_value("ON", "cars", ranges[0], 2027) == pytest.approx(1 - .2 * 4 / 7)
 
 
 def test_future_diesel_baseline_uses_latest_own_consumption_and_exact_proxy_ratio(rules):

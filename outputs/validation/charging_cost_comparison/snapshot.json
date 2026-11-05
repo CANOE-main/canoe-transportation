@@ -1,10 +1,10 @@
 {
-  "scenario": "validation_baseline",
-  "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\config\\scenarios\\validation_baseline.yaml",
-  "repository_commit": "06a1b79b9ae81a1708de5d4d07ad3c49e5cc3b11",
+  "scenario": "researcher_sales_2025",
+  "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\researcher_sales_2025.yaml",
+  "repository_commit": "83bd2ba1d841322ecce80517bfec89fc3764099b",
   "period_mapping": {
     "period_mode": "prospective",
-    "base_year": 2023,
+    "base_year": 2025,
     "existing": [
       2000,
       2005,
@@ -54,7 +54,9 @@
       "2020": [
         2021,
         2022,
-        2023
+        2023,
+        2024,
+        2025
       ]
     },
     "empty_observation_vintages": [],
@@ -116,11 +118,12 @@
         "denominator": "PJ/year_at_backend_utilization",
         "evidence": "Sensitivity only: normalize backend rated capacity using its configured utilization target; do not infer embedded utilization in the reference."
       }
-    ]
+    ],
+    "legacy_baseline": "legacy_backend/canoe_on_12d_baseline.sqlite"
   },
   "reference_files": {
     "cost_invest": {
-      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\legacy_backend\\validation_2\\CostInvest.csv",
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_2\\CostInvest.csv",
       "sha256": "61d35215ca994cff5f8297bd1400eef8745984353bfc63810a0e7d757209659c",
       "total_rows": 24,
       "selected_rows": 24,
@@ -134,7 +137,7 @@
       ]
     },
     "cost_fixed": {
-      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\legacy_backend\\validation_2\\CostFixed.csv",
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_2\\CostFixed.csv",
       "sha256": "8b20dda7642b524aba2f33e77c6f10bdeee847ca1b1aac3eabe9c58edb4696b9",
       "total_rows": 69,
       "selected_rows": 69,
@@ -148,7 +151,7 @@
       ]
     },
     "cost_variable": {
-      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\legacy_backend\\validation_2\\CostVariable_ALL.csv",
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_2\\CostVariable_ALL.csv",
       "sha256": "a8548fab68e748f0b0d3cce5fd658c136d0f22b84affc4de4c8bc690d3b64336",
       "total_rows": 11937,
       "selected_rows": 0,
@@ -173,23 +176,27 @@
   },
   "files": {
     "database": {
-      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\outputs\\sqlite\\validation_baseline.sqlite",
-      "sha256": "4add4e6f79400a5a1737a761c7e319f06d10a8a7118b290436a0a50574ed2c0f"
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\researcher_sales_2025.sqlite",
+      "sha256": "823221c51554e1a0a77d45cb82062b619b855aa36bb55856e10080e335cfaabc"
     },
     "build_report": {
-      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\outputs\\validation\\validation_baseline.json",
-      "sha256": "f12b5d1baacbddab5c5aa9ee4b49d4eafe422006ddb78f50caff909e459baf0b"
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\researcher_sales_2025.json",
+      "sha256": "6ec826264a68bade32b8a3e327be6e5ea58cf016629655c398c7ad86c7184c6c"
     },
     "manual_charger_parameters": {
-      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\0_manual_params\\charger_parameters.csv",
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\charger_parameters.csv",
       "sha256": "dbca8f294e9476e764153787dd8d0001d984071eed4715f3605d30e2142b0278"
     },
+    "reference_context_baseline": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\canoe_on_12d_baseline.sqlite",
+      "sha256": "d254623d032ebebce10a35675680ce67d7fc30236fbd5055d02c2f94322a4350"
+    },
     "cer_macro": {
-      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\tmp\\transport_validation_121\\after\\inputs\\1_interim\\fetched_cer_energy_future\\2026\\cer_macro_indicators.csv",
-      "sha256": "afeb16f7228ec42e4fd63d2cff1fe5dc1c0a67ecd50d0497c65e487e21dc49dd"
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\fetched_cer_energy_future\\2026\\cer_macro_indicators.csv",
+      "sha256": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
     }
   },
-  "build_timestamp_utc": "2026-10-29T19:35:34.547926+00:00",
+  "build_timestamp_utc": "2026-11-04T06:53:55.880088+00:00",
   "build_content_verified": true,
   "component_reconciliation": {
     "relative_tolerance": 1e-10,
@@ -198,11 +205,12 @@
   },
   "reference_basis_status": "confirmed",
   "implementation_files": {
-    "src\\validation\\charging_cost_comparison.py": "deb4e952f9e64cdff0bc41204add9f3a313d78ed08780bb9ecc4b5c1b64e5426",
+    "src\\validation\\charging_cost_comparison.py": "f29b29af13ab18a347ab45c0672d38b762f185d83553b555f51f3e2c9daf337f",
     "src\\parameterization\\ev_chargers.py": "06e6088ecf727ec17dfc05c70b26485766cb5e4bc98a29258626863d399a1659",
     "src\\parameterization\\currency.py": "8d2fe00e8002d823b29f6dce3c425faa4723f29fa93eef187dd5413b4b6cb2f6"
   },
   "limitations": [
+    "Supplied cost CSV rows govern compared costs. Non-cost context is inherited explicitly from the original legacy baseline when configured.",
     "Conditional cost interpretations are sensitivities; missing metadata is not inferred from filenames or other researchers' databases.",
     "A confirmed PJ/year capacity denominator permits a dimensional conversion using capacity_to_activity; it does not establish the reference's implicit utilization or loss convention.",
     "Technology bridges compare rates, never add duplicated BEV/PHEV or MDV/HDV rates.",
@@ -236,11 +244,11 @@
     },
     "backend_cost_invest.csv": {
       "rows": 10,
-      "sha256": "47a2e28309dc632980fd5dcc04e834d8c2b11ddc2c2cd81ca77710ff334f51a8"
+      "sha256": "f1f273d9947b18c07cb6b8818a6836c27cb8a164ff42ac4e8dbe7cd44bac3628"
     },
     "backend_cost_fixed.csv": {
       "rows": 28,
-      "sha256": "d2ff3f3b8573866906f2a9750d2a89be1d8320ab4284f3df5c835cc4b3f1732d"
+      "sha256": "5a1352919836cddf721457d2fefccda957de60a217c5586149870d6088da4b86"
     },
     "backend_cost_variable.csv": {
       "rows": 0,
@@ -248,23 +256,27 @@
     },
     "backend_capacity_to_activity.csv": {
       "rows": 4,
-      "sha256": "114b46ebdb3268ff42939a97af0311705423d39847faed7ff4a75a7a9c39a20b"
+      "sha256": "d18419ef7323e94b313878b9b24ac07c9593b72f542d5806cfc48482712607c9"
     },
     "backend_efficiency.csv": {
       "rows": 12,
-      "sha256": "c261303365c06ebc27e94c7c4dfc834d3218cfc3a67265ec6d45337976b607b9"
+      "sha256": "2b4cdf94d2c135886fca5eb0c77116dfa9181ec5281d1d03665458e17e72714c"
     },
     "backend_lifetime_tech.csv": {
       "rows": 4,
-      "sha256": "90a674c88b7248d79ccbdb30a1a7693c90eb3a9933b0b0590ddee7bff4eb51c7"
+      "sha256": "a4f3e1fff5dd5a33535682fdfd29a3e340c988961085d056707bee0d3fcb33d3"
     },
     "backend_limit_annual_capacity_factor.csv": {
       "rows": 12,
-      "sha256": "0a1df2d36b6412746381574caa11393a449128b776408637cbf75660b77002e9"
+      "sha256": "10db5f5330ce33a65de21a748d6cae7a0603457ba75b619b83f30d7a6a47b620"
     },
     "backend_existing_capacity.csv": {
       "rows": 2,
-      "sha256": "2fd30561684bc8deb4e4d22e304a29c443288eaa6208ab42630d40e414ff8724"
+      "sha256": "e95953c98eef24cb3e31cfa3617d6e59eaaf81cd1d876dd8bce385d13c1f19cb"
+    },
+    "reference_inherited_context.csv": {
+      "rows": 64,
+      "sha256": "616a0e880ef25d685666ca37e2c3b2dbdd820f5ea22a7412e4222488974ba967"
     }
   }
 }

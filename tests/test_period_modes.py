@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from validation.config_models import ScenarioPeriods
 import build_transport
-from utils import load_config_bundle, resolve_artifact_path
+from utils import resolve_artifact_path
 
 
 def grid(mode: str = "prospective", **updates) -> ScenarioPeriods:
@@ -85,6 +85,8 @@ def prepared_modes(tmp_path_factory, legacy_bundle):
     """Exercise both complete offline database paths with isolated artifacts."""
     root = Path(__file__).resolve().parents[1]
     directory = tmp_path_factory.mktemp("period_parameter_paths")
+    normalized = directory / "normalized_inputs"
+    shutil.copytree(root / "inputs/1_interim", normalized)
     results = {}
     captured = []
     original_prepare = build_transport.prepare_transport_contribution
@@ -100,10 +102,16 @@ def prepared_modes(tmp_path_factory, legacy_bundle):
 
         patch.setattr(requests.sessions.Session, "request", reject_network)
         patch.setattr(build_transport, "prepare_transport_contribution", capture)
-        for mode, bundle in (
-            ("legacy", legacy_bundle),
-            ("prospective", load_config_bundle("config/scenarios/default.yaml", repo_root=root)),
-        ):
+        for mode in ("legacy", "prospective"):
+            # Keep source, lifetime, range and charging choices matched so the
+            # comparisons exercise calendar semantics independently of defaults.
+            bundle = replace(legacy_bundle, scenario=legacy_bundle.scenario.model_copy(update={
+                "geography": legacy_bundle.scenario.geography.model_copy(update={"regions": ["ON"]}),
+                "periods": grid(mode),
+                "lifetimes": legacy_bundle.scenario.lifetimes.model_copy(update={
+                    "survival_curve_max_age": 29 if mode == "prospective" else 25,
+                }),
+            }))
             destination = directory / mode
             processed = destination / "processed"
             shutil.copytree(root / "inputs/2_processed", processed)
@@ -115,11 +123,27 @@ def prepared_modes(tmp_path_factory, legacy_bundle):
                     route = route.model_copy(update={"path": str(destination / "validation" / name)})
                 elif route.layer == "interim" and route.owner.startswith("parameterization."):
                     route = route.model_copy(update={"path": str(destination / "interim" / name)})
+                elif route.layer == "interim":
+                    route = route.model_copy(update={"path": str(normalized / Path(route.path).relative_to("inputs/1_interim"))})
+                elif route.layer in {"output_validation", "logs", "database"}:
+                    route = route.model_copy(update={"path": str(destination / route.layer / name)})
                 routes[name] = route
             paths = bundle.paths.model_copy(update={
                 "artifacts": routes,
-                "inputs": bundle.paths.inputs.model_copy(update={"processed": str(processed)}),
+                "inputs": bundle.paths.inputs.model_copy(update={
+                    "processed": str(processed), "interim": str(normalized),
+                    "validation": str(destination / "validation"),
+                }),
+                "outputs": bundle.paths.outputs.model_copy(update={
+                    "root": str(destination / "outputs"), "sqlite": str(destination),
+                    "validation": str(destination / "output_validation"),
+                    "logs": str(destination / "logs"),
+                    "build_log": str(destination / "logs" / "{scenario_name}_{scenario_yaml}_{timestamp}.log"),
+                }),
             })
+            for route in paths.artifacts.values():
+                if route.layer in {"processed", "interim", "input_validation", "output_validation", "logs", "database"}:
+                    assert Path(route.path).is_relative_to(directory)
             bundle = replace(bundle, paths=paths)
             report = build_transport.bootstrap_database(
                 bundle=bundle, template_dir=root / "inputs/0_canoe_template",

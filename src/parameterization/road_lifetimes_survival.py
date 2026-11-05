@@ -47,18 +47,15 @@ def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
 
 
 def resolved_road_lifetime_rules(bundle: ConfigBundle) -> dict[str, Any]:
-    """Resolve the scenario's heavy-truck source once for every lifetime consumer."""
+    """Resolve the selected road survival profile for every lifetime consumer."""
     rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
         "existing_capacity"
     ]
-    selectors = dict(rules["fixed_lifetime_sources"])
-    heavy = dict(selectors["heavy_trucks"])
-    options = heavy.pop("source_options")
-    source_key = bundle.scenario.lifetimes.heavy_truck_survival_source
-    if source_key not in options:
-        raise ValueError(f"No heavy-truck lifetime rules for selected source {source_key}")
-    heavy.update(options[source_key], source_id=source_key)
-    selectors["heavy_trucks"] = heavy
+    profile = bundle.scenario.lifetimes.road_lifetime_survival_source
+    profiles = rules["survival_source_profiles"]
+    if profile not in profiles:
+        raise ValueError(f"No road lifetime rules for selected profile {profile}")
+    selectors = {**rules["fixed_lifetime_sources"], **profiles[profile]}
     return {**rules, "fixed_lifetime_sources": selectors}
 
 
@@ -1159,11 +1156,13 @@ def transform_source_survival_curves(
     if moves5 is not None:
         for _, rows in moves_source.groupby("source_class"):
             ordered = rows.sort_values("age").copy()
+            # Annual rate at native age a applies during the following year.
+            # Cohort survival therefore starts at one and uses rates 0..a-1.
             ordered["survival_probability"] = pd.to_numeric(
                 ordered["source_value"], errors="raise"
-            ).cumprod()
+            ).cumprod().shift(1, fill_value=1.0)
             ordered["source_unit"] = "dimensionless"
-            ordered["transformation"] = "cumulative_product_of_annual_survival_rate"
+            ordered["transformation"] = "age_zero_one_then_prefix_product_of_annual_survival"
             transformed_frames.append(ordered[[
                 "source_id", "source_class", "age", "source_measure",
                 "survival_probability", "source_unit", "transformation",
@@ -1192,10 +1191,7 @@ def validate_accepted_survival_inputs(
     )
     if moves5 is not None:
         move_rules = assorted_rules["epa_moves5"]
-        specifications += ((moves5, {
-            **move_rules,
-            "class_columns": {"heavy": move_rules["source_vehicle_class_label"]},
-        }, "annual_survival_rate"),)
+        specifications += ((moves5, move_rules, "annual_survival_rate"),)
     for frame, rule, value_column in specifications:
         source_id = str(rule["source_id"])
         classes = set(map(str, rule["class_columns"].values()))
@@ -1225,8 +1221,6 @@ def validate_accepted_survival_inputs(
             if value_column == "survival_rate":
                 if ordered["_value"].iloc[0] != 1 or (ordered["_value"].diff().dropna() > 0).any():
                     raise ValueError(f"{source_id} {source_class} is not a cumulative survival curve")
-            elif value_column == "annual_survival_rate" and ordered["_value"].iloc[0] != 1:
-                raise ValueError(f"{source_id} {source_class} must start with survival one at age zero")
 
 
 def retention_source_comparison(
@@ -1614,7 +1608,7 @@ def median_equivalent_lifetimes(
 
 
 def survival_source_component(
-    assorted_rules: dict[str, Any], source_key: str,
+    assorted_rules: dict[str, Any], source_key: str, source_class: str | None = None,
 ) -> tuple[str, str]:
     """Resolve a selected native survival source to its configured component."""
     requests = [
@@ -1624,7 +1618,14 @@ def survival_source_component(
     ]
     if len(requests) != 1:
         raise ValueError(f"No unique survival adapter for source {source_key}")
-    return source_key, str(requests[0]["component_id"])
+    request = requests[0]
+    if source_class is not None and "component_ids" in request:
+        classes = request["class_columns"]
+        keys = [key for key, label in classes.items() if label == source_class]
+        if len(keys) != 1:
+            raise ValueError(f"No unique survival component for {source_key}/{source_class}")
+        return source_key, str(request["component_ids"][keys[0]])
+    return source_key, str(request["component_id"])
 
 
 def fixed_existing_lifetimes(
@@ -1684,7 +1685,8 @@ def prepare_fixed_road_lifetimes(
     stock_rules = resolved_road_lifetime_rules(bundle)
     selectors = stock_rules["fixed_lifetime_sources"]
     ldv_medians = medians.loc[medians.target_system.eq("nrcan_ceud")]
-    if set(ldv_medians.source_id) != {"ontario_report_a_weighted_nhtsa_cafe"}:
+    if (any(selector["kind"] == "ceud_median" for selector in selectors.values())
+            and set(ldv_medians.source_id) != {"ontario_report_a_weighted_nhtsa_cafe"}):
         raise ValueError("Accepted LDV medians must use the selected Report A weights")
     selected_classes = {
         road_class for road_class, selector in selectors.items()
@@ -1710,7 +1712,9 @@ def prepare_fixed_road_lifetimes(
             source_key = nhtsa_source
         else:
             source_key = str(selector["source_id"])
-        _, component_key = survival_source_component(assorted, source_key)
+        _, component_key = survival_source_component(
+            assorted, source_key, selector.get("curve_source_class"),
+        )
         source_context = resolve_provenance(
             bundle.sources,
             source_key=source_key,
@@ -1824,7 +1828,7 @@ def prepare_road_survival_curve_rows(
                 or annual.map(lambda value: not isfinite(value) or value < 0 or value > 1).any()
                 or annual.diff().dropna().gt(1e-10).any()):
             raise ValueError(f"Accepted survival schedule violates age-zero, bounds or monotonicity: {road_class}")
-        _, component_key = survival_source_component(assorted, source_key)
+        _, component_key = survival_source_component(assorted, source_key, source_class)
         source_context = resolve_provenance(
             bundle.sources, source_key=source_key, component_key=component_key,
             transformation="accepted_annual_survival_input", transformation_version="1",
@@ -1916,7 +1920,7 @@ def _load_normalized_frames(
 def accepted_lifetime_frames(
     nhtsa: pd.DataFrame,
     eia: pd.DataFrame,
-    report_a_weights: pd.DataFrame,
+    report_a_weights: pd.DataFrame | None,
     *,
     rules: dict[str, Any],
     moves5: pd.DataFrame | None = None,
@@ -1924,7 +1928,10 @@ def accepted_lifetime_frames(
     """Derive Report A-weighted LDV and selected heavy-truck source products."""
     source_curves, transformed = transform_source_survival_curves(nhtsa, eia, moves5)
     class_mappings = survival_class_mappings(rules)
-    ceud_curves = aggregate_ceud_survival_curves(transformed, report_a_weights, class_mappings)
+    ceud_curves = (
+        aggregate_ceud_survival_curves(transformed, report_a_weights, class_mappings)
+        if report_a_weights is not None else transformed.iloc[:0].copy()
+    )
     nlr_curves = nlr_source_survival_curves(transformed, class_mappings)
     transformed_with_aggregates = pd.concat(
         [transformed, ceud_curves, nlr_curves],
@@ -1960,8 +1967,8 @@ def _load_survival_inputs(
         path = assorted_dir / assorted_rules["epa_moves5"]["output_file"]
         if not path.is_file():
             raise FileNotFoundError(
-                f"MOVES5 survival evidence is missing: {path}. Prepare it with "
-                "python -m fetching.assorted_sources --moves5-survival "
+                f"MOVES survival evidence is missing: {path}. Prepare it with "
+                "python -m fetching.assorted_sources --moves-survival "
                 f"--scenario {bundle.scenario_path} --no-download"
             )
         moves5 = pd.read_csv(path)
@@ -1976,10 +1983,12 @@ def load_heavy_truck_survival_comparison(bundle: ConfigBundle) -> pd.DataFrame:
     assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
     nhtsa, eia, moves5 = _load_survival_inputs(bundle, assorted, include_moves5=True)
     _, transformed = transform_source_survival_curves(nhtsa, eia, moves5)
-    options = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+    profiles = load_harmonization_rules(bundle, "road_stocks_and_demands")[
         "existing_capacity"
-    ]["fixed_lifetime_sources"]["heavy_trucks"]["source_options"]
-    pairs = {(key, option["curve_source_class"]) for key, option in options.items()}
+    ]["survival_source_profiles"]
+    pairs = {(profile["heavy_trucks"]["source_id"],
+              profile["heavy_trucks"]["curve_source_class"])
+             for profile in profiles.values()}
     selected = transformed.loc[
         pd.MultiIndex.from_frame(transformed[["source_id", "source_class"]]).isin(pairs)
     ].copy()
@@ -2004,10 +2013,11 @@ def derive_accepted_lifetime_frames(
     resolved_road_lifetime_rules(bundle)
     nhtsa, eia, moves5 = _load_survival_inputs(
         bundle, assorted_rules,
-        include_moves5=(bundle.scenario.lifetimes.heavy_truck_survival_source
-                        == assorted_rules["epa_moves5"]["source_id"]),
+        include_moves5=bundle.scenario.lifetimes.road_lifetime_survival_source == "moves",
     )
-    weights, _ = load_ldv_aggregation_weights(bundle, rules=road_rules)
+    weights = None
+    if bundle.scenario.lifetimes.road_lifetime_survival_source == "nhtsa_nems":
+        weights, _ = load_ldv_aggregation_weights(bundle, rules=road_rules)
     return accepted_lifetime_frames(nhtsa, eia, weights, rules=rules, moves5=moves5)
 
 

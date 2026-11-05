@@ -59,14 +59,14 @@ artifacts:
     layer: output_validation
     owner: validation.transportation_research
     producers: [validation.transportation_research]
-    consumers: [reviewers]
+    consumers: [reviewers, docs.insights.transportation_validation_diagnosis]
     validation_surfaces: [validation.transportation_research]
   charging_cost_comparison_report:
     path: outputs/validation/charging_cost_comparison
     layer: output_validation
     owner: validation.charging_cost_comparison
     producers: [validation.charging_cost_comparison]
-    consumers: [reviewers]
+    consumers: [reviewers, docs.insights.transportation_validation_diagnosis]
     validation_surfaces: [validation.charging_cost_comparison]
   source_update_audits:
     path: outputs/validation/source_updates

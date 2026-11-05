@@ -1049,7 +1049,7 @@ def bootstrap_database(
             with log_duration(LOGGER, f"Database comparison ({bundle.scenario.comparison.mode})"):
                 comparison_report = compare_transport_database(bundle, temporary_path, comparison_reference)
         os.replace(temporary_path, database_path)
-    except Exception:
+    except BaseException:
         if connection is not None:
             if connection.in_transaction:
                 connection.rollback()
@@ -1208,7 +1208,7 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
 
         with log_duration(LOGGER, "Notebook reviewed-mapping diagnostics"):
             build_mapping_diagnostic_artifacts(scenario)
-        with log_duration(LOGGER, "Notebook MOVES5 comparison evidence"):
+        with log_duration(LOGGER, "Notebook MOVES comparison evidence"):
             assorted_sources.fetch_and_normalize_moves5_survival(scenario, download=download)
         with log_duration(LOGGER, "Notebook MTO retention diagnostics"):
             build_mto_survival_diagnostic_artifacts(scenario)
@@ -1305,9 +1305,9 @@ def _build_scenario(
         periods.model[0], periods.end_of_horizon, periods.step,
     )
     LOGGER.info(
-        "Selections: road lifetimes=%s; heavy-truck survival=%s; charging=%s; LDV ranges=%s; embodied emissions=%s",
+        "Selections: road lifetimes=%s; road survival=%s; charging=%s; LDV ranges=%s; embodied emissions=%s",
         "survival curves" if scenario.lifetimes.survival_curves else "fixed medians",
-        scenario.lifetimes.heavy_truck_survival_source,
+        scenario.lifetimes.road_lifetime_survival_source,
         scenario.charging_profiles.travel_behavior_source,
         scenario.BEV_PHEV_range_representation.mode, scenario.embodied_emissions,
     )
