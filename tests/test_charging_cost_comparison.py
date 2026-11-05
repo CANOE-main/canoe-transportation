@@ -1,6 +1,7 @@
 """Read-only charging comparisons must not manufacture units, zeros or time matches."""
 
 import json
+import sqlite3
 from types import SimpleNamespace
 
 import pandas as pd
@@ -11,7 +12,7 @@ from parameterization.currency import CerCurrencyConverter
 from utils import file_sha256
 from validation.charging_cost_comparison import (
     ChargingComparisonRules, ChargingCostComparison, ReferenceCostBasis,
-    compare_cost_frames, fixed_cost_ratios, read_reference_costs,
+    compare_cost_frames, fixed_cost_ratios, inherited_reference_context, read_reference_costs,
     verify_build_snapshot, write_report,
 )
 from validation.config_models import ScenarioPeriods
@@ -218,3 +219,22 @@ def test_report_manifest_identifies_regenerable_tables(tmp_path):
     assert manifest["exports"]["comparisons.csv"] == {
         "rows": 1, "sha256": file_sha256(tmp_path / "comparisons.csv"),
     }
+
+
+def test_reference_context_inherits_non_cost_parameters_without_overwriting_costs(tmp_path):
+    baseline = tmp_path / "baseline.sqlite"
+    with sqlite3.connect(baseline) as connection:
+        connection.executescript("""
+            CREATE TABLE CapacityToActivity(region,tech,c2a,notes);
+            CREATE TABLE Efficiency(region,tech,vintage,efficiency);
+            CREATE TABLE CostInvest(region,tech,vintage,cost);
+            INSERT INTO CapacityToActivity VALUES('ON','BEV_CHRG',31.536,'rated power');
+            INSERT INTO Efficiency VALUES('ON','BEV_CHRG',2025,.9);
+            INSERT INTO CostInvest VALUES('ON','BEV_CHRG',2025,999);
+        """)
+    original = file_sha256(baseline)
+    inherited = inherited_reference_context(baseline, rules())
+    assert set(inherited.parameter) == {"capacity_to_activity", "efficiency"}
+    assert set(inherited.evidence_origin) == {"inherited_original_legacy_baseline"}
+    assert inherited.loc[inherited.parameter.eq("efficiency"), "value"].item() == .9
+    assert file_sha256(baseline) == original

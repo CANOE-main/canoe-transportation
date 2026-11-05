@@ -2114,3 +2114,143 @@ def test_positive_other_propulsion_does_not_create_unknown_body_identity_conflic
     assert result.observations.match_status.item() == 'resolved'
     assert result.variants.Model.tolist() == ['Huracan Spyder']
     assert result.variants.allocated_count.sum() == 100
+
+
+def test_regional_composition_reuses_support_within_each_call_only(policy, monkeypatch):
+    import parameterization.rating_composition as composition
+    import parameterization.road_efficiencies as efficiencies
+
+    original = composition.median_support_weights
+    assert efficiencies.median_support_weights is original
+    calls = []
+
+    def count_support(frame, field):
+        calls.append(field)
+        return original(frame, field)
+
+    monkeypatch.setattr(composition, 'median_support_weights', count_support)
+    frame = ratings([('A', 5), ('A Sport', 9), ('A', 5), ('B', 15)])
+    mapped = stock([('A', 90), ('B', 10)])
+    first = aggregate(frame, policy, mto=mapped, regions=['ON', 'AB'])
+    assert len(calls) == 6  # Three mathematical support vectors per family, shared across regions.
+    assert first.class_audit.native_class_mean.tolist() == pytest.approx([7.8, 7.8])
+    assert first.variants.groupby('region').allocated_count.sum().to_dict() == {'AB': 100., 'ON': 100.}
+    assert first.matches.groupby('region').allocated_count.sum().to_dict() == {'AB': 100., 'ON': 100.}
+
+    changed = frame.copy()
+    changed.loc[changed.Model.str.startswith('A'), ['native_consumption', 'consumption_mj_per_vkm']] *= 2
+    second = aggregate(changed, policy, mto=mapped, regions=['ON', 'AB'])
+    assert len(calls) == 12
+    assert second.class_audit.native_class_mean.tolist() == pytest.approx([14.1, 14.1])
+
+
+@pytest.mark.parametrize("field", ["component", "source_row"])
+def test_audit_allocation_preserves_null_source_key_equality(policy, field):
+    frame = ratings([('A', 5), ('B', 15)])
+    frame.loc[0, field] = np.nan
+    result = aggregate(frame, policy, mto=stock([('A', 90), ('B', 10)]))
+    assert result.matches.loc[result.matches[field].isna(), 'allocated_count'].tolist() == [90.]
+    assert result.matches.allocated_count.sum() == 100
+
+
+@pytest.mark.parametrize("dtype,value", [
+    (pd.StringDtype(), np.nan), (pd.StringDtype(), "native"),
+    (object, np.nan), (object, "native"),
+    ("category", np.nan), ("category", "native"),
+    ("Int64", pd.NA), ("Int64", 1),
+    ("boolean", pd.NA), ("boolean", True),
+])
+def test_batched_variants_and_audits_preserve_source_dtypes(policy, dtype, value):
+    frame = ratings([('A', 15)], powertrain='bev_150_miles')
+    frame['source_audit_value'] = pd.Series([value], dtype=dtype)
+    result = aggregate(frame, policy, izev=incentives([('A', 100)]))
+    for output in (result.variants, result.matches):
+        pd.testing.assert_series_equal(
+            output.source_audit_value.reset_index(drop=True), frame.source_audit_value,
+        )
+    assert result.variants.allocated_count.sum() == 100
+
+
+def test_resolution_reuse_keeps_provincial_counts_and_transaction_eligibility(policy, monkeypatch):
+    import parameterization.rating_composition as composition
+    import parameterization.road_efficiencies as efficiencies
+
+    original = composition.median_support_weights
+    assert efficiencies.median_support_weights is original
+    calls = []
+
+    def count_support(frame, field):
+        calls.append(field)
+        return original(frame, field)
+
+    monkeypatch.setattr(composition, 'median_support_weights', count_support)
+    frame = ratings([('A', 10), ('B', 20)], powertrain='bev_150_miles')
+    ontario = incentives([('A', 90), ('B', 10)])
+    alberta = incentives([('A', 10), ('B', 90)], province='AB')
+    alberta.source_row += 100
+    unsupported = incentives([('A', 50)], province='AB')
+    unsupported.source_row += 200
+    unsupported['Purchase or Lease'] = 'Transfer'
+    records = pd.concat([ontario, alberta, unsupported], ignore_index=True)
+    result = aggregate(frame, policy, izev=records, regions=['ON', 'AB'])
+
+    assert len(calls) == 6  # Both provinces reuse the same two matched trim sets.
+    assert result.class_audit.set_index('region').native_class_mean.to_dict() == pytest.approx({'ON': 11., 'AB': 19.})
+    assert result.variants.groupby('region').allocated_count.sum().to_dict() == {'AB': 100., 'ON': 100.}
+    assert result.matches.groupby('region').allocated_count.sum().to_dict() == {'AB': 100., 'ON': 100.}
+    excluded = result.observations.loc[~result.observations.transaction_eligible]
+    assert excluded.match_status.tolist() == ['unsupported_transaction_type']
+    assert not excluded.selected.any()
+    assert result.observations.loc[result.observations.selected, 'empirical_observation_id'].nunique() == 4
+
+
+def test_shared_national_cohorts_keep_region_metadata_and_complete_audits(policy):
+    policy['izev_pool_selection']['minimum_observations'] = 200
+    frame = ratings([('A', 10), ('B', 20)], powertrain='bev_150_miles')
+    ontario = incentives([('A', 70), ('B', 30)])
+    alberta = incentives([('A', 10), ('B', 40)], province='AB')
+    alberta.source_row += 100
+    records = pd.concat([ontario, alberta], ignore_index=True)
+    combined = aggregate(frame, policy, izev=records, regions=['ON', 'AB'])
+
+    for region, provincial_count in [('ON', 100.), ('AB', 50.)]:
+        separate = aggregate(frame, policy, izev=records, regions=[region])
+        for field in ['class_audit', 'observations', 'variants', 'coverage', 'matches']:
+            actual = getattr(combined, field)
+            actual = actual.loc[actual.region.eq(region)].reset_index(drop=True)
+            pd.testing.assert_frame_equal(actual, getattr(separate, field), check_exact=True)
+        variants = combined.variants.loc[combined.variants.region.eq(region)]
+        assert set(variants.provincial_observation_count) == {provincial_count}
+        assert set(variants.pool_observation_count) == {150.}
+        assert set(variants.pool_geography) == {'national'}
+        assert set(variants.province) == {'ON', 'AB'}
+
+
+@pytest.mark.parametrize('values,dtype,expected', [
+    (['B', 'A', None, 'A'], 'string', 'A | B'),
+    ([1, 1., '1', None], object, '1 | 1.0'),
+    ([None, pd.NA, np.nan], object, ''),
+])
+def test_label_aggregation_preserves_scalar_strings_and_null_exclusion(values, dtype, expected):
+    from parameterization.rating_composition import _labels
+
+    assert _labels(pd.Series(values, dtype=dtype)) == expected
+
+
+@pytest.mark.parametrize('identities,values,dtype,weights,name', [
+    (['A', 'A'], [5., 5.], 'float64', [.5, .5], 'rating_variant_id'),
+    (['A', 'A'], [np.nan, 5.], 'float64', [0., 0.], None),
+    (['A', 'B', 'B', 'C', 'D'], [1., 2., 2., 2., 4.], 'float64',
+     [0., .25, .25, .5, 0.], 'rating_variant_id'),
+    (['A', 'A', 'B', 'C'], [pd.NA, 100., 3., 7.], 'Float64',
+     [0., 0., .5, .5], 'rating_variant_id'),
+    (['A', 'B', 'C'], [True, False, True], 'boolean', [.5, 0., .5], 'rating_variant_id'),
+    (['A', 'B'], [pd.NA, pd.NA], 'Int64', [0., 0.], None),
+])
+def test_median_numeric_support_preserves_first_physical_values_and_series_contract(
+    identities, values, dtype, weights, name,
+):
+    frame = pd.DataFrame({'rating_variant_id': identities, 'value': pd.Series(values, dtype=dtype)})
+    frame.index = [1] * len(frame)
+    expected = pd.Series(weights, index=frame.index, name=name)
+    pd.testing.assert_series_equal(median_support_weights(frame, 'value'), expected, check_exact=True)

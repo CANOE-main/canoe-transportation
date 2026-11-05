@@ -1,120 +1,120 @@
 ceud_region,road_class,vintage_year,age,sales_k_vehicles,survival_probability,surviving_k_vehicles,ceud_stock_k_vehicles,source_history_start,included_history_start,older_history_status,survival_source_id,survival_source_class,observation_status
-ON,cars,2000,23,363.081,0.1219577714523364,44.28054961668576,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2001,22,354.273,0.1385571540553264,49.08705863864266,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2002,21,368.369,0.1592435732305992,58.660395827382615,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2003,20,332.265,0.1850150085708845,61.47401182280493,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2004,19,302.415,0.2169192043447746,65.59962118192503,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2005,18,315.208,0.2561965619986988,80.75520591448586,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2006,17,320.175,0.3031998680258772,97.07701774518524,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2007,16,320.139,0.3583181319489291,114.71160844399824,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2008,15,326.355,0.4210374678539818,137.40768282148622,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2009,14,271.523,0.4894735422997605,132.90332462585786,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2010,13,256.755,0.5602610958657724,143.8498376690164,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2011,12,261.232,0.629753672924414,164.51181148539052,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2012,11,278.479,0.6957236714976065,193.744432314982,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2013,10,283.546,0.755276043410783,214.1555010049539,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2014,9,290.693,0.8067482998740281,234.51608353528084,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2015,8,281.874,0.850496388626437,239.7328190476883,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2016,7,262.173,0.8869960122301215,232.54640551440764,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2017,6,268.849,0.9168887987280316,246.50463664923257,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2018,5,261.887,0.9407079455013112,246.35918172350188,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2019,4,223.369,0.9591923893028744,214.25384480619377,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2020,3,147.38,0.9738923005478504,143.53224725474217,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2021,2,159.944,0.985062572570613,157.5548481072341,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2022,1,135.941,0.993432390246118,135.04819256244753,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,cars,2023,0,108.905,1.0,108.905,3605.267,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Car,observed
-ON,passenger_light_trucks,2000,23,207.275,0.193273942005481,40.06085632918609,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2001,22,203.662,0.2172831523226631,44.252321368338215,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2002,21,220.07,0.2455754543890841,54.04379024740574,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2003,20,210.281,0.2788448533757691,58.6357746127101,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2004,19,199.634,0.3175238983608703,63.388565925373975,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2005,18,204.684,0.3619979445933968,74.09518729115484,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2006,17,202.793,0.4118590088169099,83.52212397500762,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2007,16,213.121,0.4663941045826356,99.39837796275587,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2008,15,207.775,0.5244554164790963,108.96872415894424,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2009,14,193.341,0.5842781556910793,112.96492289946896,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2010,13,232.059,0.6433203848070218,149.28828517793266,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2011,12,231.805,0.6992211888049099,162.08296767092216,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2012,11,229.675,0.7510266751441498,172.4920516137326,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2013,10,245.554,0.7973683998710975,195.79700006194747,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2014,9,282.346,0.8375165780249386,236.4694557390293,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2015,8,330.395,0.8720008714306833,288.1047279163406,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2016,7,371.167,0.901047539405082,334.439112058366,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2017,6,398.485,0.9252605291711458,368.702441966764,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2018,5,407.038,0.9451324725967764,384.70483138084666,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2019,4,413.919,0.9611598897657808,397.8423404119621,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2020,3,335.781,0.9742293284266114,327.127698128416,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2021,2,365.569,0.9847219517733654,359.9838191878374,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2022,1,357.288,0.9930720480035644,354.81272588709754,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,passenger_light_trucks,2023,0,426.0,1.0,426.0,4355.458,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2000,23,58.768,0.193273942005481,11.35832302377811,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2001,22,57.412,0.2172831523226631,12.474660341148736,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2002,21,61.799,0.2455754543890841,15.176317505791008,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2003,20,58.778,0.2788448533757691,16.389942791720955,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2004,19,55.687,0.3175238983608703,17.681953328021784,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2005,18,56.999,0.3619979445933968,20.633520843879023,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2006,17,56.434,0.4118590088169099,23.24285130357349,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2007,16,59.31,0.4663941045826356,27.66183434279612,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2008,15,57.783,0.5244554164790963,30.304607330411624,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2009,14,53.855,0.5842781556910793,31.466300074743074,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2010,13,64.665,0.6433203848070218,41.60031268354607,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2011,12,64.575,0.6992211888049099,45.15220826707706,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2012,11,63.997,0.7510266751441498,48.06345412920015,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2013,10,68.533,0.7973683998710975,54.646048548365926,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2014,9,78.911,0.8375165780249386,66.08927068852593,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2015,8,92.336,0.8720008714306833,80.51707246442356,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2016,7,103.579,0.901047539405082,93.32960308403896,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2017,6,111.116,0.9252605291711458,102.81124895938105,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2018,5,113.365,0.9451324725967764,107.14494275593354,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2019,4,115.151,0.9611598897657808,110.6785224664194,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2020,3,93.347,0.9742293284266114,90.94138512063888,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2021,2,102.155,0.9847219517733654,100.59427098340817,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2022,1,99.565,0.9930720480035644,98.8752184594749,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,freight_light_trucks,2023,0,118.899,1.0,118.899,1215.632,2000,2000,not_reconstructed,ontario_report_a_weighted_nhtsa_cafe,Light Truck,observed
-ON,medium_trucks,2000,23,23.595,0.264859431,6.249358274444999,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2001,22,22.551,0.302950731,6.831841934780999,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2002,21,23.609,0.346365934,8.177353335806,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2003,20,23.013,0.394716566,9.083612333358,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2004,19,21.845,0.442117238,9.65805106411,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2005,18,21.929,0.494962916,10.854041784963998,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2006,17,25.878,0.552285652,14.292048102456,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2007,16,27.357,0.606091059,16.580833101063,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2008,15,25.965,0.658681192,17.10265715028,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2009,14,21.799,0.694945584,15.149118785616,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2010,13,25.828,0.742210777,19.169819948356,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2011,12,26.568,0.785191272,20.860961714496003,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2012,11,26.096,0.825199748,21.534412623808,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2013,10,26.707,0.859918934,22.965854970338,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2014,9,30.106,0.893661691,26.904578869246,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2015,8,34.606,0.917968036,31.767201853816,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2016,7,38.41,0.938476818,36.04689457938,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2017,6,42.594,0.953145802,40.598292290388,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2018,5,43.895,0.965333294,42.373304940130005,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2019,4,43.503,0.973514523,42.350802294069,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2020,3,41.548,0.980631007,40.743257078836,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2021,2,42.669,0.986632767,42.098633535123,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2022,1,46.003,0.992933663,45.677927298989,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,medium_trucks,2023,0,50.038,1.0,50.038,421.755,2000,2000,not_reconstructed,nhtsa_cafe_ldv_survival,2b/3 Trucks,observed
-ON,heavy_trucks,2000,23,11.301,0.337896506554631,3.818568420573885,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2001,22,7.97,0.3713148423677264,2.959379293670779,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2002,21,9.635,0.4080382883161828,3.9314489079264217,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2003,20,9.08,0.4435198786045465,4.027160497729283,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2004,19,10.907,0.4820868245701593,5.258120995586728,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2005,18,12.056,0.5240074180110427,6.31743343154113,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2006,17,12.255,0.5634488365710136,6.905065492177773,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2007,16,8.65,0.6058589640548533,5.240680039074481,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2008,15,7.736,0.644530812824312,4.9860903680088775,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2009,14,4.546,0.6856710774726724,3.117060718190769,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2010,13,6.347,0.7217590289186026,4.581004556546371,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2011,12,8.194,0.759746346230108,6.225361561009505,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2012,11,9.585,0.7997329960316926,7.665440766963774,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2013,10,8.687,0.8330552041996798,7.236750558882618,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2014,9,9.596,0.8677658377079999,8.327080978645967,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2015,8,11.362,0.8946039563999999,10.164490152616798,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2016,7,10.348,0.92227212,9.54367189776,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2017,6,10.771,0.950796,10.241023716,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2018,5,14.052,0.9702,13.6332504,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
-ON,heavy_trucks,2019,4,13.162,0.99,13.03038,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,cars,2000,23,363.081,0.0697911016728431,25.339822986477547,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2001,22,354.273,0.0918303969379514,32.53303021439887,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2002,21,368.369,0.120354386550395,44.33482501918248,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2003,20,332.265,0.1569157582143351,52.13761440308607,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2004,19,302.415,0.2032587541636465,61.468496140399175,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2005,18,315.208,0.2609226625977491,82.2449106321113,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2006,17,320.175,0.3315408673414855,106.15109720106013,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2007,16,320.139,0.4149447651332734,132.84000216500104,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2008,15,326.355,0.5103871649855762,166.56740322886773,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2009,14,271.523,0.6134461117615099,166.56472860382047,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2010,13,256.755,0.7183209739596135,184.43250166900052,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2011,12,261.232,0.787632646885541,205.7548516112037,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2012,11,278.479,0.8264770691348804,230.15650773561237,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2013,10,283.546,0.8618113338215646,244.36315645976936,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2014,9,290.693,0.8930687397114659,259.6088311529452,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2015,8,281.874,0.9197412355421896,259.25114102721915,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2016,7,262.173,0.9423578233014236,247.06077760840407,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2017,6,268.849,0.9606094019382504,258.25887710169667,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2018,5,261.887,0.97424888634711,255.1431180987856,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2019,4,223.369,0.984089784189,219.81515100451276,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2020,3,147.38,0.991026973,146.05755528074,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2021,2,159.944,0.994009,158.985775496,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2022,1,135.941,0.997,135.533177,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,cars,2023,0,108.905,1.0,108.905,3605.267,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Passenger Cars,observed
+ON,passenger_light_trucks,2000,23,207.275,0.2248884337919117,46.61375011421852,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2001,22,203.662,0.25468678798631,51.87002061486788,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2002,21,220.07,0.2877816813404633,63.33211461259577,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2003,20,210.281,0.3240784699779993,68.14754474544367,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2004,19,199.634,0.3637244331964077,72.61176349673164,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2005,18,204.684,0.4068505964165634,83.27580747692787,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2006,17,202.793,0.4530630249627654,91.8780100212741,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2007,16,213.121,0.5017309246542253,106.92939639323316,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2008,15,207.775,0.552567097636812,114.8096287114886,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2009,14,193.341,0.6052213555715356,117.01410210755624,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2010,13,232.059,0.6514761631555819,151.18090694572118,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2011,12,231.805,0.696765949899018,161.51383101634187,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2012,11,229.675,0.7412403722329979,170.2443824926138,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2013,10,245.554,0.7835521905211394,192.40437459122788,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2014,9,282.346,0.8230590236566592,232.38742309336308,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2015,8,330.395,0.8591430309568467,283.85656171298734,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2016,7,371.167,0.8912272105361481,330.79413005307043,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2017,6,398.485,0.91879093869706,366.1244072066979,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2018,5,407.038,0.941384158501086,383.179125107965,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2019,4,413.919,0.959616879206,397.20365902406826,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2020,3,335.781,0.973242271,326.796262998651,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2021,2,365.569,0.982081,359.01836908900003,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2022,1,357.288,0.991,354.072408,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,passenger_light_trucks,2023,0,426.0,1.0,426.0,4355.458,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2000,23,58.768,0.2248884337919117,13.216243477083072,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2001,22,57.412,0.25468678798631,14.622077871870031,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2002,21,61.799,0.2877816813404633,17.784620125159293,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2003,20,58.778,0.3240784699779993,19.04868430836684,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2004,19,55.687,0.3637244331964077,20.254722511408357,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2005,18,56.999,0.4068505964165634,23.190077145147697,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2006,17,56.434,0.4530630249627654,25.568158750748704,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2007,16,59.31,0.5017309246542253,29.757661141242103,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2008,15,57.783,0.552567097636812,31.92898460274791,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2009,14,53.855,0.6052213555715356,32.59419610430505,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2010,13,64.665,0.6514761631555819,42.1277060904557,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2011,12,64.575,0.696765949899018,44.99366121472909,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2012,11,63.997,0.7412403722329979,47.437160101795165,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2013,10,68.533,0.7835521905211394,53.69918227298525,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2014,9,78.911,0.8230590236566592,64.94841061577063,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2015,8,92.336,0.8591430309568467,79.3298309064314,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2016,7,103.579,0.8912272105361481,92.31242324012368,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2017,6,111.116,0.91879093869706,102.0923739442625,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2018,5,113.365,0.941384158501086,106.7200151284756,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2019,4,115.151,0.959616879206,110.50084325745009,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2020,3,93.347,0.973242271,90.849246271037,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2021,2,102.155,0.982081,100.324484555,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2022,1,99.565,0.991,98.668915,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,freight_light_trucks,2023,0,118.899,1.0,118.899,1215.632,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,Light-duty Trucks (Passenger and Light Commercial),observed
+ON,medium_trucks,2000,23,23.595,0.3713148423677264,8.761173705666504,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2001,22,22.551,0.4080382883161828,9.201671439818238,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2002,21,23.609,0.4435198786045465,10.47106081397474,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2003,20,23.013,0.4820868245701593,11.094264093833075,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2004,19,21.845,0.5240074180110427,11.446942046451229,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2005,18,21.929,0.5634488365710136,12.355869537165756,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2006,17,25.878,0.6058589640548533,15.678418271811491,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2007,16,27.357,0.644530812824312,17.632429446434703,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2008,15,25.965,0.6856710774726724,17.80344952657794,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2009,14,21.799,0.7217590289186026,15.733625071396617,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2010,13,25.828,0.759746346230108,19.62272863043123,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2011,12,26.568,0.7997329960316926,21.247306238570008,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2012,11,26.096,0.8330552041996798,21.739408608794843,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2013,10,26.707,0.8677658377079999,23.175422227667557,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2014,9,30.106,0.8946039563999999,26.9329467113784,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2015,8,34.606,0.92227212,31.91614898472,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2016,7,38.41,0.950796,36.52007436,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2017,6,42.594,0.9702,41.3246988,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2018,5,43.895,0.99,43.456050000000005,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2019,4,43.503,1.0,43.503,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2020,3,41.548,1.0,41.548,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2021,2,42.669,1.0,42.669,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2022,1,46.003,1.0,46.003,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,medium_trucks,2023,0,50.038,1.0,50.038,421.755,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2000,23,11.301,0.3713148423677264,4.196229033597676,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2001,22,7.97,0.4080382883161828,3.252065157879977,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2002,21,9.635,0.4435198786045465,4.273314030354806,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2003,20,9.08,0.4820868245701593,4.377348367097047,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2004,19,10.907,0.5240074180110427,5.715348908246442,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2005,18,12.056,0.5634488365710136,6.79293917370014,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2006,17,12.255,0.6058589640548533,7.424801604492227,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2007,16,8.65,0.644530812824312,5.575191530930299,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2008,15,7.736,0.6856710774726724,5.304351455328594,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2009,14,4.546,0.7217590289186026,3.2811165454639672,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2010,13,6.347,0.759746346230108,4.822110059522496,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2011,12,8.194,0.7997329960316926,6.553012169483689,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2012,11,9.585,0.8330552041996798,7.984834132253932,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2013,10,8.687,0.8677658377079999,7.538281832169394,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2014,9,9.596,0.8946039563999999,8.5846195656144,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2015,8,11.362,0.92227212,10.47885582744,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2016,7,10.348,0.950796,9.838837008,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2017,6,10.771,0.9702,10.4500242,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2018,5,14.052,0.99,13.91148,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
+ON,heavy_trucks,2019,4,13.162,1.0,13.162,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
 ON,heavy_trucks,2020,3,11.104,1.0,11.104,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
 ON,heavy_trucks,2021,2,12.577,1.0,12.577,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed
 ON,heavy_trucks,2022,1,12.69,1.0,12.69,143.136,2000,2000,not_reconstructed,epa_moves_heavy_truck_survival,"Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)",observed

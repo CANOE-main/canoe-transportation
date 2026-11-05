@@ -126,11 +126,19 @@ def load_manual_evidence(
     canonical_make_aliases: dict[str, str],
     reaudit_keys: set[tuple[str, str]],
 ) -> pd.DataFrame:
-    """Load the registered manual inventory and verify persisted derived fields."""
+    """Load optional two-pass review evidence when explicitly configured."""
+    filename = bootstrap_rules.get("manual_evidence_file")
+    if filename is None:
+        LOGGER.info("No optional two-pass MTO review inventory selected; using authoritative references and cached source evidence")
+        return pd.DataFrame(columns=[
+            "mto_make_code", "mto_model_code", "latest_fit_active_stock",
+            "highest_confidence_candidate", "vpic_second_pass_candidate",
+            *MANUAL_DERIVED_COLUMNS,
+        ])
     path = resolve_input_path(
         bundle,
         "manual",
-        str(bootstrap_rules["manual_evidence_file"]),
+        str(filename),
     )
     persisted = pd.read_csv(path, dtype=str, keep_default_na=False)
     expected = prepare_manual_evidence(
@@ -1539,33 +1547,35 @@ def build_bootstrap_mapping(
             bootstrap_rules["exclude_future_model_years"]
         ),
     )
-    manual_supported = automatically_supported_years(
-        historical_stock,
-        ratings,
-        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
-        canonical_aliases=canonical_make_aliases,
-        seed_mapping=None,
-        label_hints=_manual_label_hints(manual),
-        model_match_priority={
-            str(method): int(priority)
-            for method, priority in bootstrap_rules[
-                "accepted_model_match_methods"
-            ].items()
-        },
-        evidence_source_priority=[
-            str(source) for source in bootstrap_rules["evidence_source_priority"]
-        ],
-        minimum_make_prefix_length=int(
-            bootstrap_rules["minimum_make_prefix_length"]
-        ),
-        minimum_model_prefix_length=int(
-            bootstrap_rules["manual_minimum_model_prefix_length"]
-        ),
-        minimum_model_year=mapping_floor,
-        exclude_future_model_years=bool(
-            bootstrap_rules["exclude_future_model_years"]
-        ),
-    )
+    manual_supported = supported.iloc[:0].copy()
+    if not manual.empty:
+        manual_supported = automatically_supported_years(
+            historical_stock,
+            ratings,
+            composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
+            canonical_aliases=canonical_make_aliases,
+            seed_mapping=None,
+            label_hints=_manual_label_hints(manual),
+            model_match_priority={
+                str(method): int(priority)
+                for method, priority in bootstrap_rules[
+                    "accepted_model_match_methods"
+                ].items()
+            },
+            evidence_source_priority=[
+                str(source) for source in bootstrap_rules["evidence_source_priority"]
+            ],
+            minimum_make_prefix_length=int(
+                bootstrap_rules["minimum_make_prefix_length"]
+            ),
+            minimum_model_prefix_length=int(
+                bootstrap_rules["manual_minimum_model_prefix_length"]
+            ),
+            minimum_model_year=mapping_floor,
+            exclude_future_model_years=bool(
+                bootstrap_rules["exclude_future_model_years"]
+            ),
+        )
     if bool(bootstrap_rules["accept_reviewed_strong_candidates"]):
         current_candidates = generate_mapping_candidates(
             current_stock,

@@ -1,243 +1,193 @@
 ---
-title: Transportation validation findings
-role: Implemented researcher comparisons and reproducible evidence for the unified MVP documentation.
-status: evaluated_with_reference_and_representation_limits
-retrieve_when: Reviewing the researcher fleet reconstruction or charging-cost comparison.
-read_scope: Read the findings and limitations, then follow the owning scenario and report commands.
-verify: Executable configuration, registered evidence and generated reports outrank this narrative.
-evaluated_on: 2026-10-29
-repository_commit: 06a1b79b9ae81a1708de5d4d07ad3c49e5cc3b11
+title: Transportation validation and scenario controls
+role: Production scenario methods and independent legacy parameter comparisons.
+status: implementation_and_evaluation
+retrieve_when: Reviewing provincial sales-survival scenarios or legacy parameter comparisons.
+verify: Current executable configuration and generated reports govern numerical findings.
 ---
 
-# Transportation validation findings
+# Transportation validation
 
-The backend now supports a regional sales-survival fleet reconstruction, explicit
-CEUD endpoint holding, activity calibration and reproducible researcher comparisons.
-The unchanged control is numerically equivalent to the pre-change implementation.
-**Exact parity with the first researcher's modified scenario is not established:**
-the supplied SQLite is an older stock-based state, and the notebook's numeric inputs
-are missing. The new presets are a supported interpretation of its modelling ideas.
-They are diagnostic scenarios, not independently validated fleet forecasts.
+The backend uses registered production evidence and the current canonical vehicle
+reference tables. The files under `legacy_backend/validation_1` and `validation_2`
+are read-only comparison evidence. Their values never enter source registration,
+production calculations or database insertion.
 
-Implementation and execution decisions are recorded in
-[ExecPlan 121](../.agents/plans/121_transportation_research_validation.md).
-This document replaces the original proposal with what the code and evidence establish.
+`validation_1/canoe_ON_16d.sqlite` is the supplied Ontario extract of the notebook-derived
+all-region model. The comparison prioritizes existing capacity, annual utilization
+and demand. The notebook's raw sales bins differ from the backend's annual surviving
+cohorts. Its saved fixed-lifetime output conflicts with its current switch, so no
+unverified execution setting is assigned to the reference.
 
-## Reference evidence and decisions
+## Production methods
 
-The immutable files are registered as comparison-only artifact routes in
-[paths.yaml](../config/paths.yaml); they do not parameterize production or acquire
-invented external-source DQ identifiers. Report manifests retain their SHA-256 identities.
+- `lifetimes.road_lifetime_survival_source` selects `nhtsa_nems` or `moves` for cars
+  and trucks. Medium trucks share heavy-vehicle MOVES rates. Cumulative survival
+  has an age-zero baseline followed by conditional annual retention products.
+- `existing_capacity.road_stock_method` selects `stock_age` or `sales_survival` by
+  province. `{ON: sales_survival}` covers an Ontario-only run. `{other: sales_survival}`
+  independently reconstructs every selected province from its CEUD sales and calibrates
+  utilization against its own CEUD activity and retained stock. Ontario age distributions
+  do not enter these selected car/truck cohorts. Registration powertrain proxies,
+  older-than-history uncertainty and fixed-lifetime reallocation remain audited.
+- `nrcan_ceud_beyond_observed: constant` holds eligible CEUD endpoints through the
+  base year. `extrapolated` uses the same observed-history CAGR method as optional
+  car-demand extrapolation. Its shared YAML owner is `ceud_inputs.cagr`. Annual
+  intervals touching 2020–2021 are excluded. Generated values never train the rate,
+  zero endpoints remain zero and invalid projections or insufficient positive-valued
+  history fail explicitly.
+- CEUD extension covers stocks, sales, activity, distance, energy and consumption
+  inputs. The separate road efficiency bridge aligns empirical NRCan/CEUD evidence
+  and ATB in 2023. Annual 2024–2025 consumption follows ATB change ratios before
+  cohort aggregation. A prospective first model label may equal the base year, keeping future vintage 2025 at its 2030 source year. Buses use
+  their established distinct owner.
+- Annual utilization remains vintage-indexed. Sales-survival mode uses fixed future
+  lifetimes and flat utilization, with explicit unsupported-combination validation.
+  Demand indexing uses real GDP. Monetary conversion retains its own deflator basis.
 
-| Evidence | Established state |
+## Scenario execution
+
+Run builds serially and capture each report before another build refreshes shared
+audits. Each scenario owns a distinct database, validation report and persistent log.
+
+| Scenario | Purpose |
 | --- | --- |
-| `legacy_backend/validation_1/canoe_ON_16d.sqlite` | Integrity passes, no foreign-key violations. All 99 common non-charger transport capacity rows, 90 demand rows and 122 lifetime rows match the older `canoe_on_12d_baseline.sqlite`. Seven charger capacities differ. Its survival table is empty. |
-| `Update data_20260618_fixed lifetime (1).ipynb` | Cell 12 aggregates raw annual sales times powertrain shares, without prior survival. Cells 21/23 calibrate **activity**, not energy, using representative-vintage survival in 2023. The notebook constructs tables/CSVs but does not write the supplied SQLite. |
-| Notebook timing | Cell 12 endpoint-holds 2024–25 sales and includes them in a 2023 calibration. Its bins assign 2005 to vintage 2000 and 2021–25 to 2020. Cell 29 shifts demand labels five years backward. These conventions are inspected and quantified, not silently adopted. |
-| Notebook execution state | Current cell 31 selects `fixed_lifetime=False`; saved output describes the fixed branch. Filename and saved output do not establish the executed method. |
-| Missing inputs | `vehicle_sales_by_size.xlsx`, `vehicle_sales_by_powertrain.xlsx`, `survival_curve_transport.xlsx`, `c2a_vehicle.xlsx`, `activity.xlsx`, `demand_growth_rate.xlsx`, and original `Input data/canoe_ALL_cm.sqlite` were not found. Their values cannot be inferred from the supplied database. |
-| Charging CSVs | The user confirmed **million 2020 CAD per PJ/year of charging throughput**. Their embedded utilization/loss conventions and complete derivation remain undocumented. |
-
-The planning proposal's energy calibration and linear CEUD extrapolation were not
-implemented. The notebook supports activity closure and endpoint holding; it supplies
-no defensible linear fitting window or slope. This also avoids introducing a circular
-capacity/efficiency calibration dependency. Energy is an independent accounting check.
-
-## Fleet reconstruction
-
-Three complete Ontario presets separate the method and later-base-year effects:
-
-| Preset | Fleet basis | CEUD anchor | Active model labels |
-| --- | --- | --- | --- |
-| [validation_baseline.yaml](../config/scenarios/validation_baseline.yaml) | Existing stock/age method | Observed 2023 | 2025–2045 |
-| [researcher_sales_2023.yaml](../config/scenarios/researcher_sales_2023.yaml) | Annual sales × cumulative survival | Observed 2023 | 2025–2045 |
-| [researcher_sales_2025.yaml](../config/scenarios/researcher_sales_2025.yaml) | Annual sales × cumulative survival | 2023 CEUD held through 2025 | 2030–2045 |
-
-`existing_capacity.road_stock_method` is a regional map with an `other` fallback:
-`stock_age` retains the previous calculation; `sales_survival` applies to cars,
-passenger/freight light trucks and medium/heavy trucks. Motorcycles and buses retain
-their existing owners. The implementation supports regional overrides and a shared
-fallback; complete native execution here covers Ontario. Pure mixed-region tests
-also verify that selecting one region leaves the other's stock calculation unchanged.
-
-For sale year `y` and base year `b`, annual surviving capacity is
-`sales[y] × S(b − y)`, in thousand vehicles. Age-zero survival is one. The selected
-NHTSA/MOVES/NEMS evidence is reused; it is not refitted. MTO age distributions do not
-enter this calculation, although MTO class weights still aggregate LDV survival.
-The supplied inputs start in 2000. Missing interior sales years or unsupported
-survival ages fail; older unobserved sales are neither invented nor treated as zero.
-
-CEUD does not supply the required powertrain sales breakdown. Existing registered
-fuel shares, geographic/early-year proxies, supported-fuel exclusions and the
-medium-truck BEV override remain explicit allocation assumptions. Reconstructed
-stock is **not rescaled** to CEUD stock.
-
-| Ontario class | CEUD 2023 stock | Sales-survival 2023 | Sales-survival 2025 | 2025 difference from held CEUD |
-| --- | ---: | ---: | ---: | ---: |
-| Cars | 3,605.267 | 3,517.171 | 3,230.991 | −10.38% |
-| Passenger light trucks | 4,355.458 | 4,897.178 | 5,324.685 | +22.25% |
-| Freight light trucks | 1,215.632 | 1,365.733 | 1,485.112 | +22.17% |
-| Medium trucks | 421.755 | 597.109 | 654.305 | +55.14% |
-| Heavy trucks | 143.136 | 187.341 | 201.210 | +40.57% |
-
-All stocks are **thousand vehicles**. Differences are results of coverage, sales,
-transferred survival and composition assumptions; they are not measured errors or
-quantitative uncertainty rankings. Endpoint holding keeps reported stock/activity
-constant, while annual survival and two additional years of held sales change the
-reconstructed fleet.
-
-### Lifetime and period qualification
-
-The current future survival rows contain unconditional survival since manufacture.
-Combining them with already-surviving sales would apply historical retirement twice.
-The new method therefore requires fixed future lifetimes and flat utilization.
-Current medians are 14/16/16/18/19 years for the five classes above, matching the
-supplied legacy fixed lifetimes. Conditional remaining-life curves would need a
-separate validated interface before supporting that combination.
-
-The established fixed-lifetime eligibility policy conserves each technology total
-by reallocating ineligible stock to its eligible vintages. This is retained and
-quantified, not mistaken for a second survival multiplication. **In the 2025 preset,
-81.1% of car stock and approximately 30.6–39.7% of the four truck classes move across
-annual cohorts.** The first model label is 2030 because the existing temporal
-contract requires model labels after the base year. Coarse vintage labels and fixed
-median lifetimes materially distort ages; this scenario must not be presented as
-an independently validated age distribution or retirement forecast.
-
-### Activity and energy
-
-For each selected regional class, utilization is base-year CEUD activity divided by
-retained reconstructed capacity times manual C2A. The same level applies to existing
-and new vintages. Other classes retain the mean of the latest five eligible **observed**
-CEUD activity/stock ratios; held years do not enter that mean. Zero denominators and
-factors outside [0, 1] fail. Calibration uses retained rows after cleanup and carries
-their full source/provenance contributors into utilization.
-
-Activity closes within approximately `3e-14` billion service-km. This is a calibration
-identity, not independent validation. The following 2025 accounting uses inserted
-cohort efficiencies and counts PHEV blend input once:
-
-| Class | CEUD secondary energy, PJ | Implied vehicle input, PJ | Difference |
-| --- | ---: | ---: | ---: |
-| Cars | 133.433 | 161.751 | +21.22% |
-| Passenger light trucks | 220.448 | 253.600 | +15.04% |
-| Freight light trucks | 74.905 | 84.733 | +13.12% |
-| Medium trucks | 57.541 | 61.712 | +7.25% |
-| Heavy trucks | 157.010 | 154.572 | −1.55% |
-
-This is vehicle-input accounting, excluding upstream charger losses, not optimized
-operation. Current cohort-average efficiency evidence, registration proxies,
-unsupported fuels, fixed-lifetime redistribution and CEUD's fleet-energy boundary
-prevent exact agreement. Those residuals are retained rather than calibrated away.
-The exercise does not apportion every residual uniquely among those drivers.
-
-### CEUD extension and notebook sensitivity
-
-`sources.nrcan_ceud_beyond_observed: error | constant` separates source edition from
-the parameter base year. Native normalized observations remain unchanged.
-`parameterization.ceud_inputs` recomputes parameter views from them and writes separate
-observed/held labels, source endpoints and hashes. Only current series tails extend;
-interior gaps and discontinued historical fuel series are not filled. No values are
-extended across the entire model horizon, and CER projections remain independently
-selected.
-
-The Ontario-plus-national 2025 build adds **312 labeled rows** across 156 series and
-explicitly skips 14 historical fuel series. A read-only ten-province-plus-national
-check preserves every native cell and yields 2,382 held rows, with 140 historical
-series skipped.
-
-The report also replays notebook binning with **current registered inputs**, not the
-missing workbooks. Future 2024–25 sales contribute approximately 212.1 thousand cars,
-830.0 thousand passenger light trucks and 231.7 thousand freight light trucks to its
-2023 active-stock calculation. Older representative-bin ages introduce an offsetting
-downward bias. For cars, their net effect gives 2,799.5 thousand versus 3,238.1 thousand
-true annual-cohort survivors over the same 2005-start comparison window. This
-separates look-ahead and binning effects rather than assuming their net bias is positive.
-
-## Charging infrastructure costs
-
-The reference has 24 investment rows and 69 fixed-cost rows for Ontario. It separates
-LDV BEV/PHEV and MDV/HDV chargers; the backend pools them into LDV and MHDV infrastructure.
-The reference notes describe US Borlaug assumptions: equally weighted LDV L2
-home/public/DCFC and truck DCFC/transmission upgrades. The backend uses reviewed
-Canadian Dunsky costs plus US residential L1. Their detailed boundaries are different.
-
-Comparison matches **source calendar years**, not nominal vintage labels: prospective
-backend vintage 2025 uses 2030 cost inputs. Its 2025 reference investment rows therefore
-have no matching new-capacity key in this preset; they remain missing, not zero.
-
-| Source year/class | Researcher | Backend capacity-normalized | Backend difference |
-| --- | ---: | ---: | ---: |
-| 2030 LDV | 52.577 | 25.712 | −51.10% |
-| 2035 LDV | 52.577 | 21.646 | −58.83% |
-| 2040–2050 LDV | 52.577 | 21.603 | −58.91% |
-| 2030 MHDV | 164.326 | 36.340 | −77.89% |
-| 2035 MHDV | 164.326 | 34.788 | −78.83% |
-| 2040–2050 MHDV | 164.326 | 33.586 | −79.56% |
-
-Values are million 2020 CAD per PJ/year of capacity. Backend per-GW costs divide by
-the configured physical factor **31.536 PJ/year per GW**. This dimensional conversion
-does not establish equal delivered-throughput economics. At backend target utilization
-0.20/0.30, the 2030 rates become **128.560 LDV / 121.134 MHDV** per effective PJ/year:
-**+144.52% / −26.28%** relative to the reference. Reference utilization and loss
-conventions remain unknown, so these are a separately labeled sensitivity.
-Backend efficiencies are 95%/80%; no undocumented reference loss correction is applied.
-No discounting, lifetime division or annualization is hidden in the investment comparison.
-
-Both sources use annual fixed costs of **1% of investment** for matched new vintages.
-The reference has nine historical fixed-cost rows without corresponding investment
-entries. Existing/new representation, the backend's 15-year infrastructure lifetime,
-source-year mapping and horizon account for unmatched fixed-cost keys; they are not
-filled. `CostVariable_ALL.csv` contains 11,937 rows but **no mapped charger rows**;
-the backend likewise has no charging variable-cost entries. Absence is not an explicit zero.
-
-A material backend limitation was identified: reviewed per-GW rates are averaged
-with **port-count shares** (LDV 12/87/1%; MHDV 82/16/2%). Total expenditure divided by
-total rated GW would instead require power weighting. The current arithmetic was
-preserved; the full per-component monetary conversion is exported. Review that
-aggregation boundary before adopting an economic conclusion or changing assumptions.
-The researcher costs, utilization or charging profiles were not adopted.
-
-## Reproduction and completion boundary
-
-Run builds **serially**, capturing each research report before the next build changes
-shared generated audits. The normal command is offline; `--overwrite` only replaces
-that preset's distinct database:
+| `validation_baseline.yaml` | Current production methods, observed 2023, Ontario stock-age control. |
+| `researcher_sales_2023.yaml` | Provincial sales-survival with observed 2023 calibration. |
+| `researcher_sales_2025.yaml` | Ontario sales-survival, base 2025, constant CEUD beyond 2023. |
+| `researcher_sales_2025_extrapolated.yaml` | Matched 2025 run with observed non-pandemic CAGR extension. |
+| `provincial_sales_2025.yaml` | Independent provincial stock/activity reconstruction throughout the configured geography. |
 
 ```text
-uv run python src/build_transport.py --scenario config/scenarios/validation_baseline.yaml --overwrite
-uv run python -m validation.transportation_research --scenario config/scenarios/validation_baseline.yaml --write-report
-uv run python -m validation.charging_cost_comparison --scenario config/scenarios/validation_baseline.yaml --write-report
-
-uv run python src/build_transport.py --scenario config/scenarios/researcher_sales_2023.yaml --overwrite
-uv run python -m validation.transportation_research --scenario config/scenarios/researcher_sales_2023.yaml --write-report
-
 uv run python src/build_transport.py --scenario config/scenarios/researcher_sales_2025.yaml --overwrite
 uv run python -m validation.transportation_research --scenario config/scenarios/researcher_sales_2025.yaml --write-report
+uv run python -m validation.charging_cost_comparison --scenario config/scenarios/researcher_sales_2025.yaml --write-report
+uv run marimo run docs/insights/transportation_validation_diagnosis.py
 ```
 
-Native databases/reports use each scenario's configured output names. Persisted
-[research evidence](../outputs/validation/transportation_research/) contains per-scenario
-stock/activity/energy tables, annual cohort allocations, extension audits, notebook
-source cells and method sensitivity. The [charging comparison](../outputs/validation/charging_cost_comparison/)
-retains original values, matched values, component conversions, missing/zero status
-and manifests. Each report records configuration, database/reference hashes, commands,
-tolerances and source status. Freshness gates reject stale cohort, CEUD or survival
-evidence. Recorded paths identify the execution workspace; exported tables and hashes
-remain the captured evidence after shared intermediates change.
+After each native build, capture its full report before the next build changes shared
+audits. Later comparison-code changes can refresh the derived database views using
+`uv run python -m validation.transportation_research --scenario config/scenarios/researcher_sales_2025.yaml --refresh-comparisons --write-report`.
+This verifies unchanged databases, configuration, reference evidence and captured
+CSV hashes, preserves native audit bytes, and records the new comparison identity.
 
-Validation used isolated raw-input workspaces with network connections denied, preserving
-live generated/user work. The control agrees across all **88 numerical model tables**
-at absolute `1e-9` / relative `1e-12`, excluding provenance identities; provenance/DQ
-are validated independently. Native scenarios pass schema insertion, 14 applicable support
-checks, provenance/DQ, integrity and foreign keys. Focused tests cover formula/coverage,
-regional isolation, activity feasibility, source preservation, report freshness and
-cost units; exact commands/results are in the ExecPlan.
+The new diagnosis notebook prioritizes significant stock, utilization, demand and
+charger-cost differences. Supporting keys, source notes and complete exports stay
+available in collapsible audits. Cost comparison reads supplied CSVs, harmonizes
+million CAD2020 per PJ/year against current backend parameters, and labels inherited
+baseline C2A, efficiency, utilization and lifetime context. Missing cost rows retain
+missing status. Rated-capacity and utilization-normalized interpretations are explicit.
 
-Completion means the supported methods compile reproducibly, accounting reconciles,
-defaults remain equivalent, and differences and missing evidence are visible. It does
-**not** mean exact modified-notebook numerical parity, accepted researcher assumptions,
-validated age/energy forecasts, or a system-optimization result. Missing workbooks and
-a genuine modified output are needed for exact parity; conditional future survival,
-age redistribution and charger cost aggregation are material follow-up decisions for
-[the subsequent unified MVP documentation](mkdocs_scope_and_implementation.md).
+The real-GDP production demand calculation is assessed independently of any differently
+labelled legacy growth spreadsheet. Comparison findings explain model/source/year and
+representation differences rather than calibrating production parameters to the reference.
+
+## Evaluation record
+
+The observed-2023 control and constant/extrapolated-2025 Ontario databases passed
+their native schema, provenance, support, integrity and foreign-key checks. A separate
+registered-input test passed all 50 province/class stock/activity calibrations across
+ten provinces, with maximum absolute residual 3.55e-15 billion service-km.
+
+| Finding | Established result and interpretation |
+| --- | --- |
+| Constant-2025 stock | Relative to held CEUD totals, cars are -4.39%, passenger/freight light trucks +23.62%/+23.54%, medium trucks +61.88% and heavy trucks +45.47%. Annual sales history, survival and composition assumptions remain independently visible. |
+| Vintage allocation | Fixed-lifetime eligibility redistributes 1.956 million vehicles, about 17.1% of reconstructed road stock. Car vintage 2010 differs by +120.06% from `validation_1`, 2015 by -5.65% and 2020 by -57.77%. This age redistribution is a material limitation of the current fixed-lifetime representation. |
+| Activity and energy | Inserted-row activity closes to at most 2.84e-14 billion service-km. Independent vehicle-input energy is +5.75% to +11.33% above CEUD for cars/light/medium trucks and -0.17% for heavy trucks. The fleet/fuel and charging-loss boundaries differ. Activity closure establishes calibration consistency. |
+| Charger investment, source 2030 | On the rated annual-capacity basis, current LDV/MHDV costs are 25.712/36.340 versus 52.577/164.326 million CAD2020 per PJ/year. Conditional normalization at backend utilization gives 128.560/121.134. Embedded reference utilization/loss conventions remain unresolved. |
+| Inherited charger context | The original legacy baseline supplies efficiency 0.90 for both classes, compared with current 0.95/0.80. Both use 15-year life. Utilization, charger composition, monetary conversion and source timing contribute separate differences. |
+
+The supplied SQLite retains identical values on all 99 shared non-charger transport
+capacity keys and all 90 shared demand keys. Annual utilization is the substantial
+saved difference, with 407 of 796 shared normalized keys changed, plus differing
+key coverage. Stock summaries use one validated service-class crosswalk across the
+three databases, so differing efficiency coverage cannot change class membership.
+Notebook source changes and supplied database deltas are reported separately.
+No unverified GDP interpretation or execution flag is used to tune the calculation.
+
+The registered source now uses the August 2026 MOVES6 release, EPA-420-R-26-010,
+Table C-1 on printed page 187/PDF page 189. The user-approved car age-27 annual
+survival is 0.753, replacing 0.567 in MOVES5. The remaining 163 annual table cells
+agree. This changes cumulative car survival from age 28 onward, with unchanged
+fixed medians and sales-reconstruction values through age 25. Earlier captured
+validation results retain their documented 2024 source identity.
+
+Commands, focused checks, native build results, source-equality evidence and remaining
+limitations are recorded in `.agents/plans/archive/130_production_bridge_and_validation_scenarios.md`.
+The diagnostic exports contain database/configuration hashes and reject stale inputs.
+Final focused regression passed 420 tests, with two opt-in lifecycle tests skipped.
+The separate 18-test temporal suite, provincial calibration test and all three
+diagnosis notebooks passed execution checks. Ruff and whitespace checks passed.
+
+### MOVES6 and execution follow-up
+
+The ten-province, constant-CEUD, base-2025 default scenario completed offline in
+866.05 seconds on 4 November 2026. It published 222,135 contribution rows across
+25 tables, passed 14 cross-table support checks and reported zero foreign-key
+violations. All database tables, including provenance, match the completed build
+before the lookup optimization at zero numerical tolerance. The persistent log is
+`outputs/logs/baseline_default_2026-11-04_18-41-13-934903Z.log`.
+
+Repeated rating matching, aggregation and provenance-table selection explain the
+main observed cost. A matched ten-region 2023 composition benchmark fell from
+370.49 to 93.96 seconds. All 8,384 tested provenance lookups retain their results
+or errors, with runtime falling from 313.12 to 23.38 seconds. The final full build
+spent 546.11 seconds on efficiencies, 12.17 seconds on insertion and 1.01 seconds
+on final checks. Whole-run timings depend on concurrent work. Registered-source
+replay, row validation and integrity checks remain part of every build.
+
+The final integrated regression passed 842 tests, with four skips and two expensive
+preparation cases deselected. Real native builds separately exercise the lifecycle.
+Cancellation closes staging SQLite connections before cleanup. One audit-CSV atomic
+replacement encountered a Windows access-denied error. A same-byte replacement and
+the complete retry succeeded, preserving the previously published database on failure.
+CodeRabbit's installer rejected this Windows environment and WSL was unavailable,
+so no CodeRabbit review was produced. Detailed follow-up evidence is recorded in
+`.agents/plans/archive/131_moves6_build_performance_and_bridge_diagnostics.md`.
+
+The unchanged base-2025 diagnostic scenario rebuilt successfully and the complete
+LDV notebook executed in about 91 seconds. Its CEUD index uses the configured
+base-year extension locally. Source observation panels retain native observations.
+Graph 4 joins prepared non-null-vintage endpoints with solid lines. Separate 2023
+range anchors connect by dashed lines to the first matching future production row,
+2030 in the reviewed 2023/2025 cases. Actual BEV/PHEV consumption and service-efficiency
+renders were checked alongside the 78 focused diagnostic tests.
+
+### Further performance evaluation
+
+A second measured optimization pass completed the same full ten-province scenario
+in 385.10 seconds, compared with 866.05 seconds above, a 55.5% reduction. Every SQLite
+table, including provenance, matches at zero tolerance. The run published 222,135
+contribution rows, passed all 14 support checks and reported zero foreign-key
+violations. Its log is `outputs/logs/baseline_default_2026-11-04_19-57-00-318974Z.log`.
+
+| Native stage | Previous completed run | Further optimized run |
+| --- | --- | --- |
+| All prerequisites | 93.27 s | 73.01 s |
+| Existing capacity | 58.31 s | 21.75 s |
+| Road utilization | 25.66 s | 4.74 s |
+| Efficiencies | 546.11 s | 222.08 s |
+| Rating composition, included in efficiencies | 343.71 s | 132.51 s |
+| Vehicle costs | 101.43 s | 23.28 s |
+| SQLite insertion and final checks | 13.18 s | 13.63 s |
+
+The implementation removes repeated wide-table filtering, configuration matching,
+median/schema work, technology-set construction and physical cost calculations.
+Source-dependent caches belong to the preparation or evidence instance. Separate
+real-input comparisons retain all classification/composition values, dtypes and row
+order, cost rows and export bytes, and numerical returns and findings. The wider
+regression passes 578 tests and the composition suite 333. Four cases skip
+and two expensive preparation cases are deselected in the wider run. A separate
+registered offline integration passes all 50 province/class activity calibrations,
+with maximum residual 3.55e-15 billion service-km. Full replay and validated insertion
+ran through the normal entrypoint. Whole-run timings vary with competing work.
+
+Composition and source replay account for 132.51 and 73.01 seconds of the remaining
+elapsed time. The task-specific measurements and rejected low-benefit experiments
+are recorded in `.agents/plans/archive/132_deeper_native_build_performance.md`.
+
+The user's base-2025 diagnostic scenario also completes through the normal builder
+in 232.05 seconds, compared with 404.05 seconds in the prior pass. The scenario YAMLs
+and both canonical vehicle CSVs match their task-start hashes. The complete fresh-capture
+LDV app executes 29 outputs in 69.66 seconds, with its 2023 ATB reference and 2025
+base year. Commands, checks and remaining limits are recorded with the measurements.

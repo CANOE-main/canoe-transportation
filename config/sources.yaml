@@ -1183,50 +1183,74 @@ sources:
 
   epa_moves_heavy_truck_survival:
     source_id: T39
-    title: Population and Activity of Onroad Vehicles in MOVES5
+    title: Population and Activity of Onroad Vehicles in MOVES6
     status: active
     source_type: upstream_download
     file_type: pdf
     required: false
-    version: EPA-420-R-24-019, November 2024
+    version: EPA-420-R-26-010, August 2026
     units: Annual conditional survival-rate fractions by vehicle age.
-    citation: "U.S. Environmental Protection Agency. (2024). Population and Activity of Onroad Vehicles in MOVES5 (EPA-420-R-24-019), Appendix C, Table C-1, p. 190. https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf"
-    database_note: "Conditional annual survival for a pooled U.S. heavy-duty class, based on model-year-1980 evidence extended to age 40; a proxy for current Canadian trucks."
+    citation: "U.S. Environmental Protection Agency. (2026). Population and Activity of Onroad Vehicles in MOVES6 (EPA-420-R-26-010), Appendix C, Table C-1, p. 187. https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf"
+    database_note: "MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained."
     database_precedence: [lifetime_tech, lifetime_survival_curve]
-    # dq_time: Underlying MY1980 cohort (TEDB40 Table 3.16), not the 2024 report publication year.
+    # dq_time: Historical NHTSA 1977-2002 evidence and MY1980 heavy-truck proxy, independent of the 2026 publication year.
     data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 3, dq_time: 4}
-    validation_rule: Preserve the registered PDF identity and all Table C-1 heavy-duty annual survival values for ages 0-40, with native class, table and page evidence.
+    validation_rule: Preserve the registered PDF identity and all Table C-1 car, light-truck and heavy-vehicle annual survival values for ages 0-40, with native class, table and page evidence.
     refresh_notes: >
-      Table C-1 is printed page 190, PDF page 192. Appendix C describes these as
+      Table C-1 is printed page 187, PDF page 189. Appendix C describes these as
       conditional year-to-year survival rates, not cumulative survival. The
       heavy-duty schedule is TEDB40 Table 3.16 model-year-1980 evidence, extended
       beyond age 30 to 40 and shared by buses, single-unit and combination trucks.
-      MOVES5 retains it for age-distribution development rather than runtime
-      scrappage. The backend applies it only to heavy trucks as an explicit
-      US-source proxy; other road classes keep their configured NHTSA schedules.
-      Temporal DQ reflects the underlying MY1980 cohort, not the report year.
-      NEPIS requires the configured browser User-Agent to return the PDF; its
-      default Python-client response is a short redirect/error document. Review
-      bytes, page layout and underlying evidence before changing the registration.
+      MOVES6 retains it for age-distribution development rather than runtime
+      scrappage. The selected MOVES profile applies its car/light-truck schedules
+      directly and shares the heavy-vehicle schedule with medium trucks.
+      Car/light-truck schedules derive from NHTSA registration evidence from
+      1977-2002. Temporal DQ reflects historical input evidence rather than publication.
+      The reviewed 2026 release changes car age-27 annual survival from 0.567 to
+      0.753; the other 163 Table C-1 annual values match the prior 2024 report.
+      This change affects cumulative car survival from age 28 onward. Retain the
+      native annual value and verify the pinned bytes and table before normalization.
     adapter:
       access:
         method: checksum_pinned_https
-        url: https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf
+        url: https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf
         headers: {User-Agent: Mozilla/5.0}
-      cache_path: assorted_sources/epa_moves5_P101CUN7.pdf
-      expected_sha256: 5335c657b4c0fa7604ff3d0122c04657929ba5b0e18820b65ab42ae2310be053
-      expected_bytes: 3846424
+      cache_path: assorted_sources/epa_moves6_420r26010.pdf
+      expected_sha256: 2a216e3794368bb33145e6411b5129b3c8f3ad92dc6433ec4baa801cbe435138
+      expected_bytes: 5713495
     components:
       heavy_truck_survival_rates:
-        label: MOVES5 Table C-1 heavy-duty annual survival rates
-        short_name: moves5_heavy_truck_survival
+        label: MOVES6 Table C-1 heavy-duty annual survival rates
+        short_name: moves6_heavy_truck_survival
         required: false
         inputs: [vehicle_age, vehicle_class, annual_survival_rate]
-        applies_to: [heavy_trucks]
+        applies_to: [medium_trucks, heavy_trucks]
         produces: [survival_rates, median_equivalent_lifetime]
         parameter_modules: [road_lifetimes_survival]
         units: annual survival-rate fraction
         validation_rule: Retain all 41 age rows and annual heavy-duty values without converting them to cumulative survival during normalization.
+
+      car_survival_rates:
+        label: MOVES6 Table C-1 Passenger Cars annual survival rates
+        short_name: moves6_car_survival_rates
+        required: false
+        inputs: [vehicle_age, vehicle_class, annual_survival_rate]
+        applies_to: [cars]
+        produces: [survival_rates, median_equivalent_lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: annual survival-rate fraction
+        validation_rule: Retain all 41 age rows and annual Passenger Cars values without converting them to cumulative survival during normalization.
+
+      light_truck_survival_rates:
+        label: MOVES6 Table C-1 Light-duty Trucks (Passenger and Light Commercial) annual survival rates
+        short_name: moves6_light_truck_survival_rates
+        required: false
+        inputs: [vehicle_age, vehicle_class, annual_survival_rate]
+        applies_to: [passenger_light_trucks, freight_light_trucks]
+        produces: [survival_rates, median_equivalent_lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: annual survival-rate fraction
+        validation_rule: Retain all 41 age rows and annual Light-duty Trucks (Passenger and Light Commercial) values without converting them to cumulative survival during normalization.
 
   jgcri_gcam_motorcycle_inputs:
     source_id: T11

@@ -32,18 +32,53 @@ ANNOTATIONS = [
 AUDIT_COLUMNS = [
     *SERIES_KEY, "unit", "source_endpoint_year", "series_endpoint_year",
     "base_year", "policy", "status", "observed_rows", "missing_source_values",
-    "extended_rows", "extension_start_year", "extension_end_year",
+    "extended_rows", "extension_start_year", "extension_end_year", "annual_cagr", "growth_intervals",
 ]
+
+
+def historical_cagr(
+    series: pd.DataFrame, *, history_start_year: int, excluded_years: Sequence[int],
+) -> tuple[float, list[int]]:
+    """Geometric mean annual change across observed non-pandemic year pairs.
+
+    Each retained interval spans consecutive calendar years. An interval touching
+    an excluded year is omitted rather than bridging a pandemic gap. Estimated
+    parameter years never train the trend. A zero endpoint remains zero.
+    """
+    observed = series
+    if "ceud_value_status" in observed:
+        observed = observed.loc[observed.ceud_value_status.eq("observed")]
+    observed = observed.loc[observed.year.ge(history_start_year)].sort_values("year")
+    if observed.empty or observed.year.duplicated().any():
+        raise ValueError("CAGR requires unique observed history")
+    if float(observed.iloc[-1].value) == 0:
+        return 0.0, []
+    excluded = set(excluded_years)
+    changes, intervals = [], []
+    for first, last in zip(observed.itertuples(index=False), observed.iloc[1:].itertuples(index=False)):
+        if last.year - first.year != 1 or first.year in excluded or last.year in excluded:
+            continue
+        if first.value <= 0 or last.value <= 0:
+            continue
+        changes.append(np.log(float(last.value) / float(first.value)))
+        intervals.append(int(last.year))
+    if not changes:
+        raise ValueError("CAGR lacks positive consecutive non-pandemic observations")
+    rate = float(np.expm1(np.mean(changes)))
+    if not np.isfinite(rate) or rate <= -1:
+        raise ValueError("Invalid historical CAGR")
+    return rate, intervals
 
 
 def extend_ceud_to_base_year(
     frame: pd.DataFrame,
     *,
     base_year: int,
-    policy: Literal["error", "constant"] = "error",
+    policy: Literal["error", "constant", "extrapolated"] = "error",
     required_series: Sequence[tuple[int, str]] | None = None,
+    cagr_rules: dict | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Append constant tail estimates without repairing source gaps or trimming history.
+    """Append selected tail estimates while preserving source gaps and history.
 
     A series is eligible only if it has a value at its table's observed endpoint.
     Historical fuel labels that disappear before that endpoint remain unchanged.
@@ -54,8 +89,12 @@ def extend_ceud_to_base_year(
     """
     if isinstance(base_year, bool) or not isinstance(base_year, (int, np.integer)):
         raise ValueError("CEUD base year must be an integer")
-    if policy not in {"error", "constant"}:
+    if policy not in {"error", "constant", "extrapolated"}:
         raise ValueError(f"Unsupported CEUD beyond-observed policy: {policy}")
+    if policy == "extrapolated" and cagr_rules is None:
+        raise ValueError("CEUD extrapolation requires configured CAGR rules")
+    if cagr_rules is not None and cagr_rules["zero_endpoint"] != "constant":
+        raise ValueError("Unsupported CEUD zero-endpoint rule")
     required_columns = {*SERIES_KEY, "year", "value", "unit"}
     if missing := sorted(required_columns - set(frame)):
         raise ValueError(f"CEUD parameter input lacks columns: {missing}")
@@ -120,6 +159,7 @@ def extend_ceud_to_base_year(
             "extended_rows": 0,
             "extension_start_year": None,
             "extension_end_year": None,
+            "annual_cagr": None, "growth_intervals": None,
         }
         if finite.empty:
             record["status"] = "skipped_no_source_values"
@@ -130,14 +170,25 @@ def extend_ceud_to_base_year(
         elif policy == "error":
             raise ValueError(
                 f"CEUD base year {base_year} exceeds observed endpoint {source_endpoint} "
-                f"for {label}; select nrcan_ceud_beyond_observed: constant explicitly"
+                f"for {label}; select nrcan_ceud_beyond_observed: constant or extrapolated explicitly"
             )
         else:
             extension_years = range(source_endpoint + 1, base_year + 1)
             endpoint = finite.tail(1)
             extension = endpoint.iloc[np.zeros(len(extension_years), dtype=int)].copy()
             extension["year"] = list(extension_years)
-            extension["ceud_value_status"] = "constant"
+            if policy == "extrapolated":
+                rate, intervals = historical_cagr(
+                    finite, history_start_year=int(cagr_rules["history_start_year"]),
+                    excluded_years=cagr_rules["excluded_years"],
+                )
+                extension["value"] = float(endpoint.iloc[0].value) * np.power(
+                    1 + rate, np.arange(1, len(extension_years) + 1),
+                )
+                if not np.isfinite(extension.value).all() or extension.value.lt(0).any():
+                    raise ValueError(f"Invalid extrapolated CEUD values for {label}")
+                record.update(annual_cagr=rate, growth_intervals="|".join(map(str, intervals)))
+            extension["ceud_value_status"] = policy
             extension["ceud_observed_year"] = source_endpoint
             extension["ceud_extension_policy"] = policy
             additions.append(extension)
@@ -190,6 +241,7 @@ def read_ceud_input(
         native, base_year=bundle.scenario.periods.base_year,
         policy=bundle.scenario.sources.nrcan_ceud_beyond_observed,
         required_series=required_series,
+        cagr_rules=load_harmonization_rules(bundle, "ceud_inputs")["cagr"],
     )
     return frame.loc[frame.year.le(bundle.scenario.periods.base_year)].reset_index(drop=True)
 
@@ -209,6 +261,7 @@ def prepare_ceud_inputs(bundle: ConfigBundle) -> dict:
         frame, audit = extend_ceud_to_base_year(
             native, base_year=bundle.scenario.periods.base_year,
             policy=bundle.scenario.sources.nrcan_ceud_beyond_observed,
+            cagr_rules=rules["cagr"],
         )
         target = output / native_rules["region_output_template"].format(region=region.lower())
         prepared.append((frame, target))
@@ -235,7 +288,8 @@ def prepare_ceud_inputs(bundle: ConfigBundle) -> dict:
         "scenario_path": str(bundle.scenario_path),
         "base_year": bundle.scenario.periods.base_year,
         "policy": bundle.scenario.sources.nrcan_ceud_beyond_observed,
-        "extension_rule": "constant_after_table_observed_endpoint_only",
+        "extension_rule": bundle.scenario.sources.nrcan_ceud_beyond_observed,
+        "cagr_rules": rules["cagr"],
         "native_source_files_modified": False,
         "observed_history_preserved": True,
         "series_status_counts": combined.status.value_counts().to_dict(),

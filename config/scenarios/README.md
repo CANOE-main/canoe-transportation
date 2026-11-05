@@ -18,7 +18,7 @@ Reusable conversions belong in `config/parameters/conversion.yaml`.
 | `geography.regions` | Regions covered by the registered inputs and template. Quote `"ON"` to avoid YAML 1.1 boolean parsing. |
 | `periods` | Period mode, parameter base year, existing vintage labels, model periods, and step. Prospective periods use end conditions; legacy retains the previous historical bins and future timing. Source observations retain their own dates. |
 | `sources.selections` | CEUD provincial/national years, Transport Canada dashboard year, and CER edition. Other sources have pinned registry releases or their own discovery contract; an unused edition/year selector is rejected. |
-| `sources.nrcan_ceud_beyond_observed` | `error` rejects an unavailable CEUD base year; `constant` holds eligible series from their actual table endpoint through the base year. Source editions and native files stay unchanged. Discontinued historical fuel series and interior gaps are not filled. |
+| `sources.nrcan_ceud_beyond_observed` | `error`, `constant`, or `extrapolated`. Constant holds eligible native endpoints. Extrapolated uses shared `ceud_inputs.cagr` controls with demand, omitting intervals touching 2020–2021 and fitting only observations. Both extend only through base_year. |
 | `aggregation_sources` | Regional fleet evidence shared across parameters: stock ages, LDV classes, medium-truck classes and heavy-truck haul activity. Every scenario declares the same four roles, with its own selections. |
 | `economics.cer_scenario` | CER trajectory used for currency harmonization, independently of demand. It must exist in the selected CER edition. |
 | Other `economics` fields | Discount and loan rates, CAD currency, and reference dollar year for costs. |
@@ -75,14 +75,23 @@ Keep registered caches, external models, reviewed mappings and notebook source f
 
 ## Parameter settings
 
+Build logs report elapsed and process CPU time for prerequisites, parameters,
+insertion and final checks.
+Efficiency preparation also reports family-matching and regional composition times.
+Detailed count-weight audits are available with `--debug`. Preparations reuse
+matching/cohort results, physical costs and numerical source points within their
+current inputs. Every build replays registered inputs and performs its configured
+validation. Numerical sensitivity callers clearing the ATB value cache read the
+current ATB values. CEUD/load evidence is fixed within one preparation instance.
+
 | Section and field | Selections and behavior |
 | --- | --- |
 | `lifetimes.survival_curves` | `true` uses accepted road survival curves; `false` uses configured fixed lifetimes, including source-derived medians for LDVs and medium/heavy trucks. Road technology totals are derived over the same configured historical coverage before lifetime eligibility; this switch reallocates their vintages, preserving totals before capacity cleanup. Other technologies retain their configured fixed lifetime pathway. |
-| `lifetimes.heavy_truck_survival_source` | `eia_nems_hd_truck_scrappage` or `epa_moves_heavy_truck_survival`, for heavy trucks only. The selected cumulative schedule supplies both the fixed median and survival curves; LDVs and medium trucks retain NHTSA. The default template and researcher presets select MOVES; the legacy comparison selects NEMS. |
+| `lifetimes.road_lifetime_survival_source` | `nhtsa_nems` selects NHTSA car/light/medium and NEMS heavy schedules. `moves` selects MOVES car/light/heavy schedules, with medium trucks using heavy rates. One choice supplies medians, historical stock survival and future curves. |
 | `lifetimes.survival_curve_max_age` | Maximum supported age for road survival curves and existing-stock cohorts when curves are enabled. The prospective template uses 29 to cover ages 25–29 for vintage 2000 in the first model period; every required source age must exist. Fixed-lifetime cohorts use their class lifetime. |
 | `existing_capacity.vehicle_population_year` | MTO age-evidence year for LDVs, trucks, motorcycles, and buses. It must match the reviewed LDV aggregation artifact and the available Report 5 edition. |
 | `existing_capacity.cleanup_tolerance` | Retain positive road/bus/off-road capacity at or above this threshold in each row's native capacity unit. This is a capacity cutoff, independent of comparison tolerances; it does not trim costs or round parameters. Charger capacities have their own preparation. |
-| `existing_capacity.road_stock_method` | Regional map with required `other` fallback; `BC` also covers `BCT`. `stock_age` retains CEUD stock and the existing age allocation. `sales_survival` reconstructs cars, passenger/freight light trucks and medium/heavy trucks from CEUD sales and cumulative survival; motorcycles/buses keep their established paths. |
+| `existing_capacity.road_stock_method` | Regional map of `stock_age` or `sales_survival`. An explicit entry is required for every selected region, or use `other` as fallback. `{ON: sales_survival}` supports Ontario-only scenarios and `{other: sales_survival}` applies independent provincial CEUD sales-survival and activity calibration throughout the selected geography. |
 | `demand.cer_scenario` | CER demand trajectory, also used for the normalized default-source marker. Must exist in the selected CER edition. |
 | `demand.future_car_demand` | `GDP-indexed` or `extrapolated`. Extrapolation uses configured historical car CAGR; light trucks receive the remainder of the unchanged GDP-indexed combined passenger demand. History and harmonization remain in rules. |
 | `road_utilization.vkt_schedules` | `false` uses flat CEUD utilization. `true` prepares age-dependent mileage artifacts for supported classes. |
@@ -159,9 +168,9 @@ empty until annotated; component notes may override them.
 ## Period modes and observed years
 
 `periods.base_year` is the parameter anchor used for stocks, demand,
-ratings, load factors and annual turnover. CEUD may be extended to this anchor only
-with the explicit `sources.nrcan_ceud_beyond_observed: constant` policy; extended
-values are estimates, not observations. It is independent of
+ratings, load factors and annual turnover. CEUD extension to this anchor requires
+an explicit `sources.nrcan_ceud_beyond_observed` selection of `constant` or
+`extrapolated`. Extended values are labeled estimates. It is independent of
 `economics.cost_reference_year`, which expresses costs in a common dollar basis.
 With the template, observations end in 2023 and costs are expressed in 2020 CAD.
 Changing the dollar year does not change the observation year or period labels.
@@ -170,7 +179,7 @@ Changing the dollar year does not change the observation year or period labels.
 
 The `researcher_sales_2023.yaml` preset changes the Ontario fleet method while
 keeping the control's periods. `researcher_sales_2025.yaml` additionally holds the
-2023 CEUD endpoint through 2025 and starts model periods in 2030. Existing and
+2023 CEUD endpoint through 2025 and retains model vintage 2025, whose source endpoint is 2030. Existing and
 model vintage coordinates remain disjoint; a base year of 2025 does not create
 observed CEUD 2025 data. `validation_baseline.yaml` is the Ontario stock-based
 control. See [the validation findings](../../docs/transportation_validation.md).
@@ -200,10 +209,14 @@ Activity closure does not validate stock or energy. The opt-in research report
 calculates independent stock and vehicle-input energy residuals.
 
 `parameterization.ceud_inputs` writes labeled parameter evidence separately from
-native normalized files. It holds only missing tails of currently reported series,
-preserves all native observations, and never extends the whole model horizon.
-No linear policy is implemented: the supplied notebook provides endpoint holding,
-but no defensible linear fitting window or slope convention.
+native normalized files. It extends missing tails of currently reported series
+through the base year and preserves all native observations. `constant` holds the
+last reported value. `extrapolated` applies historical CAGR from eligible observed
+annual changes under `ceud_inputs.cagr`, excluding intervals touching 2020–2021.
+The same estimator supports `demand.future_car_demand: extrapolated`. Generated
+values never train this rate. Zero endpoints remain zero, and insufficient positive
+history or invalid projections fail explicitly. Road efficiency projections use the
+separate aligned NRCan/ATB 2023 bridge described in `docs/assumptions.md`.
 
 `periods.period_mode: prospective` is the template default. A period begins on
 December 31 of its label year and ends at the next model label: 2025 covers
@@ -266,22 +279,20 @@ emissions; there are no parameter-specific aggregation-source selectors.
 | `medium_trucks` | ON uses Report 4 including Class 2/2b; other regions use Wards Classes 3–7. Class 2b maps to Class 2 ATB VMT. All available freight vocations receive equal weights within GVWR class, excluding School/Transit/Refuse; identical VMT schedules retain separate vocation weights. |
 | `heavy_truck_haul` | StatCan Table 23-10-0142-01 provincial origin-or-destination tonne-km shares, pooled over 2011–2017 with within-province shipments counted once, shared by efficiency, costs and utilization. The configured geography map currently uses BC alone for BCT. |
 
-Medium-truck lifetime products use the single NHTSA CAFE 2b/3 Trucks survival curve for
-every GVWR class in every region. Aggregating identical curves with Report 4 or Wards
-weights leaves their lifetime values unchanged. Heavy trucks use the scenario's
-NEMS Class 7–8 or EPA MOVES5 Table C-1 schedule. NEMS annual scrappage becomes
-cumulative survival by compounding annual retention; MOVES5 annual survival is
-compounded directly. The selected schedule supplies curves when enabled and its
-first whole-age 50% survival crossing otherwise. Native class maps, weight basis,
-Wards year and vocation exclusions belong in `rules.yaml` under `road_aggregation`.
-The population year remains a scenario selection and must match the Report A/4/5
-editions consumed by that scenario.
+The `nhtsa_nems` profile applies the NHTSA CAFE 2b/3 schedule to medium trucks
+and NEMS Class 7–8 to heavy trucks, with NHTSA car and aggregated light-truck
+schedules. The `moves` profile uses native car/light-truck schedules and shares
+the heavy-vehicle schedule across medium and heavy trucks. All conditional rates
+become cumulative survival with an explicit age-zero baseline. One selected
+profile governs stock survival, fixed medians, curves and provenance.
 
-The normal build prepares MOVES5 only when selected. To prepare its optional
+The normal build prepares the registered MOVES6 release when selected. To prepare its optional
 notebook comparison evidence independently, run
-`uv run python -m fetching.assorted_sources --scenario <scenario.yaml> --moves5-survival`.
+`uv run python -m fetching.assorted_sources --scenario <scenario.yaml> --moves-survival`.
 Add `--no-download` to require the registered PDF cache. Later NEMS builds preserve
 this comparison table and its source audit without requiring the unselected PDF.
+The earlier `--moves5-survival` flag remains a compatible alias for this registered
+source operation. The selected release is owned by `sources.yaml` and extraction rules.
 
 ## Cleanup and cross-table support
 

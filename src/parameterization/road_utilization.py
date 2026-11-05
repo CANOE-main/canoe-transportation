@@ -544,6 +544,10 @@ def prepare_road_utilization(
         vintages_by_region_tech=vintages_by_region_tech,
         commodity_by_class={name: activity[name]["commodity"] for name in flat_classes},
     )
+    technologies_by_class = {
+        name: set(expanded.loc[expanded.category.eq(name), "tech"])
+        for name in road_classes
+    }
     input_digest = hashlib.sha256(json.dumps({
         "ceud": [(path.name, file_sha256(path)) for path in ceud_files],
         "manual": file_sha256(manual_file),
@@ -554,10 +558,10 @@ def prepare_road_utilization(
         "rules": factor_rules,
         "years": years,
         "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
+        "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None,
         "sales_activity_calibration": calibration.to_dict("records"),
         "calibrated_capacity": [row.model_dump(mode="json") for row in existing_capacity_rows
-                                if any(row.region == region and row.tech in set(expanded.loc[
-                                    expanded.category.eq(name), "tech"])
+                                if any(row.region == region and row.tech in technologies_by_class[name]
                                        for region, name in sales_pairs)],
     }, sort_keys=True).encode()).hexdigest()
     contexts: list[ResolvedProvenance] = []
@@ -572,7 +576,7 @@ def prepare_road_utilization(
             for selector in (activity[road_class], stock[road_class])
         ]
         if any(name == road_class for _, name in sales_pairs):
-            owners = set(expanded.loc[expanded.category.eq(road_class), "tech"])
+            owners = technologies_by_class[road_class]
             ids = {row.data_id for row in existing_capacity_rows if row.tech in owners
                    and (row.region, road_class) in sales_pairs}
             stock_inputs = [context for context in existing_capacity_contexts or []
@@ -602,9 +606,7 @@ def prepare_road_utilization(
         contexts.append(context)
         selected = [
             record for record in flat_payloads
-            if record["tech_or_group"] in set(expanded.loc[
-                expanded.category.eq(road_class), "tech"
-            ])
+            if record["tech_or_group"] in technologies_by_class[road_class]
         ]
         flat_rows.extend(validate_parameter_rows(LimitAnnualCapacityFactor, selected, context, bundle=bundle))
     age_rows: pd.DataFrame | None = None

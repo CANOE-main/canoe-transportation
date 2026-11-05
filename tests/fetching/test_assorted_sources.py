@@ -2,6 +2,7 @@ from dataclasses import replace
 from hashlib import sha256
 from io import BytesIO
 import json
+import sys
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -998,15 +999,11 @@ def test_faa_category_compatibility_failure(
 def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_outputs(
     bundle, rules, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, moves5_selected: bool,
 ) -> None:
-    choice = (
-        rules["epa_moves5"]["source_id"] if moves5_selected
-        else rules["eia_nems"]["source_id"]
-    )
     local_bundle = replace(
         bundle, repo_root=tmp_path,
         scenario=bundle.scenario.model_copy(
             update={"lifetimes": bundle.scenario.lifetimes.model_copy(
-                update={"heavy_truck_survival_source": choice}
+                update={"road_lifetime_survival_source": "moves" if moves5_selected else "nhtsa_nems"}
             )}
         ),
     )
@@ -1151,14 +1148,39 @@ def test_offline_fixture_smoke_writes_manifest_warnings_and_deterministic_output
     assert len(pd.read_csv(output_dir / rules["epri_us_regen"]["output_file"])) == 76
     assert len(pd.read_csv(output_dir / rules["faa"]["capacity_output_file"])) == 8
     assert len(pd.read_csv(output_dir / rules["faa"]["maintenance_output_file"])) == 2
-    assert len(pd.read_csv(output_dir / rules["epa_moves5"]["output_file"])) == 41
+    assert len(pd.read_csv(output_dir / rules["epa_moves5"]["output_file"])) == 123
     if moves5_selected:
         moves5_path.unlink()
         with pytest.raises(FileNotFoundError, match="Offline cache missing"):
             adapter.fetch_and_normalize("ignored.yaml", download=False, session=NoNetwork())
 
 
-def test_moves5_pdf_normalizes_only_annual_heavy_rates_with_source_locators(
+def test_registered_moves6_document_retains_approved_car_rate(bundle, rules):
+    source_rules = rules["epa_moves5"]
+    request = adapter._top_level_request(
+        bundle, source_id=source_rules["source_id"],
+        component_id=source_rules["component_id"], file_type="pdf",
+    )
+    if not request.cache_path.is_file():
+        pytest.skip("Registered MOVES6 cache is unavailable")
+    frame = normalize_moves5_survival(request, source_rules)
+    cars = frame.loc[frame.source_vehicle_class_label.eq(source_rules["class_columns"]["cars"])]
+    assert len(frame) == 123
+    assert cars.loc[cars.vehicle_age.eq(27), "annual_survival_rate"].tolist() == [0.753]
+    assert cars.loc[cars.vehicle_age.eq(27), "raw_value"].tolist() == ["0.753"]
+    assert set(frame.source_document_id) == {"EPA-420-R-26-010"}
+    assert set(frame.source_pdf_page) == {189}
+    assert set(frame.source_page) == {187}
+    assert set(frame.cache_sha256) == {request.expected_sha256}
+
+
+@pytest.mark.parametrize("flag", ["--moves-survival", "--moves5-survival"])
+def test_moves_source_cli_accepts_current_and_compatible_flags(monkeypatch, flag):
+    monkeypatch.setattr(sys, "argv", ["assorted_sources", flag])
+    assert adapter.parse_args().moves5_survival
+
+
+def test_moves5_pdf_normalizes_three_native_annual_classes_with_source_locators(
     rules, tmp_path: Path,
 ) -> None:
     source_rules = rules["epa_moves5"]
@@ -1168,7 +1190,11 @@ def test_moves5_pdf_normalizes_only_annual_heavy_rates_with_source_locators(
 
     frame = normalize_moves5_survival(request, source_rules)
 
-    assert len(frame) == 41
+    assert len(frame) == 123
+    assert set(frame.source_vehicle_class_label) == set(source_rules["class_columns"].values())
+    assert set(frame.component_id) == set(source_rules["component_ids"].values())
+    full = frame
+    frame = frame.loc[frame.source_vehicle_class_label.eq(source_rules["source_vehicle_class_label"])].reset_index(drop=True)
     assert frame.vehicle_age.tolist() == list(range(41))
     assert frame.annual_survival_rate.tolist() == pytest.approx(
         [1 - age / 100 for age in range(41)]
@@ -1178,12 +1204,12 @@ def test_moves5_pdf_normalizes_only_annual_heavy_rates_with_source_locators(
     }
     assert set(frame.unit) == {"annual survival-rate fraction"}
     assert "survival_rate" not in frame.columns
-    assert set(frame.source_pdf_page) == {192}
-    assert set(frame.source_page) == {190}
+    assert set(frame.source_pdf_page) == {source_rules["pdf_page"]}
+    assert set(frame.source_page) == {source_rules["source_page"]}
     assert set(frame.source_table) == {"Table C-1"}
     assert set(frame.cache_sha256) == {request.expected_sha256}
     assert frame.loc[1, "raw_value"] == "0.990"
-    assert frame.equals(normalize_moves5_survival(request, source_rules))
+    assert full.equals(normalize_moves5_survival(request, source_rules))
 
 
 @pytest.mark.parametrize(
@@ -1294,7 +1320,7 @@ def test_moves5_explicit_offline_preparation_preserves_other_source_evidence(
     assert before == {p.name: p.read_bytes() for p in output_dir.iterdir() if p.is_file()}
     manifest = pd.read_csv(output_dir / rules["manifest_file"])
     assert set(manifest.source_id) == {"other_source", source_rules["source_id"]}
-    assert (manifest.selected_records == [1, 41]).all()
+    assert (manifest.selected_records == [1, 123]).all()
     assert json.loads((output_dir / rules["warnings_file"]).read_text()) == warning
     path.unlink()
     with pytest.raises(FileNotFoundError, match="Offline cache missing"):

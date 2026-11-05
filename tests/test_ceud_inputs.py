@@ -147,7 +147,8 @@ def isolated_ceud(tmp_path, monkeypatch):
     ).to_csv(native / "ceud_national.csv", index=False)
     rules = {
         "nrcan_ceud": {"interim_subdir": "native", "region_output_template": "ceud_{region}.csv"},
-        "ceud_inputs": {"audit_file": "audit.csv", "manifest_file": "manifest.json"},
+        "ceud_inputs": {"cagr": {"history_start_year": 2013, "excluded_years": [2020, 2021], "zero_endpoint": "constant"},
+            "audit_file": "audit.csv", "manifest_file": "manifest.json"},
     }
     monkeypatch.setattr(ceud_inputs, "load_harmonization_rules", lambda bundle, name: rules[name])
     monkeypatch.setattr(
@@ -205,3 +206,24 @@ def test_failed_extension_publishes_no_evidence(isolated_ceud):
     with pytest.raises(ValueError, match="exceeds observed endpoint"):
         ceud_inputs.prepare_ceud_inputs(bundle)
     assert not output.exists()
+
+
+def test_extrapolated_cagr_excludes_pandemic_and_estimated_observations():
+    from parameterization.ceud_inputs import historical_cagr
+    source = source_frame(years=tuple(range(2017, 2024)), values=(100., 110., 121., 5., 8., 160., 176.))
+    rules = {"history_start_year": 2013, "excluded_years": [2020, 2021], "zero_endpoint": "constant"}
+    result, audit = extend_ceud_to_base_year(source, base_year=2025, policy="extrapolated", cagr_rules=rules)
+    assert result.loc[result.year.eq(2025), "value"].iloc[0] == pytest.approx(176 * 1.1 ** 2)
+    assert audit.iloc[0].growth_intervals == "2018|2019|2023"
+    rate, years = historical_cagr(result, history_start_year=2013, excluded_years=[2020, 2021])
+    assert rate == pytest.approx(.1)
+    assert years == [2018, 2019, 2023]
+    pd.testing.assert_frame_equal(result.loc[result.year.le(2023), source.columns].reset_index(drop=True), source)
+
+
+def test_extrapolated_zero_and_unsupported_positive_history():
+    rules = {"history_start_year": 2013, "excluded_years": [2020, 2021], "zero_endpoint": "constant"}
+    result, _ = extend_ceud_to_base_year(source_frame(values=(0, 0, 0)), base_year=2025, policy="extrapolated", cagr_rules=rules)
+    assert result.value.eq(0).all()
+    with pytest.raises(ValueError, match="consecutive"):
+        extend_ceud_to_base_year(source_frame(years=(2023,), values=(1,)), base_year=2025, policy="extrapolated", cagr_rules=rules)

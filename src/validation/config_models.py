@@ -234,8 +234,9 @@ class ScenarioPeriods(MappingModel):
             raise ValueError("periods.model must be sorted and unique")
         if any(year > self.base_year for year in self.existing):
             raise ValueError("periods.existing cannot be later than base_year")
-        if any(year <= self.base_year for year in self.model):
-            raise ValueError("periods.model must contain only years after base_year")
+        if any(year < self.base_year or (year == self.base_year and self.period_mode == "legacy")
+               for year in self.model):
+            raise ValueError("periods.model must follow base_year; prospective interval labels may equal base_year")
         if set(self.existing) & set(self.model):
             raise ValueError("periods.existing and periods.model cannot overlap")
         if any(
@@ -292,7 +293,7 @@ class ScenarioPeriods(MappingModel):
         intervals = {str(vintage): self.historical_years(vintage) for vintage in self.existing}
         return {
             **self.model_dump(mode="json"),
-            "base_year_role": "latest observed year for stock, demand and historical calibration",
+            "base_year_role": "scenario calibration anchor for stock, demand and historical cohorts",
             "historical_years_by_vintage": intervals,
             "empty_observation_vintages": [int(vintage) for vintage, years in intervals.items() if not years],
             "latest_observed_vintage": self.latest_observed_vintage,
@@ -313,7 +314,7 @@ class ScenarioSourceSelection(MappingModel):
 
 class ScenarioSources(MappingModel):
     selections: dict[str, ScenarioSourceSelection] = Field(default_factory=dict)
-    nrcan_ceud_beyond_observed: Literal["error", "constant"] = "error"
+    nrcan_ceud_beyond_observed: Literal["error", "constant", "extrapolated"] = "error"
 
 
 class ScenarioEconomics(MappingModel):
@@ -351,9 +352,7 @@ class ScenarioComparison(MappingModel):
 class ScenarioLifetimes(MappingModel):
     survival_curves: bool
     survival_curve_max_age: int = Field(gt=0)
-    heavy_truck_survival_source: Literal[
-        "eia_nems_hd_truck_scrappage", "epa_moves_heavy_truck_survival"
-    ]
+    road_lifetime_survival_source: Literal["nhtsa_nems", "moves"]
 
 
 class ScenarioRowNoteOverrides(MappingModel):
@@ -369,8 +368,8 @@ class ScenarioExistingCapacity(MappingModel):
 
     @model_validator(mode="after")
     def validate_road_stock_method(self) -> Self:
-        if "other" not in self.road_stock_method:
-            raise ValueError("existing_capacity.road_stock_method requires an other fallback")
+        if not self.road_stock_method:
+            raise ValueError("existing_capacity.road_stock_method cannot be empty")
         allowed = {"other", "ON", "AB", "BC", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"}
         if set(self.road_stock_method) - allowed:
             raise ValueError("Unknown region in existing_capacity.road_stock_method")
@@ -378,7 +377,12 @@ class ScenarioExistingCapacity(MappingModel):
 
     def method_for(self, region: str) -> str:
         methods = self.road_stock_method
-        return methods.get(region, methods.get("BC", methods["other"]) if region == "BCT" else methods["other"])
+        key = "BC" if region == "BCT" and "BCT" not in methods and "BC" in methods else region
+        if key in methods:
+            return methods[key]
+        if "other" in methods:
+            return methods["other"]
+        raise ValueError(f"No road_stock_method for selected region {region}; provide a regional value or other")
 
 
 class ScenarioDemand(MappingModel):
@@ -451,8 +455,8 @@ class ScenarioConfig(MappingModel):
             self.road_utilization.vkt_max_age < self.periods.step
         ):
             raise ValueError("road_utilization.vkt_max_age cannot contain a full period")
-        if any(self.existing_capacity.method_for(region) == "sales_survival"
-               for region in self.geography.regions):
+        stock_methods = [self.existing_capacity.method_for(region) for region in self.geography.regions]
+        if "sales_survival" in stock_methods:
             if self.lifetimes.survival_curves:
                 raise ValueError(
                     "sales_survival requires fixed future lifetimes: current unconditional "

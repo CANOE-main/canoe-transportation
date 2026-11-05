@@ -96,6 +96,7 @@ def derive_road_annual_utilization(
     if required - set(provincial):
         raise ValueError("CEUD road utilization input lacks columns")
     records: list[dict[str, Any]] = []
+    local_evidence: dict[tuple[str, int], pd.DataFrame] = {}
     for region in regions:
         for road_class, activity_selector in activity_series.items():
             stock_selector = stock_series[road_class]
@@ -103,9 +104,13 @@ def derive_road_annual_utilization(
             if not isfinite(c2a) or c2a <= 0:
                 raise ValueError(f"Invalid capacity-to-activity for {road_class}")
             for year in years:
-                local = provincial.loc[
-                    provincial["region"].eq(region) & provincial["year"].eq(year)
-                ]
+                key = region, year
+                if key not in local_evidence:
+                    local_evidence[key] = provincial.loc[
+                        provincial["region"].eq(region) & provincial["year"].eq(year),
+                        ["table_id", "raw_series", "unit", "value"],
+                    ]
+                local = local_evidence[key]
                 activity = local.loc[
                     local["table_id"].eq(int(activity_selector["table_id"]))
                     & local["raw_series"].eq(activity_selector["raw_series"])
@@ -506,11 +511,25 @@ def build_existing_stock_age_artifacts(
             assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
         )
     medians = lifetime_frames["medians"]
+    from parameterization.road_lifetimes_survival import resolved_road_lifetime_rules
+
+    selectors = resolved_road_lifetime_rules(bundle)["fixed_lifetime_sources"]
+    if selectors["cars"]["kind"] == "ceud_median":
+        age_medians = median_lifetime_map(medians)
+    else:
+        age_medians = {}
+        for name, road_class in (("Car", "cars"), ("Light Truck", "passenger_light_trucks")):
+            selector = selectors[road_class]
+            selected = medians.loc[medians.source_id.eq(selector["source_id"])
+                                   & medians.target_class.eq(selector["curve_source_class"])]
+            if len(selected) != 1 or not isfinite(float(selected.iloc[0].median_equivalent_age)):
+                raise ValueError(f"Missing selected source median for {road_class}")
+            age_medians[name] = float(selected.iloc[0].median_equivalent_age)
     age_distribution, findings = derive_ldv_age_distributions(
         mapped,
         survival_curves=bundle.scenario.lifetimes.survival_curves,
         maximum_age=bundle.scenario.lifetimes.survival_curve_max_age,
-        median_lifetimes=median_lifetime_map(medians),
+        median_lifetimes=age_medians,
         historical_review_minimum_model_year=int(
             rules["historical_review_minimum_model_year"]
         ),
@@ -636,7 +655,7 @@ def distribute_existing_road_capacity(
         rules["first_model_period_rule"] != "positive_surviving_capacity"
         or rules["ineligible_cohort_redistribution"]
         != "proportional_to_eligible_capacity"
-        or first_model_period <= base_year
+        or first_model_period < base_year
     ):
         raise ValueError("Unsupported road first-model-period eligibility rule")
     if set(fixed_lifetimes_by_class) != set(rules["ceud_stock_series"]):
@@ -1059,8 +1078,8 @@ def distribute_existing_bus_capacity(
         or abs(float(age["AGE_DIST"].sum()) - 1) > 1e-8
     ):
         raise ValueError("Invalid selected MTO Report 5 BUS age distribution")
-    if first_model_period <= base_year:
-        raise ValueError("The first model period must follow bus base-year stock")
+    if first_model_period < base_year:
+        raise ValueError("The first model period cannot precede bus base-year stock")
     source_to_powertrain = {
         member: powertrain
         for powertrain, members in rules["fuel_source_members"].items()
@@ -1384,7 +1403,7 @@ def extrapolate_passenger_ldv_demand(
 ) -> tuple[dict[tuple[str, int, str], float], list[dict[str, Any]]]:
     """Apply provincial car CAGR and assign the GDP-indexed LDV residual to trucks."""
     fit_rules = rules["car_extrapolation"]
-    if fit_rules["method"] != "endpoint_cagr_anchored_to_base_year":
+    if fit_rules["method"] != "observed_nonpandemic_cagr":
         raise ValueError("Unsupported car extrapolation method")
     start_year = int(fit_rules["history_start_year"])
     if start_year >= base_year:
@@ -1398,18 +1417,21 @@ def extrapolate_passenger_ldv_demand(
             provincial["region"].eq(ceud_region)
             & provincial["table_id"].eq(int(car_selector["table_id"]))
             & provincial["raw_series"].eq(car_selector["raw_series"])
-            & provincial["year"].isin([start_year, base_year])
+            & provincial["year"].between(start_year, base_year)
         ].sort_values("year")
-        if len(history) != 2 or history["year"].tolist() != [start_year, base_year]:
-            raise ValueError(f"Missing or duplicate CEUD car CAGR endpoints for {ceud_region}")
+        if history.empty or history.year.duplicated().any():
+            raise ValueError(f"Missing or duplicate CEUD car CAGR history for {ceud_region}")
         if set(history["unit"]) != {"millions"}:
             raise ValueError(f"CEUD car history unit changed for {ceud_region}")
         activity = (pd.to_numeric(history["value"], errors="raise") * factor).tolist()
         if any(not isfinite(value) or value <= 0 for value in activity):
             raise ValueError(f"CEUD car CAGR endpoints must be finite and positive for {ceud_region}")
-        annual_cagr = (activity[-1] / activity[0]) ** (
-            1.0 / (base_year - start_year)
-        ) - 1.0
+        from parameterization.ceud_inputs import historical_cagr
+
+        annual_cagr, growth_intervals = historical_cagr(
+            history, history_start_year=start_year,
+            excluded_years=fit_rules["excluded_years"],
+        )
         native_region = rules["region_output_map"].get(ceud_region, ceud_region)
         car_rows = baseline.loc[
             baseline["region"].eq(native_region) & baseline["service"].eq("cars")
@@ -1446,6 +1468,7 @@ def extrapolate_passenger_ldv_demand(
                 "projection_year": end_year,
                 "history_start_year": start_year,
                 "annual_car_cagr": annual_cagr,
+                "growth_intervals": "|".join(map(str, growth_intervals)),
                 "car_demand": car,
                 "passenger_light_truck_demand": truck,
                 "combined_gdp_indexed_demand": total,

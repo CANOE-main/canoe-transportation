@@ -20,6 +20,7 @@ from parameterization.offroad_efficiencies import (
 )
 from parameterization.road_efficiencies import (
     RoadEfficiencyEvidence,
+    _configuration_hybrid_evidence,
     aggregate_atb,
     aggregate_ratings,
     classify_ratings,
@@ -146,7 +147,7 @@ def test_truck_fleet_levels_and_unchanged_bus_backcast_do_not_double_load(rules)
         base_year=2023,
         rules=rules,
         conversions=load_conversion_factors(load_config_bundle("config/scenarios/notebook_diagnostics.yaml")),
-        projection_years=(2023,), projection_reference_year=2025,
+        projection_years=(2023,), projection_reference_year=2023,
         cohort_stock=pd.DataFrame([{"region": "ON", "road_class": "medium_trucks", "powertrain": "diesel",
                                     "vintage_year": 2023, "raw_capacity": 1}]),
     )
@@ -154,11 +155,69 @@ def test_truck_fleet_levels_and_unchanged_bus_backcast_do_not_double_load(rules)
     hhv = evidence.conversions["fuel_hhv"]["diesel_mj_per_litre"]
     assert medium_history["native_intensity"] == pytest.approx(40 * hhv / 100)
     assert medium_history["load_factor"] == 5
-    assert evidence.derive_consumption("ON", "medium_trucks", "diesel", 2030)["native_intensity"] == pytest.approx(20 * hhv / 100 * 4 / 6)
+    assert evidence.derive_consumption("ON", "medium_trucks", "diesel", 2030)["native_intensity"] == pytest.approx(20 * hhv / 100 * 4 / 6.8)
     bus_history = evidence.derive_consumption("ON", "urban_transit", "diesel", 2000)
     assert bus_history["native_intensity"] == pytest.approx(6.8 * 2 * 5 / 10)
     assert bus_history["load_factor"] == 5
     assert "efficiency" not in bus_history
+
+
+@pytest.fixture
+def bus_numerical_evidence(rules):
+    bus = rules["road_classes"]["urban_transit"]
+    ceud = pd.DataFrame([
+        {"region": region, "table_id": bus["intensity_table"], "raw_series": bus["intensity"],
+         "unit": "MJ/Pkm", "year": year, "value": value,
+         "source_native_note": "Retained source-native audit evidence"}
+        for region, values in [("ON", [2., 1.]), ("AB", [4., 1.])]
+        for year, value in zip([2000, 2023], values, strict=True)
+    ])
+    loads = pd.DataFrame([
+        {"region": region, "mode": "urban_transit", "year": year, "load_factor": load}
+        for region in ["ON", "AB"] for year, load in [(2000, 5.), (2023, 10.)]
+    ])
+    atb = pd.DataFrame([
+        {"region": region, "mode": "urban_transit", "powertrain": powertrain,
+         "year": 2023, "weighted_consumption": value}
+        for region in ["ON", "AB"] for powertrain, value in [("diesel", 6.8), ("bev", 2.)]
+    ])
+    return RoadEfficiencyEvidence(
+        ceud=ceud, loads=loads, rules=rules, base_year=2023,
+        rating_audit=pd.DataFrame(columns=["year", "ceud_class", "powertrain", "native_class_mean", "class_mean_mj_per_vkm", "weight"]),
+        atb_audit=atb, gcam=pd.DataFrame(), regen=pd.DataFrame(),
+    )
+
+
+def test_road_numerical_source_caches_are_regional_and_shared_across_powertrains(bus_numerical_evidence):
+    evidence = bus_numerical_evidence
+    original = evidence.ceud.copy(deep=True)
+    for powertrain in ["diesel", "bev"]:
+        for year in [2000, 2023]:
+            result = evidence.derive_consumption("ON", "urban_transit", powertrain, year)
+            assert result["load_factor"] == (5. if year == 2000 else 10.)
+    assert evidence._ceud_series.cache_info().misses == 1
+    assert evidence._ceud_value.cache_info().misses == 2
+    assert evidence._load_value.cache_info().misses == 2
+    ontario = evidence.derive_consumption("ON", "urban_transit", "diesel", 2000)
+    alberta = evidence.derive_consumption("AB", "urban_transit", "diesel", 2000)
+    assert alberta["native_intensity"] == 2 * ontario["native_intensity"]
+    assert evidence._ceud_series.cache_info().misses == 2
+    pd.testing.assert_frame_equal(evidence.ceud, original)
+
+
+@pytest.mark.parametrize("invalid", ["duplicate_year", "wrong_unit", "nonpositive", "nonfinite"])
+def test_cached_ceud_series_retains_whole_history_validation(bus_numerical_evidence, invalid):
+    evidence = bus_numerical_evidence
+    earlier = evidence.ceud.region.eq("ON") & evidence.ceud.year.eq(2000)
+    if invalid == "duplicate_year":
+        evidence.ceud = pd.concat([evidence.ceud, evidence.ceud.loc[earlier]], ignore_index=True)
+    elif invalid == "wrong_unit":
+        evidence.ceud.loc[earlier, "unit"] = "MJ/vkm"
+    else:
+        evidence.ceud.loc[earlier, "value"] = 0. if invalid == "nonpositive" else float("nan")
+    # The requested year is valid. Earlier invalid evidence must still fail.
+    with pytest.raises(ValueError):
+        evidence.derive_consumption("ON", "urban_transit", "diesel", 2023)
 
 
 def test_empty_bin_proxy_keeps_last_own_rating_without_future_observations(rules):
@@ -417,6 +476,76 @@ def test_hybrid_evidence_uses_transmission_and_excludes_separate_pev_scope(rules
                               range_rules=range_module_rules(bundle))
     assert result.powertrain.tolist() == ["gasoline", "hev"]
     assert result.included.all()
+
+
+@pytest.mark.parametrize("model,expected", [("Hidden AWD", True), ("Hidden Touring AWD", None)])
+def test_configuration_numeric_coverage_preserves_exact_and_family_routes(rules, model, expected):
+    source = pd.DataFrame([{"year": 2023, "Make": "Example", "Model": model,
+                            "Engine size (L)": "not reported", "Cylinders": 4}])
+    epa = pd.DataFrame([{"year": 2023, "make": "Example", "model": "Hidden AWD",
+                         "atvType": "Hybrid", "displ": 2., "cylinders": 4}])
+    result = _configuration_hybrid_evidence(source, epa, rules["ratings"]).iloc[0]
+    assert result.epa_hybrid is expected or result.epa_hybrid == expected
+    assert not result.ambiguous_epa_match
+    assert result.epa_classification_method == (
+        "exact_epa_hybrid" if expected else "configuration_epa_unresolved"
+    )
+
+
+def test_configuration_family_cache_keeps_year_scoped_aliases_and_source_indices(rules, monkeypatch):
+    from parameterization import road_efficiencies
+
+    spec = deepcopy(rules["ratings"])
+    spec["hybrid_configuration_evidence"]["model_aliases"] = [
+        {"make": "Example", "pattern": "Model", "canonical_model": "Other", "model_year_from": 2021},
+    ]
+    source = pd.DataFrame([{"year": year, "Make": "Example", "Model": "Model",
+                            "Engine size (L)": 2., "Cylinders": 4} for year in [2020, 2021]], index=[8, 3])
+    epa = pd.DataFrame([{"year": year, "make": "Example", "model": "Other", "atvType": "Hybrid",
+                         "displ": 2., "cylinders": 4} for year in [2020, 2021]])
+    calls = []
+    original = road_efficiencies.catalogue_family
+
+    def record_family(make, model, policy):
+        calls.append((make, model))
+        return original(make, model, policy)
+
+    monkeypatch.setattr(road_efficiencies, "catalogue_family", record_family)
+    result = _configuration_hybrid_evidence(source, epa, spec)
+    assert result.index.tolist() == [8, 3]
+    assert result.epa_classification_method.tolist() == ["unverified_source_fuel", "configuration_epa_hybrid"]
+    assert calls.count(("Example", "Other")) == 1
+    assert calls.count(("Example", "Model")) == 1
+
+
+@pytest.mark.parametrize("transmissions", [[8, 8], [8, "Automatic (S8)"]])
+def test_configuration_preserves_malformed_transmission_errors(rules, transmissions):
+    source = pd.DataFrame([{"year": 2023, "Make": "Example", "Model": "Mixed", "Transmission": "AS8",
+                            "Engine size (L)": 2., "Cylinders": 4}])
+    epa = pd.DataFrame([{"year": 2023, "make": "Example", "model": "Mixed", "atvType": "",
+                         "displ": engine, "cylinders": 4, "trany": transmission}
+                        for engine, transmission in zip([2., 3.], transmissions, strict=True)])
+    with pytest.raises(AttributeError, match="str accessor"):
+        _configuration_hybrid_evidence(source, epa, rules["ratings"])
+
+
+def test_configuration_missing_transmission_values_remain_unresolved(rules):
+    source = pd.DataFrame([{"year": 2023, "Make": "Example", "Model": "Mixed", "Transmission": "AS8",
+                            "Engine size (L)": 2., "Cylinders": 4}])
+    epa = pd.DataFrame([{"year": 2023, "make": "Example", "model": "Mixed", "atvType": "Hybrid",
+                         "displ": 2., "cylinders": 4, "trany": float("nan")}])
+    result = _configuration_hybrid_evidence(source, epa, rules["ratings"]).iloc[0]
+    assert result.epa_hybrid is None and not result.ambiguous_epa_match
+    assert result.epa_classification_method == "exact_epa_unresolved"
+
+
+def test_configuration_requires_technology_only_for_matching_evidence(rules):
+    source = pd.DataFrame([{"year": 2023, "Make": "Example", "Model": "Known"}])
+    epa = pd.DataFrame([{"year": 2023, "make": "Example", "model": "Known"}])
+    empty = _configuration_hybrid_evidence(source, epa.iloc[:0], rules["ratings"])
+    assert empty.epa_classification_method.tolist() == ["unverified_source_fuel"]
+    with pytest.raises(AttributeError, match="atvType"):
+        _configuration_hybrid_evidence(source, epa, rules["ratings"])
 
 
 @pytest.mark.parametrize("make,model,epa_model,year,engine,cylinders,code", [
@@ -991,9 +1120,9 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         atb_evidence.region.eq("ON") & atb_evidence["mode"].eq("passenger_light_trucks")
         & atb_evidence.year.eq(2030)
     ].groupby("powertrain").weighted_consumption.sum()
-    atb_anchor_2025 = atb_evidence.loc[
+    atb_anchor_2023 = atb_evidence.loc[
         atb_evidence.region.eq("ON") & atb_evidence["mode"].eq("passenger_light_trucks")
-        & atb_evidence.year.eq(2025) & atb_evidence.powertrain.eq("bev_300_miles"),
+        & atb_evidence.year.eq(2023) & atb_evidence.powertrain.eq("bev_300_miles"),
         "weighted_consumption",
     ].sum()
     rating_evidence = pd.read_csv(tmp_path / "efficiencies_interim/aggregated_rating_consumption.csv")
@@ -1015,7 +1144,7 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         if row.vintage == 2025 and row.tech in ltp_bev_ranges
     }
     assert actual_ltp_bev == pytest.approx({
-        tech: ltp_anchor_load / (ltp_anchor_consumption * future_ltp[bucket] / atb_anchor_2025)
+        tech: ltp_anchor_load / (ltp_anchor_consumption * future_ltp[bucket] / atb_anchor_2023)
         for tech, bucket in ltp_bev_ranges.items()
     }, rel=1e-12)
     assert [actual_ltp_bev[tech] for tech in ltp_bev_ranges] == sorted(actual_ltp_bev.values(), reverse=True)
@@ -1044,7 +1173,7 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     assert set(projected_bevs.treatment) == {"NRCan_cohort_anchor_ATB_relative_projection"}
     assert set(projected_bevs.projection_anchor_powertrain) == {"bev_300_miles"}
     assert projected_bevs.projection_source_years.map(json.loads).tolist() == [[2021, 2022, 2023]] * 4
-    assert projected_bevs.projection_reference_year.eq(2025).all()
+    assert projected_bevs.projection_reference_year.eq(2023).all()
     assert set(projected_bevs.projection_stock_powertrain) == {"gasoline"}
     assert projected_bevs.projection_stock_proxy.eq(True).all()
     assert projected_bevs.projection_stock_coverage.eq(1).all()
@@ -1391,3 +1520,84 @@ def test_empirical_lineage_uses_selected_variants_and_actual_component_by_region
         )
         with pytest.raises(ValueError, match=message):
             invalid_resolver("cars", "bev_300_miles", year, "mj", "ON")
+
+
+@pytest.mark.parametrize('duplicate_included', [False, True])
+def test_empirical_provenance_checks_all_included_source_keys(rules, duplicate_included):
+    classified = pd.DataFrame([
+        dict(year=2023, powertrain='bev_300_miles', rating_class='Compact', included=True,
+             component='native', source_row=1, native_unit='kWh/100 km', classification_method='omega_range_bucket'),
+        dict(year=2014, powertrain='gasoline', rating_class='Mid-size', included=duplicate_included,
+             component='native', source_row=1, native_unit='L/100 km', classification_method='source_fuel'),
+    ])
+    audit = pd.DataFrame([dict(region='ON', ceud_class='Car', year=2023, powertrain='bev_300_miles',
+                              rating_class='Compact', aggregation_method='izev_incentive_weighted',
+                              composition_source='transport_canada_izev', composition_components='fy2023')])
+    variants = pd.DataFrame([dict(region='ON', year=2023, powertrain='bev_300_miles', rating_class='Compact',
+                                 component='native', source_row=1)])
+    resolver, _ = layer.ldv_rating_input_resolvers(
+        SimpleNamespace(base_year=2023), classified, audit, rules=rules, composition_variants=variants,
+    )
+    if duplicate_included:
+        with pytest.raises(pd.errors.MergeError, match='not unique'):
+            resolver('cars', 'bev_300_miles', 2023, 'mj', 'ON')
+    else:
+        assert set(resolver('cars', 'bev_300_miles', 2023, 'mj', 'ON')) == {
+            ('nrcan_fuel_consumption_ratings', 'native'), ('transport_canada_izev', 'fy2023'),
+        }
+
+
+def test_provenance_region_guard_precedes_requested_year_filter(rules):
+    classified = pd.DataFrame([dict(year=2023, powertrain='gasoline', rating_class='Compact', included=True,
+                                   component='native', native_unit='L/100 km', classification_method='source_fuel')])
+    audit = pd.DataFrame([
+        dict(region=region, ceud_class='Car', year=year, powertrain='gasoline', rating_class='Compact')
+        for region, year in [('ON', 2023), ('QC', 2022)]
+    ])
+    resolver, _ = layer.ldv_rating_input_resolvers(SimpleNamespace(base_year=2023), classified, audit, rules=rules)
+    with pytest.raises(ValueError, match='explicit region'):
+        resolver('cars', 'gasoline', 2023, 'native')
+    assert resolver('cars', 'gasoline', 2023, 'native', 'ON') == (('nrcan_fuel_consumption_ratings', 'native'),)
+
+
+@pytest.mark.parametrize('included', [False, True])
+def test_provenance_preserves_epa_support_across_same_class_powertrains(rules, included):
+    classified = pd.DataFrame([
+        dict(year=2023, powertrain='gasoline', rating_class='Compact', included=True,
+             component='native', native_unit='L/100 km', classification_method='source_fuel'),
+        dict(year=2023, powertrain='hev', rating_class='Compact', included=included,
+             component='other', native_unit='L/100 km', classification_method='configuration_epa_hybrid'),
+    ])
+    audit = pd.DataFrame([dict(ceud_class='Car', year=2023, powertrain='gasoline', rating_class='Compact')])
+    resolver, _ = layer.ldv_rating_input_resolvers(SimpleNamespace(base_year=2023), classified, audit, rules=rules,
+                                                 composition_variants=pd.DataFrame())
+    assert set(resolver('cars', 'gasoline', 2023, 'native')) == {
+        ('nrcan_fuel_consumption_ratings', 'native'), (rules['ratings']['evidence_source'], 'vehicles'),
+    }
+    assert ('argonne_rd_greet', 'fuel_heating_values') in resolver('cars', 'gasoline', 2023, 'mj')
+
+
+def test_provenance_keeps_empirical_and_catalogue_classes_separate(rules):
+    classified = pd.DataFrame([
+        dict(year=2023, powertrain=powertrain, rating_class=rating_class, included=True,
+             component=component, source_row=index, native_unit='kWh/100 km', classification_method='omega_range_bucket')
+        for index, component, rating_class, powertrain in [
+            (1, 'empirical', 'Compact', 'bev_150_miles'),
+            (2, 'fallback', 'Mid-size', 'bev_300_miles'),
+            (3, 'unused', 'Compact', 'bev_300_miles'),
+        ]
+    ])
+    audit = pd.DataFrame([
+        dict(region='ON', ceud_class='Car', year=2023, powertrain='bev_300_miles', rating_class=rating_class,
+             aggregation_method=method, composition_source='transport_canada_izev', composition_components='fy2023')
+        for rating_class, method in [('Compact', 'izev_incentive_weighted'), ('Mid-size', 'catalogue_distinct_model_median')]
+    ])
+    variants = pd.DataFrame([dict(region='ON', year=2023, powertrain='bev_300_miles', rating_class='Compact',
+                                 component='empirical', source_row=1)])
+    resolver, _ = layer.ldv_rating_input_resolvers(
+        SimpleNamespace(base_year=2023), classified, audit, rules=rules, composition_variants=variants,
+    )
+    expected = {('nrcan_fuel_consumption_ratings', 'empirical'), ('nrcan_fuel_consumption_ratings', 'fallback'),
+                ('transport_canada_izev', 'fy2023')}
+    assert set(resolver('cars', 'bev_300_miles', 2023, 'native', 'ON')) == expected
+    assert set(resolver('cars', 'bev_300_miles', 2023, 'mj', 'ON')) == expected

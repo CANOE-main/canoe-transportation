@@ -70,7 +70,7 @@ def harmonized_costs(tmp_path_factory):
         # No existing technologies are requested; avoid generating unrelated range audits.
         patch.setattr(
             layer, "existing_range_weights",
-            lambda _: ({}, SimpleNamespace(bucket_totals=pd.DataFrame())),
+            lambda _, *, evidence=None: ({}, SimpleNamespace(bucket_totals=pd.DataFrame())),
         )
         # Currency behavior is independent of fleet aggregation; keep class mixtures fixed.
         patch.setattr(layer, "_region_weights", lambda *_: {

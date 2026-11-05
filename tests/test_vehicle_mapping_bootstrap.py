@@ -37,6 +37,30 @@ def _bootstrap_rules() -> dict[str, object]:
     return dict(road_aggregation.module_rules(bundle)["mapping_bootstrap"])
 
 
+def test_bootstrap_without_retired_manual_inventory_uses_empty_review_scope(monkeypatch):
+    from parameterization import vehicle_mapping_bootstrap as bootstrap
+
+    monkeypatch.setattr(bootstrap, "resolve_input_path", lambda *_args: pytest.fail("unselected review inventory was accessed"))
+    manual = bootstrap.load_manual_evidence(
+        None, bootstrap_rules={}, canonical_make_aliases={}, reaudit_keys=set(),
+    )
+    assert manual.empty
+    hints = bootstrap._manual_label_hints(manual)
+    assert hints.empty
+    assert {"mto_make_code", "mto_model_code", "manual_promotion_eligible"}.issubset(manual.columns)
+
+
+def test_bootstrap_explicit_manual_inventory_must_exist(tmp_path, monkeypatch):
+    from parameterization import vehicle_mapping_bootstrap as bootstrap
+
+    monkeypatch.setattr(bootstrap, "resolve_input_path", lambda *_args: tmp_path / "missing.csv")
+    with pytest.raises(FileNotFoundError):
+        bootstrap.load_manual_evidence(
+            None, bootstrap_rules={"manual_evidence_file": "missing.csv"},
+            canonical_make_aliases={}, reaudit_keys=set(),
+        )
+
+
 def automatically_supported_years(
     current_stock: pd.DataFrame,
     rating_evidence: pd.DataFrame,

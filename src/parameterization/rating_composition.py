@@ -7,12 +7,15 @@ shares, complete vehicle-market coverage, or real-world fuel consumption.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from functools import lru_cache
 from hashlib import sha256
+import logging
 from math import isfinite
 import re
+from time import perf_counter
 from typing import Any
 
 import numpy as np
@@ -26,6 +29,9 @@ from parameterization.vehicle_reference import (
     canonical_izev_observation, catalogue_family, catalogue_family_labels,
     normalize_family as normalize_family,
 )
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -43,7 +49,34 @@ def median_support_weights(frame: pd.DataFrame, field: str) -> pd.Series:
     These reproduce a scalar median and component totals. They are mathematical
     representative-rating coefficients, never observed trim-market shares.
     """
-    values = frame.drop_duplicates("rating_variant_id").sort_values([field, "rating_variant_id"])
+    variants = frame.rating_variant_id.unique()
+    native_numeric = (frame[field].dtype.kind in "biuf"
+                      and frame[field].dtype != np.dtype("float16")
+                      and frame.rating_variant_id.dtype != np.dtype("float16"))
+    if native_numeric and len(variants) == 1 and pd.notna(variants[0]):
+        value = pd.to_numeric(frame[field].iloc[0], errors="coerce")
+        weight = 1. / len(frame) if pd.notna(value) else 0.
+        return pd.Series(weight, index=frame.index, name="rating_variant_id" if pd.notna(value) else None)
+    if native_numeric and pd.notna(variants).all():
+        # Central-value mass depends on distinct trims and tied values. Count
+        # those directly while retaining the first physical row for each trim.
+        identities = frame.rating_variant_id.tolist()
+        first_values = {}
+        for identity, value in zip(identities, frame[field], strict=True):
+            first_values.setdefault(identity, value)
+        valid = {identity: value for identity, value in first_values.items() if pd.notna(value)}
+        if not valid:
+            return pd.Series(0., index=frame.index)
+        ordered = sorted(valid.values())
+        central = Counter([ordered[(len(ordered) - 1) // 2], ordered[len(ordered) // 2]])
+        tied = Counter(valid.values())
+        coefficients = {identity: (central[value] / 2.) / tied[value] for identity, value in valid.items()}
+        source_counts = Counter(identities)
+        return pd.Series(
+            [coefficients.get(identity, 0.) / source_counts[identity] for identity in identities],
+            index=frame.index, name="rating_variant_id",
+        )
+    values = frame[["rating_variant_id", field]].drop_duplicates("rating_variant_id").sort_values([field, "rating_variant_id"])
     values = values.loc[pd.to_numeric(values[field], errors="coerce").notna()]
     result = pd.Series(0., index=frame.index)
     if values.empty:
@@ -70,12 +103,15 @@ def _compatible(observed: str, candidate: str) -> bool:
 
 
 def _labels(values: pd.Series) -> str:
+    if isinstance(values.dtype, pd.StringDtype):
+        return " | ".join(sorted(values.unique().dropna()))
     return " | ".join(sorted({str(value) for value in values if pd.notna(value)}))
 
 
 def _source_references(values: pd.Series) -> str:
     """Keep row reconciliation reproducible without copying long transaction lists."""
-    unique = sorted({str(value) for value in values if pd.notna(value)})
+    unique = (sorted(values.unique().dropna()) if isinstance(values.dtype, pd.StringDtype)
+              else sorted({str(value) for value in values if pd.notna(value)}))
     if len(unique) <= 20 or any(":" not in value for value in unique):
         return " | ".join(unique)
     bounds: dict[str, list[int]] = {}
@@ -88,6 +124,27 @@ def _source_references(values: pd.Series) -> str:
     )
     digest = sha256("\n".join(unique).encode("utf-8")).hexdigest()
     return f"{ranges}; row_identity_sha256={digest}"
+
+
+def _physical_row_key(component: object, source_row: object) -> tuple:
+    """Use pandas' null-equality convention when joining physical audit rows."""
+    return (
+        None if pd.isna(component) else component,
+        None if pd.isna(source_row) else source_row,
+    )
+
+
+def _preserve_source_dtypes(frame: pd.DataFrame, schemas: list[pd.Series], overwritten: dict) -> pd.DataFrame:
+    """Keep shared source types that record construction cannot infer from nulls."""
+    distinct = list({id(schema): schema for schema in schemas}.values())
+    common = distinct[0].to_dict()
+    for schema in distinct[1:]:
+        common = {column: dtype for column, dtype in common.items()
+                  if column in schema and dtype == schema[column]}
+    actual_dtypes = frame.dtypes.to_dict()
+    corrections = {column: dtype for column, dtype in common.items()
+                   if column not in overwritten and actual_dtypes[column] != dtype}
+    return frame.astype(corrections) if corrections else frame
 
 
 def _validate_policy(spec: dict) -> None:
@@ -552,8 +609,14 @@ def _candidate_families(candidates: pd.DataFrame, description: str, spec: dict, 
     if candidates.empty:
         return candidates, ""
     key = normalize_vehicle_text(description)
-    families = candidates[["_candidate_family", "_candidate_key"]].drop_duplicates()
-    structural = families._candidate_family.map(lambda label: _family_structure_compatible(description, str(label)))
+    candidate_keys = candidates._candidate_key.unique()
+    if (len(candidate_keys) == 1 and candidate_keys[0] == key
+            and all(_family_structure_compatible(description, str(label))
+                    for label in candidates._candidate_family.unique())):
+        return candidates, "canonical_family"
+    families = list(dict.fromkeys(zip(candidates._candidate_family, candidates._candidate_key, strict=True)))
+    families = [(label, family_key) for label, family_key in families
+                if _family_structure_compatible(description, str(label))]
     makes = set(candidates._make_key) if "_make_key" in candidates else set()
     reviewed_families = (family_boundaries if family_boundaries is not None else
         {normalize_vehicle_text(rule["canonical_model"])
@@ -562,18 +625,19 @@ def _candidate_families(candidates: pd.DataFrame, description: str, spec: dict, 
     if key in reviewed_families:
         # Known body/nameplate families remain separate even when one is absent
         # from this edition (Rogue vs Rogue Sport, Corolla vs Corolla Cross).
-        structural &= ~families._candidate_key.isin(reviewed_families - {key})
-    families = families.loc[structural]
-    exact = families.loc[families._candidate_key.eq(key)]
-    if not exact.empty:
-        return candidates.loc[candidates._candidate_key.isin(exact._candidate_key)], "canonical_family"
-    prefix = families.loc[families._candidate_family.map(lambda label: _compatible(description, str(label)))]
-    if not prefix.empty:
-        return candidates.loc[candidates._candidate_key.isin(prefix._candidate_key)], "recognized_family_extensions"
+        families = [(label, family_key) for label, family_key in families
+                    if family_key not in reviewed_families - {key}]
+    exact = {family_key for _, family_key in families if family_key == key}
+    if exact:
+        return candidates.loc[candidates._candidate_key.isin(exact)], "canonical_family"
+    prefix = {family_key for label, family_key in families if _compatible(description, str(label))}
+    if prefix:
+        return candidates.loc[candidates._candidate_key.isin(prefix)], "recognized_family_extensions"
     policy = spec.get("family_matching", {})
     minimum = policy.get("minimum_similarity")
-    if minimum is None or families.empty:
+    if minimum is None or not families:
         return candidates.iloc[:0], ""
+    families = pd.DataFrame(families, columns=["_candidate_family", "_candidate_key"])
     families = families.assign(similarity=families._candidate_key.map(lambda value: SequenceMatcher(None, key, value).ratio()))
     families = families.loc[families.similarity.ge(minimum)].sort_values(["similarity", "_candidate_key"], ascending=[False, True])
     if families.empty:
@@ -770,11 +834,15 @@ def _match_observations(
 ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
     result, matches, all_candidates = [], {}, {}
     family_boundaries = {}
+    excluded_model_years = {}
     if reference is not None:
         for row in reference.canonical.loc[reference.canonical.family_boundary].itertuples(index=False):
             family_boundaries.setdefault(normalize_vehicle_text(row.canonical_make), set()).add(
                 normalize_vehicle_text(row.canonical_model))
+        for row in reference.canonical.loc[reference.canonical.evidence_status.eq("model_not_produced")].itertuples(index=False):
+            excluded_model_years.setdefault(row.vehicle_id, []).append((row.model_year_from, row.model_year_to))
     candidate_cache: dict[tuple, tuple[pd.DataFrame, str, str, pd.DataFrame]] = {}
+    resolution_cache: dict[tuple, tuple[dict, pd.DataFrame | None]] = {}
     ratings = ratings.copy()
     izev_spec = {**spec, "aliases": [*spec.get("aliases", []), *spec.get("izev_aliases", [])]}
     evidence_input = ratings if catalogue_evidence is None else catalogue_evidence
@@ -783,7 +851,24 @@ def _match_observations(
                    if reference is None else {})
     ratings["_izev_family_model"] = (ratings.family_model if reference is not None else
         [izev_labels[pair] for pair in zip(ratings.Make, ratings.Model, strict=True)])
-    catalog = {(int(year), make): group for (year, make), group in ratings.groupby(["year", "_make_key"], sort=False)}
+    catalogue_keys = ["year", "_make_key", *(["vehicle_id"] if reference is not None else [])]
+    conventional = ratings.powertrain.eq("gasoline") & ~ratings.Model.astype(str).str.contains(
+        r"(?i)\b(?:hybrid|mhev|hev|phev|bev|electric|plug[ -]?in)\b",
+    )
+    if "Fuel type" in ratings:
+        conventional &= ratings["Fuel type"].isna() | ratings["Fuel type"].isin(
+            spec["mto_selection"].get("eligible_fuel_codes", ["X", "Z"]),
+        )
+    mto_ratings = ratings.loc[conventional].copy()
+    mto_ratings["_candidate_family"] = mto_ratings.family_model
+    mto_ratings["_candidate_key"] = mto_ratings._candidate_family.map(normalize_vehicle_text)
+    mto_catalog = mto_ratings.groupby(catalogue_keys, sort=False).indices
+    empty_mto = mto_ratings.iloc[:0]
+    incentive_ratings = ratings.copy()
+    incentive_ratings["_candidate_family"] = incentive_ratings._izev_family_model
+    incentive_ratings["_candidate_key"] = incentive_ratings._candidate_family.map(normalize_vehicle_text)
+    incentive_catalog = incentive_ratings.groupby([*catalogue_keys, "_powertrain_family"], sort=False).indices
+    empty_incentive = incentive_ratings.iloc[:0]
     # Retain excluded fuels/propulsions for explanations, not for allocation.
     evidence = catalogue_family_labels(evidence_input, spec)
     evidence["_make_key"] = evidence.family_make.map(normalize_vehicle_text)
@@ -798,13 +883,17 @@ def _match_observations(
     unresolved &= ~evidence.Model.astype(str).str.contains(r"(?i)\b(?:hybrid|mhev|hev|phev|bev|electric|plug[ -]?in)\b")
     if "Fuel type" in evidence:
         unresolved &= evidence["Fuel type"].isin(spec["mto_selection"].get("eligible_fuel_codes", ["X", "Z"]))
-    unresolved_catalog = {
-        (int(year), make): group
-        for (year, make), group in evidence.loc[unresolved].groupby(["year", "_make_key"], sort=False)
-    }
+    unresolved_ratings = evidence.loc[unresolved].copy()
+    unresolved_ratings["_candidate_family"] = unresolved_ratings.family_model
+    unresolved_ratings["_candidate_key"] = unresolved_ratings._candidate_family.map(normalize_vehicle_text)
+    unresolved_catalog = unresolved_ratings.groupby(["year", "_make_key"], sort=False).indices
+    empty_unresolved = unresolved_ratings.iloc[:0]
     evidence = evidence[["year", "_make_key", "family_model", "_izev_family_model",
                          "unresolved_propulsion_evidence", *(["vehicle_id"] if reference is not None else [])]].drop_duplicates()
-    evidence_catalog = {make: group for make, group in evidence.groupby("_make_key", sort=False)}
+    evidence_keys = ["_make_key", *(["vehicle_id"] if reference is not None else [])]
+    evidence_catalog = evidence.groupby(evidence_keys, sort=False).indices
+    empty_evidence = evidence.iloc[:0]
+    known_families = {}
     for observation in observed.to_dict("records"):
         item = dict(observation)
         cache_key = tuple(item[field] for field in ("source_kind", "year", "_make_key", "family_model", "rating_class", "observed_powertrain", "vehicle_id"))
@@ -812,30 +901,21 @@ def _match_observations(
         source_family = (item["reference_family_model"] if reference is not None else
                          catalogue_family(item["family_make"], item["family_model"], source_spec)[1])
         if cache_key not in candidate_cache:
-            candidates = catalog.get((int(item["year"]), item["_make_key"]), ratings.iloc[:0]).copy()
-            if reference is not None:
-                candidates = candidates.loc[candidates.vehicle_id.eq(item["vehicle_id"])].copy()
+            catalogue_key = (int(item["year"]), item["_make_key"], *([item["vehicle_id"]] if reference is not None else []))
             if item["source_kind"] == "mto":
-                eligible = candidates.powertrain.eq("gasoline") & ~candidates.Model.astype(str).str.contains(r"(?i)\b(?:hybrid|mhev|hev|phev|bev|electric|plug[ -]?in)\b")
-                if "Fuel type" in candidates:
-                    codes = candidates["Fuel type"]
-                    eligible &= codes.isna() | codes.isin(spec["mto_selection"].get("eligible_fuel_codes", ["X", "Z"]))
-                candidates = candidates.loc[eligible].copy()
-                candidates["_candidate_family"] = candidates.family_model
+                positions = mto_catalog.get(catalogue_key)
+                candidates = empty_mto if positions is None else mto_ratings.take(positions)
             else:
-                candidates = candidates.loc[candidates._powertrain_family.eq(item["observed_powertrain"])].copy()
-                candidates["_candidate_family"] = candidates._izev_family_model
-            candidates["_candidate_key"] = candidates._candidate_family.map(normalize_vehicle_text)
+                positions = incentive_catalog.get((*catalogue_key, item["observed_powertrain"]))
+                candidates = empty_incentive if positions is None else incentive_ratings.take(positions)
             candidates, method = _candidate_families(candidates, source_family, source_spec)
-            unresolved_identity = evidence.iloc[:0].copy()
+            unresolved_identity = empty_evidence
             if item["source_kind"] == "mto" and not candidates.empty:
                 # Eligibility cannot silently settle an unspecified body/family
                 # identity when a corresponding native sibling has unresolved
                 # propulsion. Positive HEV/diesel/E85 alternatives do not enter.
-                unresolved_identity = unresolved_catalog.get(
-                    (int(item["year"]), item["_make_key"]), unresolved_identity).copy()
-                unresolved_identity["_candidate_family"] = unresolved_identity.family_model
-                unresolved_identity["_candidate_key"] = unresolved_identity._candidate_family.map(normalize_vehicle_text)
+                positions = unresolved_catalog.get((int(item["year"]), item["_make_key"]))
+                unresolved_identity = empty_unresolved if positions is None else unresolved_ratings.take(positions)
                 unresolved_identity, identity_method = _candidate_families(unresolved_identity, source_family, source_spec,
                     family_boundaries=family_boundaries.get(item["_make_key"], set()) if reference is not None else None)
                 if identity_method in {"canonical_family", "recognized_family_extensions"}:
@@ -845,13 +925,15 @@ def _match_observations(
                     unresolved_identity = unresolved_identity.iloc[:0]
             absence = "unmatched_ratings"
             if candidates.empty:
-                known = evidence_catalog.get(item["_make_key"], evidence.iloc[:0]).copy()
-                if reference is not None:
-                    known = known.loc[known.vehicle_id.eq(item["vehicle_id"])]
-                known["_candidate_family"] = (known._izev_family_model if item["source_kind"] == "izev"
-                                               else known.family_model)
-                known["_candidate_key"] = known._candidate_family.map(normalize_vehicle_text)
-                known, known_method = _candidate_families(known, source_family, source_spec)
+                evidence_key = (item["_make_key"], *([item["vehicle_id"]] if reference is not None else []))
+                known_key = (item["source_kind"], evidence_key, source_family)
+                if known_key not in known_families:
+                    positions = evidence_catalog.get(evidence_key if reference is not None else item["_make_key"], [])
+                    known = evidence.take(positions) if len(positions) else empty_evidence.copy()
+                    known["_candidate_family"] = known._izev_family_model if item["source_kind"] == "izev" else known.family_model
+                    known["_candidate_key"] = known._candidate_family.map(normalize_vehicle_text)
+                    known_families[known_key] = _candidate_families(known, source_family, source_spec)
+                known, known_method = known_families[known_key]
                 if known_method in {"canonical_family", "recognized_family_extensions"} and not known.empty:
                     target = known.loc[known.year.eq(item["year"])]
                     if target.empty:
@@ -861,81 +943,92 @@ def _match_observations(
                     else:
                         absence = "ineligible_observed_propulsion"
                 if reference is not None:
-                    canonical = reference.canonical
-                    excluded_year = (canonical.vehicle_id.eq(item["vehicle_id"])
-                        & canonical.model_year_from.le(item["year"]) & canonical.model_year_to.ge(item["year"])
-                        & canonical.evidence_status.eq("model_not_produced"))
-                    if excluded_year.any():
+                    if any(first <= item["year"] <= last
+                           for first, last in excluded_model_years.get(item["vehicle_id"], [])):
                         absence = "model_year_incompatible"
             candidate_cache[cache_key] = candidates, method, absence, unresolved_identity
         candidates, method, absence, unresolved_identity = candidate_cache[cache_key]
         all_candidates[item["empirical_observation_id"]] = candidates
-        item.update(match_status=absence, match_method=method, resolved_powertrain="",
-            candidate_variant_count=int(candidates.rating_variant_id.nunique()), candidate_rating_classes=_labels(candidates.rating_class),
-            candidate_powertrains=_labels(candidates.powertrain), candidate_models=_labels(candidates.Model), selected=False,
-            candidate_families=_labels(candidates._candidate_family) if "_candidate_family" in candidates else "",
-            matched_variant_count=0, range_assignment="not_assigned", representative_statistic="family_median",
-            observed_family_native_mean=np.nan, observed_family_native_median=np.nan, observed_family_mj_per_vkm=np.nan,
-            observed_family_range_median_km=np.nan, matched_family_make="", matched_family_model="",
-            representative_bucket_has_native_trim=True, configuration_status="unspecified_configurations_use_family_median",
-            class_resolution_status="not_resolved", class_predominant_share=np.nan,
-            consumption_relative_p90_p10_span=np.nan,
-            family_candidate_count=int(candidates._candidate_key.nunique()) if "_candidate_key" in candidates else 0)
-        if not candidates.empty:
-            chosen, conflict = _constrain_configurations(candidates, item["family_model"], source_family)
-            item["matched_variant_count"] = int(chosen.rating_variant_id.nunique())
-            rating_class, class_status, class_share = _representative_class(chosen, spec) if not chosen.empty else ("", "not_resolved", np.nan)
-            item.update(class_resolution_status=class_status, class_predominant_share=class_share)
-            if conflict:
-                item["match_status"] = "conflicting_or_unverified_configuration"
-                item["configuration_status"] = conflict
-            elif not unresolved_identity.empty and not unresolved_identity._candidate_key.isin(chosen._candidate_key).all():
-                item["match_status"] = "ambiguous_model_family"
-                item["configuration_status"] = "unresolved_propulsion_competing_family"
-                families = pd.concat([chosen._candidate_family, unresolved_identity._candidate_family])
-                item["candidate_families"] = _labels(families)
-                item["family_candidate_count"] = families.map(normalize_vehicle_text).nunique()
-                item["candidate_models"] = _labels(pd.concat([candidates.Model, unresolved_identity.Model]))
-            elif chosen._candidate_key.nunique() > 1:
-                item["match_status"] = "ambiguous_model_family"
-            elif method == "fuzzy_family_candidates":
-                item["match_status"] = "unverified_model_family"
-            elif not rating_class:
-                item["match_status"] = "ambiguous_rating_class"
-            elif item["source_kind"] == "mto" and rating_class != item["rating_class"]:
-                item["match_status"] = "conflicting_reviewed_rating_class"
-            elif (item["source_kind"] == "mto" and "ambiguous_epa_match" in chosen and chosen.ambiguous_epa_match.fillna(False).any()):
-                item["match_status"] = "ambiguous_powertrain_evidence"
-            else:
-                item["match_status"] = "resolved"
-                item["rating_class"] = rating_class
-                item["matched_family_make"] = str(chosen.family_make.iloc[0])
-                item["matched_family_model"] = str(chosen._candidate_family.iloc[0])
-                assigned = str(chosen.powertrain.iloc[0])
-                if item["source_kind"] == "izev":
-                    assigned, median_range = _representative_range(chosen, item["observed_powertrain"], range_rules, conversions)
-                    item["observed_family_range_median_km"] = median_range
-                    item["range_assignment"] = "family_median_range" if chosen.rating_variant_id.nunique() > 1 else "single_configuration_range"
-                    item["representative_bucket_has_native_trim"] = bool(chosen.powertrain.eq(assigned).any())
-                    if item["observed_powertrain"] == "phev":
-                        chosen = _phev_assigned_components(chosen, assigned, conversions, uf_by_powertrain)
-                item["resolved_powertrain"] = assigned
-                span = _relative_consumption_span(chosen)
-                item["consumption_relative_p90_p10_span"] = span
-                maximum_span = spec.get("family_matching", {}).get("consumption_dispersion", {}).get("maximum_relative_p90_p10_span")
-                if maximum_span is not None and span > maximum_span:
-                    item["match_status"] = "family_consumption_heterogeneity"
-                distinct = chosen.drop_duplicates("rating_variant_id")
-                item["observed_family_native_median"] = float(distinct.native_consumption.median())
-                item["observed_family_native_mean"] = item["observed_family_native_median"]
-                item["observed_family_mj_per_vkm"] = float(distinct.consumption_mj_per_vkm.median()) if distinct.consumption_mj_per_vkm.notna().any() else np.nan
-                chosen = chosen.copy()
-                chosen["catalogue_rating_class"] = chosen.rating_class
-                chosen["rating_class"] = rating_class
-                chosen["powertrain"] = assigned
-                chosen["range_assignment"] = item["range_assignment"]
-                if item["match_status"] == "resolved":
-                    matches[item["empirical_observation_id"]] = chosen
+        # Configuration results are invariant across provincial counts. Eligibility
+        # and source-specific exclusions remain below this call-local cache.
+        resolution_key = (cache_key, source_family)
+        if resolution_key in resolution_cache:
+            characteristics, chosen = resolution_cache[resolution_key]
+            item.update(characteristics)
+            if chosen is not None:
+                matches[item["empirical_observation_id"]] = chosen
+        else:
+            calculated = dict(match_status=absence, match_method=method, resolved_powertrain="",
+                candidate_variant_count=int(candidates.rating_variant_id.nunique()), candidate_rating_classes=_labels(candidates.rating_class),
+                candidate_powertrains=_labels(candidates.powertrain), candidate_models=_labels(candidates.Model), selected=False,
+                candidate_families=_labels(candidates._candidate_family) if "_candidate_family" in candidates else "",
+                matched_variant_count=0, range_assignment="not_assigned", representative_statistic="family_median",
+                observed_family_native_mean=np.nan, observed_family_native_median=np.nan, observed_family_mj_per_vkm=np.nan,
+                observed_family_range_median_km=np.nan, matched_family_make="", matched_family_model="",
+                representative_bucket_has_native_trim=True, configuration_status="unspecified_configurations_use_family_median",
+                class_resolution_status="not_resolved", class_predominant_share=np.nan,
+                consumption_relative_p90_p10_span=np.nan,
+                family_candidate_count=int(candidates._candidate_key.nunique()) if "_candidate_key" in candidates else 0)
+            item.update(calculated)
+            if not candidates.empty:
+                chosen, conflict = _constrain_configurations(candidates, item["family_model"], source_family)
+                item["matched_variant_count"] = int(chosen.rating_variant_id.nunique())
+                rating_class, class_status, class_share = _representative_class(chosen, spec) if not chosen.empty else ("", "not_resolved", np.nan)
+                item.update(class_resolution_status=class_status, class_predominant_share=class_share)
+                if conflict:
+                    item["match_status"] = "conflicting_or_unverified_configuration"
+                    item["configuration_status"] = conflict
+                elif not unresolved_identity.empty and not unresolved_identity._candidate_key.isin(chosen._candidate_key).all():
+                    item["match_status"] = "ambiguous_model_family"
+                    item["configuration_status"] = "unresolved_propulsion_competing_family"
+                    families = pd.concat([chosen._candidate_family, unresolved_identity._candidate_family])
+                    item["candidate_families"] = _labels(families)
+                    item["family_candidate_count"] = families.map(normalize_vehicle_text).nunique()
+                    item["candidate_models"] = _labels(pd.concat([candidates.Model, unresolved_identity.Model]))
+                elif chosen._candidate_key.nunique() > 1:
+                    item["match_status"] = "ambiguous_model_family"
+                elif method == "fuzzy_family_candidates":
+                    item["match_status"] = "unverified_model_family"
+                elif not rating_class:
+                    item["match_status"] = "ambiguous_rating_class"
+                elif item["source_kind"] == "mto" and rating_class != item["rating_class"]:
+                    item["match_status"] = "conflicting_reviewed_rating_class"
+                elif (item["source_kind"] == "mto" and "ambiguous_epa_match" in chosen and chosen.ambiguous_epa_match.fillna(False).any()):
+                    item["match_status"] = "ambiguous_powertrain_evidence"
+                else:
+                    item["match_status"] = "resolved"
+                    item["rating_class"] = rating_class
+                    item["matched_family_make"] = str(chosen.family_make.iloc[0])
+                    item["matched_family_model"] = str(chosen._candidate_family.iloc[0])
+                    assigned = str(chosen.powertrain.iloc[0])
+                    if item["source_kind"] == "izev":
+                        assigned, median_range = _representative_range(chosen, item["observed_powertrain"], range_rules, conversions)
+                        item["observed_family_range_median_km"] = median_range
+                        item["range_assignment"] = "family_median_range" if chosen.rating_variant_id.nunique() > 1 else "single_configuration_range"
+                        item["representative_bucket_has_native_trim"] = bool(chosen.powertrain.eq(assigned).any())
+                        if item["observed_powertrain"] == "phev":
+                            chosen = _phev_assigned_components(chosen, assigned, conversions, uf_by_powertrain)
+                    item["resolved_powertrain"] = assigned
+                    span = _relative_consumption_span(chosen)
+                    item["consumption_relative_p90_p10_span"] = span
+                    maximum_span = spec.get("family_matching", {}).get("consumption_dispersion", {}).get("maximum_relative_p90_p10_span")
+                    if maximum_span is not None and span > maximum_span:
+                        item["match_status"] = "family_consumption_heterogeneity"
+                    distinct = chosen.drop_duplicates("rating_variant_id")
+                    item["observed_family_native_median"] = float(distinct.native_consumption.median())
+                    item["observed_family_native_mean"] = item["observed_family_native_median"]
+                    item["observed_family_mj_per_vkm"] = float(distinct.consumption_mj_per_vkm.median()) if distinct.consumption_mj_per_vkm.notna().any() else np.nan
+                    chosen = chosen.copy()
+                    chosen["catalogue_rating_class"] = chosen.rating_class
+                    chosen["rating_class"] = rating_class
+                    chosen["powertrain"] = assigned
+                    chosen["range_assignment"] = item["range_assignment"]
+                    if item["match_status"] == "resolved":
+                        matches[item["empirical_observation_id"]] = chosen
+            resolution_cache[resolution_key] = (
+                {field: item[field] for field in (*calculated, "rating_class")},
+                matches.get(item["empirical_observation_id"]),
+            )
         if (item["source_kind"] == "izev" and item["composition_basis"] == "observed_model_year" and not
                 spec["izev_model_year_min"] <= item["year"] <= spec["izev_model_year_max"]):
             item["match_status"] = "outside_supported_program_window"
@@ -981,6 +1074,8 @@ def _match_observations(
         }
         item["match_reason"] = reasons[item["match_status"]]
         result.append(item)
+    LOGGER.debug("NRCan matching evaluated %d unique configuration signatures for %d source observations",
+                 len(resolution_cache), len(result))
     return pd.DataFrame(result), matches, all_candidates
 
 
@@ -1081,12 +1176,13 @@ def _izev_pool_choices(records: pd.DataFrame, baseline: pd.DataFrame, regions: l
     return selected_records, choices
 
 
-def _regional_observations(disposition: pd.DataFrame, region: str, choices: dict, spec: dict) -> pd.DataFrame:
+def _regional_observations(disposition: pd.DataFrame, region: str, choices: dict, spec: dict,
+                           *, source_records: list[dict] | None = None) -> pd.DataFrame:
     if disposition.empty:
         return disposition.copy()
     provinces = _region_provinces(region, spec)
     records = []
-    for item in disposition.to_dict("records"):
+    for item in disposition.to_dict("records") if source_records is None else source_records:
         if item["source_kind"] == "mto":
             pool = {"pool_geography": "mto_ontario_proxy", "pool_provinces": "ON",
                     "provincial_observation_count": np.nan, "pool_observation_count": np.nan,
@@ -1162,6 +1258,7 @@ def aggregate_empirical_ratings(
     historical = _historical_observations(selected_incentives, baseline, composition_rules, reference)
     if not historical.empty:
         observed = pd.concat([observed, historical], ignore_index=True)
+    matching_started = perf_counter()
     if observed.empty:
         disposition, matches, candidate_matches = pd.DataFrame(), {}, {}
     else:
@@ -1169,24 +1266,63 @@ def aggregate_empirical_ratings(
             range_rules=range_rules, conversions=conversions, uf_by_powertrain=uf_by_powertrain,
             catalogue_evidence=classified, reference=reference)
         disposition = _select_families(disposition, composition_rules)
+    LOGGER.info("NRCan family matching and selection completed in %.2f s for %d observations",
+                perf_counter() - matching_started, len(disposition))
     class_records, regional_observations, allocations, coverage_records, match_audits = [], [], [], [], []
+    # Trim support depends on the matched source rows, not provincial pool counts.
+    # Keep it within this call so the next build always uses its own fresh inputs.
+    prepared_matches = {}
+    schemas_by_frame, canonical_schemas = {}, {}
+
+    def frame_schema(frame):
+        identity = id(frame)
+        if identity not in schemas_by_frame:
+            schema = frame.dtypes
+            signature = tuple(schema.items())
+            schemas_by_frame[identity] = canonical_schemas.setdefault(signature, schema)
+        return schemas_by_frame[identity]
+
+    candidate_records, candidate_schemas, candidate_frames = {}, {}, {}
+    for identity, frame in candidate_matches.items():
+        if frame.empty:
+            continue
+        frame_identity = id(frame)
+        if frame_identity not in candidate_frames:
+            candidate_frames[frame_identity] = frame.to_dict("records"), frame_schema(frame)
+        candidate_records[identity], candidate_schemas[identity] = candidate_frames[frame_identity]
+    source_observations = disposition.to_dict("records") if not disposition.empty else []
+    baseline_records = baseline.to_dict("records")
+    baseline_keys = {(row["year"], row["rating_class"], row["powertrain"]) for row in baseline_records}
+    baseline_templates = {}
+    for row in baseline_records:
+        family, separator, _ = str(row["powertrain"]).partition("_")
+        if separator:
+            baseline_templates.setdefault((row["year"], row["rating_class"], family), row)
+    mto_pools, incentive_pools = {}, {}
+    if not disposition.empty:
+        mto_pools = {key: group for key, group in disposition.loc[disposition.source_kind.eq("mto")].groupby(
+            ["year", "rating_class"], sort=False,
+        )}
+        incentive_pools = {key: group for key, group in disposition.loc[
+            disposition.source_kind.eq("izev") & disposition.transaction_eligible
+        ].groupby(["year", "observed_powertrain", "composition_basis"], sort=False)}
+    pool_cache, cohort_cache, weighted_cache = {}, {}, {}
     for region in regions:
-        regional = _regional_observations(disposition, region, choices, composition_rules)
+        region_started = perf_counter()
+        regional = _regional_observations(disposition, region, choices, composition_rules,
+                                          source_records=source_observations)
         regional_baseline = baseline.copy()
         if not regional.empty:
             new_cells = []
             selected_observations = regional.loc[regional.selected & regional.match_status.eq("resolved")]
             for (year, size, powertrain), group in selected_observations.groupby(["year", "rating_class", "resolved_powertrain"]):
-                present = (regional_baseline.year.eq(year) & regional_baseline.rating_class.eq(size)
-                    & regional_baseline.powertrain.eq(powertrain))
-                if present.any():
+                if (year, size, powertrain) in baseline_keys:
                     continue
                 family = str(powertrain).split("_", 1)[0]
-                templates = baseline.loc[baseline.year.eq(year) & baseline.rating_class.eq(size)
-                    & baseline.powertrain.str.startswith(family + "_")]
-                if templates.empty:
+                template = baseline_templates.get((year, size, family))
+                if template is None:
                     raise ValueError("Representative range cohort lacks an underlying rated size-class weight")
-                template = templates.iloc[0].to_dict()
+                template = dict(template)
                 template.update(powertrain=powertrain, native_class_mean=float(group.observed_family_native_median.median()),
                     class_mean_mj_per_vkm=float(group.observed_family_mj_per_vkm.median()),
                     range_class_mean_km=float(group.observed_family_range_median_km.median()),
@@ -1197,15 +1333,7 @@ def aggregate_empirical_ratings(
                 regional_baseline = pd.concat([regional_baseline, pd.DataFrame(new_cells)], ignore_index=True)
         region_records = []
         region_allocations = []
-        pool_groups = {}
-        if not regional.empty:
-            mto_groups = regional.loc[regional.source_kind.eq("mto")].groupby(["year", "rating_class"], sort=False)
-            incentive_groups = regional.loc[regional.source_kind.eq("izev")].groupby(
-                ["year", "observed_powertrain", "composition_basis"], sort=False,
-            )
-            pool_groups.update({("mto", year, rating_class): group for (year, rating_class), group in mto_groups})
-            pool_groups.update({("izev", year, powertrain, basis): group
-                                for (year, powertrain, basis), group in incentive_groups})
+        relative_contributions, native_means = {}, {}
         for base in regional_baseline.to_dict("records"):
             item = dict(base, region=region)
             family = str(base["powertrain"]).split("_")[0]
@@ -1250,20 +1378,30 @@ def aggregate_empirical_ratings(
                             pool_geography="catalogue", pool_provinces="", composition_basis="catalogue_only",
                             source_model_year_min=np.nan, source_model_year_max=np.nan, source_model_years="")
             elif family in {"gasoline", "bev", "phev"} and not regional.empty:
-                pool = pool_groups.get(
-                    ((kind, base["year"], base["rating_class"]) if kind == "mto"
-                     else (kind, base["year"], family, composition_basis)),
-                    regional.iloc[:0],
-                )
-                if kind == "izev":
-                    pool = pool.loc[pool.transaction_eligible]
-                resolved = pool.loc[
-                    pool.match_status.eq("resolved")
-                    & pool.rating_class.eq(base["rating_class"])
-                    & pool.resolved_powertrain.eq(base["powertrain"])
-                ]
-                selected = resolved.loc[resolved.selected]
-                source_count, resolved_count, selected_count = (float(frame.source_count.sum()) for frame in (pool, resolved, selected))
+                if kind == "mto":
+                    pool_key = (kind, base["year"], base["rating_class"])
+                else:
+                    provinces = pool_choice.get("_pool_provinces", _region_provinces(region, composition_rules))
+                    pool_key = (kind, base["year"], family, composition_basis, tuple(provinces))
+                if pool_key not in pool_cache:
+                    if kind == "mto":
+                        pool = mto_pools.get((base["year"], base["rating_class"]), disposition.iloc[:0])
+                    else:
+                        pool = incentive_pools.get((base["year"], family, composition_basis), disposition.iloc[:0])
+                        pool = pool.loc[pool.province.isin(provinces)]
+                    pool_cache[pool_key] = pool
+                pool = pool_cache[pool_key]
+                cohort_key = (pool_key, base["rating_class"], base["powertrain"])
+                if cohort_key not in cohort_cache:
+                    resolved = pool.loc[
+                        pool.match_status.eq("resolved") & pool.rating_class.eq(base["rating_class"])
+                        & pool.resolved_powertrain.eq(base["powertrain"])
+                    ]
+                    selected = resolved.loc[resolved.selected]
+                    counts = tuple(float(frame.source_count.sum()) for frame in (pool, resolved, selected))
+                    cohort_cache[cohort_key] = (resolved, selected, counts)
+                resolved, selected, counts = cohort_cache[cohort_key]
+                source_count, resolved_count, selected_count = counts
                 item.update(
                     observed_source_count=source_count, resolved_source_count=resolved_count,
                     selected_source_count=selected_count,
@@ -1283,70 +1421,104 @@ def aggregate_empirical_ratings(
                         item["aggregation_method"] = "catalogue_fallback_median_insufficient_identity_support"
                         item["coverage_status"] = "insufficient_identity_supported_mass"
                 if not selected.empty:
-                    variant_frames = []
-                    for observation in selected.to_dict("records"):
-                        contribution = observation["source_count"] / selected_count
-                        regional.loc[regional.empirical_observation_id.eq(observation["empirical_observation_id"]), "relative_contribution"] = contribution
-                        variants = matches[observation["empirical_observation_id"]].copy()
-                        variants["region"] = region
-                        variants["province"] = observation["province"]
+                    if cohort_key in weighted_cache:
+                        template, empirical_metrics, cohort_contributions, cohort_native_means = weighted_cache[cohort_key]
+                        weighted = template.copy()
+                        weighted["region"] = region
                         for field in ("pool_geography", "pool_provinces", "provincial_observation_count",
                                       "pool_observation_count", "minimum_observations"):
-                            variants[field] = pool_choice[field]
-                        for field in ("identity_supported", "identity_evidence_methods", "identity_support_reason",
-                                      "identity_supported_resolved_share", "identity_coverage_met", "composition_basis",
-                                      "source_model_year_min", "source_model_year_max", "source_model_years",
-                              "representative_statistic", "representative_bucket_has_native_trim", "configuration_status",
-                              "matched_family_make", "matched_family_model", "family_candidate_count", "match_reason",
-                              "class_resolution_status", "class_predominant_share", "consumption_relative_p90_p10_span"):
-                            variants[field] = observation[field]
-                        variants["empirical_observation_id"] = observation["empirical_observation_id"]
-                        variants["empirical_family_make"] = observation["family_make"]
-                        variants["empirical_family_model"] = observation["family_model"]
-                        variants["composition_source"] = observation["composition_source"]
-                        variants["composition_components"] = observation["composition_components"]
-                        variants["family_source_count"] = observation["source_count"]
-                        variants["family_variant_count"] = variants.rating_variant_id.nunique()
-                        variants["family_median_weight"] = median_support_weights(variants, "consumption_mj_per_vkm")
-                        variants["native_median_weight"] = median_support_weights(variants, "native_consumption")
-                        variants["range_median_weight"] = median_support_weights(variants, "range_km")
-                        variants["representative_statistic"] = "family_median"
-                        variants["family_native_median"] = observation["observed_family_native_median"]
-                        variants["family_mj_per_vkm"] = observation["observed_family_mj_per_vkm"]
-                        variants["family_range_median_km"] = observation["observed_family_range_median_km"]
-                        variants["representative_bucket_has_native_trim"] = observation["representative_bucket_has_native_trim"]
-                        variants["allocated_count"] = observation["source_count"] * variants.family_median_weight
-                        variants["variant_weight"] = contribution * variants.family_median_weight
-                        regional.loc[regional.empirical_observation_id.eq(observation["empirical_observation_id"]), "observed_family_native_mean"] = observation["observed_family_native_median"]
-                        variant_frames.append(variants)
-                    weighted = pd.concat(variant_frames, ignore_index=True)
-                    if abs(weighted.variant_weight.sum() - 1.0) > rules["tolerances"]["weight_sum"]:
-                        raise ValueError("Empirical variant contributions do not sum to one")
-                    for field, output in (("observed_family_native_median", "native_class_mean"),
-                                          ("observed_family_mj_per_vkm", "class_mean_mj_per_vkm"),
-                                          ("observed_family_range_median_km", "range_class_mean_km")):
-                        values = selected[field]
-                        if values.notna().any() and values.isna().any():
-                            raise ValueError(f"Partly missing empirical family median: {field}")
-                        item[output] = float((values * selected.source_count / selected_count).sum(min_count=1))
-                    item.update(
-                        aggregation_method=("izev_historical_composition_proxy" if composition_basis == "historical_pooled_model_year_window"
-                                            else "izev_incentive_weighted" if kind == "izev" else "mto_identity_supported_weighted"),
-                        empirical_families=len(selected[["matched_family_make", "matched_family_model"]].drop_duplicates()),
-                        empirical_variant_count=int(weighted.rating_variant_id.nunique()),
-                        rating_statistic="empirical_count_weighted_mean",
-                        range_assignment=_labels(selected.range_assignment),
-                        matched_stock=selected_count, cohort_matched_stock=selected_count,
-                        composition_components=" | ".join(sorted({
-                            part.strip() for value in selected.composition_components
-                            for part in value.split("|") if part.strip()
-                        })),
-                        coverage_status="conditional_identity_supported_coverage" if kind == "mto" else "conditional_empirical_coverage",
-                    )
-                    family_counts = selected.groupby(["matched_family_make", "matched_family_model"]).source_count.sum()
-                    shares = family_counts / family_counts.sum()
-                    item["largest_family_share"] = float(shares.max())
-                    item["effective_family_count"] = float(1. / shares.pow(2).sum())
+                            weighted[field] = pool_choice[field]
+                    else:
+                        variant_records = []
+                        cohort_contributions, cohort_native_means, empirical_metrics = {}, {}, {}
+                        variant_schemas = []
+                        for observation in selected.to_dict("records"):
+                            contribution = observation["source_count"] / selected_count
+                            cohort_contributions[observation["empirical_observation_id"]] = contribution
+                            identity = observation["empirical_observation_id"]
+                            source = matches[identity]
+                            source_identity = id(source)
+                            if source_identity not in prepared_matches:
+                                prepared_matches[source_identity] = (
+                                    source.to_dict("records"), frame_schema(source), source.rating_variant_id.nunique(),
+                                    median_support_weights(source, "consumption_mj_per_vkm").to_numpy(),
+                                    median_support_weights(source, "native_consumption").to_numpy(),
+                                    median_support_weights(source, "range_km").to_numpy(),
+                                )
+                            source_records, source_schema, variant_count, family_weights, native_weights, range_weights = prepared_matches[source_identity]
+                            variant_schemas.append(source_schema)
+                            metadata = {"region": region, "province": observation["province"]}
+                            for field in ("pool_geography", "pool_provinces", "provincial_observation_count",
+                                          "pool_observation_count", "minimum_observations"):
+                                metadata[field] = pool_choice[field]
+                            for field in ("identity_supported", "identity_evidence_methods", "identity_support_reason",
+                                          "identity_supported_resolved_share", "identity_coverage_met", "composition_basis",
+                                          "source_model_year_min", "source_model_year_max", "source_model_years",
+                                  "representative_statistic", "representative_bucket_has_native_trim", "configuration_status",
+                                  "matched_family_make", "matched_family_model", "family_candidate_count", "match_reason",
+                                  "class_resolution_status", "class_predominant_share", "consumption_relative_p90_p10_span"):
+                                metadata[field] = observation[field]
+                            metadata.update(
+                                empirical_observation_id=identity,
+                                empirical_family_make=observation["family_make"],
+                                empirical_family_model=observation["family_model"],
+                                composition_source=observation["composition_source"],
+                                composition_components=observation["composition_components"],
+                                family_source_count=observation["source_count"],
+                                family_variant_count=variant_count,
+                            )
+                            for source, family_weight, native_weight, range_weight in zip(
+                                source_records, family_weights, native_weights, range_weights, strict=True,
+                            ):
+                                item_variant = {**source, **metadata}
+                                item_variant.update(
+                                    family_median_weight=family_weight,
+                                    native_median_weight=native_weight,
+                                    range_median_weight=range_weight,
+                                    representative_statistic="family_median",
+                                    family_native_median=observation["observed_family_native_median"],
+                                    family_mj_per_vkm=observation["observed_family_mj_per_vkm"],
+                                    family_range_median_km=observation["observed_family_range_median_km"],
+                                    representative_bucket_has_native_trim=observation["representative_bucket_has_native_trim"],
+                                    allocated_count=observation["source_count"] * family_weight,
+                                    variant_weight=contribution * family_weight,
+                                )
+                                variant_records.append(item_variant)
+                            cohort_native_means[observation["empirical_observation_id"]] = observation["observed_family_native_median"]
+                        weighted = _preserve_source_dtypes(pd.DataFrame(variant_records), variant_schemas, metadata)
+                        if abs(weighted.variant_weight.sum() - 1.0) > rules["tolerances"]["weight_sum"]:
+                            raise ValueError("Empirical variant contributions do not sum to one")
+                        for field, output in (("observed_family_native_median", "native_class_mean"),
+                                              ("observed_family_mj_per_vkm", "class_mean_mj_per_vkm"),
+                                              ("observed_family_range_median_km", "range_class_mean_km")):
+                            values = selected[field]
+                            if values.notna().any() and values.isna().any():
+                                raise ValueError(f"Partly missing empirical family median: {field}")
+                            empirical_metrics[output] = float((values * selected.source_count / selected_count).sum(min_count=1))
+                        empirical_metrics.update(
+                            aggregation_method=("izev_historical_composition_proxy" if composition_basis == "historical_pooled_model_year_window"
+                                                else "izev_incentive_weighted" if kind == "izev" else "mto_identity_supported_weighted"),
+                            empirical_families=len(selected[["matched_family_make", "matched_family_model"]].drop_duplicates()),
+                            empirical_variant_count=int(weighted.rating_variant_id.nunique()),
+                            rating_statistic="empirical_count_weighted_mean",
+                            range_assignment=_labels(selected.range_assignment),
+                            matched_stock=selected_count, cohort_matched_stock=selected_count,
+                            composition_components=" | ".join(sorted({
+                                part.strip() for value in selected.composition_components
+                                for part in value.split("|") if part.strip()
+                            })),
+                            coverage_status="conditional_identity_supported_coverage" if kind == "mto" else "conditional_empirical_coverage",
+                        )
+                        family_counts = selected.groupby(["matched_family_make", "matched_family_model"]).source_count.sum()
+                        shares = family_counts / family_counts.sum()
+                        empirical_metrics["largest_family_share"] = float(shares.max())
+                        empirical_metrics["effective_family_count"] = float(1. / shares.pow(2).sum())
+                        weighted_cache[cohort_key] = (
+                            weighted, empirical_metrics, cohort_contributions, cohort_native_means,
+                        )
+                    item.update(empirical_metrics)
+                    relative_contributions.update(cohort_contributions)
+                    native_means.update(cohort_native_means)
                     allocations.append(weighted)
                     region_allocations.append(weighted)
                 elif source_count and item["coverage_status"] != "insufficient_identity_supported_mass":
@@ -1355,25 +1527,39 @@ def aggregate_empirical_ratings(
         if region_records:
             region_frame = pd.DataFrame(region_records)
             region_frame["used_in_aggregation"] = True
-            for _, group in region_frame.groupby(["ceud_class", "year", "powertrain"], sort=True):
-                total = float(group.original_weight.sum())
-                if total <= 0:
-                    raise ValueError("Observed NRCan size classes have no positive configured weight")
-                region_frame.loc[group.index, "observed_weight_sum"] = total
-                region_frame.loc[group.index, "weight"] = group.original_weight / total
+            totals = region_frame.groupby(["ceud_class", "year", "powertrain"], sort=True).original_weight.transform(
+                lambda group: float(group.sum()),
+            )
+            valid = totals.notna()
+            if totals.loc[valid].le(0).any():
+                raise ValueError("Observed NRCan size classes have no positive configured weight")
+            region_frame.loc[valid, "observed_weight_sum"] = totals.loc[valid]
+            region_frame.loc[valid, "weight"] = region_frame.loc[valid, "original_weight"] / totals.loc[valid]
             class_records.extend(region_frame.to_dict("records"))
             coverage_records.extend(region_frame.to_dict("records"))
         if not regional.empty:
-            weighted_rows = pd.concat(region_allocations, ignore_index=True) if region_allocations else pd.DataFrame()
-            weighted_by_observation = (
-                {identity: group for identity, group in weighted_rows.groupby("empirical_observation_id", sort=False)}
-                if not weighted_rows.empty else {}
+            regional["relative_contribution"] = regional.empirical_observation_id.map(relative_contributions).fillna(0.)
+            updated_means = regional.empirical_observation_id.map(native_means)
+            regional["observed_family_native_mean"] = updated_means.where(
+                updated_means.notna(), regional.observed_family_native_mean,
             )
+            weighted_rows = pd.concat(region_allocations, ignore_index=True) if region_allocations else pd.DataFrame()
+            weighted_by_observation = {}
+            if not weighted_rows.empty:
+                for identity, component, source_row, weight, count in weighted_rows[[
+                    "empirical_observation_id", "component", "source_row", "variant_weight", "allocated_count",
+                ]].itertuples(index=False, name=None):
+                    weighted_by_observation.setdefault(identity, []).append(
+                        (_physical_row_key(component, source_row), (weight, count)),
+                    )
+            region_match_records = []
+            region_match_schemas = []
             for observation in regional.to_dict("records"):
-                candidates = candidate_matches.get(observation["empirical_observation_id"])
-                if candidates is None or candidates.empty:
+                candidates = candidate_records.get(observation["empirical_observation_id"])
+                if not candidates:
                     continue
-                audit = candidates.copy()
+                region_match_schemas.append(candidate_schemas[observation["empirical_observation_id"]])
+                metadata = {}
                 for field in ("region", "province", "empirical_observation_id", "family_make", "family_model",
                               "source_kind", "source_count", "transaction_eligible", "transaction_types", "match_status",
                               "selection_status", "range_assignment", "pool_geography", "pool_provinces",
@@ -1386,19 +1572,29 @@ def aggregate_empirical_ratings(
                               "resolved_gasoline_count", "identity_supported_count", "identity_supported_resolved_share",
                               "minimum_resolved_count_share", "identity_coverage_met", "composition_basis",
                               "source_model_year_min", "source_model_year_max", "source_model_years"):
-                    audit[field] = observation[field]
-                audit["empirical_raw_make"], audit["empirical_raw_model"] = observation["raw_make"], observation["raw_model"]
-                audit["assigned_powertrain"] = observation["resolved_powertrain"]
+                    metadata[field] = observation[field]
+                metadata.update(empirical_raw_make=observation["raw_make"],
+                                empirical_raw_model=observation["raw_model"],
+                                assigned_powertrain=observation["resolved_powertrain"])
                 actual = weighted_by_observation.get(observation["empirical_observation_id"])
-                if actual is None or actual.empty:
-                    audit["variant_weight"], audit["allocated_count"] = 0., 0.
-                else:
-                    audit = audit.merge(actual[["component", "source_row", "variant_weight", "allocated_count"]],
-                                        on=["component", "source_row"], how="left", validate="one_to_one")
-                    audit[["variant_weight", "allocated_count"]] = audit[["variant_weight", "allocated_count"]].fillna(0.)
-                audit["selected"] = audit.variant_weight.gt(0)
-                match_audits.append(audit)
+                weights = dict(actual or [])
+                if actual:
+                    candidate_keys = [_physical_row_key(row["component"], row["source_row"]) for row in candidates]
+                    if len(set(candidate_keys)) != len(candidate_keys) or len(weights) != len(actual):
+                        raise pd.errors.MergeError("Empirical source keys are not unique for one-to-one audit allocation")
+                for candidate in candidates:
+                    weight, count = weights.get(_physical_row_key(candidate["component"], candidate["source_row"]), (0., 0.))
+                    region_match_records.append({
+                        **candidate, **metadata, "variant_weight": weight,
+                        "allocated_count": count, "selected": weight > 0,
+                    })
+            if region_match_records:
+                match_audits.append(_preserve_source_dtypes(
+                    pd.DataFrame(region_match_records), region_match_schemas, metadata,
+                ))
             regional_observations.append(regional)
+        LOGGER.info("NRCan composition assembly for %s completed in %.2f s across %d rating cohorts",
+                    region, perf_counter() - region_started, len(region_records))
     private = ["_make_key", "_model_key", "_powertrain_family", "_izev_family_model", "_trim_model_key", "_candidate_family", "_candidate_key"]
     return RatingComposition(
         class_audit=pd.DataFrame(class_records),

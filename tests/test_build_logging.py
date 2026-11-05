@@ -16,6 +16,8 @@ from validation.config_models import OutputPaths
 def test_timing_records_elapsed_time_and_preserves_result(caplog, monkeypatch):
     ticks = iter((10.0, 12.5))
     monkeypatch.setattr(utils, "perf_counter", lambda: next(ticks))
+    cpu_ticks = iter((30.0, 31.25))
+    monkeypatch.setattr(utils, "process_time", lambda: next(cpu_ticks))
     logger = logging.getLogger("test.build")
 
     @utils.log_duration(logger, "Parameter preparation")
@@ -24,18 +26,20 @@ def test_timing_records_elapsed_time_and_preserves_result(caplog, monkeypatch):
 
     with caplog.at_level(logging.INFO):
         assert prepare() == ["validated row"]
-    assert caplog.messages == ["Parameter preparation completed in 2.50 s"]
+    assert caplog.messages == ["Parameter preparation completed in 2.50 s (CPU 1.25 s)"]
 
 
 def test_timing_reports_failure_without_success_or_swallowing_error(caplog, monkeypatch):
     ticks = iter((10.0, 13.25))
     monkeypatch.setattr(utils, "perf_counter", lambda: next(ticks))
+    cpu_ticks = iter((30.0, 31.0))
+    monkeypatch.setattr(utils, "process_time", lambda: next(cpu_ticks))
     error = ValueError("Invalid source")
     with caplog.at_level(logging.INFO), pytest.raises(ValueError) as caught:
         with utils.log_duration(logging.getLogger("test.build"), "Source validation"):
             raise error
     assert caught.value is error
-    assert caplog.messages == ["Source validation failed after 3.25 s"]
+    assert caplog.messages == ["Source validation failed after 3.25 s (CPU 1.00 s)"]
     assert caplog.records[0].levelno == logging.ERROR
 
 

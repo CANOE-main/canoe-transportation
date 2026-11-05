@@ -528,6 +528,54 @@ def test_changed_csv_dimensions_fail_with_available_columns(bundle, rules, tmp_p
         )
 
 
+@pytest.mark.parametrize("table_id", ["20-10-0025-01", "23-10-0142-01"])
+def test_stream_selection_preserves_trimmed_native_fields_and_source_order(
+    bundle, rules, tmp_path: Path, table_id,
+):
+    request = request_for(bundle, table_id).model_copy(update={
+        "archive_cache_path": tmp_path / "table.zip", "snapshot": None,
+    })
+    row = dict.fromkeys(request.table_rules["required_columns"], " native value ")
+    row.update({
+        "REF_DATE": 2023, "GEO": " Ontario ", "VALUE": 1.25,
+        "SCALAR_FACTOR": " units ", "UOM": " vehicles ",
+        "Additional native audit": " audit value ",
+        "STATUS": None,
+    })
+    for column, members in request.table_rules.get("selectors", {}).items():
+        row[column] = f" {members[0]} "
+    if request.normalizer == "freight":
+        row["Geography, destination of shipments"] = " Quebec "
+    outside_geography = {**row, "GEO": " Alberta ", "STATUS": " suppressed "}
+    if request.normalizer == "freight":
+        outside_geography["Geography, destination of shipments"] = " Manitoba "
+    selected_again = {**row, "VALUE": 2.5}
+    source = pd.DataFrame([row, outside_geography, selected_again])
+    member = f"{request.product_id}.csv"
+    with ZipFile(request.archive_cache_path, "w") as archive:
+        archive.writestr(member, source.to_csv(index=False))
+
+    actual, actual_member, input_rows = read_selected_table(
+        request, regions=["ON"], geography_rules=rules["geography"], chunksize=2,
+    )
+    expected_frames = []
+    with ZipFile(request.archive_cache_path) as archive, archive.open(member) as handle:
+        for chunk in pd.read_csv(handle, chunksize=2, low_memory=False):
+            for column in chunk.select_dtypes(include=["object", "string"]):
+                chunk[column] = chunk[column].map(
+                    lambda value: value.strip() if isinstance(value, str) else value
+                )
+            expected_frames.extend(_select_chunk(
+                chunk, request=request, regions=["ON"], geography_rules=rules["geography"],
+            ))
+    expected = pd.concat(expected_frames, ignore_index=True)
+    pd.testing.assert_frame_equal(actual, expected, check_exact=True)
+    assert actual.VALUE.tolist() == [1.25, 2.5]
+    assert actual["Additional native audit"].tolist() == ["audit value", "audit value"]
+    assert actual_member == member
+    assert input_rows == len(source)
+
+
 def test_cached_metadata_shape_can_be_serialized_for_offline_fixture(bundle) -> None:
     request = request_for(bundle, "20-10-0021-01")
     payload = [{"status": "SUCCESS", "object": {"productId": str(request.product_id)}}]

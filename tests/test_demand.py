@@ -153,7 +153,7 @@ def test_car_cagr_stays_positive_and_preserves_passenger_ldv_total() -> None:
     provincial = pd.DataFrame([
         {"region": "ON", "year": year, "table_id": 20,
          "raw_series": series, "unit": "millions", "value": value}
-        for year, value in [(2013, 100000.0), (2023, 50000.0)]
+        for year, value in [(year, 100000.0 * 0.5 ** ((year - 2013) / 10)) for year in range(2013, 2024)]
     ])
     baseline = pd.DataFrame([
         {"region": "ON", "service": "cars", "baseline_demand": 50.0},
@@ -163,7 +163,7 @@ def test_car_cagr_stays_positive_and_preserves_passenger_ldv_total() -> None:
         "activity_to_billion_factor": 0.001, "region_output_map": {},
         "activity_series": {"cars": {"table_id": 20, "raw_series": series}},
         "car_extrapolation": {"history_start_year": 2013,
-                              "method": "endpoint_cagr_anchored_to_base_year"},
+                              "method": "observed_nonpandemic_cagr", "excluded_years": [2020, 2021]},
     }
     projected, audit = extrapolate_passenger_ldv_demand(
         provincial, baseline, regions=["ON"], base_year=2023,
@@ -177,11 +177,11 @@ def test_car_cagr_stays_positive_and_preserves_passenger_ldv_total() -> None:
     assert audit[0]["annual_car_cagr"] == pytest.approx(0.5**0.1 - 1)
     with pytest.raises(ValueError, match="endpoints must be finite and positive"):
         extrapolate_passenger_ldv_demand(
-            provincial.assign(value=[0.0, 50000.0]), baseline, regions=["ON"],
+            provincial.assign(value=0.0), baseline, regions=["ON"],
             base_year=2023, periods=[2025], step=5,
             gdp_indices={2025: 1.2}, rules=rules,
         )
-    with pytest.raises(ValueError, match="Missing or duplicate CEUD car CAGR endpoints"):
+    with pytest.raises(ValueError, match="CAGR lacks positive consecutive"):
         extrapolate_passenger_ldv_demand(
             provincial.loc[provincial.year.eq(2023)], baseline, regions=["ON"],
             base_year=2023, periods=[2025], step=5,

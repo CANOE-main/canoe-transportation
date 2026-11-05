@@ -354,6 +354,16 @@ def prepare_cost_rows(
             **(details or {}),
         })
 
+    # Physical prices and repair curves repeat across regional/vintage rows.
+    # These caches belong to this preparation's freshly read source evidence.
+    @cache
+    def nlr_purchase_price(
+        powertrain: str, year: int, class_weights: tuple[tuple[str, float], ...],
+    ) -> tuple[float, float]:
+        return aggregate_purchase_price(
+            prices, powertrain=powertrain, year=year, weights=dict(class_weights),
+        )
+
     def road_price(mode: str, powertrain: str, year: int, region: str) -> tuple[float, str, int, str, list[tuple[str, str]]]:
         """Native per-vehicle price, retaining the source-specific RPE treatment."""
         if mode == "motorcycles":
@@ -377,23 +387,17 @@ def prepare_cost_rows(
             amount = interpolate(selected, year, "source_value", year_col="source_year")
             components = [(REGEN, "intercity_bus_charts")]
             if powertrain == "hev":
-                _, diesel_cost = aggregate_purchase_price(
-                    prices, powertrain="diesel", year=year,
-                    weights=weights[region, "urban_transit"],
-                )
-                _, hev_cost = aggregate_purchase_price(
-                    prices, powertrain="hev", year=year,
-                    weights=weights[region, "urban_transit"],
-                )
+                transit_weights = tuple(weights[region, "urban_transit"].items())
+                _, diesel_cost = nlr_purchase_price("diesel", year, transit_weights)
+                _, hev_cost = nlr_purchase_price("hev", year, transit_weights)
                 amount *= hev_cost / diesel_cost
                 components.append((ATB, "vehicles"))
             return amount, regen_currency, regen_year, "REGEN intercity purchase price", components
         selected_powertrain = rules["missing_mhdv_purchase_powertrain_proxy"].get(
             powertrain, powertrain
         ) if efficiency["road_classes"][mode]["pathway"] != "ldv" else powertrain
-        msrp, manufacturing = aggregate_purchase_price(
-            prices, powertrain=selected_powertrain, year=year,
-            weights=weights[region, mode],
+        msrp, manufacturing = nlr_purchase_price(
+            selected_powertrain, year, tuple(weights[region, mode].items()),
         )
         family = "ldv" if efficiency["road_classes"][mode]["pathway"] == "ldv" else "mhdv"
         markup = rules["nlr_road_retail_price_equivalent_markup"][family]
@@ -402,16 +406,18 @@ def prepare_cost_rows(
             treatment += f"; reviewed {powertrain}->{selected_powertrain} purchase proxy"
         return manufacturing, atb_currency, atb_year, treatment, [(ATB, "vehicles"), *weight_components(mode, region)]
 
-    def weight_components(mode: str, region: str) -> list[tuple[str, str | int]]:
+    @cache
+    def weight_components(mode: str, region: str) -> tuple[tuple[str, str | int], ...]:
         pathway = efficiency["road_classes"][mode]["pathway"]
         if pathway == "ldv":
-            return [aggregation_component(bundle, "ldv", region)]
+            return (aggregation_component(bundle, "ldv", region),)
         if mode == "medium_trucks":
-            return [aggregation_component(bundle, "medium_trucks", region)]
+            return (aggregation_component(bundle, "medium_trucks", region),)
         if mode == "heavy_trucks":
-            return [aggregation_component(bundle, "heavy_truck_haul", region)]
-        return []
+            return (aggregation_component(bundle, "heavy_truck_haul", region),)
+        return ()
 
+    @cache
     def load_at(region: str, mode: str) -> float:
         selected = loads.loc[loads.region.eq(region) & loads["mode"].eq(mode)]
         return interpolate(selected, scenario.periods.base_year, "load_factor")
@@ -426,6 +432,25 @@ def prepare_cost_rows(
             selected, source_year, "vehicle_price_usd_2022_per_vehicle",
             year_col="source_year",
         )
+
+    @cache
+    def ldv_maintenance_cost(age: int, msrp: float, vehicle_class: str, powertrain: str) -> float:
+        return ldv_repair_per_mile(
+            age=age, msrp=msrp, vehicle_class=vehicle_class, powertrain=powertrain,
+            baseline=burnham["baseline_repair_cost"],
+            class_multipliers=burnham["class_multipliers"],
+            powertrain_multipliers=burnham["powertrain_multipliers"],
+            maintenance=burnham["maintenance_cost"],
+            powertrain_labels=rules["ldv_powertrain_evidence"],
+            price_exponent=rules["ldv_repair_price_exponent_per_usd"],
+            max_age=rules["ldv_repair_max_age"],
+        )["total"]
+
+    @cache
+    def mhdv_maintenance_cost(vehicle_class: str, powertrain: str, age: int) -> float:
+        return bean_maintenance_per_mile(
+            bean, vehicle_class=vehicle_class, powertrain=powertrain, age=age,
+        )["source_cost_per_mile"]
 
     regions = {r: region_map.get(r, r) for r in scenario.geography.regions}
     periods = list(scenario.periods.model)
@@ -501,18 +526,9 @@ def prepare_cost_rows(
                                 for vehicle_class, class_weight in weights[source_region, mode].items():
                                     weight = range_weight * class_weight
                                     msrp = ldv_retail_msrp(bucket, vehicle_class, source_year)
-                                    result = ldv_repair_per_mile(
-                                        age=age, msrp=msrp, vehicle_class=vehicle_class,
-                                        powertrain=bucket,
-                                        baseline=burnham["baseline_repair_cost"],
-                                        class_multipliers=burnham["class_multipliers"],
-                                        powertrain_multipliers=burnham["powertrain_multipliers"],
-                                        maintenance=burnham["maintenance_cost"],
-                                        powertrain_labels=rules["ldv_powertrain_evidence"],
-                                        price_exponent=rules["ldv_repair_price_exponent_per_usd"],
-                                        max_age=rules["ldv_repair_max_age"],
-                                    )
-                                    class_costs.append(weight * result["total"])
+                                    class_costs.append(weight * ldv_maintenance_cost(
+                                        age, msrp, vehicle_class, bucket,
+                                    ))
                                     weighted_msrp += weight * msrp
                             cost_per_mile = sum(class_costs)
                             components = [(ATB, "vehicles"), (ATB, "maintenance_ldv"), (CEUD, road_demand["activity_series"][mode]["table_id"]), *weight_components(mode, source_region)]
@@ -561,10 +577,7 @@ def prepare_cost_rows(
                                     if match is None:
                                         raise ValueError(f"No BEAN class mapping for {vehicle_class}")
                                     bean_class = rules["bean_gvwr_proxy"][int(match[1])]
-                                total += weight * bean_maintenance_per_mile(
-                                    bean, vehicle_class=bean_class,
-                                    powertrain=selected_powertrain, age=age,
-                                )["source_cost_per_mile"]
+                                total += weight * mhdv_maintenance_cost(bean_class, selected_powertrain, age)
                             cost_per_mile = total
                             currency, dollar_year = bean_currency, bean_year
                             components = [(BEAN, "mhdv_maintenance_coefficients"), (CEUD, road_demand["activity_series"][mode]["table_id"]), *weight_components(mode, source_region)]
@@ -775,6 +788,7 @@ def prepare_cost_rows(
             "files": [(str(path.relative_to(bundle.repo_root)), file_sha256(path)) for path in digest_inputs],
             "lifetime_signature": lifetime_signature,
             "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
+            "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None,
             "base_year": scenario.periods.base_year,
             "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
             "fleet_rules": load_harmonization_rules(bundle, "road_aggregation"),

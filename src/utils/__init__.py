@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from time import perf_counter
+from time import perf_counter, process_time
 from typing import Any
 
 import yaml
@@ -60,16 +60,19 @@ class UniqueKeyLoader(getattr(yaml, "CSafeLoader", yaml.SafeLoader)):
 
 @contextmanager
 def log_duration(logger: logging.Logger, label: str) -> Iterator[None]:
-    """Time a routine with a monotonic clock; log completion only on success."""
+    """Report elapsed and process CPU time; log completion only on success."""
     started = perf_counter()
+    cpu_started = process_time()
     logger.debug("Starting %s", label)
     try:
         yield
     except BaseException:
-        logger.error("%s failed after %.2f s", label, perf_counter() - started)
+        logger.error("%s failed after %.2f s (CPU %.2f s)", label,
+                     perf_counter() - started, process_time() - cpu_started)
         raise
     else:
-        logger.info("%s completed in %.2f s", label, perf_counter() - started)
+        logger.info("%s completed in %.2f s (CPU %.2f s)", label,
+                    perf_counter() - started, process_time() - cpu_started)
 
 
 def find_repo_root(start: Path | None = None) -> Path:
@@ -203,9 +206,15 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
             errors.append(f"source selection not defined in sources.yaml: {source_name}")
         elif registered[source_name].status != "active":
             errors.append(f"source selection is inactive in sources.yaml: {source_name}")
-    heavy_source = bundle.scenario.lifetimes.heavy_truck_survival_source
-    if heavy_source not in registered or registered[heavy_source].status != "active":
-        errors.append(f"lifetimes.heavy_truck_survival_source is unknown or inactive: {heavy_source}")
+    stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
+    profile = bundle.scenario.lifetimes.road_lifetime_survival_source
+    source_keys = {item["source_id"] for item in stock_rules["survival_source_profiles"][profile].values()
+                   if "source_id" in item}
+    if any(item["kind"] == "ceud_median" for item in stock_rules["survival_source_profiles"][profile].values()):
+        source_keys.add(load_harmonization_rules(bundle, "assorted_sources")["nhtsa_cafe"]["source_id"])
+    for source_key in sorted(source_keys):
+        if source_key not in registered or registered[source_key].status != "active":
+            errors.append(f"lifetimes.road_lifetime_survival_source uses unknown or inactive source: {source_key}")
     selectors = {
         "nrcan_ceud_transport_provincial": "year",
         "nrcan_ceud_transport_national": "year",
