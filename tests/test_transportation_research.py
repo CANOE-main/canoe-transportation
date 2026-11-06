@@ -288,6 +288,7 @@ def captured_refresh_fixture(tmp_path, monkeypatch):
     rules = {
         "reference_route": "reference", "report_route": "report",
         "reference_sqlite": reference.name, "reference_notebook": notebook.name,
+        "inherited_sqlite": str(reference),
         "legacy_baseline": str(baseline), "energy_series": {},
         "notebook_scenario": "config/scenarios/validation_baseline.yaml", "comparison_significance_percent": 5,
     }
@@ -366,6 +367,7 @@ def test_validation_diagnosis_requires_live_scenario_and_common_build(
     monkeypatch.setattr(research, "deepen_fleet_diagnosis", lambda frames, metadata: {})
     monkeypatch.setattr(research, "deepen_demand_diagnosis", lambda result, control, rules: {})
     monkeypatch.setattr(research, "deepen_reference_cohorts", lambda result, control, rules: {}, raising=False)
+    monkeypatch.setattr(research, "reconstruct_comparison", lambda result, control, rules: {})
     monkeypatch.setattr(research, "harmonized_charging_costs", lambda frame: frame.copy())
     monkeypatch.setattr(
         research, "resolve_artifact_path",
@@ -691,7 +693,7 @@ main_compile_data_transport(growth_rate_type='gdp', range_period=range(2025, 203
     }
     rules = research.TransportationResearchRules(
         reference_route="reference", report_route="report", reference_sqlite="unused.sqlite",
-        reference_notebook="unused.ipynb", legacy_baseline="unused.sqlite", energy_series={},
+        reference_notebook="unused.ipynb", inherited_sqlite="unused.sqlite", legacy_baseline="unused.sqlite", energy_series={},
         notebook_scenario="config/scenarios/validation_baseline.yaml", comparison_significance_percent=5,
     )
     demand_rules = {"activity_to_billion_factor": .001,

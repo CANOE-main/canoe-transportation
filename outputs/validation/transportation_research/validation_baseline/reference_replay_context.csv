@@ -1,0 +1,7 @@
+evidence,interpretation
+Backend SQLite,Actual ExistingCapacity rows at native vintage; class ownership from this database's Efficiency outputs
+Sales variant SQLite,"Actual stored ExistingCapacity, including BEV/PHEV range aliases; no normalization or annual decomposition"
+Sales variant notebook recipe,Literal workbook calculation inspected independently; not proof of the supplied SQLite's generation history
+Recipe-to-SQLite key bridge,Only terminal _EX/_N suffixes are removed for key comparison; values and native vintage labels remain unchanged
+Recipe match tolerance,Scenario relative tolerance 1e-06; absolute tolerance 1e-09 thousand vehicles
+Timing,A common base-year fleet state is not established for the stored reference; no retirement screen is applied to its capacity values

@@ -1,0 +1,433 @@
+region,road_class,evidence,vintage,vintage_year,surviving_k_vehicles,survival_treatment,annual_position,cohort_position,interval,boundary_exception
+ON,cars,Current backend,2000.0,2000,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; oldest proxy includes lower endpoint; available 2000–2005",True
+ON,cars,Current backend,2000.0,2001,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2000.0, 2005.0]; available 2000–2005",False
+ON,cars,Current backend,2000.0,2002,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2000.0, 2005.0]; available 2000–2005",False
+ON,cars,Current backend,2000.0,2003,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2000.0, 2005.0]; available 2000–2005",False
+ON,cars,Current backend,2000.0,2004,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2000.0, 2005.0]; available 2000–2005",False
+ON,cars,Current backend,2000.0,2005,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; available 2000–2005",False
+ON,cars,Current backend,2005.0,2006,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Current backend,2005.0,2007,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Current backend,2005.0,2008,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Current backend,2005.0,2009,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Current backend,2005.0,2010,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Current backend,2010.0,2011,211.92608654373765,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Current backend,2010.0,2012,264.0234254534192,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Current backend,2010.0,2013,294.65592706433057,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Current backend,2010.0,2014,317.2572187186529,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Current backend,2010.0,2015,320.2570719358907,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Current backend,2015.0,2016,306.92436761481264,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Current backend,2015.0,2017,323.28780349606257,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Current backend,2015.0,2018,320.6509200519227,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Current backend,2015.0,2019,278.6932084534903,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Current backend,2015.0,2020,185.8752114927687,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Current backend,2020.0,2021,202.4255200846515,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Current backend,2020.0,2022,170.98726244944922,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Current backend,2020.0,2023,136.9741976306615,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Current backend,2020.0,2024,136.54227250158434,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Current backend,2020.0,2025,134.78650650856588,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Current backend,2000.0,2000,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; oldest proxy includes lower endpoint; available 2000–2005",True
+ON,freight_light_trucks,Current backend,2000.0,2001,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2000.0, 2005.0]; available 2000–2005",False
+ON,freight_light_trucks,Current backend,2000.0,2002,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2000.0, 2005.0]; available 2000–2005",False
+ON,freight_light_trucks,Current backend,2000.0,2003,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2000.0, 2005.0]; available 2000–2005",False
+ON,freight_light_trucks,Current backend,2000.0,2004,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2000.0, 2005.0]; available 2000–2005",False
+ON,freight_light_trucks,Current backend,2000.0,2005,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; available 2000–2005",False
+ON,freight_light_trucks,Current backend,2005.0,2006,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Current backend,2005.0,2007,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Current backend,2005.0,2008,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Current backend,2005.0,2009,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Current backend,2005.0,2010,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Current backend,2010.0,2011,37.43602149129591,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Current backend,2010.0,2012,39.92840872398014,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Current backend,2010.0,2013,45.72780159960721,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Current backend,2010.0,2014,55.987983368669646,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Current backend,2010.0,2015,69.25046459487383,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Current backend,2015.0,2016,81.55918419062013,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Current backend,2015.0,2017,91.33598719225056,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Current backend,2015.0,2018,96.56695718982728,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Current backend,2015.0,2019,101.14501683281809,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Current backend,2015.0,2020,83.72848088360273,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Current backend,2020.0,2021,92.80152166559472,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Current backend,2020.0,2022,91.16705549132864,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Current backend,2020.0,2023,109.0390148230013,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Current backend,2020.0,2024,109.52577836910817,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Current backend,2020.0,2025,110.43232358342162,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Current backend,2000.0,2000,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; oldest proxy includes lower endpoint; available 2000–2005",True
+ON,heavy_trucks,Current backend,2000.0,2001,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2000.0, 2005.0]; available 2000–2005",False
+ON,heavy_trucks,Current backend,2000.0,2002,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2000.0, 2005.0]; available 2000–2005",False
+ON,heavy_trucks,Current backend,2000.0,2003,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2000.0, 2005.0]; available 2000–2005",False
+ON,heavy_trucks,Current backend,2000.0,2004,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2000.0, 2005.0]; available 2000–2005",False
+ON,heavy_trucks,Current backend,2000.0,2005,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; available 2000–2005",False
+ON,heavy_trucks,Current backend,2005.0,2006,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Current backend,2005.0,2007,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Current backend,2005.0,2008,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Current backend,2005.0,2009,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Current backend,2005.0,2010,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Current backend,2010.0,2011,5.262410983633884,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Current backend,2010.0,2012,6.479736042820905,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Current backend,2010.0,2013,6.181749664111709,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Current backend,2010.0,2014,7.113127587297107,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Current backend,2010.0,2015,8.773116798543418,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Current backend,2015.0,2016,8.237279685343559,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Current backend,2015.0,2017,8.839174011496366,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Current backend,2015.0,2018,11.888363198388468,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Current backend,2015.0,2019,11.362652742959751,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Current backend,2015.0,2020,9.781629866578266,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Current backend,2020.0,2021,11.191122212029777,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Current backend,2020.0,2022,11.29167057888669,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Current backend,2020.0,2023,12.2446555426367,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Current backend,2020.0,2024,12.2446555426367,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Current backend,2020.0,2025,12.2446555426367,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Current backend,2000.0,2000,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; oldest proxy includes lower endpoint; available 2000–2005",True
+ON,medium_trucks,Current backend,2000.0,2001,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2000.0, 2005.0]; available 2000–2005",False
+ON,medium_trucks,Current backend,2000.0,2002,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2000.0, 2005.0]; available 2000–2005",False
+ON,medium_trucks,Current backend,2000.0,2003,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2000.0, 2005.0]; available 2000–2005",False
+ON,medium_trucks,Current backend,2000.0,2004,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2000.0, 2005.0]; available 2000–2005",False
+ON,medium_trucks,Current backend,2000.0,2005,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; available 2000–2005",False
+ON,medium_trucks,Current backend,2005.0,2006,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Current backend,2005.0,2007,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Current backend,2005.0,2008,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Current backend,2005.0,2009,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Current backend,2005.0,2010,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Current backend,2010.0,2011,14.66715266008404,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Current backend,2010.0,2012,15.164820988349774,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Current backend,2010.0,2013,16.3367192445649,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Current backend,2010.0,2014,19.18322246886237,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Current backend,2010.0,2015,22.969348467271587,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Current backend,2015.0,2016,26.282692013598197,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Current backend,2015.0,2017,30.047077077414905,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Current backend,2015.0,2018,31.91831072351587,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Current backend,2015.0,2019,32.275607108395825,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Current backend,2015.0,2020,31.451037902958788,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Current backend,2020.0,2021,32.43167431951839,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Current backend,2020.0,2022,34.96048860342353,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Current backend,2020.0,2023,38.0239487482689,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Current backend,2020.0,2024,38.02144983688645,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Current backend,2020.0,2025,38.02144983688645,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Current backend,2000.0,2000,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; oldest proxy includes lower endpoint; available 2000–2005",True
+ON,passenger_light_trucks,Current backend,2000.0,2001,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2000.0, 2005.0]; available 2000–2005",False
+ON,passenger_light_trucks,Current backend,2000.0,2002,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2000.0, 2005.0]; available 2000–2005",False
+ON,passenger_light_trucks,Current backend,2000.0,2003,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2000.0, 2005.0]; available 2000–2005",False
+ON,passenger_light_trucks,Current backend,2000.0,2004,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2000.0, 2005.0]; available 2000–2005",False
+ON,passenger_light_trucks,Current backend,2000.0,2005,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2000.0, 2005.0]; available 2000–2005",False
+ON,passenger_light_trucks,Current backend,2005.0,2006,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Current backend,2005.0,2007,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Current backend,2005.0,2008,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Current backend,2005.0,2009,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Current backend,2005.0,2010,0.0,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Current backend,2010.0,2011,134.27592467308187,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Current backend,2010.0,2012,143.18129480116193,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Current backend,2010.0,2013,163.71098699687204,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Current backend,2010.0,2014,200.1655628566032,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Current backend,2010.0,2015,247.59140524115531,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Current backend,2015.0,2016,292.02568575182573,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Current backend,2015.0,2017,327.2862299613199,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Current backend,2015.0,2018,346.445784194906,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Current backend,2015.0,2019,363.2810767018345,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Current backend,2015.0,2020,300.940508749525,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Current backend,2020.0,2021,331.8321120708814,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Current backend,2020.0,2022,326.8926546847071,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Current backend,2020.0,2023,390.3651022103616,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Current backend,2020.0,2024,392.10897646041536,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Current backend,2020.0,2025,395.3546946453487,Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2010.0,2011,0.03498035166806025,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2012,0.1001151320491556,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2013,0.3197758225468375,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2014,0.5739764778606947,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2015,0.6529877624661852,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2015.0,2016,0.8395162165191977,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2017,2.3116266583482066,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2018,6.845874803118179,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2019,4.910635526136739,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2020,4.771905018010284,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2020.0,2021,8.436896090908384,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2022,14.831308619046318,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2023,9.719920479459487,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2024,9.719920479459487,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2025,9.719920479459487,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2005.0,2006,0.0,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2005.0,2007,1.5366672000000001,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2005.0,2008,1.566504,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2005.0,2009,1.3033104,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2005.0,2010,1.232424,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2010.0,2011,3.5254812888840417,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2012,4.097225163487636,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2013,4.214895328781036,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2014,4.871865401767402,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2015,3.3267951489731087,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2015.0,2016,0.8133377538535453,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2017,0.6984180069653941,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2018,0.6610843401725393,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2019,0.14563862016679302,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2020,0.012201760114238954,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2020.0,2021,0.0012042386655592896,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2022,0.0,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2023,0.0,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2024,0.0,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2025,0.0,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2005.0,2006,0.0,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2005.0,2007,49.6855728,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2005.0,2008,50.650296,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2005.0,2009,42.14036960000001,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2005.0,2010,39.848376,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,cars,Legacy recipe,2010.0,2011,127.73102319555025,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2012,134.0884258162319,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2013,136.17189884456644,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2014,139.04953580947173,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2015,136.67991296932237,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2015.0,2016,217.61343578908597,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2017,220.36594511537916,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2018,208.1198377432699,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2019,178.1020287505103,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2020,115.6879380831281,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2020.0,2021,136.88340063679334,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2022,108.09573885160023,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2023,85.10591535111519,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2024,85.10591535111519,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2025,85.10591535111519,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2010.0,2011,1.849115205099308,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2012,3.5067064969089263,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2013,3.656068850616937,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2014,3.4166536623585033,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2015,2.719527287503321,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2015.0,2016,4.359165386635705,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2017,4.493612327168195,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2018,4.4300141832241975,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2019,7.198842308372698,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2020,5.2518409158370165,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2020.0,2021,8.585017446772177,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2022,7.9847054892545,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2023,10.022802106510374,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2024,10.022802106510374,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2025,10.022802106510374,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2010.0,2011,0.08771995879836648,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2012,0.23181739132237636,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2013,0.24582115348877415,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2014,0.3413986485416771,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2010.0,2015,0.3765168317350326,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,cars,Legacy recipe,2015.0,2016,1.8433248539055929,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2017,3.3405378921390554,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2018,5.166008930215154,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2019,1.7401947948134757,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2015.0,2020,1.0229142229103656,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,cars,Legacy recipe,2020.0,2021,1.239161586860509,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2022,0.9510170400989514,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2023,0.7892120629149256,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2024,0.7892120629149256,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,cars,Legacy recipe,2020.0,2025,0.7892120629149256,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Legacy recipe,2000.0,2005,3.73736,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2000.0, 2005.0]; available 2005–2005",False
+ON,heavy_trucks,Legacy recipe,2005.0,2006,5.8824000000000005,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Legacy recipe,2005.0,2007,4.152,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Legacy recipe,2005.0,2008,3.7132799999999997,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Legacy recipe,2005.0,2009,2.18208,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Legacy recipe,2005.0,2010,3.04656,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,heavy_trucks,Legacy recipe,2010.0,2011,5.65386,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Legacy recipe,2010.0,2012,6.61365,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Legacy recipe,2010.0,2013,5.9940299999999995,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Legacy recipe,2010.0,2014,6.621239999999999,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Legacy recipe,2010.0,2015,7.839779999999999,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,heavy_trucks,Legacy recipe,2015.0,2016,9.00276,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Legacy recipe,2015.0,2017,9.37077,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Legacy recipe,2015.0,2018,12.22524,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Legacy recipe,2015.0,2019,11.450940000000001,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Legacy recipe,2015.0,2020,9.66048,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,heavy_trucks,Legacy recipe,2020.0,2021,12.45123,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Legacy recipe,2020.0,2022,12.563099999999999,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Legacy recipe,2020.0,2023,13.623389999999999,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Legacy recipe,2020.0,2024,13.623389999999999,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,heavy_trucks,Legacy recipe,2020.0,2025,13.623389999999999,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2000.0,2005,0.3875932,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2000.0, 2005.0]; available 2005–2005",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2006,0.7223552,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2007,0.7591680000000001,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2008,0.7396224000000001,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2009,0.689344,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2010,0.8277120000000001,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2011,1.7968205708824998,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2012,1.8571507577359259,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2013,1.9321195696891782,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2014,3.145917425693933,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2015,4.234120348655074,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2016,7.2697649059729486,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2017,6.443242904875957,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2018,8.348185482825665,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2019,7.346415661587562,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2020,7.6530886615294,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2021,11.298651251345255,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2022,14.093586127547665,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2023,14.844091140303146,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2024,14.844091140303146,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2025,14.844091140303146,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2000.0,2005,9.205338500000002,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2000.0, 2005.0]; available 2005–2005",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2006,17.155936,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2007,18.03024,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2008,17.566032,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2009,16.37192,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2005.0,2010,19.658160000000002,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2011,33.69742863968756,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2012,33.320362481077744,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2013,35.75846491303033,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2014,40.254827973470896,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2015,46.55067965134493,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2016,73.52142334649729,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2017,80.00427568999675,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2018,79.66884277381723,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2019,82.42882734798724,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2020,65.09279794038972,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2021,79.69942869285661,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2022,73.66173494411571,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2023,90.09257110143801,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2024,90.09257110143801,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2025,90.09257110143801,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2011,0.01797625477812864,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2012,0.017562412999906973,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2013,0.0025655172804961053,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2014,0.00030460083517563257,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2010.0,2015,0.0,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2016,0.0,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2017,0.0,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2018,0.0,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2019,0.0,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2020,0.004467130902130165,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2021,4.842655243585614,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2022,4.809362623274161,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2023,4.702849007384376,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2024,4.702849007384376,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2025,4.702849007384376,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2016,0.000431747529752521,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2017,0.2229614051272953,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2018,0.40767174335709655,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2019,0.042536990425203335,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2015.0,2020,0.060306267178757235,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2021,0.18496481221252645,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2022,0.3397385601577909,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2023,0.44885566265060234,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2024,0.44885566265060234,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,freight_light_trucks,Legacy recipe,2020.0,2025,0.44885566265060234,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2011,0.00579900857847225,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2012,0.004373866819855835,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2013,0.0,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2014,0.00602945805259248,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2015,0.02398827079697499,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2016,0.3095882910138877,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2017,0.5845785177834248,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2018,0.5137759491193739,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2019,0.7116600778691371,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2020,1.9067009874758647,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2021,5.338984040007947,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2022,14.153342483424844,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2023,19.8926037060378,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2024,19.8926037060378,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2025,19.8926037060378,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2000.0,2005,1.0438884,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2000.0, 2005.0]; available 2005–2005",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2006,1.9468128,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2007,2.0459616,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2008,1.99464,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2009,1.8560736,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2010,2.2277663999999997,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2011,3.9104647847497875,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2012,4.421581730617898,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2013,5.377341429249013,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2014,7.66022547388366,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2015,9.170431319080862,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2016,12.144902588147392,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2017,9.708766207570886,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2018,11.75255371540397,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2019,9.342384680958489,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2020,9.781128442246318,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2021,12.547508990951252,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2022,15.811590681913884,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2023,15.777087598701456,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2024,15.777087598701456,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2025,15.777087598701456,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2000.0,2005,33.056466,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2000.0, 2005.0]; available 2005–2005",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2006,61.649072,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2007,64.78878399999999,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2008,63.163599999999995,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2009,58.775664,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2005.0,2010,70.545936,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2011,123.20534965764953,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2012,121.51357511646576,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2013,129.38191731541505,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2014,147.24740492171182,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2015,172.11665613001745,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2016,275.10038429571034,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2017,297.90597547479933,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2018,300.91737857142857,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2019,308.3774639191421,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2020,243.0716345730848,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2021,304.9475692941816,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2022,282.3874670453701,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2023,320.4355544493107,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2024,320.4355544493107,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2025,320.4355544493107,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2011,0.371136549022224,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2012,0.38171928609650924,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2013,0.29544125533596843,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2014,0.3714146160396968,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2015,0.3655161940081442,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2016,1.6698311149325775,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2017,2.0757923895296977,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2018,2.58367285155158,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2019,3.693958882283077,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2020,6.406295208136801,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2021,18.077515838900585,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2022,19.97731535780044,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2023,36.79223331409173,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2024,36.79223331409173,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2025,36.79223331409173,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2011,0.0,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2012,0.0,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2013,0.0,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2014,0.005225530312246816,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2010.0,2015,0.04065808609656777,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2016,0.28555371019580406,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2017,0.5431874103167031,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2018,1.7222589124965055,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2019,0.7313524397471455,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2015.0,2020,0.7434207890562462,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2021,2.723281835958587,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2022,3.5210044314907316,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2023,7.542520931858261,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2024,7.542520931858261,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,passenger_light_trucks,Legacy recipe,2020.0,2025,7.542520931858261,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2000.0,2005,4.078793999999999,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2000.0, 2005.0]; available 2005–2005",False
+ON,medium_trucks,Legacy recipe,2005.0,2006,7.452864,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2005.0,2007,7.878815999999999,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2005.0,2008,7.477919999999999,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2005.0,2009,6.278111999999999,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2005.0,2010,7.438463999999999,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2010.0,2011,10.999151999999999,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2010.0,2012,10.803743999999998,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2010.0,2013,11.056697999999999,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2010.0,2014,12.463884,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2010.0,2015,14.326884,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2015.0,2016,20.050019999999996,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2015.0,2017,23.638489962003174,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2015.0,2018,23.955613032839715,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2015.0,2019,23.414334612262103,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2015.0,2020,22.145751086101637,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2020.0,2021,28.561095254923277,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2020.0,2022,26.479185264760574,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2020.0,2023,29.55543029805563,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2020.0,2024,29.55543029805563,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2020.0,2025,29.55543029805563,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2000.0,2005,2.7191959999999997,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2000.0, 2005.0]; available 2005–2005",False
+ON,medium_trucks,Legacy recipe,2005.0,2006,4.968576,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2005.0,2007,5.252543999999999,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2005.0,2008,4.98528,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2005.0,2009,4.185408,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2005.0,2010,4.958976,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2005.0, 2010.0]; available 2006–2010",False
+ON,medium_trucks,Legacy recipe,2010.0,2011,7.332768000000001,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2010.0,2012,7.202496,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2010.0,2013,7.371131999999999,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2010.0,2014,8.309256,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2010.0,2015,9.551256,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2010.0, 2015.0]; available 2011–2015",False
+ON,medium_trucks,Legacy recipe,2015.0,2016,13.366679999999999,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2015.0,2017,13.41678250046784,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2015.0,2018,14.231821455228335,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2015.0,2019,14.432093591669139,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2015.0,2020,13.999176458165861,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2015.0, 2020.0]; available 2016–2020",False
+ON,medium_trucks,Legacy recipe,2020.0,2021,17.87874315967333,Aggregate acquisitions first; survival at representative model vintage,1,Year 1,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2020.0,2022,17.422081146352635,Aggregate acquisitions first; survival at representative model vintage,2,Year 2,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2020.0,2023,19.97212496678112,Aggregate acquisitions first; survival at representative model vintage,3,Year 3,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2020.0,2024,19.97212496678112,Aggregate acquisitions first; survival at representative model vintage,4,Year 4,"(2020.0, 2025.0]; available 2021–2025",False
+ON,medium_trucks,Legacy recipe,2020.0,2025,19.97212496678112,Aggregate acquisitions first; survival at representative model vintage,5,Year 5,"(2020.0, 2025.0]; available 2021–2025",False

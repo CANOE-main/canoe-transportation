@@ -113,7 +113,7 @@
     "cost_invest": [
       {
         "cost": 21.098162002961306,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -128,7 +128,7 @@
       },
       {
         "cost": 19.302188395576156,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -143,7 +143,7 @@
       },
       {
         "cost": 18.570634778491353,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -158,7 +158,7 @@
       },
       {
         "cost": 17.83908116140655,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -173,7 +173,7 @@
       },
       {
         "cost": 17.107527544321748,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -188,7 +188,7 @@
       },
       {
         "cost": 20.578777427938494,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -203,7 +203,7 @@
       },
       {
         "cost": 19.8105017782118,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -218,7 +218,7 @@
       },
       {
         "cost": 19.40560132471396,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -233,7 +233,7 @@
       },
       {
         "cost": 19.000700871216107,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -248,7 +248,7 @@
       },
       {
         "cost": 18.59580041771826,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:02be5dd4705f91c6",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:f1ebb5fb6e843758",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -263,7 +263,7 @@
       },
       {
         "cost": 26.005141909613656,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -278,7 +278,7 @@
       },
       {
         "cost": 24.012154769958656,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -293,7 +293,7 @@
       },
       {
         "cost": 23.200163730895948,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -308,7 +308,7 @@
       },
       {
         "cost": 22.388172691833226,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -323,7 +323,7 @@
       },
       {
         "cost": 21.57618165277052,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -338,7 +338,7 @@
       },
       {
         "cost": 25.3223570259388,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -353,7 +353,7 @@
       },
       {
         "cost": 24.383954901557043,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -368,7 +368,7 @@
       },
       {
         "cost": 23.903969931626865,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -383,7 +383,7 @@
       },
       {
         "cost": 23.423984961696686,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -398,7 +398,7 @@
       },
       {
         "cost": 22.943999991766507,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:d682341d8f3a9adc",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:05d807eea46cf84f",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -413,7 +413,7 @@
       },
       {
         "cost": 26.005141909613656,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -428,7 +428,7 @@
       },
       {
         "cost": 24.012154769958656,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -443,7 +443,7 @@
       },
       {
         "cost": 23.200163730895948,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -458,7 +458,7 @@
       },
       {
         "cost": 22.388172691833226,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -473,7 +473,7 @@
       },
       {
         "cost": 21.57618165277052,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -488,7 +488,7 @@
       },
       {
         "cost": 25.3223570259388,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -503,7 +503,7 @@
       },
       {
         "cost": 24.383954901557043,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -518,7 +518,7 @@
       },
       {
         "cost": 23.903969931626865,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -533,7 +533,7 @@
       },
       {
         "cost": 23.423984961696686,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -548,7 +548,7 @@
       },
       {
         "cost": 22.943999991766507,
-        "data_id": "ldv-ev-representative-cost-invest:composite:1:0f5d5cec925ff246",
+        "data_id": "ldv-ev-representative-cost-invest:composite:1:2b8abe7ca98afdc2",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -565,7 +565,7 @@
     "cost_variable": [
       {
         "cost": 32.012404859941654,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -581,7 +581,7 @@
       },
       {
         "cost": 44.458985981787116,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -597,7 +597,7 @@
       },
       {
         "cost": 32.012404859941654,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -613,7 +613,7 @@
       },
       {
         "cost": 54.805245376631184,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -629,7 +629,7 @@
       },
       {
         "cost": 43.863867982635,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -645,7 +645,7 @@
       },
       {
         "cost": 32.012404859941654,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -661,7 +661,7 @@
       },
       {
         "cost": 63.08225289250639,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -677,7 +677,7 @@
       },
       {
         "cost": 53.71543368372556,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -693,7 +693,7 @@
       },
       {
         "cost": 43.631454148462026,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -709,7 +709,7 @@
       },
       {
         "cost": 32.012404859941654,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -725,7 +725,7 @@
       },
       {
         "cost": 61.59668624459796,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -741,7 +741,7 @@
       },
       {
         "cost": 53.28982512469088,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -757,7 +757,7 @@
       },
       {
         "cost": 43.40375191073788,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -773,7 +773,7 @@
       },
       {
         "cost": 32.012404859941654,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -789,7 +789,7 @@
       },
       {
         "cost": 47.23141700647128,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -805,7 +805,7 @@
       },
       {
         "cost": 62.95215166141271,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -821,7 +821,7 @@
       },
       {
         "cost": 47.23141700647128,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -837,7 +837,7 @@
       },
       {
         "cost": 76.02006139704797,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -853,7 +853,7 @@
       },
       {
         "cost": 62.630466933444495,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -869,7 +869,7 @@
       },
       {
         "cost": 47.23141700647128,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -885,7 +885,7 @@
       },
       {
         "cost": 86.47438918555613,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -901,7 +901,7 @@
       },
       {
         "cost": 75.43097523519708,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -917,7 +917,7 @@
       },
       {
         "cost": 62.46361008547199,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -933,7 +933,7 @@
       },
       {
         "cost": 47.23141700647128,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -949,7 +949,7 @@
       },
       {
         "cost": 85.67138187659906,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -965,7 +965,7 @@
       },
       {
         "cost": 75.12541811170072,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -981,7 +981,7 @@
       },
       {
         "cost": 62.298571435510716,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -997,7 +997,7 @@
       },
       {
         "cost": 47.23141700647128,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:b21aa88f2a4fbff6",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:1e9f455d8fbe4ea7",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1013,7 +1013,7 @@
       },
       {
         "cost": 29.63468401173737,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1029,7 +1029,7 @@
       },
       {
         "cost": 41.3638716372839,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1045,7 +1045,7 @@
       },
       {
         "cost": 29.63468401173737,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1061,7 +1061,7 @@
       },
       {
         "cost": 51.11379544983255,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1077,7 +1077,7 @@
       },
       {
         "cost": 40.751586664090574,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1093,7 +1093,7 @@
       },
       {
         "cost": 29.63468401173737,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1109,7 +1109,7 @@
       },
       {
         "cost": 58.91373449987143,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1125,7 +1125,7 @@
       },
       {
         "cost": 49.992546682147534,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1141,7 +1141,7 @@
       },
       {
         "cost": 40.51193990173653,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1157,7 +1157,7 @@
       },
       {
         "cost": 29.63468401173737,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1173,7 +1173,7 @@
       },
       {
         "cost": 57.38531469659302,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1189,7 +1189,7 @@
       },
       {
         "cost": 49.55369280081222,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1205,7 +1205,7 @@
       },
       {
         "cost": 40.27753071175088,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1221,7 +1221,7 @@
       },
       {
         "cost": 29.63468401173737,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1237,7 +1237,7 @@
       },
       {
         "cost": 43.723304279612506,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1253,7 +1253,7 @@
       },
       {
         "cost": 58.49963454667311,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1269,7 +1269,7 @@
       },
       {
         "cost": 43.723304279612506,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1285,7 +1285,7 @@
       },
       {
         "cost": 70.78250518803901,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1301,7 +1301,7 @@
       },
       {
         "cost": 58.13264341172465,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1317,7 +1317,7 @@
       },
       {
         "cost": 43.723304279612506,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1333,7 +1333,7 @@
       },
       {
         "cost": 80.60880170113164,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1349,7 +1349,7 @@
       },
       {
         "cost": 70.11045152703505,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1365,7 +1365,7 @@
       },
       {
         "cost": 57.948534119593155,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1381,7 +1381,7 @@
       },
       {
         "cost": 43.723304279612506,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1397,7 +1397,7 @@
       },
       {
         "cost": 79.69269801928328,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1413,7 +1413,7 @@
       },
       {
         "cost": 69.77330081133942,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1429,7 +1429,7 @@
       },
       {
         "cost": 57.76679658331374,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1445,7 +1445,7 @@
       },
       {
         "cost": 43.723304279612506,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:7eb0fa7974b63155",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:e9132bc1eae17343",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1461,7 +1461,7 @@
       },
       {
         "cost": 91.24108040085765,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1477,7 +1477,7 @@
       },
       {
         "cost": 127.35362173098858,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1493,7 +1493,7 @@
       },
       {
         "cost": 91.24108040085765,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1509,7 +1509,7 @@
       },
       {
         "cost": 157.37228439432755,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1525,7 +1525,7 @@
       },
       {
         "cost": 125.46848125015057,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1541,7 +1541,7 @@
       },
       {
         "cost": 91.24108040085765,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1557,7 +1557,7 @@
       },
       {
         "cost": 181.38721452499854,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1573,7 +1573,7 @@
       },
       {
         "cost": 153.9201150065523,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1589,7 +1589,7 @@
       },
       {
         "cost": 124.73064211870953,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1605,7 +1605,7 @@
       },
       {
         "cost": 91.24108040085765,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1621,7 +1621,7 @@
       },
       {
         "cost": 176.68142201167348,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1637,7 +1637,7 @@
       },
       {
         "cost": 152.568944794807,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1653,7 +1653,7 @@
       },
       {
         "cost": 124.00892874590251,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1669,7 +1669,7 @@
       },
       {
         "cost": 91.24108040085765,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1685,7 +1685,7 @@
       },
       {
         "cost": 134.61798747667524,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1701,7 +1701,7 @@
       },
       {
         "cost": 180.1122582234974,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1717,7 +1717,7 @@
       },
       {
         "cost": 134.61798747667524,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1733,7 +1733,7 @@
       },
       {
         "cost": 217.92951273845443,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1749,7 +1749,7 @@
       },
       {
         "cost": 178.98234343726344,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1765,7 +1765,7 @@
       },
       {
         "cost": 134.61798747667524,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1781,7 +1781,7 @@
       },
       {
         "cost": 248.18331635041983,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1797,7 +1797,7 @@
       },
       {
         "cost": 215.86035276046834,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1813,7 +1813,7 @@
       },
       {
         "cost": 178.4154964710781,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1829,7 +1829,7 @@
       },
       {
         "cost": 134.61798747667524,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1845,7 +1845,7 @@
       },
       {
         "cost": 245.362760219032,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1861,7 +1861,7 @@
       },
       {
         "cost": 214.82231248489774,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1877,7 +1877,7 @@
       },
       {
         "cost": 177.85595181209146,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,
@@ -1893,7 +1893,7 @@
       },
       {
         "cost": 134.61798747667524,
-        "data_id": "ldv-ev-representative-cost-variable:composite:1:c0f12e9a296f2a3b",
+        "data_id": "ldv-ev-representative-cost-variable:composite:1:69b26ee291e2be71",
         "data_source": "T06",
         "dq_cred": 2,
         "dq_geog": 3,

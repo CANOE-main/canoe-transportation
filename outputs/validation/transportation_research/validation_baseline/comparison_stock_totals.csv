@@ -1,0 +1,11 @@
+region,road_class,evidence,surviving_k_vehicles,base_year,ceud_stock_k_vehicles,difference_percent
+ON,cars,Current backend,3605.2670000000003,2025,3605.267,2.220446049250313e-14
+ON,cars,Legacy recipe,2504.50164,2025,3605.267,-30.532145330706427
+ON,freight_light_trucks,Current backend,1215.632,2025,1215.632,0.0
+ON,freight_light_trucks,Legacy recipe,1242.4101854075857,2025,1215.632,2.2028200481383875
+ON,heavy_trucks,Current backend,143.136,2025,143.136,0.0
+ON,heavy_trucks,Legacy recipe,173.03093,2025,143.136,20.88568214844624
+ON,medium_trucks,Current backend,421.755,2025,421.755,0.0
+ON,medium_trucks,Legacy recipe,588.6667533189578,2025,421.755,39.57552449146018
+ON,passenger_light_trucks,Current backend,4355.458,2025,4355.458,0.0
+ON,passenger_light_trucks,Legacy recipe,4472.3606948,2025,4355.458,2.6840505590915997
