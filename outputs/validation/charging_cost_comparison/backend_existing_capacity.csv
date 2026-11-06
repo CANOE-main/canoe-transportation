@@ -1,5 +1,5 @@
 region,tech,vintage,capacity,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
-ON,T_LDV_CHRG_EX,2020,1.3042767753286026,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+ON,T_LDV_CHRG_EX,2020,1.1880427382972059,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
@@ -9,12 +9,12 @@ dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with rev
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - public_light_duty_chargers: Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers.
 pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.
-epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-ldv:T_LDV_CHRG_EX:T25:researcher_sales_2025
-ON,T_MHDV_CHRG_EX,2020,0.5428401733333335,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-ldv:T_LDV_CHRG_EX:T25:validation_baseline
+ON,T_MHDV_CHRG_EX,2020,0.3353369090285812,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
   - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
 statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
   - 23-10-0308-01: Registered vehicle stock by province, weight class and fuel; stock composition is used as a fuel-mix proxy rather than new-vehicle sales.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.
 transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
   - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.
-epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-mhdv:T_MHDV_CHRG_EX:T24:researcher_sales_2025
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-mhdv:T_MHDV_CHRG_EX:T24:validation_baseline

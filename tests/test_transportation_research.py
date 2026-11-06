@@ -14,7 +14,8 @@ from validation import transportation_research as research
 from validation.transportation_research import (
     TransportationResearch, _verify_accepted_survival, _verify_build,
     compare_reference_state, fleet_activity_energy, inspect_notebook,
-    road_parameter_comparison, write_research_report,
+    deepen_demand_diagnosis, deepen_fleet_diagnosis, harmonized_charging_costs, road_parameter_comparison,
+    write_research_report,
 )
 
 
@@ -288,7 +289,7 @@ def captured_refresh_fixture(tmp_path, monkeypatch):
         "reference_route": "reference", "report_route": "report",
         "reference_sqlite": reference.name, "reference_notebook": notebook.name,
         "legacy_baseline": str(baseline), "energy_series": {},
-        "notebook_scenario": "config/scenarios/default.yaml", "comparison_significance_percent": 5,
+        "notebook_scenario": "config/scenarios/validation_baseline.yaml", "comparison_significance_percent": 5,
     }
     monkeypatch.setattr(research, "resolve_artifact_path", lambda bundle, route, *parts: directory if route == "report" else tmp_path)
     monkeypatch.setattr(research, "load_harmonization_rules", lambda bundle, name: rules if name == "transportation_research" else {"demand": {}})
@@ -334,7 +335,7 @@ def test_comparison_refresh_rejects_tampered_capture_or_changed_identity(tmp_pat
 
 def test_supplied_reference_state_is_measured_not_inferred_from_filename():
     root = Path(__file__).resolve().parents[1]
-    reference = root / "legacy_backend/validation_1/canoe_ON_16d.sqlite"
+    reference = root / "legacy_backend/legacy_variant_sales_cohorts/canoe_ON_16d.sqlite"
     baseline = root / "legacy_backend/canoe_on_12d_baseline.sqlite"
     if not reference.is_file() or not baseline.is_file():
         pytest.skip("Supplied researcher reference files are not available")
@@ -344,6 +345,84 @@ def test_supplied_reference_state_is_measured_not_inferred_from_filename():
     assert indexed.loc["Demand", "matching_values"] == 90
     assert indexed.loc["LifetimeTech", "matching_values"] == 122
     assert metadata["survival_rows"] == 0
+
+
+@pytest.mark.parametrize("defect", [None, "fleet_export", "charging_export", "retired_scenario", "other_charging_scenario", "old_database", "old_build_report"])
+def test_validation_diagnosis_requires_live_scenario_and_common_build(
+    tmp_path, monkeypatch, defect,
+):
+    root = Path(__file__).resolve().parents[1]
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=root)
+    original_load = research.load_config_bundle
+    loaded_scenarios = []
+
+    def load_current_controls(scenario, **kwargs):
+        loaded_scenarios.append(str(scenario))
+        return original_load(scenario, **kwargs)
+
+    monkeypatch.setattr(research, "load_config_bundle", load_current_controls)
+    # Arithmetic and native freshness have separate focused tests. Here both
+    # report identities must bind to the live YAML and the same database/build.
+    monkeypatch.setattr(research, "deepen_fleet_diagnosis", lambda frames, metadata: {})
+    monkeypatch.setattr(research, "deepen_demand_diagnosis", lambda result, control, rules: {})
+    monkeypatch.setattr(research, "deepen_reference_cohorts", lambda result, control, rules: {}, raising=False)
+    monkeypatch.setattr(research, "harmonized_charging_costs", lambda frame: frame.copy())
+    monkeypatch.setattr(
+        research, "resolve_artifact_path",
+        lambda _bundle, route, *parts: tmp_path.joinpath(route, *parts),
+    )
+    rules = research.TransportationResearchRules.model_validate(
+        research.load_harmonization_rules(bundle, "transportation_research")
+    )
+    charging_rules = research.load_harmonization_rules(bundle, "charging_cost_comparison")
+    live = original_load(rules.notebook_scenario, repo_root=root)
+    captured_scenario = live.scenario.model_dump(mode="json")
+    database, build_path = tmp_path / "live.sqlite", tmp_path / "live.json"
+    database.write_bytes(b"verified database")
+    build_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(research, "resolve_configured_path", lambda *args: database)
+    monkeypatch.setattr(research, "resolve_repo_path", lambda *args: build_path)
+    checked = []
+    monkeypatch.setattr(research, "_verify_build", lambda control, path, report: checked.append(path))
+    identities = {name: {"path": str(path), "sha256": file_sha256(path)}
+                  for name, path in (("database", database), ("build_report", build_path))}
+    fleet_directory = tmp_path / rules.report_route / live.scenario.scenario.name
+    if defect == "retired_scenario":
+        captured_scenario = {"scenario": {"name": "retired_sales_case"}}
+    fleet_manifest = write_research_report(TransportationResearch(
+        {name: pd.DataFrame({"value": [1.25]}) for name in (
+            "capacity_comparison", "utilization_comparison", "demand_comparison",
+        )},
+        {"scenario": captured_scenario, "files": identities},
+        fleet_directory,
+    ))
+    charging_directory = tmp_path / charging_rules["report_route"]
+    charging_identity = json.loads(json.dumps(identities))
+    if defect in {"old_database", "old_build_report"}:
+        charging_identity[defect.removeprefix("old_")]["sha256"] = "old"
+    charging_scenario = "retired_sales_case" if defect == "other_charging_scenario" else live.scenario.scenario.name
+    charging_manifest = write_research_report(TransportationResearch(
+        {"comparisons": pd.DataFrame({"value": [2.5]})},
+        {"scenario": charging_scenario, "files": charging_identity}, charging_directory,
+    ))
+    charging_manifest.rename(charging_directory / "snapshot.json")
+    if defect in {"fleet_export", "charging_export"}:
+        altered = (fleet_directory / "capacity_comparison.csv" if defect == "fleet_export"
+                   else charging_directory / "comparisons.csv")
+        altered.write_text("value\n999\n", encoding="utf-8")
+    if defect:
+        with pytest.raises(ValueError):
+            research.load_validation_diagnosis(repo_root=root)
+    else:
+        metadata = json.loads(fleet_manifest.read_text(encoding="utf-8"))
+        result = research.load_validation_diagnosis(repo_root=root)
+        assert result["fleet_metadata"] == metadata
+        assert result["fleet_metadata"]["scenario"] == captured_scenario
+        assert result["charging_metadata"]["scenario"] == live.scenario.scenario.name
+        assert result["fleet"]["capacity_comparison"].value.tolist() == [1.25]
+        assert result["charging"]["comparisons"].value.tolist() == [2.5]
+        assert checked == [database]
+    assert loaded_scenarios == ["config/scenarios/default.yaml", rules.notebook_scenario]
 
 
 def test_parameter_comparison_reconciles_class_aliases_and_retains_temporal_keys(tmp_path):
@@ -377,3 +456,345 @@ def test_parameter_comparison_reconciles_class_aliases_and_retains_temporal_keys
     assert frames["demand_comparison"].iloc[0].period == 2030
     assert frames["utilization_comparison"].iloc[0].current_minimum == .2
     assert before == {name: file_sha256(path) for name, path in paths.items()}
+
+
+def deeper_fleet_fixture():
+    physical, controls = fleet_fixture()
+    detail, summary = fleet_activity_energy(*physical, **controls)
+    summary["ceud_stock_k_vehicles"] = 5.
+    summary["stock_minus_ceud_k_vehicles"] = 0.
+    summary["stock_relative_difference"] = 0.
+    sales = pd.DataFrame([
+        {"ceud_region": "ON", "road_class": "cars", "vintage_year": year,
+         "age": 2025 - year, "sales_k_vehicles": 5., "survival_probability": survival,
+         "surviving_k_vehicles": 5 * survival, "calibrated_surviving_k_vehicles": 4 * survival,
+         "stock_calibration_multiplier": .8, "stock_calibration_basis": "base_year_ceud_stock",
+         "ceud_stock_k_vehicles": 5., "included_history_start": 2024,
+         "source_history_start": 2024, "older_history_status": "not_reconstructed"}
+        for year, survival in ((2024, .5), (2025, .75))
+    ])
+    ages = pd.DataFrame([
+        {"region": "ON", "road_class": "cars", "vintage_year": year,
+         "stock_method": "sales_survival", "raw_cohort_k_vehicles": raw,
+         "cohort_k_vehicles": allocated, "eligible_first_model_period": eligible,
+         "uncalibrated_surviving_k_vehicles": raw / .8, "stock_calibration_multiplier": .8,
+         "eligibility_basis": "fixed_lifetime", "fixed_lifetime_years": 1.,
+         "first_model_period": 2025, "vintage": year}
+        for year, raw, allocated, eligible in ((2024, 2., 0., False), (2025, 3., 5., True))
+    ])
+    calibration = {"region": "ON", "road_class": "cars", "prior_mean_utilization": .4,
+                   "utilization": .5, "capacity_activity_denominator_bn": 20.}
+    return {
+        "sales_cohorts": sales, "road_age_cohorts": ages,
+        "fleet_cohort_accounting": detail, "stock_activity_energy": summary,
+    }, {"utilization_audit": {"sales_activity_calibration": [calibration]},
+        "comparison_significance_percent": 5,
+        "scenario": {"comparison": {"absolute_tolerance": 1e-9, "relative_tolerance": 1e-12}}}
+
+
+def test_deeper_fleet_separates_retirement_redistribution_and_energy_sensitivity():
+    frames, metadata = deeper_fleet_fixture()
+    originals = {name: frame.copy(deep=True) for name, frame in frames.items()}
+    result = deepen_fleet_diagnosis(frames, metadata)
+    annual = result["sales_cohort_reconciliation"]
+    assert annual.retired_k_vehicles.tolist() == [2.5, 1.25]
+    assert annual.eligibility_redistribution_k_vehicles.tolist() == [-2., 2.]
+    stock = result["fleet_reconciliation"].iloc[0]
+    assert stock.surviving_k_vehicles == 6.25
+    assert stock.calibrated_surviving_k_vehicles == stock.inserted_stock_k_vehicles == 5
+    assert stock.stock_minus_ceud_k_vehicles == 0
+    assert stock.raw_stock_minus_ceud_k_vehicles == 1.25
+    assert stock.raw_stock_difference_percent == 25
+    assert stock.stock_calibration_multiplier == .8
+    assert stock.ineligible_survivors_k_vehicles == 2
+    assert stock.ineligible_raw_survivors_k_vehicles == 2.5
+    assert stock.allocation_conservation_residual_k_vehicles == 0
+    assert stock.raw_stock_significant
+    assert not stock.stock_significant
+    assert "omissions cannot explain the raw surplus" in stock.stock_explanation
+    assert "closes before and after eligibility" in stock.stock_explanation
+    assert stock.first_eligible_annual_cohort == stock.first_eligible_model_vintage == 2025
+    assert stock.fixed_lifetime_years == 1
+    calibration = result["utilization_calibration"].iloc[0]
+    assert calibration.calibration_percent == pytest.approx(25)
+    assert calibration.energy_closing_utilization == .625
+    assert calibration.activity_at_energy_closure_bn == 12.5
+    assert calibration.energy_closure_activity_difference_percent == 25
+    assert "Activity closes; energy -20.0%" in calibration.energy_explanation
+    assert "change activity by +25.0%" in calibration.energy_explanation
+    stages = result["cohort_utilization_energy"].groupby("stage").vehicle_input_pj.sum()
+    assert stages["Before calibration"] == pytest.approx(3.2)
+    assert stages["Implemented activity calibration"] == 4
+    assert stages["Energy closure sensitivity"] == 5
+    implemented = result["cohort_utilization_energy"].query("stage == 'Implemented activity calibration'")
+    assert implemented.annual_service_per_vehicle.tolist() == [2e6, 2e6]
+    for name, original in originals.items():
+        pd.testing.assert_frame_equal(frames[name], original)
+
+
+@pytest.mark.parametrize("defect", ["missing_year", "survival", "nonfinite", "missing_audit", "wrong_inserted_factor", "nonconserving_allocation", "wrong_stock_multiplier", "wrong_calibrated_total", "wrong_fixed_cutoff"])
+def test_deeper_fleet_rejects_incomplete_or_inconsistent_evidence(defect):
+    frames, metadata = deeper_fleet_fixture()
+    if defect == "missing_year":
+        frames["sales_cohorts"] = frames["sales_cohorts"].iloc[:1]
+    elif defect == "survival":
+        frames["sales_cohorts"].loc[0, "surviving_k_vehicles"] = 3
+    elif defect == "nonfinite":
+        frames["fleet_cohort_accounting"].loc[0, "efficiency"] = float("inf")
+    elif defect == "missing_audit":
+        metadata = {}
+    elif defect == "nonconserving_allocation":
+        frames["road_age_cohorts"].loc[1, "cohort_k_vehicles"] += 1
+    elif defect == "wrong_stock_multiplier":
+        frames["sales_cohorts"]["stock_calibration_multiplier"] *= 1.1
+    elif defect == "wrong_calibrated_total":
+        frames["sales_cohorts"]["stock_calibration_multiplier"] *= .9
+        frames["sales_cohorts"]["calibrated_surviving_k_vehicles"] *= .9
+    elif defect == "wrong_fixed_cutoff":
+        frames["road_age_cohorts"]["fixed_lifetime_years"] = 10.
+    else:
+        metadata["utilization_audit"]["sales_activity_calibration"][0]["utilization"] = .6
+    with pytest.raises(ValueError):
+        deepen_fleet_diagnosis(frames, metadata)
+
+
+def test_positive_raw_stock_gap_explanation_does_not_attribute_it_to_missing_older_sales():
+    frames, metadata = deeper_fleet_fixture()
+    stock = deepen_fleet_diagnosis(frames, metadata)["fleet_reconciliation"].iloc[0]
+    assert stock.raw_stock_difference_percent == 25
+    assert stock.stock_difference_percent == 0
+    assert "Raw sales × survival +25.0%" in stock.stock_explanation
+    assert "cannot explain the raw surplus" in stock.stock_explanation
+    assert "consistency remains unresolved" in stock.stock_explanation
+
+
+def test_raw_stock_shortfall_stays_visible_after_ceud_calibration():
+    frames, metadata = deeper_fleet_fixture()
+    frames["sales_cohorts"]["sales_k_vehicles"] *= .6
+    frames["sales_cohorts"]["surviving_k_vehicles"] *= .6
+    frames["sales_cohorts"]["stock_calibration_multiplier"] = 4 / 3
+    frames["road_age_cohorts"]["uncalibrated_surviving_k_vehicles"] *= .6
+    frames["road_age_cohorts"]["stock_calibration_multiplier"] = 4 / 3
+    stock = deepen_fleet_diagnosis(frames, metadata)["fleet_reconciliation"].iloc[0]
+    assert stock.raw_stock_difference_percent == -25
+    assert stock.calibrated_stock_minus_ceud_k_vehicles == 0
+    assert "raw shortfall is unquantified" in stock.stock_explanation
+
+
+def test_insertion_difference_is_reported_without_relaxing_allocation_conservation():
+    frames, metadata = deeper_fleet_fixture()
+    # The captured annual allocation conserves five thousand survivors, while
+    # insertion/cleanup evidence can separately contain a small retained difference.
+    detail = frames["fleet_cohort_accounting"]
+    detail["capacity"] *= .9999
+    detail["implied_activity_bn"] *= .9999
+    detail["implied_vehicle_input_pj"] *= .9999
+    summary = frames["stock_activity_energy"]
+    summary["inserted_stock_k_vehicles"] *= .9999
+    summary["implied_activity_bn"] *= .9999
+    summary["implied_vehicle_input_pj"] *= .9999
+    metadata["utilization_audit"]["sales_activity_calibration"][0]["capacity_activity_denominator_bn"] *= .9999
+    stock = deepen_fleet_diagnosis(frames, metadata)["fleet_reconciliation"].iloc[0]
+    assert stock.allocation_conservation_residual_k_vehicles == 0
+    assert stock.calibrated_to_inserted_residual_k_vehicles == pytest.approx(-.0005)
+    assert stock.survival_to_inserted_residual_k_vehicles == pytest.approx(-1.2505)
+
+
+def charging_harmonization_fixture():
+    return pd.DataFrame([
+        {"table": "cost_invest", "charger_class": "ldv", "region": "ON",
+         "reference_vintage": 2030, "reference_period": float("nan"),
+         "reference_tech": tech, "reference_million_target_cad": 50.,
+         "backend_cost_per_gw": 800., "backend_denominator_per_gw": 31.536 * .2,
+         "backend_utilization_target": .2, "backend_vintage": 2025,
+         "backend_cost_source_year": 2030, "target_dollar_year": 2020,
+         "scope_status": "source_year_matched", "denominator": denominator}
+        for tech in ("range150", "range200")
+        for denominator in ("PJ/year_capacity", "PJ/year_at_backend_utilization")
+    ])
+
+
+def test_charging_harmonization_converts_utilized_throughput_and_collapses_rates():
+    result = harmonized_charging_costs(charging_harmonization_fixture())
+    assert len(result) == 1
+    row = result.iloc[0]
+    assert row.reference_million_cad_per_gw == pytest.approx(315.36)
+    assert row.backend_million_cad_per_gw == 800
+    assert row.harmonized_relative_percent == pytest.approx((800 / 315.36 - 1) * 100)
+
+
+def test_charging_harmonization_rejects_distinct_reference_rates():
+    frame = charging_harmonization_fixture()
+    frame.loc[frame.reference_tech.eq("range200"), "reference_million_target_cad"] = 60
+    with pytest.raises(ValueError, match="Different charging rates"):
+        harmonized_charging_costs(frame)
+
+
+@pytest.mark.parametrize("missing", ["backend_denominator_per_gw", "backend_utilization_target"])
+def test_charging_harmonization_keeps_missing_bridge_or_utilization_missing(missing):
+    frame = charging_harmonization_fixture()
+    frame[missing] = float("nan")
+    row = harmonized_charging_costs(frame).iloc[0]
+    assert pd.isna(row.reference_million_cad_per_gw)
+    assert pd.isna(row.harmonized_relative_percent)
+
+
+def demand_diagnosis_fixture(tmp_path, monkeypatch):
+    activity_path, growth_path = tmp_path / "activity.xlsx", tmp_path / "demand_growth_rate.xlsx"
+    pd.DataFrame([{"Region": "ON", "Mode": "Cars", "Unit": "M passenger-km", 2023: 10000.}]).to_excel(activity_path, index=False)
+    pd.DataFrame({"Year": [2023, 2025, 2030, 2035], "gdp": [1., 1.1, 1.2, 1.5],
+                  "Gross Domestic Product Deflator": [100., 110., 120., 150.]}).to_excel(growth_path, index=False)
+    source = """
+def organize_activity_ceud(activity_ceud):
+    map_comm = {'Cars': 'service'}
+    activity_ceud_organized['demand'] = activity_ceud_organized['demand'] / 1000
+
+def project_demand_v(activity_ceud_organized, demand_growth_rate, growth_rate_type):
+    activity_2023 = activity_ceud_organized[activity_ceud_organized['period'] == 2023]
+    demand_update_v['demand'] = demand_update_v['demand'] * demand_update_v['growth_factor']
+    demand_update_v = demand_update_v[demand_update_v['period'].isin(range(2025, 2036, 5))]
+    return demand_update_v
+
+def shift_time_period(data_default, range_period):
+    data_shifted['period'] = data_shifted['period'] - 5
+
+main_compile_data_transport(growth_rate_type='gdp', range_period=range(2025, 2031, 5))
+"""
+    result = {
+        "fleet_metadata": {
+            "notebook": {"dependencies": [{"path": path.name, "provided_sha256": file_sha256(path)}
+                                            for path in (activity_path, growth_path)]},
+            "scenario": {"periods": {"base_year": 2025, "step": 5, "period_mode": "prospective"},
+                         "demand": {"future_car_demand": "GDP-indexed"},
+                         "sources": {"nrcan_ceud_beyond_observed": "extrapolated"}},
+            "demand_audit": {
+                "ceud_observed_year": 2023, "base_year": 2025, "base_year_gdp_index": 1.05,
+                "gdp_index_by_period": {"2025": 1.5, "2030": 1.8},
+                "observed_ceud_baselines": [{"region": "ON", "service": "cars", "commodity": "service",
+                                              "ceud_observed_year": 2023, "baseline_demand": 10.,
+                                              "gdp_indexed_base_year_demand": 10.5}],
+            },
+        },
+        "fleet": {
+            "notebook_source_cells": pd.DataFrame({"source": [source]}),
+            "stock_activity_energy": pd.DataFrame([{
+                "region": "ON", "ceud_region": "ON", "road_class": "cars", "ceud_activity_bn": 12.,
+                "ceud_activity_observed_year": 2023, "ceud_activity_status": "extrapolated",
+            }]),
+            "demand_comparison": pd.DataFrame([
+                {"region": "ON", "road_class": "cars", "period": year, "current": current,
+                 "reference": reference, "baseline": reference}
+                for year, current, reference in ((2025, 15., 20.), (2030, 18., 24.))
+            ]),
+            "reference_state": pd.DataFrame([{"table": "Demand", "matching_values": 2, "common_keys": 2}]),
+        },
+    }
+    rules = research.TransportationResearchRules(
+        reference_route="reference", report_route="report", reference_sqlite="unused.sqlite",
+        reference_notebook="unused.ipynb", legacy_baseline="unused.sqlite", energy_series={},
+        notebook_scenario="config/scenarios/validation_baseline.yaml", comparison_significance_percent=5,
+    )
+    demand_rules = {"activity_to_billion_factor": .001,
+                    "activity_series": {"cars": {"commodity": "service", "units": "bn passenger-km"}}}
+    monkeypatch.setattr(research, "resolve_artifact_path", lambda *args: tmp_path)
+    monkeypatch.setattr(research, "load_harmonization_rules", lambda *args: {"demand": demand_rules})
+    return result, rules
+
+
+def test_demand_replay_multiplies_workbook_index_and_decomposes_equivalent_anchors(tmp_path, monkeypatch):
+    result, rules = demand_diagnosis_fixture(tmp_path, monkeypatch)
+    frames = deepen_demand_diagnosis(result, None, rules)
+    replay = frames["demand_recipe_replay"]
+    assert replay.period.tolist() == [2025, 2030]
+    assert replay.source_year.tolist() == [2030, 2035]
+    assert replay.notebook_recipe_demand_bn.tolist() == [12., 15.]
+    attribution = frames["demand_attribution"]
+    assert attribution.stored_to_recipe_change_bn.tolist() == [-8., -9.]
+    assert attribution.baseline_change_bn.tolist() == [0., 0.]
+    assert attribution.anchor_change_bn.tolist() == [0., 0.]
+    assert attribution.replay_at_current_anchor_bn.tolist() == [12., 15.]
+    assert attribution.current_growth_index.tolist() == [1.5, 1.8]
+    assert attribution.growth_driver_change_bn.tolist() == [3., 3.]
+    assert attribution.attribution_residual_bn.tolist() == pytest.approx([0., 0.], abs=1e-12)
+    method = frames["demand_method_context"].set_index("evidence")
+    assert "GDP-deflator ratio" in method.loc["Inspected notebook recipe", "growth"]
+    assert "GDP(2023)" in method.loc["Current backend", "growth"]
+    assert "1.050000" in method.loc["Current backend", "growth"]
+    baseline = frames["demand_baseline_comparison"].iloc[0]
+    assert baseline.current_activity_bn == baseline.notebook_activity_bn == 10.
+    assert baseline.current_anchor_year == baseline.current_observed_year == 2023
+    assert baseline.current_baseline_year == 2025
+    assert baseline.current_baseline_status == "observed"
+    bridge = frames["demand_base_year_bridge"].iloc[0]
+    assert bridge.current_base_year_demand_bn == 10.5
+    assert bridge.observation_to_base_year_growth_bn == .5
+    assert bridge.historical_calibration_target_bn == 12.
+    assert bridge.historical_calibration_target_status == "extrapolated"
+    chart = frames["demand_method_comparison"]
+    assert chart.loc[chart.evidence.eq("Stored legacy extract"), "calendar_year"].isna().all()
+    assert chart.loc[chart.evidence.eq("Current backend"), "calendar_year"].tolist() == [2030, 2035]
+
+
+@pytest.mark.parametrize("defect", ["tampered_workbook", "wrong_product", "duplicate_demand_write", "calendar_mode", "missing_growth_year"])
+def test_demand_replay_rejects_changed_identity_recipe_and_calendar(tmp_path, monkeypatch, defect):
+    result, rules = demand_diagnosis_fixture(tmp_path, monkeypatch)
+    if defect == "tampered_workbook":
+        with (tmp_path / "activity.xlsx").open("ab") as stream:
+            stream.write(b"changed after capture")
+    elif defect == "wrong_product":
+        result["fleet"]["notebook_source_cells"]["source"] = result["fleet"]["notebook_source_cells"].source.str.replace(
+            "demand_update_v['demand'] * demand_update_v['growth_factor']",
+            "demand_update_v['demand'] / demand_update_v['growth_factor']", regex=False,
+        )
+    elif defect == "duplicate_demand_write":
+        result["fleet"]["notebook_source_cells"]["source"] = result["fleet"]["notebook_source_cells"].source.str.replace(
+            "    return demand_update_v", "    demand_update_v['demand'] = 0\n    return demand_update_v", regex=False,
+        )
+    elif defect == "calendar_mode":
+        result["fleet_metadata"]["scenario"]["periods"]["period_mode"] = "legacy"
+    else:
+        path = tmp_path / "demand_growth_rate.xlsx"
+        growth = pd.read_excel(path)
+        growth.loc[growth.Year.ne(2030)].to_excel(path, index=False)
+        result["fleet_metadata"]["notebook"]["dependencies"][1]["provided_sha256"] = file_sha256(path)
+    with pytest.raises(ValueError):
+        deepen_demand_diagnosis(result, None, rules)
+
+
+@pytest.mark.parametrize("defect", ["missing_audit", "missing_native_baseline", "wrong_observed_year",
+                                  "wrong_base_year", "wrong_base_year_bridge", "missing_gdp_period",
+                                  "current_row_disagrees"])
+def test_demand_diagnosis_rejects_stale_or_inconsistent_observation_anchor(tmp_path, monkeypatch, defect):
+    result, rules = demand_diagnosis_fixture(tmp_path, monkeypatch)
+    audit = result["fleet_metadata"]["demand_audit"]
+    if defect == "missing_audit":
+        result["fleet_metadata"].pop("demand_audit")
+    elif defect == "missing_native_baseline":
+        audit["observed_ceud_baselines"] = []
+    elif defect == "wrong_observed_year":
+        audit["observed_ceud_baselines"][0]["ceud_observed_year"] = 2025
+    elif defect == "wrong_base_year":
+        audit["base_year"] = 2024
+    elif defect == "wrong_base_year_bridge":
+        audit["observed_ceud_baselines"][0]["gdp_indexed_base_year_demand"] = 11.
+    elif defect == "missing_gdp_period":
+        audit["gdp_index_by_period"].pop("2025")
+    else:
+        result["fleet"]["demand_comparison"].loc[0, "current"] = 16.
+    with pytest.raises(ValueError):
+        deepen_demand_diagnosis(result, None, rules)
+
+
+def test_demand_diagnosis_tail_policy_changes_only_historical_calibration_context(tmp_path, monkeypatch):
+    result, rules = demand_diagnosis_fixture(tmp_path, monkeypatch)
+    original = deepen_demand_diagnosis(result, None, rules)
+    result["fleet_metadata"]["scenario"]["sources"]["nrcan_ceud_beyond_observed"] = "constant"
+    historical = result["fleet"]["stock_activity_energy"]
+    historical["ceud_activity_bn"] = 10.
+    historical["ceud_activity_status"] = "constant"
+    changed = deepen_demand_diagnosis(result, None, rules)
+    for name in ["demand_recipe_replay", "demand_method_comparison"]:
+        pd.testing.assert_frame_equal(original[name], changed[name])
+    assert original["demand_baseline_comparison"].iloc[0].current_activity_bn == 10.
+    assert changed["demand_baseline_comparison"].iloc[0].current_activity_bn == 10.
+    assert changed["demand_base_year_bridge"].iloc[0].historical_calibration_target_bn == 10.

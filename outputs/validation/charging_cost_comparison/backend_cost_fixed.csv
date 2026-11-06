@@ -5,47 +5,47 @@ open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratio
   - charger_fixed_cost_ratio: Annual charger fixed operating cost assumed proportional to investment cost; the reviewed ratio is common to charger classes.
   - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.
-nlr_alternative_fueling_infrastructure: U.S. residential L1 port cost estimate, represented by the reviewed cost midpoint and normalized to rated charging power in 2021 USD.",T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2030,T_LDV_CHRG_EX,2020,16.204762204209946,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
+nlr_alternative_fueling_infrastructure: U.S. residential L1 port cost estimate, represented by the reviewed cost midpoint and normalized to rated charging power in 2021 USD.",T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2030,T_LDV_CHRG_EX,2020,16.204762204209946,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
 ON,2025,T_LDV_CHRG_N,2025,8.108547361670789,$M 2020CAD / GW,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
   - charger_fixed_cost_ratio: Annual charger fixed operating cost assumed proportional to investment cost; the reviewed ratio is common to charger classes.
   - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.
 dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.
-nlr_alternative_fueling_infrastructure: U.S. residential L1 port cost estimate, represented by the reviewed cost midpoint and normalized to rated charging power in 2021 USD.",T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2030,T_LDV_CHRG_N,2025,8.108547361670789,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2035,T_LDV_CHRG_N,2025,8.108547361670789,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2030,T_LDV_CHRG_N,2030,6.826360720285793,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2035,T_LDV_CHRG_N,2030,6.826360720285793,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2040,T_LDV_CHRG_N,2030,6.826360720285793,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2035,T_LDV_CHRG_N,2035,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2040,T_LDV_CHRG_N,2035,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2045,T_LDV_CHRG_N,2035,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2040,T_LDV_CHRG_N,2040,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2045,T_LDV_CHRG_N,2040,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2045,T_LDV_CHRG_N,2045,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:researcher_sales_2025
+nlr_alternative_fueling_infrastructure: U.S. residential L1 port cost estimate, represented by the reviewed cost midpoint and normalized to rated charging power in 2021 USD.",T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2030,T_LDV_CHRG_N,2025,8.108547361670789,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2035,T_LDV_CHRG_N,2025,8.108547361670789,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2030,T_LDV_CHRG_N,2030,6.826360720285793,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2035,T_LDV_CHRG_N,2030,6.826360720285793,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2040,T_LDV_CHRG_N,2030,6.826360720285793,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2035,T_LDV_CHRG_N,2035,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2040,T_LDV_CHRG_N,2035,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2045,T_LDV_CHRG_N,2035,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2040,T_LDV_CHRG_N,2040,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2045,T_LDV_CHRG_N,2040,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
+ON,2045,T_LDV_CHRG_N,2045,6.812603094564442,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-ldv-cost-fixed:ON:T24:validation_baseline
 ON,2025,T_MHDV_CHRG_EX,2020,12.064830702390768,$M 2020CAD / GW,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
   - charger_fixed_cost_ratio: Annual charger fixed operating cost assumed proportional to investment cost; the reviewed ratio is common to charger classes.
   - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.
-dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.",T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2030,T_MHDV_CHRG_EX,2020,12.064830702390768,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
+dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.",T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2030,T_MHDV_CHRG_EX,2020,12.064830702390768,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
 ON,2025,T_MHDV_CHRG_N,2025,11.460270756801318,$M 2020CAD / GW,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
   - charger_fixed_cost_ratio: Annual charger fixed operating cost assumed proportional to investment cost; the reviewed ratio is common to charger classes.
   - transport_process_lifetimes: Charging-infrastructure process-lifetime assumption applied across the represented charger classes.
-dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.",T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2030,T_MHDV_CHRG_N,2025,11.460270756801318,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2035,T_MHDV_CHRG_N,2025,11.460270756801318,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2030,T_MHDV_CHRG_N,2030,10.970817426215993,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2035,T_MHDV_CHRG_N,2030,10.970817426215993,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2040,T_MHDV_CHRG_N,2030,10.970817426215993,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2035,T_MHDV_CHRG_N,2035,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2040,T_MHDV_CHRG_N,2035,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2045,T_MHDV_CHRG_N,2035,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2040,T_MHDV_CHRG_N,2040,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2045,T_MHDV_CHRG_N,2040,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
-ON,2045,T_MHDV_CHRG_N,2045,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:researcher_sales_2025
+dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year.",T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2030,T_MHDV_CHRG_N,2025,11.460270756801318,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2035,T_MHDV_CHRG_N,2025,11.460270756801318,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2030,T_MHDV_CHRG_N,2030,10.970817426215993,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2035,T_MHDV_CHRG_N,2030,10.970817426215993,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2040,T_MHDV_CHRG_N,2030,10.970817426215993,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2035,T_MHDV_CHRG_N,2035,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2040,T_MHDV_CHRG_N,2035,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2045,T_MHDV_CHRG_N,2035,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2040,T_MHDV_CHRG_N,2040,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2045,T_MHDV_CHRG_N,2040,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline
+ON,2045,T_MHDV_CHRG_N,2045,10.591566117065126,$M 2020CAD / GW,,T16,3,3,3,3,3,ev-chargers-mhdv-cost-fixed:ON:T24:validation_baseline

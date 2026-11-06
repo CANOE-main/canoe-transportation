@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from math import isfinite
+from math import isclose, isfinite
 from pathlib import Path
 from typing import Any
 from collections.abc import Mapping, Sequence
@@ -551,10 +551,12 @@ def derive_sales_survival_cohorts(
     provincial: pd.DataFrame, transformed_curves: pd.DataFrame, *,
     regions: list[str], base_year: int, history_start: int, rules: dict[str, Any],
 ) -> pd.DataFrame:
-    """Reconstruct surviving sales without a stock anchor or an age-distribution fit.
+    """Calibrate the sales-survival shape to reported base-year class stock.
 
     Cohort age is base year minus sale year; cumulative survival includes age zero.
     Registered history is a bounded reconstruction, not evidence of zero older stock.
+    Raw sales and survivors remain unchanged in the audit; the explicit multiplier
+    scales only modelled cohort sizes to the independently reported CEUD stock.
     Fuel allocation is performed separately using the existing registration proxies.
     """
     records = []
@@ -605,6 +607,17 @@ def derive_sales_survival_cohorts(
             ages = base_year - sales.year
             if set(ages) - set(survival.index):
                 raise ValueError(f"Sales history exceeds accepted survival coverage: {(region, road_class)}")
+            raw_survivors = float((sales.value * ages.map(survival)).sum())
+            if not isfinite(raw_survivors) or raw_survivors <= 0:
+                raise ValueError(f"No positive surviving sales for CEUD stock calibration: {(region, road_class)}")
+            multiplier = observed_stock / raw_survivors
+            if not isfinite(multiplier):
+                raise ValueError(f"Invalid sales stock calibration multiplier: {(region, road_class)}")
+            logging.info(
+                "Sales-survival stock calibration %s/%s at %s: raw survivors %.9g k vehicles; "
+                "CEUD target %.9g k vehicles; multiplier %.9g",
+                region, road_class, base_year, raw_survivors, observed_stock, multiplier,
+            )
             for row in sales.itertuples(index=False):
                 age = base_year - int(row.year)
                 fraction = float(survival.loc[age])
@@ -614,7 +627,12 @@ def derive_sales_survival_cohorts(
                     "sales_k_vehicles": float(row.value),
                     "survival_probability": fraction,
                     "surviving_k_vehicles": float(row.value) * fraction,
+                    "stock_calibration_multiplier": multiplier,
+                    "calibrated_surviving_k_vehicles": float(row.value) * fraction * multiplier,
+                    "stock_calibration_basis": "base_year_ceud_stock",
                     "ceud_stock_k_vehicles": observed_stock,
+                    "stock_observed_year": int(stock.iloc[0].get("ceud_observed_year", base_year)),
+                    "stock_observation_status": str(stock.iloc[0].get("ceud_value_status", "observed")),
                     "source_history_start": source_start,
                     "included_history_start": start,
                     "older_history_status": "not_reconstructed",
@@ -731,24 +749,44 @@ def distribute_existing_road_capacity(
                 raise ValueError(f"Invalid CEUD road stock: {(region, name)}")
             is_sales = (region, name) in sales_keys
             observed_stock = stock
+            sales_raw_by_age = {}
+            calibration_multiplier = None
             if is_sales:
                 selected_sales = sales_cohorts.loc[
                     sales_cohorts.ceud_region.eq(region) & sales_cohorts.road_class.eq(name)
                 ]
-                stock = float(selected_sales.surviving_k_vehicles.sum())
-                if stock <= 0:
+                raw_stock = float(selected_sales.surviving_k_vehicles.sum())
+                calibrated_stock = float(selected_sales.calibrated_surviving_k_vehicles.sum())
+                if not isfinite(raw_stock) or raw_stock <= 0:
                     raise ValueError(f"No surviving sales for {(region, name)}")
+                if (selected_sales.age.duplicated().any()
+                        or not selected_sales.stock_calibration_basis.eq("base_year_ceud_stock").all()
+                        or selected_sales.stock_calibration_multiplier.nunique() != 1
+                        or selected_sales[["surviving_k_vehicles", "calibrated_surviving_k_vehicles"]].map(
+                            lambda value: not isfinite(value) or value < 0
+                        ).any().any()
+                        or not all(isclose(row.calibrated_surviving_k_vehicles,
+                                           row.surviving_k_vehicles * row.stock_calibration_multiplier,
+                                           abs_tol=1e-9, rel_tol=1e-12)
+                                   for row in selected_sales.itertuples())
+                        or not isclose(calibrated_stock, observed_stock, abs_tol=1e-9, rel_tol=1e-12)):
+                    raise ValueError(f"Sales cohorts do not preserve their CEUD stock calibration: {(region, name)}")
+                calibration_multiplier = float(selected_sales.stock_calibration_multiplier.iloc[0])
+                sales_raw_by_age = selected_sales.set_index("age").surviving_k_vehicles.to_dict()
                 ages = selected_sales.assign(
-                    age_share=selected_sales.surviving_k_vehicles / stock,
+                    age_share=(selected_sales.calibrated_surviving_k_vehicles / stock
+                               if stock > 0 else selected_sales.surviving_k_vehicles / raw_stock),
                 )
             else:
                 ages = age_map[name]
+            uses_curves = survival_curves and name in curve_classes
+            eligibility_basis = "accepted_survival_curve_support" if uses_curves else "fixed_lifetime"
             eligible_age_rows: list[tuple[int, int, float, bool, bool]] = []
             for age_row in ages.itertuples(index=False):
                 actual_year = base_year - int(age_row.age)
                 year = max(periods[0], actual_year)
                 within_history = actual_year >= periods[0]
-                if survival_curves and name in curve_classes:
+                if uses_curves:
                     first_period_age = first_model_period - actual_year
                     model_age = first_model_period - period_config.existing_vintage(year)
                     eligible = (
@@ -791,9 +829,14 @@ def distribute_existing_road_capacity(
                         "age_share": age_share,
                         "within_historical_coverage": within_history,
                         "eligible_first_model_period": eligible,
+                        "eligibility_basis": eligibility_basis,
+                        "fixed_lifetime_years": None if uses_curves else float(fixed_lifetimes_by_class[name]),
+                        "first_model_period": first_model_period,
                         "stock_k_vehicles": stock,
                         "ceud_stock_k_vehicles": observed_stock,
                         "stock_method": "sales_survival" if is_sales else "stock_age",
+                        "stock_calibration_multiplier": calibration_multiplier,
+                        "uncalibrated_surviving_k_vehicles": sales_raw_by_age.get(age),
                         "raw_cohort_k_vehicles": stock * age_share,
                         "reference_cohort_k_vehicles": stock * age_share / history_share
                         if within_history
@@ -1035,6 +1078,14 @@ def distribute_existing_road_capacity(
     allocated_totals = shares_frame.groupby(technology_keys)["capacity"].transform("sum")
     if not (allocated_totals - target).abs().le(1e-7).all():
         raise ValueError("Road allocation does not conserve each technology's stock")
+    class_keys = ["region", "road_class"]
+    class_targets = cohorts.groupby(class_keys).ceud_stock_k_vehicles.first()
+    class_allocated = shares_frame.groupby(class_keys).capacity.sum().reindex(class_targets.index)
+    if class_allocated.isna().any() or not all(
+        isclose(actual, expected, abs_tol=1e-7, rel_tol=1e-12)
+        for actual, expected in zip(class_allocated, class_targets, strict=True)
+    ):
+        raise ValueError("Road allocation does not preserve each region/class CEUD stock target")
     capacity = shares_frame.groupby(
         ["region", "road_class", "tech", "vintage"], as_index=False
     )["capacity"].sum()

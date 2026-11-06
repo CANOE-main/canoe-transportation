@@ -16,8 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.mark.parametrize("profiles", [[], ["vehicle_stock"], ["efficiency"], ["vehicle_stock", "efficiency"]])
-def test_notebook_prerequisites_are_explicit_and_ordered(monkeypatch, profiles):
-    bundle = load_config_bundle("config/scenarios/notebook_diagnostics.yaml")
+def test_notebook_prerequisites_are_explicit_and_ordered(tmp_path, monkeypatch, profiles):
+    shutil.copytree(ROOT / "config", tmp_path / "config")
+    bundle = load_config_bundle("config/scenarios/notebook_diagnostics.yaml", repo_root=tmp_path)
     scenario = bundle.scenario.model_copy(deep=True)
     scenario.notebook_diagnostics = profiles
     bundle = replace(bundle, scenario=scenario)
@@ -34,6 +35,8 @@ def test_notebook_prerequisites_are_explicit_and_ordered(monkeypatch, profiles):
         "fetching.nlr_atb_autonomie.fetch_and_normalize": "atb",
         "fetching.assorted_sources.fetch_and_normalize": "assorted",
         "fetching.assorted_sources.fetch_and_normalize_tc_dashboard": "dashboard",
+        "parameterization.ceud_inputs.prepare_ceud_inputs": "ceud_parameters",
+        "fetching.transport_canada_izev.fetch_izev": "izev",
         "fetching.vehicle_population.fetch_and_normalize": "ontario",
         "fetching.fueleconomy_vehicles.validate_cache": "validate_fueleconomy",
         "fetching.fueleconomy_vehicles.fetch_and_normalize": "normalize_fueleconomy",
@@ -48,6 +51,10 @@ def test_notebook_prerequisites_are_explicit_and_ordered(monkeypatch, profiles):
     monkeypatch.setattr("fetching.fueleconomy_vehicles.build_request", lambda bundle: None)
     build_transport.prepare_scenario_inputs(bundle, download=False)
     names = [name for name, kwargs in calls]
+    assert names[:9] == [
+        "ceud", "ratings", "statcan", "cer", "atb", "assorted", "dashboard",
+        "ceud_parameters", "izev",
+    ]
     assert ("normalize_fueleconomy" in names) == bool(profiles)
     assert ("statcan_stock_review" in names) == ("efficiency" in profiles)
     assert ("mapping_review" in names) == ("vehicle_stock" in profiles)

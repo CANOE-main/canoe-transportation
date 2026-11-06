@@ -22,7 +22,7 @@ each operation. The legend below is local to these diagrams.
 - [`cost_variable`](#cost_variable)
 - [`emission_embodied`](#emission_embodied)
 - [EV charger parameters](#ev-charger-parameters)
-- [`limit_new_capacity_share` for LDV PEV range composition](#limit_new_capacity_share-for-ldv-pev-range-composition-to-review)
+- [`limit_new_capacity_share` for LDV PEV range composition](#limit_new_capacity_share-for-ldv-pev-range-composition)
 - [`capacity_factor_tech` for BEV charging profiles](#capacity_factor_tech-for-bev-charging-profiles-pending-refactor)
 
 ### Flowchart Legends

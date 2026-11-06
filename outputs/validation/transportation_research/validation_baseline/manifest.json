@@ -1,5 +1,5 @@
 {
-  "accepted_survival_sha256": "6d80b13a70b651196517d8a3d3988394b5f033061ae87d056b50543fc9d6f1f3",
+  "accepted_survival_sha256": "1272ff565b25a0072f74aad15358dab92888800d439f1bf9ab760aa2f25d4025",
   "build_parameter_support": {
     "checks": {
       "capacity_to_activity_coverage": {
@@ -169,7 +169,7 @@
           "data_id"
         ],
         "primary_keys_match": true,
-        "row_count": 196
+        "row_count": 222
       },
       "data_source": {
         "primary_key_columns": [
@@ -177,7 +177,7 @@
           "data_id"
         ],
         "primary_keys_match": true,
-        "row_count": 731
+        "row_count": 889
       },
       "data_source_label": {
         "primary_key_columns": [
@@ -351,13 +351,13 @@
       },
       "data_set": {
         "null_data_id": 0,
-        "row_count": 196,
+        "row_count": 222,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
       },
       "data_source": {
         "null_data_id": 0,
-        "row_count": 731,
+        "row_count": 889,
         "unregistered_data_id": 0,
         "unregistered_source_pair": 0
       },
@@ -449,8 +449,8 @@
   },
   "ceud_parameter_inputs": {
     "audit_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_extension_audit.csv",
-    "audit_sha256": "0f8a5a9ce6ddff24d0c99a8f1e261d9128907f2d537811613736f547bcff72ae",
-    "base_year": 2023,
+    "audit_sha256": "707f1132a3f0800b6be74e4d32b142638295909942f6d860a859e16205dcc773",
+    "base_year": 2025,
     "cagr_rules": {
       "excluded_years": [
         2020,
@@ -459,16 +459,16 @@
       "history_start_year": 2013,
       "zero_endpoint": "constant"
     },
-    "extended_rows": 0,
-    "extension_rule": "error",
+    "extended_rows": 312,
+    "extension_rule": "constant",
     "native_source_files_modified": false,
     "observed_history_preserved": true,
-    "policy": "error",
+    "policy": "constant",
     "scenario": "validation_baseline",
     "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
     "series_status_counts": {
-      "skipped_not_observed_at_source_endpoint": 14,
-      "within_observed_horizon": 156
+      "extended": 156,
+      "skipped_not_observed_at_source_endpoint": 14
     },
     "sources": [
       {
@@ -478,8 +478,8 @@
         "observed_max_year": 2023,
         "observed_min_year": 2000,
         "output_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\ceud_parameter_inputs\\nrcan_ceud_transport_on.csv",
-        "output_sha256": "8be9ad1caadeb6c152e8696438134b87e539545efcbcd4d476c0a742ae89001c",
-        "parameter_evidence_rows": 2823,
+        "output_sha256": "7bd9759b670c000d200dcf0d787f804d1c756cce402273bf904de9d0eb787926",
+        "parameter_evidence_rows": 3053,
         "region": "ON",
         "selected_source_edition": 2023,
         "source_id": "nrcan_ceud_transport_provincial"
@@ -491,8 +491,8 @@
         "observed_max_year": 2023,
         "observed_min_year": 2000,
         "output_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\ceud_parameter_inputs\\nrcan_ceud_transport_national.csv",
-        "output_sha256": "cb869a2ed70baf1574369aca8bd844650249e1076c29fdbc63c461586b4c90cd",
-        "parameter_evidence_rows": 984,
+        "output_sha256": "0866c3ef8ec5da12b7f7aab956f92ce24baea482d95e64a53793b7270856da3f",
+        "parameter_evidence_rows": 1066,
         "region": "national",
         "selected_source_edition": 2023,
         "source_id": "nrcan_ceud_transport_national"
@@ -500,23 +500,23 @@
     ]
   },
   "cohort_audit": {
-    "accepted_survival_sha256": "6d80b13a70b651196517d8a3d3988394b5f033061ae87d056b50543fc9d6f1f3",
+    "accepted_survival_sha256": "1272ff565b25a0072f74aad15358dab92888800d439f1bf9ab760aa2f25d4025",
     "annual_stock_evidence": {
       "path": "inputs\\1_interim\\existing_capacity\\road_existing_capacity_fuel_shares.csv",
-      "sha256": "8a373110efdc7779ff504bb102c451c880a119b6f00267912e019e74f15d464d"
+      "sha256": "b03ad4f3eefa43343805c1e4c4d3fe0752f79b573ffed5860b0ae3b7356f16f9"
     },
     "bus_classes": [
       "inter_city_buses",
       "school_buses",
       "urban_transit"
     ],
-    "bus_ineligible_raw_stock_k_vehicles": 9.82442725749814,
+    "bus_ineligible_raw_stock_k_vehicles": 6.6379296639115095,
     "bus_stock_k_vehicles": 19.99999999999997,
     "bus_technology_transfers": 0,
     "bus_transferred_stock_k_vehicles": 0.0,
     "ceud_parameter_evidence": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_parameter_inputs_manifest.json",
-      "sha256": "8d602a0df503e027793b4d5a85b006714c937f186950a37810b4d6f5f6b41d18"
+      "sha256": "c5982191595d027b582f8c110a43c80d794f8ddafb923bc9436488d2c99de3e8"
     },
     "cleanup": {
       "epsilon": 0.001,
@@ -809,22 +809,22 @@
       ]
     },
     "excluded_air_gasoline_pj": {
-      "freight_air": 0.143151,
-      "passenger_air": 8.933849
+      "freight_air": 0.157683,
+      "passenger_air": 9.611317
     },
-    "excluded_air_gasoline_rows": 48,
+    "excluded_air_gasoline_rows": 52,
     "excluded_bus_fuel_pj": {
       "Propane": 2.3194470000000003
     },
     "excluded_bus_fuel_rows": 5,
     "excluded_family": "EV charger capacity",
-    "excluded_road_fuel_rows": 165,
+    "excluded_road_fuel_rows": 172,
     "excluded_road_fuel_rows_by_reason": {
       "configured_latest_vintage_only_fuel": 19,
       "pre_evidence_non_combustion": 77,
-      "unsupported_existing_technology": 69
+      "unsupported_existing_technology": 76
     },
-    "input_content_digest": "9d6836938fffa1d066edfcd439d4c042af62035b6d6a6e6ea59b119f61538b60",
+    "input_content_digest": "6cb5c0a750f93c308c1ba712b837174a3f4a95a96f102e5bc920a2af687627f9",
     "max_excluded_fuel_source_share": [
       {
         "fuel_type": "Battery electric",
@@ -838,7 +838,7 @@
       },
       {
         "fuel_type": "Other fuel types",
-        "max_share": 1.2010905902559524e-05,
+        "max_share": 3.9916972696790676e-05,
         "road_class": "cars"
       },
       {
@@ -872,8 +872,13 @@
         "road_class": "medium_trucks"
       },
       {
+        "fuel_type": "Hybrid electric",
+        "max_share": 5.7120335410609535e-06,
+        "road_class": "medium_trucks"
+      },
+      {
         "fuel_type": "Other fuel types",
-        "max_share": 6.493506493506494e-05,
+        "max_share": 6.854440249273143e-05,
         "road_class": "medium_trucks"
       },
       {
@@ -894,7 +899,7 @@
     ],
     "offroad_capacity_by_unit": {
       "bn passenger-km": 74.40527647693823,
-      "bn tonne-km": 98.0187240032437
+      "bn tonne-km": 98.01872400324368
     },
     "offroad_early_retired_capacity_by_mode": {
       "freight_air": 0.8706921620680876,
@@ -904,8 +909,8 @@
       "passenger_rail": 0.42885707667161493
     },
     "offroad_ineligible_raw_capacity_by_unit": {
-      "bn passenger-km": 0.005400368832526928,
-      "bn tonne-km": 8.753360554145228
+      "bn passenger-km": 0.0016682214726124523,
+      "bn tonne-km": 2.9567107880173626
     },
     "offroad_modes": [
       "freight_air",
@@ -915,17 +920,17 @@
       "passenger_rail"
     ],
     "offroad_surviving_minus_observed_base_year": {
-      "freight_air": 0.0,
+      "freight_air": -1.1102230246251565e-16,
       "freight_marine": -8.881784197001252e-16,
-      "freight_rail": 1.4210854715202004e-14,
-      "passenger_air": 0.0,
-      "passenger_rail": 0.0
+      "freight_rail": -1.4210854715202004e-14,
+      "passenger_air": 1.4210854715202004e-14,
+      "passenger_rail": -5.551115123125783e-17
     },
     "parameter_rows": 102,
     "pending_classes": [],
     "period_mapping": {
-      "base_year": 2023,
-      "base_year_role": "latest observed year for stock, demand and historical calibration",
+      "base_year": 2025,
+      "base_year_role": "scenario calibration anchor for stock, demand and historical cohorts",
       "cost_and_charger_years": {
         "2025": 2030,
         "2030": 2035,
@@ -982,7 +987,9 @@
         "2020": [
           2021,
           2022,
-          2023
+          2023,
+          2024,
+          2025
         ]
       },
       "latest_observed_vintage": 2020,
@@ -1002,7 +1009,11 @@
     "research_evidence": {
       "road_age_cohorts": {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_age_cohorts.csv",
-        "sha256": "239d6a42a0b7d4e004488455526cf5e80e184ce5cedaf1a72bb7f08ad79509bb"
+        "sha256": "aba22755596ef749eefcbe3d5a7fd8be17b0d7dbdfcd1f8258890854a12967e1"
+      },
+      "sales_cohorts": {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_sales_survival_cohorts.csv",
+        "sha256": "cc6da988e4a40bf6c63ad416bf67fe0e2b35d52f69b01391b4a63b9044ea3078"
       }
     },
     "road_classes": [
@@ -1013,44 +1024,195 @@
       "motorcycles",
       "passenger_light_trucks"
     ],
-    "road_ineligible_raw_stock_k_vehicles": 2182.717008458303,
-    "road_stock_k_vehicles": 9953.501,
+    "road_ineligible_raw_stock_k_vehicles": 1731.3007557834414,
+    "road_lifetime_eligibility": [
+      {
+        "basis": "fixed_lifetime",
+        "eligibility_rule": "annual cohort year + lifetime > first period AND model vintage + lifetime > first period",
+        "first_eligible_annual_cohort": 2011,
+        "first_eligible_model_vintage": 2010,
+        "first_model_period": 2025,
+        "fixed_lifetime_years": 16.0,
+        "last_eligible_annual_cohort": 2025,
+        "region": "ON",
+        "road_class": "cars"
+      },
+      {
+        "basis": "fixed_lifetime",
+        "eligibility_rule": "annual cohort year + lifetime > first period AND model vintage + lifetime > first period",
+        "first_eligible_annual_cohort": 2011,
+        "first_eligible_model_vintage": 2010,
+        "first_model_period": 2025,
+        "fixed_lifetime_years": 17.0,
+        "last_eligible_annual_cohort": 2025,
+        "region": "ON",
+        "road_class": "freight_light_trucks"
+      },
+      {
+        "basis": "fixed_lifetime",
+        "eligibility_rule": "annual cohort year + lifetime > first period AND model vintage + lifetime > first period",
+        "first_eligible_annual_cohort": 2011,
+        "first_eligible_model_vintage": 2010,
+        "first_model_period": 2025,
+        "fixed_lifetime_years": 20.0,
+        "last_eligible_annual_cohort": 2025,
+        "region": "ON",
+        "road_class": "heavy_trucks"
+      },
+      {
+        "basis": "fixed_lifetime",
+        "eligibility_rule": "annual cohort year + lifetime > first period AND model vintage + lifetime > first period",
+        "first_eligible_annual_cohort": 2011,
+        "first_eligible_model_vintage": 2010,
+        "first_model_period": 2025,
+        "fixed_lifetime_years": 20.0,
+        "last_eligible_annual_cohort": 2025,
+        "region": "ON",
+        "road_class": "medium_trucks"
+      },
+      {
+        "basis": "fixed_lifetime",
+        "eligibility_rule": "annual cohort year + lifetime > first period AND model vintage + lifetime > first period",
+        "first_eligible_annual_cohort": 2011,
+        "first_eligible_model_vintage": 2010,
+        "first_model_period": 2025,
+        "fixed_lifetime_years": 17.0,
+        "last_eligible_annual_cohort": 2025,
+        "region": "ON",
+        "road_class": "motorcycles"
+      },
+      {
+        "basis": "fixed_lifetime",
+        "eligibility_rule": "annual cohort year + lifetime > first period AND model vintage + lifetime > first period",
+        "first_eligible_annual_cohort": 2011,
+        "first_eligible_model_vintage": 2010,
+        "first_model_period": 2025,
+        "fixed_lifetime_years": 17.0,
+        "last_eligible_annual_cohort": 2025,
+        "region": "ON",
+        "road_class": "passenger_light_trucks"
+      }
+    ],
+    "road_stock_k_vehicles": 9953.501000000002,
     "road_stock_method": {
+      "ON": "sales_survival",
       "other": "stock_age"
     },
     "road_technology_redistribution": {
       "checked_technology_totals": 20,
       "composition_basis": "configured_historical_vintage_coverage",
       "max_conservation_error_k_vehicles": 4.547473508864641e-13,
-      "redistributed_stock_k_vehicles": 2154.976318937175,
+      "redistributed_stock_k_vehicles": 1723.8504488550402,
       "redistribution_scope": "same_region_and_technology"
     },
-    "sales_reconstruction": []
+    "sales_reconstruction": [
+      {
+        "calibrated_stock_k_vehicles": 3605.2669999999994,
+        "calibration_residual_k_vehicles": -4.547473508864641e-13,
+        "fuel_allocation": "existing registration shares proxy sales composition",
+        "future_lifetimes": "fixed; no second cumulative survival multiplication",
+        "history_end": 2025,
+        "history_start": 2000,
+        "observed_stock_k_vehicles": 3605.267,
+        "older_cohorts": "not reconstructed; no assumed sales before registered/configured coverage",
+        "oldest_survival_probability": 0.039993721022521064,
+        "raw_sales_k_vehicles": 6712.639999999999,
+        "reconstructed_stock_k_vehicles": 3446.843449459542,
+        "region": "ON",
+        "road_class": "cars",
+        "stock_calibration_basis": "base_year_ceud_stock",
+        "stock_calibration_multiplier": 1.045961922223447,
+        "stock_observation_status": "constant",
+        "stock_observed_year": 2023
+      },
+      {
+        "calibrated_stock_k_vehicles": 1215.6319999999998,
+        "calibration_residual_k_vehicles": -2.2737367544323206e-13,
+        "fuel_allocation": "existing registration shares proxy sales composition",
+        "future_lifetimes": "fixed; no second cumulative survival multiplication",
+        "history_end": 2025,
+        "history_start": 2000,
+        "observed_stock_k_vehicles": 1215.632,
+        "older_cohorts": "not reconstructed; no assumed sales before registered/configured coverage",
+        "oldest_survival_probability": 0.1739557013067196,
+        "raw_sales_k_vehicles": 2104.817,
+        "reconstructed_stock_k_vehicles": 1501.7595737956744,
+        "region": "ON",
+        "road_class": "freight_light_trucks",
+        "stock_calibration_basis": "base_year_ceud_stock",
+        "stock_calibration_multiplier": 0.8094717831080701,
+        "stock_observation_status": "constant",
+        "stock_observed_year": 2023
+      },
+      {
+        "calibrated_stock_k_vehicles": 143.136,
+        "calibration_residual_k_vehicles": 0.0,
+        "fuel_allocation": "existing registration shares proxy sales composition",
+        "future_lifetimes": "fixed; no second cumulative survival multiplication",
+        "history_end": 2025,
+        "history_start": 2000,
+        "observed_stock_k_vehicles": 143.136,
+        "older_cohorts": "not reconstructed; no assumed sales before registered/configured coverage",
+        "oldest_survival_probability": 0.3074858209647142,
+        "raw_sales_k_vehicles": 273.894,
+        "reconstructed_stock_k_vehicles": 208.2260768238431,
+        "region": "ON",
+        "road_class": "heavy_trucks",
+        "stock_calibration_basis": "base_year_ceud_stock",
+        "stock_calibration_multiplier": 0.6874066984467628,
+        "stock_observation_status": "constant",
+        "stock_observed_year": 2023
+      },
+      {
+        "calibrated_stock_k_vehicles": 421.755,
+        "calibration_residual_k_vehicles": 0.0,
+        "fuel_allocation": "existing registration shares proxy sales composition",
+        "future_lifetimes": "fixed; no second cumulative survival multiplication",
+        "history_end": 2025,
+        "history_start": 2000,
+        "observed_stock_k_vehicles": 421.755,
+        "older_cohorts": "not reconstructed; no assumed sales before registered/configured coverage",
+        "oldest_survival_probability": 0.3074858209647142,
+        "raw_sales_k_vehicles": 856.188,
+        "reconstructed_stock_k_vehicles": 682.7329504748512,
+        "region": "ON",
+        "road_class": "medium_trucks",
+        "stock_calibration_basis": "base_year_ceud_stock",
+        "stock_calibration_multiplier": 0.6177451955507097,
+        "stock_observation_status": "constant",
+        "stock_observed_year": 2023
+      },
+      {
+        "calibrated_stock_k_vehicles": 4355.4580000000005,
+        "calibration_residual_k_vehicles": 9.094947017729282e-13,
+        "fuel_allocation": "existing registration shares proxy sales composition",
+        "future_lifetimes": "fixed; no second cumulative survival multiplication",
+        "history_end": 2025,
+        "history_start": 2000,
+        "observed_stock_k_vehicles": 4355.458,
+        "older_cohorts": "not reconstructed; no assumed sales before registered/configured coverage",
+        "oldest_survival_probability": 0.1739557013067196,
+        "raw_sales_k_vehicles": 7541.717000000001,
+        "reconstructed_stock_k_vehicles": 5384.2955814341485,
+        "region": "ON",
+        "road_class": "passenger_light_trucks",
+        "stock_calibration_basis": "base_year_ceud_stock",
+        "stock_calibration_multiplier": 0.8089188147504878,
+        "stock_observation_status": "constant",
+        "stock_observed_year": 2023
+      }
+    ]
   },
   "commands": [
     "uv run python src/build_transport.py --scenario C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
     "uv run python -m validation.transportation_research --scenario C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml --write-report"
-  ],
-  "comparison_refresh": [
-    {
-      "command": "uv run python -m validation.transportation_research --scenario C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml --refresh-comparisons --write-report",
-      "comparison_implementation_sha256": "2753d2e13f16dee03eddd9cf9006c6b84ee4a08201bffe81933a5c05ca1c831f",
-      "interpretation": "Direct comparisons refreshed from unchanged databases; captured native audits and their implementation identity retained.",
-      "prior_manifest_sha256": "0a26d71d617fed18fdc9d3d0405a091214addb17e47734a0fdc2a9b91771b09a",
-      "refreshed_frames": [
-        "capacity_comparison",
-        "demand_comparison",
-        "reference_state",
-        "utilization_comparison"
-      ]
-    }
   ],
   "comparison_significance_percent": 5.0,
   "configuration": {
     "manual_inputs": [
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\capacity_to_activity.csv",
-        "sha256": "2d2ac665f138ee5f027f71f0bba43d1a5094c38ccfe90313724f7294d4e415a5"
+        "sha256": "0c5c69da853709c769bd544675a795c4576d659f19ad5211abf35d856df2252a"
       },
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\charger_parameters.csv",
@@ -1080,7 +1242,7 @@
     "parameters": [
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\rules.yaml",
-        "sha256": "160d5af3db664e7e7171b047da47ed89753bb92501a88be2b698ab625c87675b"
+        "sha256": "3144388d81fa159b0c43d7987e3d3661da981a20310d6064e6966af362320a61"
       },
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\conversion.yaml",
@@ -1097,29 +1259,241 @@
     ],
     "paths": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
-      "sha256": "c5393acc5e8f313c8debd5ac162c04aa1dda0c31e651e5f099da786f3bc318f3"
+      "sha256": "c9568baf80d9c59903392f5cf4e3585230ec7f78b50810b560f9ad1bcbd6aa9a"
     },
     "scenario": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
-      "sha256": "e927e6e378b0c598d36243cd80015f53c289345f747f023b059c59110e9398dd"
+      "sha256": "9ae4f670afb99923d8fcf5525813e01528f765f84b74963ad4012a0da66b626f"
     },
     "sources": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\sources.yaml",
-      "sha256": "560eaaafaaeadbec58741a0ac6c4227416e18a943d92f69e7d6ef55b3f3be3ff"
+      "sha256": "cbbbd5d00a82b1109eaf354e5e54f66511d87e2437a4258df9ed48c8e79ba529"
     }
+  },
+  "demand_audit": {
+    "base_year": 2025,
+    "base_year_gdp_index": 1.025236821839801,
+    "cer_edition": 2026,
+    "cer_scenario": "Current Measures",
+    "ceud_observed_year": 2023,
+    "ceud_source_editions": {
+      "nrcan_ceud_transport_national": 2023,
+      "nrcan_ceud_transport_provincial": 2023
+    },
+    "commodities": [
+      "T_D_pj_off",
+      "T_D_pkm_hdv_aj",
+      "T_D_pkm_hdv_bic",
+      "T_D_pkm_hdv_bs",
+      "T_D_pkm_hdv_bt",
+      "T_D_pkm_hdv_r",
+      "T_D_pkm_ldv_c",
+      "T_D_pkm_ldv_m",
+      "T_D_pkm_ldv_t",
+      "T_D_tkm_hdv_aj",
+      "T_D_tkm_hdv_r",
+      "T_D_tkm_hdv_t",
+      "T_D_tkm_hdv_wt",
+      "T_D_tkm_ldv_t",
+      "T_D_tkm_mdv_t"
+    ],
+    "energy_only_baselines": [
+      {
+        "baseline_demand": 49.69,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pj_off",
+        "gdp_indexed_base_year_demand": 50.944017677219705,
+        "region": "ON",
+        "service": "off_road",
+        "units": "PJ"
+      }
+    ],
+    "future_car_demand": "GDP-indexed",
+    "gdp_index_by_period": {
+      "2025": 1.1120123180474235,
+      "2030": 1.2164214361860668,
+      "2035": 1.317022875834803,
+      "2040": 1.4086985100880633,
+      "2045": 1.518623165592303
+    },
+    "input_content_digest": "c4702e6f281814ace1bd22f30ecac9a120a53e0065d1349f64e165d9ca67f80d",
+    "observed_ceud_baselines": [
+      {
+        "baseline_demand": 84.20890228500001,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pkm_ldv_c",
+        "gdp_indexed_base_year_demand": 86.33406734929176,
+        "region": "ON",
+        "service": "cars",
+        "units": "bn passenger-km"
+      },
+      {
+        "baseline_demand": 121.867879338,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pkm_ldv_t",
+        "gdp_indexed_base_year_demand": 124.94343729684745,
+        "region": "ON",
+        "service": "passenger_light_trucks",
+        "units": "bn passenger-km"
+      },
+      {
+        "baseline_demand": 13.233869755,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_tkm_ldv_t",
+        "gdp_indexed_base_year_demand": 13.567850568258065,
+        "region": "ON",
+        "service": "freight_light_trucks",
+        "units": "bn tonne-km"
+      },
+      {
+        "baseline_demand": 10.899558088,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_tkm_mdv_t",
+        "gdp_indexed_base_year_demand": 11.174628293599417,
+        "region": "ON",
+        "service": "medium_trucks",
+        "units": "bn tonne-km"
+      },
+      {
+        "baseline_demand": 92.801423834,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_tkm_hdv_t",
+        "gdp_indexed_base_year_demand": 95.14343683377852,
+        "region": "ON",
+        "service": "heavy_trucks",
+        "units": "bn tonne-km"
+      },
+      {
+        "baseline_demand": 0.963641203,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pkm_ldv_m",
+        "gdp_indexed_base_year_demand": 0.9879604443576024,
+        "region": "ON",
+        "service": "motorcycles",
+        "units": "bn passenger-km"
+      },
+      {
+        "baseline_demand": 4.965808711,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pkm_hdv_bs",
+        "gdp_indexed_base_year_demand": 5.091129940730038,
+        "region": "ON",
+        "service": "school_buses",
+        "units": "bn passenger-km"
+      },
+      {
+        "baseline_demand": 4.006198199,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pkm_hdv_bt",
+        "gdp_indexed_base_year_demand": 4.107301909203095,
+        "region": "ON",
+        "service": "urban_transit",
+        "units": "bn passenger-km"
+      },
+      {
+        "baseline_demand": 0.737135819,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pkm_hdv_bic",
+        "gdp_indexed_base_year_demand": 0.7557387843358387,
+        "region": "ON",
+        "service": "inter_city_buses",
+        "units": "bn passenger-km"
+      },
+      {
+        "baseline_demand": 0.8981574676714331,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_tkm_hdv_aj",
+        "gdp_indexed_base_year_demand": 0.9208241076671438,
+        "region": "ON",
+        "service": "freight_air",
+        "units": "bn tonne-km"
+      },
+      {
+        "baseline_demand": 7.769038611537762,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_tkm_hdv_wt",
+        "gdp_indexed_base_year_demand": 7.965104454843675,
+        "region": "ON",
+        "service": "freight_marine",
+        "units": "bn tonne-km"
+      },
+      {
+        "baseline_demand": 89.35480155468282,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_tkm_hdv_r",
+        "gdp_indexed_base_year_demand": 91.60983276204912,
+        "region": "ON",
+        "service": "freight_rail",
+        "units": "bn tonne-km"
+      },
+      {
+        "baseline_demand": 74.36763311695994,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pkm_hdv_aj",
+        "gdp_indexed_base_year_demand": 76.24443582458034,
+        "region": "ON",
+        "service": "passenger_air",
+        "units": "bn passenger-km"
+      },
+      {
+        "baseline_demand": 0.30481112954455764,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pkm_hdv_r",
+        "gdp_indexed_base_year_demand": 0.3125035937156621,
+        "region": "ON",
+        "service": "passenger_rail",
+        "units": "bn passenger-km"
+      },
+      {
+        "baseline_demand": 49.69,
+        "ceud_observed_year": 2023,
+        "ceud_region": "ON",
+        "commodity": "T_D_pj_off",
+        "gdp_indexed_base_year_demand": 50.944017677219705,
+        "region": "ON",
+        "service": "off_road",
+        "units": "PJ"
+      }
+    ],
+    "parameter_rows": 75,
+    "periods": [
+      2025,
+      2030,
+      2035,
+      2040,
+      2045
+    ],
+    "regions": [
+      "ON"
+    ]
   },
   "exports": {
     "capacity_comparison.csv": {
       "rows": 17,
-      "sha256": "59509b63cd04b7046b8a9b7ea1bdf360c963d79e9f0c8afe55e23495ccbc6c27"
+      "sha256": "7058224927de62faeff37e9f8ee30276183d758030e506efdfcc8ca816b86590"
     },
     "ceud_extension_audit.csv": {
       "rows": 170,
-      "sha256": "0f8a5a9ce6ddff24d0c99a8f1e261d9128907f2d537811613736f547bcff72ae"
+      "sha256": "707f1132a3f0800b6be74e4d32b142638295909942f6d860a859e16205dcc773"
     },
     "configured_survival_curves.csv": {
       "rows": 588,
-      "sha256": "6d80b13a70b651196517d8a3d3988394b5f033061ae87d056b50543fc9d6f1f3"
+      "sha256": "1272ff565b25a0072f74aad15358dab92888800d439f1bf9ab760aa2f25d4025"
     },
     "demand_comparison.csv": {
       "rows": 35,
@@ -1127,7 +1501,7 @@
     },
     "fleet_cohort_accounting.csv": {
       "rows": 55,
-      "sha256": "2c0e8f2fa461414f2147658d3fec849db6703b79fba7d2e2d9b7928b52dc9cef"
+      "sha256": "983867324f7cc5aaf4fd435ec799c34cf017e3831a069591fd76d90b9e3bde40"
     },
     "notebook_source_cells.csv": {
       "rows": 14,
@@ -1138,57 +1512,65 @@
       "sha256": "10fe874acb69e6b1bc7b36b4c43212da8b82520c3ad5d43b0dd2b9aa565ed927"
     },
     "road_age_cohorts.csv": {
-      "rows": 180,
-      "sha256": "6f9f16ba3babd7d8b1bc62b1df05c354b0e0f8e2200732767276107195074fa9"
+      "rows": 166,
+      "sha256": "64ee64b23f9f2448038cd4b9d89819b168b1f92813a602a56f496570c1143c53"
     },
     "road_fuel_shares.csv": {
-      "rows": 360,
-      "sha256": "c0f9a9f8b581c1064e447f5d4e1d42dab16b102bb54227b90c31a0f57cdc8f7c"
+      "rows": 400,
+      "sha256": "04be0d08e78ac2644637ff5b4c3b2dc8ca0862e21a4d01c19f7e4e80ce954cf3"
+    },
+    "sales_cohorts.csv": {
+      "rows": 130,
+      "sha256": "c9ec536fb5ec6aaac22fa0d129e3b9f62132d2ddc9ad8947d246203fbfadc4d4"
     },
     "stock_activity_energy.csv": {
       "rows": 5,
-      "sha256": "10df73451d09965be71204b08f6563cd275d8d31ff048f86365c60014f402218"
+      "sha256": "13df3f8d52b742af375f1c0dc4bb5e62462ca078f036ebecdcde0d5db3350795"
     },
     "supplied_legacy_stock.csv": {
-      "rows": 36,
-      "sha256": "b5433a8462e98a820c4f4ee33e6e388209b6b31b2526bfb34a75db517eabf463"
+      "rows": 45,
+      "sha256": "fc8d1761e8b45972bae6360f988eb08f57038f348635eabc1b08e09160a2144f"
     },
     "utilization_comparison.csv": {
       "rows": 10,
-      "sha256": "fb02f6d4cc1a823ac9f7b1f9fd3c727a54596ee786e7e1a72fb9161e80407eec"
+      "sha256": "03efa86a231fd9b4e7c0f82df308f69e3f104a89a140cee3bdf1acafb109a103"
     }
   },
   "files": {
     "build_report": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\validation_baseline.json",
-      "sha256": "8e843317b742a64e3fbd6607cb7a8a035396b902a21169f9a3b0553399276e20"
+      "sha256": "31588f54fb8097092dc43272cf378930f746e58b8bd7003ddcaa8da402c0a415"
     },
     "ceud_manifest": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_parameter_inputs_manifest.json",
-      "sha256": "8d602a0df503e027793b4d5a85b006714c937f186950a37810b4d6f5f6b41d18"
+      "sha256": "c5982191595d027b582f8c110a43c80d794f8ddafb923bc9436488d2c99de3e8"
     },
     "database": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_baseline.sqlite",
-      "sha256": "88b874a1a62932ad66f8ed51709ff259a9b86989e66c51487b478885f8ba682d"
+      "sha256": "4899ac72c94ed53d5fe484fcc4e0ff7d2732863a5417cf84c9ef12950d63ed2b"
     },
     "road_age_cohorts": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_age_cohorts.csv",
-      "sha256": "239d6a42a0b7d4e004488455526cf5e80e184ce5cedaf1a72bb7f08ad79509bb"
+      "sha256": "aba22755596ef749eefcbe3d5a7fd8be17b0d7dbdfcd1f8258890854a12967e1"
     },
     "road_fuel_shares": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_fuel_shares.csv",
-      "sha256": "8a373110efdc7779ff504bb102c451c880a119b6f00267912e019e74f15d464d"
+      "sha256": "b03ad4f3eefa43343805c1e4c4d3fe0752f79b573ffed5860b0ae3b7356f16f9"
+    },
+    "sales_cohorts": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_sales_survival_cohorts.csv",
+      "sha256": "cc6da988e4a40bf6c63ad416bf67fe0e2b35d52f69b01391b4a63b9044ea3078"
     }
   },
-  "implementation_sha256": "06ae92bde422006193b67b67f245120b7cb8a9a0725a5c6b89b4b1555e64f58d",
+  "implementation_sha256": "e78fb75482781b82a3049bbc2f5a7e5f6ed2d38bcb1e387f3dc701cb53d83d08",
   "limitations": [
-    "The supplied database is the notebook-derived Ontario extract confirmed by the user. Its rows are comparison evidence.",
+    "The supplied SQLite and the newer workbooks are separate evidence states; the notebook execution that produced the SQLite is unresolved.",
     "Comparisons retain original period and vintage labels. The current scenario manifest supplies its source-year interpretation.",
     "Utilization comparisons show the full minimum-to-maximum range by class and existing/new technology kind. Reference period rows and current vintage rows have different keys.",
     "Workbook values and the legacy fixed_lifetime execution flag do not parameterize the current backend.",
     "Activity/energy accounting evaluates all inserted base-year cohorts before future retirement; it is not an optimization result.",
     "Vehicle input energy includes PHEV blend energy once, excluding upstream charger losses; CEUD class energy contains a different fuel/fleet boundary.",
-    "Current source history omits older cohorts and fuel registration shares proxy sales composition; stock discrepancy is not rescaled away."
+    "Raw sales-survival stock is retained for diagnosis; explicit class calibration anchors represented stock to base-year CEUD stock."
   ],
   "notebook": {
     "dependencies": [
@@ -1196,42 +1578,42 @@
         "cell_index": 3,
         "path": "Input data/vehicle_sales_by_size.xlsx",
         "present_relative_to_notebook": false,
-        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_1\\vehicle_sales_by_size.xlsx",
+        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\vehicle_sales_by_size.xlsx",
         "provided_sha256": "f393231f63957a02b1acdc0728614d587b27d7b7fc821b3e1a30b9a9516cf8ae"
       },
       {
         "cell_index": 3,
         "path": "Input data/vehicle_sales_by_powertrain.xlsx",
         "present_relative_to_notebook": false,
-        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_1\\vehicle_sales_by_powertrain.xlsx",
+        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\vehicle_sales_by_powertrain.xlsx",
         "provided_sha256": "cda06f63b3167e45ddd30291d23e0efd057c7ec64e3ec336527a53dae13404b3"
       },
       {
         "cell_index": 3,
         "path": "Input data/survival_curve_transport.xlsx",
         "present_relative_to_notebook": false,
-        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_1\\survival_curve_transport.xlsx",
+        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\survival_curve_transport.xlsx",
         "provided_sha256": "918a7a5aa9f60ca42eda74b20a967b2d1c84342a5a279cf1aeccf4f25bc4b48e"
       },
       {
         "cell_index": 3,
         "path": "Input data/c2a_vehicle.xlsx",
         "present_relative_to_notebook": false,
-        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_1\\c2a_vehicle.xlsx",
+        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\c2a_vehicle.xlsx",
         "provided_sha256": "f750e05eeb2d1987e3a244cbddeb9d61f8c3ead0140aa81f6171d239d030e93a"
       },
       {
         "cell_index": 3,
         "path": "Input data/activity.xlsx",
         "present_relative_to_notebook": false,
-        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_1\\activity.xlsx",
+        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\activity.xlsx",
         "provided_sha256": "97e3c94b833086bbca81cf54227c7df1ee94b0e6d038bc70642e66b737c6f797"
       },
       {
         "cell_index": 3,
         "path": "Input data/demand_growth_rate.xlsx",
         "present_relative_to_notebook": false,
-        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_1\\demand_growth_rate.xlsx",
+        "provided_comparison_evidence": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\demand_growth_rate.xlsx",
         "provided_sha256": "75d9d10d9e99b91df0f35627c1cf80c0862dbef51e891c92600797e19043e735"
       },
       {
@@ -1250,7 +1632,7 @@
       }
     ],
     "missing_dependency_count": 1,
-    "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_1\\Update data_20260618_fixed lifetime (1).ipynb",
+    "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\Update data_20260618_fixed lifetime (1).ipynb",
     "sha256": "ada5b14fca8d53a72d5c1561d7757be3b4112a20fa04197ea8aa098b99469559",
     "source_output_conflict": true,
     "sqlite_dataframe_write_calls": [],
@@ -1286,15 +1668,15 @@
       "sha256": "d254623d032ebebce10a35675680ce67d7fc30236fbd5055d02c2f94322a4350"
     },
     "reference": {
-      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\validation_1\\canoe_ON_16d.sqlite",
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\canoe_ON_16d.sqlite",
       "sha256": "b4db7481fb0f809bcdc32e75c0ca65a08027307c60ab526f886b7e5dbb2517f5"
     },
     "relative_tolerance": 1e-06,
     "survival_rows": 0
   },
-  "revision": "83bd2ba1d841322ecce80517bfec89fc3764099b",
+  "revision": "aafdd708e54840a13188b82c3f80e62fa83ff0fc",
   "sales_activity_closure": {
-    "classes_checked": 0,
+    "classes_checked": 5,
     "interpretation": "calibration check, not independent validation",
     "passes": true
   },
@@ -1327,8 +1709,8 @@
     "comparison": {
       "absolute_tolerance": 1e-09,
       "include_provenance": false,
-      "mode": "none",
-      "reference_sqlite": "legacy_backend/canoe_on_12d_baseline.sqlite",
+      "mode": "legacy",
+      "reference_sqlite": "legacy_backend/legacy_variant_sales_cohorts/canoe_ON_16d.sqlite",
       "relative_tolerance": 1e-06
     },
     "costs": {
@@ -1357,6 +1739,7 @@
     "existing_capacity": {
       "cleanup_tolerance": 0.001,
       "road_stock_method": {
+        "ON": "sales_survival",
         "other": "stock_age"
       },
       "vehicle_population_year": 2025
@@ -1378,7 +1761,7 @@
       "validation_report": "outputs/validation/validation_baseline.json"
     },
     "periods": {
-      "base_year": 2023,
+      "base_year": 2025,
       "existing": [
         2000,
         2005,
@@ -1397,19 +1780,19 @@
       "step": 5
     },
     "road_utilization": {
-      "vkt_max_age": 25,
+      "vkt_max_age": 29,
       "vkt_schedules": false
     },
     "row_note_overrides": {
       "technology": {}
     },
     "scenario": {
-      "description": "Ontario control for researcher validation; current stock and timing selections.",
+      "description": "Ontario baseline for legacy sales-cohort and charger-cost comparisons.",
       "name": "validation_baseline",
       "purpose": "research_validation_control"
     },
     "sources": {
-      "nrcan_ceud_beyond_observed": "error",
+      "nrcan_ceud_beyond_observed": "constant",
       "selections": {
         "cer_canadas_energy_future": {
           "edition": 2026,
@@ -2452,9 +2835,80 @@
         ]
       }
     ],
-    "input_content_digest": "97b031bc374ae42475f8d85680221f3df450748672cee45f6a74a78455258efc",
-    "manual_assumption_data_id": "canoe-road-capacity-to-activity:39f76d748a70b3f1",
-    "sales_activity_calibration": [],
+    "input_content_digest": "e1e272b088af642fa894ac4b0fcfbf2953be12c520e86034ca6fc65bef203a89",
+    "manual_assumption_data_id": "canoe-road-capacity-to-activity:556c6f4a2c27519b",
+    "sales_activity_calibration": [
+      {
+        "activity_residual_bn": 0.0,
+        "base_year": 2025,
+        "capacity_activity_denominator_bn": 4686.847099999999,
+        "future_policy": "same flat level for existing and new vintages",
+        "modelled_activity_bn": 84.20890228500001,
+        "prior_mean_utilization": 0.019160207178010986,
+        "region": "ON",
+        "reported_stock_k_vehicles": 3605.267,
+        "retained_stock_k_vehicles": 3605.2670000000003,
+        "road_class": "cars",
+        "target_activity_bn": 84.20890228500001,
+        "utilization": 0.01796706836990693
+      },
+      {
+        "activity_residual_bn": 0.0,
+        "base_year": 2025,
+        "capacity_activity_denominator_bn": 395.08040000000005,
+        "future_policy": "same flat level for existing and new vintages",
+        "modelled_activity_bn": 13.233869755,
+        "prior_mean_utilization": 0.034266752736822906,
+        "region": "ON",
+        "reported_stock_k_vehicles": 1215.632,
+        "retained_stock_k_vehicles": 1215.6319999999998,
+        "road_class": "freight_light_trucks",
+        "target_activity_bn": 13.233869755,
+        "utilization": 0.033496649681938155
+      },
+      {
+        "activity_residual_bn": 0.0,
+        "base_year": 2025,
+        "capacity_activity_denominator_bn": 1395.576,
+        "future_policy": "same flat level for existing and new vintages",
+        "modelled_activity_bn": 92.801423834,
+        "prior_mean_utilization": 0.07038135398499287,
+        "region": "ON",
+        "reported_stock_k_vehicles": 143.136,
+        "retained_stock_k_vehicles": 143.136,
+        "road_class": "heavy_trucks",
+        "target_activity_bn": 92.801423834,
+        "utilization": 0.06649686139199872
+      },
+      {
+        "activity_residual_bn": 0.0,
+        "base_year": 2025,
+        "capacity_activity_denominator_bn": 685.351875,
+        "future_policy": "same flat level for existing and new vintages",
+        "modelled_activity_bn": 10.899558088,
+        "prior_mean_utilization": 0.01603592542400754,
+        "region": "ON",
+        "reported_stock_k_vehicles": 421.755,
+        "retained_stock_k_vehicles": 421.75499999999994,
+        "road_class": "medium_trucks",
+        "target_activity_bn": 10.899558088,
+        "utilization": 0.015903594176349192
+      },
+      {
+        "activity_residual_bn": 0.0,
+        "base_year": 2025,
+        "capacity_activity_denominator_bn": 7077.61925,
+        "future_policy": "same flat level for existing and new vintages",
+        "modelled_activity_bn": 121.867879338,
+        "prior_mean_utilization": 0.017648016174319638,
+        "region": "ON",
+        "reported_stock_k_vehicles": 4355.458,
+        "retained_stock_k_vehicles": 4355.4580000000005,
+        "road_class": "passenger_light_trucks",
+        "target_activity_bn": 121.867879338,
+        "utilization": 0.017218767361355303
+      }
+    ],
     "vkt_schedules": false
   }
 }

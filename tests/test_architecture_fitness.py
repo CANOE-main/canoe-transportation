@@ -51,7 +51,9 @@ def test_impact_routes_have_live_owners_producers_and_validation_surfaces(monkey
         assert resolve_artifact_path(bundle, family).is_relative_to(REPO_ROOT)
         importlib.import_module(route.owner)
         for producer in route.producers:
-            if producer == "reviewers":
+            if producer == "researcher":
+                assert route.layer == "legacy"
+            elif producer == "reviewers":
                 assert route.layer == "documentation"
             else:
                 _assert_live_interface(producer)

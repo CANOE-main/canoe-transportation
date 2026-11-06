@@ -148,6 +148,57 @@ def test_real_gdp_maps_start_period_to_end_year_and_rejects_gaps() -> None:
                          base_year=2023, periods=[2025, 2030], step=5)
 
 
+def test_real_gdp_extends_from_observation_through_base_and_projection_years() -> None:
+    macro = pd.DataFrame([
+        {"scenario": "Current Measures", "region": "Canada", "variable_key": "real_gdp",
+         "year": year, "value": value, "unit": "$2017 Millions"}
+        for year, value in [(2023, 100.0), (2025, 105.0), (2030, 120.0), (2035, 150.0)]
+    ])
+    # A price deflator cannot substitute for the real GDP growth driver.
+    macro = pd.concat([macro, macro.assign(variable_key="gdp_deflator", value=999.0)])
+    assert real_gdp_indices(
+        macro, scenario="Current Measures", base_year=2025, observed_year=2023,
+        periods=[2025, 2030], step=5,
+    ) == {2025: 1.2, 2030: 1.5}
+    for missing_year in [2023, 2025, 2035]:
+        with pytest.raises(ValueError, match="observation anchor"):
+            real_gdp_indices(
+                macro.loc[macro.year.ne(missing_year)], scenario="Current Measures",
+                base_year=2025, observed_year=2023, periods=[2025, 2030], step=5,
+            )
+
+
+@pytest.mark.parametrize("future_car_demand", ["GDP-indexed", "extrapolated"])
+def test_demand_uses_observation_anchor_independently_of_ceud_tail_policy(future_car_demand):
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT)
+    payload = bundle.scenario.model_dump(mode="python")
+    payload["geography"]["regions"] = ["ON"]
+    payload["demand"]["future_car_demand"] = future_car_demand
+    baseline_rows, baseline_ids = None, None
+    for policy in ["error", "constant", "extrapolated"]:
+        payload["sources"]["nrcan_ceud_beyond_observed"] = policy
+        selected = replace(bundle, scenario=bundle.scenario.model_validate(payload))
+        rows, contexts, audit = prepare_demand_rows(selected)
+        values = {(row.region, row.period, row.commodity): row.demand for row in rows}
+        data_ids = {context.component_key: context.data_id for context in contexts}
+        if baseline_rows is None:
+            baseline_rows, baseline_ids = values, data_ids
+        else:
+            assert values == baseline_rows
+            assert data_ids == baseline_ids
+        assert audit["ceud_observed_year"] == 2023
+        assert audit["base_year"] == 2025
+        assert audit["base_year_gdp_index"] == pytest.approx(2445644 / 2385443)
+        assert audit["gdp_index_by_period"][2025] == pytest.approx(2652642 / 2385443)
+        observed = {item["service"]: item for item in audit["observed_ceud_baselines"]}
+        assert observed["cars"]["baseline_demand"] == pytest.approx(84.208902285)
+        assert observed["cars"]["gdp_indexed_base_year_demand"] == pytest.approx(84.208902285 * 2445644 / 2385443)
+        assert observed["passenger_air"]["ceud_observed_year"] == 2023
+        assert values["ON", 2025, "T_D_pj_off"] == pytest.approx(49.69 * 2652642 / 2385443)
+        car, truck = (values["ON", 2025, commodity] for commodity in ["T_D_pkm_ldv_c", "T_D_pkm_ldv_t"])
+        assert car + truck == pytest.approx((84.208902285 + 121.867879338) * 2652642 / 2385443)
+
+
 def test_car_cagr_stays_positive_and_preserves_passenger_ldv_total() -> None:
     series = "Cars|Activity|Passenger-kilometres (millions)"
     provincial = pd.DataFrame([
