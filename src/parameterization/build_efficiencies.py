@@ -467,6 +467,9 @@ def historical_stock_evidence(
     digest = file_sha256(expected)
     if descriptor.get("sha256") != digest:
         raise ValueError("Annual stock evidence changed after capacity preparation")
+    from parameterization.build_existing_capacity import validate_capacity_handoff
+
+    validate_capacity_handoff(bundle, rows=rows, contexts=contexts, audit=audit)
     stock = pd.read_csv(expected)
     if file_sha256(expected) != digest:
         raise ValueError("Annual stock evidence changed while being read")
@@ -1049,6 +1052,12 @@ def prepare_efficiency_rows(
     )], ignore_index=True)
     if file_sha256(stock_path) != existing_capacity_audit["annual_stock_evidence"]["sha256"]:
         raise ValueError("Annual stock evidence changed during efficiency preparation")
+    from parameterization.build_existing_capacity import validate_capacity_handoff
+
+    validate_capacity_handoff(
+        bundle, rows=existing_capacity_rows, contexts=existing_capacity_contexts,
+        audit=existing_capacity_audit,
+    )
     input_evidence = [
         {"path": str(path.relative_to(bundle.repo_root) if path.is_relative_to(bundle.repo_root) else path),
          "sha256": file_sha256(path)}

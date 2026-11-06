@@ -395,15 +395,15 @@ artifacts:
     layer: processed
     owner: parameterization.build_existing_capacity
     producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
-    consumers: [build_transport, parameterization.ev_chargers, reviewers]
+    consumers: [build_transport, reviewers]
     validation_surfaces: [parameterization.build_existing_capacity.prepare_existing_capacity_rows]
   existing_capacity_validation:
     path: inputs/validation/existing_capacity
     layer: input_validation
     owner: parameterization.build_existing_capacity
     producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
-    consumers: [reviewers]
-    validation_surfaces: [parameterization.build_existing_capacity.validate_capacity_outputs]
+    consumers: [parameterization.build_efficiencies, reviewers]
+    validation_surfaces: [parameterization.build_existing_capacity.validate_capacity_outputs, parameterization.build_existing_capacity.validate_capacity_handoff]
   ev_chargers_processed:
     path: inputs/2_processed/ev_chargers
     layer: processed

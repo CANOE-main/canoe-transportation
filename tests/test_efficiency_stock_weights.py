@@ -1,28 +1,35 @@
 """Fresh raw-cohort stock handoff and consumption-first period aggregation."""
 
 from copy import deepcopy
-from types import SimpleNamespace
+from dataclasses import replace
 
+from canoe_schema.v4_0 import ExistingCapacity
 import pandas as pd
 import pytest
 
 from parameterization import build_efficiencies as layer
-from utils import file_sha256, load_config_bundle, load_harmonization_rules
+from parameterization.build_existing_capacity import publish_capacity_handoff
+from utils import file_sha256, load_config_bundle, load_harmonization_rules, resolve_artifact_path
 from validation.provenance import resolve_provenance
 
 
 @pytest.fixture
-def handoff(tmp_path, monkeypatch):
+def handoff(tmp_path):
     bundle = load_config_bundle("config/scenarios/default.yaml")
+    routes = dict(bundle.paths.artifacts)
+    for family in ("existing_capacity_interim", "existing_capacity_validation"):
+        routes[family] = routes[family].model_copy(update={"path": str(tmp_path / family)})
+    bundle = replace(bundle, paths=bundle.paths.model_copy(update={"artifacts": routes}))
     rules = load_harmonization_rules(bundle, "efficiencies")
-    path = tmp_path / "annual_stock.csv"
+    stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
+    path = resolve_artifact_path(bundle, "existing_capacity_interim", stock_rules["fuel_shares_file"])
+    path.parent.mkdir(parents=True)
     stock = pd.DataFrame([
         {"region": "ON", "road_class": "cars", "tech": "T_LDV_C_BEV_EX",
          "vintage": 2020, "vintage_year": year, "raw_capacity": raw, "capacity": count}
         for year, raw, count in [(2021, 8, 0), (2022, 3, 4), (2023, 1, 6)]
     ])
     stock.to_csv(path, index=False)
-    monkeypatch.setattr(layer, "resolve_artifact_path", lambda *_args: path)
     context = resolve_provenance(
         bundle.sources, source_key="statcan_transport_tables", component_key="20-10-0021-01",
         transformation="synthetic annual stock fixture", transformation_version="1",
@@ -30,12 +37,14 @@ def handoff(tmp_path, monkeypatch):
     inputs = {
         "rules": rules,
         "relationships": pd.DataFrame([{"mode": "cars", "tech": "T_LDV_C_BEV_EX"}]),
-        "rows": [SimpleNamespace(region="ON", tech="T_LDV_C_BEV_EX", vintage=2020,
-                                 capacity=10, data_id=context.data_id)],
+        "rows": [ExistingCapacity(region="ON", tech="T_LDV_C_BEV_EX", vintage=2020,
+                                  capacity=10, units="k vehicles", **context.parameter_fields())],
         "contexts": [context],
         "audit": {"period_mapping": bundle.scenario.periods.audit(),
                   "annual_stock_evidence": {"path": str(path), "sha256": file_sha256(path)}},
     }
+    publish_capacity_handoff(bundle, **{key: inputs[key] for key in ("rows", "contexts", "audit")},
+                             artifact_paths=[path])
     return bundle, path, stock, inputs
 
 
@@ -55,8 +64,8 @@ def test_fresh_annual_stock_reconciles_capacity_but_retains_raw_cohort_weights(h
     ("path", "configured capacity evidence"),
     ("periods", "period mapping"),
     ("hash", "changed after capacity preparation"),
-    ("capacity", "reconcile to prepared capacity"),
-    ("context", "Missing capacity provenance"),
+    ("capacity", "scenario, rows or contexts"),
+    ("context", "scenario, rows or contexts"),
 ])
 def test_annual_stock_rejects_inconsistent_capacity_handoff(handoff, problem, expected):
     bundle, path, _, original = handoff
@@ -110,6 +119,8 @@ def test_annual_stock_rejects_invalid_or_absent_weight_support(handoff, problem,
         stock["capacity"] = 0
     stock.to_csv(path, index=False)
     inputs["audit"]["annual_stock_evidence"]["sha256"] = file_sha256(path)
+    publish_capacity_handoff(bundle, **{key: inputs[key] for key in ("rows", "contexts", "audit")},
+                             artifact_paths=[path])
     with pytest.raises(ValueError, match=expected):
         layer.historical_stock_evidence(bundle, **inputs)
 

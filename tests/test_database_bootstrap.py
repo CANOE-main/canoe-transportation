@@ -15,6 +15,7 @@ from build_transport import (
     insert_transport_contribution,
     prepare_transport_contribution,
 )
+from utils import resolve_artifact_path, resolve_input_path
 from validation.database_bootstrap import validate_database
 from validation.insertion import insert_models
 from validation.schema_contract import create_v4_schema, packaged_ddl
@@ -35,12 +36,12 @@ def csv_row_count(path: Path) -> int:
 
 
 @pytest.fixture
-def bundle(legacy_bundle):
+def bundle(isolated_legacy_bundle):
     # These cases exercise schema/publication behavior and lifetime switches.
     # Full ten-region production parity is covered by the offline scenario replay.
-    payload = legacy_bundle.scenario.model_dump(mode="python")
+    payload = isolated_legacy_bundle.scenario.model_dump(mode="python")
     payload["geography"]["regions"] = ["ON"]
-    return replace(legacy_bundle, scenario=type(legacy_bundle.scenario).model_validate(payload))
+    return replace(isolated_legacy_bundle, scenario=type(isolated_legacy_bundle.scenario).model_validate(payload))
 
 
 def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
@@ -50,7 +51,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
 
     report = bootstrap_database(
         bundle=bundle,
-        template_dir=TEMPLATES,
+        template_dir=resolve_input_path(bundle, "template"),
         database_path=database,
     )
 
@@ -174,7 +175,7 @@ def test_fixed_lifetime_mode_inserts_one_row_per_modeled_technology(bundle, tmp_
     database = tmp_path / "fixed-lifetimes.sqlite"
     report = bootstrap_database(
         bundle=replace(bundle, scenario=scenario),
-        template_dir=TEMPLATES,
+        template_dir=resolve_input_path(bundle, "template"),
         database_path=database,
     )
     expected_rows = 122 * len(bundle.scenario.geography.regions)
@@ -193,7 +194,7 @@ def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Pat
     database = tmp_path / "age-mode.sqlite"
     report = bootstrap_database(
         bundle=replace(bundle, scenario=scenario),
-        template_dir=TEMPLATES,
+        template_dir=resolve_input_path(bundle, "template"),
         database_path=database,
     )
     assert report["road_utilization"]["sqlite_insertion"] == "blocked_upstream_vintage_plus_period_schema_gap"
@@ -209,8 +210,6 @@ def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Pat
 def test_transport_contribution_uses_a_caller_owned_transaction(
     bundle, tmp_path: Path
 ) -> None:
-    shutil.copytree(REPO_ROOT / "config", tmp_path / "config")
-    bundle = replace(bundle, repo_root=tmp_path)
     database = tmp_path / "caller-owned.sqlite"
     connection = sqlite3.connect(database, isolation_level=None)
     create_v4_schema(connection)
@@ -218,7 +217,7 @@ def test_transport_contribution_uses_a_caller_owned_transaction(
     contribution = prepare_transport_contribution(
         connection,
         bundle=bundle,
-        template_dir=TEMPLATES,
+        template_dir=resolve_input_path(bundle, "template"),
         include_existing_capacity=False,
         include_demand=False,
         include_road_utilization=False,
@@ -263,7 +262,7 @@ def test_existing_capacity_uses_the_same_caller_owned_insertion(bundle) -> None:
     connection = sqlite3.connect(":memory:", isolation_level=None)
     create_v4_schema(connection)
     contribution = prepare_transport_contribution(
-        connection, bundle=bundle, template_dir=TEMPLATES
+        connection, bundle=bundle, template_dir=resolve_input_path(bundle, "template")
     )
     assert len(contribution.parameter_rows) == contribution.parameter_audit["parameter_rows"] + contribution.charger_audit["capacity_rows"]
     assert len(contribution.demand_rows) == contribution.demand_audit["parameter_rows"]
@@ -310,7 +309,7 @@ def test_transport_contribution_rejects_an_incompatible_caller_schema(
         prepare_transport_contribution(
             connection,
             bundle=bundle,
-            template_dir=TEMPLATES,
+            template_dir=resolve_input_path(bundle, "template"),
         )
 
     connection.close()
@@ -338,7 +337,7 @@ def test_bootstrap_applies_scenario_economics_and_technology_note(
 
     report = bootstrap_database(
         bundle=configured_bundle,
-        template_dir=TEMPLATES,
+        template_dir=resolve_input_path(bundle, "template"),
         database_path=database,
     )
 
@@ -377,7 +376,7 @@ def test_bootstrap_rejects_unknown_technology_note_override(
     with pytest.raises(TemplateLoadError, match="unknown technologies.*T_UNKNOWN"):
         bootstrap_database(
             bundle=configured_bundle,
-            template_dir=TEMPLATES,
+            template_dir=resolve_input_path(bundle, "template"),
             database_path=tmp_path / "transport.sqlite",
         )
 
@@ -385,7 +384,7 @@ def test_bootstrap_rejects_unknown_technology_note_override(
 def test_bootstrap_preserves_notes_and_reports_model_defaults(bundle, tmp_path: Path) -> None:
     report = bootstrap_database(
         bundle=bundle,
-        template_dir=TEMPLATES,
+        template_dir=resolve_input_path(bundle, "template"),
         database_path=tmp_path / "transport.sqlite",
     )
     table_reports = {item["table"]: item for item in report["templates"]}
@@ -451,8 +450,56 @@ def test_bootstrap_protects_existing_database_without_overwrite(
     with pytest.raises(FileExistsError, match="Refusing to overwrite"):
         bootstrap_database(
             bundle=bundle,
-            template_dir=TEMPLATES,
+            template_dir=resolve_input_path(bundle, "template"),
             database_path=database,
         )
 
     assert database.read_bytes() == sentinel
+
+
+@pytest.mark.parametrize("interruption", [RuntimeError, KeyboardInterrupt, SystemExit])
+def test_real_capacity_publication_failure_requires_complete_repreparation(
+    bundle, monkeypatch, interruption,
+) -> None:
+    """A partial real family cannot masquerade as the previously completed input."""
+    from parameterization import build_existing_capacity as capacity
+
+    rows, contexts, audit = capacity.prepare_existing_capacity_rows(bundle)
+    capacity.validate_capacity_handoff(bundle, rows=rows, contexts=contexts, audit=audit)
+    marker = resolve_artifact_path(bundle, "existing_capacity_validation", "integrity.json")
+    previous_marker = marker.read_bytes()
+    previous_artifacts = {}
+    for artifact in audit["prepared_handoff"]["artifacts"]:
+        path = bundle.repo_root / artifact["path"]
+        assert path.is_relative_to(bundle.repo_root)
+        previous_artifacts[path] = path.read_bytes()
+
+    original_write = capacity.write_dataframe_atomic
+    writes = 0
+
+    def interrupt_second_write(frame, path):
+        nonlocal writes
+        writes += 1
+        assert not marker.exists()
+        if writes == 2:
+            raise interruption("interrupted capacity family publication")
+        original_write(frame, path)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(capacity, "write_dataframe_atomic", interrupt_second_write)
+        with pytest.raises(interruption, match="interrupted capacity family publication"):
+            capacity.prepare_existing_capacity_rows(bundle)
+    assert writes == 2
+    assert not marker.exists()
+    with pytest.raises(ValueError, match="no readable completion marker"):
+        capacity.validate_capacity_handoff(bundle, rows=rows, contexts=contexts, audit=audit)
+
+    recovered_rows, recovered_contexts, recovered_audit = capacity.prepare_existing_capacity_rows(bundle)
+    assert recovered_rows == rows
+    assert recovered_contexts == contexts
+    assert recovered_audit == audit
+    assert marker.read_bytes() == previous_marker
+    assert {path: path.read_bytes() for path in previous_artifacts} == previous_artifacts
+    capacity.validate_capacity_handoff(
+        bundle, rows=recovered_rows, contexts=recovered_contexts, audit=recovered_audit,
+    )
