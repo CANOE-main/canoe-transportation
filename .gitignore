@@ -27,6 +27,7 @@ inputs/playground/
 **/__marimo__/
 /debug.log
 .agents/skills/*
+!.agents/skills/codebase-improver/
 .agents/plans/*
 tmp/
 # Wards workbooks are local-only licensed source files.

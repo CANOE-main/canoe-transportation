@@ -19,20 +19,20 @@ preparation and insertion for a caller-owned compatible database. Both paths use
 transport parameterization; an upstream-specific adapter remains planned.
 
 The tree below maps the implemented entrypoints and their owners. An upstream-specific
-`canoe_adapter.py` is still a planned integration seam, not an implemented entrypoint. #to-review
+`canoe_adapter.py` is still a planned integration seam, not an implemented entrypoint.
 
 ```text
 .
 ├── AGENTS.md                                # Stable repository policy
 ├── README.md                                # Human-facing project orientation
-├── .gitattributes                           # Portable text/binary checkout and registered source-byte exceptions #to-review
+├── .gitattributes                           # Portable text/binary checkout and registered source-byte exceptions
 ├── .agents/
 │   ├── PLANS.md                             # ExecPlan protocol
 │   ├── plans/                               # Task-local implementation records
 │   └── skills/                              # Optional task-retrieved procedures
 ├── config/
 │   ├── paths.yaml                           # Canonical paths and artifact-family impact routes
-│   ├── sources.yaml                         # External-source registry, provenance and explicit update policies #to-review
+│   ├── sources.yaml                         # External-source registry, provenance and explicit update policies
 │   ├── scenarios/                           # Scenario authoring contract
 │   └── parameters/
 │       ├── rules.yaml                       # Extraction and harmonization contracts
@@ -41,15 +41,15 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │   ├── setup.py                             # Configuration/schema smoke entrypoint
 │   ├── build_transport.py                   # Transport contribution and atomic database assembly
 │   ├── fetching/                            # Upstream download, cache, and interim normalization
-│   │   ├── source_updater.py                # Explicit rolling-source review/adoption, immutable snapshots and diff logs #to-review
-│   │   ├── nrcan_ceud.py                    # NRCan CEUD tables and checksum-pinned fuel-consumption ratings #to-review
+│   │   ├── source_updater.py                # Explicit rolling-source review/adoption, immutable snapshots and diff logs
+│   │   ├── nrcan_ceud.py                    # NRCan CEUD tables and checksum-pinned fuel-consumption ratings
 │   │   ├── vehicle_population.py            # Ontario MTO report acquisition and normalization
 │   │   ├── statcan_tables.py                # Statistics Canada transport tables
 │   │   ├── cer_enerfuture.py                # CER energy future tables
 │   │   ├── nlr_atb_autonomie.py             # NLR ATB and ANL Autonomie inputs
 │   │   ├── greet_automation.py              # Explicit disposable-copy Excel generation of vehicle-cycle evidence
 │   │   ├── greet_vehicle_cycle.py           # Registered source contracts, extraction and offline bank validation
-│   │   ├── fueleconomy_vehicles.py          # Shared pinned vehicle-class and diagnostic range evidence #to-review
+│   │   ├── fueleconomy_vehicles.py          # Shared pinned vehicle-class and diagnostic range evidence
 │   │   ├── legacy_charging_profiles.py      # Immutable NHTS/TTS charging evidence and legacy hourly transformation
 │   │   ├── epa_omega_baseline.py            # Compact legacy OMEGA baseline sales/CD ranges and source identity validation
 │   │   ├── technology_growth_evidence.py    # Registered adoption evidence acquisition and normalization
@@ -64,13 +64,13 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │   │   ├── build_costs.py                   # Combine and validate investment/variable costs
 │   │   ├── manual_parameters.py             # Validate registry and resolve generic selectors
 │   │   ├── road_stocks_and_demands.py       # Road existing stock and demand products
-│   │   ├── ceud_inputs.py                  # Explicit base-year views; preserves native CEUD observations #to-review
+│   │   ├── ceud_inputs.py                   # Explicit base-year views; preserves native CEUD observations #to-do: determine whether this belongs in param/ or in utils/
 │   │   ├── road_utilization.py              # Road C2A and annual utilization, including vintage-period artifacts
 │   │   ├── offroad_stocks_and_demands.py    # Off-road existing stock and demand products
 │   │   ├── road_lifetimes_survival.py       # Accepted road lifetime, survival, and MTO diagnostics
 │   │   ├── offroad_lifetimes.py             # Lifetimes of remaining technologies
 │   │   ├── road_aggregation.py              # Reviewed mapping application and aggregation weights
-│   │   ├── road_fleet_weights.py            # Shared production class/powertrain fleet composition #to-review
+│   │   ├── road_fleet_weights.py            # Shared production class/powertrain fleet composition
 │   │   ├── vehicle_mapping_bootstrap.py     # Explicit mapping-development entrypoint
 │   │   ├── road_efficiencies.py             # Road technology efficiencies
 │   │   ├── offroad_efficiencies.py          # Off-road technology efficiencies
@@ -79,15 +79,15 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │   │   ├── currency.py                      # CER-backed currency and price-year conversion
 │   │   ├── road_embodied_emissions.py       # Road vehicle-cycle lifetime gases and regional aggregation
 │   │   ├── ev_chargers.py                   # EV charging infrastructure preparation and validated artifacts
-│   │   ├── ldv_charging_profiles.py         # Inherited hourly profiles, configured scaling and annual utilization limits #to-review
+│   │   ├── ldv_charging_profiles.py         # Inherited hourly profiles, configured scaling and annual utilization limits
 │   │   ├── ldv_ev_ranges.py                 # OMEGA range shares, minimum constraints and parameter-specific representative LDV aggregation
-│   │   └── road_adoption_constraints.py     # Opt-in adoption evidence diagnostics and provisional calibration #to-review
+│   │   └── road_adoption_constraints.py     # Opt-in adoption evidence diagnostics and provisional calibration # to-do: pending full implementation; currently beyond MVP
 │   ├── utils/
 │   │   ├── __init__.py                      # Typed config loading and artifact path resolution
-│   │   ├── files.py                         # Shared hashing and atomic CSV/text publication #to-review
-│   │   ├── build_logging.py                 # Persistent scenario/YAML/UTC-named build logs #to-review
+│   │   ├── files.py                         # Shared hashing and atomic CSV/text publication
+│   │   ├── build_logging.py                 # Persistent scenario/YAML/UTC-named build logs
 │   │   └── vehicle_labels.py                # Shared vehicle-label mechanics
-│   └── validation/
+│   └── validation/ # to-do: let's make sure that validation modules are not stale and they maintain alignment with the latest modeling choices and provenance
 │       ├── config_models.py                 # Pydantic configuration contracts
 │       ├── config_smoke.py                  # Setup-time config/schema status and directory creation
 │       ├── provenance.py                    # Source and dataset provenance
@@ -96,15 +96,15 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │       ├── database_bootstrap.py            # Post-insertion database integrity checks
 │       ├── sqlite_utils.py                  # Shared SQLite identifier mechanics
 │       ├── legacy_compare.py                # Narrow configured legacy comparison
-│       ├── sqlite_compare.py                # Scenario-to-scenario SQLite comparison #to-review
-│       ├── transportation_research.py        # Opt-in researcher reference, cohort and closure reports #to-review
-│       ├── charging_cost_comparison.py       # Opt-in source-year and unit-aware charger cost comparison #to-review
-│       ├── notebook_evidence.py             # Captured, hash-validated stock/efficiency evidence bundles #to-review
-│       ├── vehicle_stock_diagnostic.py      # Reader and views for recorded stock/mapping/retention evidence #to-review
-│       ├── ldv_efficiency_diagnostic.py     # Reader and views for recorded efficiency evidence #to-review
-│       ├── rating_stock_benchmark.py        # Diagnostic MTO/rating comparison, outside production weights #to-review
-│       ├── road_investment_review.py        # Opt-in investment-cost interpretation and review #to-review
-│       └── transport_comparison.py         # Configured legacy parameter-comparison evidence/report #to-review
+│       ├── sqlite_compare.py                # Scenario-to-scenario SQLite comparison
+│       ├── transportation_research.py       # Opt-in researcher reference, cohort and closure reports
+│       ├── charging_cost_comparison.py      # Opt-in source-year and unit-aware charger cost comparison
+│       ├── notebook_evidence.py             # Captured, hash-validated stock/efficiency evidence bundles
+│       ├── vehicle_stock_diagnostic.py      # Reader and views for recorded stock/mapping/retention evidence
+│       ├── ldv_efficiency_diagnostic.py     # Reader and views for recorded efficiency evidence
+│       ├── rating_stock_benchmark.py        # Diagnostic MTO/rating comparison, outside production weights
+│       ├── road_investment_review.py        # Opt-in investment-cost interpretation and review
+│       └── transport_comparison.py          # Configured legacy parameter-comparison evidence/report
 ├── inputs/
 │   ├── 0_canoe_template/                    # Backend-owned structural templates
 │   ├── 0_cache/                             # Authoritative cached downloads
@@ -115,17 +115,14 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │   └── validation/                          # Development, review, and transformation diagnostics
 ├── outputs/
 │   ├── sqlite/                              # Built CANOE/Temoa-ready databases
-│   ├── validation/                          # Build reports, source-update audits and recorded notebook bundles #to-review
-│   └── logs/                                # Persistent build attempts and source-update logs #to-review
+│   ├── validation/                          # Build reports, source-update audits and recorded notebook bundles
+│   └── logs/                                # Persistent build attempts and source-update logs
 ├── docs/
 │   ├── backend_architecture.md              # Repository structure and ownership reference
-│   ├── canoe_main_orchestrator.md           # Point-in-time upstream integration context; reverify before use #to-review
 │   ├── etl_flowcharts.md                    # Parameter-specific lineage reference
-│   ├── assumptions.md                      # Enduring data challenges and modelling assumptions #to-review
-│   ├── source_inventory.md                 # Registry-based source uses, formats and footprint snapshot #to-review
-│   ├── executive_summary.md                # Narrative project/methodology overview #to-review
-│   ├── codebase_diagnostic_snapshot.md      # Point-in-time structure/refactor assessment #to-review
-│   └── insights/                            # Four marimo diagnosis notebooks; see diagnostic workflows below #to-review
+│   ├── assumptions.md                       # Enduring data challenges and modelling assumptions
+│   ├── source_inventory.md                  # Registry-based source uses, formats and footprint snapshot
+│   └── insights/                            # Marimo diagnosis notebooks; see diagnostic workflows below
 ├── legacy_backend/                          # Read-mostly parity evidence
 ├── scripts/
 │   ├── doctor.py                            # Non-mutating repository readiness check
@@ -166,7 +163,7 @@ mechanics remain in `validation/`, backed by the pinned `canoe-schema` package.
 The pinned package owns both v4 DDL and final row models. Database creation uses
 `canoe_schema.get_sql_schema("4.0")`; insertion registers provenance, validates the
 corresponding row model, rejects conflicting keys, then checks foreign keys and integrity
-before publication. Local legacy SQL is comparison evidence. #to-review
+before publication. Local legacy SQL is comparison evidence.
 
 ## Running and extending the backend
 
@@ -176,7 +173,7 @@ It owns the complete production lifecycle through `prepare_scenario_inputs`, fol
 shared contribution preparation, validated insertion and atomic SQLite publication.
 Scenario selections stay in YAML. `setup.py` and `scripts/doctor.py` are optional
 configuration/schema and readiness checks, not mandatory build stages. See the
-[README](../README.md) for installation and the concise operating commands. #to-review
+[README](../README.md) for installation and the concise operating commands.
 
 Every invocation regenerates CEUD/ratings, StatCan, CER, ATB/Autonomie, assorted sources,
 the TC dashboard, the selected Ontario Report A/4/5 edition and reviewed road aggregation
@@ -206,7 +203,7 @@ a failed attempt and are regenerated on the next invocation.
 Every scenario attempt records a persistent log through `utils.build_logging`. The
 `outputs.build_log` template in `paths.yaml` includes the scenario name, scenario YAML
 name and UTC timestamp; the log records the YAML path/hash, stage timings and failure
-details. Ordinary logs use INFO, with detailed audits enabled by `--debug`. #to-review
+details. Ordinary logs use INFO, with detailed audits enabled by `--debug`.
 
 ## Explicit source updates
 
@@ -214,26 +211,26 @@ details. Ordinary logs use INFO, with detailed audits enabled by `--debug`. #to-
 The typed `updater` limits and per-source `update` policies in `sources.yaml` determine
 eligible public endpoints and allowed download hosts. A normal invocation reports
 available replacements; `--apply` explicitly permits adoption of the selected batch.
-Source-specific fetchers retain physical parsing and normalization ownership. #to-review
+Source-specific fetchers retain physical parsing and normalization ownership.
 
 The updater handles NRCan ratings, existing registered Ontario years, StatCan WDS
 metadata/archive pairs, the scenario-selected CER edition, and FuelEconomy's shared
 vehicle/range ZIP. The TC HTML policy permits a revised page only when the exact old
 registered snapshot proves unchanged parsed market shares, charger counts and reporting
 periods. New years/editions, changed coverage or layouts, manual assumptions, reviewed
-mapping promotion and external-model generation remain separate review operations. #to-review
+mapping promotion and external-model generation remain separate review operations.
 
 All selected candidates are validated before adoption. Revision-specific cache paths
 retain old files; one atomic registry replacement activates the validated selection.
 Ontario, StatCan and CER request contracts replay adopted snapshots with their registered
 hashes. Each run persists a log, JSON audit and exact registry diff through the
 `source_update_logs` and `source_update_audits` routes, including skipped sources and
-failures. These reports are review evidence, not ETL readiness inputs. #to-review
+failures. These reports are review evidence, not ETL readiness inputs.
 
 `.gitattributes` establishes portable text/script line endings and binary preservation,
 with specific exceptions for checksum-registered legacy inputs. It does not normalize
 registered artifacts during source refresh or make Windows/Excel-only generation
-available on other platforms. #to-review
+available on other platforms.
 
 ## Diagnostic and research evidence
 
@@ -246,7 +243,7 @@ preserves the aggregate history manifest, status, quality and key-inventory prod
 Full-history preparation is explicit through `fetching.vehicle_population --no-download`
 without `--year`. Historical consumers validate registered edition coverage and normalized
 file hashes before reading it. The vehicle notebook also needs mapping and MTO diagnostics;
-the notebook preparation preset produces those products explicitly. #to-review
+the notebook preparation preset produces those products explicitly.
 
 The stock and efficiency notebooks share the opt-in `notebook_diagnostics.yaml` preset
 and native builder. It prepares historical/mapping/retention review evidence and the
@@ -255,19 +252,19 @@ configuration through `validation.notebook_evidence`. A latest-successful index 
 only after database publication. Readers verify and load the recorded bundle, including
 its build identity and database hash, without running ETL or selecting another scenario.
 Missing, changed or backend-incompatible captures fail with a rebuild instruction; the
-reader never substitutes mutable live configuration. #to-review
+reader never substitutes mutable live configuration.
 
 `config/parameters/vehicle_reference.csv` and `vehicle_source_links.csv` are the two
 versioned vehicle authorities. One read-only loader validates their scoped facts and
 source links before mapping and matching. Builds calculate consumption/range summaries
 downstream and never regenerate these configuration tables; notebook bundles capture
-the same tables once as configuration. #to-review
+the same tables once as configuration.
 
 Ordinary builds preserve these snapshots and do not require notebook evidence. Only
 bundles referenced by the latest index are retained after successful publication; these
 generated files are local and excluded from Git. Production builders remain the authority
 for parameter rows; diagnostic views and the benchmark do not replace their accepted
-values or promote alternative mappings/powertrain weights. #to-review
+values or promote alternative mappings/powertrain weights.
 
 The transport-comparison notebook reads the database/report selected by
 `config/parameters/transport_comparison.yaml`; `legacy_comparison.yaml` prepares its
@@ -275,14 +272,14 @@ separate comparison build. Interpret differences against the configured units, k
 tolerances and explanation evidence, not as automatic baseline acceptance. The growth
 notebook uses the fingerprinted products of `parameterization.road_adoption_constraints`;
 its fitted rates, seeds and envelopes remain provisional research outside production
-scenario wiring and SQLite insertion. #to-review
+scenario wiring and SQLite insertion.
 
 The growth notebook uses the supported `default.yaml` configuration route and remains
-separate from the captured stock/efficiency loading commands. #to-review
+separate from the captured stock/efficiency loading commands.
 
 Supported commands regenerate notebook evidence from registered/reviewed inputs. Agent
 judgments, acceptance captures, screenshots and probes are disposable development work
-in ignored `tmp/`, not notebook handoff inputs or source provenance. #to-review
+in ignored `tmp/`, not notebook handoff inputs or source provenance.
 
 For a change, follow the affected `config/paths.yaml` artifact family to its owner,
 producers, consumers, and validation surfaces, then verify the current code and focused

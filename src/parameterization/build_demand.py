@@ -10,7 +10,7 @@ from math import isfinite
 from typing import Any
 
 import pandas as pd
-from parameterization.ceud_inputs import read_ceud_input
+from parameterization.ceud_inputs import read_ceud_observations
 from canoe_schema.v4_0 import Demand
 
 from fetching.cer_enerfuture import configured_edition, configured_scenario
@@ -46,25 +46,26 @@ DEMAND_UNITS = {"bn passenger-km", "bn tonne-km", "PJ"}
 
 def real_gdp_indices(
     macro: pd.DataFrame, *, scenario: str, base_year: int,
-    periods: list[int], step: int,
+    periods: list[int], step: int, observed_year: int | None = None,
 ) -> dict[int, float]:
-    """Map start-labeled periods to end-year GDP divided by base-year GDP."""
+    """Map period-end GDP to the actual CEUD observation year's real GDP."""
+    anchor_year = base_year if observed_year is None else observed_year
     selected = macro.loc[
         macro["scenario"].eq(scenario)
         & macro["region"].eq("Canada")
         & macro["variable_key"].eq("real_gdp")
     ]
-    years = {base_year, *(period + step for period in periods)}
+    years = {base_year, anchor_year, *(period + step for period in periods)}
     selected = selected.loc[selected["year"].isin(years)].copy()
     if len(selected) != len(years) or set(selected["year"]) != years:
-        raise ValueError(f"CER real GDP lacks base or period-end years for {scenario}")
-    if selected.duplicated("year").any() or selected["unit"].nunique() != 1:
+        raise ValueError(f"CER real GDP lacks base or period-end years, including observation anchor, for {scenario}")
+    if selected.duplicated("year").any() or selected["unit"].isna().any() or selected["unit"].nunique() != 1:
         raise ValueError("CER real GDP has duplicate years or inconsistent units")
     selected["value"] = pd.to_numeric(selected["value"], errors="raise")
     if any(not isfinite(value) or value <= 0 for value in selected["value"]):
         raise ValueError("CER real GDP must be finite and positive")
     gdp = dict(zip(selected["year"], selected["value"], strict=True))
-    return {period: float(gdp[period + step] / gdp[base_year]) for period in periods}
+    return {period: float(gdp[period + step] / gdp[anchor_year]) for period in periods}
 
 
 def validate_demand_outputs(
@@ -129,23 +130,40 @@ def prepare_demand_rows(
         return ceud_dir / ceud_rules["region_output_template"].format(region=region.lower())
     ceud_files = [ceud_file(region) for region in regions]
     national_file = ceud_file("national")
-    provincial = pd.concat([read_ceud_input(bundle, region) for region in regions], ignore_index=True)
-    national = read_ceud_input(bundle, "national")
-    if set(provincial["region"]) != set(regions) or int(provincial["year"].max()) != base_year:
-        raise ValueError("Provincial CEUD coverage or edition differs from scenario")
-    if int(national["year"].max()) != base_year:
-        raise ValueError("National CEUD edition differs from scenario base year")
+    provincial_selectors = sorted(
+        {(int(item["table_id"]), item["raw_series"]) for item in road_rules["activity_series"].values()}
+        | {(int(item["provincial_table"]), item["energy_series"])
+           for item in (*offroad_rules["energy_intensity_series"].values(), *energy_only.values())}
+    )
+    national_selectors = sorted({(int(item["national_table"]), item["intensity_series"])
+                                 for item in offroad_rules["energy_intensity_series"].values()})
+    provincial = pd.concat([
+        read_ceud_observations(bundle, region, required_series=provincial_selectors)
+        for region in regions
+    ], ignore_index=True)
+    national = read_ceud_observations(bundle, "national", required_series=national_selectors)
+    observed_years = set(provincial.groupby("region").year.max()) | {int(national.year.max())}
+    if set(provincial.region) != set(regions) or len(observed_years) != 1:
+        raise ValueError("Demand requires matching provincial and national CEUD observation years")
+    observed_year = int(observed_years.pop())
     macro_file = resolve_input_path(bundle, "interim", str(cer_rules["interim_subdir_template"]).format(edition=edition)) / cer_rules["components"]["macro-indicators"]["output_file"]
     macro = pd.read_csv(macro_file)
     if set(macro["source_id"]) != {CER} or set(macro["edition"]) != {edition}:
         raise ValueError("CER macro artifact identity differs from selected edition")
     indices = real_gdp_indices(macro, scenario=selected_scenario,
-                               base_year=base_year, periods=periods, step=step)
+                               base_year=base_year, periods=periods, step=step,
+                               observed_year=observed_year)
+    base_year_index = real_gdp_indices(
+        macro, scenario=selected_scenario, base_year=base_year,
+        periods=[base_year - step], step=step, observed_year=observed_year,
+    )[base_year - step]
     baseline = pd.concat([
-        derive_road_baseline_demand(provincial, regions=regions, base_year=base_year, rules=road_rules),
+        derive_road_baseline_demand(provincial, regions=regions, base_year=observed_year, rules=road_rules),
         derive_offroad_baseline_demand(provincial, national, regions=regions,
-                                       base_year=base_year, rules=offroad_rules),
+                                       base_year=observed_year, rules=offroad_rules),
     ], ignore_index=True)
+    baseline["ceud_observed_year"] = observed_year
+    baseline["gdp_indexed_base_year_demand"] = baseline.baseline_demand * base_year_index
     expected_regions = {road_rules["region_output_map"].get(region, region) for region in regions}
     expected_commodities = {
         selector["commodity"] for selector in road_rules["activity_series"].values()
@@ -164,7 +182,7 @@ def prepare_demand_rows(
     car_audit: list[dict[str, Any]] = []
     if future_car_demand == "extrapolated":
         car_projection, car_audit = extrapolate_passenger_ldv_demand(
-            provincial, baseline, regions=regions, base_year=base_year,
+            provincial, baseline, regions=regions, base_year=observed_year,
             periods=periods, step=step, gdp_indices=indices, rules=road_rules,
         )
     elif future_car_demand != "GDP-indexed":
@@ -182,7 +200,8 @@ def prepare_demand_rows(
     variant = {"base_year": base_year, "periods": periods, "step": step,
                "cer_edition": edition, "cer_scenario": selected_scenario,
                "input_content_digest": digest,
-               "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed, "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None}
+               "ceud_observed_year": observed_year,
+               "demand_extension": "CER_real_GDP_from_native_CEUD_observation"}
     source_ids = source_id_mapping(bundle.sources)
     cer_context = resolve_provenance(bundle.sources, source_key=CER,
                                      component_key="macro-indicators",
@@ -216,15 +235,15 @@ def prepare_demand_rows(
             if family == "offroad_energy":
                 service_variant = {**variant, "energy_only_selector": selector}
             transformation = (
-                "CEUD car CAGR and CER GDP-indexed passenger LDV total"
+                "Observed CEUD car CAGR and CER real-GDP-indexed passenger LDV total"
                 if reallocates_passenger_ldv else
-                "CEUD provincial energy demand indexed by CER real GDP" if family == "offroad_energy" else
-                "CEUD baseline service activity indexed by CER real GDP"
+                "Observed CEUD provincial energy demand indexed by CER real GDP" if family == "offroad_energy" else
+                "Observed CEUD service activity indexed by CER real GDP"
             )
             context = resolve_composite_provenance(
                 inputs=[*inputs, cer_context], dataset_key=f"demand.{family}.{service}",
                 transformation=transformation,
-                transformation_version="1", governing_source_id=source_ids[CEUD_PROVINCIAL],
+                transformation_version="2", governing_source_id=source_ids[CEUD_PROVINCIAL],
                 data_quality=bundle.sources.resolved_data_quality(
                     CEUD_PROVINCIAL, components[0][1],
                 ),
@@ -252,6 +271,11 @@ def prepare_demand_rows(
                                     template_units=template_units)
     audit.update({"cer_edition": edition, "cer_scenario": selected_scenario,
                   "future_car_demand": future_car_demand,
+                  "ceud_observed_year": observed_year,
+                  "base_year": base_year, "base_year_gdp_index": base_year_index,
+                  "ceud_source_editions": {key: scenario.sources.selections[key].year
+                                           for key in (CEUD_PROVINCIAL, CEUD_NATIONAL)},
+                  "observed_ceud_baselines": baseline.to_dict("records"),
                   "gdp_index_by_period": indices, "input_content_digest": digest})
     if energy_only:
         audit["energy_only_baselines"] = baseline.loc[
@@ -265,8 +289,8 @@ def prepare_demand_rows(
         }
     write_dataframe_atomic(pd.DataFrame([row.model_dump(mode="python") for row in rows]),
                            resolve_artifact_path(bundle, "demand_processed") / "demand.csv")
-    LOGGER.info("Prepared %s demand rows for %s regions and %s periods",
-                len(rows), len(expected_regions), len(periods))
+    LOGGER.info("Prepared %s demand rows from CEUD observation year %s; real GDP to base year %s: %.6f; %s regions and %s periods",
+                len(rows), observed_year, base_year, base_year_index, len(expected_regions), len(periods))
     return rows, contexts, audit
 
 

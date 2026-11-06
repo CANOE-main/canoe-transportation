@@ -518,10 +518,10 @@ def build_existing_capacity_artifacts(
             bundle,
             name=f"road.{road_class}.{vintage}.{region}",
             components=components,
-            variant=variants,
-            transformation_version="3",
+            variant={**variants, "sales_stock_calibration": "base_year_ceud_stock"} if sales_based else variants,
+            transformation_version="4" if sales_based else "3",
             transformation=(
-                "Annual CEUD sales times cumulative survival, registration fuel proxy and "
+                "Annual CEUD sales times cumulative survival calibrated to base-year CEUD class stock, registration fuel proxy and "
                 "stock-preserving fixed-lifetime eligibility redistribution" if sales_based else
                 "CEUD stock with reviewed age, fuel, and lifetime evidence"
             ),
@@ -676,6 +676,12 @@ def build_existing_capacity_artifacts(
             "history_end": int(group.vintage_year.max()),
             "observed_stock_k_vehicles": float(group.ceud_stock_k_vehicles.iloc[0]),
             "reconstructed_stock_k_vehicles": float(group.surviving_k_vehicles.sum()),
+            "stock_calibration_multiplier": float(group.stock_calibration_multiplier.iloc[0]),
+            "calibrated_stock_k_vehicles": float(group.calibrated_surviving_k_vehicles.sum()),
+            "stock_calibration_basis": str(group.stock_calibration_basis.iloc[0]),
+            "calibration_residual_k_vehicles": float(group.calibrated_surviving_k_vehicles.sum() - group.ceud_stock_k_vehicles.iloc[0]),
+            "stock_observed_year": int(group.stock_observed_year.iloc[0]),
+            "stock_observation_status": str(group.stock_observation_status.iloc[0]),
             "raw_sales_k_vehicles": float(group.sales_k_vehicles.sum()),
             "oldest_survival_probability": float(group.sort_values("age").survival_probability.iloc[-1]),
             "older_cohorts": "not reconstructed; no assumed sales before registered/configured coverage",
@@ -684,11 +690,25 @@ def build_existing_capacity_artifacts(
         }
         for (region, road_class), group in sales_cohorts.groupby(["ceud_region", "road_class"])
     ] if not sales_cohorts.empty else []
+    audit["road_lifetime_eligibility"] = [
+        {
+            "region": region, "road_class": road_class,
+            "basis": str(group.eligibility_basis.iloc[0]),
+            "fixed_lifetime_years": float(group.fixed_lifetime_years.iloc[0]) if group.fixed_lifetime_years.notna().all() else None,
+            "first_model_period": int(group.first_model_period.iloc[0]),
+            "first_eligible_annual_cohort": int(group.loc[group.eligible_first_model_period, "vintage_year"].min()) if group.eligible_first_model_period.any() else None,
+            "last_eligible_annual_cohort": int(group.loc[group.eligible_first_model_period, "vintage_year"].max()) if group.eligible_first_model_period.any() else None,
+            "first_eligible_model_vintage": int(group.loc[group.eligible_first_model_period, "vintage"].min()) if group.eligible_first_model_period.any() else None,
+            "eligibility_rule": "annual cohort year + lifetime > first period AND model vintage + lifetime > first period" if group.eligibility_basis.eq("fixed_lifetime").all() else "accepted curve supports annual age and complete model-vintage age block",
+        }
+        for (region, road_class), group in road_cohorts.groupby(["region", "road_class"])
+    ]
     if not sales_cohorts.empty:
         write_dataframe_atomic(sales_cohorts, interim_output / road_rules["sales_cohorts_file"])
         LOGGER.warning(
-            "Sales reconstruction covers %s through %s; older cohorts are unestimated, "
-            "registration shares proxy sales composition; fixed-lifetime eligibility redistributes within technology",
+            "Sales-survival shape covers %s through %s and is calibrated to base-year CEUD stock; "
+            "older sales are unestimated, registration shares proxy sales composition; "
+            "fixed-lifetime eligibility redistributes the calibrated stock within technology",
             int(sales_cohorts.vintage_year.min()), base_year,
         )
     audit["excluded_road_fuel_rows"] = len(road_exclusions)

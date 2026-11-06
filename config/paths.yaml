@@ -41,14 +41,14 @@ artifacts:
     consumers: [parameterization.build_existing_capacity, parameterization.build_demand, parameterization.build_efficiencies, parameterization.build_costs, parameterization.road_utilization]
     validation_surfaces: [parameterization.ceud_inputs.extend_ceud_to_base_year]
   transportation_validation_researcher_inputs:
-    path: legacy_backend/validation_1
+    path: legacy_backend/legacy_variant_sales_cohorts
     layer: legacy
     owner: validation.transportation_research
     producers: [researcher]
     consumers: [validation.transportation_research]
     validation_surfaces: [validation.transportation_research]
   transportation_validation_charging_inputs:
-    path: legacy_backend/validation_2
+    path: legacy_backend/legacy_vatiant_charger_costs
     layer: legacy
     owner: validation.charging_cost_comparison
     producers: [researcher]

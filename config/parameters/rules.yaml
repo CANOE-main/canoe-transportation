@@ -946,7 +946,8 @@ parameterization:
   transportation_research:
     reference_route: transportation_validation_researcher_inputs
     report_route: transportation_research_report
-    notebook_scenario: config/scenarios/researcher_sales_2025.yaml
+    # Select a captured report, independently of whether its scenario YAML survives.
+    notebook_scenario: config/scenarios/validation_baseline.yaml
     comparison_significance_percent: 5.0
     reference_sqlite: canoe_ON_16d.sqlite
     reference_notebook: Update data_20260618_fixed lifetime (1).ipynb

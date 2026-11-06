@@ -227,3 +227,53 @@ def test_extrapolated_zero_and_unsupported_positive_history():
     assert result.value.eq(0).all()
     with pytest.raises(ValueError, match="consecutive"):
         extend_ceud_to_base_year(source_frame(years=(2023,), values=(1,)), base_year=2025, policy="extrapolated", cagr_rules=rules)
+
+
+@pytest.mark.parametrize("policy", ["error", "constant", "extrapolated"])
+def test_demand_observations_ignore_tail_policy_and_preserve_native_hash(isolated_ceud, policy):
+    bundle, native, output = isolated_ceud
+    bundle.scenario.sources.nrcan_ceud_beyond_observed = policy
+    path = native / "ceud_on.csv"
+    before = file_sha256(path)
+    result = ceud_inputs.read_ceud_observations(
+        bundle, "ON", required_series=[(21, "Stock (thousands)|Cars")],
+    )
+    assert result.year.tolist() == [2021, 2022, 2023]
+    assert result.ceud_value_status.eq("observed").all()
+    assert result.ceud_extension_policy.eq("none").all()
+    assert file_sha256(path) == before
+    assert not output.exists()
+
+
+def test_demand_observation_anchor_uses_base_year_inside_observed_history(isolated_ceud):
+    bundle, _, _ = isolated_ceud
+    bundle.scenario.periods.base_year = 2022
+    result = ceud_inputs.read_ceud_observations(
+        bundle, "ON", required_series=[(21, "Stock (thousands)|Cars")],
+    )
+    assert result.year.tolist() == [2021, 2022]
+    assert result.iloc[-1].value == 11.0
+    assert result.iloc[-1].ceud_observed_year == 2022
+
+
+@pytest.mark.parametrize("missing", ["row", "value"])
+def test_demand_rejects_missing_selected_series_endpoint(isolated_ceud, missing):
+    bundle, native, _ = isolated_ceud
+    stock = source_frame()
+    if missing == "row":
+        stock = stock.loc[stock.year.ne(2023)]
+    else:
+        stock.loc[stock.year.eq(2023), "value"] = np.nan
+    other = source_frame().assign(raw_series="Another series")
+    pd.concat([stock, other], ignore_index=True).to_csv(native / "ceud_on.csv", index=False)
+    with pytest.raises(ValueError, match="Missing required native CEUD observation at 2023"):
+        ceud_inputs.read_ceud_observations(
+            bundle, "ON", required_series=[(21, "Stock (thousands)|Cars")],
+        )
+
+
+def test_demand_rejects_wrong_native_source_edition(isolated_ceud):
+    bundle, native, _ = isolated_ceud
+    source_frame(years=(2020, 2021, 2022)).to_csv(native / "ceud_on.csv", index=False)
+    with pytest.raises(ValueError, match="observation endpoint differs from selected edition"):
+        ceud_inputs.read_ceud_observations(bundle, "ON")

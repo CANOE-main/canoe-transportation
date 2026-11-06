@@ -193,6 +193,48 @@ def test_curve_eligibility_requires_the_complete_model_vintage_age_block() -> No
         }))
 
 
+def test_accepted_curve_eligibility_never_applies_the_fixed_median() -> None:
+    arguments = _varying_powertrain_stock_inputs()
+    results = []
+    for median in (1., 100.):
+        cohorts, _, _, capacity = distribute_existing_road_capacity(**(arguments | {
+            "survival_curves": True, "fixed_lifetimes_by_class": {"cars": median},
+        }))
+        assert set(cohorts.eligibility_basis) == {"accepted_survival_curve_support"}
+        assert cohorts.fixed_lifetime_years.isna().all()
+        results.append(capacity)
+    pd.testing.assert_frame_equal(results[0], results[1])
+
+
+@pytest.mark.parametrize("median", [16., 17., 20.])
+def test_different_fixed_medians_can_share_the_same_prospective_vintage_cutoff(median) -> None:
+    arguments = _varying_powertrain_stock_inputs()
+    ages = pd.DataFrame([
+        {"report_year": 2025, "nrcan_ceud_class": "Car", "age": age, "fit_active_stock": 25.}
+        for age in (0, 14, 15, 19)
+    ])
+    cohorts, _, _, _ = distribute_existing_road_capacity(**(arguments | {
+        "provincial": arguments["provincial"].assign(year=2025),
+        "ldv_age": ages, "survival_curves": False,
+        "period_config": ScenarioPeriods(
+            period_mode="prospective", base_year=2025,
+            existing=[2000, 2005, 2010, 2015, 2020], model=[2025], step=5,
+        ),
+        "fixed_lifetimes_by_class": {"cars": median},
+    }))
+    eligible = cohorts.loc[cohorts.eligible_first_model_period]
+    assert set(cohorts.eligibility_basis) == {"fixed_lifetime"}
+    assert set(cohorts.fixed_lifetime_years) == {median}
+    assert eligible.vintage_year.min() == 2011
+    assert eligible.vintage.min() == 2010
+    annual_2010 = cohorts.loc[cohorts.vintage_year.eq(2010)].iloc[0]
+    # The annual cohort passes for every median, but its five-year model-vintage
+    # label (2005) still fails the strict first-period survival inequality.
+    assert 2010 + median > 2025
+    assert annual_2010.vintage == 2005
+    assert not annual_2010.eligible_first_model_period
+
+
 def test_fixed_lifetime_sources_resolve_nhtsa_and_nems_medians() -> None:
     bundle = load_config_bundle(
         "config/scenarios/legacy_comparison.yaml", repo_root=ROOT

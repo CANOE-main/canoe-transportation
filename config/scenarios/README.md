@@ -10,6 +10,48 @@ under `aggregation_sources`. Extraction and modelling rules belong in
 `config/parameters/rules.yaml`, grouped under `fetching` and `parameterization`.
 Reusable conversions belong in `config/parameters/conversion.yaml`.
 
+## Supported roles and lifecycle
+
+Keep one YAML per demonstrated, repeatable workflow. The current supported set is:
+
+| File | Role and current scope |
+| --- | --- |
+| `default.yaml` | Canonical production entrypoint/template: ten provinces, prospective 2025, stock-age allocation, MOVES fixed lifetimes and new-capacity range shares. Its run label remains `baseline`. |
+| `legacy_comparison.yaml` | Reproducible legacy-timing comparison: ten provinces, observed 2023, NHTSA/NEMS survival curves and configured legacy SQLite comparison. It also prepares the transport-comparison notebook's inputs. |
+| `validation_baseline.yaml` | Ontario prospective-2025 comparison for both legacy variants: 2023 CEUD held constant for historical parameters, sales-survival stock anchored to CEUD, MOVES fixed lifetimes and representative new LDV ranges. |
+| `notebook_diagnostics.yaml` | Shared stock/efficiency notebook prerequisite: Ontario observed-2023, NHTSA/NEMS curves, explicit future ranges, both captured diagnostics, no charging profile or embodied emissions. |
+
+Retain these names and selections. For a new supported comparison, use a concise
+`validation_<question>.yaml` name; add another diagnostic
+preset only when the shared notebook preset cannot serve a demonstrated consumer.
+Use lowercase snake_case for filenames and run labels. The filename identifies a
+configuration; `scenario.name` identifies its report/output family and need not match
+an existing filename. Record purpose, consumer and changed selections in the scenario.
+
+Keep temporary alternatives as complete YAMLs under ignored
+`tmp/<task>/scenarios/exp_<question>_<variant>.yaml`, outside the supported set. Start
+from the appropriate complete control/template and change only the intended selections;
+there is no scenario inheritance or override manager. Give every variant distinct
+database/report/setup-log names through the existing output fields. Source years,
+modeling selections and comparisons still belong in that YAML. Build from the repository
+root using `--scenario <path>`.
+
+Distinct final outputs do not isolate shared preparation artifacts: run native scenarios
+serially. Tests or concurrent experiments need a disposable repository/configuration
+with all mutable artifact routes isolated, not only a different SQLite filename.
+Remove task scratch after its useful results and configuration identities have been
+recorded in their existing report or task owner. Promote a temporary scenario only for
+a recurring supported workflow, with a documented consumer and appropriate validation.
+On retirement, repair active consumers and retain captured configuration/hash identities;
+do not recreate deleted presets to satisfy historical prose or reports.
+
+The former `researcher_sales_2023`, `researcher_sales_2025` and
+`researcher_sales_2025_extrapolated` names identify historical comparison captures.
+They are not live presets. The transportation-validation notebook uses
+`transportation_research.notebook_scenario` in `config/parameters/rules.yaml`, currently
+`validation_baseline.yaml`. Both fleet and charger captures must match that live YAML
+and the same fresh database/build fingerprints. Regenerate both after changing it.
+
 ## Shared run settings
 
 | Section | What it controls |
@@ -18,7 +60,7 @@ Reusable conversions belong in `config/parameters/conversion.yaml`.
 | `geography.regions` | Regions covered by the registered inputs and template. Quote `"ON"` to avoid YAML 1.1 boolean parsing. |
 | `periods` | Period mode, parameter base year, existing vintage labels, model periods, and step. Prospective periods use end conditions; legacy retains the previous historical bins and future timing. Source observations retain their own dates. |
 | `sources.selections` | CEUD provincial/national years, Transport Canada dashboard year, and CER edition. Other sources have pinned registry releases or their own discovery contract; an unused edition/year selector is rejected. |
-| `sources.nrcan_ceud_beyond_observed` | `error`, `constant`, or `extrapolated`. Constant holds eligible native endpoints. Extrapolated uses shared `ceud_inputs.cagr` controls with demand, omitting intervals touching 2020–2021 and fitting only observations. Both extend only through base_year. |
+| `sources.nrcan_ceud_beyond_observed` | `error`, `constant`, or `extrapolated` for stock and historical parameter views through base_year. Extrapolated uses `ceud_inputs.cagr` controls, omitting intervals touching 2020–2021. Demand always anchors at the actual selected-edition observation and uses CER real GDP to base_year and future projection years; the optional passenger split shares the CAGR estimator, not this endpoint policy. |
 | `aggregation_sources` | Regional fleet evidence shared across parameters: stock ages, LDV classes, medium-truck classes and heavy-truck haul activity. Every scenario declares the same four roles, with its own selections. |
 | `economics.cer_scenario` | CER trajectory used for currency harmonization, independently of demand. It must exist in the selected CER edition. |
 | Other `economics` fields | Discount and loan rates, CAD currency, and reference dollar year for costs. |
@@ -177,12 +219,12 @@ Changing the dollar year does not change the observation year or period labels.
 
 ### Sales reconstruction and later CEUD base years
 
-The `researcher_sales_2023.yaml` preset changes the Ontario fleet method while
-keeping the control's periods. `researcher_sales_2025.yaml` additionally holds the
-2023 CEUD endpoint through 2025 and retains model vintage 2025, whose source endpoint is 2030. Existing and
-model vintage coordinates remain disjoint; a base year of 2025 does not create
-observed CEUD 2025 data. `validation_baseline.yaml` is the Ontario stock-based
-control. See [the validation findings](../../docs/transportation_validation.md).
+For a sales-survival experiment, copy the complete `validation_baseline.yaml` control
+to a temporary YAML and select `existing_capacity.road_stock_method` explicitly.
+A later base year also needs a matching period grid and a deliberate constant or
+extrapolated CEUD extension. Existing and model vintage coordinates remain disjoint;
+a base year of 2025 does not create observed CEUD 2025 data. The retired researcher
+presets remain historical evidence in [the validation findings](../../docs/transportation_validation.md).
 
 Sales reconstruction calculates `sales[y] * S(base_year - y)` over complete
 registered annual history inside the configured historical coverage. It does not

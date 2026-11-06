@@ -1,13 +1,13 @@
 region,input_comm,tech,vintage,output_comm,efficiency,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
-ON,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:researcher_sales_2025
-ON,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:researcher_sales_2025
-ON,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:researcher_sales_2025
-ON,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:researcher_sales_2025
-ON,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:researcher_sales_2025
-ON,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:researcher_sales_2025
-ON,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:researcher_sales_2025
-ON,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:researcher_sales_2025
-ON,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:researcher_sales_2025
-ON,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:researcher_sales_2025
-ON,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:researcher_sales_2025
-ON,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:researcher_sales_2025
+ON,T_elc,T_LDV_CHRG_EX,2020,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:validation_baseline
+ON,T_elc,T_LDV_CHRG_N,2025,T_elc_ldv_chrg,0.95,PJ/PJ,"icct_ev_charge: EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types.",T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:validation_baseline
+ON,T_elc,T_LDV_CHRG_N,2030,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:validation_baseline
+ON,T_elc,T_LDV_CHRG_N,2035,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:validation_baseline
+ON,T_elc,T_LDV_CHRG_N,2040,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:validation_baseline
+ON,T_elc,T_LDV_CHRG_N,2045,T_elc_ldv_chrg,0.95,PJ/PJ,,T28,2.0,3.0,3.0,3.0,2.0,ev-chargers-ldv-efficiency:ON:T28:validation_baseline
+ON,T_elc,T_MHDV_CHRG_EX,2020,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:validation_baseline
+ON,T_elc,T_MHDV_CHRG_N,2025,T_elc_mhdv_chrg,0.8,PJ/PJ,"icct_hdv_charge: HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types.",T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:validation_baseline
+ON,T_elc,T_MHDV_CHRG_N,2030,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:validation_baseline
+ON,T_elc,T_MHDV_CHRG_N,2035,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:validation_baseline
+ON,T_elc,T_MHDV_CHRG_N,2040,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:validation_baseline
+ON,T_elc,T_MHDV_CHRG_N,2045,T_elc_mhdv_chrg,0.8,PJ/PJ,,T29,2.0,3.0,3.0,3.0,2.0,ev-chargers-mhdv-efficiency:ON:T29:validation_baseline

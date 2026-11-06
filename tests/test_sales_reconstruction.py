@@ -66,6 +66,9 @@ def test_sales_are_survived_once_with_age_zero_and_explicit_missing_older_histor
     assert cohorts.age.tolist() == [2, 1, 0]
     assert cohorts.surviving_k_vehicles.tolist() == pytest.approx([5.0, 16.0, 30.0])
     assert cohorts.surviving_k_vehicles.sum() == pytest.approx(51.0)
+    assert cohorts.calibrated_surviving_k_vehicles.sum() == pytest.approx(999.0)
+    assert set(cohorts.stock_calibration_multiplier) == {999.0 / 51.0}
+    assert set(cohorts.stock_calibration_basis) == {"base_year_ceud_stock"}
     assert set(cohorts.ceud_stock_k_vehicles) == {999.0}
     assert set(cohorts.source_history_start) == {2021}
     assert set(cohorts.included_history_start) == {2021}
@@ -75,12 +78,15 @@ def test_sales_are_survived_once_with_age_zero_and_explicit_missing_older_histor
     assert cohorts.observation_status.tolist() == ["observed", "observed", "constant"]
 
 
-def test_ceud_comparison_stock_never_rescales_sales_survivors(sales_inputs):
+def test_ceud_stock_scales_modelled_cohorts_while_raw_sales_survivors_stay_unchanged(sales_inputs):
     original = derive_sales_survival_cohorts(**sales_inputs)
     provincial = sales_inputs["provincial"].copy()
     provincial.loc[provincial.raw_series.eq("Stock|Cars"), "value"] *= 10
     changed = derive_sales_survival_cohorts(**(sales_inputs | {"provincial": provincial}))
     pd.testing.assert_series_equal(original.surviving_k_vehicles, changed.surviving_k_vehicles)
+    pd.testing.assert_series_equal(original.sales_k_vehicles, changed.sales_k_vehicles)
+    assert changed.calibrated_surviving_k_vehicles.tolist() == pytest.approx(original.calibrated_surviving_k_vehicles * 10)
+    assert changed.stock_calibration_multiplier.tolist() == pytest.approx(original.stock_calibration_multiplier * 10)
     assert set(changed.ceud_stock_k_vehicles) == {9990.0}
 
 
@@ -92,6 +98,7 @@ def test_history_start_and_base_year_bound_sales_without_inventing_missing_years
     }))
     assert cohorts.vintage_year.tolist() == [2022, 2023]
     assert cohorts.surviving_k_vehicles.sum() == pytest.approx(46.0)
+    assert cohorts.calibrated_surviving_k_vehicles.sum() == pytest.approx(999.0)
     assert set(cohorts.source_history_start) == {2021}
     assert set(cohorts.included_history_start) == {2022}
 
@@ -174,15 +181,18 @@ def allocation_inputs(sales_inputs, *, regions=("ON",), lifetime=4):
 
 def test_sales_allocation_needs_no_population_ages_and_preserves_technology_totals(sales_inputs):
     sales = derive_sales_survival_cohorts(**sales_inputs)
-    expected = {"T_LDV_C_GSL_EX": 20.0, "T_LDV_C_DSL_EX": 16.0, "T_LDV_C_BEV_EX": 15.0}
+    multiplier = 999. / 51.
+    expected = {"T_LDV_C_GSL_EX": 20.0 * multiplier, "T_LDV_C_DSL_EX": 16.0 * multiplier, "T_LDV_C_BEV_EX": 15.0 * multiplier}
     for lifetime in (4, 10):
         args = allocation_inputs(sales_inputs, lifetime=lifetime)
         cohorts, shares, _, capacity = distribute_existing_road_capacity(**(args | {
             "sales_cohorts": sales, "ldv_age": pd.DataFrame(),
         }))
         assert capacity.groupby("tech").capacity.sum().to_dict() == pytest.approx(expected)
-        assert capacity.capacity.sum() == pytest.approx(51.0)
-        assert cohorts.raw_cohort_k_vehicles.sum() == pytest.approx(51.0)
+        assert capacity.capacity.sum() == pytest.approx(999.0)
+        assert cohorts.raw_cohort_k_vehicles.sum() == pytest.approx(999.0)
+        assert cohorts.uncalibrated_surviving_k_vehicles.sum() == pytest.approx(51.0)
+        assert set(cohorts.stock_calibration_multiplier) == {multiplier}
         assert set(cohorts.stock_method) == {"sales_survival"}
         assert set(cohorts.age_source) == {"CEUD sales times cumulative survival"}
         assert shares.groupby("tech").raw_capacity.sum().to_dict() == pytest.approx(expected)
@@ -203,10 +213,63 @@ def test_mixed_regional_methods_preserve_unselected_stock_results(sales_inputs):
         mixed.loc[mixed.region.eq("QC")].reset_index(drop=True),
         stock.loc[stock.region.eq("QC")].reset_index(drop=True),
     )
-    assert mixed.groupby("region").capacity.sum().to_dict() == pytest.approx({"ON": 51, "QC": 100})
+    assert mixed.groupby("region").capacity.sum().to_dict() == pytest.approx({"ON": 999, "QC": 100})
     assert cohorts.groupby("region").stock_method.first().to_dict() == {
         "ON": "sales_survival", "QC": "stock_age",
     }
+
+
+def test_each_region_gets_its_own_reported_stock_calibration(sales_inputs, caplog):
+    with caplog.at_level("INFO"):
+        sales = derive_sales_survival_cohorts(**(sales_inputs | {"regions": ["ON", "QC"]}))
+    assert sales.groupby("ceud_region").surviving_k_vehicles.sum().to_dict() == {"ON": 51., "QC": 51.}
+    assert sales.groupby("ceud_region").calibrated_surviving_k_vehicles.sum().to_dict() == pytest.approx({"ON": 999., "QC": 100.})
+    assert sales.groupby("ceud_region").stock_calibration_multiplier.first().to_dict() == pytest.approx({"ON": 999 / 51, "QC": 100 / 51})
+    assert "raw survivors 51" in caplog.text
+    assert "CEUD target 999" in caplog.text
+    assert "CEUD target 100" in caplog.text
+
+
+def test_each_road_class_gets_its_own_reported_stock_calibration(sales_inputs):
+    rules = deepcopy(sales_inputs["rules"])
+    for key in ("ceud_sales_series", "ceud_stock_series", "fixed_lifetime_sources"):
+        rules[key]["passenger_light_trucks"] = deepcopy(rules[key]["cars"])
+    rules["ceud_stock_series"]["passenger_light_trucks"]["raw_series"] = "Stock|LightTrucks"
+    light_stock = sales_inputs["provincial"].loc[sales_inputs["provincial"].raw_series.eq("Stock|Cars")].assign(
+        raw_series="Stock|LightTrucks", value=75.,
+    )
+    source = pd.concat([sales_inputs["provincial"], light_stock], ignore_index=True)
+    sales = derive_sales_survival_cohorts(**(sales_inputs | {"provincial": source, "rules": rules}))
+    assert sales.groupby("road_class").calibrated_surviving_k_vehicles.sum().to_dict() == pytest.approx({"cars": 999., "passenger_light_trucks": 75.})
+    assert sales.groupby("road_class").surviving_k_vehicles.sum().to_dict() == {"cars": 51., "passenger_light_trucks": 51.}
+
+
+def test_stock_calibration_never_falls_back_when_surviving_sales_are_zero(sales_inputs):
+    source = sales_inputs["provincial"].copy()
+    source.loc[source.raw_series.eq("Sales|Cars"), "value"] = 0
+    with pytest.raises(ValueError, match="No positive surviving sales"):
+        derive_sales_survival_cohorts(**(sales_inputs | {"provincial": source}))
+
+
+def test_zero_reported_stock_is_an_explicit_zero_multiplier(sales_inputs):
+    source = sales_inputs["provincial"].copy()
+    source.loc[source.raw_series.eq("Stock|Cars"), "value"] = 0
+    sales = derive_sales_survival_cohorts(**(sales_inputs | {"provincial": source}))
+    assert sales.surviving_k_vehicles.sum() == 51
+    assert set(sales.stock_calibration_multiplier) == {0}
+    assert sales.calibrated_surviving_k_vehicles.sum() == 0
+    args = allocation_inputs(sales_inputs) | {"provincial": source, "sales_cohorts": sales}
+    cohorts, shares, _, capacity = distribute_existing_road_capacity(**args)
+    assert cohorts.cohort_k_vehicles.sum() == 0
+    assert shares.capacity.sum() == 0
+    assert capacity.empty
+
+
+def test_allocator_rejects_stale_sales_stock_anchor(sales_inputs):
+    sales = derive_sales_survival_cohorts(**sales_inputs)
+    sales["calibrated_surviving_k_vehicles"] *= .9
+    with pytest.raises(ValueError, match="preserve their CEUD stock calibration"):
+        distribute_existing_road_capacity(**(allocation_inputs(sales_inputs) | {"sales_cohorts": sales}))
 
 
 @pytest.fixture

@@ -120,6 +120,7 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "hatch_extended_growth_evidence": "T35",
         "eafo_norway_growth_evidence": "T36",
         "epa_moves_heavy_truck_survival": "T39",
+        "transport_canada_izev": "T40",
     }
     assert report["template"]["kind"] == "backend_internal_reference"
     assert report["template"]["data_id"].startswith("canoe-transport-template:")
@@ -208,6 +209,8 @@ def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Pat
 def test_transport_contribution_uses_a_caller_owned_transaction(
     bundle, tmp_path: Path
 ) -> None:
+    shutil.copytree(REPO_ROOT / "config", tmp_path / "config")
+    bundle = replace(bundle, repo_root=tmp_path)
     database = tmp_path / "caller-owned.sqlite"
     connection = sqlite3.connect(database, isolation_level=None)
     create_v4_schema(connection)

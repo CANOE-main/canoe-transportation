@@ -246,6 +246,43 @@ def read_ceud_input(
     return frame.loc[frame.year.le(bundle.scenario.periods.base_year)].reset_index(drop=True)
 
 
+def read_ceud_observations(
+    bundle: ConfigBundle,
+    region: str,
+    *,
+    required_series: Sequence[tuple[int, str]] | None = None,
+) -> pd.DataFrame:
+    """Read native observations for demand without applying a tail assumption.
+
+    The selected source edition owns the observation endpoint. For historical
+    scenarios, use the base year instead. Required series must have a real value
+    at that year; a discontinued or missing series cannot choose an older anchor.
+    """
+    native, path = _read_native(bundle, region)
+    if native.empty:
+        raise ValueError(f"CEUD observations are empty: {path}")
+    source_id = str(native.source_id.iloc[0])
+    selected_year = bundle.scenario.sources.selections[source_id].year
+    if selected_year is None or int(native.year.max()) != selected_year:
+        raise ValueError(f"Native CEUD observation endpoint differs from selected edition: {path}")
+    observed_year = min(bundle.scenario.periods.base_year, selected_year)
+    # Reuse physical validation and annotations at a year that cannot extend any
+    # table. Every returned value consequently remains a native observation.
+    annotated, _ = extend_ceud_to_base_year(native, base_year=int(native.year.min()))
+    frame = annotated.loc[annotated.year.le(observed_year)].reset_index(drop=True)
+    for table_id, raw_series in required_series or ():
+        selected = frame.loc[
+            frame.year.eq(observed_year) & frame.table_id.eq(table_id)
+            & frame.raw_series.eq(raw_series)
+        ]
+        if len(selected) != 1 or selected.iloc[0].ceud_value_status != "observed":
+            raise ValueError(
+                f"Missing required native CEUD observation at {observed_year}: "
+                f"{region}/{table_id}/{raw_series}"
+            )
+    return frame
+
+
 def prepare_ceud_inputs(bundle: ConfigBundle) -> dict:
     """Persist complete annotated evidence and its source/selection manifest."""
     output = resolve_artifact_path(bundle, "ceud_parameter_inputs")

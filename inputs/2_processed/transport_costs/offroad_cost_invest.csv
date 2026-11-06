@@ -4,110 +4,110 @@ ON,T_HDV_AJF_JFL_N,2025,6132.623678803439,$M 2020CAD / bn tonne-km,"cer_canadas_
 faa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.
   - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
-ON,T_HDV_AJF_JFL_N,2030,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
-ON,T_HDV_AJF_JFL_N,2035,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
-ON,T_HDV_AJF_JFL_N,2040,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
-ON,T_HDV_AJF_JFL_N,2045,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
+ON,T_HDV_AJF_JFL_N,2030,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
+ON,T_HDV_AJF_JFL_N,2035,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
+ON,T_HDV_AJF_JFL_N,2040,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
+ON,T_HDV_AJF_JFL_N,2045,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
 ON,T_HDV_AJF_SPK_N,2025,6132.623678803439,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 faa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.
   - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
-ON,T_HDV_AJF_SPK_N,2030,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
-ON,T_HDV_AJF_SPK_N,2035,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
-ON,T_HDV_AJF_SPK_N,2040,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
-ON,T_HDV_AJF_SPK_N,2045,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:870126469aaf2455
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
+ON,T_HDV_AJF_SPK_N,2030,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
+ON,T_HDV_AJF_SPK_N,2035,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
+ON,T_HDV_AJF_SPK_N,2040,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
+ON,T_HDV_AJF_SPK_N,2045,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:composite:3:2e2f3b2e2491c8a7
 ON,T_HDV_AJP_JFL_N,2025,1032.1218289023984,$M 2020CAD / bn passenger-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 faa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.
   - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
-ON,T_HDV_AJP_JFL_N,2030,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
-ON,T_HDV_AJP_JFL_N,2035,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
-ON,T_HDV_AJP_JFL_N,2040,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
-ON,T_HDV_AJP_JFL_N,2045,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
+ON,T_HDV_AJP_JFL_N,2030,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
+ON,T_HDV_AJP_JFL_N,2035,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
+ON,T_HDV_AJP_JFL_N,2040,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
+ON,T_HDV_AJP_JFL_N,2045,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
 ON,T_HDV_AJP_SPK_N,2025,1032.1218289023984,$M 2020CAD / bn passenger-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 faa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.
   - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
-ON,T_HDV_AJP_SPK_N,2030,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
-ON,T_HDV_AJP_SPK_N,2035,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
-ON,T_HDV_AJP_SPK_N,2040,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
-ON,T_HDV_AJP_SPK_N,2045,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:9406f75bd4385406
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
+ON,T_HDV_AJP_SPK_N,2030,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
+ON,T_HDV_AJP_SPK_N,2035,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
+ON,T_HDV_AJP_SPK_N,2040,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
+ON,T_HDV_AJP_SPK_N,2045,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:composite:3:501b571e791dac59
 ON,T_HDV_RF_DSL_N,2025,39.10602039451965,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:ab3bf0db7f3033eb
-ON,T_HDV_RF_DSL_N,2030,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:ab3bf0db7f3033eb
-ON,T_HDV_RF_DSL_N,2035,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:ab3bf0db7f3033eb
-ON,T_HDV_RF_DSL_N,2040,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:ab3bf0db7f3033eb
-ON,T_HDV_RF_DSL_N,2045,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:ab3bf0db7f3033eb
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:57c0d70f1d8b0f47
+ON,T_HDV_RF_DSL_N,2030,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:57c0d70f1d8b0f47
+ON,T_HDV_RF_DSL_N,2035,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:57c0d70f1d8b0f47
+ON,T_HDV_RF_DSL_N,2040,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:57c0d70f1d8b0f47
+ON,T_HDV_RF_DSL_N,2045,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:composite:3:57c0d70f1d8b0f47
 ON,T_HDV_RF_H2_N,2025,74.69249895353255,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - nonroad_cost_invest_multipliers: Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
-ON,T_HDV_RF_H2_N,2030,74.69249895353255,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
-ON,T_HDV_RF_H2_N,2035,68.4355356904094,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
-ON,T_HDV_RF_H2_N,2040,62.178572427286255,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
-ON,T_HDV_RF_H2_N,2045,55.9216091641631,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
+ON,T_HDV_RF_H2_N,2030,74.69249895353255,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
+ON,T_HDV_RF_H2_N,2035,68.4355356904094,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
+ON,T_HDV_RF_H2_N,2040,62.178572427286255,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
+ON,T_HDV_RF_H2_N,2045,55.9216091641631,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
 ON,T_HDV_RF_LNG_N,2025,61.39645201939587,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - nonroad_cost_invest_multipliers: Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
-ON,T_HDV_RF_LNG_N,2030,61.39645201939587,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
-ON,T_HDV_RF_LNG_N,2035,61.13574521676574,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
-ON,T_HDV_RF_LNG_N,2040,60.87503841413561,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
-ON,T_HDV_RF_LNG_N,2045,60.61433161150547,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:2dfc237356eb399d
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
+ON,T_HDV_RF_LNG_N,2030,61.39645201939587,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
+ON,T_HDV_RF_LNG_N,2035,61.13574521676574,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
+ON,T_HDV_RF_LNG_N,2040,60.87503841413561,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
+ON,T_HDV_RF_LNG_N,2045,60.61433161150547,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:composite:3:79dd289ba5500a25
 ON,T_HDV_RICP_DSL_N,2025,1885.6878005906885,$M 2020CAD / bn passenger-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:4b17e99cf62e8c24
-ON,T_HDV_RICP_DSL_N,2030,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:4b17e99cf62e8c24
-ON,T_HDV_RICP_DSL_N,2035,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:4b17e99cf62e8c24
-ON,T_HDV_RICP_DSL_N,2040,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:4b17e99cf62e8c24
-ON,T_HDV_RICP_DSL_N,2045,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:4b17e99cf62e8c24
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:f369b4190f3a7701
+ON,T_HDV_RICP_DSL_N,2030,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:f369b4190f3a7701
+ON,T_HDV_RICP_DSL_N,2035,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:f369b4190f3a7701
+ON,T_HDV_RICP_DSL_N,2040,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:f369b4190f3a7701
+ON,T_HDV_RICP_DSL_N,2045,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:composite:3:f369b4190f3a7701
 ON,T_HDV_RICP_H2_N,2025,2168.5409706792916,$M 2020CAD / bn passenger-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - nonroad_cost_invest_multipliers: Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:06f6e859cdafe0f6
-ON,T_HDV_RICP_H2_N,2030,2168.5409706792916,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:06f6e859cdafe0f6
-ON,T_HDV_RICP_H2_N,2035,2080.5422066517262,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:06f6e859cdafe0f6
-ON,T_HDV_RICP_H2_N,2040,1992.5434426241607,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:06f6e859cdafe0f6
-ON,T_HDV_RICP_H2_N,2045,1904.5446785965953,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:06f6e859cdafe0f6
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:2e984d45d522ae27
+ON,T_HDV_RICP_H2_N,2030,2168.5409706792916,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:2e984d45d522ae27
+ON,T_HDV_RICP_H2_N,2035,2080.5422066517262,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:2e984d45d522ae27
+ON,T_HDV_RICP_H2_N,2040,1992.5434426241607,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:2e984d45d522ae27
+ON,T_HDV_RICP_H2_N,2045,1904.5446785965953,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:composite:3:2e984d45d522ae27
 ON,T_HDV_WTF_HFO_N,2025,159.71497923605244,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
-ON,T_HDV_WTF_HFO_N,2030,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
-ON,T_HDV_WTF_HFO_N,2035,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
-ON,T_HDV_WTF_HFO_N,2040,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
-ON,T_HDV_WTF_HFO_N,2045,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
+ON,T_HDV_WTF_HFO_N,2030,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
+ON,T_HDV_WTF_HFO_N,2035,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
+ON,T_HDV_WTF_HFO_N,2040,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
+ON,T_HDV_WTF_HFO_N,2045,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
 ON,T_HDV_WTF_LNG_N,2025,167.70072819785508,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
   - nonroad_cost_invest_multipliers: Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:e6329b0e8032ee77
-ON,T_HDV_WTF_LNG_N,2030,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:e6329b0e8032ee77
-ON,T_HDV_WTF_LNG_N,2035,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:e6329b0e8032ee77
-ON,T_HDV_WTF_LNG_N,2040,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:e6329b0e8032ee77
-ON,T_HDV_WTF_LNG_N,2045,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:e6329b0e8032ee77
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:4017dd1c4f75cd57
+ON,T_HDV_WTF_LNG_N,2030,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:4017dd1c4f75cd57
+ON,T_HDV_WTF_LNG_N,2035,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:4017dd1c4f75cd57
+ON,T_HDV_WTF_LNG_N,2040,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:4017dd1c4f75cd57
+ON,T_HDV_WTF_LNG_N,2045,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:composite:3:4017dd1c4f75cd57
 ON,T_HDV_WTF_MDO_N,2025,159.71497923605244,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
   - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
 emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
-  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
-ON,T_HDV_WTF_MDO_N,2030,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
-ON,T_HDV_WTF_MDO_N,2035,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
-ON,T_HDV_WTF_MDO_N,2040,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
-ON,T_HDV_WTF_MDO_N,2045,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:4f19ef88d95d62b4
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
+ON,T_HDV_WTF_MDO_N,2030,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
+ON,T_HDV_WTF_MDO_N,2035,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
+ON,T_HDV_WTF_MDO_N,2040,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d
+ON,T_HDV_WTF_MDO_N,2045,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:composite:3:156ead7dd3e82b0d

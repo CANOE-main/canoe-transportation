@@ -61,6 +61,7 @@ def test_explicit_source_ids_preserve_retired_gaps(bundle) -> None:
         "hatch_extended_growth_evidence": "T35",
         "eafo_norway_growth_evidence": "T36",
         "epa_moves_heavy_truck_survival": "T39",
+        "transport_canada_izev": "T40",
     }
 
 
