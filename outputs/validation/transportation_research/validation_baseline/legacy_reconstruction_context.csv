@@ -1,0 +1,9 @@
+stage,interpretation
+Active call,"fixed_lifetime=False; workbook survival, not filename or saved fixed-lifetime output"
+Acquisition,Annual class sales × shares; missing products zero; 2023 products held through2025; no CEUD stock scaling
+Aggregation,2005→2000; 2006–10→2005; 2011–15→2010; 2016–20→2015; 2021–25→2020; sum partial bins
+Survival,"Sum acquisitions first, then rounded workbook survival at calendar year minus representative model vintage; apply once"
+Calibration,2023 historical class activity / Σ(raw vintage capacity × survival(2023−vintage) × own c2a); includes projected2024–25 acquisitions in vintage2020
+Bounds,"Central calibration ×0.975 and ×1.025; parameters constrain solver operation, they are not realized dispatch"
+Energy,"Σ(surviving2025 stock × own c2a × central UF / inherited shifted/interpolated service efficiency); vehicle input, PHEV blend once, excludes upstream charger losses"
+Inherited input,Explicit read-only snapshot C:\Users\rashi\ESM_databases\canoe-transportation\legacy_backend\legacy_variant_sales_cohorts\canoe_ON_16d.sqlite; named original Input data/canoe_ALL_cm.sqlite unavailable; historical identity unproven

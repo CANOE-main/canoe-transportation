@@ -19,6 +19,7 @@ from parameterization.ceud_inputs import read_ceud_input
 from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames, resolved_road_lifetime_rules,
 )
+from parameterization.road_stocks_and_demands import derive_road_annual_utilization
 from utils import (
     ConfigBundle, file_sha256, load_config_bundle, load_harmonization_rules,
     resolve_artifact_path, resolve_configured_path, resolve_repo_path,
@@ -26,6 +27,7 @@ from utils import (
 )
 from validation.config_models import MappingModel
 from validation.sqlite_utils import open_sqlite_readonly, quote_identifier
+from validation.legacy_sales_reconstruction import reconstruct_legacy_sales
 
 
 LOGGER = logging.getLogger(__name__)
@@ -41,6 +43,7 @@ class TransportationResearchRules(MappingModel):
     report_route: str
     reference_sqlite: str
     reference_notebook: str
+    inherited_sqlite: str = Field(min_length=1)
     legacy_baseline: str
     energy_series: dict[str, CeudSeries]
     notebook_scenario: str = Field(min_length=1)
@@ -580,7 +583,8 @@ def build_research_report(
             "The supplied SQLite and the newer workbooks are separate evidence states; the notebook execution that produced the SQLite is unresolved.",
             "Comparisons retain original period and vintage labels. The current scenario manifest supplies its source-year interpretation.",
             "Utilization comparisons show the full minimum-to-maximum range by class and existing/new technology kind. Reference period rows and current vintage rows have different keys.",
-            "Workbook values and the legacy fixed_lifetime execution flag do not parameterize the current backend.",
+            "The primary legacy comparison replays active fixed_lifetime=False; saved fixed-lifetime messages and disputed SQLite outputs are audit evidence only.",
+            "Original Input data/canoe_ALL_cm.sqlite is unavailable; the configured inherited snapshot supports a conditional energy reconstruction, without proving historical identity.",
             "Activity/energy accounting evaluates all inserted base-year cohorts before future retirement; it is not an optimization result.",
             "Vehicle input energy includes PHEV blend energy once, excluding upstream charger losses; CEUD class energy contains a different fuel/fleet boundary.",
             "Raw sales-survival stock is retained for diagnosis; explicit class calibration anchors represented stock to base-year CEUD stock.",
@@ -591,6 +595,11 @@ def build_research_report(
         "commands": [f"uv run python src/build_transport.py --scenario {bundle.scenario_path}",
                      f"uv run python -m validation.transportation_research --scenario {bundle.scenario_path} --write-report"],
     }
+    diagnosis = {"fleet": frames, "fleet_metadata": metadata}
+    frames.update(deepen_fleet_diagnosis(frames, metadata))
+    frames.update(deepen_reference_cohorts(diagnosis, bundle, rules))
+    frames.update(deepen_demand_diagnosis(diagnosis, bundle, rules))
+    frames.update(reconstruct_comparison(diagnosis, bundle, rules))
     return TransportationResearch(frames, metadata,
                                   resolve_artifact_path(bundle, rules.report_route, bundle.scenario.scenario.name))
 
@@ -1005,16 +1014,174 @@ def deepen_fleet_diagnosis(
     }
 
 
+def independent_fleet_comparison(frames: dict[str, pd.DataFrame], *, step: int) -> dict[str, pd.DataFrame]:
+    """Compare complete parameterizations; preserve annual lineage and UF controls.
+
+    Backend capacities already include survival and fixed-lifetime allocation.
+    Legacy acquisitions receive their own representative-vintage survival exactly
+    once. Neither method borrows the other's normalization or efficiencies.
+    """
+    keys = ["region", "road_class"]
+    backend = frames["sales_cohort_reconciliation"].copy()
+    backend["evidence"] = "Current backend"
+    backend["surviving_k_vehicles"] = backend.inserted_cohort_k_vehicles
+    backend["survival_treatment"] = "Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement"
+    legacy = frames["legacy_reconstructed_annual"].copy()
+    legacy["evidence"] = "Legacy recipe"
+    legacy["survival_treatment"] = "Aggregate acquisitions first; survival at representative model vintage"
+    columns = keys + ["evidence", "vintage", "vintage_year", "surviving_k_vehicles", "survival_treatment"]
+    annual = pd.concat([backend[columns], legacy[columns]], ignore_index=True)
+    if step <= 0 or annual[columns].isna().any().any() or annual.surviving_k_vehicles.lt(0).any():
+        raise ValueError("Invalid comparison annual lineage")
+    annual["annual_position"] = ((annual.vintage_year - annual.vintage - 1) % step + 1).astype(int)
+    annual["cohort_position"] = "Year " + annual.annual_position.astype(str)
+    annual["interval"] = annual.vintage.map(lambda value: f"({value}, {value + step}]")
+    annual["boundary_exception"] = annual.vintage_year.le(annual.vintage)
+    annual.loc[annual.boundary_exception, "interval"] += "; oldest proxy includes lower endpoint"
+    available = annual.groupby(keys + ["evidence", "vintage"]).vintage_year
+    first_year = available.transform("min").astype(int)
+    last_year = available.transform("max").astype(int)
+    annual["interval"] += "; available " + first_year.astype(str) + "–" + last_year.astype(str)
+    vintages = annual.groupby(keys + ["evidence", "vintage"], as_index=False).surviving_k_vehicles.sum()
+    totals = vintages.groupby(keys + ["evidence"], as_index=False).surviving_k_vehicles.sum()
+    targets = frames["stock_activity_energy"][keys + ["base_year", "ceud_stock_k_vehicles"]]
+    totals = totals.merge(targets, on=keys, how="left", validate="many_to_one")
+    totals["difference_percent"] = 100 * (totals.surviving_k_vehicles / totals.ceud_stock_k_vehicles - 1)
+    checks = {
+        "Current backend": frames["fleet_cohort_accounting"].groupby(keys).capacity.sum(),
+        "Legacy recipe": frames["legacy_reconstructed_parameters"].groupby(keys).surviving_k_vehicles.sum(),
+    }
+    vintage_checks = {
+        "Current backend": frames["fleet_cohort_accounting"].groupby(keys + ["vintage"]).capacity.sum(),
+        "Legacy recipe": frames["legacy_reconstructed_parameters"].groupby(keys + ["vintage"]).surviving_k_vehicles.sum(),
+    }
+    for evidence, expected_vintages in vintage_checks.items():
+        actual_vintages = vintages.loc[vintages.evidence.eq(evidence)].set_index(keys + ["vintage"]).surviving_k_vehicles
+        actual_vintages, expected_vintages = actual_vintages.align(expected_vintages, fill_value=0.)
+        if not all(isclose(left, right, rel_tol=1e-10, abs_tol=1e-8)
+                   for left, right in zip(actual_vintages, expected_vintages, strict=True)):
+            raise ValueError("Annual comparison contributions do not recover parameterized model-vintage stock")
+    for row in totals.itertuples():
+        if not isclose(row.surviving_k_vehicles, checks[row.evidence].loc[(row.region, row.road_class)],
+                       rel_tol=1e-10, abs_tol=1e-8):
+            raise ValueError("Annual comparison contributions do not recover parameterized stock")
+    # Separate annual-age exclusion from the additional model-vintage screen.
+    cutoffs = frames["sales_cohort_reconciliation"].copy()
+    cutoffs["annual_lifetime_eligible"] = cutoffs.vintage_year + cutoffs.fixed_lifetime_years > cutoffs.first_model_period
+    cutoffs["model_vintage_eligible"] = cutoffs.vintage + cutoffs.fixed_lifetime_years > cutoffs.first_model_period
+    cutoffs["coarse_vintage_exclusion_k_vehicles"] = cutoffs.calibrated_surviving_k_vehicles.where(
+        cutoffs.annual_lifetime_eligible & ~cutoffs.model_vintage_eligible, 0.)
+    cutoffs["all_excluded_k_vehicles"] = cutoffs.calibrated_surviving_k_vehicles.where(
+        ~cutoffs.eligible_first_model_period, 0.)
+    cutoff_totals = cutoffs.groupby(keys + ["fixed_lifetime_years", "first_model_period"], as_index=False).agg(
+        coarse_vintage_exclusion_k_vehicles=("coarse_vintage_exclusion_k_vehicles", "sum"),
+        all_excluded_k_vehicles=("all_excluded_k_vehicles", "sum"),
+    ).merge(targets, on=keys, validate="one_to_one")
+    cutoff_totals["coarse_exclusion_percent"] = 100 * cutoff_totals.coarse_vintage_exclusion_k_vehicles / cutoff_totals.ceud_stock_k_vehicles
+    cutoff_totals["total_redistributed_percent"] = 100 * cutoff_totals.all_excluded_k_vehicles / cutoff_totals.ceud_stock_k_vehicles
+    # Backend sensitivities retain the same stock, C2A and efficiency rows.
+    stages = frames["cohort_utilization_energy"].groupby(keys + ["stage"], as_index=False).agg(
+        implied_activity_bn=("activity_bn", "sum"), implied_vehicle_input_pj=("vehicle_input_pj", "sum"),
+        utilization=("annual_utilization", "first"),
+    ).rename(columns={"stage": "case"})
+    labels = {"Before calibration": "Backend before calibration",
+              "Implemented activity calibration": "Current backend",
+              "Energy closure sensitivity": "Backend energy sensitivity"}
+    stages["case"] = stages.case.replace(labels)
+    legacy_totals = frames["legacy_reconstructed_totals"].copy()
+    legacy_totals["case"] = "Legacy recipe"
+    if "utilization" not in legacy_totals:
+        legacy_totals = legacy_totals.merge(frames["legacy_reconstructed_utilization"][keys + ["utilization"]],
+                                            on=keys, validate="one_to_one")
+    cases = pd.concat([stages, legacy_totals[stages.columns]], ignore_index=True)
+    target_columns = keys + ["base_year", "ceud_activity_bn", "ceud_secondary_energy_pj",
+                             "ceud_activity_observed_year", "ceud_energy_observed_year"]
+    cases = cases.merge(frames["stock_activity_energy"][target_columns], on=keys, validate="many_to_one")
+    cases["activity_difference_percent"] = 100 * (cases.implied_activity_bn / cases.ceud_activity_bn - 1)
+    cases["energy_difference_percent"] = 100 * (cases.implied_vehicle_input_pj / cases.ceud_secondary_energy_pj - 1)
+    cases["energy_per_service_pj_per_bn"] = cases.implied_vehicle_input_pj / cases.implied_activity_bn
+    cases["ceud_energy_per_service_pj_per_bn"] = cases.ceud_secondary_energy_pj / cases.ceud_activity_bn
+    return {"comparison_annual_stock": annual, "comparison_vintage_stock": vintages,
+            "comparison_stock_totals": totals, "backend_lifetime_exclusions": cutoff_totals,
+            "baseline_activity_energy_cases": cases}
+
+
+def reconstruct_comparison(result, bundle, rules) -> dict[str, pd.DataFrame]:
+    """Capture independent recipe inputs and quantitative backend calibration context."""
+    from parameterization.road_utilization import select_baseline_years
+
+    frames, metadata = result["fleet"], result["fleet_metadata"]
+    directory = resolve_artifact_path(bundle, rules.reference_route)
+    legacy, identity = reconstruct_legacy_sales(
+        directory / rules.reference_notebook,
+        resolve_repo_path(bundle.repo_root, rules.inherited_sqlite),
+        comparison_year=bundle.scenario.periods.base_year,
+        regions=bundle.scenario.geography.regions,
+    )
+    if metadata.get("legacy_reconstruction", identity) != identity:
+        raise ValueError("Captured independent legacy reconstruction inputs changed; recapture the report")
+    metadata["legacy_reconstruction"] = identity
+    raw = legacy["legacy_reconstructed_parameters"]
+    expected = frames["reference_recipe_parameters"]
+    keys = ["region", "tech", "vintage"]
+    check = raw[keys + ["raw_capacity_k_vehicles"]].merge(
+        expected[keys + ["capacity_k_vehicles"]], on=keys, how="outer", validate="one_to_one", indicator=True)
+    if not check._merge.eq("both").all() or not all(
+        isclose(row.raw_capacity_k_vehicles, row.capacity_k_vehicles, rel_tol=1e-12, abs_tol=1e-9)
+        for row in check.itertuples()
+    ):
+        raise ValueError("Executable legacy acquisition recipe differs from the annual workbook audit")
+    assembled = {**frames, **legacy}
+    comparison = independent_fleet_comparison(assembled, step=bundle.scenario.periods.step)
+    service = frames["demand_baseline_service_targets"]
+    comparison["baseline_activity_energy_cases"] = comparison["baseline_activity_energy_cases"].merge(
+        service[["region", "road_class", "current_base_year_demand_bn", "legacy_calendar_base_year_demand_bn"]],
+        on=["region", "road_class"], validate="many_to_one")
+    # Recompute the original grey arithmetic mean from the same observed CEUD
+    # edition, keeping every year's numerator and denominator available for review.
+    ceud = pd.concat([read_ceud_input(bundle, region) for region in bundle.scenario.geography.regions], ignore_index=True)
+    observed = ceud.loc[ceud.ceud_value_status.eq("observed")]
+    controls = load_harmonization_rules(bundle, "road_utilization")
+    years = select_baseline_years(observed, base_year=min(bundle.scenario.periods.base_year, int(observed.year.max())),
+                                  observations=controls["baseline_observations"], excluded_years=controls["excluded_years"])
+    demand = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
+    stock = resolved_road_lifetime_rules(bundle)
+    classes = set(frames["stock_activity_energy"].road_class)
+    detail = frames["fleet_cohort_accounting"]
+    c2a = detail.groupby("road_class").c2a
+    if c2a.nunique().ne(1).any():
+        raise ValueError("Backend class calibration unexpectedly uses multiple C2A factors")
+    source_years = derive_road_annual_utilization(
+        ceud, regions=bundle.scenario.geography.regions, years=years,
+        activity_series={name: demand["activity_series"][name] for name in classes},
+        stock_series={name: stock["ceud_stock_series"][name] for name in classes},
+        capacity_by_class=c2a.first().to_dict(), region_output_map=demand["region_output_map"],
+        activity_to_billion_factor=demand["activity_to_billion_factor"],
+    )
+    means = source_years.groupby(["region", "road_class"]).utilization.mean()
+    calibration = frames["utilization_calibration"].copy()
+    for row in calibration.itertuples():
+        if not isclose(means.loc[(row.region, row.road_class)], row.prior_mean_utilization, rel_tol=1e-12, abs_tol=1e-12):
+            raise ValueError("Reconstructed grey utilization differs from captured source-year mean")
+    calibration["source_years"] = ", ".join(map(str, years))
+    calibration["c2a"] = calibration.road_class.map(c2a.first())
+    calibration["stock_denominator_k_vehicles"] = calibration.inserted_stock_k_vehicles
+    comparison["backend_utilization_source_years"] = source_years
+    comparison["backend_utilization_bridge"] = calibration
+    return {**legacy, **comparison}
+
+
 def deepen_demand_diagnosis(
     result: dict[str, Any], control: ConfigBundle, rules: TransportationResearchRules,
 ) -> dict[str, pd.DataFrame]:
-    """Replay the inspected demand recipe; never execute the supplied notebook.
+    """Replay demand and audit its formula, source identity and calendar labels.
 
     Returns independent recipe, baseline and additive attribution tables. Captured
     database rows remain distinct from the intended notebook calculation.
     """
     metadata, frames = result["fleet_metadata"], result["fleet"]
     reference_dir = resolve_artifact_path(control, rules.reference_route)
+    workbook_paths = {}
 
     def workbook(filename):
         evidence = [item for item in metadata["notebook"]["dependencies"]
@@ -1024,6 +1191,7 @@ def deepen_demand_diagnosis(
         path = reference_dir / filename
         if file_sha256(path) != evidence[0]["provided_sha256"]:
             raise ValueError(f"Notebook workbook changed after capture: {path}")
+        workbook_paths[filename] = path
         return pd.read_excel(path)
 
     activity = workbook("activity.xlsx")
@@ -1036,6 +1204,11 @@ def deepen_demand_diagnosis(
     project = functions["project_demand_v"]
     organize = functions["organize_activity_ceud"]
     shift = functions["shift_time_period"]
+    project_notes = [node.value.value for node in ast.walk(project)
+                     if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant)
+                     and isinstance(node.value.value, str)
+                     and any(isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Constant)
+                             and target.slice.value == "notes" for target in node.targets)]
     mapping = [node.value for node in ast.walk(organize)
                if isinstance(node, ast.Assign) and any(
                    isinstance(target, ast.Name) and target.id == "map_comm"
@@ -1106,6 +1279,68 @@ def deepen_demand_diagnosis(
                 float(growth.loc[baseline_year, deflator_columns[0]]), rel_tol=1e-12)
         for _, row in growth.iterrows()
     )
+    # A column label plus an internal ratio is insufficient evidence of economic
+    # meaning. Retain the actual Excel formula and independently compare the raw
+    # levels against the registered CER source, without downloading or modifying it.
+    from openpyxl import load_workbook
+    import re
+    from fetching.cer_enerfuture import (
+        build_requests, module_rules, normalize_component, read_and_validate_source,
+    )
+
+    excel = load_workbook(workbook_paths["demand_growth_rate.xlsx"], read_only=True, data_only=False)
+    try:
+        sheet = excel.active
+        headers = [cell.value for cell in next(sheet.iter_rows())]
+        year_column = headers.index("Year")
+        selected_column = headers.index(growth_column)
+        formula_rows = {
+            int(row[year_column].value): {
+                "workbook_growth_cell": row[selected_column].coordinate,
+                "workbook_growth_formula": row[selected_column].value
+                if row[selected_column].data_type == "f" else None,
+            }
+            for row in sheet.iter_rows(min_row=2) if row[year_column].value is not None
+        }
+        for year, details in formula_rows.items():
+            formula = details["workbook_growth_formula"]
+            if formula is not None:
+                references = re.fullmatch(r"=\$?([A-Z]+)\$?(\d+)/\$?([A-Z]+)\$?(\d+)", formula)
+                if references is None:
+                    raise ValueError(f"Unsupported workbook growth formula at {details['workbook_growth_cell']}: {formula}")
+                numerator_col, numerator_row, denominator_col, denominator_row = references.groups()
+                numerator = float(sheet[f"{numerator_col}{numerator_row}"].value)
+                denominator = float(sheet[f"{denominator_col}{denominator_row}"].value)
+                denominator_year = int(sheet.cell(row=int(denominator_row), column=year_column + 1).value)
+                if denominator_year != baseline_year or denominator <= 0 or not isclose(
+                    float(growth.loc[year, growth_column]), numerator / denominator,
+                    rel_tol=1e-12, abs_tol=1e-12,
+                ):
+                    raise ValueError("Workbook cached growth index does not reproduce its observation-anchored formula")
+    finally:
+        excel.close()
+    source_audit = pd.DataFrame()
+    source_identity = "not supplied to isolated fixture"
+    if control is not None:
+        cer_rules = module_rules(control)
+        request = next(item for item in build_requests(control) if item.component_id == "macro-indicators")
+        macro = normalize_component(read_and_validate_source(request), request,
+                                    region_labels=[], rules=cer_rules)
+        selected_macro = macro.loc[macro.scenario.eq(control.scenario.demand.cer_scenario)]
+        source_audit = selected_macro.pivot(index="year", columns="variable_key", values="value")
+        if not {"gdp_deflator", "real_gdp"} <= set(source_audit):
+            raise ValueError("Registered CER source lacks independent GDP/deflator evidence")
+        if set(growth.index) - set(source_audit.index):
+            raise ValueError("Registered CER source does not cover every workbook year")
+        if deflator_identity and any(
+            not isclose(float(row[deflator_columns[0]]), float(source_audit.loc[year, "gdp_deflator"]),
+                        rel_tol=1e-12, abs_tol=1e-12)
+            for year, row in growth.iterrows()
+        ):
+            raise ValueError("Workbook deflator levels conflict with the registered CER edition/scenario")
+        source_identity = f"CER {request.edition} / {control.scenario.demand.cer_scenario}; {request.url}"
+        source_audit["source_path"] = str(request.cache_path)
+        source_audit["source_sha256"] = file_sha256(request.cache_path)
     scenario = metadata["scenario"]
     model_base_year = int(scenario["periods"]["base_year"])
     audit = metadata.get("demand_audit", {})
@@ -1174,7 +1409,10 @@ def deepen_demand_diagnosis(
                               "current_base_year_demand_bn": base_year_activity,
                               "observation_to_base_year_growth_bn": base_year_activity - observed_activity,
                               "historical_calibration_target_bn": target.ceud_activity_bn,
-                              "historical_calibration_target_status": target.ceud_activity_status})
+                              "historical_calibration_target_status": target.ceud_activity_status,
+                              "legacy_calendar_base_year_demand_bn": historical * float(growth.loc[model_base_year, growth_column]),
+                              "legacy_calendar_base_year_model_label": model_base_year - period_shift,
+                              "legacy_calendar_base_year_emitted": model_base_year - period_shift in range(*requested_periods[0])})
         for source_year in sorted(source_years & set(growth.index)):
             replay_rows.append({"region": target.region, "road_class": target.road_class,
                                 "period": source_year - period_shift,
@@ -1230,12 +1468,46 @@ def deepen_demand_diagnosis(
                                   "unit": demand_rules["activity_series"][row.road_class]["units"],
                                   "growth_index": index})
     demand_state = frames["reference_state"].set_index("table").loc["Demand"]
+    growth_audit_rows = []
+    for year, row in growth.iterrows():
+        source = source_audit.loc[year] if not source_audit.empty else pd.Series(dtype=object)
+        source_deflator = source.get("gdp_deflator")
+        source_real_gdp = source.get("real_gdp")
+        source_deflator_index = (float(source_deflator) / float(source_audit.loc[baseline_year, "gdp_deflator"])
+                                 if pd.notna(source_deflator) else None)
+        source_real_index = (float(source_real_gdp) / float(source_audit.loc[baseline_year, "real_gdp"])
+                            if pd.notna(source_real_gdp) else None)
+        growth_audit_rows.append({
+            "calendar_year": int(year), "model_label": int(year) - period_shift,
+            "compiler_emits_year": int(year) in source_years,
+            "observation_anchor_year": baseline_year,
+            "workbook_selected_column": growth_column,
+            **formula_rows[int(year)],
+            "workbook_growth_index": float(row[growth_column]),
+            "workbook_native_series": deflator_columns[0] if deflator_identity else "unresolved",
+            "workbook_native_value": float(row[deflator_columns[0]]) if deflator_identity else None,
+            "workbook_source_statement": row.get("source"),
+            "compiler_demand_notes": " | ".join(project_notes),
+            "registered_deflator": source_deflator,
+            "registered_deflator_index": source_deflator_index,
+            "registered_real_gdp": source_real_gdp,
+            "registered_real_gdp_index": source_real_index,
+            "growth_index_difference": float(row[growth_column]) - source_real_index
+            if source_real_index is not None else None,
+            "source_identity": source_identity,
+            "source_path": source.get("source_path"), "source_sha256": source.get("source_sha256"),
+            "interpretation": "price-index ratio, not real output growth" if deflator_identity else "unresolved",
+            "compiler_note_conflict": "project_demand_v notes claim projected national GDP growth; selected values are a price deflator"
+            if deflator_identity else "series meaning unresolved",
+        })
     method = pd.DataFrame([
         {"evidence": "Supplied SQLite", "baseline": "Captured database rows; independent of recipe replay",
          "growth": f"{int(demand_state.matching_values)}/{int(demand_state.common_keys)} shared demand values match original legacy",
          "calendar": "Stored period labels retained; exact source-year mapping unresolved"},
         {"evidence": "Inspected notebook recipe", "baseline": f"CEUD {baseline_year}",
-         "growth": "Workbook GDP-deflator ratio (verified arithmetically)" if deflator_identity else f"Workbook {growth_column}; variable identity unresolved",
+         "growth": ("Workbook GDP-deflator ratio; formula and raw levels verified against registered CER source"
+                    if not source_audit.empty else "Workbook GDP-deflator ratio (verified arithmetically)")
+         if deflator_identity else f"Workbook {growth_column}; variable identity unresolved",
          "calendar": f"Workbook year = stored period + {period_shift}"},
         {"evidence": "Current backend", "baseline": f"Native CEUD observation {anchor}; stock-tail policy does not set demand",
          "growth": f"Captured CER real GDP / GDP({anchor}); GDP({model_base_year}) / GDP({anchor}) = {base_year_gdp_index:.6f}; emitted rows reconciled",
@@ -1244,6 +1516,12 @@ def deepen_demand_diagnosis(
     return {"demand_recipe_replay": replay, "demand_baseline_comparison": pd.DataFrame(baseline_rows),
             "demand_attribution": attribution.sort_values(["region", "road_class", "period"]),
             "demand_method_comparison": pd.DataFrame(long_rows), "demand_method_context": method,
+            "demand_growth_series_audit": pd.DataFrame(growth_audit_rows),
+            "demand_baseline_service_targets": pd.DataFrame(baseline_rows)[[
+                "region", "road_class", "notebook_baseline_year", "notebook_activity_bn", "current_baseline_year",
+                "legacy_calendar_base_year_demand_bn", "legacy_calendar_base_year_model_label",
+                "legacy_calendar_base_year_emitted", "current_base_year_demand_bn", "historical_calibration_target_bn",
+            ]],
             "demand_base_year_bridge": pd.DataFrame(baseline_rows)[[
                 "region", "road_class", "current_anchor_year", "current_baseline_year", "current_activity_bn",
                 "base_year_gdp_index", "current_base_year_demand_bn", "observation_to_base_year_growth_bn",
@@ -1725,6 +2003,7 @@ def load_validation_diagnosis(*, repo_root: Path | None = None) -> dict[str, Any
     result["fleet"].update(deepen_fleet_diagnosis(result["fleet"], result["fleet_metadata"]))
     result["fleet"].update(deepen_reference_cohorts(result, control, rules))
     result["fleet"].update(deepen_demand_diagnosis(result, control, rules))
+    result["fleet"].update(reconstruct_comparison(result, control, rules))
     result["charging"]["harmonized_costs"] = harmonized_charging_costs(result["charging"]["comparisons"])
     return result
 

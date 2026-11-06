@@ -1,7 +1,7 @@
 {
   "scenario": "validation_baseline",
   "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
-  "repository_commit": "aafdd708e54840a13188b82c3f80e62fa83ff0fc",
+  "repository_commit": "3e1b20175efc420bc999390caf36b6a5ff218939",
   "period_mapping": {
     "period_mode": "prospective",
     "base_year": 2025,
@@ -177,11 +177,11 @@
   "files": {
     "database": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_baseline.sqlite",
-      "sha256": "4899ac72c94ed53d5fe484fcc4e0ff7d2732863a5417cf84c9ef12950d63ed2b"
+      "sha256": "554e710b00ec9e40370af8097218182670c433767f2c40ccd6d7b9ef1b880ec3"
     },
     "build_report": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\validation_baseline.json",
-      "sha256": "31588f54fb8097092dc43272cf378930f746e58b8bd7003ddcaa8da402c0a415"
+      "sha256": "cef96b579f33d6598f20bf15ab881ade338c3ca449dfcbf9ec76ea8ee80a66b1"
     },
     "manual_charger_parameters": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\charger_parameters.csv",
@@ -196,7 +196,7 @@
       "sha256": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
     }
   },
-  "build_timestamp_utc": "2026-11-05T17:46:49.803750+00:00",
+  "build_timestamp_utc": "2026-11-06T04:02:07.074664+00:00",
   "build_content_verified": true,
   "component_reconciliation": {
     "relative_tolerance": 1e-10,

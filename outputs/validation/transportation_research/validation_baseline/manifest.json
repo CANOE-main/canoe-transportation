@@ -1242,7 +1242,7 @@
     "parameters": [
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\rules.yaml",
-        "sha256": "3144388d81fa159b0c43d7987e3d3661da981a20310d6064e6966af362320a61"
+        "sha256": "a9126ea76a268d6e5c75f15b22e8d8a0be8620d81d76f464cf822bd789ce4721"
       },
       {
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\conversion.yaml",
@@ -1483,6 +1483,30 @@
     ]
   },
   "exports": {
+    "backend_lifetime_exclusions.csv": {
+      "rows": 5,
+      "sha256": "fce6eb485c38ff4742891f07ee70ceff71572a2ec15fdec6cb01820d6459380e"
+    },
+    "backend_utilization_bridge.csv": {
+      "rows": 5,
+      "sha256": "79059b35294a1184112ad43fc616197da6495ea4298fe45d445efd62dab520f7"
+    },
+    "backend_utilization_source_years.csv": {
+      "rows": 25,
+      "sha256": "b5b231f9645f88abccfa97bdaaf8c08d9609718b3d866145063e988170277ab0"
+    },
+    "baseline_activity_energy_cases.csv": {
+      "rows": 20,
+      "sha256": "7d2a2077c860bba0e60e1d3e42245ce4ed1462bbb55426733d4c56382756817c"
+    },
+    "built_stock_parameters.csv": {
+      "rows": 100,
+      "sha256": "11f3c5a02e8def96e786c36661fc52715820c25201250e768297f01148789282"
+    },
+    "built_stock_totals.csv": {
+      "rows": 10,
+      "sha256": "71f599caa352ee75685d41f8d2b316076c403b46f72e001c07990f33026740f4"
+    },
     "capacity_comparison.csv": {
       "rows": 17,
       "sha256": "7058224927de62faeff37e9f8ee30276183d758030e506efdfcc8ca816b86590"
@@ -1491,25 +1515,141 @@
       "rows": 170,
       "sha256": "707f1132a3f0800b6be74e4d32b142638295909942f6d860a859e16205dcc773"
     },
+    "cohort_utilization_energy.csv": {
+      "rows": 165,
+      "sha256": "ba0c2d4cb02658434cfb643bd65e9f684430e71a704e2949248587492af0b748"
+    },
+    "comparison_annual_stock.csv": {
+      "rows": 432,
+      "sha256": "f5b5b2a09ff6edb0bc53d5491017296051831e4d43ec39b43c8761f579623c0e"
+    },
+    "comparison_stock_totals.csv": {
+      "rows": 10,
+      "sha256": "1a43744a30397bda663d9b28be29f35a954b962bf82cae1b89a96cdc60d9877d"
+    },
+    "comparison_vintage_stock.csv": {
+      "rows": 49,
+      "sha256": "6be3e0b01e719d47dfb020043f12d6444c56d718621c5f6c42ca38d37048ef40"
+    },
     "configured_survival_curves.csv": {
       "rows": 588,
       "sha256": "1272ff565b25a0072f74aad15358dab92888800d439f1bf9ab760aa2f25d4025"
+    },
+    "demand_attribution.csv": {
+      "rows": 35,
+      "sha256": "88f8d7d5f629d296ae9f8bae75cdb750dad9d8600f097b4988664efe454d2e46"
+    },
+    "demand_base_year_bridge.csv": {
+      "rows": 5,
+      "sha256": "cc060698656b39c34254eee5cafd6aadc55640f1021939c7ce507cbb31531b27"
+    },
+    "demand_baseline_comparison.csv": {
+      "rows": 5,
+      "sha256": "d36e08bcf4128e06c137240b468b9685e4645d95745ba06d3ef753d32b1af6e7"
+    },
+    "demand_baseline_service_targets.csv": {
+      "rows": 5,
+      "sha256": "e1e211aee8927b098022f3f86882430eddd6840454e42c4c27f19613269c85d1"
     },
     "demand_comparison.csv": {
       "rows": 35,
       "sha256": "3295e90bbe439762530e3b38f877da25124fec964e6ed0515c7bcfef3a058e12"
     },
+    "demand_growth_series_audit.csv": {
+      "rows": 28,
+      "sha256": "53872c2c3a47b9a26a99d7bd38e8a4bf20910a9648e046d7b07cf4c7ff4124bf"
+    },
+    "demand_method_comparison.csv": {
+      "rows": 80,
+      "sha256": "695c39648bf11cbca763f229437979dba9fed247040b60850c6a94ae3f38a5ef"
+    },
+    "demand_method_context.csv": {
+      "rows": 3,
+      "sha256": "28e4cb91b3edfa584c0ae6060e50baa6a2d1d0e7dd4df86a433b945ea8e1ea02"
+    },
+    "demand_recipe_replay.csv": {
+      "rows": 25,
+      "sha256": "adcd1f350a8cda94a4749329600001ff11c2e9fce0f71feb328c35b77ac2ba72"
+    },
     "fleet_cohort_accounting.csv": {
       "rows": 55,
       "sha256": "983867324f7cc5aaf4fd435ec799c34cf017e3831a069591fd76d90b9e3bde40"
+    },
+    "fleet_reconciliation.csv": {
+      "rows": 5,
+      "sha256": "d435e6125b2300b20171858866926da3a6e2f4746e11dbb82db79dec1b7c1185"
+    },
+    "legacy_reconstructed_annual.csv": {
+      "rows": 302,
+      "sha256": "bcbd79f2fe5deb9571da7e2e913b3287ea677210aa8962475199dc8564bce9d3"
+    },
+    "legacy_reconstructed_energy_detail.csv": {
+      "rows": 66,
+      "sha256": "0717a947c8ce3fdba6f16a6a3db128fa2e5e5461b6d8dd36c2b6156a14baab15"
+    },
+    "legacy_reconstructed_lifetimes.csv": {
+      "rows": 46,
+      "sha256": "471ca4d5e3cb8ab002d16f155b8fa03069c45da107beb30e949eaaf4dc0e06be"
+    },
+    "legacy_reconstructed_parameters.csv": {
+      "rows": 66,
+      "sha256": "0717a947c8ce3fdba6f16a6a3db128fa2e5e5461b6d8dd36c2b6156a14baab15"
+    },
+    "legacy_reconstructed_survival.csv": {
+      "rows": 12728,
+      "sha256": "f879c0060fe37ad05c9eee3ccfb43e617644f1e814e54f786428bfcb0831c6de"
+    },
+    "legacy_reconstructed_totals.csv": {
+      "rows": 5,
+      "sha256": "118e2b9a5f6417008c9e68282782c78b055412e8d6649daef9b0ae2fce6c3446"
+    },
+    "legacy_reconstructed_utilization.csv": {
+      "rows": 5,
+      "sha256": "9d9105aef1b4b4d6cc6012abdd5ff7c0bd35a3ebdc937725f84b7b5e592c6b74"
+    },
+    "legacy_reconstruction_context.csv": {
+      "rows": 8,
+      "sha256": "9981043827a1371d49d2acb6317c84ff4ba9bd0ccef36914a88e8fe3e192e839"
     },
     "notebook_source_cells.csv": {
       "rows": 14,
       "sha256": "491291981793bb4b32a46cf9f9dc880260327b39606f58ef41533a36bc46c3a2"
     },
+    "reference_recipe_annual.csv": {
+      "rows": 302,
+      "sha256": "e463d5b31a2d43cbffae6cee9246830403fbe7b484c95856ebaa90e1f4def443"
+    },
+    "reference_recipe_comparison.csv": {
+      "rows": 66,
+      "sha256": "d8b8cc228d1ba336f9243e9b9ce0c7e9c7af52895be65bdd24c3fd9a18c2a001"
+    },
+    "reference_recipe_context.csv": {
+      "rows": 7,
+      "sha256": "d22038a40bb81fad88a32ca6c6da3b9f688f02dfa78ba5ebaec0ae67ef25a123"
+    },
+    "reference_recipe_parameters.csv": {
+      "rows": 66,
+      "sha256": "45e4ee923adfbfe2d333deed9dbf408f252a3fcfcbcef5a2b167d811f6c0ecd2"
+    },
+    "reference_recipe_steps.csv": {
+      "rows": 7,
+      "sha256": "c3e88a99ad4cb48c5c26528d0fd5e3c3f59e582243a7e28288ec51585a24e813"
+    },
+    "reference_recipe_totals.csv": {
+      "rows": 5,
+      "sha256": "d3b3a3c1b5c802553df59ada1419e97e8c51f1800533cee3573477ab215dbed6"
+    },
+    "reference_replay_context.csv": {
+      "rows": 6,
+      "sha256": "7e438e965cc09f7b8965f4435436db4f6e916d55308f8ae0971a3b565bb1ea32"
+    },
     "reference_state.csv": {
       "rows": 4,
       "sha256": "10fe874acb69e6b1bc7b36b4c43212da8b82520c3ad5d43b0dd2b9aa565ed927"
+    },
+    "reference_timing_context.csv": {
+      "rows": 5,
+      "sha256": "bf74e861e9f774df8fa74e0c6b4578dd3441d5daa3d5810b4091c155f3937cb5"
     },
     "road_age_cohorts.csv": {
       "rows": 166,
@@ -1518,6 +1658,10 @@
     "road_fuel_shares.csv": {
       "rows": 400,
       "sha256": "04be0d08e78ac2644637ff5b4c3b2dc8ca0862e21a4d01c19f7e4e80ce954cf3"
+    },
+    "sales_cohort_reconciliation.csv": {
+      "rows": 130,
+      "sha256": "055ceab151dd1cc5bfa921a1ffa669e1e1d83d29cf37d2edfba859ebbf7490e2"
     },
     "sales_cohorts.csv": {
       "rows": 130,
@@ -1531,6 +1675,10 @@
       "rows": 45,
       "sha256": "fc8d1761e8b45972bae6360f988eb08f57038f348635eabc1b08e09160a2144f"
     },
+    "utilization_calibration.csv": {
+      "rows": 5,
+      "sha256": "8570447e897ed2b913a24a2408445babc6a454362fbbd83ab41563051b9319c5"
+    },
     "utilization_comparison.csv": {
       "rows": 10,
       "sha256": "03efa86a231fd9b4e7c0f82df308f69e3f104a89a140cee3bdf1acafb109a103"
@@ -1539,7 +1687,7 @@
   "files": {
     "build_report": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\validation_baseline.json",
-      "sha256": "31588f54fb8097092dc43272cf378930f746e58b8bd7003ddcaa8da402c0a415"
+      "sha256": "cef96b579f33d6598f20bf15ab881ade338c3ca449dfcbf9ec76ea8ee80a66b1"
     },
     "ceud_manifest": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_parameter_inputs_manifest.json",
@@ -1547,7 +1695,7 @@
     },
     "database": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_baseline.sqlite",
-      "sha256": "4899ac72c94ed53d5fe484fcc4e0ff7d2732863a5417cf84c9ef12950d63ed2b"
+      "sha256": "554e710b00ec9e40370af8097218182670c433767f2c40ccd6d7b9ef1b880ec3"
     },
     "road_age_cohorts": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_age_cohorts.csv",
@@ -1562,12 +1710,80 @@
       "sha256": "cc6da988e4a40bf6c63ad416bf67fe0e2b35d52f69b01391b4a63b9044ea3078"
     }
   },
-  "implementation_sha256": "e78fb75482781b82a3049bbc2f5a7e5f6ed2d38bcb1e387f3dc701cb53d83d08",
+  "implementation_sha256": "92b6a91c6c9bb01df14f0c94d80e2b9aeaefa3736fc253154e9bed10769385bc",
+  "legacy_reconstruction": {
+    "active_arguments": {
+      "activity_ceud": "data_activity_ceud",
+      "c2a_vehicle": "data_c2a_vehicle",
+      "canoe_default_all": "'Input data/canoe_ALL_cm.sqlite'",
+      "demand_growth_rate": "data_demand_growth_rate",
+      "fixed_lifetime": "False",
+      "growth_rate_type": "'gdp'",
+      "range_period": "range(2025, 2046, 5)",
+      "range_vin": "np.arange(2005, 2026, 1)",
+      "survival_curve_transport": "data_survival_curve_transport",
+      "vehicle_sales_by_powertrain": "data_vehicle_sales_by_powertrain",
+      "vehicle_sales_by_size": "data_vehicle_sales_by_size"
+    },
+    "calibration_year": 2023,
+    "comparison_year": 2025,
+    "evidence_gap": "Original named all-region input database identity unverified; explicit inherited snapshot does not establish historical equivalence",
+    "final_lacf_preserves_existing_calibration": true,
+    "inherited_database": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\canoe_ON_16d.sqlite",
+      "sha256": "b4db7481fb0f809bcdc32e75c0ca65a08027307c60ab526f886b7e5dbb2517f5"
+    },
+    "notebook": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\Update data_20260618_fixed lifetime (1).ipynb",
+      "sha256": "ada5b14fca8d53a72d5c1561d7757be3b4112a20fa04197ea8aa098b99469559"
+    },
+    "original_inherited_input_available": false,
+    "original_input_identity_matches": false,
+    "original_named_input": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\Input data\\canoe_ALL_cm.sqlite",
+    "recipe_ast_sha256": {
+      "compile_data_c2a": "c5fe60f9842b758069b9c0e80d8e35331d418f875feaf9d229f018720d9d10cd",
+      "compile_data_eff_cova": "03514c7e28455fcdde6f4804ea6f4cf15e6e8ea21fa059c803ad8915de732ca5",
+      "compile_data_existing_capacity": "29d0772947c90ebe6d931b2c2ab8d9652d70dee1692bc7ed06a6e6021844fbec",
+      "compile_data_lacf_v_ex": "15e5e4237920340918fd3d296d6dc0dd819bb67a8b1a902f77de5156ecd42910",
+      "compile_data_lacf_v_n": "619e75d1095bccaae1880e347fae8065eb3686b5a9668fc540310e525fc3e34c",
+      "compile_data_survival_lifetime_transport": "39ea6cb060f9bfc6147c1ce1b597746378c7fcf7af65e9e6b26eae64aac02967",
+      "compile_lacf_transport": "d6c308e736f9279f2ba5a71f72490eb0749a94a3677a4a9a4ce0bd62124b3616",
+      "main_compile_data_transport": "2c975dd610cea165674604d297fbd7301286179a58adeff0939f70efb3a09d71",
+      "organize_activity_ceud": "85d794ab6859f756023162a426013531398023134ce6463aac07db71f3ed3af6",
+      "remove_data_noexca": "f4d94fbd49a22168ad922b5afa954a976d2064e760db3f50c57c9b44f8097538",
+      "shift_time_period": "c55c6f7c94345d78b00c4a0cb97c3a2a44bccfae687143c320ce9b0687230ca3"
+    },
+    "reconstruction_implementation_sha256": "b355340b2678313f2d707b1883adc2a1ca61c25520bfd64b83e0684c45d39c0d",
+    "references_immutable_during_replay": true,
+    "workbooks": [
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\vehicle_sales_by_size.xlsx",
+        "sha256": "f393231f63957a02b1acdc0728614d587b27d7b7fc821b3e1a30b9a9516cf8ae"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\vehicle_sales_by_powertrain.xlsx",
+        "sha256": "cda06f63b3167e45ddd30291d23e0efd057c7ec64e3ec336527a53dae13404b3"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\survival_curve_transport.xlsx",
+        "sha256": "918a7a5aa9f60ca42eda74b20a967b2d1c84342a5a279cf1aeccf4f25bc4b48e"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\c2a_vehicle.xlsx",
+        "sha256": "f750e05eeb2d1987e3a244cbddeb9d61f8c3ead0140aa81f6171d239d030e93a"
+      },
+      {
+        "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\legacy_variant_sales_cohorts\\activity.xlsx",
+        "sha256": "97e3c94b833086bbca81cf54227c7df1ee94b0e6d038bc70642e66b737c6f797"
+      }
+    ]
+  },
   "limitations": [
     "The supplied SQLite and the newer workbooks are separate evidence states; the notebook execution that produced the SQLite is unresolved.",
     "Comparisons retain original period and vintage labels. The current scenario manifest supplies its source-year interpretation.",
     "Utilization comparisons show the full minimum-to-maximum range by class and existing/new technology kind. Reference period rows and current vintage rows have different keys.",
-    "Workbook values and the legacy fixed_lifetime execution flag do not parameterize the current backend.",
+    "The primary legacy comparison replays active fixed_lifetime=False; saved fixed-lifetime messages and disputed SQLite outputs are audit evidence only.",
+    "Original Input data/canoe_ALL_cm.sqlite is unavailable; the configured inherited snapshot supports a conditional energy reconstruction, without proving historical identity.",
     "Activity/energy accounting evaluates all inserted base-year cohorts before future retirement; it is not an optimization result.",
     "Vehicle input energy includes PHEV blend energy once, excluding upstream charger losses; CEUD class energy contains a different fuel/fleet boundary.",
     "Raw sales-survival stock is retained for diagnosis; explicit class calibration anchors represented stock to base-year CEUD stock."
@@ -1674,7 +1890,7 @@
     "relative_tolerance": 1e-06,
     "survival_rows": 0
   },
-  "revision": "aafdd708e54840a13188b82c3f80e62fa83ff0fc",
+  "revision": "3e1b20175efc420bc999390caf36b6a5ff218939",
   "sales_activity_closure": {
     "classes_checked": 5,
     "interpretation": "calibration check, not independent validation",

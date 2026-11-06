@@ -951,6 +951,9 @@ parameterization:
     comparison_significance_percent: 5.0
     reference_sqlite: canoe_ON_16d.sqlite
     reference_notebook: Update data_20260618_fixed lifetime (1).ipynb
+    # Original notebook Input data/canoe_ALL_cm.sqlite is unavailable. Explicit
+    # inherited-parameter substitution; disputed capacity/demand are not authority.
+    inherited_sqlite: legacy_backend/legacy_variant_sales_cohorts/canoe_ON_16d.sqlite
     legacy_baseline: legacy_backend/canoe_on_12d_baseline.sqlite
     energy_series:
       cars: {table_id: 20, raw_series: Car Energy Use (PJ)}

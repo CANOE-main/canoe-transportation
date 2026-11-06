@@ -1,4 +1,4 @@
-"""Equivalent fleet, utilization, demand and charging-cost diagnostics."""
+"""Independent 2025 stock, activity–energy and demand comparison."""
 
 import marimo
 
@@ -18,37 +18,37 @@ def _():
         "freight_light_trucks": "Freight light trucks", "medium_trucks": "Medium trucks",
         "heavy_trucks": "Heavy trucks",
     }
-    STAGES = ["Before calibration", "Implemented activity calibration", "Energy closure sensitivity"]
-    STAGE_COLORS = ["#999999", "#2166ac", "#b35806"]
     STOCK_LABELS = {**CLASS_LABELS, "passenger_light_trucks": "Light trucks", "freight_light_trucks": "Light trucks"}
     STOCK_ORDER = ["Cars", "Light trucks", "Medium trucks", "Heavy trucks"]
+    BUILDS = ["Current backend", "Legacy recipe"]
+    CASES = ["Backend before calibration", "Current backend", "Legacy recipe", "Backend energy sensitivity"]
+    CASE_COLORS = ["#999999", "#2166ac", "#7b3294", "#b35806"]
+    CASE_SHAPES = ["circle", "square", "triangle-up", "diamond"]
 
-    def stock_grid(chart):
+    def stock_grid(chart, paired_scales=False):
+        if paired_scales:
+            rows = [chart.transform_filter(alt.FieldOneOfPredicate(field="Class", oneOf=names)).properties(
+                width=370, height=215).facet(column=alt.Column("Class:N", sort=names, title=None)).resolve_scale(y="shared")
+                for names in [STOCK_ORDER[:2], STOCK_ORDER[2:]]]
+            return alt.vconcat(*rows, spacing=25).resolve_scale(y="independent")
         return chart.properties(width=370, height=190).facet(
-            facet=alt.Facet("Class:N", sort=STOCK_ORDER, title=None, header=alt.Header(labelFontSize=12)),
-            columns=2,
+            facet=alt.Facet("Class:N", sort=STOCK_ORDER, title=None), columns=2,
         ).resolve_scale(x="shared", y="independent")
 
-    def class_grid(chart, shared_y=False, service_units=False):
-        field = "Class:N"
-        labels = list(CLASS_LABELS.values())
-        if service_units:
-            field = "Panel:N"
-            labels = [label + (" (passenger-km)" if name in {"cars", "passenger_light_trucks"}
-                               else " (tonne-km)") for name, label in CLASS_LABELS.items()]
-        grid = chart.properties(width=280, height=170).facet(
-            facet=alt.Facet(field, sort=labels, title=None, header=alt.Header(labelFontSize=12)), columns=3,
-        ).resolve_scale(x="independent", y="shared" if shared_y else "independent")
-        if service_units:
-            grid = grid.transform_calculate(Panel=(
-                "datum.Class + (indexof(['Cars', 'Passenger light trucks'], datum.Class) >= 0"
-                " ? ' (passenger-km)' : ' (tonne-km)')"))
-        return grid
+    def class_grid(chart):
+        labels = [label + (" (billion passenger-km)" if name in {"cars", "passenger_light_trucks"}
+                           else " (billion tonne-km)") for name, label in CLASS_LABELS.items()]
+        grid = chart.properties(width=290, height=210).facet(
+            facet=alt.Facet("Panel:N", sort=labels, title=None, header=alt.Header(labelFontSize=11)), columns=3,
+        ).resolve_scale(x="independent", y="independent")
+        return grid.transform_calculate(Panel=(
+            "datum.Class + (indexof(['Cars', 'Passenger light trucks'], datum.Class) >= 0"
+            " ? ' (billion passenger-km)' : ' (billion tonne-km)')"))
 
     def display_chart(chart):
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
 
-    return CLASS_LABELS, STAGES, STAGE_COLORS, STOCK_LABELS, STOCK_ORDER, alt, class_grid, display_chart, load_validation_diagnosis, mo, pd, stock_grid
+    return BUILDS, CASES, CASE_COLORS, CASE_SHAPES, CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, class_grid, display_chart, load_validation_diagnosis, mo, pd, stock_grid
 
 
 @app.cell
@@ -61,22 +61,30 @@ def _(load_validation_diagnosis):
 def _(diagnosis, mo):
     scenario = diagnosis["fleet_metadata"]["scenario"]
     mo.vstack([mo.md(f"""
-    # Transportation validation: methods and closure
+    # Transportation validation: independent methods
 
-    Build: **[{scenario['scenario']['name']}](../../{diagnosis['scenario_path']})**, base year **{scenario['periods']['base_year']}**.
-    References: **legacy_variant_sales_cohorts** (workbooks and `canoe_ON_16d.sqlite`)
-    and **legacy_variant_charger_costs** (cost tables).
-    Stock panels combine passenger and freight light trucks; service panels keep their different units separate.
-    Stock panels use separate vertical scales.
-    **{diagnosis['significance_percent']:g}%** flags discrepancies for review, not an acceptance tolerance.
-    """), mo.accordion({"Generate this comparison (run in order)": mo.md(f"""
+    **2025 evaluation**, shared **CEUD 2023 edition**; observed stock, activity and energy are held
+    constant through 2025. Backend stock is normalized to CEUD; legacy stock is independently reconstructed.
+    CEUD observation year, UF calibration year, evaluation year and model labels are different concepts.
+    Prospective **model period 2025 represents demand calendar year 2030**; baseline accounting here is calendar 2025.
+    Scenario: [{scenario['scenario']['name']}](../../{diagnosis['scenario_path']}).
+
+    Primary legacy reference: the supplied notebook's **active `fixed_lifetime=False` recipe** and workbooks.
+    The supplied `canoe_ON_16d.sqlite` does not reproduce its capacity output; it remains discrepancy evidence.
+    It is also the explicitly selected **inherited-parameter snapshot**, substituting for missing
+    `Input data/canoe_ALL_cm.sqlite`. Legacy efficiency-dependent energy is conditional on that substitution;
+    it does not establish the original input's historical identity. Reference files remain immutable.
+    No efficiencies, costs, charging assumptions or scientific calibration are changed by this comparison.
+    """), mo.accordion({"Reproduce offline, in order": mo.md(f"""
     ```powershell
-    uv run python src/build_transport.py --scenario {diagnosis['scenario_path']} --overwrite
-    uv run python -m validation.transportation_research --scenario {diagnosis['scenario_path']} --write-report
-    uv run python -m validation.charging_cost_comparison --scenario {diagnosis['scenario_path']} --write-report
-    uv run marimo edit docs/insights/transportation_validation_diagnosis.py
+    uv run --offline python src/build_transport.py --scenario {diagnosis['scenario_path']} --overwrite
+    uv run --offline python -m validation.transportation_research --scenario {diagnosis['scenario_path']} --write-report
+    uv run --offline python -m validation.charging_cost_comparison --scenario {diagnosis['scenario_path']} --write-report
+    uv run --offline marimo edit docs/insights/transportation_validation_diagnosis.py
     ```
-    Both reports must match this live YAML and the same database. Reference inputs remain read-only.
+    Both reports must identify the same configured build. All numerical comparison tables are exported
+    under its configured research report route, with input and CSV hashes. A fresh notebook replays the
+    inspected legacy calculation functions and rejects changed recipe/input identities.
     """)})])
     return
 
@@ -90,17 +98,13 @@ def _(diagnosis, mo):
 
 
 @app.cell(hide_code=True)
-def _(CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, diagnosis, display_chart, mo, pd, region, stock_grid):
+def _(STOCK_LABELS, alt, diagnosis, display_chart, mo, region, stock_grid):
     annual = diagnosis["fleet"]["sales_cohort_reconciliation"]
-    annual = annual.loc[annual.region.eq(region.value)].copy()
-    annual["Class"] = annual.road_class.map(STOCK_LABELS)
+    annual = annual.loc[annual.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
     annual_stock = annual.groupby(["Class", "vintage_year"], as_index=False)[[
-        "sales_k_vehicles", "surviving_k_vehicles", "retired_k_vehicles",
-        "calibrated_surviving_k_vehicles", "inserted_cohort_k_vehicles",
-    ]].sum()
-    portions = annual_stock.melt(id_vars=["Class", "vintage_year"], value_vars=[
         "surviving_k_vehicles", "retired_k_vehicles", "calibrated_surviving_k_vehicles", "inserted_cohort_k_vehicles",
-    ], var_name="Component", value_name="Vehicles")
+    ]].sum()
+    portions = annual_stock.melt(id_vars=["Class", "vintage_year"], var_name="Component", value_name="Vehicles")
     portions["Kind"] = portions.Component.isin(["surviving_k_vehicles", "retired_k_vehicles"]).map({True: "Sales", False: "Model"})
     portions["Component"] = portions.Component.map({
         "surviving_k_vehicles": "Raw surviving sales", "retired_k_vehicles": "Cumulative retirements",
@@ -109,405 +113,288 @@ def _(CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, diagnosis, display_chart, mo
     cohort_legend = ["Raw surviving sales", "Cumulative retirements", "After stock scaling", "After fixed-lifetime allocation"]
     cohort_colors = ["#4477aa", "#d9d9d9", "#cc8844", "#222222"]
     retirement_bars = alt.Chart().transform_filter(alt.datum.Kind == "Sales").mark_bar().encode(
-        x=alt.X("vintage_year:O", title="Sales year", axis=alt.Axis(labelAngle=0, labelExpr="toNumber(datum.label) % 5 == 0 ? datum.label : ''")),
+        x=alt.X("vintage_year:O", title="Sales calendar year", axis=alt.Axis(labelAngle=0, labelExpr="toNumber(datum.label) % 5 == 0 ? datum.label : ''")),
         y=alt.Y("Vehicles:Q", title="Thousand vehicles", stack="zero"),
         color=alt.Color("Component:N", title=None, scale=alt.Scale(domain=cohort_legend, range=cohort_colors),
-            legend=alt.Legend(orient="right", direction="vertical", labelLimit=260, symbolType="stroke", symbolSize=350)),
-        order=alt.Order("Component:N", sort="descending"),
-        tooltip=["Class:N", "vintage_year:O", "Component:N", alt.Tooltip("Vehicles:Q", format=",.2f")],
+                        legend=alt.Legend(orient="bottom", labelLimit=280, columns=2, symbolType="stroke", symbolSize=350)),
+        order=alt.Order("Component:N", sort="descending"), tooltip=["Class:N", "vintage_year:O", "Component:N", alt.Tooltip("Vehicles:Q", format=",.3f")],
     )
     allocated_line = alt.Chart().transform_filter(alt.datum.Kind == "Model").mark_line(strokeWidth=1.8).encode(
         x="vintage_year:O", y=alt.Y("Vehicles:Q", stack=None), order="vintage_year:O",
-        color=alt.Color("Component:N", title=None, scale=alt.Scale(domain=cohort_legend, range=cohort_colors),
-                        legend=alt.Legend(orient="right", direction="vertical", labelLimit=260, symbolType="stroke", symbolSize=350)),
+        color=alt.Color("Component:N", title=None, scale=alt.Scale(domain=cohort_legend, range=cohort_colors)),
         strokeDash=alt.StrokeDash("Component:N", title=None, scale=alt.Scale(domain=cohort_legend, range=[[1, 0], [1, 0], [1, 0], [5, 3]]),
-                                  legend=alt.Legend(orient="right", direction="vertical", labelLimit=260, symbolType="stroke", symbolSize=350)),
-        tooltip=["Class:N", "vintage_year:O", "Component:N", alt.Tooltip("Vehicles:Q", format=",.2f")],
+                                  legend=alt.Legend(orient="bottom", labelLimit=280, columns=2, symbolType="stroke", symbolSize=350)),
+        tooltip=["Class:N", "vintage_year:O", "Component:N", alt.Tooltip("Vehicles:Q", format=",.3f")],
     )
-    retirement_chart = stock_grid(alt.layer(retirement_bars, allocated_line, data=portions)).properties(
-        title="Backend only · raw sales, stock scaling and cohort redistribution",
-    )
-    fleet_totals = diagnosis["fleet"]["fleet_reconciliation"]
-    fleet_totals = fleet_totals.loc[fleet_totals.region.eq(region.value)].copy()
-    fleet_totals["Class"] = fleet_totals.road_class.map(CLASS_LABELS)
-    backend_stages = fleet_totals.assign(Class=fleet_totals.road_class.map(STOCK_LABELS)).groupby("Class", as_index=False)[[
-        "surviving_k_vehicles", "calibrated_surviving_k_vehicles", "allocated_stock_k_vehicles", "inserted_stock_k_vehicles",
-    ]].sum()
-    backend_stages["Stock multiplier"] = backend_stages.calibrated_surviving_k_vehicles / backend_stages.surviving_k_vehicles
-    backend_stages = backend_stages.set_index("Class").reindex(STOCK_ORDER).reset_index()
-    heavy = fleet_totals.loc[fleet_totals.road_class.eq("heavy_trucks")].iloc[0]
-    built_totals = diagnosis["fleet"]["built_stock_totals"]
-    built_totals = built_totals.loc[built_totals.region.eq(region.value)].copy()
-    built_totals["Class"] = built_totals.road_class.map(STOCK_LABELS)
-    stock_comparison = built_totals.groupby(["Class", "evidence"], as_index=False)[[
-        "capacity_k_vehicles", "ceud_stock_k_vehicles",
-    ]].sum()
-    stock_comparison["Difference from CEUD (%)"] = 100 * (stock_comparison.capacity_k_vehicles / stock_comparison.ceud_stock_k_vehicles - 1)
-    stock_comparison["Share of CEUD target (%)"] = 100 + stock_comparison["Difference from CEUD (%)"]
-    stock_methods = ["Backend SQLite", "Sales variant SQLite"]
-    stock_comparison["Kind"] = "Database"
-    targets = stock_comparison.loc[stock_comparison.evidence.eq("Backend SQLite"), ["Class", "ceud_stock_k_vehicles"]].rename(
-        columns={"ceud_stock_k_vehicles": "capacity_k_vehicles"},
-    )
-    targets["Kind"] = "Target"
-    targets["Share of CEUD target (%)"] = 100.
-    stock_data = pd.concat([stock_comparison, targets], ignore_index=True)
-    stock_bars = alt.Chart().transform_filter(alt.datum.Kind == "Database").mark_bar(size=13).encode(
-        y=alt.Y("Class:N", sort=STOCK_ORDER, title=None),
-        yOffset=alt.YOffset("evidence:N", sort=stock_methods, scale=alt.Scale(domain=stock_methods)),
-        x=alt.X("Share of CEUD target (%):Q", title="Stored capacity / backend CEUD 2025 target (%)", scale=alt.Scale(zero=True)),
-        color=alt.Color("evidence:N", title=None, scale=alt.Scale(domain=stock_methods, range=["#2166ac", "#cc8844"]),
-                        legend=alt.Legend(orient="right", direction="vertical", labelLimit=240)),
-        tooltip=["Class:N", "evidence:N", alt.Tooltip("capacity_k_vehicles:Q", title="Stored capacity (thousand)", format=",.3f"),
-                 alt.Tooltip("Difference from CEUD (%):Q", format="+.2f")],
-    )
-    stock_target = alt.Chart().transform_filter(alt.datum.Kind == "Target").mark_tick(
-        orient="vertical", color="#222222", thickness=2, size=38,
-    ).encode(y=alt.Y("Class:N", sort=STOCK_ORDER), x="Share of CEUD target (%):Q",
-             tooltip=["Class:N", alt.Tooltip("capacity_k_vehicles:Q", title="Backend CEUD 2025 target (thousand)", format=",.3f")])
-    stock_residual_chart = alt.layer(stock_bars, stock_target, data=stock_data).properties(width=640, height=220)
-    mo.vstack([
-        mo.md("""
-        ## 1. Backend cohorts: raw survival, stock scaling and allocation
+    retirement_chart = stock_grid(alt.layer(retirement_bars, allocated_line, data=portions))
+    cutoffs = diagnosis["fleet"]["backend_lifetime_exclusions"]
+    cutoffs = cutoffs.loc[cutoffs.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
+    mo.vstack([mo.md("""
+    ## 1. Stock and cohort lineage
 
-        **Blue + gray = original sales; blue = sales × cumulative survival at 2025 age.**
-        The backend then explicitly scales survivors by **CEUD stock / raw survivors** (orange).
-        Fixed-lifetime allocation redistributes that scaled stock among eligible cohorts (dashed).
-        Its total equals CEUD by construction. This calibration identity does not validate the raw reconstruction.
+    **Backend only:** blue + grey reconstruct raw sales; blue is sales × cumulative annual survival at 2025.
+    Orange scales those survivors by **CEUD stock / raw surviving stock**. Dashed allocation then redistributes
+    excluded stock proportionally **within each technology**, preserving its total. CEUD equality is a calibration identity.
 
-        Fixed-lifetime eligibility applies with **`survival_curves: false`**. Cars/light trucks/medium
-        and heavy trucks have 16/17/20-year medians; the shared 2011 sales-year cutoff results from
-        also testing the five-year vintage's eligibility. Allocation changes the cohort distribution.
-        """), display_chart(retirement_chart),
-        mo.md(f"""
-        **Heavy trucks:** {heavy.surviving_k_vehicles:,.3f}k raw survivors × {heavy.stock_calibration_multiplier:.4f}
-        = **{heavy.calibrated_surviving_k_vehicles:,.3f}k** stock-calibrated vehicles;
-        fixed-lifetime allocation preserves **{heavy.allocated_stock_k_vehicles:,.3f}k**.
-        Scaling removes the raw surplus; it is a separate operation from cumulative retirement.
-        Consequently, allocated cohorts can lie below raw survivors while their total equals CEUD.
-        """),
-        mo.ui.table(backend_stages[["Class", "surviving_k_vehicles", "Stock multiplier", "calibrated_surviving_k_vehicles", "allocated_stock_k_vehicles"]].rename(columns={
-            "surviving_k_vehicles": "Raw survivors (k)", "calibrated_surviving_k_vehicles": "After stock scaling (k)",
-            "allocated_stock_k_vehicles": "After allocation (k)",
-        }), selection=None, pagination=False, label="Backend transformations only; light-truck quantities are summed before calculating the multiplier",
-            format_mapping={"Stock multiplier": "{:.4f}", "Raw survivors (k)": "{:,.3f}", "After stock scaling (k)": "{:,.3f}", "After allocation (k)": "{:,.3f}"}),
-        mo.md("""
-        ### What the two databases actually contain
-
-        Both bars below sum **stored vehicle-capacity rows**, including every BEV/PHEV range.
-        The sales-variant values are read directly from its SQLite; no CEUD scaling or backend
-        retirement method is applied to them. Black ticks mark the backend's CEUD 2025 target
-        at 100% (2023 stock held constant); the percentage axis makes classes comparable and
-        absolute counts remain in the table. This is a reference point, not a verified variant base year.
-        Stored capacity can include cohorts that expire before 2025; active fleets require a separate retirement calculation.
-        """), display_chart(stock_residual_chart),
-        mo.ui.table(stock_comparison[["Class", "evidence", "capacity_k_vehicles", "ceud_stock_k_vehicles", "Difference from CEUD (%)"]].rename(columns={
-            "evidence": "Database", "capacity_k_vehicles": "Stored capacity (k)", "ceud_stock_k_vehicles": "Backend CEUD 2025 target (k)",
-        }), selection=None, pagination=False, label="Actual database totals; CEUD equality on the backend side is the implemented stock calibration",
-            format_mapping={"Stored capacity (k)": "{:,.3f}", "Backend CEUD 2025 target (k)": "{:,.3f}", "Difference from CEUD (%)": "{:+.2f}%"}),
-        mo.accordion({
-            "Backend class-specific stock and cutoff audit": mo.ui.table(fleet_totals[[
-                "Class", "stock_explanation", "fixed_lifetime_years", "first_eligible_annual_cohort", "first_eligible_model_vintage",
-                "calibrated_to_inserted_residual_k_vehicles",
-            ]], selection=None, pagination=False),
-        }),
-    ])
-    return retirement_chart, stock_residual_chart
+    Eligibility requires both `annual year + lifetime > 2025` and `model vintage + lifetime > 2025`.
+    Lifetimes are **16 years (cars), 17 (light trucks), 20 (medium/heavy)**. Vintage 2005 represents 2006–2010:
+    even `2005 + 20 = 2025` fails the strict endpoint. Vintage 2010 represents 2011–2015 and passes all three.
+    That explains the common **2011 cutoff**. Annual-only cutoffs would be 2010 / 2009 / 2006 respectively.
+    This is an effect of the current fixed-lifetime representation, not missing aggregation bins.
+    """), display_chart(retirement_chart), mo.ui.table(cutoffs[[
+        "Class", "fixed_lifetime_years", "all_excluded_k_vehicles", "total_redistributed_percent",
+        "coarse_vintage_exclusion_k_vehicles", "coarse_exclusion_percent",
+    ]].rename(columns={"fixed_lifetime_years": "Lifetime (years)", "all_excluded_k_vehicles": "All redistributed (k)",
+        "total_redistributed_percent": "All / CEUD (%)", "coarse_vintage_exclusion_k_vehicles": "Extra from model-vintage test (k)",
+        "coarse_exclusion_percent": "Extra / CEUD (%)"}), selection=None, pagination=False,
+        label="Separate service classes retained for the exclusion audit; light-truck stock plots combine them"),
+        mo.accordion({"Raw → scaled → allocated class totals and explanations": mo.ui.table(
+            diagnosis["fleet"]["fleet_reconciliation"], selection=None, page_size=5)})])
+    return (retirement_chart,)
 
 
 @app.cell(hide_code=True)
-def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, mo, region, stock_grid):
-    composition = diagnosis["fleet"]["built_stock_parameters"]
-    composition = composition.loc[composition.region.eq(region.value)].copy()
-    composition["Class"] = composition.road_class.map(STOCK_LABELS)
-    stacks = composition.groupby(["Class", "vintage", "evidence", "powertrain"], as_index=False).agg(
-        Stock=("capacity_k_vehicles", "sum"), Technology_count=("tech", "nunique"),
+def _(BUILDS, STOCK_LABELS, alt, diagnosis, display_chart, mo, pd, region, stock_grid):
+    vintages = diagnosis["fleet"]["comparison_vintage_stock"]
+    vintages = vintages.loc[vintages.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
+    vintage_stocks = vintages.groupby(["Class", "evidence", "vintage"], as_index=False).surviving_k_vehicles.sum()
+    vintage_stocks["Kind"] = "Stock"
+    totals = diagnosis["fleet"]["comparison_stock_totals"]
+    totals = totals.loc[totals.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
+    stock_totals = totals.groupby(["Class", "evidence"], as_index=False)[["surviving_k_vehicles", "ceud_stock_k_vehicles"]].sum()
+    stock_totals["Difference (%)"] = 100 * (stock_totals.surviving_k_vehicles / stock_totals.ceud_stock_k_vehicles - 1)
+    targets = stock_totals.rename(columns={"ceud_stock_k_vehicles": "Target"}).assign(Kind="Target")
+    stock_data = pd.concat([vintage_stocks, targets], ignore_index=True)
+    stock_bars = alt.Chart().transform_filter(alt.datum.Kind == "Stock").mark_bar(size=58).encode(
+        x=alt.X("evidence:N", sort=BUILDS, title=None, axis=alt.Axis(labelAngle=0)),
+        y=alt.Y("surviving_k_vehicles:Q", title="Surviving stock at 2025 (thousand vehicles)", stack="zero"),
+        color=alt.Color("vintage:O", title="Model vintage", scale=alt.Scale(scheme="blues"), legend=alt.Legend(orient="bottom")),
+        order="vintage:O", tooltip=["Class:N", "evidence:N", "vintage:O", alt.Tooltip("surviving_k_vehicles:Q", format=",.3f")],
     )
-    comparison_methods = ["Backend SQLite", "Sales variant SQLite"]
-    powertrain_order = ["Gasoline", "Diesel", "HEV", "PHEV", "BEV", "CNG", "LPG", "Other"]
-    powertrain_order = [powertrain for powertrain in powertrain_order if powertrain in set(stacks.powertrain)]
-    powertrain_colors = {"Gasoline": "#ddcc77", "Diesel": "#4477aa", "HEV": "#228833", "PHEV": "#aa3377",
-                         "BEV": "#66ccee", "CNG": "#ee7733", "LPG": "#cc6677", "Other": "#999999"}
-    stacks["Powertrain order"] = stacks.powertrain.map({powertrain: index for index, powertrain in enumerate(powertrain_order)})
-    vintage_chart = stock_grid(alt.Chart(stacks).mark_bar(size=22).encode(
-        x=alt.X("vintage:O", title="Native vintage · left backend / right sales variant", axis=alt.Axis(labelAngle=0)),
-        xOffset=alt.XOffset("evidence:N", sort=comparison_methods, scale=alt.Scale(domain=comparison_methods)),
-        y=alt.Y("Stock:Q", title="Stored capacity (thousand vehicles)", stack="zero"),
-        color=alt.Color("powertrain:N", title="Stored powertrain", scale=alt.Scale(domain=powertrain_order,
-            range=[powertrain_colors[powertrain] for powertrain in powertrain_order]),
-            legend=alt.Legend(orient="right", direction="vertical", labelLimit=240)),
-        order=alt.Order("Powertrain order:Q", sort="ascending"),
-        tooltip=["Class:N", "evidence:N", "vintage:O", "powertrain:N", "Technology_count:Q", alt.Tooltip("Stock:Q", format=",.3f")],
+    stock_target = alt.Chart().transform_filter(alt.datum.Kind == "Target").mark_point(
+        shape="cross", color="#111111", filled=False, size=180, strokeWidth=2.5).encode(
+        x=alt.X("evidence:N", sort=BUILDS), y=alt.Y("Target:Q", title="Surviving stock at 2025 (thousand vehicles)"),
+        tooltip=["Class:N", alt.Tooltip("Target:Q", title="CEUD 2023 stock held to 2025 (k)", format=",.3f")])
+    stock_comparison_chart = stock_grid(alt.layer(stock_bars, stock_target, data=stock_data), paired_scales=True)
+    mo.vstack([mo.md("""
+    ### Surviving stock: independent 2025 parameterizations
+
+    One bar per build, stacked by model vintage. **Black crosses = CEUD 2023 stock held through 2025**.
+    Cars/light trucks share one vertical scale; medium/heavy share another. Backend capacity already contains
+    annual survival, stock normalization and eligibility allocation: no second retirement is applied.
+    Legacy exported ExistingCapacity is **raw acquisitions**, not surviving stock. Its own rounded workbook
+    survival is applied once **after aggregation**, at `2025 − representative vintage`; no CEUD scaling is imposed.
+    """), display_chart(stock_comparison_chart), mo.ui.table(stock_totals.rename(columns={
+        "evidence": "Build", "surviving_k_vehicles": "Surviving 2025 stock (k)", "ceud_stock_k_vehicles": "CEUD target (k)",
+    }), selection=None, pagination=False, format_mapping={"Difference (%)": "{:+.2f}%"}),
+        mo.accordion({"Disputed supplied SQLite versus raw notebook export": mo.vstack([
+            mo.md("Raw export is compared with raw stored capacity here, separately from the surviving-stock comparison. No matching branch is inferred from filenames or saved messages."),
+            mo.ui.table(diagnosis["fleet"]["reference_recipe_totals"], selection=None, pagination=False),
+            mo.ui.table(diagnosis["fleet"]["legacy_reconstruction_context"], selection=None, pagination=False),
+        ])})])
+    return (stock_comparison_chart,)
+
+
+@app.cell(hide_code=True)
+def _(BUILDS, STOCK_LABELS, alt, diagnosis, display_chart, mo, region, stock_grid):
+    lineage = diagnosis["fleet"]["comparison_annual_stock"]
+    lineage = lineage.loc[lineage.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
+    contributions = lineage.groupby(["Class", "evidence", "vintage", "vintage_year", "annual_position", "cohort_position", "interval"], as_index=False).surviving_k_vehicles.sum()
+    positions = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"]
+    vintage_chart = stock_grid(alt.Chart(contributions).mark_bar(size=20).encode(
+        x=alt.X("vintage:O", title="Model vintage · left backend / right legacy", axis=alt.Axis(labelAngle=0)),
+        xOffset=alt.XOffset("evidence:N", sort=BUILDS, scale=alt.Scale(domain=BUILDS)),
+        y=alt.Y("surviving_k_vehicles:Q", title="Surviving stock at 2025 (thousand)", stack="zero"),
+        color=alt.Color("cohort_position:N", title="5-year cohorts", scale=alt.Scale(domain=positions,
+            range=["#4477aa", "#66ccee", "#228833", "#ddcc77", "#cc6677"]), legend=alt.Legend(orient="bottom", columns=5)),
+        order=alt.Order("annual_position:Q"), tooltip=["Class:N", "evidence:N", "vintage:O", "vintage_year:O", "cohort_position:N", "interval:N",
+            alt.Tooltip("surviving_k_vehicles:Q", format=",.3f")],
     ))
-    recipe_totals = diagnosis["fleet"]["reference_recipe_totals"]
-    recipe_totals = recipe_totals.loc[recipe_totals.region.eq(region.value)].copy()
-    recipe_totals["Class"] = recipe_totals.road_class.map(CLASS_LABELS)
-    mo.vstack([
-        mo.md("""
-        ### Actual vintage composition: backend versus sales variant
+    mo.vstack([mo.md("""
+    ### Annual contributions inside each model vintage
 
-        Each pair now contains **only the two databases' stored parameters**; no markers or substituted
-        workbook reconstruction. Segments are powertrains, which both SQLite files preserve.
-        The variant does not retain the annual split inside its five-year vintages, so yearly colors
-        would imply unsupported data. Backend vintage 2020 contains 2021–2025 cohorts;
-        the exact annual composition of the variant's stored vintage 2020 is unverified.
-        """), display_chart(vintage_chart),
-        mo.md("""
-        ### Do the annual Excel files reproduce the sales-variant SQLite?
+    Left **current backend**, right **legacy recipe**; sum of annual segments equals the same vintage and class
+    capacities above. Positions mean `vintage + 1 … vintage + 5`. Exact years are in tooltips.
+    **Partial bins are summed, never discarded**: available 2013–2015 all contribute to vintage 2010.
+    Aggregation precedes the separate eligibility screen. The legacy's oldest bin contains only **2005 → 2000**;
+    the backend oldest proxy includes **2000–2005**, an extra lower endpoint (zero surviving allocated stock here).
+    Hover identifies any such boundary exception rather than treating it as a regular five-year interval.
 
-        The supplied notebook multiplies annual class sales by powertrain shares, extends the
-        **2023 products** through 2024–2025, and groups 2005–2025 into five-year bins.
-        Its `ExistingCapacity` calculation applies **no survival or CEUD stock normalization**;
-        survival enters later utilization calculations. Replaying those steps uses their own inputs and bins.
-        The table compares that intended capacity output with the supplied SQLite after explicit technology-suffix alignment.
-
-        The replay does not reproduce the stored rows. This discrepancy remains **after annual-to-vintage
-        aggregation**. The newer workbooks, notebook and older SQLite therefore describe different
-        evidence states; the inspected notebook supplies no CSV-to-SQLite write path establishing this build.
-        Its stored road capacities also equal the original legacy database's values.
-        """),
-        mo.ui.table(recipe_totals[["Class", "stored_capacity_k_vehicles", "recipe_capacity_k_vehicles",
-                                     "recipe_minus_stored_k_vehicles", "recipe_difference_percent", "common_keys", "matching_keys"]].rename(columns={
-            "stored_capacity_k_vehicles": "Stored variant (k)", "recipe_capacity_k_vehicles": "Notebook Excel recipe (k)",
-            "recipe_minus_stored_k_vehicles": "Recipe − stored (k)", "recipe_difference_percent": "Difference (%)",
-            "common_keys": "Shared technology/vintage keys", "matching_keys": "Matching values",
-        }), selection=None, pagination=False, label="One row per original CEUD class; light-truck service classes remain separate for this source reconciliation",
-            format_mapping={"Stored variant (k)": "{:,.3f}", "Notebook Excel recipe (k)": "{:,.3f}", "Recipe − stored (k)": "{:+,.3f}", "Difference (%)": "{:+.2f}%"}),
-        mo.accordion({
-            "Recipe steps, years and evidence limits": mo.vstack([
-                mo.ui.table(diagnosis["fleet"]["reference_recipe_steps"], selection=None, pagination=False),
-                mo.ui.table(diagnosis["fleet"]["reference_recipe_context"], selection=None, pagination=False),
-                mo.ui.table(diagnosis["fleet"]["reference_replay_context"], selection=None, pagination=False),
-            ]),
-            "Stored variant lifetimes and timing evidence": mo.ui.table(diagnosis["fleet"]["reference_timing_context"], selection=None, pagination=False),
-            "Recipe versus SQLite: every native technology/vintage key": mo.ui.table(diagnosis["fleet"]["reference_recipe_comparison"], selection=None, page_size=10),
-            "Actual database rows used in both stacks": mo.ui.table(composition, selection=None, page_size=10),
-            "Literal annual workbook recipe": mo.ui.table(diagnosis["fleet"]["reference_recipe_annual"], selection=None, page_size=10),
-            "Backend annual eligibility and fuel allocation": mo.vstack([
-                mo.json(diagnosis["fleet_metadata"]["cohort_audit"]["period_mapping"]),
-                mo.ui.table(diagnosis["fleet"]["road_age_cohorts"], selection=None, page_size=10),
-                mo.ui.table(diagnosis["fleet"]["road_fuel_shares"], selection=None, page_size=10),
-            ]),
-        }),
-    ])
+    Legacy annual colours carry **one representative-vintage survival fraction shared by the bin**.
+    They do not imply annual-age survival. Backend lineage retains its own annual survival, CEUD multiplier
+    and technology-specific redistribution. Missing annual SQLite detail does not prevent workbook reconstruction.
+    """), display_chart(vintage_chart), mo.accordion({"Full annual lineage": mo.ui.table(lineage, selection=None, page_size=10)})])
     return (vintage_chart,)
 
 
 @app.cell(hide_code=True)
-def _(CLASS_LABELS, STAGES, STAGE_COLORS, alt, diagnosis, display_chart, mo, region):
-    calibration = diagnosis["fleet"]["utilization_calibration"]
-    calibration = calibration.loc[calibration.region.eq(region.value)].copy()
-    calibration["Class"] = calibration.road_class.map(CLASS_LABELS)
-    utilization_long = calibration.melt(id_vars="Class", value_vars=[
-        "prior_mean_utilization", "implemented_utilization", "energy_closing_utilization",
-    ], var_name="Stage", value_name="Annual factor")
-    utilization_long["Stage"] = utilization_long.Stage.map(dict(zip([
-        "prior_mean_utilization", "implemented_utilization", "energy_closing_utilization",
-    ], STAGES)))
-    utilization_chart = alt.Chart(utilization_long).mark_point(filled=True, size=100).encode(
+def _(CASES, CASE_COLORS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis, display_chart, mo, region):
+    cases = diagnosis["fleet"]["baseline_activity_energy_cases"]
+    cases = cases.loc[cases.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS))
+    legacy_bounds = diagnosis["fleet"]["legacy_reconstructed_utilization"]
+    legacy_bounds = legacy_bounds.loc[legacy_bounds.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS))
+    utilization_points = alt.Chart(cases).mark_point(filled=True, size=110).encode(
         y=alt.Y("Class:N", sort=list(CLASS_LABELS.values()), title=None),
-        x=alt.X("Annual factor:Q", title="Annual utilization factor (dimensionless)", axis=alt.Axis(tickCount=6), scale=alt.Scale(zero=True)),
-        color=alt.Color("Stage:N", sort=STAGES, scale=alt.Scale(domain=STAGES, range=STAGE_COLORS),
-                        legend=alt.Legend(orient="bottom", title=None, labelLimit=280)),
-        shape=alt.Shape("Stage:N", sort=STAGES, scale=alt.Scale(domain=STAGES, range=["circle", "square", "diamond"]),
-                        legend=alt.Legend(orient="bottom", title=None, labelLimit=280)),
-        tooltip=["Class:N", "Stage:N", alt.Tooltip("Annual factor:Q", format=".5f")],
-    ).properties(width=760, height=185)
-    mo.vstack([
-        mo.md("""
-        ## 2. Annual utilization and its implemented calibration
+        x=alt.X("utilization:Q", title="Annual utilization factor (dimensionless)", scale=alt.Scale(zero=True)),
+        color=alt.Color("case:N", scale=alt.Scale(domain=CASES, range=CASE_COLORS), title=None, legend=alt.Legend(orient="bottom", columns=2, labelLimit=260)),
+        shape=alt.Shape("case:N", scale=alt.Scale(domain=CASES, range=CASE_SHAPES), title=None, legend=alt.Legend(orient="bottom", columns=2, labelLimit=260)),
+        tooltip=["Class:N", "case:N", alt.Tooltip("utilization:Q", format=".6f")],
+    )
+    utilization_bounds = alt.Chart(legacy_bounds).mark_rule(color="#7b3294", strokeWidth=2).encode(
+        y=alt.Y("Class:N", sort=list(CLASS_LABELS.values())), x="lower_bound:Q", x2="upper_bound:Q",
+        tooltip=["Class:N", alt.Tooltip("lower_bound:Q", format=".6f"), alt.Tooltip("upper_bound:Q", format=".6f")])
+    utilization_chart = alt.layer(utilization_bounds, utilization_points).properties(width=800, height=220)
+    calibration = diagnosis["fleet"]["backend_utilization_bridge"]
+    calibration = calibration.loc[calibration.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS))
+    mo.vstack([mo.md("""
+    ## 2. Utilization: calibration values, bounds and sensitivity
 
-        Gray is the captured CEUD-derived factor before sales-stock calibration;
-        blue is inserted utilization. Calibration preserves class **annual activity**,
-        applying the same flat factor to existing and new technologies. It does not
-        calibrate energy consumption.
+    Grey = arithmetic mean of `activity_y / (stock_y × c2a)` for observed **2017, 2018, 2019, 2022, 2023**;
+    2020–2021 are excluded. Blue = **2023 CEUD class activity held at 2025 / Σ(inserted stock × c2a)**.
+    The table exposes target, denominator and resulting change. Reviewed manual c2a and efficiency stay fixed.
+    This is historical activity calibration, separate from GDP-indexed service demand.
 
-        Orange is an **unimplemented energy-closure sensitivity**: implemented factor ×
-        NRCan energy / reconstructed energy, holding stock, efficiencies and c2a fixed.
-        One factor generally cannot close activity and energy simultaneously when
-        implied fleet efficiency differs. The table quantifies that tradeoff.
+    Purple triangles = **native legacy central calibration**, with a line showing its **±2.5% parameter bounds**.
+    Its denominator is raw model-vintage capacity × workbook survival at **2023** × own c2a.
+    It already includes the 2024–2025 extended sales in vintage 2020; it is a recipe calibration identity,
+    not an observation of calendar-2023 acquisitions. Bounds are constraints, not realized solver operation.
 
-        `capacity_to_activity` uses the reviewed legacy-aligned manual factors in regular
-        production. Raw factors are comparable only when those scaling factors agree.
-        The next grid multiplies them into physical annual service per vehicle.
-        """), display_chart(utilization_chart),
-        mo.ui.table(calibration[[
-            "Class", "prior_mean_utilization", "implemented_utilization", "calibration_percent",
-            "energy_closing_utilization", "energy_closure_activity_difference_percent", "energy_closure_feasible",
-        ]].rename(columns={
-            "prior_mean_utilization": "Before", "implemented_utilization": "Implemented",
-            "calibration_percent": "Implemented change (%)", "energy_closing_utilization": "Energy sensitivity",
-            "energy_closure_activity_difference_percent": "Activity gap at energy closure (%)",
-            "energy_closure_feasible": "Sensitivity factor ≤ 1",
-        }), selection=None, pagination=False, format_mapping={
-            "Before": "{:.5f}", "Implemented": "{:.5f}", "Energy sensitivity": "{:.5f}",
-            "Implemented change (%)": "{:+.2f}%", "Activity gap at energy closure (%)": "{:+.2f}%",
-        }, label="Actual calibration and diagnostic energy closure; one row per class"),
-        mo.accordion({"Reference utilization bounds": mo.vstack([
-            mo.md("Legacy bounds are period-indexed; backend factors are vintage-indexed. Raw ranges are not matched-year physical utilization."),
-            mo.ui.table(diagnosis["fleet"]["utilization_comparison"], selection=None, page_size=10),
-        ])}),
-    ])
-    return calibration, utilization_chart
+    Orange = **unimplemented backend energy sensitivity**: blue UF × CEUD energy / backend energy.
+    Only UF changes; stock, composition, efficiencies and c2a are held fixed. The native legacy point uses
+    its own complete parameters and is independent of that sensitivity.
+    """), display_chart(utilization_chart), mo.ui.table(calibration[[
+        "Class", "source_years", "ceud_activity_bn", "stock_denominator_k_vehicles", "c2a",
+        "capacity_activity_denominator_bn", "prior_mean_utilization", "implemented_utilization", "calibration_percent",
+    ]].rename(columns={"ceud_activity_bn": "2023 activity held at 2025 (bn)", "stock_denominator_k_vehicles": "Backend stock (k)",
+        "capacity_activity_denominator_bn": "Σ stock × c2a (bn)", "prior_mean_utilization": "Grey UF", "implemented_utilization": "Blue UF",
+        "calibration_percent": "UF change (%)", "source_years": "Grey source years"}), selection=None, pagination=False,
+        label="c2a: billion passenger-km or tonne-km per thousand vehicles; UF = target / capacity-activity denominator"),
+        mo.accordion({"Annual grey inputs and native legacy denominator": mo.vstack([
+            mo.ui.table(diagnosis["fleet"]["backend_utilization_source_years"], selection=None, page_size=10),
+            mo.ui.table(legacy_bounds, selection=None, pagination=False),
+        ])})])
+    return calibration, cases, utilization_chart
 
 
 @app.cell(hide_code=True)
-def _(CLASS_LABELS, STAGES, STAGE_COLORS, alt, calibration, class_grid, diagnosis, display_chart, mo, region):
-    cohort_energy = diagnosis["fleet"]["cohort_utilization_energy"]
-    cohort_energy = cohort_energy.loc[cohort_energy.region.eq(region.value)].copy()
-    cohort_energy["Class"] = cohort_energy.road_class.map(CLASS_LABELS)
-    cohort_energy = cohort_energy.merge(calibration[["road_class", "ceud_secondary_energy_pj"]], on="road_class", validate="many_to_one")
-    cohort_energy["NRCan energy (%)"] = 100 * cohort_energy.vehicle_input_pj / cohort_energy.ceud_secondary_energy_pj
-    contributions = cohort_energy.groupby(["Class", "stage", "vintage"], as_index=False).agg(
-        contribution=("NRCan energy (%)", "sum"), energy_pj=("vehicle_input_pj", "sum"),
-    )
-    bars = alt.Chart().mark_bar().encode(
-        x=alt.X("stage:N", sort=STAGES, title=None, axis=alt.Axis(labelAngle=0,
-            labelExpr="datum.label === 'Before calibration' ? 'Before' : datum.label === 'Implemented activity calibration' ? 'Implemented' : 'Energy sensitivity'")),
-        y=alt.Y("contribution:Q", title="% of NRCan energy", stack="zero"),
-        color=alt.Color("vintage:O", title="Cohort vintage", scale=alt.Scale(scheme="blues"), legend=alt.Legend(orient="bottom")),
-        order="vintage:O",
-        tooltip=["Class:N", "stage:N", "vintage:O", alt.Tooltip("energy_pj:Q", title="Vehicle input (PJ)", format=",.3f"),
-                 alt.Tooltip("contribution:Q", title="% of NRCan energy", format=".2f")],
-    )
-    target = alt.Chart().mark_rule(strokeDash=[4, 3], color="#b35806").encode(y=alt.datum(100))
-    energy_chart = class_grid(alt.layer(bars, target, data=contributions), shared_y=True)
-    cohort_energy["Service (thousand/vehicle/year)"] = cohort_energy.annual_service_per_vehicle / 1000
-    annual_service_chart = class_grid(alt.Chart(cohort_energy.loc[cohort_energy.stage.ne(STAGES[2])]).mark_point(filled=True, size=45).encode(
-        x=alt.X("vintage:O", title="Inserted cohort vintage"), xOffset=alt.XOffset("stage:N", sort=STAGES[:2]),
-        y=alt.Y("Service (thousand/vehicle/year):Q", title="Thousand service-km/vehicle/year", scale=alt.Scale(zero=True)),
-        color=alt.Color("stage:N", scale=alt.Scale(domain=STAGES[:2], range=STAGE_COLORS[:2]), legend=alt.Legend(orient="bottom", title=None, labelLimit=260)),
-        tooltip=["Class:N", "stage:N", "tech:N", "vintage:O", "service_unit:N",
-                 alt.Tooltip("c2a:Q", title="Reviewed c2a", format=".3f"),
-                 alt.Tooltip("annual_service_per_vehicle:Q", title="Annual service per vehicle", format=",.0f")],
-    ), service_units=True)
-    mo.vstack([
-        mo.md("""
-        ### Physical annual service per vehicle
+def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, display_chart, mo, pd):
+    target_rows = cases.loc[cases.case.eq("Current backend")].copy()
+    references = []
+    for label, column in [("CEUD 2023 held at 2025", "ceud_activity_bn"),
+                           ("Backend real-GDP 2025 target", "current_base_year_demand_bn"),
+                           ("Legacy workbook 2025 target", "legacy_calendar_base_year_demand_bn")]:
+        references.append(target_rows.assign(Reference=label, Service=lambda frame: frame[column],
+                                            Energy=lambda frame: frame.ceud_secondary_energy_pj))
+    reference_points = pd.concat(references, ignore_index=True)
+    reconciliation_data = pd.concat([
+        cases.assign(Kind="Case", Service=lambda frame: frame.implied_activity_bn, Energy=lambda frame: frame.implied_vehicle_input_pj),
+        reference_points.assign(Kind="Reference"),
+    ], ignore_index=True)
+    reconciliation_data["Point"] = reconciliation_data["case"].where(reconciliation_data.Kind.eq("Case"), reconciliation_data.Reference)
+    point_order = CASES + [item["Reference"].iloc[0] for item in references]
+    point_colors = CASE_COLORS + ["#111111"] * 3
+    point_shapes = CASE_SHAPES + ["cross", "triangle-up", "triangle-down"]
+    activity_energy_chart = class_grid(alt.Chart(reconciliation_data).mark_point(filled=True, size=120, strokeWidth=1.8).encode(
+        x=alt.X("Energy:Q", title="2025 vehicle-input energy (PJ)", scale=alt.Scale(zero=True)),
+        y=alt.Y("Service:Q", title="2025 service (billion)", scale=alt.Scale(zero=True)),
+        color=alt.Color("Point:N", scale=alt.Scale(domain=point_order, range=point_colors), title=None,
+                        legend=alt.Legend(orient="bottom", columns=2, labelLimit=320)),
+        shape=alt.Shape("Point:N", scale=alt.Scale(domain=point_order, range=point_shapes), title=None,
+                        legend=alt.Legend(orient="bottom", columns=2, labelLimit=320)),
+        stroke=alt.Stroke("Point:N", scale=alt.Scale(domain=point_order, range=point_colors), legend=None),
+        tooltip=["Class:N", "Point:N", alt.Tooltip("utilization:Q", format=".6f"),
+                 alt.Tooltip("Energy:Q", format=",.3f"), alt.Tooltip("Service:Q", format=",.3f")],
+    ))
+    mo.vstack([mo.md("""
+    ## 3. Baseline activity–energy reconciliation
 
-        Annual service per vehicle = `c2a × factor × 10⁶`, converting billion service-km
-        per thousand vehicles. Service means passenger-km for passenger classes and
-        tonne-km for freight, not vehicle-km: that would require occupancy or payload.
-        All inserted vintages are shown; equal-service technologies have coincident points.
-        """), display_chart(annual_service_chart),
-        mo.md("""
-        ## 3. How cohorts add up to baseline energy
+    **x = total energy (PJ); y = total service**, separately in billion passenger-km and billion tonne-km.
+    `Service = Σ(stock × c2a × UF)`; `energy = Σ(service / cohort efficiency)`.
+    Vehicle-input energy counts PHEV blend input once and excludes upstream charger losses.
+    CEUD secondary energy has its reported fleet/fuel boundary; unsupported fuels and composition can differ.
+    Black cross = CEUD activity/energy. Black triangles retain CEUD energy but use the distinct
+    calendar-2025 demand targets (backend real GDP; legacy workbook price index). Those triangles combine
+    observed energy with projected service for context; they are not independent observations.
 
-        **Activityᵢ = stockᵢ × c2aᵢ × factorᵢ; energyᵢ = activityᵢ / efficiencyᵢ.**
-        Segments are additive vintage contributions; the dashed line is NRCan class
-        energy (100%). Common percentage axes compare closure across classes; actual PJ
-        remain in the table. The sensitivity closes energy by construction and changes
-        activity as shown above; it is not independent validation.
+    A common UF change with fixed composition/efficiency scales **both** totals. Collinearity of backend cases
+    is an accounting identity, not evidence of fit. If the energy-per-service ratio differs from CEUD,
+    one common UF cannot meet both targets: energy closure necessarily moves activity off its target.
+    The table quantifies the tradeoff. The native legacy point also loses stock between its 2023 calibration
+    and 2025 evaluation, so its service need not close the original activity target.
 
-        This is vehicle-input energy, counting PHEV blend input once and excluding
-        upstream charging losses. NRCan secondary energy covers its reported fuel/fleet
-        population. Composition, supported fuels and cohort efficiency can affect gaps;
-        this aggregate check does not isolate their individual effects.
-        """), display_chart(energy_chart),
-        mo.ui.table(calibration[[
-            "Class", "ceud_activity_bn", "implied_activity_bn", "prior_energy_pj",
-            "ceud_secondary_energy_pj", "implied_vehicle_input_pj", "energy_relative_difference", "activity_at_energy_closure_bn",
-        ]].rename(columns={
-            "ceud_activity_bn": "NRCan activity (bn)", "implied_activity_bn": "Implemented activity (bn)",
-            "prior_energy_pj": "Before calibration (PJ)", "ceud_secondary_energy_pj": "NRCan energy (PJ)",
-            "implied_vehicle_input_pj": "Implemented energy (PJ)", "energy_relative_difference": "Energy gap",
-            "activity_at_energy_closure_bn": "Activity at energy closure (bn)",
-        }), selection=None, pagination=False, format_mapping={"Energy gap": "{:+.2%}"},
-            label="Passenger activity: billion passenger-km; freight: billion tonne-km"),
-        mo.ui.table(calibration[["Class", "energy_explanation"]].rename(columns={"energy_explanation": "Energy discrepancy and calibration tradeoff"}),
-                    selection=None, pagination=False, label="Quantitative explanations for further review"),
-        mo.accordion({
-            "Every cohort, scaling factor, efficiency and contribution": mo.ui.table(cohort_energy, selection=None, page_size=10),
-            "NRCan endpoints and extension evidence": mo.vstack([
-                mo.ui.table(diagnosis["fleet"]["stock_activity_energy"], selection=None, page_size=5),
-                mo.ui.table(diagnosis["fleet"]["ceud_extension_audit"], selection=None, page_size=10),
-            ]),
-        }),
-    ])
-    return annual_service_chart, energy_chart
+    Gaps suggest a mismatch in aggregate energy per unit service, but do not by themselves identify
+    efficiency error. Fleet composition, service units/load, cohort efficiency, supported fuels, energy
+    boundaries and the missing inherited input identity need reconciliation before recommending a new
+    efficiency or utilization calibration. **No further scientific recalibration is implemented.**
+    """), display_chart(activity_energy_chart), mo.ui.table(cases[[
+        "Class", "case", "implied_vehicle_input_pj", "implied_activity_bn", "energy_difference_percent", "activity_difference_percent",
+        "energy_per_service_pj_per_bn", "ceud_energy_per_service_pj_per_bn",
+    ]].rename(columns={"case": "UF case", "implied_vehicle_input_pj": "Energy (PJ)", "implied_activity_bn": "Service (bn)",
+        "energy_difference_percent": "Energy gap (%)", "activity_difference_percent": "Activity gap (%)",
+        "energy_per_service_pj_per_bn": "PJ / bn service", "ceud_energy_per_service_pj_per_bn": "CEUD PJ / bn service"}), selection=None,
+        pagination=False, label="Passenger and freight units stay separate; energy sensitivity is conditional, legacy energy uses the declared inherited snapshot"),
+        mo.ui.table(calibration[["Class", "implemented_utilization", "energy_closing_utilization", "energy_closure_activity_difference_percent"]],
+                    selection=None, pagination=False, label="Backend sensitivity: UF needed for energy closure and resulting historical activity error")])
+    return (activity_energy_chart,)
 
 
 @app.cell(hide_code=True)
-def _(CLASS_LABELS, alt, class_grid, diagnosis, display_chart, mo, region):
-    demand_methods = diagnosis["fleet"]["demand_method_comparison"]
-    demand_methods = demand_methods.loc[demand_methods.region.eq(region.value)].copy()
-    matched = demand_methods.loc[demand_methods.calendar_year.notna()].copy()
-    common_years = set.intersection(*[set(group.calendar_year) for _, group in matched.groupby("evidence")])
-    for (road_class, evidence), trajectory in matched.groupby(["road_class", "evidence"]):
-        first_value = trajectory.loc[trajectory.calendar_year.eq(min(common_years)), "demand_bn"].iloc[0]
-        matched.loc[trajectory.index, "growth_index"] = trajectory.demand_bn / first_value
+def _(BUILDS, CLASS_LABELS, alt, class_grid, diagnosis, display_chart, mo, region):
+    methods = diagnosis["fleet"]["demand_method_comparison"]
+    matched = methods.loc[methods.region.eq(region.value) & methods.calendar_year.notna()].copy()
+    matched["Build"] = matched.evidence.replace({"Notebook recipe replay": "Legacy recipe"})
     matched["Class"] = matched.road_class.map(CLASS_LABELS)
-    matched["Demand units"] = matched.unit
-    method_base = alt.Chart(matched).encode(
-        x=alt.X("calendar_year:Q", title="Projection calendar year", axis=alt.Axis(format="d", tickCount=4)),
-        color=alt.Color("evidence:N", scale=alt.Scale(domain=["Current backend", "Notebook recipe replay"], range=["#2166ac", "#b35806"]),
-                        legend=alt.Legend(orient="bottom", title=None, symbolType="stroke", symbolSize=300)),
-        strokeDash=alt.StrokeDash("evidence:N", scale=alt.Scale(domain=["Current backend", "Notebook recipe replay"], range=[[1, 0], [7, 3]]),
-                                  legend=alt.Legend(orient="bottom", title=None, symbolType="stroke", symbolSize=300)),
-        detail="evidence:N", order="calendar_year:Q",
-        tooltip=["Class:N", "evidence:N", "period:O", "calendar_year:O", "Demand units:N",
-                 alt.Tooltip("demand_bn:Q", title="Demand (billion)", format=",.3f"), alt.Tooltip("growth_index:Q", format=".3f")],
+    common_years = sorted(set.intersection(*[set(group.calendar_year) for _, group in matched.groupby("Build")]))
+    matched = matched.loc[matched.calendar_year.isin(common_years)].sort_values(["road_class", "Build", "calendar_year"]).copy()
+    matched["Growth index"] = matched.demand_bn / matched.groupby(["road_class", "Build"]).demand_bn.transform("first")
+    demand_base = alt.Chart(matched).encode(
+        x=alt.X("calendar_year:Q", title="Demand calendar year", axis=alt.Axis(format="d", tickCount=5)),
+        color=alt.Color("Build:N", scale=alt.Scale(domain=BUILDS, range=["#2166ac", "#7b3294"]), title=None, legend=alt.Legend(orient="bottom")),
+        strokeDash=alt.StrokeDash("Build:N", scale=alt.Scale(domain=BUILDS, range=[[1, 0], [7, 3]]), title=None, legend=alt.Legend(orient="bottom")),
+        tooltip=["Class:N", "Build:N", "calendar_year:O", "period:O", "unit:N", alt.Tooltip("demand_bn:Q", format=",.3f"), alt.Tooltip("Growth index:Q", format=".4f")],
     )
-    demand_chart = class_grid(method_base.mark_line(point=True).encode(y=alt.Y("demand_bn:Q", title="Billion service-km", scale=alt.Scale(zero=True))), service_units=True)
-    growth_spread = matched.groupby(["evidence", "calendar_year"]).growth_index.agg(["min", "max"])
-    common_growth = (growth_spread["max"] - growth_spread["min"]).abs().le(1e-12).all()
-    if common_growth:
-        growth_values = matched.groupby(["evidence", "calendar_year"], as_index=False).growth_index.first()
-        demand_growth_chart = method_base.mark_line(point=True).encode(
-            y=alt.Y("growth_index:Q", title="First common year = 1", scale=alt.Scale(zero=False)),
-            tooltip=["evidence:N", "calendar_year:O", alt.Tooltip("growth_index:Q", format=".3f")],
-        ).properties(data=growth_values, width=760, height=180,
-                     title="All five classes have the same normalized growth trajectory")
-    else:
-        demand_growth_chart = class_grid(method_base.mark_line(point=True).encode(
-            y=alt.Y("growth_index:Q", title="First common year = 1", scale=alt.Scale(zero=False))), shared_y=True)
+    demand_chart = class_grid(demand_base.mark_line(point=True).encode(y=alt.Y("demand_bn:Q", title="Billion service-km (units in panel)", scale=alt.Scale(zero=True))))
+    growth_spread = matched.groupby(["Build", "calendar_year"])["Growth index"].agg(["min", "max"])
+    if (growth_spread["max"] - growth_spread["min"]).abs().gt(1e-12).any():
+        raise ValueError("Growth differs by class; retain class facets instead of collapsing trajectories")
+    growth_data = matched.groupby(["Build", "calendar_year"], as_index=False)["Growth index"].first()
+    demand_growth_chart = alt.Chart(growth_data).mark_line(point=True).encode(
+        x=alt.X("calendar_year:Q", title="Demand calendar year", axis=alt.Axis(format="d")),
+        y=alt.Y("Growth index:Q", title="Each build's first common calendar year = 1", scale=alt.Scale(zero=False)),
+        color=alt.Color("Build:N", scale=alt.Scale(domain=BUILDS, range=["#2166ac", "#7b3294"]), title=None, legend=alt.Legend(orient="bottom")),
+        tooltip=["Build:N", "calendar_year:O", alt.Tooltip("Growth index:Q", format=".4f")],
+    ).properties(width=790, height=190)
     attribution = diagnosis["fleet"]["demand_attribution"]
     attribution = attribution.loc[attribution.region.eq(region.value)]
-    first_projection = attribution.loc[attribution.period.eq(attribution.current_baseline_year)]
-    mo.vstack([
-        mo.md("""
-        ## 4. Demand: calendar alignment, baseline and growth method
+    mo.vstack([mo.md("""
+    ## 4. Demand: workbook meaning and calendar alignment
 
-        Both methods anchor demand to actual **2023 NRCan observations**, including
-        real-GDP growth to the backend's 2025 base year. The revised notebook uses a
-        workbook column named `gdp` that equals **GDP-deflator growth**; the backend
-        selects **real GDP**. Both map period 2025 to calendar
-        year 2030. These two known calendar interpretations share the primary axis.
+    Both methods anchor to the same **2023 CEUD observed activity**. Backend demand multiplies it by
+    **CER real GDP(calendar year) / real GDP(2023)**. The active legacy `growth_rate_type='gdp'` selects
+    workbook `gdp`, whose formulas are **column C / C$2**: GDP-deflator levels normalized to 2023.
+    This interpretation is checked against actual formulas and the registered CER macro source values,
+    rather than inferred from a column name or previous report.
 
-        The supplied SQLite's demand equals the original legacy baseline; notes cite
-        CEUD 2021 / CER 2023. Its exact calendar interpretation remains unresolved, so
-        native stored labels stay in the audit rather than being forced onto this axis.
-        It is not evidence that the revised recipe was executed. Service-km means
-        passenger-km for passenger classes and tonne-km for freight.
-        """), display_chart(demand_chart),
-        mo.md("""
-        ### Growth shape without the initial level difference
+    Specific contradiction: the compiler describes national GDP activity growth, yet calendar 2030 uses
+    **144.1 / 123 = 1.171545**, the GDP deflator. Real GDP is **2,652,642 / 2,385,443 = 1.112012**.
+    The earlier deflator characterization is confirmed; the economic description in the legacy notes is wrong.
+    The comparison preserves that executable price-index recipe without replacing its assumption.
 
-        Index each method to its own value at the first common calendar year. The
-        Class growth paths that coincide are shown once; physical plots above retain
-        their different levels. The
-        additive table below changes baseline, anchor and method in that order;
-        the method remainder is not an isolated causal estimate.
-        """), display_chart(demand_growth_chart),
-        mo.ui.table(first_projection[[
-            "road_class", "reference", "notebook_recipe_demand_bn", "current", "replay_relative_percent",
-            "stored_to_recipe_change_bn", "baseline_change_bn", "anchor_change_bn", "growth_driver_change_bn",
-        ]].rename(columns={
-            "road_class": "Class", "reference": "Stored (native label)", "notebook_recipe_demand_bn": "Recipe replay (bn)",
-            "current": "Backend (bn)", "replay_relative_percent": "Backend / replay − 1 (%)",
-            "stored_to_recipe_change_bn": "Stored → recipe (bn)", "baseline_change_bn": "Baseline effect (bn)",
-            "anchor_change_bn": "Anchor effect (bn)", "growth_driver_change_bn": "Method remainder (bn)",
-        }), selection=None, pagination=False, format_mapping={"Backend / replay − 1 (%)": "{:+.2f}%"},
-            label="First projection: ordered bridge by native label; stored-year equivalence remains unresolved"),
-        mo.accordion({
-            "Methods and calendar interpretation": mo.ui.table(diagnosis["fleet"]["demand_method_context"], selection=None, pagination=False),
-            "Baseline equivalence": mo.ui.table(diagnosis["fleet"]["demand_baseline_comparison"], selection=None, pagination=False),
-            "Observed anchor to model base year": mo.ui.table(diagnosis["fleet"]["demand_base_year_bridge"], selection=None, pagination=False),
-            "Full attribution and residual": mo.ui.table(attribution, selection=None, page_size=10),
-            "All trajectories and unmatched stored years": mo.ui.table(demand_methods, selection=None, page_size=10),
-            "Original period-label comparisons": mo.ui.table(diagnosis["fleet"]["demand_comparison"], selection=None, page_size=10),
-        }),
-    ])
+    Legacy `project_demand_v` generates calendar 2025–2050, then `shift_time_period` subtracts five and
+    retains model labels 2025–2045. Thus **calendar 2025 → label 2020 is dropped**; first emitted
+    **label 2025 → calendar 2030**. Backend prospective demand uses the same interval-end calendar axis.
+    Calendar-2025 contextual service targets in Section 3 are not the first emitted model-period demands.
+    """), display_chart(demand_chart), display_chart(demand_growth_chart),
+        mo.ui.table(attribution[["road_class", "period", "current_source_year", "notebook_recipe_demand_bn", "current", "replay_relative_percent"]].rename(columns={
+            "road_class": "Class", "period": "Model label", "current_source_year": "Calendar year", "notebook_recipe_demand_bn": "Legacy recipe (bn)",
+            "current": "Current backend (bn)", "replay_relative_percent": "Backend / legacy − 1 (%)",
+        }), selection=None, page_size=10),
+        mo.accordion({"Formula, source-value and year audit": mo.ui.table(diagnosis["fleet"]["demand_growth_series_audit"], selection=None, page_size=10),
+            "Observation, calibration and 2025 demand targets": mo.ui.table(diagnosis["fleet"]["demand_baseline_service_targets"], selection=None, pagination=False),
+            "Full trajectories, stored SQLite discrepancy and ordered attribution": mo.vstack([
+                mo.ui.table(methods, selection=None, page_size=10), mo.ui.table(attribution, selection=None, page_size=10),
+                mo.ui.table(diagnosis["fleet"]["demand_method_context"], selection=None, pagination=False),
+            ])})])
     return demand_chart, demand_growth_chart
 
 
@@ -589,6 +476,7 @@ def _(diagnosis, mo):
             "fleet_scenario": diagnosis["fleet_metadata"]["scenario"], "fleet_revision": diagnosis["fleet_metadata"]["revision"],
             "charging_scenario": diagnosis["charging_metadata"]["scenario"], "charging_build_utc": diagnosis["charging_metadata"]["build_timestamp_utc"],
             "limitations": diagnosis["fleet_metadata"]["limitations"], "commands": diagnosis["fleet_metadata"]["commands"],
+            "legacy_reconstruction": diagnosis["fleet_metadata"]["legacy_reconstruction"],
         }),
     ])})
     return
