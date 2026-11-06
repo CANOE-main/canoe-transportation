@@ -8,17 +8,23 @@ last_diagnostic_run: 2026-11-04
 local_commit_reviewed: aafdd708e54840a13188b82c3f80e62fa83ff0fc
 previous_diagnostic_run: 2026-10-02
 previous_local_commit_reviewed: 1bd946bc19a6d8df2cc00331a7f284626d125167
+last_bounded_implementation: 2026-11-05
+implementation_base_commit: 5b81a1f7f3f8e4d9b566fb606d0e7d045fc495c5
 ---
 
 # Codebase diagnostic snapshot
 
 The native backend retains one prerequisite/preparation/insertion lifecycle with explicit
-source, full DQ and publication checks. The most consequential remaining engineering
-work is prepared-input identity and shared artifact isolation, followed by a real
-CANOE-main integration fixture. Historical CPU improvements are substantial; this review
-does not establish another measured optimization or justify a new caching framework.
+source, full DQ and publication checks. The bounded November 5 implementation corrects
+charger prepared-input identity and guards the capacity-to-efficiency evidence handoff.
+Broader shared artifact isolation and a real CANOE-main integration fixture remain open.
+Historical CPU improvements are substantial; this work introduces no new caching framework.
 
 ## Scope, methods and freshness
+
+The inventory and broad diagnostic scope below describe November 4. November 5 is a
+bounded implementation at the three selected findings, documented in [Plan 142][p142];
+it does not claim a new repository-wide audit or scientific validation.
 
 Reviewed on 2026-11-04 at the revision above plus this task's bounded documentation,
 evidence-route, diagnostic-loader and test repairs. Pre-existing edits in
@@ -136,13 +142,13 @@ and further reuse benefits remain hypotheses requiring a representative profile.
 
 | Stable ID / status | Owner/interface and consequence | Evidence / uncertainty | Priority and smallest useful next action |
 | --- | --- | --- | --- |
-| **CBI-ARTIFACT-IDENTITY — still open** | `ev_chargers.prepare_ev_charger_rows` combines supplied capacity rows/contexts with a hash of `existing_capacity_processed/existing_capacity.csv`. Identity depends on an incidental disk artifact. | High-confidence source evidence: [path](../src/parameterization/ev_chargers.py#L385), [digest](../src/parameterization/ev_chargers.py#L476). Different/missing disk artifacts can change identity or fail preparation; no concurrent corruption reproduced. | High: define a complete prepared-capacity handoff for this family. Prove exact numerical/coverage/DQ/audit preservation and supplied-input independence. Any corrected provenance identity is an intentional interface correction to evaluate separately. |
-| **CBI-ARTIFACT-ISOLATION — still open** | Native prerequisites and family preparation publish shared interim/processed/audit files before final candidate publication. Failure can leave preparation evidence for the failed run while SQLite/report remain previously published. | Verified writes in capacity, efficiency, costs and utilization owners; [native ordering](../src/build_transport.py#L1346). Database/report/notebook-index replacement is individually atomic, not crash-atomic as a set. | High: retain serial scenarios; bound preparation/publication for one family before reuse or concurrency. Test rollback/interruption, output identity and stale/missing artifacts across consumers. |
+| **CBI-ARTIFACT-IDENTITY — resolved in the selected interface** | `ev_chargers._prepared_stock_identity` fingerprints the ordered consumed BEV row models and full matching contexts. It excludes unused rows/contexts and never reads the incidental capacity CSV. | The versioned `prepared_stock` audit records the digest, row count and contributing IDs. Missing/conflicting lineage, duplicate consumed keys and nonfinite stock fail explicitly. Corrected identity deliberately propagates through the existing common charger/H2 digest; it is not an identifier-preserving refactor. | Retain exact preparation/native regression and missing/different-disk, changed-input, repeated-input and regional-scope tests. Numerical and provenance preservation evidence is recorded in [Plan 142][p142]. |
+| **CBI-ARTIFACT-ISOLATION — partially resolved** | Capacity invalidates `integrity.json` before preparation, then atomically publishes it last with exact row/context/scenario identity and all direct family artifact hashes. Efficiencies validates the completion handoff before stock consumption and after calculation. | Missing, replaced, corrupt or differently scoped completion evidence fails closed. This prevents the selected production consumer from accepting partial family publication; individual CSVs can still remain after failure. | Retain serial native execution and final SQLite publication safeguards. Other families, raw-file diagnostic consumers and cross-file/cross-process crash atomicity remain outside this slice; extend only at a demonstrated next consumer boundary. |
 | **CBI-INTEGRATION — still open, updated** | Caller-owned insertion exists; no upstream-initialized multi-sector fixture/adapter establishes shared rows, geography, notes, supply/emission or reduced-time compatibility. | Current local fixture checks pass; [upstream assessment](canoe_main_orchestrator.md) pins unstable `2c05f0af`. Electricity supply is implemented there; several former unknowns are now concrete contracts. | High before adapter work: agree ownership and compatibility, then one fixture exercising the existing prerequisite/contribution/insertion seam. Do not introduce parallel parameterization. |
-| **CBI-PERFORMANCE-EVIDENCE — partly superseded** | Old repeated-computation advice is partly implemented. Composition/replay/CSV remain historical cost centers; repeated fleet evidence reads alone do not demonstrate current material cost. | Current local caches/indexes inspected and fixture regressions pass; no fresh native profile or memory measurement. | Medium: profile an equivalent full-history workload in one serial native build when performance work is authorized. Keep source replay/validation; assess kernels and full-build benefit separately before adding state. |
-| **CBI-STATCAN-ORACLE — still open from Plan 136** | Stream preservation fixtures build expected frames with the same live `_select_chunk`. A selector defect can be shared by both sides. | [Exact regression test](../tests/test_statcan_tables.py#L532) preserves trim timing, dtypes/order/member/counts; independent province/freight tests help but do not exhaust multi-region overlap. No production defect established. | Low, before modifying selection: add explicit expected selected rows/region annotations and a two-region freight overlap fixture; retain exact frame/source-audit assertions. |
-| **CBI-ASSEMBLY-COHESION / CBI-HELPER-OWNERSHIP — still open, conditional** | Large family assemblers combine calculation/row-provenance assembly and publication; five utilization algorithms live in stocks, general numerical helpers in efficiencies, road bus lifetimes in off-road lifetime code. | Verified source/import seams, no demonstrated numerical or runtime failure. Domain-specific extrapolation/eligibility/unit meanings differ. | Low: when an independently useful seam changes, extract/relocate one contract without forwarding duplicates. Compare exact rows, contexts, frames and fallback/errors; size alone does not justify refactoring. |
-| **CBI-TEST-ISOLATION / CBI-ROUTE-CONSUMERS — resolved for the exercised cases** | Lifecycle mocks omitted CEUD/iZEV producers. Even the template-only caller test published range products through a real-root bundle. Deleted researcher YAML blocked a captured-report consumer; renamed evidence paths were stale. | Private lifecycle/caller roots, current producer mocks/order assertions and before/after artifact hashes; captured-report loader retains recorded metadata/export checks. Focused consumers pass. | Retain these checks. Other full bootstrap tests still use real-root preparation despite temporary SQLite paths; audit/isolate their complete footprint before running them. |
+| **CBI-PERFORMANCE-EVIDENCE — partly superseded** | Old repeated-computation advice is partly implemented. Composition/replay/CSV remain historical cost centers; repeated fleet evidence reads alone do not demonstrate current material cost. | The bounded implementation adds comparable native stage/total timings below, not a new hotspot, peak-memory or I/O profile. Existing local reuse remains unchanged. | Profile an equivalent full-history workload before the next optimization. Keep source replay/validation; assess kernels and full-build benefit separately before adding state. |
+| **CBI-STATCAN-ORACLE — still open from Plan 136** | Stream preservation fixtures build expected frames with the same live `_select_chunk`. A selector defect can be shared by both sides. | Current [stream test](../tests/test_statcan_tables.py#L532) still shares the selector; existing ON/QC freight tests independently assert directional counts and haul weights. No production selection defect established. | Before future selection changes, hand-enumerate chunk-spanning ON/QC overlap rows, `scenario_region`, `region_match` and order; retain exact dtypes/nullability/member/input-count assertions. No production change selected. |
+| **CBI-ASSEMBLY-COHESION / CBI-HELPER-OWNERSHIP — still open, conditional** | Large family assemblers combine calculation, provenance and publication; cross-domain helpers remain. | `aggregate_consumption_period` and `combine_range_observations` serve both efficiencies and LDV diagnostics and have independent tests. Bus lifetimes still have an off-road owner. No numerical/import/runtime defect is established. | When weighting next changes, consider moving those two pure kernels together to the existing road-efficiency owner without forwarding duplicates. Preserve consumption-before-reciprocal and observed-support rules. Do not decompose based on size or relocate bus logic absent a source-contract change. |
+| **CBI-TEST-ISOLATION / CBI-ROUTE-CONSUMERS — resolved for exercised boundaries; wider audit open** | The shared `isolated_legacy_bundle` fixture serves bootstrap, charger preparation and real efficiency tests. It copies registered raw/control inputs and replays prerequisites in a private repository; all configured artifact/input/output routes are checked. | Private template-only caller checks and prior route repairs remain. Actual capacity late-write interruption/recovery tests use this fixture; synthetic efficiency handoffs also redirect the completion-audit route. All 15 bootstrap cases pass. | Unexercised full bootstrap cases in `test_existing_capacity_bus.py` and the real-offline range-mode test still need complete root isolation before execution. Do not infer whole-suite safety from this bounded repair. |
 
 ## Reconciliation with the previous snapshot
 
@@ -154,8 +160,8 @@ silently disappearing. Status changes use current source/tests, not module count
 | §4 fixed-lifetime selector cycle | CBI-FIXED-LIFETIME-OWNER — remains resolved | One selector remains in `road_lifetimes_survival`; new deferred graph edges do not undo that relocation. |
 | §4 repeated text replacement | CBI-ATOMIC-TEXT — remains resolved | Unique sibling-temp cleanup remains in `utils.files`; newline/write/replace failure tests pass. |
 | §4 missing route consumers | CBI-ROUTE-CONSUMERS — remains resolved for those edges | Capacity/charger consumers remain declared; current full executable-route check passes after recognizing the human legacy producer explicitly. |
-| §5 mixed capacity/disk fingerprint | CBI-ARTIFACT-IDENTITY — still open | Same charger file-mediated dependency verified. |
-| §5 shared preparation/parallel scenarios | CBI-ARTIFACT-ISOLATION — still open | Shared writes remain; serial convention retained. No concurrent failure experiment run. |
+| §5 mixed capacity/disk fingerprint | CBI-ARTIFACT-IDENTITY — resolved for chargers | Supplied consumed rows/full contexts now own identity; explicit downstream identifier correction evaluated separately. |
+| §5 shared preparation/parallel scenarios | CBI-ARTIFACT-ISOLATION — partially resolved | Capacity completion guards the efficiency handoff. Broader shared writes and serial convention remain; no concurrency guarantee introduced. |
 | §5 repeated fleet/evidence I/O suggestion | CBI-PERFORMANCE-EVIDENCE — partly superseded | Plans 131/132 remove measured repetition; remaining repeated reads need current cost evidence. |
 | §6 long family functions | CBI-ASSEMBLY-COHESION — still open, conditional | Calculation/publication seams still mix; no decomposition justified by LOC alone. |
 | §5 utilization/general numerical/bus lifetime owners | CBI-HELPER-OWNERSHIP — still open | Cross-domain imports remain; move one proven contract only when useful. |
@@ -168,7 +174,67 @@ silently disappearing. Status changes use current source/tests, not module count
 
 ## Verification, preservation and next decision
 
-Current checks are recorded in [ExecPlan 137][plan]. The 111-case scenario/evidence/config
+### Bounded implementation evidence, November 5
+
+[Plan 142][p142] compares frozen pre-change code at `5b81a1f` with the completed
+implementation using the unchanged default scenario, ten regions, prospective base 2025,
+fixed lifetimes, charging and future range shares. Both normal native entrypoints replayed
+registered prerequisites offline with sockets denied in the same disposable repository.
+All 2,276 raw input files match; no accepted reference or real publication was replaced.
+This establishes regression equivalence for this workload, not independent scientific
+validity, legacy parity, solver feasibility or CANOE-main readiness.
+
+- All **91 SQLite table schemas** match. **90 complete tables are strictly exact**,
+  including all parameter values, keys, coverage, units, readable IDs, source links and
+  DQ. The sole table difference is **27 `data_set.notes.content_identity` values**.
+  An explicit label-derived bijection makes those notes exact without changing any
+  other notes byte. The prepared identities cover 18 regional charger-capacity contexts,
+  six LDV/MHDV cost/efficiency contexts and three H2 contexts. Existing readable-ID
+  publication preserves the final database keys.
+- Captured efficiency preparation is strictly exact. Capacity rows/contexts are exact;
+  its audit gains `prepared_handoff`. Charger/full contribution objects match after
+  only that identity mapping and the declared audit changes. All **21 actual pre-CSV
+  frames / 19,416 rows** match at zero tolerance, including dtypes, nulls, indexes,
+  ordering and attrs. Among captured files, 171 are byte-identical; four charger CSVs
+  differ only in prepared IDs. Two family audits add the handoff/stock identity and
+  remove the unused capacity-CSV fingerprint. The build report additionally records
+  the changed database/config hashes, timestamp and log path; a new run log is expected.
+- Both builds insert **222,135 transport rows**, pass all **14 support checks** and
+  retain integrity, foreign-key and provenance validation. Baseline/final native elapsed
+  time is **385.95 / 335.44 s**, CPU **375.25 / 328.22 s**; capacity **22.65 / 18.74 s**,
+  chargers **3.00 / 2.66 s**, insertion **10.42 / 10.94 s**. No material runtime regression
+  is observed. This is one instrumented pair with fresh processes, identical work and
+  no competing agent builds; OS-cache/load variability remains, so no speedup or peak
+  memory claim is made.
+- The actual full-default contribution also inserts into a fresh local caller-owned
+  v4 database with existing region/time axes and an unrelated dataset sentinel. Both
+  insertions pass validation and retain the caller's active transaction; rollback
+  restores every original table, and subsequent commit matches all 91 standalone
+  tables except the sentinel. The contribution remains unchanged. This is a local
+  seam check, not the deferred upstream-initialized multi-sector fixture.
+- **301 distinct focused tests pass, two opt-in native cases skip**: 279 across charger,
+  efficiency, handoff, lifecycle, configuration, schema/provenance/support and artifact
+  route checks; seven readable-ID checks; 15 private bootstrap cases. The latter exercise
+  real second-CSV-write failures under `RuntimeError`, `KeyboardInterrupt` and `SystemExit`,
+  rejected incomplete handoffs and exact recovery. Ruff and whitespace/reference checks
+  pass. The existing dependency `Traversable` deprecation remains; no full-suite claim.
+- Final protected inventory covers 3,095 files: 3,052 readable byte hashes and 43
+  pre-existing unreadable files checked only by size/mtime. The only change is authorized
+  `config/paths.yaml` ownership/consumer metadata. Byte preservation of those 43 files
+  cannot be independently asserted. All task-local native/caller/comparison captures and
+  the three bulk private test roots were removed after recording the evidence.
+
+The tests below also exercise legacy-period selections and caller-owned transactions.
+The shared private-input fixture is limited to affected real preparations; pure unit
+tests retain their lightweight fixtures. Unexercised bootstrap/range-mode paths remain
+listed under CBI-TEST-ISOLATION. The guarded family is not a multi-file transaction:
+failed runs can leave partial CSVs, which the efficiency consumer now refuses until
+successful re-preparation. Other raw-file consumers and broader shared publication are
+not claimed safe for concurrency.
+
+### Previous diagnostic verification
+
+The November 4 diagnostic checks are recorded in [ExecPlan 137][plan]. The 111-case scenario/evidence/config
 suite passes; the 57-case schema/provenance/support/publication/caller suite passes with
 two opt-in native cases skipped. The diagnostic regression group passed 364 cases and
 initially failed the artifact-route check's attempt to import human producer `researcher`;
@@ -201,12 +267,13 @@ scenario/evidence resolution are checked in the final task record. Existing upst
 `Traversable` deprecation warnings are retained. No fresh legacy parity, solver
 feasibility, scientific justification, full replay or combined-sector success is claimed.
 
-The next useful implementation decision is one prepared-capacity identity/publication
-slice or a narrowly agreed upstream fixture. A new speed target, persistent output cache,
-parallel scenario runner, broad module split or generic entity conversion is deferred:
-current evidence does not justify its scope or regression risk.
+The next useful bounded test improvement is the independent StatCan streaming oracle.
+A separate implementation slice can guard another demonstrated shared-artifact consumer;
+upstream integration requires its own agreed fixture. A new speed target, persistent
+cache, parallel scenario runner or broad module split remains unjustified by this work.
 
 [plan]: ../.agents/plans/archive/137_diagnostic_integration_and_scenario_refresh.md
+[p142]: ../.agents/plans/archive/142_prepared_capacity_identity_and_publication.md
 [old-plan]: ../.agents/plans/archive/060_industry_orchestrator_and_structural_refresh.md
 [p131]: ../.agents/plans/archive/131_moves6_build_performance_and_bridge_diagnostics.md
 [p132]: ../.agents/plans/archive/132_deeper_native_build_performance.md

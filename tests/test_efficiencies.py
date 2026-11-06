@@ -979,7 +979,7 @@ def test_template_edges_periods_and_default_exclusions(bundle, rules):
 
 @pytest.mark.parametrize("include_bus_capacity,missing_rating_year", [(False, None), (True, 2017)])
 def test_offline_deterministic_preparation_and_caller_owned_insertion(
-    bundle, tmp_path, monkeypatch, include_bus_capacity, missing_rating_year
+    isolated_legacy_bundle, tmp_path, monkeypatch, include_bus_capacity, missing_rating_year
 ):
     from build_transport import (
         insert_transport_contribution,
@@ -987,21 +987,23 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     )
     from validation.insertion import insert_models
     from validation.schema_contract import create_v4_schema
-    from canoe_schema.v4_0 import Region, TimePeriod
+    from canoe_schema.v4_0 import ExistingCapacity, Region, TimePeriod
+    from parameterization.build_existing_capacity import publish_capacity_handoff
     from parameterization import ldv_ev_ranges, road_aggregation
 
+    bundle = isolated_legacy_bundle
     payload = bundle.scenario.model_dump()
     payload["geography"]["regions"] = ["ON"]
     routes = dict(bundle.paths.artifacts)
     for family in routes:
-        if family.startswith(("efficiencies_", "ldv_range_")) or family in {"existing_capacity_interim", "vehicle_reference"}:
+        if family.startswith(("efficiencies_", "ldv_range_")) or family in {"existing_capacity_interim", "existing_capacity_validation", "vehicle_reference"}:
             routes[family] = routes[family].model_copy(update={"path": str(tmp_path / family)})
     configured = replace(bundle, scenario=type(bundle.scenario).model_validate(payload),
                          paths=bundle.paths.model_copy(update={"artifacts": routes}))
     original_path = layer.resolve_artifact_path
 
     def output_path(b, family, *parts):
-        if family.startswith(("efficiencies_", "ldv_range_")) or family in {"existing_capacity_interim", "vehicle_reference"}:
+        if family.startswith(("efficiencies_", "ldv_range_")) or family in {"existing_capacity_interim", "existing_capacity_validation", "vehicle_reference"}:
             return tmp_path / family / Path(*parts)
         return original_path(b, family, *parts)
 
@@ -1079,6 +1081,14 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     pd.DataFrame(stock_records).to_csv(stock_path, index=False)
     capacity_audit = {"period_mapping": configured.scenario.periods.audit(),
                       "annual_stock_evidence": {"path": str(stock_path), "sha256": file_sha256(stock_path)}}
+    capacity = [ExistingCapacity(
+        region=row.region, tech=row.tech, vintage=row.vintage, capacity=row.capacity,
+        units="k vehicles", **capacity_context.parameter_fields("existing_capacity"),
+    ) for row in capacity]
+    publish_capacity_handoff(
+        configured, rows=capacity, contexts=[capacity_context], audit=capacity_audit,
+        artifact_paths=[stock_path],
+    )
     handoff = {"existing_capacity_rows": capacity, "existing_capacity_contexts": [capacity_context],
                "existing_capacity_audit": capacity_audit}
     # Plan 046 added bus capacity, retiring plan 045's source-only historical bus rows.

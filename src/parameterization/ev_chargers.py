@@ -43,6 +43,45 @@ class ChargerPreparation:
     capacity_to_activity_rows: list[CapacityToActivity]
 
 
+def _prepared_stock_identity(
+    rows: list[ExistingCapacity], contexts: list[ResolvedProvenance],
+) -> tuple[dict[str, Any], dict[str, ResolvedProvenance]]:
+    """Identify consumed BEV rows and lineage, independently of published CSVs.
+
+    Preserve row order because it is the order of floating-point accumulation.
+    Context order and identical repeated contexts do not affect resolution. Unused
+    contexts and rows excluded by the caller's region/technology selection are not
+    dependencies. The version names this serialization contract, not a source edition.
+    """
+    keys = [(row.region, row.tech, row.vintage) for row in rows]
+    if len(set(keys)) != len(keys):
+        raise ValueError("Duplicate prepared BEV stock keys")
+    data_ids = {row.data_id for row in rows}
+    selected: dict[str, ResolvedProvenance] = {}
+    for context in contexts:
+        if context.data_id not in data_ids:
+            continue
+        if context.data_id in selected and selected[context.data_id] != context:
+            raise ValueError(f"Conflicting BEV stock provenance context: {context.data_id}")
+        selected[context.data_id] = context
+    if data_ids - set(selected):
+        raise ValueError("BEV stock provenance contexts are missing")
+    payload = {
+        "contract": "supplied_bev_capacity_v1",
+        "rows": [row.model_dump(mode="json") for row in rows],
+        "contexts": [selected[key].model_dump(mode="json") for key in sorted(selected)],
+    }
+    identity = {
+        "contract": payload["contract"],
+        "sha256": hashlib.sha256(json.dumps(
+            payload, sort_keys=True, allow_nan=False, separators=(",", ":"),
+        ).encode("utf-8")).hexdigest(),
+        "row_count": len(rows),
+        "data_ids": sorted(data_ids),
+    }
+    return identity, selected
+
+
 def prepare_charger_capacity_to_activity(
     bundle: ConfigBundle, *, technology: pd.DataFrame, regions: set[str],
 ) -> tuple[DataSet, list[CapacityToActivity]]:
@@ -382,7 +421,6 @@ def prepare_ev_charger_rows(
     province_path = source_dir / charger_source["province_output_file"]
     type_path = source_dir / charger_source["type_output_file"]
     manual_path = resolve_input_path(bundle, "manual", rules["manual_file"])
-    vehicle_path = resolve_artifact_path(bundle, "existing_capacity_processed") / "existing_capacity.csv"
     provincial = pd.read_csv(province_path)
     types = pd.read_csv(type_path)
     if (
@@ -446,6 +484,7 @@ def prepare_ev_charger_rows(
     stock_class_map = rules["stock_classes"]
     stock_data_ids: dict[tuple[str, str], set[str]] = {}
     stock_by_region: dict[tuple[str, str], float] = {}
+    consumed_stock: list[ExistingCapacity] = []
     excluded_rows = sum(row.region not in model_regions for row in existing_capacity_rows)
     if excluded_rows:
         LOGGER.info("Skipped %d vehicle capacity rows outside selected charger regions", excluded_rows)
@@ -459,8 +498,9 @@ def prepare_ev_charger_rows(
                    if item["category"] in classes and item["sub_category"].startswith("bev")]
         if not matched:
             continue
-        if row.units != "k vehicles" or row.capacity < 0:
+        if row.units != "k vehicles" or not math.isfinite(row.capacity) or row.capacity < 0:
             raise ValueError(f"BEV stock has invalid units or capacity: {row.tech}")
+        consumed_stock.append(row)
         key = (row.region, matched[0])
         stock_by_region[key] = stock_by_region.get(key, 0.0) + row.capacity * 1000
         stock_data_ids.setdefault(key, set()).add(row.data_id)
@@ -470,12 +510,13 @@ def prepare_ev_charger_rows(
         stock_by_region[key] = 0.0
     if missing_stock:
         LOGGER.info("Zero BEV stock, omitting historical charger rows: %s", missing_stock)
-    vehicle_contexts = {item.data_id: item for item in existing_capacity_contexts}
-    if any(ids - set(vehicle_contexts) for ids in stock_data_ids.values()):
-        raise ValueError("BEV stock provenance contexts are missing")
-    paths = [manual_path, province_path, type_path, vehicle_path]
+    stock_identity, vehicle_contexts = _prepared_stock_identity(
+        consumed_stock, existing_capacity_contexts,
+    )
+    paths = [manual_path, province_path, type_path]
     digest = hashlib.sha256(json.dumps(
         {"files": [(path.name, file_sha256(path)) for path in paths],
+         "prepared_stock": stock_identity,
          "scenario": bundle.scenario.ev_chargers.model_dump(),
          "rules": rules, "stock": sorted((key, value) for key, value in stock_by_region.items()),
          "fixed_lifetimes": sorted((key, value) for key, value in fixed_lives.items())},
@@ -735,6 +776,7 @@ def prepare_ev_charger_rows(
         "port_reconciliation": port_records, "cost_conversion": cost_audit,
         "fixed_period_vintage_pairs_excluded_by_lifetime": excluded_fixed_pairs,
         "hydrogen_refueling": h2_audit,
+        "prepared_stock": stock_identity,
         "input_sha256": {path.name: file_sha256(path) for path in [*paths, macro_path]},
     }
     validation_dir = resolve_artifact_path(bundle, "ev_chargers_validation")

@@ -23,8 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="module")
-def prepared_inputs(legacy_bundle, tmp_path_factory):
-    bundle = legacy_bundle
+def prepared_inputs(isolated_legacy_bundle, tmp_path_factory):
+    bundle = isolated_legacy_bundle
     directory = tmp_path_factory.mktemp("ev_charger_inputs")
     isolated = {
         "existing_capacity_interim", "existing_capacity_processed", "existing_capacity_validation",
@@ -461,3 +461,128 @@ def test_selected_regions_keep_full_source_validation_and_equivalent_rows(prepar
         assert actual == baseline
     assert {row["region"] for row in subset.audit["port_reconciliation"]} == expected
     assert sum(subset.audit["tc_type_counts"].values()) == 39220
+    scoped_stock = [row for row in stock if row.region in expected]
+    scoped_ids = {row.data_id for row in scoped_stock}
+    repeated = prepare_ev_charger_rows(
+        selected, existing_capacity_rows=scoped_stock,
+        existing_capacity_contexts=[context for context in contexts if context.data_id in scoped_ids],
+        fixed_lifetime_rows=lifetime_rows,
+    )
+    _assert_preparation_equal(repeated, subset)
+
+
+def _assert_preparation_equal(actual, expected):
+    for name in (
+        "capacity_rows", "invest_rows", "fixed_rows", "efficiency_rows", "utilization_rows",
+        "capacity_to_activity_rows", "provenance_contexts", "assumption_dataset", "audit",
+    ):
+        assert getattr(actual, name) == getattr(expected, name), name
+    pd.testing.assert_frame_equal(actual.utilization, expected.utilization, check_exact=True)
+
+
+@pytest.mark.parametrize("disk_state", ["missing", "unrelated"])
+def test_supplied_capacity_is_independent_of_incidental_csv(
+    prepared, isolated_ev_outputs, tmp_path, monkeypatch, disk_state,
+):
+    bundle, stock, contexts, lifetimes = isolated_ev_outputs
+    incidental = tmp_path / "incidental"
+    if disk_state == "unrelated":
+        incidental.mkdir()
+        (incidental / "existing_capacity.csv").write_text("unrelated,stale\n1,2\n")
+    original = layer.resolve_artifact_path
+
+    def artifact_path(config, family, *parts):
+        if family == "existing_capacity_processed":
+            pytest.fail("Charger preparation accessed an unconsumed capacity CSV")
+        return original(config, family, *parts)
+
+    monkeypatch.setattr(layer, "resolve_artifact_path", artifact_path)
+    result = prepare_ev_charger_rows(
+        bundle, existing_capacity_rows=stock, existing_capacity_contexts=contexts,
+        fixed_lifetime_rows=lifetimes,
+    )
+    _assert_preparation_equal(result, prepared[1])
+    assert "existing_capacity.csv" not in result.audit["input_sha256"]
+    assert result.audit["prepared_stock"]["contract"] == "supplied_bev_capacity_v1"
+
+
+def test_prepared_stock_identity_tracks_rows_and_full_lineage(prepared_inputs):
+    _, stock, contexts, _ = prepared_inputs
+    rows = [row for row in stock if "BEV" in row.tech and row.region == "ON"]
+    assert len(rows) > 1
+    identity, selected = layer._prepared_stock_identity(rows, contexts)
+    repeat, _ = layer._prepared_stock_identity(rows, [*reversed(contexts), *contexts])
+    assert repeat == identity
+    reordered, _ = layer._prepared_stock_identity(list(reversed(rows)), contexts)
+    assert reordered["sha256"] != identity["sha256"]
+    first = rows[0]
+    changed_rows = [first.model_copy(update={"capacity": first.capacity + 0.125}), *rows[1:]]
+    changed, _ = layer._prepared_stock_identity(changed_rows, contexts)
+    assert changed["sha256"] != identity["sha256"]
+    changed_key, _ = layer._prepared_stock_identity(
+        [first.model_copy(update={"vintage": 1900}), *rows[1:]], contexts,
+    )
+    assert changed_key["sha256"] != identity["sha256"]
+    changed_contexts = [context.model_copy(update={"dataset_description": "changed lineage"})
+                        if context.data_id == first.data_id else context for context in contexts]
+    changed_lineage, _ = layer._prepared_stock_identity(rows, changed_contexts)
+    assert changed_lineage["sha256"] != identity["sha256"]
+    assert set(selected) == {row.data_id for row in rows}
+
+
+@pytest.mark.parametrize("defect, message", [
+    ("duplicate_rows", "Duplicate prepared BEV"),
+    ("missing_context", "provenance contexts are missing"),
+    ("conflicting_context", "Conflicting BEV stock provenance"),
+    ("nonfinite", "invalid units or capacity"),
+])
+def test_invalid_supplied_stock_fails_before_publication(isolated_ev_outputs, tmp_path, defect, message):
+    bundle, stock, contexts, lifetimes = isolated_ev_outputs
+    row = next(row for row in stock if "BEV" in row.tech and row.region == "ON")
+    if defect == "duplicate_rows":
+        stock = [*stock, row]
+    elif defect == "missing_context":
+        contexts = [context for context in contexts if context.data_id != row.data_id]
+    elif defect == "conflicting_context":
+        context = next(context for context in contexts if context.data_id == row.data_id)
+        contexts = [*contexts, context.model_copy(update={"dataset_description": "conflict"})]
+    else:
+        stock = [item.model_copy(update={"capacity": float("nan")}) if item is row else item for item in stock]
+    with pytest.raises(ValueError, match=message):
+        prepare_ev_charger_rows(
+            bundle, existing_capacity_rows=stock, existing_capacity_contexts=contexts,
+            fixed_lifetime_rows=lifetimes,
+        )
+    assert not (tmp_path / "ev_chargers_processed").exists()
+    assert not (tmp_path / "ev_chargers_validation").exists()
+
+
+def test_unused_capacity_and_contexts_do_not_change_identity(prepared, isolated_ev_outputs):
+    bundle, stock, contexts, lifetimes = isolated_ev_outputs
+    consumed_ids = set(prepared[1].audit["prepared_stock"]["data_ids"])
+    changed = [row.model_copy(update={"capacity": row.capacity + 1})
+               if "BEV" not in row.tech else row for row in stock]
+    contexts = [context.model_copy(update={"dataset_description": "unused context"})
+                if context.data_id not in consumed_ids else context for context in contexts]
+    result = prepare_ev_charger_rows(
+        bundle, existing_capacity_rows=changed, existing_capacity_contexts=contexts,
+        fixed_lifetime_rows=lifetimes,
+    )
+    _assert_preparation_equal(result, prepared[1])
+
+
+def test_changed_supplied_stock_changes_output_and_repeated_identity(prepared, isolated_ev_outputs):
+    bundle, stock, contexts, lifetimes = isolated_ev_outputs
+    original = next(row for row in stock if row.tech == "T_LDV_C_BEV_EX" and row.region == "ON")
+    changed = [row.model_copy(update={"capacity": row.capacity + 0.125})
+               if row is original else row for row in stock]
+    results = [prepare_ev_charger_rows(
+        bundle, existing_capacity_rows=changed, existing_capacity_contexts=contexts,
+        fixed_lifetime_rows=lifetimes,
+    ) for _ in range(2)]
+    _assert_preparation_equal(*results)
+    assert results[0].audit["prepared_stock"]["sha256"] != prepared[1].audit["prepared_stock"]["sha256"]
+    before = next(row for row in prepared[1].capacity_rows if row.region == "ON" and row.tech == "T_LDV_CHRG_EX")
+    after = next(row for row in results[0].capacity_rows if row.region == "ON" and row.tech == "T_LDV_CHRG_EX")
+    assert after.capacity > before.capacity
+    assert after.data_id != before.data_id

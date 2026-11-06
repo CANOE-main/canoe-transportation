@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -38,6 +39,7 @@ from utils import (
     resolve_artifact_path,
     resolve_input_path,
     write_dataframe_atomic,
+    write_text_atomic,
 )
 from validation.insertion import (
     cleanup_transport_parameter_batches,
@@ -57,6 +59,87 @@ LOGGER = logging.getLogger(__name__)
 
 def _rules_digest(rules: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(rules, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def _capacity_handoff_identity(
+    bundle: ConfigBundle, rows: list[ExistingCapacity], contexts: list[ResolvedProvenance],
+) -> dict[str, Any]:
+    """Identify the exact prepared batches and scenario, independent of destinations."""
+    def digest(value: Any) -> str:
+        return hashlib.sha256(json.dumps(
+            value, sort_keys=True, separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")).hexdigest()
+
+    return {
+        "version": 1,
+        "scenario_sha256": digest(bundle.scenario.model_dump(mode="json", exclude={"outputs"})),
+        "rows_sha256": digest([row.model_dump(mode="json") for row in rows]),
+        "contexts_sha256": digest([context.model_dump(mode="json") for context in contexts]),
+    }
+
+
+def publish_capacity_handoff(
+    bundle: ConfigBundle, *, rows: list[ExistingCapacity], contexts: list[ResolvedProvenance],
+    audit: dict[str, Any], artifact_paths: list[Path],
+) -> None:
+    """Commit a complete capacity family after its individual artifacts are written.
+
+    The producer invalidates the previous integrity marker before any preparation
+    writes. A missing marker therefore means the family must be prepared again;
+    individual CSV replacements are not a multi-file transaction.
+    """
+    audit["prepared_handoff"] = {
+        **_capacity_handoff_identity(bundle, rows, contexts),
+        "artifacts": [
+            {
+                "path": str(path.relative_to(bundle.repo_root)
+                            if path.is_relative_to(bundle.repo_root) else path),
+                "sha256": file_sha256(path),
+            }
+            for path in artifact_paths
+        ],
+    }
+    marker = resolve_artifact_path(bundle, "existing_capacity_validation", "integrity.json")
+    write_text_atomic(json.dumps(audit, indent=2) + "\n", marker)
+    LOGGER.info("Published complete existing-capacity handoff with %d artifacts", len(artifact_paths))
+
+
+def validate_capacity_handoff(
+    bundle: ConfigBundle, *, rows: list[ExistingCapacity], contexts: list[ResolvedProvenance],
+    audit: dict[str, Any],
+) -> None:
+    """Reject incomplete, replaced or differently scoped capacity evidence."""
+    marker = resolve_artifact_path(bundle, "existing_capacity_validation", "integrity.json")
+    try:
+        committed_text = marker.read_text(encoding="utf-8")
+        committed = json.loads(committed_text)
+    except (OSError, ValueError) as error:
+        raise ValueError("Existing-capacity preparation has no readable completion marker; prepare it again") from error
+    # JSON round-trip retains audit semantics (including JSON object-key coercion).
+    if json.dumps(committed, sort_keys=True) != json.dumps(json.loads(json.dumps(audit)), sort_keys=True):
+        raise ValueError("Existing-capacity completion marker differs from the supplied audit")
+    handoff = audit.get("prepared_handoff", {})
+    identity = _capacity_handoff_identity(bundle, rows, contexts)
+    if any(handoff.get(key) != value for key, value in identity.items()):
+        raise ValueError("Existing-capacity handoff differs from the supplied scenario, rows or contexts")
+    artifacts = handoff.get("artifacts")
+    if not artifacts:
+        raise ValueError("Existing-capacity handoff has no completed artifacts")
+    for artifact in artifacts:
+        path = Path(artifact["path"])
+        path = path if path.is_absolute() else bundle.repo_root / path
+        try:
+            matches = file_sha256(path) == artifact["sha256"]
+        except OSError as error:
+            raise ValueError(f"Completed existing-capacity artifact is missing: {path}") from error
+        if not matches:
+            raise ValueError(f"Completed existing-capacity artifact changed: {path}")
+    try:
+        unchanged = marker.read_text(encoding="utf-8") == committed_text
+    except OSError:
+        unchanged = False
+    if not unchanged:
+        raise ValueError("Existing-capacity completion marker changed while checking evidence")
 
 
 def _component(
@@ -222,6 +305,9 @@ def build_existing_capacity_artifacts(
     bundle: ConfigBundle,
 ) -> tuple[list[ExistingCapacity], list[ResolvedProvenance], dict[str, Any]]:
     """Rebuild normalized audit products and parameter-ready v4 rows from cached inputs."""
+    completion_marker = resolve_artifact_path(bundle, "existing_capacity_validation", "integrity.json")
+    completion_marker.unlink(missing_ok=True)
+    LOGGER.info("Invalidated existing-capacity handoff before preparation")
     scenario = bundle.scenario
     selected_sources = {
         region: bundle.scenario.aggregation_sources.source_for("stock_age", region)
@@ -834,7 +920,7 @@ def build_existing_capacity_artifacts(
             axis=1,
         )
     ]
-    for frame, path in (
+    artifact_frames = (
         (road_cohorts, interim_output / road_rules["age_cohorts_file"]),
         (road_shares, interim_output / road_rules["fuel_shares_file"]),
         (road_exclusions, validation_output / road_rules["exclusions_file"]),
@@ -848,7 +934,8 @@ def build_existing_capacity_artifacts(
         (road_parameter_ready, processed_output / road_rules["capacity_file"]),
         (bus_parameter_ready, processed_output / bus_rules["capacity_file"]),
         (offroad_parameter_ready, processed_output / offroad_rules["capacity_file"]),
-    ):
+    )
+    for frame, path in artifact_frames:
         write_dataframe_atomic(frame, path)
     write_dataframe_atomic(
         pd.DataFrame([row.model_dump(mode="python") for row in rows]),
@@ -868,9 +955,13 @@ def build_existing_capacity_artifacts(
                if not sales_cohorts.empty else {}),
         }.items()
     }
-    validation_output.mkdir(parents=True, exist_ok=True)
-    (validation_output / "integrity.json").write_text(
-        json.dumps(audit, indent=2) + "\n", encoding="utf-8"
+    publish_capacity_handoff(
+        bundle, rows=rows, contexts=contexts, audit=audit,
+        artifact_paths=[
+            *(path for _, path in artifact_frames),
+            processed_output / "existing_capacity.csv",
+            *([interim_output / road_rules["sales_cohorts_file"]] if not sales_cohorts.empty else []),
+        ],
     )
     LOGGER.info(
         "Prepared %s existing-capacity rows across %s regions; removed %s below epsilon=%s; excluded %s road fuel shares",
