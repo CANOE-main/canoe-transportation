@@ -1141,6 +1141,29 @@ flowchart LR
   click p2 "https://github.com/RAMP-project/RAMP-mobility"
 ```
 
+**Representative period clustering (pending refactor).** The current calculation
+uses the ordinary mean of 8,760 equal-duration hours. After selecting or clustering
+representative periods, rescale the charging shape using the final model time-slice
+weights: cluster frequency × slice duration, normalized to fractions of the year.
+An unweighted mean of representative slices can change annual utilization. #to-review
+
+For representative shape `p_i`, normalized annual weights `w_i`, and annual charger
+utilization target `U`, use the same weights as the model's annual energy balance:
+#to-review
+
+```math
+\mu_w = \sum_i w_i p_i,\quad \sum_i w_i = 1,\qquad
+\mathrm{CF}_i = p_i\,\frac{U}{\mu_w},\quad
+\sum_i w_i\,\mathrm{CF}_i = U.
+```
+
+For `U = 0.20`, the weighted mean of charging ceilings must remain 20%. Do not
+multiply each `CF_i` by its weight again. The annual utilization floor remains
+separate (`0.98 × U = 0.196` for new LDV chargers). Check the weighted mean and
+`0 ≤ CF_i ≤ 1`; reject infeasible scaling rather than clipping. Apply this rescaling
+in the upstream clustering step; the current transport projection requires a
+complete mapping that preserves the full-year integral. #to-review
+
 ### Compact manual parameter selectors
 
 Manual lifetime, efficiency, and cost tables use `technology_class` as an exact

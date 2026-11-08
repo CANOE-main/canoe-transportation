@@ -756,6 +756,74 @@
         "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_sales_survival_cohorts.csv",
         "sha256": "cc6da988e4a40bf6c63ad416bf67fe0e2b35d52f69b01391b4a63b9044ea3078"
       }
+    },
+    "prepared_handoff": {
+      "version": 1,
+      "scenario_sha256": "7715b38cface9768c4bb0c17717984ce4ad1b8e5eafda0a51f50b7fe08ad5436",
+      "rows_sha256": "8e86865cd49dc8727ec8d4245ec0bbcf77273fef271327d6ad4ee5576eaf7cbf",
+      "contexts_sha256": "3cda4009e395ec4fb35436af6f005b7df2216dca81efd95b9f110f273ad9584d",
+      "artifacts": [
+        {
+          "path": "inputs\\1_interim\\existing_capacity\\road_existing_capacity_age_cohorts.csv",
+          "sha256": "aba22755596ef749eefcbe3d5a7fd8be17b0d7dbdfcd1f8258890854a12967e1"
+        },
+        {
+          "path": "inputs\\1_interim\\existing_capacity\\road_existing_capacity_fuel_shares.csv",
+          "sha256": "b03ad4f3eefa43343805c1e4c4d3fe0752f79b573ffed5860b0ae3b7356f16f9"
+        },
+        {
+          "path": "inputs\\validation\\existing_capacity\\road_existing_capacity_excluded_fuel_shares.csv",
+          "sha256": "6e1706b476f154c8098200376d19d3be91054696fd75f85c94120c1e6ccb6c18"
+        },
+        {
+          "path": "inputs\\1_interim\\existing_capacity\\bus_existing_capacity_age_cohorts.csv",
+          "sha256": "fbe762af805a03da97e598e036563ac4585e9eefcfebde90d4e9d3bebef5916c"
+        },
+        {
+          "path": "inputs\\1_interim\\existing_capacity\\bus_existing_capacity_activity_shares.csv",
+          "sha256": "856805dc1afb796a6d646c5fc7f5afb63dac32549f2dbea7636cd5f769d934f2"
+        },
+        {
+          "path": "inputs\\validation\\existing_capacity\\bus_existing_capacity_excluded_fuel_energy.csv",
+          "sha256": "bfc2211e0a094a9a8a815078f482bcf72c7dfd665da599c4acf23e04d050e450"
+        },
+        {
+          "path": "inputs\\validation\\existing_capacity\\bus_existing_capacity_technology_transfers.csv",
+          "sha256": "5672e2ab32dc0c47f7a4aa7a767b08e9c4aabf9ded730e0c60c0089682a32dc9"
+        },
+        {
+          "path": "inputs\\1_interim\\existing_capacity\\offroad_existing_capacity_annual.csv",
+          "sha256": "8872fc244795498da0613113b98d9e2d359dd6021d7e8f17cc681d82ab8597dd"
+        },
+        {
+          "path": "inputs\\1_interim\\existing_capacity\\offroad_existing_capacity_cohort_additions.csv",
+          "sha256": "2b035588525181e09d6d2f56ad5ae655a47276c99379484f92055f285854a62e"
+        },
+        {
+          "path": "inputs\\validation\\existing_capacity\\excluded_air_gasoline_energy.csv",
+          "sha256": "b30950286e3700695fb4e5d415fc00de44370799a586fde04a2fdb2a9103f427"
+        },
+        {
+          "path": "inputs\\2_processed\\existing_capacity\\road_existing_capacity.csv",
+          "sha256": "28fdb9a9ea6877364c92bcf762d52a73ea477d6a946b9af77db18357405a8a9c"
+        },
+        {
+          "path": "inputs\\2_processed\\existing_capacity\\bus_existing_capacity.csv",
+          "sha256": "ee3e38c5ae9bce124d1a74e490fe72acad4a4d7dde0bfdbc5521a64a7586bd73"
+        },
+        {
+          "path": "inputs\\2_processed\\existing_capacity\\offroad_existing_capacity.csv",
+          "sha256": "22032ba72a3e01f93c2dd33692bc7c1bdfe5523e1ab7491d4aa8248e453ef478"
+        },
+        {
+          "path": "inputs\\2_processed\\existing_capacity\\existing_capacity.csv",
+          "sha256": "1d341dabc40b916e973a4791f08f2cf1c470963e2aee3f7baa2caccfb0675492"
+        },
+        {
+          "path": "inputs\\1_interim\\existing_capacity\\road_sales_survival_cohorts.csv",
+          "sha256": "cc6da988e4a40bf6c63ad416bf67fe0e2b35d52f69b01391b4a63b9044ea3078"
+        }
+      ]
     }
   },
   "periods": {
@@ -4170,11 +4238,27 @@
       ],
       "fixed_period_vintage_pairs_excluded_by_lifetime": 12
     },
+    "prepared_stock": {
+      "contract": "supplied_bev_capacity_v1",
+      "sha256": "957aae111bc1cd152a0a6d1b57ca441c52e712f7cb6ca7c51a1150b99a7e6866",
+      "row_count": 10,
+      "data_ids": [
+        "existing-capacity-road-cars-2010-on:composite:4:33ae96b051e639fa",
+        "existing-capacity-road-cars-2015-on:composite:4:87ce87b6dd23b7e2",
+        "existing-capacity-road-cars-2020-on:composite:4:65eeb0b8fbb99d6e",
+        "existing-capacity-road-freight-light-trucks-2010-on:composite:4:d2271732d7316b55",
+        "existing-capacity-road-freight-light-trucks-2015-on:composite:4:4d0bad5b2c9343eb",
+        "existing-capacity-road-freight-light-trucks-2020-on:composite:4:a5c087c7e778a048",
+        "existing-capacity-road-medium-trucks-2020-on:composite:4:f3f6dc57df74d171",
+        "existing-capacity-road-passenger-light-trucks-2010-on:composite:4:5b6566927812cea0",
+        "existing-capacity-road-passenger-light-trucks-2015-on:composite:4:32fb7d89d2ab9b79",
+        "existing-capacity-road-passenger-light-trucks-2020-on:composite:4:e3b09d5967a2f61d"
+      ]
+    },
     "input_sha256": {
       "charger_parameters.csv": "dbca8f294e9476e764153787dd8d0001d984071eed4715f3605d30e2142b0278",
       "transport_canada_public_ld_chargers_by_province_2026.csv": "bedab0a1130bc1340a73302ce55dc6c382caefca0bb3450c13b6d1769fe2b832",
       "transport_canada_public_ld_chargers_by_type_2026.csv": "ba3b8056806b59d4df540e3b85cda8c8c2302145d18eacc80091710a47409e6c",
-      "existing_capacity.csv": "1d341dabc40b916e973a4791f08f2cf1c470963e2aee3f7baa2caccfb0675492",
       "cer_macro_indicators.csv": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
     }
   },
@@ -12237,15 +12321,15 @@
     "foreign_key_violations": 0,
     "foreign_keys_enabled": true
   },
-  "database_sha256": "554e710b00ec9e40370af8097218182670c433767f2c40ccd6d7b9ef1b880ec3",
-  "timestamp_utc": "2026-11-06T04:02:07.074664+00:00",
+  "database_sha256": "65d09a612e43856b6c4441f41c6d34ab16519ebe9e576b53883cdd7015c90439",
+  "timestamp_utc": "2026-11-06T15:56:47.714160+00:00",
   "scenario": "validation_baseline",
   "orchestration": {
     "prerequisites": "replayed",
     "download_sources": false
   },
   "logging": {
-    "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\logs\\validation_baseline_validation_baseline_2026-11-06_03-54-48-998645Z.log",
+    "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\logs\\validation_baseline_validation_baseline_2026-11-06_15-54-02-352269Z.log",
     "verbosity": "INFO"
   },
   "config": {
@@ -12255,7 +12339,7 @@
     },
     "paths": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
-      "sha256": "c9568baf80d9c59903392f5cf4e3585230ec7f78b50810b560f9ad1bcbd6aa9a"
+      "sha256": "0ea03aa981b4b5d75a29fb6a6864a956c896f04bbe591f413ce69a79158e1930"
     },
     "sources": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\sources.yaml",

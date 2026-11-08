@@ -1,7 +1,7 @@
 {
   "scenario": "validation_baseline",
   "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
-  "repository_commit": "3e1b20175efc420bc999390caf36b6a5ff218939",
+  "repository_commit": "af8994ff3bd2aa7771a24d9efe727ee2d170fc11",
   "period_mapping": {
     "period_mode": "prospective",
     "base_year": 2025,
@@ -177,11 +177,11 @@
   "files": {
     "database": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_baseline.sqlite",
-      "sha256": "554e710b00ec9e40370af8097218182670c433767f2c40ccd6d7b9ef1b880ec3"
+      "sha256": "65d09a612e43856b6c4441f41c6d34ab16519ebe9e576b53883cdd7015c90439"
     },
     "build_report": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\validation_baseline.json",
-      "sha256": "cef96b579f33d6598f20bf15ab881ade338c3ca449dfcbf9ec76ea8ee80a66b1"
+      "sha256": "0cfd427f086df2f7ae3611d253549a110ab044873cdd5d503090ecfcd5efb618"
     },
     "manual_charger_parameters": {
       "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\charger_parameters.csv",
@@ -196,7 +196,7 @@
       "sha256": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
     }
   },
-  "build_timestamp_utc": "2026-11-06T04:02:07.074664+00:00",
+  "build_timestamp_utc": "2026-11-06T15:56:47.714160+00:00",
   "build_content_verified": true,
   "component_reconciliation": {
     "relative_tolerance": 1e-10,
@@ -206,7 +206,7 @@
   "reference_basis_status": "confirmed",
   "implementation_files": {
     "src\\validation\\charging_cost_comparison.py": "f29b29af13ab18a347ab45c0672d38b762f185d83553b555f51f3e2c9daf337f",
-    "src\\parameterization\\ev_chargers.py": "06e6088ecf727ec17dfc05c70b26485766cb5e4bc98a29258626863d399a1659",
+    "src\\parameterization\\ev_chargers.py": "5c858644581bedafab762b63303aef3e0fa31659ccf670488a55b328b5494899",
     "src\\parameterization\\currency.py": "8d2fe00e8002d823b29f6dce3c425faa4723f29fa93eef187dd5413b4b6cb2f6"
   },
   "limitations": [
