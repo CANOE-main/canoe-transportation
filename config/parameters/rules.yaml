@@ -1540,6 +1540,8 @@ parameterization:
     insertion_gap_file: vintage_period_schema_gap.json
 
   road_lifetimes_survival:
+    # Scenario lifetimes own the tail method, survival threshold and optional zero cap.
+    # Preserve the native source schedule as evidence.
     bus_lifetimes:
       statcan_table_id: "34-10-0254-01"
       region_source_proxy: {BCT: BC}

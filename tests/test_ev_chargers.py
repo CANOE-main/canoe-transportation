@@ -41,7 +41,8 @@ def prepared_inputs(isolated_legacy_bundle, tmp_path_factory):
         for owner in ("ev_chargers", "build_existing_capacity", "road_stocks_and_demands",
                       "road_lifetimes_survival", "build_lifetime_parameters"):
             patch.setattr(f"parameterization.{owner}.resolve_artifact_path", artifact_path)
-        stock, contexts, _ = prepare_existing_capacity_rows(bundle)
+        fleet = prepare_existing_capacity_rows(bundle)
+        stock, contexts = fleet.existing_capacity_rows, fleet.provenance_contexts
         lifetime_rows = prepare_lifetime_rows(bundle).fixed_rows
         yield bundle, stock, contexts, lifetime_rows
 
@@ -503,38 +504,41 @@ def test_supplied_capacity_is_independent_of_incidental_csv(
     )
     _assert_preparation_equal(result, prepared[1])
     assert "existing_capacity.csv" not in result.audit["input_sha256"]
-    assert result.audit["prepared_stock"]["contract"] == "supplied_bev_capacity_v1"
+    assert result.audit["prepared_stock"]["contract"] == "supplied_bev_physical_stock_v2"
 
 
 def test_prepared_stock_identity_tracks_rows_and_full_lineage(prepared_inputs):
-    _, stock, contexts, _ = prepared_inputs
-    rows = [row for row in stock if "BEV" in row.tech and row.region == "ON"]
+    from parameterization.build_existing_capacity import physical_stock_for_consumers
+
+    bundle, stock, contexts, _ = prepared_inputs
+    rows = physical_stock_for_consumers(bundle, stock, None)
+    rows = rows.loc[rows.tech.str.contains("BEV") & rows.region.eq("ON")].reset_index(drop=True)
     assert len(rows) > 1
     identity, selected = layer._prepared_stock_identity(rows, contexts)
     repeat, _ = layer._prepared_stock_identity(rows, [*reversed(contexts), *contexts])
     assert repeat == identity
-    reordered, _ = layer._prepared_stock_identity(list(reversed(rows)), contexts)
+    reordered, _ = layer._prepared_stock_identity(rows.iloc[::-1], contexts)
     assert reordered["sha256"] != identity["sha256"]
-    first = rows[0]
-    changed_rows = [first.model_copy(update={"capacity": first.capacity + 0.125}), *rows[1:]]
+    changed_rows = rows.copy()
+    changed_rows.loc[0, "surviving_k_vehicles"] += .125
     changed, _ = layer._prepared_stock_identity(changed_rows, contexts)
     assert changed["sha256"] != identity["sha256"]
-    changed_key, _ = layer._prepared_stock_identity(
-        [first.model_copy(update={"vintage": 1900}), *rows[1:]], contexts,
-    )
+    changed_rows = rows.copy()
+    changed_rows.loc[0, "vintage"] = 1900
+    changed_key, _ = layer._prepared_stock_identity(changed_rows, contexts)
     assert changed_key["sha256"] != identity["sha256"]
     changed_contexts = [context.model_copy(update={"dataset_description": "changed lineage"})
-                        if context.data_id == first.data_id else context for context in contexts]
+                        if context.data_id == rows.iloc[0].data_id else context for context in contexts]
     changed_lineage, _ = layer._prepared_stock_identity(rows, changed_contexts)
     assert changed_lineage["sha256"] != identity["sha256"]
-    assert set(selected) == {row.data_id for row in rows}
+    assert set(selected) == set(rows.data_id)
 
 
 @pytest.mark.parametrize("defect, message", [
-    ("duplicate_rows", "Duplicate prepared BEV"),
+    ("duplicate_rows", "duplicate cohort keys"),
     ("missing_context", "provenance contexts are missing"),
     ("conflicting_context", "Conflicting BEV stock provenance"),
-    ("nonfinite", "invalid units or capacity"),
+    ("nonfinite", "Physical-stock handoff has null"),
 ])
 def test_invalid_supplied_stock_fails_before_publication(isolated_ev_outputs, tmp_path, defect, message):
     bundle, stock, contexts, lifetimes = isolated_ev_outputs

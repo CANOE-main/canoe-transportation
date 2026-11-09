@@ -1,8 +1,0 @@
-step,source_cell,operation,interpretation
-1,12,"Melt class sales and powertrain shares, then left join region/mode/year",Workbook class sales are thousand vehicles; powertrain shares are fractions
-2,12,Multiply sales by share; fill missing products with zero,Preserves literal missing-share handling; no share normalization or substitute weights
-3,12,Right join requested 2005–25 support; forward interpolate each powertrain's product,"2024–25 retain the 2023 powertrain-level product, rather than a newly allocated class total"
-4,12,Assign native five-year bins; 2005 alone belongs to vintage 2000,Input columns 2000–04 are excluded by the actual main call's range_vin
-5,12,Sum by native region/mode/powertrain/vintage/unit; remove zero totals,Existing capacities contain acquisition volumes without pre-applied survival
-6,12,"Apply native unsuffixed technology maps, including car BEV150, passenger-LT BEV300 and PHEV35",Separate explicit alias bridges may compare stored SQLite suffixes; no numerical values change
-7,29,Replace all five old road families with untouched recipe rows; export ExistingCapacity_transport.csv,"The earlier five-year shift acts on old defaults; new road rows undergo no later shift, drop or survival adjustment. The notebook contains no active SQLite insertion path"

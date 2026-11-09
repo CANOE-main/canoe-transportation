@@ -59,6 +59,23 @@ def test_repeated_publication_is_deterministic_and_tracks_exact_rows(prepared):
         layer.validate_capacity_handoff(bundle, **old)
 
 
+def test_handoff_separately_fingerprints_curve_parameters_and_physical_stock(prepared):
+    bundle, path, arguments = prepared
+    scenario = bundle.scenario.model_copy(update={
+        "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": True}),
+    })
+    curve_bundle = replace(bundle, scenario=scenario)
+    # Existing 10-unit installation equivalent corresponds to six current vehicles.
+    physical = layer.physical_stock_for_consumers(bundle, arguments["rows"], None)
+    physical["surviving_k_vehicles"] = 6.
+    arguments = {**arguments, "physical_stock": physical}
+    layer.publish_capacity_handoff(curve_bundle, **arguments, artifact_paths=[path])
+    layer.validate_capacity_handoff(curve_bundle, **arguments)
+    changed = physical.assign(surviving_k_vehicles=5.)
+    with pytest.raises(ValueError, match="handoff differs"):
+        layer.validate_capacity_handoff(curve_bundle, **(arguments | {"physical_stock": changed}))
+
+
 def test_handoff_binds_scenario_and_provenance_but_not_output_destination(prepared):
     bundle, _, arguments = prepared
     payload = bundle.scenario.model_dump()

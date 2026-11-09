@@ -20,7 +20,7 @@ tempfile.tempdir = str(PYTEST_TEMP_ROOT)
 
 @pytest.fixture(scope="module")
 def legacy_bundle():
-    """Pinned pre-period-mode selections for existing numerical regression checks."""
+    """Historical period grid with the supported fixed-lifetime production method."""
     from dataclasses import replace
 
     from utils import load_config_bundle
@@ -29,7 +29,7 @@ def legacy_bundle():
     bundle = load_config_bundle("config/scenarios/legacy_comparison.yaml", repo_root=REPO_ROOT)
     payload = bundle.scenario.model_dump(mode="python")
     payload["periods"].update(period_mode="legacy", existing=[2000, 2005, 2010, 2015, 2020, 2023])
-    payload["lifetimes"]["survival_curve_max_age"] = 25
+    payload["lifetimes"].update(survival_curves=False)
     # Pin both later representation selections for the original numerical baseline.
     payload["charging_profiles"]["travel_behavior_source"] = "none"
     payload["BEV_PHEV_range_representation"]["mode"] = "none"

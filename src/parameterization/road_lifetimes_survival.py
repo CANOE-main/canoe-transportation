@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from canoe_schema.v4_0 import LifetimeSurvivalCurve, LifetimeTech
+from canoe_schema.v4_0 import LifetimeProcess, LifetimeSurvivalCurve, LifetimeTech
 
 from fetching.vehicle_population import load_history_manifest
 from parameterization.road_aggregation import (
@@ -17,6 +17,12 @@ from parameterization.road_aggregation import (
 )
 from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from parameterization.road_fleet_weights import aggregation_component, load_ldv_aggregation_weights
+from parameterization.road_cohort_survival import (
+    ReconciledSurvival,
+    TEMOA_MIN_INTERIOR_SURVIVAL,
+    build_composite_cohorts,
+    reconcile_survival_schedules,
+)
 from utils import (
     ConfigBundle,
     load_config_bundle,
@@ -56,7 +62,60 @@ def resolved_road_lifetime_rules(bundle: ConfigBundle) -> dict[str, Any]:
     if profile not in profiles:
         raise ValueError(f"No road lifetime rules for selected profile {profile}")
     selectors = {**rules["fixed_lifetime_sources"], **profiles[profile]}
-    return {**rules, "fixed_lifetime_sources": selectors}
+    return {**rules, "fixed_lifetime_sources": selectors,
+            "survival_hard_zero_age": bundle.scenario.lifetimes.survival_curve_max_age}
+
+
+def require_tail_derivation(bundle: ConfigBundle) -> dict[str, Any]:
+    """Validate the approved tail settings before source or artifact I/O."""
+    method = bundle.scenario.lifetimes.tail_derivation
+    threshold = float(bundle.scenario.lifetimes.tail_survival_threshold)
+    cap = bundle.scenario.lifetimes.survival_curve_max_age
+    if method != "constant_retirement":
+        raise ValueError("Road survival tail_derivation must be constant_retirement")
+    if not isfinite(threshold) or not TEMOA_MIN_INTERIOR_SURVIVAL <= threshold < 1:
+        raise ValueError("Survival tail threshold must be finite and supported by Temoa")
+    if cap is not None and (isinstance(cap, bool) or int(cap) != cap or cap <= 0):
+        raise ValueError("The survival hard zero age must be a positive integer or null")
+    return {"tail_derivation": method, "threshold": threshold, "hard_zero_age": cap}
+
+
+def selected_road_survival_schedules(bundle: ConfigBundle, transformed: pd.DataFrame) -> pd.DataFrame:
+    """Select full source-supported schedules, preserving their native precision."""
+    rules = resolved_road_lifetime_rules(bundle)
+    selected_frames = []
+    for road_class in rules["survival_curve_classes"]:
+        selector = rules["fixed_lifetime_sources"][road_class]
+        source_id = ("ontario_report_a_weighted_nhtsa_cafe" if selector["kind"] == "ceud_median"
+                     else str(selector["source_id"]))
+        source_class = str(selector.get("target_class", selector.get("curve_source_class", "")))
+        selected = transformed.loc[transformed.source_id.eq(source_id) & transformed.source_class.eq(source_class)].copy()
+        if selected.empty or selected.age.duplicated().any():
+            raise ValueError(f"Missing or duplicate accepted annual survival schedule for {road_class}")
+        selected["road_class"] = road_class
+        selected["native_max_age"] = int(selected.age.max()) - (
+            1 if selected.source_measure.eq("annual_survival_rate").all() else 0)
+        selected_frames.append(selected)
+    return pd.concat(selected_frames, ignore_index=True)
+
+
+def harmonized_road_survival_schedules(bundle: ConfigBundle, transformed: pd.DataFrame) -> ReconciledSurvival:
+    """Resolve one harmonized age schedule for calibration and future retirement."""
+    settings = require_tail_derivation(bundle)
+    return reconcile_survival_schedules(selected_road_survival_schedules(bundle, transformed), **settings)
+
+
+def resolved_survival_max_age(bundle: ConfigBundle, schedules: pd.DataFrame | None = None) -> int:
+    """Resolve the shared requested age ceiling without truncating class tails."""
+    settings = require_tail_derivation(bundle)
+    if settings["hard_zero_age"] is not None:
+        return int(settings["hard_zero_age"])
+    if schedules is None or schedules.empty or not {"road_class", "age", "survival_probability"} <= set(schedules):
+        raise ValueError("Harmonized survival schedules are required to resolve the age ceiling")
+    endings = schedules.sort_values("age").groupby("road_class").tail(1)
+    if endings.survival_probability.ne(0).any():
+        raise ValueError("Harmonized survival schedules must end at zero")
+    return int(endings.age.max())
 
 
 def aggregate_report_a_snapshots(
@@ -1163,6 +1222,13 @@ def transform_source_survival_curves(
             ).cumprod().shift(1, fill_value=1.0)
             ordered["source_unit"] = "dimensionless"
             ordered["transformation"] = "age_zero_one_then_prefix_product_of_annual_survival"
+            # Native rate a describes survival from age a to a+1. Retain the
+            # final supported transition as well as the age-zero prefix.
+            endpoint = ordered.iloc[-1].to_dict()
+            endpoint["age"] = int(endpoint["age"]) + 1
+            endpoint["survival_probability"] = float(pd.to_numeric(
+                ordered["source_value"], errors="raise").prod())
+            ordered = pd.concat([ordered, pd.DataFrame([endpoint])], ignore_index=True)
             transformed_frames.append(ordered[[
                 "source_id", "source_class", "age", "source_measure",
                 "survival_probability", "source_unit", "transformation",
@@ -1670,6 +1736,11 @@ def fixed_existing_lifetimes(
         lifetime = float(values.iloc[0])
         if not isfinite(lifetime) or lifetime <= 0:
             raise ValueError(f"Invalid fixed lifetime for {road_class}")
+        cap = rules.get("survival_hard_zero_age")
+        if cap is not None and kind in {"ceud_median", "source_median_equal"}:
+            # Selected sources reach their median before the derived tail.
+            # An earlier explicit zero therefore makes that cap the median.
+            lifetime = min(lifetime, float(cap))
         lifetimes[road_class] = lifetime
     return lifetimes
 
@@ -1737,14 +1808,15 @@ def prepare_fixed_road_lifetimes(
         context = resolve_composite_provenance(
             inputs=inputs,
             dataset_key=f"lifetime_tech.road.{road_class}",
-            transformation="First accepted cumulative-survival age at or below one half",
-            transformation_version="1",
+            transformation="First harmonized cumulative-survival age at or below one half, respecting an explicit hard zero age",
+            transformation_version="2",
             governing_source_id=source_ids[source_key],
             data_quality=source_context.data_quality,
             value_variant={
                 "road_class": road_class,
                 "selector": selector,
                 "median_years": values[road_class],
+                "tail_derivation": require_tail_derivation(bundle),
                 "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
                 "population_year": bundle.scenario.existing_capacity.vehicle_population_year,
             },
@@ -1778,118 +1850,121 @@ def prepare_road_survival_curve_rows(
     *,
     transformed: pd.DataFrame,
     technology: pd.DataFrame,
-) -> tuple[list[LifetimeSurvivalCurve], list[ResolvedProvenance]]:
-    """Average accepted annual schedules over full model periods for each cohort."""
-    stock_rules = resolved_road_lifetime_rules(bundle)
-    selectors = stock_rules["fixed_lifetime_sources"]
-    curve_classes = set(stock_rules["survival_curve_classes"])
-    if curve_classes - set(selectors):
-        raise ValueError("Accepted curve classes lack road owner selectors")
+    annual_acquisitions: pd.DataFrame | None = None,
+    cohort_provenance_contexts: list[ResolvedProvenance] | None = None,
+) -> tuple[list[LifetimeSurvivalCurve], list[LifetimeProcess], list[ResolvedProvenance], dict[str, Any]]:
+    """Prepare annual absolute curves and matching endpoints from one schedule.
+
+    Existing cohorts use acquisition-weighted annual source survival. Future
+    investments use the reconciled age curve directly. Neither is period averaged.
+    """
+    settings = require_tail_derivation(bundle)
+    if not bundle.scenario.lifetimes.survival_curves:
+        raise ValueError("Annual road curve preparation requires survival_curves enabled")
+    if annual_acquisitions is None:
+        raise ValueError("Existing annual acquisitions are required for grouped survival curves")
     if technology["tech"].duplicated().any():
         raise ValueError("Technology template has duplicate owner IDs")
-    scenario = bundle.scenario
-    step = scenario.periods.step
-    max_age = scenario.lifetimes.survival_curve_max_age
-    if step <= 0 or max_age < step - 1:
-        raise ValueError("Survival horizon cannot contain one full model period")
+    stock_rules = resolved_road_lifetime_rules(bundle)
+    reconciled = harmonized_road_survival_schedules(bundle, transformed)
+    if not reconciled.audit.temoa_compatible.all():
+        raise ValueError("Harmonized source survival does not satisfy current Temoa annual curve validation")
+    composites = build_composite_cohorts(
+        annual_acquisitions, reconciled.annual,
+        reference_year=bundle.scenario.periods.base_year,
+        first_model_period=bundle.scenario.periods.model[0],
+    )
+    if not composites.audit.empty and not composites.audit.temoa_compatible.all():
+        bad = composites.audit.loc[~composites.audit.temoa_compatible, ["region", "tech", "vintage", "minimum_interior_fraction"]]
+        raise ValueError("Final grouped survival has values below Temoa's supported minimum: "
+                         + str(bad.to_dict("records")))
     assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
     source_ids = source_id_mapping(bundle.sources)
-    records_by_context: list[tuple[ResolvedProvenance, list[dict[str, Any]]]] = []
-    for road_class in sorted(curve_classes):
-        selector = selectors[road_class]
+    curve_rows, process_rows, contexts = [], [], []
+    regions = sorted({stock_rules["region_output_map"].get(region, region)
+                      for region in bundle.scenario.geography.regions})
+    for road_class in sorted(stock_rules["survival_curve_classes"]):
+        selector = stock_rules["fixed_lifetime_sources"][road_class]
         source_class = str(selector.get("target_class", selector.get("curve_source_class", "")))
-        source_key = (
-            str(assorted["nhtsa_cafe"]["source_id"])
-            if selector["kind"] == "ceud_median"
-            else str(selector["source_id"])
-        )
-        accepted_source_id = (
-            "ontario_report_a_weighted_nhtsa_cafe" if selector["kind"] == "ceud_median"
-            else source_key
-        )
-        selected = transformed.loc[
-            transformed["source_id"].eq(accepted_source_id)
-            & transformed["source_class"].eq(source_class)
-        ].copy()
-        selected["age"] = pd.to_numeric(selected["age"], errors="raise")
-        selected["survival_probability"] = pd.to_numeric(
-            selected["survival_probability"], errors="raise"
-        )
-        if (selected.empty or selected.duplicated("age").any()
-                or selected["age"].isna().any()
-                or selected["age"].mod(1).ne(0).any()
-                or set(selected["source_unit"]) != {"dimensionless"}):
-            raise ValueError(f"Invalid accepted survival schedule for {road_class}")
-        annual = selected.set_index(selected["age"].astype(int))["survival_probability"]
-        if set(range(max_age + 1)) - set(annual.index):
-            raise ValueError(f"Accepted survival schedule lacks ages through {max_age}: {road_class}")
-        annual = annual.sort_index().loc[:max_age]
-        if (abs(float(annual.iloc[0]) - 1.0) > 1e-10
-                or annual.map(lambda value: not isfinite(value) or value < 0 or value > 1).any()
-                or annual.diff().dropna().gt(1e-10).any()):
-            raise ValueError(f"Accepted survival schedule violates age-zero, bounds or monotonicity: {road_class}")
+        source_key = (str(assorted["nhtsa_cafe"]["source_id"]) if selector["kind"] == "ceud_median"
+                      else str(selector["source_id"]))
+        schedule = reconciled.annual.loc[reconciled.annual.road_class.eq(road_class)].sort_values("age")
+        terminal = int(schedule.age.max())
         _, component_key = survival_source_component(assorted, source_key, source_class)
-        source_context = resolve_provenance(
-            bundle.sources, source_key=source_key, component_key=component_key,
-            transformation="accepted_annual_survival_input", transformation_version="1",
-        )
+        source_context = resolve_provenance(bundle.sources, source_key=source_key, component_key=component_key,
+                                            transformation="accepted_annual_survival_input", transformation_version="1")
         inputs = [source_context]
         if selector["kind"] == "ceud_median":
-            weight_source, weight_component = aggregation_component(
-                bundle, "ldv", scenario.geography.regions[0],
-            )
-            inputs.append(resolve_provenance(
-                bundle.sources, source_key=weight_source,
-                component_key=weight_component,
-                transformation="reviewed_ldv_weight_input", transformation_version="1",
-            ))
-        digest = hashlib.sha256(annual.to_csv(header=False).encode("utf-8")).hexdigest()
+            weight_source, weight_component = aggregation_component(bundle, "ldv", bundle.scenario.geography.regions[0])
+            inputs.append(resolve_provenance(bundle.sources, source_key=weight_source, component_key=weight_component,
+                                             transformation="reviewed_ldv_weight_input", transformation_version="1"))
+        annual_class = annual_acquisitions.loc[annual_acquisitions.road_class.eq(road_class)]
         context = resolve_composite_provenance(
             inputs=inputs, dataset_key=f"lifetime_survival_curve.road.{road_class}",
-            transformation="Mean cumulative survival over full model-period age blocks",
-            transformation_version="1", governing_source_id=source_ids[source_key],
+            transformation="Annual absolute survival and explicit endpoint lifetimes for new investments",
+            transformation_version="2", governing_source_id=source_ids[source_key],
             data_quality=source_context.data_quality,
             value_variant={"road_class": road_class, "source_class": source_class,
-                           "annual_sha256": digest, "max_age": max_age,
-                           "periods": scenario.periods.model_dump(), "step": step,
-                           "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
-                           "population_year": scenario.existing_capacity.vehicle_population_year},
+                           "annual_sha256": hashlib.sha256(schedule.to_csv(index=False).encode()).hexdigest(),
+                           "tail_derivation": settings, "periods": bundle.scenario.periods.model_dump()},
         )
-        owners = technology.loc[technology["category"].eq(road_class), "tech"]
-        if owners.empty:
-            raise ValueError(f"Accepted survival class has no technology owners: {road_class}")
+        owners = set(technology.loc[technology.category.eq(road_class), "tech"])
+        if not owners:
+            raise ValueError(f"Accepted curve class has no technology owners: {road_class}")
+        if set(annual_class.tech) - owners:
+            raise ValueError(f"Annual acquisitions have inconsistent technology/class ownership: {road_class}")
+        existing_records = composites.curves.loc[composites.curves.tech.isin(owners)].to_dict("records")
+        existing_endpoints = composites.lifetimes.loc[composites.lifetimes.tech.isin(owners)].to_dict("records")
+        if existing_records:
+            if "data_id" not in annual_class or annual_class.data_id.isna().any():
+                raise ValueError("Grouped survival acquisitions require their source provenance data_id")
+            cohort_contexts = {item.data_id: item for item in cohort_provenance_contexts or []}
+            missing = set(annual_class.data_id) - set(cohort_contexts)
+            if missing:
+                raise ValueError(f"Grouped survival acquisition provenance is unresolved: {sorted(missing)}")
+            composite_context = resolve_composite_provenance(
+                inputs=[*inputs, *(cohort_contexts[key] for key in sorted(set(annual_class.data_id)))],
+                dataset_key=f"lifetime_survival_curve.existing_road.{road_class}",
+                transformation="Acquisition-weighted annual absolute survival and matched historical cohort endpoints",
+                transformation_version="2", governing_source_id=source_ids[source_key],
+                data_quality=source_context.data_quality,
+                value_variant={"road_class": road_class, "source_class": source_class,
+                               "annual_sha256": hashlib.sha256(schedule.to_csv(index=False).encode()).hexdigest(),
+                               "acquisitions_sha256": hashlib.sha256(annual_class.sort_values(
+                                   ["region", "tech", "vintage", "vintage_year"]).to_csv(index=False).encode()).hexdigest(),
+                               "tail_derivation": settings, "periods": bundle.scenario.periods.model_dump()},
+            )
+            curve_rows.extend(validate_parameter_rows(LifetimeSurvivalCurve, existing_records, composite_context, bundle=bundle))
+            process_rows.extend(validate_parameter_rows(LifetimeProcess,
+                [{**record, "units": "years"} for record in existing_endpoints], composite_context, bundle=bundle))
+            contexts.append(composite_context)
         records: list[dict[str, Any]] = []
+        endpoints: list[dict[str, Any]] = []
         for tech in sorted(owners):
             if tech.endswith("_EX"):
-                vintages = scenario.periods.existing
-            elif tech.endswith("_N"):
-                vintages = scenario.periods.model
-            else:
-                raise ValueError(f"Lifetime curve owner has no vintage convention: {tech}")
-            for vintage in vintages:
-                for period in scenario.periods.model:
-                    start_age = period - vintage
-                    end_age = start_age + step - 1
-                    if start_age < 0 or end_age > max_age:
-                        continue
-                    fraction = float(annual.loc[list(range(start_age, end_age + 1))].mean())
-                    for region in sorted(scenario.geography.regions):
-                        model_region = stock_rules["region_output_map"].get(region, region)
-                        records.append({
-                            "region": model_region, "tech": str(tech),
-                            "period": int(period), "vintage": int(vintage),
-                            "fraction": fraction,
-                        })
-        records_by_context.append((context, records))
-    rows = [row for context, records in records_by_context
-            for row in validate_parameter_rows(LifetimeSurvivalCurve, records, context, bundle=bundle)]
-    if len(rows) != len({(row.region, row.tech, row.period, row.vintage) for row in rows}):
-        raise ValueError("Accepted road survival rows have conflicting keys")
-    expected_owners = set(technology.loc[technology["category"].isin(curve_classes), "tech"])
-    if {row.tech for row in rows} != expected_owners:
-        raise ValueError("Accepted road survival rows lack technology coverage")
-    rows.sort(key=lambda row: (row.region, row.tech, row.vintage, row.period))
-    return rows, [context for context, _ in records_by_context]
+                continue
+            if not tech.endswith("_N"):
+                raise ValueError(f"Lifetime owner has no existing/future convention: {tech}")
+            for region in regions:
+                for vintage in bundle.scenario.periods.model:
+                    endpoints.append({"region": region, "tech": tech, "vintage": vintage, "lifetime": terminal})
+                    records.extend({"region": region, "tech": tech, "vintage": vintage,
+                                    "period": vintage + int(row.age), "fraction": float(row.survival_probability)}
+                                   for row in schedule.itertuples(index=False))
+        curve_rows.extend(validate_parameter_rows(LifetimeSurvivalCurve, records, context, bundle=bundle))
+        process_rows.extend(validate_parameter_rows(LifetimeProcess,
+            [{**record, "units": "years"} for record in endpoints], context, bundle=bundle))
+        contexts.append(context)
+    if len(curve_rows) != len({(row.region, row.tech, row.vintage, row.period) for row in curve_rows}):
+        raise ValueError("Annual road survival rows have conflicting keys")
+    if len(process_rows) != len({(row.region, row.tech, row.vintage) for row in process_rows}):
+        raise ValueError("Road endpoint lifetimes have conflicting keys")
+    curve_rows.sort(key=lambda row: (row.region, row.tech, row.vintage, row.period))
+    process_rows.sort(key=lambda row: (row.region, row.tech, row.vintage))
+    audit = {"terminal_schedules": reconciled.audit.to_dict("records"),
+             "grouped_cohorts": composites.audit.rename(columns={"minimum_interior_fraction": "minimum_positive_survival"}).to_dict("records"),
+             "grouped_tail_retirements": composites.tail_losses.to_dict("records")}
+    return curve_rows, process_rows, contexts, audit
 
 
 def _load_normalized_frames(

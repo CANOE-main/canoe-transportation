@@ -461,14 +461,14 @@ def test_invalid_scenario_choices_are_rejected(
         ("comparison", "relative_tolerance"),
         ("comparison", "include_provenance"),
         ("lifetimes", "survival_curves"),
-        ("lifetimes", "survival_curve_max_age"),
+        ("lifetimes", "tail_derivation"),
+        ("lifetimes", "tail_survival_threshold"),
         ("lifetimes", "road_lifetime_survival_source"),
         ("existing_capacity", "vehicle_population_year"),
         ("existing_capacity", "cleanup_tolerance"),
         ("demand", "cer_scenario"),
         ("economics", "cer_scenario"),
         ("road_utilization", "vkt_schedules"),
-        ("road_utilization", "vkt_max_age"),
         ("ev_chargers", "ld_evs_per_port"),
         ("ev_chargers", "mhd_evs_per_port"),
         ("efficiencies", "atb_trajectory"),
@@ -561,8 +561,7 @@ def test_yaml_rejects_duplicate_keys_but_allows_explicit_merge_overrides(tmp_pat
         ("costs", "atb_trajectory", "unreviewed", "costs.atb_trajectory"),
         ("economics", "cer_scenario", "Global Net-zero", "economics.cer_scenario"),
         ("demand", "cer_scenario", "Global Net-zero", "demand.cer_scenario"),
-        ("lifetimes", "survival_curve_max_age", 1, "cannot contain a full period"),
-        ("road_utilization", "vkt_max_age", 1, "cannot contain a full period"),
+        ("road_utilization", "vkt_max_age", 1, "vkt_max_age"),
     ],
 )
 def test_parameter_selectors_are_checked_before_io(
@@ -617,3 +616,68 @@ def test_rules_modules_have_one_owner_and_source_annotations_are_explicit() -> N
             "dq_cred", "dq_geog", "dq_struc", "dq_tech", "dq_time",
         }
         assert all(value is None or 1 <= value <= 5 for value in source["data_quality"].values())
+
+
+@pytest.mark.parametrize("profile", ["moves", "nhtsa_nems"])
+def test_derived_terminal_age_and_vkt_share_one_optional_cap(tmp_path, profile):
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["lifetimes"]["road_lifetime_survival_source"] = profile
+    payload["lifetimes"]["survival_curve_max_age"] = None
+    payload["road_utilization"].pop("vkt_max_age", None)
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    bundle = load_config_bundle(scenario, repo_root=tmp_path)
+    assert bundle.scenario.lifetimes.survival_curve_max_age is None
+    assert "vkt_max_age" not in bundle.scenario.model_dump()["road_utilization"]
+    payload["lifetimes"]["survival_curve_max_age"] = 30
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    bundle = load_config_bundle(scenario, repo_root=tmp_path)
+    assert bundle.scenario.lifetimes.survival_curve_max_age == 30
+    assert "vkt_max_age" not in type(bundle.scenario.road_utilization).model_fields
+
+
+@pytest.mark.parametrize("selection", ["constant_terminal_hazard", "source_cutoff", None])
+def test_only_approved_tail_derivation_is_accepted(tmp_path, selection):
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["lifetimes"]["tail_derivation"] = selection
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match="tail_derivation"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+def test_replaced_terminal_policy_setting_is_rejected(tmp_path):
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["lifetimes"]["terminal_policy"] = "source_cutoff"
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match="terminal_policy"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+def test_boolean_cannot_silently_become_a_one_year_survival_cap():
+    from validation.config_models import ScenarioLifetimes
+
+    with pytest.raises(ValidationError, match="survival_curve_max_age"):
+        ScenarioLifetimes(survival_curves=True, survival_curve_max_age=True,
+                          road_lifetime_survival_source="moves", tail_derivation="constant_retirement",
+                          tail_survival_threshold=0.005)
+
+
+@pytest.mark.parametrize("threshold", [0.005, 0.001, 0.01])
+def test_tail_threshold_is_a_scenario_selection(tmp_path, threshold):
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["lifetimes"]["tail_survival_threshold"] = threshold
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    assert load_config_bundle(scenario, repo_root=tmp_path).scenario.lifetimes.tail_survival_threshold == threshold
+
+
+@pytest.mark.parametrize("threshold", [0, 1, -0.005, "0.5%", float("nan")])
+def test_tail_threshold_rejects_invalid_fractions(tmp_path, threshold):
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["lifetimes"]["tail_survival_threshold"] = threshold
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match="tail_survival_threshold"):
+        load_config_bundle(scenario, repo_root=tmp_path)

@@ -16,8 +16,8 @@ Keep one YAML per demonstrated, repeatable workflow. The current supported set i
 
 | File | Role and current scope |
 | --- | --- |
-| `default.yaml` | Canonical production entrypoint/template: ten provinces, prospective 2025, stock-age allocation, MOVES fixed lifetimes and new-capacity range shares. Its run label remains `baseline`. |
-| `legacy_comparison.yaml` | Reproducible legacy-timing comparison: ten provinces, observed 2023, NHTSA/NEMS survival curves and configured legacy SQLite comparison. It also prepares the transport-comparison notebook's inputs. |
+| `default.yaml` | Canonical production entrypoint/template: ten provinces, prospective 2025, sales-derived calibrated cohorts, MOVES fixed lifetimes and new-capacity range shares. Its run label remains `baseline`. |
+| `legacy_comparison.yaml` | Reproducible legacy-timing comparison: ten provinces, observed 2023, NHTSA/NEMS survival-curve selection and configured legacy SQLite comparison. Uses the shared constant-retirement tail to 0.5% survival, then zero. |
 | `validation_baseline.yaml` | Ontario prospective-2025 comparison for both legacy variants: 2023 CEUD held constant for historical parameters, sales-survival stock anchored to CEUD, MOVES fixed lifetimes and representative new LDV ranges. |
 | `notebook_diagnostics.yaml` | Shared stock/efficiency notebook prerequisite: Ontario observed-2023, NHTSA/NEMS curves, explicit future ranges, both captured diagnostics, no charging profile or embodied emissions. |
 
@@ -45,12 +45,17 @@ a recurring supported workflow, with a documented consumer and appropriate valid
 On retirement, repair active consumers and retain captured configuration/hash identities;
 do not recreate deleted presets to satisfy historical prose or reports.
 
-The former `researcher_sales_2023`, `researcher_sales_2025` and
-`researcher_sales_2025_extrapolated` names identify historical comparison captures.
-They are not live presets. The transportation-validation notebook uses
+Retired researcher-scenario databases and captures are removed when no live consumer
+uses them. The transportation-validation notebook uses
 `transportation_research.notebook_scenario` in `config/parameters/rules.yaml`, currently
 `validation_baseline.yaml`. Both fleet and charger captures must match that live YAML
 and the same fresh database/build fingerprints. Regenerate both after changing it.
+
+Generated databases under `outputs/sqlite/`, run reports, comparison captures and
+notebook HTML remain local and are ignored by Git. Keep their versioned scenarios,
+producers and registered inputs so the supported commands can rebuild them. Unique
+review handoffs and authored presentation files are retained separately; do not use
+blanket generated-output deletion to clean them.
 
 ## Shared run settings
 
@@ -128,16 +133,17 @@ current ATB values. CEUD/load evidence is fixed within one preparation instance.
 
 | Section and field | Selections and behavior |
 | --- | --- |
-| `lifetimes.survival_curves` | `true` uses accepted road survival curves; `false` uses configured fixed lifetimes, including source-derived medians for LDVs and medium/heavy trucks. Road technology totals are derived over the same configured historical coverage before lifetime eligibility; this switch reallocates their vintages, preserving totals before capacity cleanup. Other technologies retain their configured fixed lifetime pathway. |
+| `lifetimes.survival_curves` | `false` exports calibrated physical survivors with fixed lifetimes. `true` exports installed-equivalent acquisitions with annual vintage survival and explicit process lifetimes; it uses the approved shared tail rule and validates annual curves and lifetimes. Buses/motorcycles retain their existing pathway. |
 | `lifetimes.road_lifetime_survival_source` | `nhtsa_nems` selects NHTSA car/light/medium and NEMS heavy schedules. `moves` selects MOVES car/light/heavy schedules, with medium trucks using heavy rates. One choice supplies medians, historical stock survival and future curves. |
-| `lifetimes.survival_curve_max_age` | Maximum supported age for road survival curves and existing-stock cohorts when curves are enabled. The prospective template uses 29 to cover ages 25–29 for vintage 2000 in the first model period; every required source age must exist. Fixed-lifetime cohorts use their class lifetime. |
+| `lifetimes.survival_curve_max_age` | `null` derives each end age using the selected survival threshold, then zero. A positive integer shortens any longer derived curve by forcing zero at that age and audits the removed stock. |
+| `lifetimes.tail_survival_threshold` | Surviving fraction that ends the derived tail; default `0.005` means 0.5%. The final positive year is followed by zero. |
+| `lifetimes.tail_derivation` | Only `constant_retirement` is supported: keep native survival, extend the final annual retirement rate to the selected threshold or less, retain that positive year, then append zero. Select the surviving fraction with `tail_survival_threshold`. |
 | `existing_capacity.vehicle_population_year` | MTO age-evidence year for LDVs, trucks, motorcycles, and buses. It must match the reviewed LDV aggregation artifact and the available Report 5 edition. |
 | `existing_capacity.cleanup_tolerance` | Retain positive road/bus/off-road capacity at or above this threshold in each row's native capacity unit. This is a capacity cutoff, independent of comparison tolerances; it does not trim costs or round parameters. Charger capacities have their own preparation. |
-| `existing_capacity.road_stock_method` | Regional map of `stock_age` or `sales_survival`. An explicit entry is required for every selected region, or use `other` as fallback. `{ON: sales_survival}` supports Ontario-only scenarios and `{other: sales_survival}` applies independent provincial CEUD sales-survival and activity calibration throughout the selected geography. |
 | `demand.cer_scenario` | CER demand trajectory, also used for the normalized default-source marker. Must exist in the selected CER edition. |
 | `demand.future_car_demand` | `GDP-indexed` or `extrapolated`. Extrapolation uses configured historical car CAGR; light trucks receive the remainder of the unchanged GDP-indexed combined passenger demand. History and harmonization remain in rules. |
 | `road_utilization.vkt_schedules` | `false` uses flat CEUD utilization. `true` prepares age-dependent mileage artifacts for supported classes. |
-| `road_utilization.vkt_max_age` | Mileage-profile age limit, independent of the survival-curve age limit. Must cover a full model period when schedules are enabled. |
+| Road mileage age | Derived from the explicit survival age cap or the longest derived class endpoint. Omit `road_utilization.vkt_max_age` from YAML; the retired independent setting is rejected. Missing ATB age coverage fails explicitly. |
 | `efficiencies.atb_trajectory` | `Advanced`, `Conservative`, `Constant`, or `Mid`; selected from the pinned ATB release. |
 | `costs.atb_trajectory` | The same ATB choices, independently selectable from efficiencies. |
 | `ev_chargers.ld_evs_per_port` | Positive LDV electric vehicles per charger port. |
@@ -219,36 +225,32 @@ Changing the dollar year does not change the observation year or period labels.
 
 ### Sales reconstruction and later CEUD base years
 
-For a sales-survival experiment, copy the complete `validation_baseline.yaml` control
-to a temporary YAML and select `existing_capacity.road_stock_method` explicitly.
-A later base year also needs a matching period grid and a deliberate constant or
-extrapolated CEUD extension. Existing and model vintage coordinates remain disjoint;
-a base year of 2025 does not create observed CEUD 2025 data. The retired researcher
-presets remain historical evidence in [the validation findings](../../docs/transportation_validation.md).
+Cars and trucks use one production sales-derived method. The removed
+`existing_capacity.road_stock_method` selector is rejected; stock-age allocation
+remains available only in the stock/cohort diagnosis. Buses and motorcycles are unchanged.
+A later base year needs a matching period grid and an explicit constant or extrapolated
+CEUD extension. Held values are estimates, never new observations.
 
-Sales reconstruction calculates `sales[y] * S(base_year - y)` over complete
-registered annual history inside the configured historical coverage. It does not
-rescale to reported stock or infer earlier sales. Current Canadian inputs start
-in 2000, when survival is still positive at the oldest represented ages. This is
-a coverage-limited estimate. Existing registration shares proxy the unobserved
-powertrain composition of sales. Historical BEV overrides and fuel exclusions
-remain explicit in the allocation audit.
+For each region/class, compute physical survivors as annual sales times survival to
+`periods.base_year`, then multiply acquisitions and survivors by
+`k = CEUD base-year stock / raw surviving stock`. Current sales begin in 2000, so
+calibration absorbs missing older cohorts and other source mismatches without resolving
+them. Keep the annual powertrain allocation rules and their explicit overrides.
 
-The selected cumulative schedules are independent of future fixed lifetimes.
-Current unconditional future survival rows cannot be combined with surviving
-sales cohorts without applying historical retirement again, so the configuration
-rejects `sales_survival` with `lifetimes.survival_curves: true`. It also rejects
-age-dependent VKT for this method. Fixed-lifetime eligibility retains the existing
-within-technology redistribution rule: it preserves reconstructed totals while
-moving ineligible cohorts to supported vintages. The audit quantifies this age
-distortion; it is not further survival multiplication or CEUD stock calibration.
+Curves off exports calibrated survivors after fixed-lifetime redistribution. Curves on
+exports calibrated installed-equivalent acquisitions with acquisition-weighted annual
+vintage curves and matching process lifetimes. The latter retains the summed annual
+survival path until the explicit small-tail retirement rule; it does not match future CEUD stocks. Apply the
+same constant-retirement schedule before calibration and vintage grouping. Raw source
+survival remains audit evidence. Preserve annual survivor totals when grouping vintages; only values too small for
+Temoa end a grouped curve early. Report that adjustment without recalibrating it away. The production
+method is assessed in `docs/insights/stock_cohort_diagnosis.py`.
 
-For selected regional classes, utilization is base-year CEUD activity divided by
-retained reconstructed capacity times manual C2A. The same flat class level applies
-to existing and new vehicles. Unselected classes use the latest five eligible
-**observed** CEUD activity/stock ratios; held years do not enter that average.
-Activity closure does not validate stock or energy. The opt-in research report
-calculates independent stock and vehicle-input energy residuals.
+Utilization is reference-year activity divided by calibrated physical surviving stock
+times C2A. Existing efficiency aggregation and EV charger counts also use survivors.
+Acquisition weights construct the combined vintage survival curves. Calibration closes stock and
+activity by construction; energy remains an independent check. Aggregate powertrain
+composition can change when the cohort ages change, even with unchanged annual shares.
 
 `parameterization.ceud_inputs` writes labeled parameter evidence separately from
 native normalized files. It extends missing tails of currently reported series
@@ -296,7 +298,9 @@ periods:
   step: 5
 lifetimes:
   survival_curves: true
-  survival_curve_max_age: 25
+  survival_curve_max_age: null
+  tail_derivation: constant_retirement
+  tail_survival_threshold: 0.005  # Surviving fraction: 0.5%, then zero
 ```
 
 Legacy cohorts go to the next existing label: 2016–2020 → 2020 and 2021–2023 →
@@ -316,7 +320,7 @@ emissions; there are no parameter-specific aggregation-source selectors.
 
 | Role | Current regional treatment |
 | --- | --- |
-| `stock_age` | MTO Report A LDV age/vintage shares and Report 5 truck, bus, and motorcycle shares in every region. Provincial stock totals retain their CEUD/registration evidence. |
+| `stock_age` | MTO age evidence for the deprecated car/truck diagnostic comparison and unchanged bus/motorcycle allocation. Production cars/trucks use sales-derived cohorts. |
 | `ldv` | MTO Report A class weights everywhere, for ratings, ATB efficiency/cost, utilization and NHTSA lifetime products. Wards LDV survival products remain opt-in comparison evidence. |
 | `medium_trucks` | ON uses Report 4 including Class 2/2b; other regions use Wards Classes 3–7. Class 2b maps to Class 2 ATB VMT. All available freight vocations receive equal weights within GVWR class, excluding School/Transit/Refuse; identical VMT schedules retain separate vocation weights. |
 | `heavy_truck_haul` | StatCan Table 23-10-0142-01 provincial origin-or-destination tonne-km shares, pooled over 2011–2017 with within-province shipments counted once, shared by efficiency, costs and utilization. The configured geography map currently uses BC alone for BCT. |

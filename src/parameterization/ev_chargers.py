@@ -44,7 +44,7 @@ class ChargerPreparation:
 
 
 def _prepared_stock_identity(
-    rows: list[ExistingCapacity], contexts: list[ResolvedProvenance],
+    rows: pd.DataFrame, contexts: list[ResolvedProvenance],
 ) -> tuple[dict[str, Any], dict[str, ResolvedProvenance]]:
     """Identify consumed BEV rows and lineage, independently of published CSVs.
 
@@ -53,10 +53,10 @@ def _prepared_stock_identity(
     contexts and rows excluded by the caller's region/technology selection are not
     dependencies. The version names this serialization contract, not a source edition.
     """
-    keys = [(row.region, row.tech, row.vintage) for row in rows]
+    keys = list(rows[["region", "tech", "vintage"]].itertuples(index=False, name=None))
     if len(set(keys)) != len(keys):
         raise ValueError("Duplicate prepared BEV stock keys")
-    data_ids = {row.data_id for row in rows}
+    data_ids = set(rows.data_id)
     selected: dict[str, ResolvedProvenance] = {}
     for context in contexts:
         if context.data_id not in data_ids:
@@ -67,8 +67,8 @@ def _prepared_stock_identity(
     if data_ids - set(selected):
         raise ValueError("BEV stock provenance contexts are missing")
     payload = {
-        "contract": "supplied_bev_capacity_v1",
-        "rows": [row.model_dump(mode="json") for row in rows],
+        "contract": "supplied_bev_physical_stock_v2",
+        "rows": rows.to_dict("records"),
         "contexts": [selected[key].model_dump(mode="json") for key in sorted(selected)],
     }
     identity = {
@@ -383,9 +383,13 @@ def _prepare_hydrogen_refueling(
 def prepare_ev_charger_rows(
     bundle: ConfigBundle, *, existing_capacity_rows: list[ExistingCapacity],
     existing_capacity_contexts: list[ResolvedProvenance],
+    physical_stock: pd.DataFrame | None = None,
     fixed_lifetime_rows: list[LifetimeTech] | None = None,
 ) -> ChargerPreparation:
     """Reuse prepared stock/lifetimes and return charger and H2 station products."""
+    from parameterization.build_existing_capacity import physical_stock_for_consumers
+
+    physical_stock = physical_stock_for_consumers(bundle, existing_capacity_rows, physical_stock)
     rules = load_harmonization_rules(bundle, "ev_chargers")
     manual_rules = load_harmonization_rules(bundle, "manual_parameters")
     _, frames = validate_manual_registry(
@@ -484,11 +488,11 @@ def prepare_ev_charger_rows(
     stock_class_map = rules["stock_classes"]
     stock_data_ids: dict[tuple[str, str], set[str]] = {}
     stock_by_region: dict[tuple[str, str], float] = {}
-    consumed_stock: list[ExistingCapacity] = []
-    excluded_rows = sum(row.region not in model_regions for row in existing_capacity_rows)
+    consumed_stock = []
+    excluded_rows = int((~physical_stock.region.isin(model_regions)).sum())
     if excluded_rows:
         LOGGER.info("Skipped %d vehicle capacity rows outside selected charger regions", excluded_rows)
-    for row in existing_capacity_rows:
+    for row in physical_stock.itertuples(index=False):
         if row.region not in model_regions:
             continue
         if row.tech not in technology.index:
@@ -498,11 +502,11 @@ def prepare_ev_charger_rows(
                    if item["category"] in classes and item["sub_category"].startswith("bev")]
         if not matched:
             continue
-        if row.units != "k vehicles" or not math.isfinite(row.capacity) or row.capacity < 0:
+        if row.units != "k vehicles" or not math.isfinite(row.surviving_k_vehicles) or row.surviving_k_vehicles < 0:
             raise ValueError(f"BEV stock has invalid units or capacity: {row.tech}")
-        consumed_stock.append(row)
+        consumed_stock.append(row._asdict())
         key = (row.region, matched[0])
-        stock_by_region[key] = stock_by_region.get(key, 0.0) + row.capacity * 1000
+        stock_by_region[key] = stock_by_region.get(key, 0.0) + row.surviving_k_vehicles * 1000
         stock_data_ids.setdefault(key, set()).add(row.data_id)
     expected_stock = {(region, category) for region in model_regions for category in stock_class_map}
     missing_stock = sorted(expected_stock - set(stock_by_region))
@@ -511,7 +515,7 @@ def prepare_ev_charger_rows(
     if missing_stock:
         LOGGER.info("Zero BEV stock, omitting historical charger rows: %s", missing_stock)
     stock_identity, vehicle_contexts = _prepared_stock_identity(
-        consumed_stock, existing_capacity_contexts,
+        pd.DataFrame(consumed_stock, columns=physical_stock.columns), existing_capacity_contexts,
     )
     paths = [manual_path, province_path, type_path]
     digest = hashlib.sha256(json.dumps(
@@ -806,10 +810,11 @@ def main() -> None:
     from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
     bundle = load_config_bundle(args.scenario)
-    vehicle_rows, vehicle_contexts, _ = prepare_existing_capacity_rows(bundle)
+    vehicles = prepare_existing_capacity_rows(bundle)
     result = prepare_ev_charger_rows(
-        bundle, existing_capacity_rows=vehicle_rows,
-        existing_capacity_contexts=vehicle_contexts,
+        bundle, existing_capacity_rows=vehicles.existing_capacity_rows,
+        existing_capacity_contexts=vehicles.provenance_contexts,
+        physical_stock=vehicles.physical_stock,
     )
     print(json.dumps({key: value for key, value in result.audit.items()
                       if key.endswith("_rows") or key in {"tc_public_ports", "tc_as_of"}},

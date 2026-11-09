@@ -35,6 +35,12 @@ def csv_row_count(path: Path) -> int:
             return sum(1 for _ in csv.DictReader(handle))
 
 
+def modeled_technologies(template_dir: Path) -> set[str]:
+    with (template_dir / "technology.csv").open(encoding="utf-8-sig", newline="") as handle:
+        return {row["tech"] for row in csv.DictReader(handle)
+                if row["category"].strip() and row["tech"] != "T_OFF"}
+
+
 @pytest.fixture
 def bundle(isolated_legacy_bundle):
     # These cases exercise schema/publication behavior and lifetime switches.
@@ -64,14 +70,16 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
     assert database.is_file()
     assert report["ok"] is True
     regions = len(bundle.scenario.geography.regions)
-    assert report["lifetimes"]["fixed_rows"] == 57 * regions
-    # The current structural template includes the existing medium-truck BEV.
-    assert report["lifetimes"]["curve_rows"] == 956 * regions
+    expected_lifetime_owners = modeled_technologies(resolve_input_path(bundle, "template"))
+    assert report["lifetimes"]["fixed_rows"] == len(expected_lifetime_owners) * regions
+    assert report["lifetimes"]["curve_rows"] == 0
     assert report["costs"]["cost_invest_rows"] == 405 * regions
     assert report["costs"]["cost_variable_rows"] > 0
     with sqlite3.connect(database) as lifetime_connection:
-        assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 57 * regions
-        assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_survival_curve").fetchone()[0] == 956 * regions
+        assert set(lifetime_connection.execute("SELECT region, tech FROM lifetime_tech")) == {
+            (region, tech) for region in bundle.scenario.geography.regions for tech in expected_lifetime_owners
+        }
+        assert lifetime_connection.execute("SELECT COUNT(*) FROM lifetime_survival_curve").fetchone()[0] == 0
         assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_invest").fetchone()[0] == report["costs"]["cost_invest_rows"] + report["ev_chargers"]["invest_rows"]
         assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_fixed").fetchone()[0] == report["ev_chargers"]["fixed_rows"]
         assert lifetime_connection.execute("SELECT COUNT(*) FROM cost_variable").fetchone()[0] == report["costs"]["cost_variable_rows"]
@@ -178,7 +186,7 @@ def test_fixed_lifetime_mode_inserts_one_row_per_modeled_technology(bundle, tmp_
         template_dir=resolve_input_path(bundle, "template"),
         database_path=database,
     )
-    expected_rows = 122 * len(bundle.scenario.geography.regions)
+    expected_rows = len(modeled_technologies(resolve_input_path(bundle, "template"))) * len(bundle.scenario.geography.regions)
     assert report["lifetimes"]["fixed_rows"] == expected_rows
     assert report["lifetimes"]["curve_rows"] == 0
     with sqlite3.connect(database) as connection:
@@ -187,10 +195,71 @@ def test_fixed_lifetime_mode_inserts_one_row_per_modeled_technology(bundle, tmp_
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
 
 
-def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Path) -> None:
-    scenario = bundle.scenario.model_copy(update={
-        "road_utilization": bundle.scenario.road_utilization.model_copy(update={"vkt_schedules": True}),
+def test_invalid_tail_method_fails_before_capacity_publication_or_prerequisite_io(tmp_path, monkeypatch):
+    from build_transport import prepare_scenario_inputs
+    from parameterization import build_existing_capacity as capacity
+    from utils import load_config_bundle
+
+    original = load_config_bundle("config/scenarios/default.yaml", repo_root=REPO_ROOT)
+    scenario = original.scenario.model_copy(update={
+        "lifetimes": original.scenario.lifetimes.model_copy(update={"survival_curves": True, "tail_derivation": "unsupported"}),
     })
+    routes = dict(original.paths.artifacts)
+    routes["existing_capacity_validation"] = routes["existing_capacity_validation"].model_copy(
+        update={"path": str(tmp_path / "capacity_validation")})
+    pending = replace(original, scenario=scenario, paths=original.paths.model_copy(update={"artifacts": routes}))
+    marker = resolve_artifact_path(pending, "existing_capacity_validation", "integrity.json")
+    marker.parent.mkdir()
+    marker.write_bytes(b"previous completed family")
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("Invalid tail method reached prerequisite I/O or capacity publication")
+
+    monkeypatch.setattr(capacity, "read_ceud_input", forbidden)
+    monkeypatch.setattr(capacity, "write_dataframe_atomic", forbidden)
+    with pytest.raises(ValueError, match="tail_derivation"):
+        capacity.prepare_existing_capacity_rows(pending)
+    assert marker.read_bytes() == b"previous completed family"
+    with pytest.raises(ValueError, match="tail_derivation"):
+        prepare_scenario_inputs(pending, download=False)
+    with pytest.raises(ValueError, match="tail_derivation"):
+        prepare_transport_contribution(None, bundle=pending, template_dir=tmp_path / "unread-template")
+
+
+def test_curve_mode_inserts_complete_annual_curves_with_process_endpoints(bundle, tmp_path):
+    payload = bundle.scenario.model_dump(mode="python")
+    payload["lifetimes"].update(survival_curves=True, survival_curve_max_age=None)
+    selected = replace(bundle, scenario=type(bundle.scenario).model_validate(payload))
+    database = tmp_path / "survival-curves.sqlite"
+    report = bootstrap_database(
+        bundle=selected, template_dir=resolve_input_path(selected, "template"), database_path=database,
+    )
+    assert report["ok"]
+    assert report["lifetimes"]["curve_rows"] > report["lifetimes"]["process_rows"] > 0
+    assert report["existing_capacity"]["grouped_tail_reference_loss_k_vehicles"] == 0
+    with sqlite3.connect(database) as connection:
+        rows = connection.execute(
+            "SELECT c.region,c.tech,c.vintage,MIN(c.period),MAX(c.period),COUNT(*),p.lifetime "
+            "FROM lifetime_survival_curve c JOIN lifetime_process p USING (region,tech,vintage) "
+            "GROUP BY c.region,c.tech,c.vintage"
+        ).fetchall()
+        assert len(rows) == report["lifetimes"]["process_rows"]
+        for region, tech, vintage, first, last, count, lifetime in rows:
+            assert first == vintage and last == vintage + lifetime and count == last - first + 1
+            assert connection.execute(
+                "SELECT fraction FROM lifetime_survival_curve WHERE region=? AND tech=? AND vintage=? AND period IN (?,?) ORDER BY period",
+                (region, tech, vintage, first, last),
+            ).fetchall() == [(1.0,), (0.0,)]
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Path) -> None:
+    # All registered ATB VMT classes cover 0..25; their later native endpoints
+    # differ. Use one explicit common lifetime/VKT horizon for this schema test.
+    payload = bundle.scenario.model_dump(mode="python")
+    payload["lifetimes"]["survival_curve_max_age"] = 25
+    payload["road_utilization"].update(vkt_schedules=True)
+    scenario = type(bundle.scenario).model_validate(payload)
     database = tmp_path / "age-mode.sqlite"
     report = bootstrap_database(
         bundle=replace(bundle, scenario=scenario),
@@ -205,6 +274,18 @@ def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Pat
         assert "period" not in {
             row[1] for row in connection.execute("PRAGMA table_info(limit_annual_capacity_factor)")
         }
+
+
+def test_full_survival_horizon_does_not_invent_missing_vkt_tails(bundle):
+    from parameterization.road_utilization import _survival_age_limit, prepare_age_profiles
+
+    # The production MOVES lifetime horizon extends past the shortest ATB
+    # mileage profile. Preserve the explicit data-support failure until a
+    # treatment is reviewed; never give VKT an independently shortened ceiling.
+    assert bundle.scenario.lifetimes.survival_curve_max_age is None
+    assert _survival_age_limit(bundle) > 25
+    with pytest.raises(ValueError, match="unequal age coverage; a reviewed treatment is required"):
+        prepare_age_profiles(bundle, output_regions={"ON": "ON"})
 
 
 def test_transport_contribution_uses_a_caller_owned_transaction(
@@ -464,7 +545,8 @@ def test_real_capacity_publication_failure_requires_complete_repreparation(
     """A partial real family cannot masquerade as the previously completed input."""
     from parameterization import build_existing_capacity as capacity
 
-    rows, contexts, audit = capacity.prepare_existing_capacity_rows(bundle)
+    prepared = capacity.prepare_existing_capacity_rows(bundle)
+    rows, contexts, audit = prepared.existing_capacity_rows, prepared.provenance_contexts, prepared.audit
     capacity.validate_capacity_handoff(bundle, rows=rows, contexts=contexts, audit=audit)
     marker = resolve_artifact_path(bundle, "existing_capacity_validation", "integrity.json")
     previous_marker = marker.read_bytes()
@@ -494,7 +576,10 @@ def test_real_capacity_publication_failure_requires_complete_repreparation(
     with pytest.raises(ValueError, match="no readable completion marker"):
         capacity.validate_capacity_handoff(bundle, rows=rows, contexts=contexts, audit=audit)
 
-    recovered_rows, recovered_contexts, recovered_audit = capacity.prepare_existing_capacity_rows(bundle)
+    recovered = capacity.prepare_existing_capacity_rows(bundle)
+    recovered_rows, recovered_contexts, recovered_audit = (
+        recovered.existing_capacity_rows, recovered.provenance_contexts, recovered.audit
+    )
     assert recovered_rows == rows
     assert recovered_contexts == contexts
     assert recovered_audit == audit

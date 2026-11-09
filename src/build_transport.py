@@ -31,6 +31,7 @@ from canoe_schema.v4_0 import (
     CapacityToActivity,
     LimitAnnualCapacityFactor,
     LifetimeTech,
+    LifetimeProcess,
     LifetimeSurvivalCurve,
     Efficiency,
     LimitTechInputSplitAnnual,
@@ -135,6 +136,7 @@ class TransportContribution:
     capacity_to_activity_categories: tuple[str, ...] = ()
     flat_road_factor_rows: list[LimitAnnualCapacityFactor] = dataclass_field(default_factory=list)
     lifetime_tech_rows: list[LifetimeTech] = dataclass_field(default_factory=list)
+    lifetime_process_rows: list[LifetimeProcess] = dataclass_field(default_factory=list)
     lifetime_survival_curve_rows: list[LifetimeSurvivalCurve] = dataclass_field(default_factory=list)
     efficiency_rows: list[Efficiency] = dataclass_field(default_factory=list)
     input_split_rows: list[LimitTechInputSplitAnnual] = dataclass_field(default_factory=list)
@@ -152,6 +154,7 @@ class TransportContribution:
     cost_audit: dict[str, Any] = dataclass_field(default_factory=dict)
     existing_vintages: tuple[int, ...] = ()
     prepared_support_tables: tuple[str, ...] = ()
+    expected_survival_curve_keys: tuple[tuple[str, str, int], ...] = ()
     support_audit: dict[str, Any] = dataclass_field(default_factory=dict)
     new_technologies: tuple[str, ...] = ()
     emission_embodied: EmbodiedEmissionPreparation | None = None
@@ -449,6 +452,9 @@ def prepare_transport_contribution(
     range_evidence: RangeEvidence | None = None,
 ) -> TransportContribution:
     """Prepare the currently supported transport rows without writing to SQLite."""
+    from parameterization.road_lifetimes_survival import require_tail_derivation
+
+    require_tail_derivation(bundle)
     if not template_dir.is_dir():
         raise FileNotFoundError(f"Template directory does not exist: {template_dir}")
     template_dataset = _internal_template_dataset(template_dir)
@@ -504,11 +510,15 @@ def prepare_transport_contribution(
     if charging_profiles is not None:
         contexts.extend(charging_profiles.provenance_contexts)
     parameter_audit: dict[str, Any] = {}
+    capacity_preparation = None
     if selected_capacity:
         from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
         with log_duration(LOGGER, "Existing capacity"):
-            parameter_rows, capacity_contexts, parameter_audit = prepare_existing_capacity_rows(bundle)
+            capacity_preparation = prepare_existing_capacity_rows(bundle)
+        parameter_rows = list(capacity_preparation.existing_capacity_rows)
+        capacity_contexts = capacity_preparation.provenance_contexts
+        parameter_audit = capacity_preparation.audit
         contexts.extend(capacity_contexts)
     selected_demand = True if include_demand is None else include_demand
     demand_rows: list[Demand] = []
@@ -533,6 +543,7 @@ def prepare_transport_contribution(
             road = prepare_road_utilization(
                 bundle, existing_capacity_rows=parameter_rows,
                 existing_capacity_contexts=capacity_contexts,
+                physical_stock=capacity_preparation.physical_stock if capacity_preparation else None,
             )
         road_assumption_dataset = road.assumption_dataset
         c2a_rows = road.capacity_to_activity_rows
@@ -541,13 +552,19 @@ def prepare_transport_contribution(
         road_audit = road.audit
     lifetime_tech_rows: list[LifetimeTech] = []
     lifetime_curve_rows: list[LifetimeSurvivalCurve] = []
+    lifetime_process_rows: list[LifetimeProcess] = []
     lifetime_audit: dict[str, Any] = {}
     if include_lifetimes is not False:
         from parameterization.build_lifetime_parameters import prepare_lifetime_rows
 
         with log_duration(LOGGER, "Lifetimes (lifetime_tech, lifetime_survival_curve)"):
-            lifetimes = prepare_lifetime_rows(bundle)
+            lifetimes = prepare_lifetime_rows(
+                bundle,
+                annual_acquisitions=capacity_preparation.annual_acquisitions if capacity_preparation else None,
+                cohort_provenance_contexts=capacity_contexts,
+            )
         lifetime_tech_rows = lifetimes.fixed_rows
+        lifetime_process_rows = lifetimes.process_rows
         lifetime_curve_rows = lifetimes.curve_rows
         contexts.extend(lifetimes.provenance_contexts)
         lifetime_audit = lifetimes.audit
@@ -563,6 +580,7 @@ def prepare_transport_contribution(
                 bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
                 existing_capacity_contexts=capacity_contexts if selected_capacity else None,
                 existing_capacity_audit=parameter_audit if selected_capacity else None,
+                physical_stock=capacity_preparation.physical_stock if capacity_preparation else None,
                 range_evidence=range_evidence,
             )
         efficiency_rows = efficiencies.efficiency_rows
@@ -609,6 +627,7 @@ def prepare_transport_contribution(
             chargers = prepare_ev_charger_rows(
                 bundle, existing_capacity_rows=parameter_rows,
                 existing_capacity_contexts=contexts,
+                physical_stock=capacity_preparation.physical_stock if capacity_preparation else None,
                 fixed_lifetime_rows=lifetime_tech_rows if include_lifetimes is not False else None,
             )
         parameter_rows.extend(chargers.capacity_rows)
@@ -630,6 +649,8 @@ def prepare_transport_contribution(
             embodied = prepare_emission_embodied_rows(bundle)
         contexts.extend(embodied.provenance_contexts)
     support_tables = []
+    if include_lifetimes is not False:
+        support_tables.extend(("lifetime_tech", "lifetime_process", "lifetime_survival_curve"))
     if selected_capacity:
         support_tables.append("existing_capacity")
     if include_efficiencies is not False:
@@ -662,6 +683,7 @@ def prepare_transport_contribution(
         capacity_to_activity_categories=tuple(sorted(c2a_categories)),
         flat_road_factor_rows=flat_factor_rows,
         lifetime_tech_rows=lifetime_tech_rows,
+        lifetime_process_rows=lifetime_process_rows,
         lifetime_survival_curve_rows=lifetime_curve_rows,
         efficiency_rows=efficiency_rows,
         input_split_rows=split_rows,
@@ -682,6 +704,9 @@ def prepare_transport_contribution(
         range_representation=range_preparation,
         existing_vintages=tuple(bundle.scenario.periods.existing),
         prepared_support_tables=tuple(support_tables),
+        expected_survival_curve_keys=tuple(sorted({
+            (row.region, row.tech, row.vintage) for row in lifetime_curve_rows
+        })),
         new_technologies=tuple(
             row.tech for row in table_rows["technology"]
             if not row.tech.endswith(existing_suffix)
@@ -701,6 +726,7 @@ def _representative_batches(contribution: TransportContribution) -> dict[str, li
         "capacity_to_activity": contribution.capacity_to_activity_rows,
         "limit_annual_capacity_factor": contribution.flat_road_factor_rows,
         "lifetime_tech": contribution.lifetime_tech_rows,
+        "lifetime_process": contribution.lifetime_process_rows,
         "lifetime_survival_curve": contribution.lifetime_survival_curve_rows,
         "efficiency": contribution.efficiency_rows,
         "limit_tech_input_split_annual": contribution.input_split_rows,
@@ -743,7 +769,11 @@ def _apply_ldv_range_representation(bundle: ConfigBundle, contribution: Transpor
         labels_by_table=result.labels, range_representation=ranges,
         parameter_rows=rows["existing_capacity"], capacity_to_activity_rows=rows["capacity_to_activity"],
         flat_road_factor_rows=rows["limit_annual_capacity_factor"], lifetime_tech_rows=rows["lifetime_tech"],
-        lifetime_survival_curve_rows=rows["lifetime_survival_curve"], efficiency_rows=rows["efficiency"],
+        lifetime_survival_curve_rows=rows["lifetime_survival_curve"],
+        lifetime_process_rows=rows["lifetime_process"], efficiency_rows=rows["efficiency"],
+        expected_survival_curve_keys=tuple(sorted({
+            (row.region, row.tech, row.vintage) for row in rows["lifetime_survival_curve"]
+        })),
         input_split_rows=rows["limit_tech_input_split_annual"], cost_invest_rows=rows["cost_invest"],
         cost_fixed_rows=rows["cost_fixed"], cost_variable_rows=rows["cost_variable"], emission_embodied=embodied,
         provenance_contexts=[*contribution.provenance_contexts, *ranges.provenance_contexts],
@@ -762,6 +792,9 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
         "limit_annual_capacity_factor": contribution.flat_road_factor_rows,
         "emission_embodied": contribution.emission_embodied_rows,
         "capacity_to_activity": contribution.capacity_to_activity_rows,
+        "lifetime_tech": contribution.lifetime_tech_rows,
+        "lifetime_process": contribution.lifetime_process_rows,
+        "lifetime_survival_curve": contribution.lifetime_survival_curve_rows,
     }
     if contribution.emission_embodied is not None and contribution.emission_embodied.audit["enabled"]:
         from parameterization.road_embodied_emissions import validate_embodied_outputs
@@ -778,6 +811,13 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
         {table: batches[table] for table in contribution.prepared_support_tables},
         existing_vintages=contribution.existing_vintages,
         new_technologies=contribution.new_technologies,
+        expected_survival_curve_keys=contribution.expected_survival_curve_keys,
+        # Match the lifetime preparer's physical technology scope. Unclassified
+        # unlimited fuel-blending processes have no vehicle lifetime contract.
+        lifetime_technologies=[
+            row.tech for row in contribution.rows_by_table.get("technology", [])
+            if row.category and row.tech != "T_OFF"
+        ],
         capacity_to_activity_technologies=[
             row.tech for row in contribution.rows_by_table.get("technology", [])
             if row.category in contribution.capacity_to_activity_categories
@@ -919,6 +959,7 @@ def insert_transport_contribution(
         inserted.setdefault("data_set", []).extend(insert_published([contribution.efficiency_assumption_dataset]))
     if (contribution.parameter_rows or contribution.demand_rows
             or contribution.flat_road_factor_rows or contribution.lifetime_tech_rows
+            or contribution.lifetime_process_rows
             or contribution.lifetime_survival_curve_rows or contribution.efficiency_rows
             or contribution.input_split_rows or contribution.cost_invest_rows
             or contribution.cost_fixed_rows
@@ -934,6 +975,8 @@ def insert_transport_contribution(
             insert_parameter_batch(contribution.flat_road_factor_rows)
         if contribution.lifetime_tech_rows:
             insert_parameter_batch(contribution.lifetime_tech_rows)
+        if contribution.lifetime_process_rows:
+            insert_parameter_batch(contribution.lifetime_process_rows)
         if contribution.lifetime_survival_curve_rows:
             insert_parameter_batch(contribution.lifetime_survival_curve_rows)
         if contribution.efficiency_rows:
@@ -1160,6 +1203,9 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
     from parameterization.road_aggregation import build_road_aggregation_artifacts
     from parameterization.ceud_inputs import prepare_ceud_inputs
 
+    from parameterization.road_lifetimes_survival import require_tail_derivation
+
+    require_tail_derivation(bundle)
     scenario = bundle.scenario_path
     LOGGER.info("Preparing scenario inputs: cache downloads %s", "enabled" if download else "disabled")
     for prepare in (
@@ -1272,6 +1318,9 @@ def build_from_scenario(
     from utils.build_logging import scenario_build_log
 
     bundle = load_config_bundle(scenario_path)
+    from parameterization.road_lifetimes_survival import require_tail_derivation
+
+    require_tail_derivation(bundle)
     with scenario_build_log(bundle, debug=debug) as log_path:
         with log_duration(LOGGER, "Total scenario build"):
             return _build_scenario(

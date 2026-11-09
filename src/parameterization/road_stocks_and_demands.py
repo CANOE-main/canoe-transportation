@@ -331,6 +331,8 @@ def accepted_curve_ages(
         selected = curves.loc[
             curves["source_class"].eq(target_class) & curves["source_id"].eq(source_id)
         ]
+        if "road_class" in selected:
+            selected = selected.loc[selected.road_class.eq(road_class)]
         if selected.empty or selected["age"].duplicated().any():
             raise ValueError(f"Missing or duplicate accepted curve for {road_class}")
         result[road_class] = set(
@@ -346,7 +348,7 @@ def derive_ldv_age_distributions(
     mapped_stock: pd.DataFrame,
     *,
     survival_curves: bool,
-    maximum_age: int,
+    maximum_age: int | None,
     median_lifetimes: dict[str, float],
     historical_review_minimum_model_year: int,
     period_config: ScenarioPeriods | None = None,
@@ -387,6 +389,8 @@ def derive_ldv_age_distributions(
         )
         accepted["cutoff_basis"] = "configured_historical_vintage_coverage"
     elif survival_curves:
+        if maximum_age is None:
+            raise ValueError("An age limit is required when diagnosing stock ages without scenario periods")
         accepted["cutoff_age"] = float(maximum_age)
         accepted["cutoff_basis"] = "scenario_survival_curve_max_age"
     else:
@@ -569,6 +573,8 @@ def derive_sales_survival_cohorts(
             transformed_curves.source_id.eq(source_id)
             & transformed_curves.source_class.eq(source_class)
         ]
+        if "road_class" in selected:
+            selected = selected.loc[selected.road_class.eq(road_class)]
         if selected.empty or selected.age.duplicated().any():
             raise ValueError(f"Missing or duplicate sales survival schedule: {road_class}")
         survival = selected.set_index("age").survival_probability.sort_index()
@@ -605,9 +611,12 @@ def derive_sales_survival_cohorts(
             if not isfinite(observed_stock) or observed_stock < 0:
                 raise ValueError(f"Invalid CEUD comparison stock: {(region, road_class)}")
             ages = base_year - sales.year
-            if set(ages) - set(survival.index):
+            missing_ages = set(ages) - set(survival.index)
+            terminal_age = int(survival.index[-1]) if survival.iloc[-1] == 0 else None
+            if missing_ages and (terminal_age is None or any(age <= terminal_age for age in missing_ages)):
                 raise ValueError(f"Sales history exceeds accepted survival coverage: {(region, road_class)}")
-            raw_survivors = float((sales.value * ages.map(survival)).sum())
+            fractions = ages.map(survival).fillna(0.0)
+            raw_survivors = float((sales.value * fractions).sum())
             if not isfinite(raw_survivors) or raw_survivors <= 0:
                 raise ValueError(f"No positive surviving sales for CEUD stock calibration: {(region, road_class)}")
             multiplier = observed_stock / raw_survivors
@@ -620,11 +629,12 @@ def derive_sales_survival_cohorts(
             )
             for row in sales.itertuples(index=False):
                 age = base_year - int(row.year)
-                fraction = float(survival.loc[age])
+                fraction = float(survival.get(age, 0.0))
                 records.append({
                     "ceud_region": region, "road_class": road_class,
                     "vintage_year": int(row.year), "age": age,
                     "sales_k_vehicles": float(row.value),
+                    "calibrated_acquisitions_k_vehicles": float(row.value) * multiplier,
                     "survival_probability": fraction,
                     "surviving_k_vehicles": float(row.value) * fraction,
                     "stock_calibration_multiplier": multiplier,
@@ -654,17 +664,33 @@ def distribute_existing_road_capacity(
     period_config: ScenarioPeriods,
     vehicle_population_year: int,
     survival_curves: bool,
-    survival_curve_max_age: int,
+    survival_curve_max_age: int | None,
     fixed_lifetimes_by_class: Mapping[str, float],
     curve_ages_by_class: Mapping[str, set[int]],
     rules: dict[str, Any],
     sales_cohorts: pd.DataFrame | None = None,
+    cohort_method: str = "sales_survival",
+    annual_survival: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Apply reviewed age and registration shares to CEUD base-year road stocks."""
+    """Allocate annual sales cohorts; retain explicit age-method comparison for diagnostics.
+
+    The production caller always uses sales_survival for the five sales-supported
+    road classes. Motorcycles retain Report 5 stock ages. stock_age is a read-only
+    diagnostic option, not a production scenario selection.
+    The returned annual shares also carry exact grouped-curve retirement summaries
+    and annual losses in their attrs for the caller's published audit.
+    """
     base_year = period_config.base_year
+    if cohort_method not in {"sales_survival", "stock_age"}:
+        raise ValueError("Unknown cohort method")
+    if cohort_method == "stock_age" and sales_cohorts is not None and not sales_cohorts.empty:
+        raise ValueError("Diagnostic stock-age allocation cannot also receive sales cohorts")
     sales_keys = set() if sales_cohorts is None or sales_cohorts.empty else set(
         zip(sales_cohorts.ceud_region, sales_cohorts.road_class, strict=True)
     )
+    expected_sales = {(region, name) for region in regions for name in rules["ceud_sales_series"]}
+    if cohort_method == "sales_survival" and sales_keys != expected_sales:
+        raise ValueError("Production road cohorts require complete regional car/truck sales coverage")
     age_classes = {name for name in rules["ceud_stock_series"]
                    if any((region, name) not in sales_keys for region in regions)}
     periods = period_config.existing
@@ -681,6 +707,9 @@ def distribute_existing_road_capacity(
     curve_classes = set(rules["survival_curve_classes"])
     if survival_curves and set(curve_ages_by_class) != curve_classes:
         raise ValueError("Accepted curves do not cover configured road classes")
+    composite_mode = survival_curves and cohort_method == "sales_survival"
+    if composite_mode and annual_survival is None:
+        raise ValueError("Sales capacity with survival curves requires the shared annual survival schedules")
     historical_fuels = set(rules["historical_fuel_types"])
     if historical_fuels != {"Gasoline", "Diesel"}:
         raise ValueError("Historical fuel rule must select gasoline and diesel")
@@ -750,6 +779,8 @@ def distribute_existing_road_capacity(
             is_sales = (region, name) in sales_keys
             observed_stock = stock
             sales_raw_by_age = {}
+            acquisitions_by_age = {}
+            calibrated_acquisitions_by_age = {}
             calibration_multiplier = None
             if is_sales:
                 selected_sales = sales_cohorts.loc[
@@ -773,6 +804,10 @@ def distribute_existing_road_capacity(
                     raise ValueError(f"Sales cohorts do not preserve their CEUD stock calibration: {(region, name)}")
                 calibration_multiplier = float(selected_sales.stock_calibration_multiplier.iloc[0])
                 sales_raw_by_age = selected_sales.set_index("age").surviving_k_vehicles.to_dict()
+                acquisitions_by_age = selected_sales.set_index("age").sales_k_vehicles.to_dict()
+                calibrated_acquisitions_by_age = (
+                    selected_sales.set_index("age").sales_k_vehicles * calibration_multiplier
+                ).to_dict()
                 ages = selected_sales.assign(
                     age_share=(selected_sales.calibrated_surviving_k_vehicles / stock
                                if stock > 0 else selected_sales.surviving_k_vehicles / raw_stock),
@@ -780,7 +815,8 @@ def distribute_existing_road_capacity(
             else:
                 ages = age_map[name]
             uses_curves = survival_curves and name in curve_classes
-            eligibility_basis = "accepted_survival_curve_support" if uses_curves else "fixed_lifetime"
+            eligibility_basis = ("annual_sales_survival" if uses_curves and is_sales else
+                                 "accepted_survival_curve_support" if uses_curves else "fixed_lifetime")
             eligible_age_rows: list[tuple[int, int, float, bool, bool]] = []
             for age_row in ages.itertuples(index=False):
                 actual_year = base_year - int(age_row.age)
@@ -789,11 +825,12 @@ def distribute_existing_road_capacity(
                 if uses_curves:
                     first_period_age = first_model_period - actual_year
                     model_age = first_model_period - period_config.existing_vintage(year)
-                    eligible = (
+                    age_limit = survival_curve_max_age if survival_curve_max_age is not None else max(curve_ages_by_class[name])
+                    eligible = within_history if is_sales else (
                         within_history
-                        and first_period_age <= survival_curve_max_age
+                        and first_period_age <= age_limit
                         and first_period_age in curve_ages_by_class[name]
-                        and model_age + period_config.step - 1 <= survival_curve_max_age
+                        and model_age + period_config.step - 1 <= age_limit
                         and model_age in curve_ages_by_class[name]
                     )
                 else:
@@ -837,6 +874,8 @@ def distribute_existing_road_capacity(
                         "stock_method": "sales_survival" if is_sales else "stock_age",
                         "stock_calibration_multiplier": calibration_multiplier,
                         "uncalibrated_surviving_k_vehicles": sales_raw_by_age.get(age),
+                        "raw_acquisitions_k_vehicles": acquisitions_by_age.get(age),
+                        "calibrated_acquisitions_k_vehicles": calibrated_acquisitions_by_age.get(age),
                         "raw_cohort_k_vehicles": stock * age_share,
                         "reference_cohort_k_vehicles": stock * age_share / history_share
                         if within_history
@@ -1028,6 +1067,12 @@ def distribute_existing_road_capacity(
                         "reference_cohort_k_vehicles"
                     ].sum(),
                     "raw_capacity": group["reference_cohort_k_vehicles"].sum() * share,
+                    "raw_acquisitions_k_vehicles": (
+                        group["raw_acquisitions_k_vehicles"].sum(min_count=1) * share
+                    ),
+                    "calibrated_acquisitions_k_vehicles": (
+                        group["calibrated_acquisitions_k_vehicles"].sum(min_count=1) * share
+                    ),
                 }
             )
     shares_frame = pd.DataFrame(share_rows)
@@ -1086,9 +1131,51 @@ def distribute_existing_road_capacity(
         for actual, expected in zip(class_allocated, class_targets, strict=True)
     ):
         raise ValueError("Road allocation does not preserve each region/class CEUD stock target")
+    shares_frame["solver_capacity_k_vehicles"] = shares_frame.capacity
+    shares_frame["capacity_basis"] = "reference_year_surviving_stock"
+    shares_frame["solver_reference_stock_k_vehicles"] = shares_frame.capacity
+    shares_frame["grouped_tail_reference_loss_k_vehicles"] = 0.0
     capacity = shares_frame.groupby(
         ["region", "road_class", "tech", "vintage"], as_index=False
     )["capacity"].sum()
+    if composite_mode:
+        from parameterization.road_cohort_survival import build_composite_cohorts
+
+        acquisitions = shares_frame.loc[shares_frame.road_class.isin(curve_classes), [
+            "region", "road_class", "tech", "vintage_year", "vintage", "calibrated_acquisitions_k_vehicles",
+        ]]
+        composite = build_composite_cohorts(
+            acquisitions, annual_survival, reference_year=base_year,
+            first_model_period=first_model_period,
+        )
+        annual_keys = ["region", "tech", "vintage", "vintage_year"]
+        native = composite.physical_stock.set_index(annual_keys)
+        curve_rows = shares_frame.road_class.isin(curve_classes)
+        curve_index = pd.MultiIndex.from_frame(shares_frame.loc[curve_rows, annual_keys])
+        reconstructed = native.physical_stock_k_vehicles.reindex(curve_index).fillna(0.0).to_numpy()
+        if not all(isclose(left, right, abs_tol=1e-8, rel_tol=1e-12)
+                   for left, right in zip(reconstructed, shares_frame.loc[curve_rows, "capacity"], strict=True)):
+            raise ValueError("Survival curves do not reproduce calibrated annual physical stock")
+        shares_frame.loc[curve_rows, "solver_capacity_k_vehicles"] = (
+            native.installed_equivalent_k_vehicles.reindex(curve_index).fillna(0.0).to_numpy()
+        )
+        for field in ("solver_reference_stock_k_vehicles", "grouped_tail_reference_loss_k_vehicles"):
+            shares_frame.loc[curve_rows, field] = native[field].reindex(curve_index).fillna(0.0).to_numpy()
+        if not (
+            shares_frame.loc[curve_rows, "solver_reference_stock_k_vehicles"]
+            + shares_frame.loc[curve_rows, "grouped_tail_reference_loss_k_vehicles"]
+            - shares_frame.loc[curve_rows, "capacity"]
+        ).abs().le(1e-8).all():
+            raise ValueError("Survival-curve stock and recorded early retirements do not match reference-year vehicles")
+        shares_frame.attrs["vintage_curve_audit"] = composite.audit.to_dict("records")
+        shares_frame.attrs["curve_tail_retirements"] = composite.tail_losses.to_dict("records")
+        active_keys = pd.MultiIndex.from_frame(composite.capacity[["region", "tech", "vintage"]])
+        represented = pd.MultiIndex.from_frame(shares_frame[["region", "tech", "vintage"]]).isin(active_keys)
+        shares_frame.loc[curve_rows & ~represented, "solver_capacity_k_vehicles"] = 0.0
+        shares_frame.loc[curve_rows, "capacity_basis"] = "installed_capacity_before_survival"
+        capacity = pd.concat([
+            capacity.loc[~capacity.road_class.isin(curve_classes)], composite.capacity,
+        ], ignore_index=True)
     capacity = capacity.loc[capacity["capacity"].gt(0)].reset_index(drop=True)
     capacity["units"] = "k vehicles"
     return cohorts, shares_frame, pd.DataFrame(excluded_rows), capacity

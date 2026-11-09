@@ -50,3 +50,14 @@ def test_schema_cost_dimensions_and_coverage() -> None:
                 ("ON", 2030, "T_LDV_C_GSL_N", 2025),
             }, reference_year=2020,
         )
+
+
+@pytest.mark.parametrize(("fixed", "curves"), [(None, []), ([], None), (None, None)])
+def test_curve_cost_handoff_rejects_unmatched_capacity_before_io(fixed, curves):
+    from types import SimpleNamespace
+    from parameterization.build_costs import prepare_cost_rows
+
+    bundle = SimpleNamespace(scenario=SimpleNamespace(lifetimes=SimpleNamespace(survival_curves=True)))
+    with pytest.raises(ValueError, match="matching prepared lifetime batches"):
+        prepare_cost_rows(bundle, existing_capacity_rows=[],
+                          fixed_lifetime_rows=fixed, survival_curve_rows=curves)

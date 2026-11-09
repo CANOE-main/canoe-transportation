@@ -1,5 +1,0 @@
-side,region,charger_class,rows,explicit_zero_rows,nonzero_rows,status
-reference,ON,ldv,0,0,0,absent
-backend,ON,ldv,0,0,0,absent
-reference,ON,mhdv,0,0,0,absent
-backend,ON,mhdv,0,0,0,absent

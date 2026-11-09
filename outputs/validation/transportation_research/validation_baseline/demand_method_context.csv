@@ -1,4 +1,0 @@
-evidence,baseline,growth,calendar
-Supplied SQLite,Captured database rows; independent of recipe replay,90/90 shared demand values match original legacy,Stored period labels retained; exact source-year mapping unresolved
-Inspected notebook recipe,CEUD 2023,Workbook GDP-deflator ratio; formula and raw levels verified against registered CER source,Workbook year = stored period + 5
-Current backend,Native CEUD observation 2023; stock-tail policy does not set demand,Captured CER real GDP / GDP(2023); GDP(2025) / GDP(2023) = 1.025237; emitted rows reconciled,Projection year = start-labelled period + 5

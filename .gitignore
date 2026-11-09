@@ -18,12 +18,18 @@ inputs/validation/*
 inputs/playground/
 # outputs/
 # Local rebuilds and notebook state; maintain their producers, not build snapshots.
+/outputs/sqlite/
 /outputs/logs/
+/outputs/validation/*.json
+/outputs/validation/charging_cost_comparison/
+/outputs/validation/transportation_research/
+/outputs/validation/technology_growth/
+/outputs/validation/transport_comparison/*.csv
+/outputs/validation/transport_comparison/*.json
+/outputs/validation/transport_comparison/*.html
 /outputs/validation/source_updates/
 /outputs/validation/notebook_evidence/
 /outputs/validation/ldv_efficiency_diagnostic/
-/outputs/validation/notebook_diagnostics_build.json
-/outputs/sqlite/canoe_transport_notebook_diagnostics.sqlite
 **/__marimo__/
 /debug.log
 .agents/skills/*

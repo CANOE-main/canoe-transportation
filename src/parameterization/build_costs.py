@@ -209,6 +209,11 @@ def prepare_cost_rows(
     range_evidence: RangeEvidence | None = None,
 ) -> CostPreparation:
     """Build and validate both cost parameters without opening a SQLite connection."""
+    if (bundle.scenario.lifetimes.survival_curves and existing_capacity_rows is not None
+            and (fixed_lifetime_rows is None or survival_curve_rows is None)):
+        raise ValueError(
+            "Curve-mode costs with supplied capacity require matching prepared lifetime batches"
+        )
     rules = load_harmonization_rules(bundle, "costs")
     efficiency = load_harmonization_rules(bundle, "efficiencies")
     conversions = load_conversion_factors(bundle)
@@ -291,10 +296,12 @@ def prepare_cost_rows(
         raise ValueError("GCAM or REGEN normalized cost source identity changed")
     if set(bean.source_id) != {BEAN} or set(faa_maintenance.source_id) != {FAA}:
         raise ValueError("BEAN or FAA normalized cost source identity changed")
+    capacity_preparation = None
     if existing_capacity_rows is None:
         from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
-        existing_capacity_rows, _, _ = prepare_existing_capacity_rows(bundle)
+        capacity_preparation = prepare_existing_capacity_rows(bundle)
+        existing_capacity_rows = capacity_preparation.existing_capacity_rows
     existing_keys = {
         (r.region, r.tech, r.vintage)
         for r in existing_capacity_rows if r.capacity > 0
@@ -302,7 +309,11 @@ def prepare_cost_rows(
     if fixed_lifetime_rows is None or survival_curve_rows is None:
         from parameterization.build_lifetime_parameters import prepare_lifetime_rows
 
-        lifetimes = prepare_lifetime_rows(bundle)
+        lifetimes = prepare_lifetime_rows(
+            bundle,
+            annual_acquisitions=capacity_preparation.annual_acquisitions if capacity_preparation else None,
+            cohort_provenance_contexts=capacity_preparation.provenance_contexts if capacity_preparation else None,
+        )
         fixed_lifetime_rows = lifetimes.fixed_rows
         survival_curve_rows = lifetimes.curve_rows
     fixed_lives = {
@@ -312,10 +323,9 @@ def prepare_cost_rows(
     curve_owners = {(row.region, row.tech) for row in survival_curve_rows}
     curve_keys = {
         (row.region, row.period, row.tech, row.vintage)
-        for row in survival_curve_rows if row.fraction is not None and row.fraction > 0
+        for row in survival_curve_rows
+        if row.period in scenario.periods.model and row.fraction is not None and row.fraction > 0
     }
-    if set(fixed_lives) & curve_owners:
-        raise ValueError("Cost lifetime owners have conflicting representations")
     def active_period(region: str, period: int, tech: str, vintage: int) -> bool:
         owner = (region, tech)
         if owner in curve_owners:

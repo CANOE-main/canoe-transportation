@@ -1,6 +1,0 @@
-region,road_class,notebook_baseline_year,notebook_activity_bn,current_baseline_year,legacy_calendar_base_year_demand_bn,legacy_calendar_base_year_model_label,legacy_calendar_base_year_emitted,current_base_year_demand_bn,historical_calibration_target_bn
-ON,cars,2023,84.20890228500001,2025,89.20666640435368,2020,False,86.33406734929176,84.20890228500001
-ON,passenger_light_trucks,2023,121.867879338,2025,129.10068843692196,2020,False,124.94343729684745,121.867879338
-ON,freight_light_trucks,2023,13.233869755,2025,14.019294545337402,2020,False,13.567850568258065,13.233869755
-ON,medium_trucks,2023,10.899558088,2025,11.546442429808131,2020,False,11.174628293599417,10.899558088
-ON,heavy_trucks,2023,92.801423834,2025,98.3091506143919,2020,False,95.14343683377852,92.801423834

@@ -453,6 +453,7 @@ def validate_efficiency_outputs(
 def historical_stock_evidence(
     bundle: ConfigBundle, *, rules: dict, relationships: pd.DataFrame,
     rows: list, contexts: list[ResolvedProvenance], audit: dict,
+    physical_stock: pd.DataFrame | None = None,
 ) -> tuple[Path, pd.DataFrame, dict[tuple, tuple]]:
     """Validate capacity lineage, retaining raw age-distribution counts for weighting."""
     stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
@@ -467,9 +468,10 @@ def historical_stock_evidence(
     digest = file_sha256(expected)
     if descriptor.get("sha256") != digest:
         raise ValueError("Annual stock evidence changed after capacity preparation")
-    from parameterization.build_existing_capacity import validate_capacity_handoff
+    from parameterization.build_existing_capacity import physical_stock_for_consumers, validate_capacity_handoff
 
-    validate_capacity_handoff(bundle, rows=rows, contexts=contexts, audit=audit)
+    physical_stock = physical_stock_for_consumers(bundle, rows, physical_stock)
+    validate_capacity_handoff(bundle, rows=rows, contexts=contexts, audit=audit, physical_stock=physical_stock)
     stock = pd.read_csv(expected)
     if file_sha256(expected) != digest:
         raise ValueError("Annual stock evidence changed while being read")
@@ -477,6 +479,10 @@ def historical_stock_evidence(
     required = {*keys, "road_class", "vintage_year", "raw_capacity", "capacity"}
     if required - set(stock):
         raise ValueError("Annual age-distribution evidence lacks required columns")
+    if "solver_capacity_k_vehicles" not in stock:
+        if bundle.scenario.lifetimes.survival_curves:
+            raise ValueError("Curve-mode annual lineage lacks installation-equivalent contributions")
+        stock["solver_capacity_k_vehicles"] = stock.capacity
     modes = rules["historical_stock_weighted_modes"]
     if not modes or len(set(modes)) != len(modes) or any(
         mode not in rules["road_classes"] or rules["road_classes"][mode]["pathway"] not in {"ldv", "mhdv"}
@@ -506,8 +512,13 @@ def historical_stock_evidence(
         cohort = stock.loc[stock.region.eq(row.region) & stock.tech.eq(row.tech) & stock.vintage.eq(row.vintage)]
         if cohort.empty or not cohort.road_class.eq(weighted_technologies[row.tech]).all():
             raise ValueError(f"Missing or mismatched age-distribution support: {key}")
-        if not np.isclose(cohort.capacity.sum(), row.capacity, rtol=tolerance, atol=tolerance):
-            raise ValueError(f"Annual surviving stock does not reconcile to prepared capacity: {key}")
+        if not np.isclose(cohort.solver_capacity_k_vehicles.sum(), row.capacity, rtol=tolerance, atol=tolerance):
+            raise ValueError(f"Annual solver contributions do not reconcile to prepared capacity: {key}")
+        physical = physical_stock.loc[physical_stock.region.eq(row.region) & physical_stock.tech.eq(row.tech)
+                                      & physical_stock.vintage.eq(row.vintage)]
+        if len(physical) != 1 or not np.isclose(cohort.capacity.sum(), physical.surviving_k_vehicles.iloc[0],
+                                             rtol=tolerance, atol=tolerance):
+            raise ValueError(f"Annual surviving stock does not reconcile to the physical-stock handoff: {key}")
         cohort = cohort.loc[cohort.raw_capacity.gt(0)].copy()
         if cohort.empty:
             raise ValueError(f"Missing positive raw age-distribution stock: {key}")
@@ -529,6 +540,7 @@ def prepare_efficiency_rows(
     bundle: ConfigBundle, *, existing_capacity_rows: list | None = None,
     existing_capacity_contexts: list[ResolvedProvenance] | None = None,
     existing_capacity_audit: dict | None = None,
+    physical_stock: pd.DataFrame | None = None,
     range_evidence: RangeEvidence | None = None,
 ) -> EfficiencyPreparation:
     """Offline source-to-schema preparation; no connection or transaction is required."""
@@ -582,7 +594,11 @@ def prepare_efficiency_rows(
     if not any(supplied_capacity):
         from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 
-        existing_capacity_rows, existing_capacity_contexts, existing_capacity_audit = prepare_existing_capacity_rows(bundle)
+        prepared_capacity = prepare_existing_capacity_rows(bundle)
+        existing_capacity_rows = prepared_capacity.existing_capacity_rows
+        existing_capacity_contexts = prepared_capacity.provenance_contexts
+        existing_capacity_audit = prepared_capacity.audit
+        physical_stock = prepared_capacity.physical_stock
     existing_keys = {
         (r.region, r.tech, r.vintage) for r in existing_capacity_rows if r.capacity > 0
     }
@@ -639,7 +655,7 @@ def prepare_efficiency_rows(
     )
     stock_path, annual_stock, stock_components = historical_stock_evidence(
         bundle, rules=rules, relationships=relationships, rows=existing_capacity_rows,
-        contexts=existing_capacity_contexts, audit=existing_capacity_audit,
+        contexts=existing_capacity_contexts, audit=existing_capacity_audit, physical_stock=physical_stock,
     )
     paths.append(stock_path)
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
@@ -1056,7 +1072,7 @@ def prepare_efficiency_rows(
 
     validate_capacity_handoff(
         bundle, rows=existing_capacity_rows, contexts=existing_capacity_contexts,
-        audit=existing_capacity_audit,
+        audit=existing_capacity_audit, physical_stock=physical_stock,
     )
     input_evidence = [
         {"path": str(path.relative_to(bundle.repo_root) if path.is_relative_to(bundle.repo_root) else path),

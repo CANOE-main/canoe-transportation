@@ -1,6 +1,7 @@
 """Focused contracts for road mileage weighting and the v4 age boundary."""
 
 from dataclasses import replace
+from types import SimpleNamespace
 import sys
 
 import pandas as pd
@@ -12,6 +13,24 @@ from parameterization.road_utilization import (
     validate_road_utilization,
 )
 from utils import load_config_bundle, load_harmonization_rules
+from validation.provenance import resolve_provenance
+from validation.config_models import ScenarioConfig
+
+
+def stock_inputs(bundle, overrides=()):
+    context = resolve_provenance(
+        bundle.sources, source_key="nrcan_ceud_transport_provincial", component_key=21,
+        transformation="isolated utilization stock fixture", transformation_version="1",
+    )
+    defaults = ["T_LDV_C_GSL_EX", "T_LDV_LTP_GSL_EX", "T_LDV_LTF_GSL_EX", "T_MDV_T_DSL_EX", "T_HDV_T_DSL_EX"]
+    overridden = {(row.region, row.tech) for row in overrides}
+    rows = [row.model_copy(update={"data_id": context.data_id, "units": "k vehicles",
+                                   "capacity": 10000. if row.capacity > 0 else 0.}) for row in overrides]
+    rows.extend(ExistingCapacity(region=region, tech=tech, vintage=bundle.scenario.periods.latest_observed_vintage,
+                                 capacity=10000., units="k vehicles", **context.parameter_fields())
+                for region in bundle.scenario.geography.regions for tech in defaults
+                if (region, tech) not in overridden)
+    return rows, [context]
 
 
 @pytest.fixture
@@ -31,12 +50,13 @@ def isolated_bundle(tmp_path, monkeypatch):
 
 def test_age_mode_retains_vintage_period_grain_and_flat_only_classes(isolated_bundle, tmp_path) -> None:
     bundle = isolated_bundle
-    scenario = bundle.scenario.model_copy(update={
-        "road_utilization": bundle.scenario.road_utilization.model_copy(
-            update={"vkt_schedules": True, "vkt_max_age": 10},
-        ),
-    })
-    prepared = prepare_road_utilization(replace(bundle, scenario=scenario), existing_capacity_rows=[])
+    payload = bundle.scenario.model_dump(mode="python")
+    payload["lifetimes"]["survival_curve_max_age"] = 10
+    payload["road_utilization"].update(vkt_schedules=True)
+    scenario = ScenarioConfig.model_validate(payload)
+    selected = replace(bundle, scenario=scenario)
+    stock, contexts = stock_inputs(selected)
+    prepared = prepare_road_utilization(selected, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
     rows = prepared.age_factor_artifact
     assert rows is not None
     assert prepared.audit["sqlite_insertion"] == "blocked_upstream_vintage_plus_period_schema_gap"
@@ -51,7 +71,8 @@ def test_age_mode_retains_vintage_period_grain_and_flat_only_classes(isolated_bu
     )
     car = profile.loc[profile.region.eq("ON") & profile.nrcan_ceud_class.eq("Car")]
     assert car.age.max() == 10
-    assert scenario.lifetimes.survival_curve_max_age == 29
+    assert scenario.lifetimes.survival_curve_max_age == 10
+    assert prepared.audit["age_ceiling"] == 10
     assert car.normalized_utilization.max() == pytest.approx(1.0)
     assert car.normalized_utilization.nunique() > 1
     selected = rows.loc[
@@ -76,7 +97,9 @@ def test_flat_mode_applies_existing_cohort_limits_without_age_profiles(isolated_
     })
     stock = [ExistingCapacity(region="ON", tech="T_LDV_C_GSL_EX", vintage=vintage, capacity=capacity, data_id="test-stock")
              for vintage, capacity in ((2000, 0.0), (2015, 1.0), (2020, 2.0))]
-    prepared = prepare_road_utilization(replace(bundle, scenario=scenario), existing_capacity_rows=stock)
+    selected = replace(bundle, scenario=scenario)
+    stock, contexts = stock_inputs(selected, stock)
+    prepared = prepare_road_utilization(selected, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
     assert prepared.age_factor_artifact is None
     assert prepared.audit["vkt_schedules"] is False
     rows = prepared.flat_factor_rows
@@ -123,8 +146,10 @@ def test_existing_utilization_keeps_regional_cohort_coverage(isolated_bundle) ->
     })
     stock = [ExistingCapacity(region=region, tech="T_LDV_C_GSL_EX", vintage=vintage, capacity=1, data_id="test-stock")
              for region, vintage in (("ON", 2015), ("AB", 2020), ("QC", 2000))]
-    prepared = prepare_road_utilization(replace(bundle, scenario=scenario), existing_capacity_rows=stock)
-    existing = [row for row in prepared.flat_factor_rows if row.tech_or_group.endswith("_EX")]
+    selected = replace(bundle, scenario=scenario)
+    stock, contexts = stock_inputs(selected, stock)
+    prepared = prepare_road_utilization(selected, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
+    existing = [row for row in prepared.flat_factor_rows if row.tech_or_group == "T_LDV_C_GSL_EX"]
     assert {(row.region, row.tech_or_group, row.vintage) for row in existing} == {
         ("ON", "T_LDV_C_GSL_EX", 2015), ("AB", "T_LDV_C_GSL_EX", 2020),
     }
@@ -133,7 +158,8 @@ def test_existing_utilization_keeps_regional_cohort_coverage(isolated_bundle) ->
 def test_existing_utilization_rejects_positive_stock_outside_declared_vintages(isolated_bundle) -> None:
     stock = [ExistingCapacity(region="ON", tech="T_LDV_C_GSL_EX", vintage=1990, capacity=1, data_id="test-stock")]
     with pytest.raises(ValueError, match="outside the scenario"):
-        prepare_road_utilization(isolated_bundle, existing_capacity_rows=stock)
+        stock, contexts = stock_inputs(isolated_bundle, stock)
+        prepare_road_utilization(isolated_bundle, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
 
 
 def test_cli_explicitly_prepares_stock_once_before_utilization(monkeypatch) -> None:
@@ -144,9 +170,9 @@ def test_cli_explicitly_prepares_stock_once_before_utilization(monkeypatch) -> N
 
     def prepare_stock(bundle):
         events.append("stock")
-        return stock, [], {}
+        return SimpleNamespace(existing_capacity_rows=stock, provenance_contexts=[], physical_stock=pd.DataFrame())
 
-    def prepare_utilization(bundle, *, existing_capacity_rows, existing_capacity_contexts):
+    def prepare_utilization(bundle, *, existing_capacity_rows, existing_capacity_contexts, physical_stock):
         assert existing_capacity_rows is stock
         assert existing_capacity_contexts == []
         events.append("utilization")
