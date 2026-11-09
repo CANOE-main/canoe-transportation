@@ -80,7 +80,7 @@ def _varying_powertrain_stock_inputs() -> dict:
         "survival_curve_max_age": 29,
         "fixed_lifetimes_by_class": {"cars": 14},
         "curve_ages_by_class": {"cars": set(range(30))},
-        "rules": rules,
+        "rules": rules, "cohort_method": "stock_age",
     }
 
 
@@ -262,11 +262,9 @@ def test_fixed_lifetime_sources_resolve_nhtsa_and_nems_medians() -> None:
 
 @pytest.mark.parametrize("survival_curves", [False, True])
 def test_truck_stock_eligibility_traces_selected_lifetime_source(
-    tmp_path: Path, survival_curves: bool,
+    isolated_legacy_bundle, tmp_path: Path, survival_curves: bool,
 ) -> None:
-    bundle = load_config_bundle(
-        "config/scenarios/legacy_comparison.yaml", repo_root=ROOT,
-    )
+    bundle = isolated_legacy_bundle
     routes = dict(bundle.paths.artifacts)
     for family in (
         "existing_capacity_interim", "existing_capacity_processed",
@@ -278,7 +276,8 @@ def test_truck_stock_eligibility_traces_selected_lifetime_source(
         "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": survival_curves}),
     })
     isolated = replace(bundle, paths=bundle.paths.model_copy(update={"artifacts": routes}), scenario=scenario)
-    rows, contexts, _ = prepare_existing_capacity_rows(isolated)
+    prepared = prepare_existing_capacity_rows(isolated)
+    rows, contexts = prepared.existing_capacity_rows, prepared.provenance_contexts
     motorcycles = [row for row in rows if row.tech == "T_LDV_M_GSL_EX"]
     assert motorcycles
     assert all(row.vintage + 17 > scenario.periods.model[0] for row in motorcycles)
@@ -312,6 +311,11 @@ def test_truck_stock_eligibility_traces_selected_lifetime_source(
         heavy = [row for row in rows if row.tech.startswith("T_HDV_T_")]
         assert all(row.vintage + 25 > scenario.periods.model[0] for row in heavy)
         assert any(row.vintage == 2005 for row in heavy)
+    else:
+        assert prepared.audit["grouped_tail_reference_loss_k_vehicles"] == 0
+        assert prepared.audit["vintage_curve_audit"]
+        assert sum(row.capacity for row in rows if row.units == "k vehicles") > prepared.physical_stock.surviving_k_vehicles.sum()
+        assert prepared.annual_acquisitions.calibrated_acquisitions_k_vehicles.gt(0).all()
 
 
 def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
@@ -427,6 +431,7 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
 
     cohorts, shares, excluded, capacity = distribute_existing_road_capacity(
         provincial=provincial,
+        cohort_method="stock_age",
         ldv_age=ldv_age,
         report5_age=report5,
         ldv_registrations=ldv,

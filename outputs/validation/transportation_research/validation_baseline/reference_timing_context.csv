@@ -1,6 +1,0 @@
-region,road_class,minimum_fixed_lifetime_years,maximum_fixed_lifetime_years,represented_technologies,missing_lifetime_technologies,survival_table_rows,base_year_status,interpretation
-ON,cars,14.0,14.0,5,0,0,not established by stored parameters; native vintage labels retained,Stored fixed lifetimes only; capacities are not retired or normalized by this diagnostic
-ON,freight_light_trucks,16.0,16.0,4,0,0,not established by stored parameters; native vintage labels retained,Stored fixed lifetimes only; capacities are not retired or normalized by this diagnostic
-ON,heavy_trucks,19.0,19.0,1,0,0,not established by stored parameters; native vintage labels retained,Stored fixed lifetimes only; capacities are not retired or normalized by this diagnostic
-ON,medium_trucks,18.0,18.0,2,0,0,not established by stored parameters; native vintage labels retained,Stored fixed lifetimes only; capacities are not retired or normalized by this diagnostic
-ON,passenger_light_trucks,16.0,16.0,5,0,0,not established by stored parameters; native vintage labels retained,Stored fixed lifetimes only; capacities are not retired or normalized by this diagnostic

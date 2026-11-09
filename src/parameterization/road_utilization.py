@@ -59,6 +59,26 @@ class RoadUtilizationPreparation:
     audit: dict[str, Any]
 
 
+def _survival_age_limit(bundle: ConfigBundle) -> int:
+    """Use the same final age as the selected survival schedules."""
+    from parameterization.road_lifetimes_survival import (
+        derive_accepted_lifetime_frames, harmonized_road_survival_schedules,
+        require_tail_derivation, resolved_survival_max_age,
+    )
+
+    require_tail_derivation(bundle)
+    if bundle.scenario.lifetimes.survival_curve_max_age is not None:
+        return resolved_survival_max_age(bundle)
+    frames = derive_accepted_lifetime_frames(
+        bundle,
+        rules=load_harmonization_rules(bundle, "road_lifetimes_survival"),
+        road_rules=load_harmonization_rules(bundle, "road_aggregation"),
+        assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
+    )
+    schedules = harmonized_road_survival_schedules(bundle, frames["transformed_curves"])
+    return resolved_survival_max_age(bundle, schedules.annual)
+
+
 def prepare_age_profiles(
     bundle: ConfigBundle,
     *,
@@ -66,7 +86,7 @@ def prepare_age_profiles(
     fleet: FleetAggregationEvidence | None = None,
 ) -> pd.DataFrame:
     """Build dimensionless age profiles with reviewed class and haul ownership."""
-    ceiling = bundle.scenario.road_utilization.vkt_max_age
+    ceiling = _survival_age_limit(bundle)
     if ceiling < bundle.scenario.periods.step:
         raise ValueError("Age ceiling must cover one complete model period")
     atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
@@ -106,6 +126,9 @@ def prepare_age_profiles(
     result = pd.concat(all_profiles, ignore_index=True)
     if result.duplicated(["region", "nrcan_ceud_class", "age"]).any():
         raise ValueError("Duplicate region/class/age utilization profile")
+    expected_ages = set(range(ceiling + 1))
+    if any(set(group.age) != expected_ages for _, group in result.groupby(["region", "nrcan_ceud_class"])):
+        raise ValueError(f"ATB mileage does not cover survival ages 0 through {ceiling}; a reviewed extension is required")
     return result.sort_values(["region", "nrcan_ceud_class", "age"]).reset_index(drop=True)
 
 
@@ -171,9 +194,9 @@ def build_age_factor_artifact(
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[ResolvedProvenance], dict[str, Any]]:
     """Retain technology vintage and model period separately for age utilization."""
     scenario = bundle.scenario
-    max_age = scenario.road_utilization.vkt_max_age
     fleet = load_fleet_aggregation_evidence(bundle)
     profiles = prepare_age_profiles(bundle, output_regions=output_regions, fleet=fleet)
+    max_age = int(profiles.age.max())
     age_classes = rules["age_profile_classes"]
     if set(age_classes) | set(rules["flat_only_classes"]) != set(activity):
         raise ValueError("Age and flat-only road classes do not partition road activity")
@@ -426,9 +449,13 @@ def prepare_road_utilization(
     *,
     existing_capacity_rows: list[ExistingCapacity],
     existing_capacity_contexts: list[ResolvedProvenance] | None = None,
+    physical_stock: pd.DataFrame | None = None,
     technology: pd.DataFrame | None = None,
 ) -> RoadUtilizationPreparation:
     """Prepare deterministic road rows and audit artifacts from registered local inputs."""
+    from parameterization.build_existing_capacity import physical_stock_for_consumers
+
+    physical_stock = physical_stock_for_consumers(bundle, existing_capacity_rows, physical_stock)
     scenario = bundle.scenario
     rules = load_harmonization_rules(bundle, "road_stocks_and_demands")
     factor_rules = load_harmonization_rules(bundle, "road_utilization")
@@ -492,7 +519,7 @@ def prepare_road_utilization(
     baseline["unit"] = "dimensionless"
     sales_pairs = {
         (demand_rules["region_output_map"].get(region, region), name)
-        for region in regions if scenario.existing_capacity.method_for(region) == "sales_survival"
+        for region in regions
         for name in capacity_rules["ceud_sales_series"]
     }
     calibration = pd.DataFrame()
@@ -507,7 +534,7 @@ def prepare_road_utilization(
         )
         baseline, calibration = calibrate_sales_activity(
             baseline, base_annual,
-            pd.DataFrame([row.model_dump() for row in existing_capacity_rows]), expanded,
+            physical_stock.rename(columns={"surviving_k_vehicles": "capacity"}), expanded,
             selected_pairs=sales_pairs, base_year=scenario.periods.base_year,
         )
         LOGGER.info("Calibrated %s sales-based class activity totals; maximum closure residual %.3g",
@@ -560,9 +587,7 @@ def prepare_road_utilization(
         "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
         "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None,
         "sales_activity_calibration": calibration.to_dict("records"),
-        "calibrated_capacity": [row.model_dump(mode="json") for row in existing_capacity_rows
-                                if any(row.region == region and row.tech in technologies_by_class[name]
-                                       for region, name in sales_pairs)],
+        "calibrated_physical_stock": physical_stock.to_dict("records"),
     }, sort_keys=True).encode()).hexdigest()
     contexts: list[ResolvedProvenance] = []
     flat_rows: list[LimitAnnualCapacityFactor] = []
@@ -577,8 +602,7 @@ def prepare_road_utilization(
         ]
         if any(name == road_class for _, name in sales_pairs):
             owners = technologies_by_class[road_class]
-            ids = {row.data_id for row in existing_capacity_rows if row.tech in owners
-                   and (row.region, road_class) in sales_pairs}
+            ids = set(physical_stock.loc[physical_stock.tech.isin(owners), "data_id"])
             stock_inputs = [context for context in existing_capacity_contexts or []
                             if context.data_id in ids]
             if {context.data_id for context in stock_inputs} != ids:
@@ -588,7 +612,7 @@ def prepare_road_utilization(
             inputs=inputs,
             dataset_key=f"road_utilization.flat.{road_class}",
             transformation=("CEUD base-year activity divided by retained sales-survival stock and manual capacity-to-activity; "
-                            "unselected regions retain mean CEUD ratios" if any(name == road_class for _, name in sales_pairs)
+                            "physical stock is counted separately from capacity before survival is applied" if any(name == road_class for _, name in sales_pairs)
                             else "Mean CEUD annual activity-to-stock ratio divided by manual capacity-to-activity"),
             transformation_version="2", governing_source_id=source_id,
             data_quality=bundle.sources.resolved_data_quality(
@@ -685,8 +709,11 @@ def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     bundle = load_config_bundle(args.scenario)
-    stock, contexts, _ = prepare_existing_capacity_rows(bundle)
-    prepare_road_utilization(bundle, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
+    prepared = prepare_existing_capacity_rows(bundle)
+    prepare_road_utilization(
+        bundle, existing_capacity_rows=prepared.existing_capacity_rows,
+        existing_capacity_contexts=prepared.provenance_contexts, physical_stock=prepared.physical_stock,
+    )
 
 
 if __name__ == "__main__":

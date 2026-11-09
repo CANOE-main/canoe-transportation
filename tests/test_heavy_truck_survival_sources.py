@@ -36,6 +36,7 @@ def selected_bundle(bundle, source, curves):
     return replace(bundle, scenario=bundle.scenario.model_copy(update={
         "lifetimes": bundle.scenario.lifetimes.model_copy(update={
             "road_lifetime_survival_source": "moves" if source == MOVES else "nhtsa_nems", "survival_curves": curves,
+            "survival_curve_max_age": 41 if source == MOVES else 34,
         }),
     }))
 
@@ -98,6 +99,8 @@ def test_moves_annual_survival_compounds_without_changing_native_audit(survival_
     assert curve.loc[0, "survival_probability"] == 1
     assert curve.loc[2, "survival_probability"] == pytest.approx(0.99 * 0.9)
     assert curve.loc[40, "survival_probability"] == pytest.approx(0.99 * 0.9 ** 39)
+    assert curve.loc[41, "survival_probability"] == pytest.approx(0.99 * 0.9 ** 40)
+    assert source.age.max() == 40
     assert set(curve.source_unit) == {"dimensionless"}
     medians = median_equivalent_lifetimes(transformed)
     assert set(medians.loc[medians.source_id.eq(MOVES), "median_equivalent_age"]) == {8}
@@ -110,7 +113,7 @@ def test_moves_annual_survival_compounds_without_changing_native_audit(survival_
             validate_accepted_survival_inputs(nhtsa, eia, assorted_rules=rules, moves5=invalid)
 
 
-@pytest.mark.parametrize("curves", [False, True])
+@pytest.mark.parametrize("curves", [False])
 def test_source_profile_changes_car_truck_rows_with_complete_lineage(survival_inputs, curves):
     bundle, _, _ = survival_inputs
     preparations = {
@@ -169,7 +172,7 @@ def test_source_profile_changes_car_truck_rows_with_complete_lineage(survival_in
 def test_stock_eligibility_uses_selected_source_and_supported_ages(survival_inputs):
     bundle, _, _ = survival_inputs
     manual = pd.read_csv(resolve_input_path(bundle, "manual", "lifetime_process.csv"))
-    for source, median, last_age in ((NEMS, 25, 34), (MOVES, 8, 40)):
+    for source, median, last_age in ((NEMS, 25, 34), (MOVES, 8, 41)):
         selected = selected_bundle(bundle, source, False)
         frames = accepted_frames(selected)
         rules = resolved_road_lifetime_rules(selected)

@@ -70,10 +70,11 @@ lifetimes:
   survival_curves: false  # true: road curves; false: road median lifetimes.
   # NHTSA+NEMS or MOVES for cars and trucks; medium trucks share heavy MOVES rates.
   road_lifetime_survival_source: moves  # nhtsa_nems | moves
-  survival_curve_max_age: 29  # Curve mode: maximum road survival/stock age.
+  survival_curve_max_age: null  # Optional hard zero age; null derives the endpoint.
+  tail_derivation: constant_retirement  # Continue the last annual retirement rate.
+  tail_survival_threshold: 0.005  # Surviving fraction: 0.5%, then zero the following year.
 
 existing_capacity:
-  road_stock_method: {"ON": sales_survival, other: stock_age}  # Regional overrides: stock_age | sales_survival.
   vehicle_population_year: 2025  # MTO evidence year.
   cleanup_tolerance: 0.001  # Minimum retained capacity in each row's native unit.
 
@@ -84,7 +85,6 @@ demand:
 road_utilization:
   # Age-dependent VKT is audit-only until the SQLite schema supports it.
   vkt_schedules: false
-  vkt_max_age: 29  # Age limit when VKT schedules are enabled.
 
 efficiencies:
   atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid

@@ -1,8 +1,0 @@
-evidence,method,interpretation
-Literal existing-capacity recipe,Raw annual sales × source powertrain fraction; missing products become zero; forward interpolate each product through 2025,"No survival, stock normalization or backend fuel allocation is applied to these capacity rows"
-Native recipe bins,2005→2000; 2006–10→2005; 2011–15→2010; 2016–20→2015; 2021–25→2020,"Annual details decompose the literal recipe only, not supplied SQLite parameters"
-Survival flag in source call,fixed_lifetime=False,Survival is prepared downstream; this flag does not change existing-capacity arithmetic
-Stored output conflict,True,Source inspection cannot establish which earlier execution produced stored outputs or SQLite rows
-Final existing-capacity CSV path,Shift original defaults; exclude all five original road families; concatenate untouched recipe road rows with remaining non-road defaults,"No later road-capacity shift, truncation, retirement or append of original road rows occurs before ExistingCapacity_transport.csv or data_update['ExistingCapacity']"
-vehicle_sales_by_size.xlsx,Exact captured source bytes,f393231f63957a02b1acdc0728614d587b27d7b7fc821b3e1a30b9a9516cf8ae
-vehicle_sales_by_powertrain.xlsx,Exact captured source bytes,cda06f63b3167e45ddd30291d23e0efd057c7ec64e3ec336527a53dae13404b3

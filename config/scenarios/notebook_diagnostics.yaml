@@ -60,10 +60,11 @@ economics:
 lifetimes:
   survival_curves: true
   road_lifetime_survival_source: nhtsa_nems  # nhtsa_nems | moves
-  survival_curve_max_age: 29
+  survival_curve_max_age: null  # Optional hard zero age; null derives the endpoint.
+  tail_derivation: constant_retirement  # Continue the last annual retirement rate.
+  tail_survival_threshold: 0.005  # Surviving fraction: 0.5%, then zero the following year.
 
 existing_capacity:
-  road_stock_method: {other: stock_age}  # Regional overrides: stock_age | sales_survival.
   vehicle_population_year: 2025
   cleanup_tolerance: 0.001
 
@@ -73,7 +74,6 @@ demand:
 
 road_utilization:
   vkt_schedules: false
-  vkt_max_age: 25
 
 efficiencies:
   atb_trajectory: Mid

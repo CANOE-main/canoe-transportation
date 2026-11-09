@@ -171,14 +171,16 @@ def load_config_bundle(
     resolved_paths = resolve_repo_path(root, paths_path)
     resolved_sources = resolve_repo_path(root, sources_path)
     resolved_scenario = resolve_repo_path(root, scenario_path)
+    paths = PathsConfig.model_validate(load_yaml(resolved_paths))
+    scenario_payload = load_yaml(resolved_scenario)
     bundle = ConfigBundle(
         repo_root=root,
         paths_path=resolved_paths,
         sources_path=resolved_sources,
         scenario_path=resolved_scenario,
-        paths=PathsConfig.model_validate(load_yaml(resolved_paths)),
+        paths=paths,
         sources=SourcesConfig.model_validate(load_yaml(resolved_sources)),
-        scenario=ScenarioConfig.model_validate(load_yaml(resolved_scenario)),
+        scenario=ScenarioConfig.model_validate(scenario_payload),
     )
     errors = validate_config_bundle(bundle)
     if errors:

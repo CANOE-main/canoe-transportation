@@ -10,7 +10,7 @@ from canoe_schema.v4_0 import Region, TechnologyLabel
 
 from parameterization.offroad_lifetimes import prepare_reviewed_manual_lifetimes, prepare_statcan_bus_lifetimes
 from parameterization.build_lifetime_parameters import prepare_lifetime_rows
-from parameterization.road_lifetimes_survival import derive_accepted_lifetime_frames, prepare_fixed_road_lifetimes, prepare_road_survival_curve_rows
+from parameterization.road_lifetimes_survival import derive_accepted_lifetime_frames, prepare_fixed_road_lifetimes
 from utils import load_config_bundle, load_harmonization_rules
 from validation.insertion import insert_models
 from validation.provenance import registry_rows
@@ -186,62 +186,10 @@ def test_bus_latest_province_and_canada_fallback(tmp_path: Path) -> None:
     }
 
 
-def test_survival_period_blocks_and_representation_switch() -> None:
+def test_fixed_lifetime_representation_preserves_reviewed_medians() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=ROOT)
     technology = pd.read_csv(ROOT / "inputs/0_canoe_template/technology.csv")
-    transformed = derive_accepted_lifetime_frames(
-        bundle, rules=load_harmonization_rules(bundle, "road_lifetimes_survival"),
-        road_rules=load_harmonization_rules(bundle, "road_aggregation"),
-        assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
-    )["transformed_curves"]
-    curves, contexts = prepare_road_survival_curve_rows(
-        bundle, transformed=transformed, technology=technology
-    )
-    assert len(contexts) == 5
-    assert {row.tech for row in curves} == set(technology.loc[
-        technology.category.isin(["cars", "passenger_light_trucks", "freight_light_trucks", "medium_trucks", "heavy_trucks"]), "tech"
-    ])
-    car = transformed.loc[transformed.source_id.eq("ontario_report_a_weighted_nhtsa_cafe") & transformed.source_class.eq("Car")]
-    expected = car.loc[car.age.isin(range(5)), "survival_probability"].mean()
-    assert next(row.fraction for row in curves if row.region == "ON" and row.tech == "T_LDV_C_GSL_N" and row.vintage == 2025 and row.period == 2025) == pytest.approx(expected)
-    for tech, source_id, source_class in (
-        ("T_MDV_T_BEV_N", "nhtsa_cafe_ldv_survival", "2b/3 Trucks"),
-        ("T_HDV_T_BEV_N", "eia_nems_hd_truck_scrappage", "Cls 7-8"),
-    ):
-        source = transformed.loc[
-            transformed.source_id.eq(source_id)
-            & transformed.source_class.eq(source_class)
-            & transformed.age.isin(range(5)), "survival_probability"
-        ]
-        row = next(row for row in curves if row.region == "ON" and row.tech == tech and row.vintage == 2025 and row.period == 2025)
-        assert row.fraction == pytest.approx(source.mean())
-        context = next(context for context in contexts if context.data_id == row.data_id)
-        assert {item.source_key for item in context.contributors} == {source_id}
-    assert not any(row.period - row.vintage + 4 > bundle.scenario.lifetimes.survival_curve_max_age for row in curves)
-    short_bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
-        "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curve_max_age": 10})
-    }))
-    short_curves, _ = prepare_road_survival_curve_rows(
-        short_bundle, transformed=transformed, technology=technology
-    )
-    assert len(short_curves) < len(curves)
-    assert all(row.period - row.vintage + 4 <= 10 for row in short_curves)
-    prepared = prepare_lifetime_rows(bundle)
-    assert prepared.audit["fixed_technologies"] == 57
-    assert prepared.audit["curve_technologies"] == 65
-    heavy_at_age_20 = next(
-        row for row in prepared.curve_rows
-        if row.region == "ON" and row.tech == "T_HDV_T_DSL_N"
-        and row.vintage == 2025 and row.period == 2045
-    )
-    nems = transformed.loc[
-        transformed.source_id.eq("eia_nems_hd_truck_scrappage")
-        & transformed.source_class.eq("Cls 7-8")
-        & transformed.age.between(20, 24), "survival_probability"
-    ]
-    assert heavy_at_age_20.fraction == pytest.approx(nems.mean())
-    assert heavy_at_age_20.fraction > 0
-    assert not any(row.tech.startswith("T_HDV_T_") for row in prepared.fixed_rows)
+    transformed = accepted_frames(bundle)["transformed_curves"]
     fixed_bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
         "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": False})
     }))

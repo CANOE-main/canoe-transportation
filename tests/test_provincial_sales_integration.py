@@ -23,7 +23,6 @@ def test_each_province_closes_its_own_sales_activity(tmp_path, monkeypatch):
         "model": [2025, 2030, 2035, 2040, 2045], "step": 5,
     }
     payload["sources"]["nrcan_ceud_beyond_observed"] = "constant"
-    payload["existing_capacity"]["road_stock_method"] = {"other": "sales_survival"}
     payload["lifetimes"]["road_lifetime_survival_source"] = "moves"
     payload["lifetimes"]["survival_curves"] = False
     payload["road_utilization"]["vkt_schedules"] = False
@@ -41,18 +40,22 @@ def test_each_province_closes_its_own_sales_activity(tmp_path, monkeypatch):
     # context while exercising their real cached parsing and normalization.
     from fetching import (
         assorted_sources, cer_enerfuture, nlr_atb_autonomie, nrcan_ceud,
-        statcan_tables, vehicle_population,
+        statcan_tables, vehicle_population, transport_canada_izev, fueleconomy_vehicles,
     )
     from parameterization import road_aggregation
     for adapter in (assorted_sources, cer_enerfuture, nlr_atb_autonomie,
-                    nrcan_ceud, statcan_tables, vehicle_population, road_aggregation):
+                    nrcan_ceud, statcan_tables, vehicle_population, road_aggregation,
+                    transport_canada_izev, fueleconomy_vehicles):
         monkeypatch.setattr(adapter, "load_config_bundle", lambda *args, **kwargs: bundle)
     def reject_network(*args, **kwargs):
         raise AssertionError("registered-input integration must remain offline")
     monkeypatch.setattr("requests.sessions.Session.request", reject_network)
     prepare_scenario_inputs(bundle, download=False)
-    rows, contexts, _ = prepare_existing_capacity_rows(bundle)
-    prepare_road_utilization(bundle, existing_capacity_rows=rows, existing_capacity_contexts=contexts)
+    prepared = prepare_existing_capacity_rows(bundle)
+    prepare_road_utilization(
+        bundle, existing_capacity_rows=prepared.existing_capacity_rows,
+        existing_capacity_contexts=prepared.provenance_contexts, physical_stock=prepared.physical_stock,
+    )
     rules = load_harmonization_rules(bundle, "road_utilization")
     audit = pd.read_csv(resolve_artifact_path(bundle, "road_utilization_processed") / rules["sales_calibration_file"])
     assert len(audit) == 50

@@ -557,9 +557,9 @@ def build_research_report(
         revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=bundle.repo_root, text=True).strip()
     except (OSError, subprocess.CalledProcessError):
         revision = None
-    sales_rows = frames["stock_activity_energy"].loc[
-        frames["stock_activity_energy"].ceud_region.map(bundle.scenario.existing_capacity.method_for).eq("sales_survival")
-    ]
+    if report["existing_capacity"].get("road_stock_method") != "sales_survival":
+        raise ValueError("Research requires a production sales-derived cohort build")
+    sales_rows = frames["stock_activity_energy"]
     closure = all(isclose(row.implied_activity_bn, row.ceud_activity_bn,
                          abs_tol=bundle.scenario.comparison.absolute_tolerance,
                          rel_tol=bundle.scenario.comparison.relative_tolerance)

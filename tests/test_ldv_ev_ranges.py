@@ -862,12 +862,15 @@ def test_representation_rejects_caller_owned_variant_uses_before_writes(bundle, 
 
 
 def test_real_offline_standalone_caller_rollback_and_mode_switches(
-    bundle, tmp_path, monkeypatch
+    isolated_legacy_bundle, tmp_path, monkeypatch
 ):
     """Actual pinned sources, complete parameter families, and the shared assembly seam."""
     import hashlib
     import json
     import socket
+    import shutil
+    import yaml
+    from pathlib import Path
     from contextlib import closing
     import build_transport
     from canoe_schema.v4_0 import (
@@ -877,28 +880,39 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
         TimeOfDay,
     )
     from parameterization.ldv_charging_profiles import prepare_charging_profile_rows
+    from fetching.legacy_charging_profiles import build_request as charging_request
 
-    bundle = load_config_bundle("config/scenarios/default.yaml")
+    bundle = load_config_bundle(
+        "config/scenarios/default.yaml", repo_root=isolated_legacy_bundle.repo_root
+    )
     payload = bundle.scenario.model_dump()
-    # This acceptance case exercises interval-end charger inputs and the full
-    # oldest-vintage curve block, independently of edits to the default scenario.
+    # Exercise complete fixed-mode production in a private artifact namespace.
+    # Curve construction/solver acceptance has its own explicit review-gate tests.
     payload["periods"].update(
         period_mode="prospective", base_year=2023,
         existing=[2000, 2005, 2010, 2015, 2020],
         model=[2025, 2030, 2035, 2040, 2045], step=5,
     )
-    payload["lifetimes"].update(survival_curves=True, survival_curve_max_age=29)
+    payload["lifetimes"].update(survival_curves=False, survival_curve_max_age=41)
     payload["charging_profiles"]["travel_behavior_source"] = "nhts"
     # Use the complete configured vehicle-cycle layer as well as actual range evidence.
     payload["embodied_emissions"] = True
     b = replace(bundle, scenario=ScenarioConfig.model_validate(payload))
     b = with_mode(b, "new_capacity_shares")
+    live_root = Path(__file__).resolve().parents[1]
+    profile_path = charging_request(b, "nhts").registered_path
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(live_root / profile_path.relative_to(b.repo_root), profile_path)
 
     def no_network(*args, **kwargs):
         pytest.fail("network access during registered-source offline build")
 
     monkeypatch.setattr(socket.socket, "connect", no_network)
     monkeypatch.setattr(socket, "create_connection", no_network)
+    # The private fixture initially replays NHTSA inputs. Replay this test's
+    # actual MOVES selection and period policy before preparing parameters.
+    b.scenario_path.write_text(yaml.safe_dump(b.scenario.model_dump(mode="json")), encoding="utf-8")
+    build_transport.prepare_scenario_inputs(b, download=False)
     captured = []
     original_prepare = build_transport.prepare_transport_contribution
 
@@ -927,6 +941,7 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
         "limit_annual_capacity_factor",
         "lifetime_tech",
         "lifetime_survival_curve",
+        "lifetime_process",
         "efficiency",
         "limit_tech_input_split_annual",
         "cost_invest",
@@ -935,8 +950,18 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
         "emission_embodied",
     ]
 
-    def digest(c, table):
+    def digest(c, table, *, canonical_lineage=False):
         rows = c.execute(f'SELECT * FROM "{table}"').fetchall()
+        if canonical_lineage:
+            from validation.provenance import published_content_identity
+
+            aliases = {data_id: published_content_identity(notes) or data_id
+                       for data_id, notes in c.execute("SELECT data_id, notes FROM data_set")}
+            columns = [column[1] for column in c.execute(f'PRAGMA table_info("{table}")')]
+            if "data_id" in columns:
+                index = columns.index("data_id")
+                assert all(row[index] in aliases for row in rows)
+                rows = [(*row[:index], aliases[row[index]], *row[index + 1:]) for row in rows]
         return hashlib.sha256(
             json.dumps(sorted(rows, key=repr), separators=(",", ":")).encode()
         ).hexdigest()
@@ -1164,7 +1189,11 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
             + ")",
             tuple(variants),
         ).fetchone() == (0,)
-        rep_hashes = {t: digest(caller, t) for t in tables}
+        rep_alias_hashes = {t: digest(caller, t) for t in tables}
+        # A caller retains its published aliases; a fresh representative batch
+        # numbers a smaller alias pool. Compare immutable provenance identities
+        # across those histories, with every other row field still exact.
+        rep_hashes = {t: digest(caller, t, canonical_lineage=True) for t in tables}
         # Standalone uses the very same prepared, real-source contribution and schema insertion.
         rep_database = tmp_path / "omega_representative.sqlite"
         full_rep = replace(rep, charging_profiles=hourly_profiles,
@@ -1179,14 +1208,14 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
             rep_report["ok"] and rep_report["validation"]["foreign_key_violations"] == 0
         )
         with closing(sqlite3.connect(rep_database)) as standalone:
-            assert {t: digest(standalone, t) for t in tables} == rep_hashes
+            assert {t: digest(standalone, t, canonical_lineage=True) for t in tables} == rep_hashes
             assert standalone.execute(
                 "SELECT COUNT(*) FROM limit_new_capacity_share"
             ).fetchone() == (0,)
         build_transport.insert_transport_contribution(
             caller, rep, conflict="ignore_identical"
         )
-        assert {t: digest(caller, t) for t in tables} == rep_hashes
+        assert {t: digest(caller, t) for t in tables} == rep_alias_hashes
         build_transport.insert_transport_contribution(
             caller, prepared, conflict="ignore_identical"
         )
@@ -1226,3 +1255,32 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
         )
     assert hashlib.sha256(database.read_bytes()).hexdigest() == published_hash
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_representative_survival_preserves_exact_unit_endpoint(representative_prerequisites):
+    bundle, kwargs = representative_prerequisites
+    # Normalized shares can differ from one by floating point roundoff. Temoa
+    # still requires the supplied age-zero survival to be exactly one.
+    from parameterization.ldv_ev_ranges import sales_bucket_totals
+
+    evidence = kwargs["range_preparation"].evidence
+    records = evidence.records.copy()
+    records.loc[records.powertrain.eq("BEV"), "sales"] = 1
+    records.loc[records.powertrain.eq("BEV") & records.bucket.eq("bev_400_miles"), "sales"] = 15
+    additions = records.loc[records.powertrain.eq("BEV")].groupby("market_class").head(1).copy()
+    additions["source_row_id"] = range(int(records.source_row_id.max()) + 1,
+                                       int(records.source_row_id.max()) + 1 + len(additions))
+    additions["bucket"] = "bev_200_miles"
+    additions["cd_range_miles"] = 200
+    additions["sales"] = 6
+    records = pd.concat([records, additions], ignore_index=True)
+    evidence = replace(evidence, records=records,
+                       bucket_totals=sales_bucket_totals(records, module_rules(bundle)))
+    kwargs["range_preparation"] = replace(kwargs["range_preparation"], evidence=evidence)
+    assert sum(evidence.bucket_totals.loc[
+        evidence.bucket_totals.market_class.eq("car") & evidence.bucket_totals.powertrain.eq("BEV"),
+        "share_of_all_sales"]) != 1.0
+    result = prepare_representative_parameters(bundle, **kwargs)
+    endpoints = [row for row in result.batches["lifetime_survival_curve"]
+                 if "_REP" in row.tech and row.period == row.vintage]
+    assert endpoints and all(row.fraction == 1.0 for row in endpoints)

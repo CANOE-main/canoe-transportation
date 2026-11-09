@@ -935,7 +935,8 @@ def prepare_representative_parameters(
         "capacity_to_activity": ("c2a", "identity"),
         "limit_annual_capacity_factor": ("factor", "identity"),
         "lifetime_tech": ("lifetime", "identity"),
-        "lifetime_survival_curve": ("fraction", "weighted"),
+        "lifetime_process": ("lifetime", "identity"),
+        "lifetime_survival_curve": ("fraction", "identity"),
         "efficiency": ("efficiency", "harmonic"),
         "cost_invest": ("cost", "weighted"),
         "cost_fixed": ("cost", "weighted"),
@@ -1030,6 +1031,7 @@ def prepare_representative_parameters(
                     "cost_variable",
                     "limit_annual_capacity_factor",
                     "lifetime_survival_curve",
+                    "lifetime_process",
                     "emission_embodied",
                 }:
                     if {

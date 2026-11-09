@@ -67,6 +67,8 @@ def test_sales_are_survived_once_with_age_zero_and_explicit_missing_older_histor
     assert cohorts.surviving_k_vehicles.tolist() == pytest.approx([5.0, 16.0, 30.0])
     assert cohorts.surviving_k_vehicles.sum() == pytest.approx(51.0)
     assert cohorts.calibrated_surviving_k_vehicles.sum() == pytest.approx(999.0)
+    assert cohorts.calibrated_acquisitions_k_vehicles.tolist() == pytest.approx(
+        cohorts.sales_k_vehicles * 999. / 51.)
     assert set(cohorts.stock_calibration_multiplier) == {999.0 / 51.0}
     assert set(cohorts.stock_calibration_basis) == {"base_year_ceud_stock"}
     assert set(cohorts.ceud_stock_k_vehicles) == {999.0}
@@ -101,6 +103,16 @@ def test_history_start_and_base_year_bound_sales_without_inventing_missing_years
     assert cohorts.calibrated_surviving_k_vehicles.sum() == pytest.approx(999.0)
     assert set(cohorts.source_history_start) == {2021}
     assert set(cohorts.included_history_start) == {2022}
+
+
+def test_sales_older_than_an_explicit_zero_endpoint_have_no_survivors(sales_inputs):
+    curves = sales_inputs["transformed_curves"].iloc[:2].copy()
+    curves["survival_probability"] = [1.0, 0.0]
+    cohorts = derive_sales_survival_cohorts(**(sales_inputs | {"transformed_curves": curves}))
+    assert cohorts.survival_probability.tolist() == [0.0, 0.0, 1.0]
+    assert cohorts.surviving_k_vehicles.tolist() == [0.0, 0.0, 30.0]
+    assert cohorts.calibrated_surviving_k_vehicles.sum() == pytest.approx(999.0)
+    assert cohorts.sales_k_vehicles.tolist() == [10.0, 20.0, 30.0]
 
 
 @pytest.mark.parametrize("missing_year", [2022, 2023])
@@ -204,19 +216,13 @@ def test_sales_allocation_needs_no_population_ages_and_preserves_technology_tota
             assert set(capacity.vintage) == {2020, 2021, 2022}
 
 
-def test_mixed_regional_methods_preserve_unselected_stock_results(sales_inputs):
+def test_partial_regional_sales_cannot_fall_back_to_population_ages(sales_inputs):
     args = allocation_inputs(sales_inputs, regions=("ON", "QC"), lifetime=10)
-    _, _, _, stock = distribute_existing_road_capacity(**args)
     sales = derive_sales_survival_cohorts(**sales_inputs)
-    cohorts, _, _, mixed = distribute_existing_road_capacity(**(args | {"sales_cohorts": sales}))
-    pd.testing.assert_frame_equal(
-        mixed.loc[mixed.region.eq("QC")].reset_index(drop=True),
-        stock.loc[stock.region.eq("QC")].reset_index(drop=True),
-    )
-    assert mixed.groupby("region").capacity.sum().to_dict() == pytest.approx({"ON": 999, "QC": 100})
-    assert cohorts.groupby("region").stock_method.first().to_dict() == {
-        "ON": "sales_survival", "QC": "stock_age",
-    }
+    with pytest.raises(ValueError, match="complete regional car/truck sales coverage"):
+        distribute_existing_road_capacity(**(args | {"sales_cohorts": sales}))
+    _, _, _, stock = distribute_existing_road_capacity(**(args | {"cohort_method": "stock_age"}))
+    assert stock.groupby("region").capacity.sum().to_dict() == pytest.approx({"ON": 999, "QC": 100})
 
 
 def test_each_region_gets_its_own_reported_stock_calibration(sales_inputs, caplog):
@@ -270,6 +276,74 @@ def test_allocator_rejects_stale_sales_stock_anchor(sales_inputs):
     sales["calibrated_surviving_k_vehicles"] *= .9
     with pytest.raises(ValueError, match="preserve their CEUD stock calibration"):
         distribute_existing_road_capacity(**(allocation_inputs(sales_inputs) | {"sales_cohorts": sales}))
+
+
+def test_composite_bins_keep_annual_survival_and_separate_solver_from_physical_stock(sales_inputs):
+    inputs = deepcopy(sales_inputs)
+    inputs["transformed_curves"] = pd.DataFrame({
+        "source_id": "ontario_report_a_weighted_nhtsa_cafe", "source_class": "Car",
+        "road_class": "cars", "age": range(7),
+        "survival_probability": [1., .8, .5, .3, .2, .1, 0.],
+    })
+    sales = derive_sales_survival_cohorts(**inputs)
+    args = allocation_inputs(inputs, lifetime=10)
+    args.update({
+        "sales_cohorts": sales, "survival_curves": True,
+        "curve_ages_by_class": {"cars": set(range(7))},
+        "annual_survival": inputs["transformed_curves"],
+        "period_config": ScenarioPeriods(period_mode="prospective", base_year=2023,
+                                         existing=[2020], model=[2023], step=5),
+    })
+    cohorts, shares, _, parameters = distribute_existing_road_capacity(**args)
+    assert cohorts.cohort_k_vehicles.sum() == pytest.approx(999.)
+    assert shares.capacity.sum() == pytest.approx(999.)
+    assert parameters.capacity.sum() == pytest.approx(60. * 999. / 51.)
+    assert parameters.capacity.sum() > shares.capacity.sum()
+    assert shares.solver_capacity_k_vehicles.sum() == pytest.approx(parameters.capacity.sum())
+    assert set(shares.capacity_basis) == {"installed_capacity_before_survival"}
+    # Historical fuel proxies stay at each actual year, including its distinct survival.
+    expected = {"T_LDV_C_GSL_EX": 20. * 999. / 51.,
+                "T_LDV_C_DSL_EX": 16. * 999. / 51., "T_LDV_C_BEV_EX": 15. * 999. / 51.}
+    assert shares.groupby("tech").capacity.sum().to_dict() == pytest.approx(expected)
+    altered = inputs["transformed_curves"].copy()
+    altered.loc[altered.age.eq(2), "survival_probability"] = .4
+    with pytest.raises(ValueError, match="calibrated annual physical stock"):
+        distribute_existing_road_capacity(**(args | {"annual_survival": altered}))
+
+
+@pytest.mark.parametrize("old_sales,expected_loss", [(100.0, 0.0), (10000.0, 999.0)])
+def test_grouped_tail_retirement_is_recorded_without_recalibrating_physical_stock(sales_inputs, old_sales, expected_loss):
+    inputs = deepcopy(sales_inputs)
+    source = inputs["provincial"]
+    for year, value in ((2021, old_sales), (2022, 1.0), (2023, 0.0)):
+        source.loc[source.raw_series.eq("Sales|Cars") & source.year.eq(year), "value"] = value
+    inputs["transformed_curves"] = inputs["transformed_curves"].assign(
+        road_class="cars", survival_probability=[1.0, 0.2, 0.0],
+    )
+    sales = derive_sales_survival_cohorts(**inputs)
+    args = allocation_inputs(inputs, lifetime=10) | {
+        "sales_cohorts": sales, "survival_curves": True,
+        "curve_ages_by_class": {"cars": {0, 1}}, "annual_survival": inputs["transformed_curves"],
+        "period_config": ScenarioPeriods(period_mode="prospective", base_year=2023,
+                                         existing=[2020], model=[2023], step=5),
+    }
+    _, shares, _, _ = distribute_existing_road_capacity(**args)
+    assert sales.stock_calibration_multiplier.unique().tolist() == pytest.approx([999.0 / 0.2])
+    assert shares.capacity.sum() == pytest.approx(999.0)
+    loss = shares.grouped_tail_reference_loss_k_vehicles.sum()
+    # Keep the ~0.002 grouped fraction even though it is below the selected
+    # source-tail threshold. Only the more extreme mix falls below Temoa's floor.
+    assert loss == pytest.approx(expected_loss)
+    assert shares.solver_reference_stock_k_vehicles.sum() + loss == pytest.approx(999.0)
+    summary = pd.DataFrame(shares.attrs["vintage_curve_audit"])
+    annual_loss = pd.DataFrame(shares.attrs["curve_tail_retirements"])
+    assert summary.removed_reference_stock_k_vehicles.sum() == pytest.approx(loss)
+    if expected_loss == 0:
+        assert annual_loss.empty
+        assert summary.removed_stock_years_k_vehicles.sum() == 0
+        return
+    assert annual_loss.loc[annual_loss.period.eq(2023), "removed_k_vehicles"].sum() == pytest.approx(loss)
+    assert annual_loss.removed_k_vehicles.sum() == pytest.approx(summary.removed_stock_years_k_vehicles.sum())
 
 
 @pytest.fixture
@@ -327,52 +401,32 @@ def test_nonphysical_calibration_target_is_rejected(calibration_inputs, target):
         calibrate_sales_activity(**(calibration_inputs | {"annual": annual}))
 
 
-def test_method_selection_defaults_region_overrides_and_bc_alias():
+def test_production_has_one_sales_method_for_all_regions():
     model = ScenarioExistingCapacity(vehicle_population_year=2025, cleanup_tolerance=0.001)
-    assert model.method_for("ON") == "stock_age"
-    selected = model.model_copy(update={"road_stock_method": {
-        "ON": "sales_survival", "BC": "sales_survival", "other": "stock_age",
-    }})
-    assert [selected.method_for(region) for region in ("ON", "BCT", "QC")] == [
-        "sales_survival", "sales_survival", "stock_age",
-    ]
-    everywhere = model.model_copy(update={"road_stock_method": {"other": "sales_survival"}})
-    assert all(everywhere.method_for(region) == "sales_survival" for region in ("ON", "BCT", "QC"))
+    assert set(model.model_dump()) == {"vehicle_population_year", "cleanup_tolerance"}
 
 
-@pytest.mark.parametrize("selection", [{}, {"XX": "sales_survival", "other": "stock_age"}])
-def test_invalid_method_region_configuration_fails(selection):
+@pytest.mark.parametrize("selection", [{}, {"ON": "sales_survival", "other": "stock_age"}])
+def test_retired_method_selector_is_rejected(selection):
     with pytest.raises(ValidationError):
         ScenarioExistingCapacity(
             vehicle_population_year=2025, cleanup_tolerance=0.001, road_stock_method=selection,
         )
 
 
-def test_sales_scenario_rejects_double_retirement_and_age_vkt_only_when_selected():
-    payload = load_config_bundle("config/scenarios/default.yaml").scenario.model_dump(mode="python")
-    payload["geography"]["regions"] = ["ON"]
-    payload["lifetimes"]["survival_curves"] = False
-    payload["road_utilization"]["vkt_schedules"] = False
-    payload["existing_capacity"]["road_stock_method"] = {"ON": "sales_survival", "other": "stock_age"}
-    ScenarioConfig.model_validate(payload)
-    curves = deepcopy(payload)
-    curves["lifetimes"]["survival_curves"] = True
-    with pytest.raises(ValidationError, match="requires fixed future lifetimes"):
-        ScenarioConfig.model_validate(curves)
-    schedules = deepcopy(payload)
-    schedules["road_utilization"]["vkt_schedules"] = True
-    with pytest.raises(ValidationError, match="requires flat road utilization"):
-        ScenarioConfig.model_validate(schedules)
-    curves["geography"]["regions"] = ["QC"]
-    ScenarioConfig.model_validate(curves)
+@pytest.mark.parametrize("threshold", [0.005, 0.02])
+def test_curves_use_the_selected_production_tail_derivation(threshold):
+    from parameterization.road_lifetimes_survival import require_tail_derivation
+    from dataclasses import replace
 
-
-def test_selected_regions_all_require_stock_methods_even_after_sales_region():
-    payload = load_config_bundle("config/scenarios/default.yaml").scenario.model_dump(mode="python")
-    payload["geography"]["regions"] = ["ON", "QC"]
-    payload["existing_capacity"]["road_stock_method"] = {"ON": "sales_survival"}
-    with pytest.raises(ValueError, match="QC"):
-        ScenarioConfig.model_validate(payload)
+    bundle = load_config_bundle("config/scenarios/default.yaml")
+    payload = bundle.scenario.model_dump(mode="python")
+    payload["lifetimes"]["survival_curves"] = True
+    payload["lifetimes"]["tail_survival_threshold"] = threshold
+    curves = ScenarioConfig.model_validate(payload)
+    settings = require_tail_derivation(replace(bundle, scenario=curves))
+    assert settings["tail_derivation"] == "constant_retirement"
+    assert settings["threshold"] == threshold
 
 
 def test_prospective_base_year_label_retains_2030_future_endpoint():
@@ -386,7 +440,6 @@ def test_prospective_base_year_label_retains_2030_future_endpoint():
     payload["sources"]["nrcan_ceud_beyond_observed"] = "constant"
     payload["lifetimes"]["survival_curves"] = False
     payload["road_utilization"]["vkt_schedules"] = False
-    payload["existing_capacity"]["road_stock_method"] = {"ON": "sales_survival"}
     scenario = ScenarioConfig.model_validate(payload)
     assert scenario.periods.model[0] == scenario.periods.base_year == 2025
     assert scenario.periods.historical_years(2020) == list(range(2021, 2026))

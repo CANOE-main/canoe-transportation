@@ -253,6 +253,7 @@ def replace_owned_ldv_representation(
         "capacity_to_activity",
         "limit_annual_capacity_factor",
         "lifetime_tech",
+        "lifetime_process",
         "lifetime_survival_curve",
         "efficiency",
         "limit_tech_input_split",
@@ -522,6 +523,8 @@ def validate_transport_parameter_support(
     batches: Mapping[str, Sequence[CanoeBaseModel]], *, existing_vintages: Sequence[int],
     new_technologies: Sequence[str] = (),
     capacity_to_activity_technologies: Sequence[str] = (),
+    expected_survival_curve_keys: Sequence[tuple[str, str, int]] = (),
+    lifetime_technologies: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     """Check active transport keys that SQLite foreign keys cannot express.
 
@@ -533,10 +536,48 @@ def validate_transport_parameter_support(
     keys = {
         table: {(row.region, row.tech, row.vintage) for row in rows}
         for table, rows in batches.items()
-        if table not in {"limit_annual_capacity_factor", "capacity_to_activity"}
+        if table not in {"limit_annual_capacity_factor", "capacity_to_activity", "lifetime_tech"}
     }
     checks: dict[str, Any] = {}
     errors: list[str] = []
+
+    if "lifetime_survival_curve" in batches:
+        # Temoa uses a curve together with a process/technology lifetime. Its
+        # implicit 40-year fallback must not repair an incomplete contribution.
+        technology_lives = {
+            (r.region, r.tech): float(r.lifetime)
+            for r in batches.get("lifetime_tech", [])
+        }
+        process_lives = {
+            (r.region, r.tech, r.vintage): float(r.lifetime)
+            for r in batches.get("lifetime_process", [])
+        }
+        curves: dict[tuple, list] = {}
+        for row in batches["lifetime_survival_curve"]:
+            curves.setdefault((row.region, row.tech, row.vintage), []).append(row)
+        invalid_curves = []
+        for key, rows in curves.items():
+            lifetime = process_lives.get(key, technology_lives.get(key[:2]))
+            if lifetime is None or not isfinite(lifetime) or lifetime <= 0 or not lifetime.is_integer():
+                invalid_curves.append((key, "missing positive integer lifetime"))
+                continue
+            vintage, end = key[2], key[2] + int(lifetime)
+            ordered = sorted(rows, key=lambda row: row.period)
+            years = [row.period for row in ordered]
+            fractions = [float(row.fraction) for row in ordered]
+            if years != list(range(vintage, end + 1)):
+                invalid_curves.append((key, "incomplete or duplicate annual curve nodes"))
+            elif (fractions[0] != 1 or fractions[-1] != 0
+                  or any(not isfinite(value) or value < 0 or value > 1 for value in fractions)
+                  or any(right > left + 1e-12 for left, right in zip(fractions, fractions[1:]))
+                  or any(value < 0.0001 for value in fractions[1:-1])):
+                invalid_curves.append((key, "invalid survival endpoints, increasing values or a fraction below the Temoa minimum"))
+        checks["survival_curve_lifetime_contract"] = {
+            "checked_keys": len(curves), "invalid_keys": len(invalid_curves),
+            "examples": invalid_curves[:15],
+        }
+        if invalid_curves:
+            errors.append(f"survival_curve_lifetime_contract: {len(invalid_curves)} invalid curves {invalid_curves[:8]}")
 
     def record(name: str, checked: set[tuple], supported: set[tuple]) -> None:
         missing = checked - supported
@@ -546,6 +587,20 @@ def validate_transport_parameter_support(
         }
         if missing:
             errors.append(f"{name}: {len(missing)} unsupported keys {sorted(missing)[:8]}")
+
+    if "lifetime_tech" in batches or "lifetime_process" in batches:
+        active = set().union(*(values for table, values in keys.items()
+                               if table not in {"lifetime_process", "lifetime_survival_curve"}))
+        if lifetime_technologies is not None:
+            owners = set(lifetime_technologies)
+            active = {key for key in active if key[1] in owners}
+        tech_lifetimes = {(r.region, r.tech) for r in batches.get("lifetime_tech", [])}
+        supported = set(keys.get("lifetime_process", set()))
+        supported.update(key for key in active if key[:2] in tech_lifetimes)
+        record("active_process_lifetime_coverage", active, supported)
+    if "lifetime_survival_curve" in batches:
+        record("prepared_survival_curve_coverage", set(expected_survival_curve_keys),
+               keys.get("lifetime_survival_curve", set()))
 
     if "capacity_to_activity" in batches:
         required_techs = set(capacity_to_activity_technologies)

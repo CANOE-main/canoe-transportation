@@ -351,8 +351,10 @@ class ScenarioComparison(MappingModel):
 
 class ScenarioLifetimes(MappingModel):
     survival_curves: bool
-    survival_curve_max_age: int = Field(gt=0)
+    survival_curve_max_age: int | None = Field(default=None, gt=0, strict=True)
     road_lifetime_survival_source: Literal["nhtsa_nems", "moves"]
+    tail_derivation: Literal["constant_retirement"]
+    tail_survival_threshold: float = Field(gt=0, lt=1, allow_inf_nan=False, strict=True)
 
 
 class ScenarioRowNoteOverrides(MappingModel):
@@ -362,27 +364,6 @@ class ScenarioRowNoteOverrides(MappingModel):
 class ScenarioExistingCapacity(MappingModel):
     vehicle_population_year: int = Field(gt=0)
     cleanup_tolerance: float = Field(ge=0, allow_inf_nan=False)
-    road_stock_method: dict[str, Literal["stock_age", "sales_survival"]] = Field(
-        default_factory=lambda: {"other": "stock_age"},
-    )
-
-    @model_validator(mode="after")
-    def validate_road_stock_method(self) -> Self:
-        if not self.road_stock_method:
-            raise ValueError("existing_capacity.road_stock_method cannot be empty")
-        allowed = {"other", "ON", "AB", "BC", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"}
-        if set(self.road_stock_method) - allowed:
-            raise ValueError("Unknown region in existing_capacity.road_stock_method")
-        return self
-
-    def method_for(self, region: str) -> str:
-        methods = self.road_stock_method
-        key = "BC" if region == "BCT" and "BCT" not in methods and "BC" in methods else region
-        if key in methods:
-            return methods[key]
-        if "other" in methods:
-            return methods["other"]
-        raise ValueError(f"No road_stock_method for selected region {region}; provide a regional value or other")
 
 
 class ScenarioDemand(MappingModel):
@@ -392,7 +373,6 @@ class ScenarioDemand(MappingModel):
 
 class ScenarioRoadUtilization(MappingModel):
     vkt_schedules: bool
-    vkt_max_age: int = Field(gt=0)
 
 
 class ScenarioEfficiencies(MappingModel):
@@ -447,29 +427,16 @@ class ScenarioConfig(MappingModel):
     def validate_parameter_horizons(self) -> Self:
         if len(set(self.notebook_diagnostics)) != len(self.notebook_diagnostics):
             raise ValueError("notebook_diagnostics cannot repeat a notebook")
-        if self.lifetimes.survival_curves and (
-            self.lifetimes.survival_curve_max_age < self.periods.step - 1
-        ):
-            raise ValueError("lifetimes.survival_curve_max_age cannot contain a full period")
-        if self.road_utilization.vkt_schedules and (
-            self.road_utilization.vkt_max_age < self.periods.step
-        ):
-            raise ValueError("road_utilization.vkt_max_age cannot contain a full period")
-        stock_methods = [self.existing_capacity.method_for(region) for region in self.geography.regions]
-        if "sales_survival" in stock_methods:
-            if self.lifetimes.survival_curves:
-                raise ValueError(
-                    "sales_survival requires fixed future lifetimes: current unconditional "
-                    "survival rows would apply historical retirement twice"
-                )
-            if self.road_utilization.vkt_schedules:
-                raise ValueError("sales_survival activity calibration requires flat road utilization")
+        if (self.road_utilization.vkt_schedules
+                and self.lifetimes.survival_curve_max_age is not None
+                and self.lifetimes.survival_curve_max_age < self.periods.step):
+            raise ValueError("survival_curve_max_age cannot contain a full mileage period")
         return self
 
 
 ParameterTable = Literal[
     "existing_capacity", "demand", "efficiency", "cost_invest", "cost_fixed",
-    "cost_variable", "emission_embodied", "lifetime_tech", "lifetime_survival_curve",
+    "cost_variable", "emission_embodied", "lifetime_tech", "lifetime_process", "lifetime_survival_curve",
     "limit_annual_capacity_factor", "capacity_factor_tech", "limit_tech_input_split",
     "limit_tech_input_split_annual",
     "limit_new_capacity_share",

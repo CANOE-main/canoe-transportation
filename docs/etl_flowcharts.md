@@ -16,7 +16,7 @@ each operation. The legend below is local to these diagrams.
 - [`existing_capacity`](#existing_capacity)
 - [`demand`](#demand)
 - [`limit_annual_capacity_factor`](#limit_annual_capacity_factor)
-- [`lifetime_tech` and `lifetime_survival_curve`](#lifetime_tech-and-lifetime_survival_curve)
+- [`lifetime_tech`, `lifetime_process` and `lifetime_survival_curve`](#lifetime_tech-lifetime_process-and-lifetime_survival_curve)
 - [`efficiency`](#efficiency)
 - [`cost_invest`](#cost_invest)
 - [`cost_variable`](#cost_variable)
@@ -85,7 +85,7 @@ flowchart LR
   s0[("`**NRCan CEUD**
     Provincial vehicle sales, stocks, off-road energy use, and energy intensities`")]
 
-  subgraph expansion["`**Vehicle population evidence**`"]
+  subgraph expansion["`**Vehicle population**`"]
     direction LR
     s1[("`**ON Ministry of Transport (MTO)**
       • *Report A:* vehicle counts by make-model codes, model year, and status
@@ -96,7 +96,7 @@ flowchart LR
       Vehicle counts by make-model, vintage, and size class; aggregated and indexed by two attributes at a time`")]
   end
 
-  subgraph classes["`**Vehicle class mapping evidence**`"]
+  subgraph classes["`**Vehicle class mapping**`"]
     s1_2[("`**NRCan Fuel Consum. Ratings**
       Official vehicle make and model mappings into size classes`")]
     s1_3[("`**EPA Fuel Economy API**
@@ -111,9 +111,10 @@ flowchart LR
     Latest quarterly medium- and heavy-duty EV market shares by province; annual shares not disclosed by province`")]
 
   %% ############ Processes ###########
-  p1["`**Fleet age distribution**
-    • *Road:* distribute baseline stock by age.
-    *MTO Report A is mapped into NRCan CEUD cars and light trucks via MTO code-to-model inference; and Report 5 distributes MHD truck, bus, and motorcycle age cohorts*<br>
+  %% #to-review: Updated production cohort preparation.
+  p1["`**Annual fleet cohorts**
+    • *Cars and trucks:* reconstruct sales and survival; scale to NRCan CEUD stock at the base year<br>
+    • *Buses and motorcycles:* distribute stocks by MTO age evidence<br>
     • *Off-road:* treat provincial energy use ÷ intensity as stock, then distribute by age`"]
 
   p1_2@{shape: notch-rect, label: "**Vehicle population mapping diagnosis**
@@ -124,7 +125,7 @@ flowchart LR
     • Report A vs Report 5 age cohorts
     • MTO stock vs NRCan CEUD data
     • survival rates from mapped cohorts"}
-  p1 -- vehicle_stock_diagnosis.py --> p1_2
+  p1 -- vehicle_population_diagnosis.py --> p1_2
   s0 -- nrcan_ceud.py --> p1
   s1 -- vehicle_population.py --> p1
   s1_2 -- nrcan_ceud.py --> p1
@@ -132,8 +133,9 @@ flowchart LR
   vpic_model_years.py
   vpic_vehicle_types.py --> p1
 
+  %% #to-review: Preserve annual powertrain allocation in both lifetime modes.
   p2["`**Fleet powertrain distribution**
-    • *Road:* distribute age-specific stock by powertrain<br>
+    • *Cars and trucks:* apply annual registration shares to sales and surviving stock<br>
     • *Off-road:* incumbent techs mostly use diesel or jet fuel<br>
     • Aggregate into 5-year vintages`"]
   p1 -- road_aggregation.py --> p2
@@ -141,7 +143,16 @@ flowchart LR
   s5 -- statcan_tables.py --> p2
   s6 -- assorted_sources.py --> p2
 
-  p2 -- build_existing_capacity.py --> o1[/"`**existing_capacity**
+  %% #to-review: Shared source-tail rule and capacity basis.
+  s7@{shape: processes, label: "**Road survival curves**
+    NHTSA & NEMS, or MOVES; extend the last retirement rate to the selected survival threshold, then zero"}
+  s7 -- road_lifetimes_survival.py --> p1
+
+  p3["`**Existing fleet capacity**
+    • *Curves off:* surviving stock with fixed-lifetime allocation<br>
+    • *Curves on:* sales-equivalent capacity with annual survival and explicit lifetimes<br>
+    • Keep physical survivors for utilization and efficiency`"]
+  p2 -- build_existing_capacity.py --> p3 --> o1[/"`**existing_capacity**
     [k vehicles]
     [bn tonne-km]
     [bn passenger-km]`"/]
@@ -161,7 +172,8 @@ flowchart LR
 | Harmonization rule                                     | Affected classes      | Description                                                                                                                          |
 | ------------------------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Fetch vehicle counts by inferred size class            | Cars and light trucks | Map make-model-vintage keys with the reviewed NRCan and FuelEconomy.gov evidence crosswalk                                       |
-| Distribute stock by age                                | Road vehicles         | Distribute NRCan CEUD stocks over existing vintages using age cohort registrations                               |
+| Reconstruct and calibrate cohorts | Cars and trucks | `k = CEUD reference stock / sum(sales * survival)`, one factor per region/class; preserve annual acquisitions and survivors separately. MTO stock-age allocation is diagnostic only. #to-review |
+| Retain stock-age allocation | Buses and motorcycles | Keep their existing MTO age distributions and fixed lifetime treatment. #to-review |
 | Treat energy use<sub>province</sub>÷intensity as stock | Off-road modes        | Air, rail, and marine fleet size are estimated from the available supply capacity to satisfy demand by vintage (in demand units)      |
 | Distribute stock by age                                | Off-road modes        | Available demand supply by vintage is estimated with a fleet turnover approximation assuming an avg. annual retirement of 1÷lifetime |
 | Distribute stock<sub>age</sub> by powertrain           | Cars and light trucks | Each stock by vintage gets distributed over vehicle market shares by fuel type                                                       |
@@ -245,7 +257,7 @@ flowchart LR
 
   %% ############ Processes ###########
   p0["`**Annual vehicle utilization (UF)**
-    **eq. (i)** 5-year avg of activity ÷ stock excluding 2020-2021, then scaled by **capacity_to_activity**`"]
+    **eq. (i)** Cars/trucks: base-year activity divided by calibrated physical surviving stock and **capacity_to_activity**. Other classes retain the observed-year mean. #to-review`"]
   s0 -- nrcan_ceud.py --> p0
   s0_2 -- inputs/0_manual_params/ --> p0
 
@@ -296,7 +308,7 @@ flowchart LR
 | Aggregate profiles and normalize            | Road vehicles    | Aggregate annual mileage profiles by vehicle size/weight class using aggregation mappings (see `efficiency` flowchart) and apply max scaling to each series           |
 | Scale utilization by normalized trajectory  | Road vehicles    | Baseline utilization is indexed through normalized age trajectories to obtain utilization as a function of vehicle age, mostly decaying                               |
 
-### `lifetime_tech` and `lifetime_survival_curve`
+### `lifetime_tech`, `lifetime_process` and `lifetime_survival_curve`
 
 ```mermaid
 ---
@@ -309,7 +321,8 @@ config:
 ---
 flowchart LR
   %% ############ Sources ###########
-  subgraph survival["`**Road vehicle fleet survival rates (US sources)**`"]
+  %% Source profile selection includes MOVES and NHTSA/NEMS. #to-review
+  subgraph survival["US survival schedules"]
     direction LR
     s2[("`**NHTSA CAFE model**
       Car, light- and medium-truck survival rates`")]
@@ -319,7 +332,7 @@ flowchart LR
       Cars, light and heavy truck survival rates (Table C-1)`")]
   end
 
-  subgraph population["`**Vehicle population evidence**`"]
+  subgraph population["Population evidence"]
     direction LR
     s0[("`**ON Ministry of Transport (MTO)**
       • *Report A:* vehicle counts by make-model codes, model year, and status`")]
@@ -340,7 +353,7 @@ flowchart LR
     • **eq. (i)** Estimate apparent retirement from make-model-vintage cohorts across Report A editions before mapping<br>
     • The MTO make-model mapping separates LDV stock exposure from unmapped and non-LDV; and aggregates evidence accordingly<br>
     • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
-    • Because the resulting survival rates are very similar to aggregated NHTSA CAFE curves → **Only NHTSA CAFE and selected heavy-truck sources are promoted as parameters**`"]
+    • Production uses the selected NHTSA/NEMS or MOVES profile; MTO estimates remain diagnostic #to-review`"]
   p4 -- "road_lifetimes_survival.py" --> p0
   s0 -. "`vehicle_population.py
     *\*diagnostic-only*`" .-> p0
@@ -354,7 +367,7 @@ flowchart LR
     • Report A vs Report 5 age cohorts
     • MTO stock vs NRCan CEUD data
     • survival rates from mapped cohorts"}
-  p0 -- vehicle_stock_diagnosis.py --> p0_2
+  p0 -- vehicle_population_diagnosis.py --> p0_2
 
   p1@{shape: hex, label: "**config/scenarios/**
     *survival_curves:* true or false"}
@@ -366,7 +379,9 @@ flowchart LR
     Lifetime of remaining modes"}
 
   p2@{shape: hex, label: "**config/scenarios/**
-    *survival_curve_max_age:* 29"}
+    *tail_derivation:* constant_retirement<br>
+    *tail_survival_threshold:* 0.005 (0.5%)<br>
+    *survival_curve_max_age:* optional hard zero cap; null derives the end age #to-review"}
   p1 -. true .-> p2
 
   p3["`**Fixed lifetimes**
@@ -376,7 +391,11 @@ flowchart LR
   s4 -- statcan_tables.py --> p3
   s5 -- inputs/0_manual_params/ --> p3
 
-  p2 -. "build_lifetime_parameters.py" .-> o1[/"`**lifetime_survival_curve**
+  p2 -. true .-> pt["`**Annual reconciled curves**
+    Extend the last annual retirement rate to 0.5% survival, then zero; use the same schedule for stock calibration and vintage curves #to-review`"]
+  pt -. "build_lifetime_parameters.py" .-> ol[/"`**lifetime_process**
+    Explicit terminal year minus model vintage [years] #to-review`"/]
+  pt -. "build_lifetime_parameters.py" .-> o1[/"`**lifetime_survival_curve**
     [-]`"/]
   p3 -- build_lifetime_parameters.py
   offroad_lifetimes.py --> o2[/"`**lifetime_tech**
@@ -411,14 +430,15 @@ The cumulative MTO survival is a product of those empirical rates with an explic
 
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
-| Standardize source survival schedules | Road vehicles | Keep NHTSA cumulative survival values as reported. Convert NEMS annual scrappage rates into cumulative survival, starting at 100% at age zero. |
-| Map source schedules to model classes | Road vehicles | Assign NHTSA schedules to car and light-truck classes, using the latest Wards shares to combine the light-truck schedules. Keep NEMS medium- and heavy-truck weight classes separate unless reviewed aggregation weights are available. |
-| Compile fixed lifetimes | All | When survival curves are disabled, keep configured fixed lifetimes and fill missing road-vehicle values with the first age at which the accepted survival curve reaches 50% or less. Use StatCan or configured average lifetimes for the remaining modes. |
-| Select the lifetime representation | All | Use `survival_curves` to select fixed lifetimes or accepted road-vehicle curves. `survival_curve_max_age` limits the curve and stock-age horizon; it is not an individual technology lifetime. |
+| Standardize source survival schedules | Cars and trucks | Keep NHTSA cumulative values. Convert NEMS scrappage and MOVES annual retention to cumulative survival from one at age zero. MOVES rate at age a supplies survival at a+1, including rate40 to age41. #to-review |
+| Map source schedules to model classes | Cars and trucks | NHTSA/NEMS uses NHTSA cars, weighted light trucks, NHTSA 2b/3 medium trucks and NEMS heavy trucks. MOVES uses car/light/heavy schedules, with medium trucks sharing the heavy schedule. Apply configured class weights. #to-review |
+| Compile fixed lifetimes | All | With curves off, selected car/truck classes use the first age at which source survival reaches 50% or less. Remaining modes retain StatCan or reviewed fixed lifetimes. #to-review |
+| Select the lifetime representation | All | Curves off uses fixed lifetimes. Curves on uses annual survival and a matching process lifetime; Temoa computes period averages. #to-review |
+| Reconcile terminal survival | Cars and trucks | Retain native values, extend the last annual retirement rate to 0.5% survival, then append zero. Apply an optional hard zero age from the scenario. Use this schedule for calibration and future survival; preserve annual totals when grouping vintages and audit any adjustment required by Temoa. #to-review |
 | Estimate MTO annual changes before mapping | Cars and light trucks | Compare `FIT_ACTIVE` counts for the same make-model and model year in consecutive Report A editions. Keep increases as observed rather than forcing every annual ratio between zero and one. |
 | Map and aggregate MTO diagnostics | Cars and light trucks | Attach reviewed vintage-range mappings only after the raw annual changes are calculated. Sum the starting and following counts by NLR and NRCan CEUD class and age before calculating class-level rates. |
 | Limit and check MTO diagnostic evidence | Cars and light trucks | Use starting ages 0 through 35, including eligible pre-2000 model years. Report mapping coverage, age gaps, unusual rates, and sample support; do not fill missing ages or the older tail with NHTSA or NEMS values. |
-| Keep MTO results diagnostic | Cars and light trucks | Treat the results as changes in registered stock, not direct observations of vehicle retirement. Compare them with accepted NHTSA curves only after the MTO series is derived; the current decision keeps NHTSA curves as CANOE parameters. |
+| Keep MTO results diagnostic | Cars and light trucks | Treat the results as changes in registered stock, not direct observations of vehicle retirement. Compare them with accepted NHTSA curves only after the MTO series is derived; production uses the configured NHTSA/NEMS or MOVES profile. #to-review |
 
 **Notes:**
 
@@ -427,7 +447,7 @@ The cumulative MTO survival is a product of those empirical rates with an explic
   loading MTO history or its reviewed mapping. `--mto-diagnostics` publishes the MTO
   review evidence; `--all` runs both paths.
 - Detailed MTO filters, evidence checks, and comparisons are documented in
-  `docs/insights/vehicle_stock_diagnosis.py`.
+  `docs/insights/vehicle_population_diagnosis.py`.
 
 ### `efficiency`
 
@@ -476,7 +496,7 @@ flowchart LR
       • Report A vs Wards LDV class shares
       • Report 4 vs Wards MD truck shares
       • survival rates from mapped cohorts"}
-    p0 -- vehicle_stock_diagnosis.py --> p0_2
+    p0 -- vehicle_population_diagnosis.py --> p0_2
 
   subgraph road["`**Road efficiencies**`"]
     s1[("`**NRCan Fuel Consum. Ratings**
@@ -501,7 +521,7 @@ flowchart LR
   s9[("`**NRCan CEUD**
     Activity, avg. annual distance travelled and stock used to derive occupancy and payload`")]
   s11@{shape: processes, label: "**Annual cohort aggregation weights**
-      Reuse ***existing_capacity*** cohort counts by fuel and class for period aggregation"}  
+      Use physical surviving cohort counts by fuel and class; never acquisition-capacity weights #to-review"}
 
   %% ############ Processes ###########
   p2_2@{shape: hex, label: "**config/scenarios/**
@@ -568,7 +588,7 @@ flowchart LR
 | Derive regional- and long-haul activity weights | Heavy-duty trucks | Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
 | Aggregate NRCan ratings using mappings | Cars and light trucks | Within each exact model-year, size-class and powertrain/range cohort, average distinct make-models (or use the configured median), then apply MTO class weights. MTO supplies class/vintage evidence, not powertrain/range shares. |
 | Retain each range's observed consumption | Cars and light trucks | Retain each range's exact NRCan history. Form PHEV totals from CD electricity/liquid fuel and CS fuel using the matched ATB bucket's utility factor. Missing years reduce coverage; only wholly empty bins may use a recorded, configured analogue. |
-| Anchor future LDVs to Canadian cohorts | Cars and light trucks | Weight the latest historical period bin's consumption by `existing_capacity` cohort counts. Use each non-PEV's own ATB improvement ratio; BEV/PHEV ranges use BEV300/PHEV35 anchors: `C_range(y) = C_anchor × ATB_range(y) / ATB_anchor(reference)`. Use observed years in the latest configured historical bin, through `base_year`, to establish the anchor; use the first model-period year as the ATB ratio reference. |
+| Anchor future LDVs to Canadian cohorts | Cars and light trucks | Weight the latest historical period bin's consumption by physical survivor counts, independent of solver-capacity representation. #to-review Use each non-PEV's own ATB improvement ratio; BEV/PHEV ranges use BEV300/PHEV35 anchors: `C_range(y) = C_anchor × ATB_range(y) / ATB_anchor(reference)`. Use observed years in the latest configured historical bin, through `base_year`, to establish the anchor; use the configured ATB bridge reference year. #to-review |
 | Derive emerging truck history | MD/HD trucks | Multiply annual NRCan CEUD diesel consumption by the aggregated ATB target/diesel consumption ratio at the first projection reference year. All truck histories use average fleet consumption as vintage proxies; emerging histories (e.g., battery trucks) are derived, not observed model-year efficiencies. |
 | Project from the latest truck cohort | MD/HD trucks | Weight the latest period bin's incumbent or derived emerging consumption by its own cohort counts. Use an explicit diesel cohort proxy when an emerging powertrain has no positive own counts. Apply each powertrain's ATB future/reference consumption ratio (diesel's for gasoline); hold the load factor averaged with the same cohort weights. |
 | Special handling of buses | Transit, school, intercity | Existing school/transit efficiencies are indexed backwards from ATB using CEUD historical service-intensity ratios. Intercity buses use an ATB transit diesel baseline with REGEN powertrain/diesel consumption ratios; HEVs retain the ATB transit HEV/diesel ratio. |
@@ -893,9 +913,9 @@ flowchart LR
     L1 residential charger installation cost per port; excluding charger cost since these tend to be included with PEV acquisition"}
   s5@{shape: docs, label: "**CMU OEO model assumptions**
       Fixed costs of charging infrastructure set to 1% of CAPEX (Borlaug et al. 2021)"}
-  oi[/"`***existing_capacity***
+  oi[/"`***Physical surviving stock***
     [k vehicles]
-    *Retrieve LD and MHD EV stock`"/]  
+    *Retrieve LD and MHD EV survivors at base_year; not acquisition capacity* #to-review`"/]
 
   %% ############ Processes ###########
   p0["`**Aggregated capital and fixed costs**

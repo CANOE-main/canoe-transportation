@@ -89,14 +89,21 @@ artifacts:
     producers:
       - fetching.assorted_sources.fetch_and_normalize
       - fetching.assorted_sources.fetch_and_normalize_moves5_survival
-    consumers: [parameterization.road_lifetimes_survival, docs.insights.vehicle_stock_diagnosis]
+    consumers: [parameterization.road_lifetimes_survival, docs.insights.vehicle_population_diagnosis]
     validation_surfaces:
       - fetching.assorted_sources.validate_cached_identity
       - fetching.assorted_sources.normalize_moves5_survival
       - parameterization.road_lifetimes_survival.validate_accepted_survival_inputs
   # Opt-in database review; no production prerequisite consumes these products.
+  stock_cohort_notebook:
+    path: docs/insights/stock_cohort_diagnosis.py
+    layer: documentation
+    owner: validation.stock_cohort_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [validation.stock_cohort_diagnostic.load_stock_cohort_diagnosis, marimo.check]
   transport_comparison_notebook:
-    path: docs/insights/transport_comparison_diagnosis.py
+    path: docs/insights/legacy_comparison_diagnosis.py
     layer: documentation
     owner: validation.transport_comparison
     producers: [reviewers]
@@ -107,7 +114,7 @@ artifacts:
     layer: output_validation
     owner: validation.transport_comparison
     producers: [validation.transport_comparison, marimo.export]
-    consumers: [docs.insights.transport_comparison_diagnosis, reviewers]
+    consumers: [docs.insights.legacy_comparison_diagnosis, reviewers]
     validation_surfaces: [validation.transport_comparison.load_diagnostic]
   transport_comparison_database:
     path: outputs/sqlite/legacy_reproduction.sqlite
@@ -153,7 +160,7 @@ artifacts:
     consumers: [validation.vehicle_stock_diagnostic, validation.ldv_efficiency_diagnostic, reviewers]
     validation_surfaces: [validation.notebook_evidence.load_notebook_evidence]
   vehicle_stock_notebook:
-    path: docs/insights/vehicle_stock_diagnosis.py
+    path: docs/insights/vehicle_population_diagnosis.py
     layer: documentation
     owner: validation.vehicle_stock_diagnostic
     producers: [reviewers]
@@ -361,7 +368,7 @@ artifacts:
       - parameterization.road_lifetimes_survival.build_accepted_lifetime_artifacts
       - parameterization.road_lifetimes_survival.build_lifetime_artifacts
     consumers: [reviewers]
-    validation_surfaces: [parameterization.road_lifetimes_survival.median_equivalent_lifetimes]
+    validation_surfaces: [parameterization.road_lifetimes_survival.median_equivalent_lifetimes, parameterization.road_cohort_survival.reconcile_survival_schedules, parameterization.road_cohort_survival.build_composite_cohorts]
   lifetime_parameters:
     path: inputs/2_processed/lifetime_parameters
     layer: processed

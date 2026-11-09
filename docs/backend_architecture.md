@@ -59,7 +59,7 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │   ├── parameterization/                    # Transform normalized inputs into model parameters
 │   │   ├── build_existing_capacity.py       # Combine and validate road/off-road capacity rows
 │   │   ├── build_demand.py                  # Project and validate combined transport demand
-│   │   ├── build_lifetime_parameters.py     # Select and validate fixed/curve lifetime rows
+│   │   ├── build_lifetime_parameters.py     # Prepare fixed lifetimes or annual curves with process endpoints #to-review
 │   │   ├── build_efficiencies.py            # Combine efficiency rows and PHEV input splits
 │   │   ├── build_costs.py                   # Combine and validate investment/variable costs
 │   │   ├── manual_parameters.py             # Validate registry and resolve generic selectors
@@ -68,6 +68,7 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │   │   ├── road_utilization.py              # Road C2A and annual utilization, including vintage-period artifacts
 │   │   ├── offroad_stocks_and_demands.py    # Off-road existing stock and demand products
 │   │   ├── road_lifetimes_survival.py       # Accepted road lifetime, survival, and MTO diagnostics
+│   │   ├── road_cohort_survival.py          # Pure annual survival reconciliation and cohort arithmetic #to-review
 │   │   ├── offroad_lifetimes.py             # Lifetimes of remaining technologies
 │   │   ├── road_aggregation.py              # Reviewed mapping application and aggregation weights
 │   │   ├── road_fleet_weights.py            # Shared production class/powertrain fleet composition
@@ -98,6 +99,7 @@ The tree below maps the implemented entrypoints and their owners. An upstream-sp
 │       ├── legacy_compare.py                # Narrow configured legacy comparison
 │       ├── sqlite_compare.py                # Scenario-to-scenario SQLite comparison
 │       ├── transportation_research.py       # Opt-in researcher reference, cohort and closure reports
+│       ├── stock_cohort_diagnostic.py       # Read-only sales, stock and survival diagnostics #to-review
 │       ├── charging_cost_comparison.py      # Opt-in source-year and unit-aware charger cost comparison
 │       ├── notebook_evidence.py             # Captured, hash-validated stock/efficiency evidence bundles
 │       ├── vehicle_stock_diagnostic.py      # Reader and views for recorded stock/mapping/retention evidence
@@ -145,11 +147,24 @@ coverage and keys, and publish configured artifacts without opening SQLite conne
 
 | Builder | Prepared contract |
 | --- | --- |
-| `build_existing_capacity` | Road/off-road technology-vintage capacity and reconciliation evidence. |
+| `build_existing_capacity` | Solver capacity rows, physical reference-year stock, annual acquisitions, provenance and reconciliation evidence. #to-review |
 | `build_demand` | Road/off-road base activity, CER scenario projections, and regional-period demand. |
-| `build_lifetime_parameters` | Exactly one fixed or survival-curve representation per modeled region/technology. |
+| `build_lifetime_parameters` | Fixed technology lifetimes; curve mode instead supplies annual survival and matching process lifetimes. Curves and lifetimes are complementary Temoa inputs. #to-review |
 | `build_efficiencies` | Fuel/service efficiency edges and PHEV input splits, gated by existing capacity. |
 | `build_costs` | Investment and variable costs, harmonized with `currency` and constrained by capacity/lifetime coverage. |
+
+`road_cohort_survival` owns pure source-tail reconciliation and acquisition-weighted
+vintage survival arithmetic. `road_lifetimes_survival` selects registered schedules and extends
+the last retirement rate to the scenario survival threshold (0.5% by default), followed by zero. `build_existing_capacity` exposes physical survivors
+separately from solver capacity; utilization, efficiency and charger preparation consume
+that physical-stock contract. Contribution insertion rechecks annual curve endpoints,
+positive annual values and explicit lifetime coverage before writing. #to-review
+
+The stock/cohort notebook uses `validation.stock_cohort_diagnostic` to reconstruct
+comparisons from registered inputs without publishing production parameters. The notebook
+assesses the promoted constant-retirement method and reports its end ages and any
+extra retirement after grouping. Curve builds validate annual values and matching
+process lifetimes before publication. #to-review
 
 `build_transport.py` calls the same preparation functions for standalone and caller-owned
 assembly. `prepare_transport_contribution` gathers structural templates, capacity, demand,

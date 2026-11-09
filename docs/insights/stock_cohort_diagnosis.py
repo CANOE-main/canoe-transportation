@@ -1,8 +1,4 @@
-"""Read-only stock/cohort diagnosis using the configured transportation research report.
-
-Owner: validation.transportation_research; source layer: output_validation.
-This documentation notebook does not publish parameters or acquire upstream code.
-"""
+"""Read-only comparison of sales cohorts, fixed allocation and curve-mode inputs."""
 
 import marimo
 
@@ -12,30 +8,136 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    from math import ceil, floor
     import altair as alt
     import marimo as mo
     import numpy as np
     import pandas as pd
-    from validation.transportation_research import load_validation_diagnosis
+    from validation.stock_cohort_diagnostic import comparison_lineage, load_stock_cohort_diagnosis
 
-    STOCK_LABELS = {
-        "cars": "Cars", "passenger_light_trucks": "Light trucks",
-        "freight_light_trucks": "Light trucks", "medium_trucks": "Medium trucks",
+    CLASS_LABELS = {
+        "cars": "Cars", "passenger_light_trucks": "Passenger light trucks",
+        "freight_light_trucks": "Freight light trucks", "medium_trucks": "Medium trucks",
         "heavy_trucks": "Heavy trucks",
     }
+    STOCK_LABELS = {**CLASS_LABELS, "passenger_light_trucks": "Light trucks", "freight_light_trucks": "Light trucks"}
     STOCK_ORDER = ["Cars", "Light trucks", "Medium trucks", "Heavy trucks"]
-    TEMOA_COMMIT = "cb2f51503ddb4dc6607c73635098d34c5e2d1283"
-    TEMOA_SOURCE = f"https://github.com/TemoaProject/temoa/blob/{TEMOA_COMMIT}/temoa"
+    PROFILE_LABELS = {"moves": "MOVES", "nhtsa_nems": "NHTSA + NEMS"}
 
-    def stock_grid(chart, paired_scales=False):
-        if paired_scales:
-            rows = [chart.transform_filter(alt.FieldOneOfPredicate(field="Class", oneOf=names)).properties(
-                width=370, height=215).facet(column=alt.Column("Class:N", sort=names, title=None)).resolve_scale(y="shared")
-                for names in [STOCK_ORDER[:2], STOCK_ORDER[2:]]]
-            return alt.vconcat(*rows, spacing=20).resolve_scale(y="independent")
+    def stock_grid(chart):
         return chart.properties(width=370, height=190).facet(
             facet=alt.Facet("Class:N", sort=STOCK_ORDER, title=None), columns=2,
         ).resolve_scale(x="shared", y="independent")
+
+    def clipped_diagonals(x_left, x_right, y_bottom, y_top, spacing=7.):
+        """Return 45-degree pixel-space segments clipped to an axis-aligned box."""
+        if x_right <= x_left or y_top <= y_bottom:
+            return []
+        lower = floor((y_bottom - x_right) / spacing)
+        upper = ceil((y_top - x_left) / spacing)
+        result = []
+        for offset_index in range(lower, upper + 1):
+            intercept = offset_index * spacing
+            start = max(x_left, y_bottom - intercept)
+            stop = min(x_right, y_top - intercept)
+            if stop > start + 1e-10:
+                result.append((start, stop, start + intercept, stop + intercept))
+        return result
+
+
+    def build_cohort_hatching(contributions, builds, panel_height=190, panel_width=370,
+                             value_column="surviving_k_vehicles", period_step=5):
+        """Stack unchanged capacities and clip diagonal rules to legacy bar bounds.
+
+        Quantitative rectangle coordinates use years and thousand vehicles. Invisible
+        extents fix the per-class scale; with nice=False at 370x190, hatch spacing is
+        seven pixels and slopes are 45 degrees. This is display geometry only.
+        """
+        if len(builds) != 2 or len(set(builds)) != 2 or panel_height <= 0 or panel_width <= 0 or period_step <= 0:
+            raise ValueError("Two distinct builds and positive panel dimensions are required")
+        required = ["Class", "evidence", "vintage", "annual_position", "cohort_position",
+                    "vintage_year", "interval", value_column]
+        rectangles = contributions[required].copy()
+        if rectangles.empty or rectangles[required].isna().any().any():
+            raise ValueError("Cohort contributions must be nonempty with complete labels")
+        numeric = rectangles[["vintage", "annual_position", "vintage_year", value_column]]
+        if not np.isfinite(numeric).all().all() or rectangles[value_column].lt(0).any():
+            raise ValueError("Cohort coordinates/capacities must be finite and nonnegative")
+        if not set(rectangles.evidence) <= set(builds):
+            raise ValueError("Unknown build in cohort contributions")
+        rectangles["build_order"] = rectangles.evidence.map({value: index for index, value in enumerate(builds)})
+        rectangles = rectangles.sort_values(["Class", "vintage", "build_order", "annual_position", "vintage_year"]).reset_index(drop=True)
+        keys = ["Class", "evidence", "vintage"]
+        rectangles["y1"] = rectangles.groupby(keys, sort=False)[value_column].cumsum()
+        rectangles["y0"] = rectangles.y1 - rectangles[value_column]
+        rectangles["bar_total"] = rectangles.groupby(keys, sort=False)[value_column].transform("sum")
+        # The grouped pair occupies 60% of the configured vintage spacing.
+        centers = rectangles.vintage + rectangles.build_order.map({0: -.16 * period_step, 1: .16 * period_step})
+        rectangles["x0"], rectangles["x1"] = centers - .14 * period_step, centers + .14 * period_step
+        minimum = float(rectangles.vintage.min()) - .5 * period_step
+        maximum = float(rectangles.vintage.max()) + .5 * period_step
+        span = maximum - minimum
+        totals = rectangles.groupby(keys, as_index=False).bar_total.first()
+        maxima = totals.groupby("Class").bar_total.max()
+        extents = pd.DataFrame({"Class": maxima.index, "y1": np.where(maxima.gt(0), maxima * 1.05, 1.)})
+        extents["y0"], extents["x0"], extents["x1"] = 0., minimum, maximum
+        ymax_by_class = extents.set_index("Class").y1.to_dict()
+        stripes = []
+        legacy = rectangles.loc[rectangles.evidence.eq(builds[1])].drop_duplicates(keys)
+        for bar in legacy.itertuples(index=False):
+            ymax = ymax_by_class[bar.Class]
+            left = (bar.x0 - minimum) * panel_width / span
+            right = (bar.x1 - minimum) * panel_width / span
+            top = bar.bar_total * panel_height / ymax
+            for stripe_id, (x0, x1, y0, y1) in enumerate(clipped_diagonals(left, right, 0., top)):
+                stripes.append({
+                    "Class": bar.Class, "evidence": bar.evidence, "vintage": bar.vintage,
+                    "stripe_id": stripe_id,
+                    "x0": minimum + x0 * span / panel_width,
+                    "x1": minimum + x1 * span / panel_width,
+                    "y0": y0 * ymax / panel_height, "y1": y1 * ymax / panel_height,
+                    "bar_x0": bar.x0, "bar_x1": bar.x1, "bar_y1": bar.bar_total,
+                })
+        stripe_columns = ["Class", "evidence", "vintage", "stripe_id", "x0", "x1", "y0", "y1", "bar_x0", "bar_x1", "bar_y1"]
+        stripes = pd.DataFrame(stripes, columns=stripe_columns)
+        rectangles.attrs.update({"vintage_ticks": sorted(rectangles.vintage.unique().tolist()),
+                                 "x_domain": [minimum, maximum], "y_domains": ymax_by_class,
+                                 "stripe_spacing_px": 7., "stripe_slope_pixels": 1.})
+        return rectangles, stripes, extents
+
+    def cohort_style_legend(positions, builds, bases):
+        """A vertical key using the same colours and real solid/striped swatches."""
+        year_rows = pd.DataFrame({"cohort_position": positions, "y0": [24 + 21 * i for i in range(len(positions))]})
+        year_rows["y1"] = year_rows.y0 + 13
+        year_rows["y"] = year_rows.y0 + 6.5
+        build_title_y = 50 + 21 * len(positions)
+        build_rows = pd.DataFrame({"label": [builds[0] + " (solid)\n" + bases[0], builds[1] + " (striped)\n" + bases[1]],
+                                   "y0": [build_title_y + 16., build_title_y + 60.],
+                                   "y1": [build_title_y + 32., build_title_y + 76.],
+                                   "y": [build_title_y + 24., build_title_y + 68.]})
+        stripe_rows = pd.DataFrame(clipped_diagonals(0., 16., build_title_y + 60., build_title_y + 76., spacing=5.),
+                                   columns=["x0", "x1", "y0", "y1"])
+        stripe_rows[["y0", "y1"]] = (2 * build_title_y + 136.) - stripe_rows[["y0", "y1"]]
+        x_scale = alt.Scale(domain=[0, 240], nice=False, zero=False)
+        y_scale = alt.Scale(domain=[build_title_y + 95, 0], nice=False, zero=False)
+        years = alt.Chart(year_rows).mark_rect().encode(
+            x=alt.X(datum=0, scale=x_scale, axis=None), x2=alt.X2(datum=16),
+            y=alt.Y("y0:Q", scale=y_scale, axis=None), y2="y1:Q",
+            color=alt.Color("cohort_position:N", scale=alt.Scale(domain=positions, scheme="blues"), legend=None))
+        year_text = alt.Chart(year_rows).mark_text(align="left", baseline="middle", fontSize=11).encode(
+            x=alt.X(datum=24, scale=x_scale, axis=None), y=alt.Y("y:Q", scale=y_scale, axis=None), text="cohort_position:N")
+        swatches = alt.Chart(build_rows).mark_rect(fill="#bdbdbd", stroke="#777", strokeWidth=.4).encode(
+            x=alt.X(datum=0, scale=x_scale, axis=None), x2=alt.X2(datum=16),
+            y=alt.Y("y0:Q", scale=y_scale, axis=None), y2="y1:Q")
+        stripes = alt.Chart(stripe_rows).mark_rule(stroke="#222", strokeWidth=.7).encode(
+            x=alt.X("x0:Q", scale=x_scale, axis=None), x2="x1:Q",
+            y=alt.Y("y0:Q", scale=y_scale, axis=None), y2="y1:Q")
+        build_text = alt.Chart(build_rows).mark_text(align="left", baseline="middle", fontSize=11, lineBreak="\n", lineHeight=14).encode(
+            x=alt.X(datum=24, scale=x_scale, axis=None), y=alt.Y("y:Q", scale=y_scale, axis=None), text="label:N")
+        titles = alt.Chart(pd.DataFrame({"label": [f"{len(positions)}-year cohorts", "Method"], "y": [10, build_title_y]})).mark_text(
+            align="left", baseline="middle", fontWeight="bold", fontSize=12).encode(
+            x=alt.X(datum=0, scale=x_scale, axis=None), y=alt.Y("y:Q", scale=y_scale, axis=None), text="label:N")
+        return alt.layer(years, year_text, swatches, stripes, build_text, titles).properties(width=240, height=build_title_y + 95)
 
     def display_table(frame, **options):
         formats = {column: "{:,.4f}" for column in frame.select_dtypes(include="floating").columns}
@@ -45,395 +147,417 @@ def _():
     def display_chart(chart):
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
 
-    def period_survival(parameters, curves, start, length):
-        """Evaluate native annual fractions; require all years, never fill missing support."""
-        keys = ["region", "tech", "vintage"]
-        if length <= 0 or parameters.duplicated(keys).any():
-            raise ValueError("Positive period length and unique capacity keys required")
-        years = pd.DataFrame({"period": range(start, start + length)})
-        requested = parameters[keys].merge(years, how="cross")
-        annual = requested.merge(curves[keys + ["period", "fraction"]],
-                                 on=keys + ["period"], how="left", validate="one_to_one")
-        if (annual.fraction.isna().any() or not np.isfinite(annual.fraction).all()
-                or not annual.fraction.between(0, 1).all()):
-            raise ValueError("Native curves lack complete physical annual period support")
-        return annual.groupby(keys, as_index=False).fraction.mean().rename(
-            columns={"fraction": "period_survival_fraction"})
-
-    return (STOCK_LABELS, STOCK_ORDER, TEMOA_COMMIT, TEMOA_SOURCE, alt, display_chart,
-            display_table, load_validation_diagnosis, mo, np, pd, period_survival, stock_grid)
+    return (CLASS_LABELS, PROFILE_LABELS, STOCK_LABELS, alt, build_cohort_hatching,
+            cohort_style_legend, comparison_lineage, display_chart, display_table,
+            load_stock_cohort_diagnosis, mo, pd, stock_grid)
 
 
 @app.cell
-def _(load_validation_diagnosis):
-    diagnosis = load_validation_diagnosis()
+def _(load_stock_cohort_diagnosis):
+    diagnosis = load_stock_cohort_diagnosis()
     return (diagnosis,)
 
 
 @app.cell(hide_code=True)
-def _(TEMOA_COMMIT, TEMOA_SOURCE, mo):
-    mo.md(rf"""
-    # Stock cohorts: what does Temoa retire?
+def _(diagnosis, mo):
+    reference_year = diagnosis["metadata"]["reference_year"]
+    mo.md(f"""
+    # Stock cohorts and existing capacity
 
-    **Confirmed in current Temoa: with survival curves, `existing_capacity` is the original
-    installed cohort at its vintage — sales/additions equivalent, before cumulative retirement.**
-    Supplying stock already reduced to the base year applies historical survival twice.
-    With no curve, Temoa applies fixed end-of-life retirement, including a partial final period;
-    it does not apply historical gradual survival. Base-year surviving stock is therefore the
-    appropriate existing-fleet input for that fixed representation.
+    **Reference year: {reference_year}**, from `periods.base_year` in
+    `{diagnosis['metadata']['scenario_path']}`. This notebook recomputes the production owners'
+    calculations from registered inputs. It does not build a database, publish parameters or download sources.
+    CEUD **sales, stock and energy** beyond the latest observed year are held constant under the selected
+    policy; held values are estimates, not additional observations. There is no extrapolated diagnostic scenario.
 
-    This is a diagnostic assessment. Production methods, scenarios and captured inputs are unchanged.
-    The current sales-based validation scenario already has curves **off** and rejects combining
-    that method with curves. The separate stock-age curve path needs further compatibility work.
+    With curves **off**, existing capacity is surviving stock assigned to fixed-lifetime vintages.
+    With curves **on**, it is original-installation-equivalent acquisitions; Temoa applies absolute annual
+    survival and averages effective capacity over each model period. Supplying already retired stock to that
+    curve would retire it twice. Physical survivors remain the basis for utilization and efficiency weights.
+    The approved **constant-retirement** treatment continues each source's last observed retirement rate
+    to the configured **{100 * diagnosis['metadata']['tail_survival_threshold']:g}% survival threshold**, followed by zero. The same treatment supports stock calibration
+    and future fleet retirement for both survival sources.
+    Stock closure here precedes the configured
+    `{diagnosis['metadata']['scenario']['existing_capacity']['cleanup_tolerance']:g}` thousand-vehicle cleanup
+    threshold; the inserted database can differ by removed tiny rows.
+    [Inspected Temoa capacity rule](https://github.com/TemoaProject/temoa/blob/cb2f51503ddb4dc6607c73635098d34c5e2d1283/temoa/components/capacity.py#L471)
+    and [annual survival/period averaging](https://github.com/TemoaProject/temoa/blob/cb2f51503ddb4dc6607c73635098d34c5e2d1283/temoa/components/technology.py#L116).
 
-    Inspected upstream `main` on **6 November 2026**, pinned to [`{TEMOA_COMMIT[:12]}`](https://github.com/TemoaProject/temoa/commit/{TEMOA_COMMIT}).
-    The notebook runs offline against the configured, freshness-checked comparison capture.
-    [Native backend/legacy comparison](transportation_validation_diagnosis.py) retains both
-    the actual parameter values and the separately derived survivors.
-
-    For a vintage \(v\), original installed capacity \(E_v\), model period \(p\) of length \(L_p\),
-    and absolute annual survival \(S_{{y,v}}\), without optional early retirement:
-
-    \[
-    C_{{p,v}}=E_v F_{{p,v}},\qquad
-    F^{{curve}}_{{p,v}}=\frac{{1}}{{L_p}}\sum_{{y=p}}^{{p+L_p-1}} S_{{y,v}}.
-    \]
-
-    There is **no division by base-year survival**. The fixed-lifetime branch uses
-    \(F^{{fixed}}_{{p,v}}=\min(1,(v+\ell_v-p)/L_p)\) **only for active processes**;
-    vintages with \(p\ge v+\ell_v\) are excluded first.
-    See [adjusted capacity]({TEMOA_SOURCE}/components/capacity.py#L471),
-    [life fraction]({TEMOA_SOURCE}/components/technology.py#L116), and
-    [active-process filtering]({TEMOA_SOURCE}/components/technology.py#L154).
+    The deprecated MTO method is retained here as an explicit comparison. Its Ontario age distribution is a
+    proxy outside Ontario. Cars and trucks migrate to sales cohorts; motorcycles and buses keep their separate
+    stock methods. Every chart states whether its numbers are acquisitions or surviving stock.
     """)
-    return
+    return (reference_year,)
 
 
 @app.cell
 def _(diagnosis, mo):
-    regions = sorted(diagnosis["fleet"]["stock_activity_energy"].region.unique())
-    region = mo.ui.dropdown(regions, value=regions[0], label="Comparison region")
-    region
-    return (region,)
+    region = mo.ui.dropdown(diagnosis["metadata"]["regions"], value=diagnosis["metadata"]["regions"][0], label="Region")
+    profile = mo.ui.dropdown(list(diagnosis["annual"].profile.unique()),
+        value=diagnosis["metadata"]["selected_profile"], label="Survival source")
+    mo.hstack([region, profile], justify="start")
+    return profile, region
 
 
 @app.cell(hide_code=True)
-def _(STOCK_LABELS, alt, diagnosis, display_chart, mo, region, stock_grid, display_table):
-    annual = diagnosis["fleet"]["sales_cohort_reconciliation"]
-    annual = annual.loc[annual.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
-    annual_stock = annual.groupby(["Class", "vintage_year"], as_index=False)[[
-        "surviving_k_vehicles", "retired_k_vehicles", "calibrated_surviving_k_vehicles", "inserted_cohort_k_vehicles",
+def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, mo, pd,
+      profile, reference_year, region, stock_grid):
+    off_annual = diagnosis["annual"].loc[
+        diagnosis["annual"].region.eq(region.value) & diagnosis["annual"].profile.eq(profile.value)
+    ].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
+    off_values = off_annual.groupby(["Class", "vintage_year"], as_index=False)[[
+        "sales_k_vehicles", "surviving_k_vehicles", "calibrated_surviving_k_vehicles",
+        "fixed_allocated_k_vehicles", "deprecated_mto_k_vehicles",
     ]].sum()
-    portions = annual_stock.melt(id_vars=["Class", "vintage_year"], var_name="Component", value_name="Vehicles")
-    portions["Kind"] = portions.Component.isin(["surviving_k_vehicles", "retired_k_vehicles"]).map({True: "Sales", False: "Model"})
-    portions["Component"] = portions.Component.map({
+    off_values["retired_k_vehicles"] = off_values.sales_k_vehicles - off_values.surviving_k_vehicles
+    off_portions = off_values.drop(columns="sales_k_vehicles").melt(
+        id_vars=["Class", "vintage_year"], var_name="Component", value_name="Vehicles")
+    off_portions["Kind"] = off_portions.Component.isin(["surviving_k_vehicles", "retired_k_vehicles"]).map({True: "Sales", False: "Model"})
+    off_portions["Component"] = off_portions.Component.map({
         "surviving_k_vehicles": "Raw surviving sales", "retired_k_vehicles": "Cumulative retirements",
-        "calibrated_surviving_k_vehicles": "After stock scaling", "inserted_cohort_k_vehicles": "After fixed-lifetime allocation",
+        "calibrated_surviving_k_vehicles": "CEUD-stock scaling", "fixed_allocated_k_vehicles": "Fixed-lifetime allocation",
+        "deprecated_mto_k_vehicles": "Deprecated MTO age allocation",
     })
-    cohort_legend = ["Raw surviving sales", "Cumulative retirements", "After stock scaling", "After fixed-lifetime allocation"]
-    cohort_colors = ["#4477aa", "#d9d9d9", "#cc8844", "#222222"]
-    retirement_bars = alt.Chart().transform_filter(alt.datum.Kind == "Sales").mark_bar().encode(
-        x=alt.X("vintage_year:O", title="Sales calendar year", axis=alt.Axis(labelAngle=0, labelExpr="toNumber(datum.label) % 5 == 0 ? datum.label : ''")),
+    off_legend = ["Raw surviving sales", "Cumulative retirements", "CEUD-stock scaling",
+                  "Fixed-lifetime allocation", "Deprecated MTO age allocation"]
+    off_colors = ["#4477aa", "#d9d9d9", "#cc8844", "#222222", "#b2182b"]
+    off_bars = alt.Chart().transform_filter(alt.datum.Kind == "Sales").mark_bar().encode(
+        x=alt.X("vintage_year:O", title="Annual cohort year", axis=alt.Axis(labelAngle=0, labelExpr="toNumber(datum.label) % 5 == 0 ? datum.label : ''")),
         y=alt.Y("Vehicles:Q", title="Thousand vehicles", stack="zero"),
-        color=alt.Color("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=cohort_legend, range=cohort_colors),
+        color=alt.Color("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=off_legend, range=off_colors),
                         legend=alt.Legend(orient="right", direction="vertical", columns=1, labelLimit=280, symbolType="stroke", symbolSize=350)),
-        order=alt.Order("Component:N", sort="descending"), tooltip=["Class:N", "vintage_year:O", "Component:N", alt.Tooltip("Vehicles:Q", format=",.3f")],
+        order=alt.Order("Component:N", sort="descending"),
+        tooltip=["Class:N", "vintage_year:O", "Component:N", alt.Tooltip("Vehicles:Q", format=",.3f")],
     )
-    allocated_line = alt.Chart().transform_filter(alt.datum.Kind == "Model").mark_line(strokeWidth=1.8).encode(
+    off_lines = alt.Chart().transform_filter(alt.datum.Kind == "Model").mark_line(strokeWidth=2.34).encode(
         x="vintage_year:O", y=alt.Y("Vehicles:Q", stack=None), order="vintage_year:O",
-        color=alt.Color("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=cohort_legend, range=cohort_colors),
+        color=alt.Color("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=off_legend, range=off_colors),
                         legend=alt.Legend(orient="right", direction="vertical", columns=1, labelLimit=280, symbolType="stroke", symbolSize=350)),
-        strokeDash=alt.StrokeDash("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=cohort_legend, range=[[1, 0], [1, 0], [1, 0], [5, 3]]),
+        strokeDash=alt.StrokeDash("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=off_legend, range=[[1, 0], [1, 0], [1, 0], [5, 3], [2, 2]]),
                                   legend=alt.Legend(orient="right", direction="vertical", columns=1, labelLimit=280, symbolType="stroke", symbolSize=350)),
         tooltip=["Class:N", "vintage_year:O", "Component:N", alt.Tooltip("Vehicles:Q", format=",.3f")],
     )
-    retirement_chart = stock_grid(alt.layer(retirement_bars, allocated_line, data=portions))
-    cutoffs = diagnosis["fleet"]["backend_lifetime_exclusions"]
-    cutoffs = cutoffs.loc[cutoffs.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map({
-        **STOCK_LABELS, "passenger_light_trucks": "Passenger light trucks", "freight_light_trucks": "Freight light trucks",
-    }))
-    mo.vstack([mo.md("""
-    ## 1. Current backend: annual stock and cohort lineage
+    retirement_chart = stock_grid(alt.layer(off_bars, off_lines, data=off_portions))
+    redistribution = diagnosis["vintage"].loc[
+        diagnosis["vintage"].region.eq(region.value) & diagnosis["vintage"].profile.eq(profile.value)
+    ].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS))
+    mo.vstack([mo.md(f"""
+    ## 1. Curves off: survivors and fixed-lifetime redistribution
 
-    **Backend only:** blue + grey reconstruct raw sales; blue is sales × cumulative annual survival at 2025.
-    Orange scales those survivors by **CEUD stock / raw surviving stock**. Dashed allocation then redistributes
-    excluded stock proportionally **within each technology**, preserving its total. CEUD equality is a calibration identity.
+    Blue + grey reconstruct raw sales. Blue is sales × cumulative annual survival at {reference_year};
+    orange applies one CEUD stock multiplier per region/class. The black dashed line redistributes
+    ineligible surviving stock within each technology, preserving its total. Red shows the deprecated MTO
+    age allocation after its fixed-lifetime redistribution, with the same fuel-share rules. **Bars are unchanged; line widths
+    are 30% larger.** Light-truck plots combine passenger and freight; tables retain those services separately.
+    Cohort year is the sales year for CEUD and the age-implied year for MTO.
 
-    **Only when `survival_curves: false` (this scenario)**, eligibility requires both
-    `annual year + lifetime > 2025` and `model vintage + lifetime > 2025`.
-    **Annual year** is the actual sales calendar year. **Model vintage** is the five-year model label:
-    a vehicle sold in **2013** belongs to model vintage **2010**, representing 2011–2015.
-    The first test checks the real cohort's age; the second checks the model's coarser representation.
-    Lifetimes are **16 years (cars), 17 (light trucks), 20 (medium/heavy)**. Vintage 2005 represents 2006–2010:
-    even `2005 + 20 = 2025` fails the strict endpoint. Vintage 2010 represents 2011–2015 and passes all three.
-    That explains the common **2011 cutoff**. Annual-only cutoffs would be 2010 / 2009 / 2006 respectively.
-    This is an effect of the current fixed-lifetime representation, not missing aggregation bins.
-    With curves enabled on supported stock paths, eligibility checks accepted curve-age coverage and the
-    full model-vintage age block; it does **not** apply these median cutoffs. The selected sales-survival
-    reconstruction already applies retirement and its configuration guard rejects combining it with curves.
-    That guard protects this fixed-lifetime path; it does not establish compatibility of other stock paths with Temoa curves.
-    """), display_chart(retirement_chart), display_table(cutoffs[[
-        "Class", "fixed_lifetime_years", "all_excluded_k_vehicles", "total_redistributed_percent",
-        "coarse_vintage_exclusion_k_vehicles", "coarse_exclusion_percent",
-    ]].rename(columns={"fixed_lifetime_years": "Lifetime (years)", "all_excluded_k_vehicles": "All redistributed (k)",
-        "total_redistributed_percent": "All / CEUD (%)", "coarse_vintage_exclusion_k_vehicles": "Extra from model-vintage test (k)",
-        "coarse_exclusion_percent": "Extra / CEUD (%)"}), selection=None, pagination=False,
-        label="Separate service classes retained for the exclusion audit; light-truck stock plots combine them"),
-        mo.accordion({"Raw → scaled → allocated class totals and explanations": display_table(
-            diagnosis["fleet"]["fleet_reconciliation"], selection=None, page_size=5)})])
+    Eligibility requires both the annual cohort and its representative model vintage to remain alive at
+    the first model period. Passing that test does not guarantee a full period of effective capacity:
+    Temoa prorates fixed lifetimes that end within a period. The table shows signed redistribution by vintage;
+    cumulative redistribution must return to zero within each class.
+    """), display_chart(retirement_chart), display_table(redistribution[[
+        "Class", "vintage", "calibrated_surviving_k_vehicles", "fixed_allocated_k_vehicles",
+        "redistributed_k_vehicles", "cumulative_redistribution_k_vehicles",
+    ]].rename(columns={"vintage": "Model vintage", "calibrated_surviving_k_vehicles": "Before allocation (k)",
+        "fixed_allocated_k_vehicles": "After allocation (k)", "redistributed_k_vehicles": "Redistributed (k)",
+        "cumulative_redistribution_k_vehicles": "Cumulative redistribution (k)"}), selection=None, page_size=15)])
     return (retirement_chart,)
 
 
 @app.cell(hide_code=True)
-def _(alt, display_chart, display_table, mo, pd):
-    demonstration = pd.DataFrame({
-        "Case": ["Original cohort + curve", "Surviving stock + curve",
-                 "Stock + fixed full period", "Stock + fixed partial period"],
-        "Input (vehicles)": [100., 60., 60., 60.],
-        "Period fraction": [.5, .5, 1., .6],
-        "Effective capacity (vehicles)": [50., 30., 60., 36.],
-        "Meaning": ["Correct curve input", "Double retirement", "No smooth survival", "Three years of five remain"],
-    })
-    demonstration_chart = alt.Chart(demonstration).mark_bar().encode(
-        y=alt.Y("Case:N", title=None, sort=demonstration.Case.tolist()),
-        x=alt.X("Effective capacity (vehicles):Q", scale=alt.Scale(domain=[0, 100])),
-        color=alt.Color("Meaning:N", scale=alt.Scale(
-            domain=demonstration.Meaning.tolist(), range=["#2166ac", "#b2182b", "#438564", "#a6761d"]),
-            legend=None),
-        tooltip=["Case:N", "Input (vehicles):Q", "Period fraction:Q", "Effective capacity (vehicles):Q"],
-    ).properties(width=680, height=180)
-    mo.vstack([mo.md("""
-    ## 2. Direct Temoa function check: double retirement and the fixed case
-
-    **Illustrative inputs, not fleet assumptions:** 100 vehicles installed at vintage 2010;
-    annual survival during 2025–2029 is 60%, 55%, 50%, 45%, 40%. Beginning-2025 stock is 60;
-    mean surviving capacity is 50. If 60 is supplied instead of 100, Temoa returns **30**.
-
-    For the fixed examples, the supplied stock is 60. Lifetime 30 covers the entire period;
-    lifetime 18 ends in 2028, so only 2025–2027 contribute: **60 × 3/5 = 36**.
-    Stock at a single date and period-average capacity are distinct even with fixed lifetimes.
-
-    All four values were asserted by calling the **actual upstream-equivalent**
-    `param_process_life_fraction_rule` and `adjusted_capacity_constraint`, with Pyomo expressions.
-    This verifies constraint arithmetic, not optimization or a complete fleet solve.
-    """), display_chart(demonstration_chart), display_table(demonstration, selection=None, pagination=False)])
-    return demonstration, demonstration_chart
-
-
-@app.cell(hide_code=True)
-def _(STOCK_LABELS, alt, diagnosis, display_chart, display_table, mo, pd, period_survival, region, stock_grid):
-    legacy_parameters = diagnosis["fleet"]["legacy_reconstructed_parameters"]
-    legacy_parameters = legacy_parameters.loc[legacy_parameters.region.eq(region.value)].copy()
-    first_period = min(diagnosis["fleet_metadata"]["scenario"]["periods"]["model"])
-    period_length = diagnosis["fleet_metadata"]["scenario"]["periods"]["step"]
-    legacy_periods = period_survival(legacy_parameters,
-        diagnosis["fleet"]["legacy_reconstructed_survival"], first_period, period_length)
-    legacy_capacity = legacy_parameters.merge(legacy_periods, on=["region", "tech", "vintage"], validate="one_to_one")
-    legacy_capacity["period_capacity"] = legacy_capacity.raw_capacity_k_vehicles * legacy_capacity.period_survival_fraction
-    legacy_capacity["double_retired_capacity"] = legacy_capacity.surviving_k_vehicles * legacy_capacity.period_survival_fraction
-    legacy_capacity["Class"] = legacy_capacity.road_class.map(STOCK_LABELS)
-    capacity_labels = {
-        "raw_capacity_k_vehicles": "Native parameter: acquisitions",
-        "surviving_k_vehicles": f"Point stock: {first_period}",
-        "period_capacity": f"Temoa formula mean: {first_period}–{first_period + period_length - 1}",
-        "double_retired_capacity": "If survivors were supplied",
-    }
-    basis_totals = legacy_capacity.groupby("Class", as_index=False)[list(capacity_labels)].sum()
-    basis_values = basis_totals.melt(id_vars="Class", var_name="Basis", value_name="Thousand vehicles")
-    basis_values["Basis"] = basis_values.Basis.map(capacity_labels)
-    basis_chart = stock_grid(alt.Chart(basis_values).mark_bar().encode(
-        x=alt.X("Basis:N", title=None, sort=list(capacity_labels.values()), axis=alt.Axis(labels=False, ticks=False)),
-        y=alt.Y("Thousand vehicles:Q", scale=alt.Scale(zero=True)),
-        color=alt.Color("Basis:N", title=None, scale=alt.Scale(domain=list(capacity_labels.values()),
-            range=["#7b3294", "#2166ac", "#438564", "#b2182b"]),
-            legend=alt.Legend(orient="right", direction="vertical", labelLimit=260)),
-        tooltip=["Class:N", "Basis:N", alt.Tooltip("Thousand vehicles:Q", format=",.4f")],
-    ))
-    mo.vstack([mo.md(f"""
-    ## 3. Native legacy acquisitions, survivors and Temoa period capacity
-
-    **Purple is the actual native `ExistingCapacity` export.** Blue is the point-{first_period}
-    stock used in the earlier comparison. Green applies current Temoa's period-mean formula to
-    those native acquisitions and their own rounded annual workbook curve. Red is the deliberately
-    incorrect counterfactual of supplying already-surviving stock to the same curve.
-    No backend survival curve, CEUD multiplier or fixed-lifetime redistribution is imposed on legacy.
-
-    One bar represents a class total; light-truck passenger/freight services are combined.
-    Axes are independent across classes; all values are thousand vehicles. This is a capacity-only
-    calculation with complete {first_period}–{first_period + period_length - 1} curve support checked;
-    it excludes early decision retirement and is **not a solver run**. No modified parameter is emitted.
-    Full-horizon compatibility is not established: the native recipe assigns lifetime 42, but its
-    rounded car curve reaches zero at **age 32**. Current Temoa rejects nonfinal zero fractions.
-    A direct call to `create_survival_curve` rejected `ON / T_LDV_C_GSL / vintage 2005`
-    at calendar 2037 (age 32), before its declared end in 2047. All 17 positive existing car
-    capacity keys share this incompatibility, covering 4,356.854 thousand acquisitions.
-    These native rows are preserved as evidence; the green bar evaluates only the requested
-    period's arithmetic and does not certify a loadable legacy model.
-
-    Legacy UF is independently calibrated against **2023** activity using
-    `Σ(raw capacity × survival at 2023 × own capacity-to-activity)`.
-    The earlier point-2025 stock/energy calculations remain legitimate descriptive accounting,
-    but they are not Temoa's period-average capacity or a simulated dispatch result.
-    """), display_chart(basis_chart), display_table(basis_totals.rename(columns=capacity_labels),
-        selection=None, pagination=False, label="Native legacy only; every numerical column is thousand vehicles"),
-        mo.accordion({"Per-technology and vintage audit": display_table(legacy_capacity[[
-            "road_class", "tech", "vintage", "raw_capacity_k_vehicles", "baseline_survival_fraction",
-            "surviving_k_vehicles", "period_survival_fraction", "period_capacity", "double_retired_capacity",
-        ]], selection=None, page_size=10)})])
-    return basis_chart, basis_totals, legacy_capacity
-
-
-@app.cell(hide_code=True)
-def _(STOCK_LABELS, alt, diagnosis, display_chart, display_table, mo, region, stock_grid):
-    fixed_annual = diagnosis["fleet"]["sales_cohort_reconciliation"].copy()
-    fixed_annual = fixed_annual.loc[fixed_annual.region.eq(region.value)]
-    fixed_step = diagnosis["fleet_metadata"]["scenario"]["periods"]["step"]
-    if fixed_annual.fixed_lifetime_years.isna().any():
-        raise ValueError("This fixed-mode comparison requires explicit fixed lifetimes")
-    fixed_annual["period_fraction"] = (
-        (fixed_annual.vintage + fixed_annual.fixed_lifetime_years - fixed_annual.first_model_period)
-        / fixed_step).clip(lower=0, upper=1)
-    fixed_annual["effective_capacity"] = fixed_annual.inserted_cohort_k_vehicles * fixed_annual.period_fraction
-    fixed_annual["Class"] = fixed_annual.road_class.map(STOCK_LABELS)
-    fixed_vintages = fixed_annual.groupby(["Class", "vintage"], as_index=False).agg(
-        inserted_stock=("inserted_cohort_k_vehicles", "sum"),
-        effective_capacity=("effective_capacity", "sum"),
+def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, mo,
+      profile, reference_year, region, stock_grid):
+    on_annual = diagnosis["annual"].loc[
+        diagnosis["annual"].region.eq(region.value) & diagnosis["annual"].profile.eq(profile.value)
+    ].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
+    on_values = on_annual.groupby(["Class", "vintage_year"], as_index=False)[[
+        "sales_k_vehicles", "calibrated_acquisitions_k_vehicles", "deprecated_mto_physical_k_vehicles",
+    ]].sum().melt(id_vars=["Class", "vintage_year"], var_name="Stage", value_name="Vehicles")
+    on_values["Stage"] = on_values.Stage.replace({
+        "sales_k_vehicles": "Raw acquisitions", "calibrated_acquisitions_k_vehicles": "CEUD-stock scaling",
+        "deprecated_mto_physical_k_vehicles": "Deprecated MTO surviving stock"})
+    on_legend = ["Raw acquisitions", "CEUD-stock scaling", "Deprecated MTO surviving stock"]
+    on_encoding = dict(
+        x=alt.X("vintage_year:O", title="Annual cohort year", axis=alt.Axis(labelAngle=0,
+            labelExpr="toNumber(datum.label) % 5 == 0 ? datum.label : ''")),
+        y=alt.Y("Vehicles:Q", title="Acquisitions / stock (thousand)", scale=alt.Scale(zero=True)),
+        color=alt.Color("Stage:N", title="Acquisitions and stock", scale=alt.Scale(domain=on_legend, range=["#4477aa", "#cc8844", "#b2182b"]),
+            legend=alt.Legend(orient="right", labelLimit=280, symbolType="stroke", symbolSize=350)),
+        tooltip=["Class:N", "vintage_year:O", "Stage:N", alt.Tooltip("Vehicles:Q", format=",.3f")],
     )
-    fixed_vintages = fixed_vintages.loc[fixed_vintages.inserted_stock.gt(0)]
-    fixed_labels = {"inserted_stock": "Inserted surviving stock", "effective_capacity": "Mean capacity: 2025–2029"}
-    fixed_values = fixed_vintages.melt(id_vars=["Class", "vintage"], var_name="Basis", value_name="Thousand vehicles")
-    fixed_values["Basis"] = fixed_values.Basis.map(fixed_labels)
-    fixed_chart = stock_grid(alt.Chart(fixed_values).mark_bar().encode(
-        x=alt.X("vintage:O", title="Model vintage", axis=alt.Axis(labelAngle=0)),
-        xOffset=alt.XOffset("Basis:N", sort=list(fixed_labels.values())),
-        y=alt.Y("Thousand vehicles:Q", scale=alt.Scale(zero=True)),
-        color=alt.Color("Basis:N", title=None, scale=alt.Scale(domain=list(fixed_labels.values()),
-            range=["#2166ac", "#438564"]), legend=alt.Legend(orient="right", direction="vertical", labelLimit=260)),
-        tooltip=["Class:N", "vintage:O", "Basis:N", alt.Tooltip("Thousand vehicles:Q", format=",.4f")],
-    ))
+    on_bars = alt.Chart().transform_filter(alt.datum.Stage == "Raw acquisitions").mark_bar().encode(**on_encoding)
+    on_line = alt.Chart().transform_filter(alt.datum.Stage != "Raw acquisitions").mark_line(strokeWidth=2.34).encode(
+        **on_encoding, order="vintage_year:O",
+        strokeDash=alt.StrokeDash("Stage:N", title="Acquisitions and stock",
+            scale=alt.Scale(domain=on_legend, range=[[1, 0], [1, 0], [2, 2]]),
+            legend=alt.Legend(orient="right", labelLimit=280, symbolType="stroke", symbolSize=350)))
+    acquisitions_chart = stock_grid(alt.layer(on_bars, on_line, data=on_values))
+    acquisitions = diagnosis["vintage"].loc[
+        diagnosis["vintage"].region.eq(region.value) & diagnosis["vintage"].profile.eq(profile.value)
+    ].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS))
+    mo.vstack([mo.md(f"""
+    ## 2. Curves on: acquisitions before and after stock calibration
+
+    Blue and orange are **original-installation equivalents**, not survivors. One region/class multiplier preserves
+    annual sales shape while its surviving stock closes to CEUD at the reference year {reference_year}.
+    No fixed-lifetime redistribution is applied to acquisitions. Aggregated model vintages use
+    acquisition-weighted combined vintage curves, preserving the contributions of their actual sales years.
+
+    The red comparison is **MTO surviving stock before fixed-lifetime redistribution**, using its historical
+    coverage and renormalization. It has a different quantity basis from acquisitions.
+    Under the approved curve-mode capacity contract, physical
+    survivors are used separately for utilization and efficiency weights. The table keeps raw and calibrated
+    acquisitions adjacent, including cumulative totals; future survival is not a new CEUD calibration.
+    Matching point-year physical stock does not force Temoa's first model-period average to equal CEUD stock.
+    """), display_chart(acquisitions_chart), display_table(acquisitions[[
+        "Class", "vintage", "sales_k_vehicles", "calibrated_acquisitions_k_vehicles",
+        "cumulative_sales_k_vehicles", "cumulative_calibrated_acquisitions_k_vehicles", "deprecated_mto_physical_k_vehicles",
+    ]].rename(columns={"vintage": "Model vintage", "sales_k_vehicles": "Raw acquisitions (k)",
+        "calibrated_acquisitions_k_vehicles": "Calibrated acquisitions (k)",
+        "deprecated_mto_physical_k_vehicles": "MTO surviving stock (k)",
+        "cumulative_sales_k_vehicles": "Cumulative raw (k)",
+        "cumulative_calibrated_acquisitions_k_vehicles": "Cumulative calibrated (k)"}), selection=None, page_size=15)])
+    return (acquisitions_chart,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    lineage_basis = mo.ui.dropdown(
+        ["Acquisitions versus stock", "Physical surviving stock"],
+        value="Acquisitions versus stock", label="Paired cohort comparison",
+    )
     mo.vstack([mo.md("""
-    ## 4. Curves off: current backend stock still faces fixed retirement
+    ## 3. Sales cohorts versus the deprecated MTO method
 
-    No historical smooth-survival multiplier is applied here. Blue is the current inserted
-    surviving stock; green applies Temoa's fixed remaining-life fraction over 2025–2029.
-    The vintage-2010 cars have lifetime 16, hence only **2025** remains: their mean capacity
-    is **one fifth** of inserted stock. Light trucks have two years left; medium/heavy trucks have all five.
-    Passing the backend's eligibility test means alive at the start, not alive for the whole period.
-
-    Each pair is one class/vintage, in thousand vehicles; only positive inserted cohorts appear.
-    This calculation uses the captured fixed lifetime and vintage for every annual contribution,
-    with zero outside viable years. It excludes early decision retirement and is not a model solve.
-    The existing UF/activity calibration is based on inserted stock, so those earlier descriptive
-    comparisons do not by themselves establish first-period model service closure. Production
-    parameters are unchanged; period averaging is a separate issue from double smooth retirement.
-    """), display_chart(fixed_chart), display_table(fixed_vintages.rename(columns=fixed_labels),
-        selection=None, pagination=False, label="Fixed-mode stock and effective first-period capacity (thousand vehicles)")])
-    return fixed_chart, fixed_vintages
+    Solid sales bars and striped MTO bars retain the annual-position colours from the transportation
+    comparison. **Default quantities differ:** curve-mode sales parameters are calibrated acquisitions;
+    deprecated MTO quantities are age-allocated survivors **before fixed-lifetime redistribution**. Select physical surviving stock for a like-quantity
+    comparison. Each annual segment sums exactly to its model-vintage total; partial bins remain visible.
+    The acquisition view uses the production installation basis. In the configured prospective bins
+    this equals calibrated acquisitions; right-labelled synthetic bins would use their own normalized basis.
+    Both methods are shown before fixed-lifetime redistribution here. The deprecated MTO distribution still
+    uses its original historical-window restriction and renormalization; it is not unfiltered source stock.
+    """), lineage_basis])
+    return (lineage_basis,)
 
 
 @app.cell(hide_code=True)
-def _(TEMOA_SOURCE, mo):
-    mo.md(rf"""
-    ## 5. What this means for the backend
-
-    | Configuration | Appropriate existing-fleet basis | What Temoa does |
-    |---|---|---|
-    | Absolute survival curve present for this process | Original installations or a reviewed sales-equivalent cohort | Applies absolute annual survival, then averages across the period |
-    | No survival curve for this process | Surviving base-year stock assigned to viable historical vintages | Retains full capacity until fixed EOL; prorates a final partial period |
-
-    **Raw sales are not the only possible curve-compatible calibration.** To reproduce a reviewed
-    beginning-of-horizon cohort stock \(B_v\), the original-installation equivalent would be
-    \(E_v=B_v/S_{{p_0,v}}\), for positive survival. For a period-mean target, the divisor would
-    instead be \(F_{{p_0,v}}\). These are different modeling choices. Temoa does neither conversion
-    for the modeler; conditional survival \(S_y/S_{{p_0}}\) is not its current existing-capacity rule.
-    A future change must decide which quantity CEUD calibration represents before changing capacity,
-    UF or cohort weights. Five-year representative vintages also alter age relative to annual sales.
-
-    **Current production exposure:** [the scenario validator](../../src/validation/config_models.py)
-    already forbids `sales_survival` together with `survival_curves: true`. Both the current default
-    and validation scenario use fixed lifetimes. This assessment therefore does not establish
-    double retirement in the current sales-based validation build. The separate `stock_age` path
-    distributes reported surviving stock and permits curves; a future curve-compatible design
-    must review that path as well.
-
-    **A second, independent interface issue:**
-    [the backend curve-row producer](../../src/parameterization/road_lifetimes_survival.py)
-    currently emits survival averaged within model-period age blocks, at model-period labels.
-    Current Temoa instead expects **annual calendar-year survival**, including `S(v)=1` and
-    `S(v+lifetime)=0`, then interpolates any intermediate gaps and computes period averages itself.
-    A model-period-only table lacks required historical endpoints and cannot be treated as a verified
-    input to current Temoa. Fixing capacity alone would not establish compatibility.
-    See [curve validation/interpolation]({TEMOA_SOURCE}/components/technology.py#L244).
-
-    The legacy notebook's own `fixed_lifetime=True` option creates a step-shaped survival table;
-    that option is not the same as omitting curves from Temoa. Its active call uses `False`.
-
-    Curve activation is **per region, technology and vintage**, determined by presence of curve rows;
-    it is not a global Temoa switch. The loader passes
-    [existing capacity]({TEMOA_SOURCE}/data_io/hybrid_loader.py#L616) and
-    [survival values]({TEMOA_SOURCE}/data_io/hybrid_loader.py#L738) through without rebasing them.
-    Optional early retirement is handled separately: the
-    [capacity rule]({TEMOA_SOURCE}/components/capacity.py#L471) divides those retired amounts by
-    survival at retirement to subtract original-installation equivalents. Myopic carryover similarly
-    [adjusts original capacity]({TEMOA_SOURCE}/components/utils.py#L141); neither mechanism
-    converts a residual input stock into its original cohort.
-
-    **Decision boundary:** preserve the current fixed-lifetime workflow while reviewing a coherent
-    curve-mode contract for capacity, annual curve rows, representative vintages and utilization.
-    This notebook establishes the direction of that review; it does not promote a replacement method.
-    """)
-    return
+def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, comparison_lineage,
+      diagnosis, display_chart, display_table, lineage_basis, mo, pd, profile, region, stock_grid):
+    paired_annual = diagnosis["annual"].loc[
+        diagnosis["annual"].region.eq(region.value) & diagnosis["annual"].profile.eq(profile.value)]
+    paired_lineage = comparison_lineage(paired_annual,
+        physical_survivors=lineage_basis.value == "Physical surviving stock")
+    paired_lineage["Class"] = paired_lineage.road_class.map(STOCK_LABELS)
+    paired_lineage["evidence"] = paired_lineage.method.replace({"Deprecated MTO age allocation": "Deprecated MTO"})
+    paired_step = diagnosis["metadata"]["scenario"]["periods"]["step"]
+    paired_lineage["annual_position"] = ((paired_lineage.vintage_year - paired_lineage.vintage - 1) % paired_step + 1).astype(int)
+    paired_lineage["cohort_position"] = "Year " + paired_lineage.annual_position.astype(str)
+    paired_lineage["interval"] = paired_lineage.vintage.map(lambda year: f"({year}, {year + paired_step}]")
+    paired_lineage.loc[paired_lineage.vintage_year.le(paired_lineage.vintage), "interval"] += "; oldest proxy includes lower endpoint"
+    paired_contributions = paired_lineage.groupby(["Class", "evidence", "vintage", "vintage_year",
+        "annual_position", "cohort_position", "interval"], as_index=False).vehicles_k.sum()
+    paired_builds = ["Sales cohorts", "Deprecated MTO"]
+    paired_bases = [("Physical surviving stock" if lineage_basis.value == "Physical surviving stock"
+                     else "Installed-equivalent acquisitions"), "Physical surviving stock"]
+    paired_positions = [f"Year {position}" for position in range(1, paired_step + 1)]
+    paired_rectangles, paired_hatches, paired_extents = build_cohort_hatching(
+        paired_contributions, paired_builds, value_column="vehicles_k", period_step=paired_step)
+    paired_geometry = pd.concat([paired_rectangles.assign(Kind="Stock"), paired_hatches.assign(Kind="Hatch"),
+                                paired_extents.assign(Kind="Extent")], ignore_index=True)
+    paired_x = alt.X("x0:Q", title="Model vintage", scale=alt.Scale(domain=paired_rectangles.attrs["x_domain"], nice=False, zero=False),
+        axis=alt.Axis(values=paired_rectangles.attrs["vintage_ticks"], format="d", labelAngle=0))
+    paired_y = alt.Y("y0:Q", title=("Surviving stock (thousand)" if lineage_basis.value == "Physical surviving stock"
+        else "Acquisitions / stock (thousand)"), scale=alt.Scale(nice=False, zero=False))
+    paired_bars = alt.Chart().transform_filter(alt.datum.Kind == "Stock").mark_rect().encode(
+        x=paired_x, x2="x1:Q", y=paired_y, y2="y1:Q",
+        color=alt.Color("cohort_position:N", scale=alt.Scale(domain=paired_positions, scheme="blues"), legend=None),
+        tooltip=["Class:N", "evidence:N", "vintage:O", "vintage_year:O", "interval:N", alt.Tooltip("vehicles_k:Q", format=",.4f")])
+    paired_stripes = alt.Chart().transform_filter(alt.datum.Kind == "Hatch").mark_rule(stroke="#111", strokeWidth=.7, opacity=.42).encode(
+        x=paired_x, x2="x1:Q", y=paired_y, y2="y1:Q")
+    paired_bounds = alt.Chart().transform_filter(alt.datum.Kind == "Extent").mark_rect(opacity=0).encode(
+        x=paired_x, x2="x1:Q", y=paired_y, y2="y1:Q")
+    paired_chart = alt.hconcat(stock_grid(alt.layer(paired_bounds, paired_bars, paired_stripes, data=paired_geometry)),
+        cohort_style_legend(paired_positions, paired_builds, paired_bases), spacing=18).resolve_scale(color="independent", x="independent", y="independent")
+    mo.vstack([display_chart(paired_chart), mo.accordion({"Annual contributions and explicit quantity basis":
+        display_table(paired_lineage[["road_class", "evidence", "basis", "vintage", "vintage_year", "vehicles_k"]],
+                      selection=None, page_size=10)})])
+    return (paired_chart,)
 
 
 @app.cell(hide_code=True)
-def _(TEMOA_SOURCE, mo):
-    mo.accordion({"Reproduce the actual-function check against a verified Temoa checkout": mo.md(rf"""
-    The inspected local checkout was at `7f45f47494194fa310035c1e94d4eedb76db73b6`.
-    `technology.py`, `utils.py` and process-viability source matched pinned upstream main;
-    the complete `adjusted_capacity_constraint` function also matched. Other capacity-file
-    content on that local feature branch differs, so this claim is scoped to the functions tested.
-    Run the following in a Temoa environment with Pyomo after checking those source identities.
-    It creates no database, does not optimize, and writes no parameters.
+def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table, mo, profile, region):
+    calibration = diagnosis["calibration"].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS),
+                                                Source=lambda frame: frame.profile.map(PROFILE_LABELS))
+    calibration_tiles = alt.Chart(calibration).mark_rect().encode(
+        x=alt.X("Class:N", sort=list(CLASS_LABELS.values()), title=None, axis=alt.Axis(labelAngle=-20, labelLimit=180)),
+        y=alt.Y("region:N", title="Region"),
+        color=alt.Color("multiplier:Q", title="Stock multiplier", scale=alt.Scale(scheme="redblue", domainMid=1, reverse=True)),
+        tooltip=["Source:N", "region:N", "Class:N", alt.Tooltip("multiplier:Q", format=".4f"),
+            alt.Tooltip("raw_survivors_k_vehicles:Q", format=",.3f"), alt.Tooltip("ceud_stock_k_vehicles:Q", format=",.3f")],
+    )
+    calibration_labels = alt.Chart(calibration).mark_text(fontSize=11).encode(
+        x=alt.X("Class:N", sort=list(CLASS_LABELS.values())), y="region:N", text=alt.Text("multiplier:Q", format=".2f"),
+        color=alt.condition((alt.datum.multiplier > 1.8) | (alt.datum.multiplier < .75), alt.value("white"), alt.value("black")))
+    calibration_chart = alt.layer(calibration_tiles, calibration_labels).properties(width=470, height=270).facet(
+        column=alt.Column("Source:N", title=None))
+    selected_composition = diagnosis["composition"].loc[
+        diagnosis["composition"].profile.eq(profile.value) & diagnosis["composition"].region.eq(region.value)].copy()
+    selected_composition["Class"] = selected_composition.road_class.map(CLASS_LABELS)
+    selected_composition["share_percent"] = 100 * selected_composition.physical_stock_k_vehicles / selected_composition.groupby(
+        ["road_class", "method"]).physical_stock_k_vehicles.transform("sum")
+    largest_factor = calibration.loc[calibration.multiplier.idxmax()]
+    mo.vstack([mo.md(f"""
+    ## 4. CEUD-stock scaling across regions and classes
 
-    ```python
-    from collections import defaultdict
-    from types import SimpleNamespace
-    from pyomo.environ import ConcreteModel, Var, value
-    from temoa.components.capacity import adjusted_capacity_constraint
-    from temoa.components.technology import param_process_life_fraction_rule
+    Each factor is `CEUD reference stock / reconstructed raw survivors`, separately by region and class.
+    Values above one increase original-installation equivalents; values below one reduce them. This is a level
+    calibration, not evidence that every historical sales count was wrong. Large factors can reflect incomplete
+    history before {diagnosis['metadata']['scenario']['periods']['existing'][0]}, regional fleet boundaries
+    and transfers, survival proxies, or the held observation tail.
+    Aggregate stock alone cannot identify a separate correction for every vintage.
 
-    r, t, p, v = "R", "vehicle", 2025, 2010
-    for amount, curve, life, expected in [
-        (100, True, 30, 50), (60, True, 30, 30),
-        (60, False, 30, 60), (60, False, 18, 36),
-    ]:
-        pm = ConcreteModel()
-        pm.cap = Var()
-        model = SimpleNamespace(
-            time_exist=[v], time_optimize=[p], tech_retirement=set(),
-            existing_capacity={{(r, t, v): amount}},
-            retired_existing_capacity=defaultdict(float),
-            lifetime_survival_curve=defaultdict(
-                lambda: 0 if curve else 1,
-                {{(r, y, t, v): s for y, s in
-                 zip(range(p, p + 5), [.6, .55, .5, .45, .4])}} if curve else {{}}),
-            period_length={{p: 5}}, lifetime_process={{(r, t, v): life}},
-            is_survival_curve_process={{(r, t, v): curve}},
-            v_capacity={{(r, p, t, v): pm.cap}},
-        )
-        fraction = param_process_life_fraction_rule(model, r, p, t, v)
-        model.process_life_frac = {{(r, p, t, v): fraction}}
-        rhs = value(adjusted_capacity_constraint(model, r, p, t, v).args[1])
-        assert abs(rhs - expected) < 1e-12
-        print(amount, curve, fraction, rhs)
-    ```
+    The largest factor shown is **{largest_factor.multiplier:.3f}** for {largest_factor.region}
+    {largest_factor.Class.lower()} using {largest_factor.Source}: {largest_factor.raw_survivors_k_vehicles:,.2f}
+    thousand reconstructed survivors must match {largest_factor.ceud_stock_k_vehicles:,.2f} thousand CEUD stock.
+    This identifies the size of the mismatch; the aggregate inputs cannot isolate which explanation causes it.
 
-    These stand-ins test the numerical constraints after model construction. Curve endpoint
-    validation and process filtering were inspected separately in
-    [technology.py]({TEMOA_SOURCE}/components/technology.py#L244); the five illustrative
-    annual fractions alone are not a complete loadable lifetime curve.
-    """)})
-    return
+    The same class factor is used for acquisitions and physical survivors. Utilization uses calibrated physical
+    stock, while combined vintage curves use acquisition weights. Existing fuel, powertrain and geography proxy rules
+    are preserved; changing annual age weights can still change aggregate technology composition. The composition
+    audit makes that consequence visible. LDV shares represent new registrations; truck shares include registered
+    stock proxies and the existing medium-truck EV override.
+    """), display_chart(calibration_chart), display_table(calibration[[
+        "Source", "region", "Class", "raw_sales_k_vehicles", "raw_survivors_k_vehicles", "ceud_stock_k_vehicles",
+        "multiplier", "adjustment_percent", "stock_residual_k_vehicles",
+    ]].rename(columns={"region": "Region", "raw_sales_k_vehicles": "Raw sales (k)", "raw_survivors_k_vehicles": "Raw survivors (k)",
+        "ceud_stock_k_vehicles": "CEUD stock (k)", "multiplier": "Stock multiplier", "adjustment_percent": "Adjustment (%)",
+        "stock_residual_k_vehicles": "Closure residual (k)"}), selection=None, page_size=10),
+        mo.accordion({"Technology composition: selected source and region": display_table(selected_composition[[
+            "Class", "tech", "method", "physical_stock_k_vehicles", "share_percent"]].rename(columns={
+                "tech": "Technology", "method": "Method", "physical_stock_k_vehicles": "Physical stock (k)",
+                "share_percent": "Within-class share (%)"}), selection=None, page_size=10),
+            "Registered inputs and freshness": mo.vstack([mo.md("Inputs are read afresh; no captured charging or comparison report is required."),
+                mo.json(diagnosis["metadata"])])})])
+    return (calibration_chart,)
+
+
+@app.cell(hide_code=True)
+def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table, mo, pd, region):
+    survival_methods = ["Native survival", "Constant retirement"]
+    native_curves = diagnosis["source_curves"].assign(Method=survival_methods[0])
+    production_curves = diagnosis["production_curves"].assign(Method=survival_methods[1])
+    survival_curves = pd.concat([native_curves, production_curves], ignore_index=True).assign(
+        Class=lambda frame: frame.road_class.map(CLASS_LABELS), Source=lambda frame: frame.profile.map(PROFILE_LABELS))
+    survival_chart = alt.Chart(survival_curves).mark_line(strokeWidth=2.0).encode(
+        x=alt.X("age:Q", title="Vehicle age (years)", axis=alt.Axis(tickCount=4)),
+        y=alt.Y("survival_probability:Q", title="Cumulative survival", scale=alt.Scale(domain=[0, 1])),
+        color=alt.Color("Method:N", scale=alt.Scale(domain=survival_methods, range=["#777777", "#438564"]),
+            legend=alt.Legend(orient="bottom", symbolType="stroke", symbolSize=350)),
+        strokeDash=alt.StrokeDash("Method:N", scale=alt.Scale(domain=survival_methods, range=[[1, 0], [6, 3]])),
+        detail=["road_class:N", "profile:N", "Method:N"], order="age:Q",
+        tooltip=["Source:N", "Class:N", "Method:N", "age:Q", alt.Tooltip("survival_probability:Q", format=".6f")],
+    ).properties(width=180, height=170).facet(
+        row=alt.Row("Source:N", title=None), column=alt.Column("Class:N", sort=list(CLASS_LABELS.values()), title=None,
+            header=alt.Header(labelFontSize=10))).resolve_scale(x="independent")
+    historical_projection = diagnosis["historical_projection"].loc[
+        diagnosis["historical_projection"].region.eq(region.value)].copy()
+    differing_groups = historical_projection.groupby(["profile", "road_class"]).native_difference_k_vehicles.agg(
+        lambda values: values.abs().gt(1e-9).any()).rename("differs_from_native").reset_index()
+    projection_values = historical_projection[["profile", "road_class", "calendar_year", "retained_k_vehicles"]].assign(
+        Method=survival_methods[1])
+    native_projection = historical_projection.merge(differing_groups, on=["profile", "road_class"], validate="many_to_one")
+    native_projection = native_projection.loc[native_projection.differs_from_native & native_projection.native_complete,
+        ["profile", "road_class", "calendar_year", "native_survivors_k_vehicles"]].rename(
+            columns={"native_survivors_k_vehicles": "retained_k_vehicles"}).assign(Method=survival_methods[0])
+    projection_methods = survival_methods if not native_projection.empty else [survival_methods[1]]
+    projection_colors = [{"Native survival": "#777777", "Constant retirement": "#438564"}[name] for name in projection_methods]
+    projection_dashes = [{"Native survival": [1, 0], "Constant retirement": [6, 3]}[name] for name in projection_methods]
+    projection_values = pd.concat([native_projection, projection_values], ignore_index=True).assign(
+        Class=lambda frame: frame.road_class.map(CLASS_LABELS), Source=lambda frame: frame.profile.map(PROFILE_LABELS))
+    projection_start = int(historical_projection.calendar_year.min())
+    projection_end = int(historical_projection.calendar_year.max())
+    projection_ticks = sorted({projection_start, (projection_start + projection_end) // 2, projection_end})
+    projection_chart = alt.Chart(projection_values).mark_line(strokeWidth=2.0).encode(
+        x=alt.X("calendar_year:Q", title="Calendar year", axis=alt.Axis(format="d", values=projection_ticks)),
+        y=alt.Y("retained_k_vehicles:Q", title="Historical survivors (k)", scale=alt.Scale(zero=True)),
+        color=alt.Color("Method:N", scale=alt.Scale(domain=projection_methods, range=projection_colors),
+            legend=alt.Legend(orient="bottom", symbolType="stroke", symbolSize=350)),
+        strokeDash=alt.StrokeDash("Method:N", scale=alt.Scale(domain=projection_methods, range=projection_dashes)),
+        detail=["road_class:N", "profile:N", "Method:N"], order="calendar_year:Q",
+        tooltip=["Source:N", "Class:N", "Method:N", "calendar_year:O", alt.Tooltip("retained_k_vehicles:Q", format=",.6f")],
+    ).properties(width=180, height=170).facet(row=alt.Row("Source:N", title=None),
+        column=alt.Column("Class:N", sort=list(CLASS_LABELS.values()), title=None,
+            header=alt.Header(labelFontSize=10))).resolve_scale(y="independent")
+    survival_audit = diagnosis["production_survival_audit"].assign(
+        Source=lambda frame: frame.profile.map(PROFILE_LABELS), Class=lambda frame: frame.road_class.map(CLASS_LABELS),
+        retirement_percent=lambda frame: 100 * frame.terminal_retirement_rate)
+    projection_audit = historical_projection.assign(
+        comparable_year=lambda frame: frame.calendar_year.where(frame.native_complete),
+    ).groupby(["profile", "road_class"], as_index=False).agg(
+        last_comparable_year=("comparable_year", "max"),
+        max_difference_k_vehicles=("native_difference_k_vehicles", lambda values: values.abs().max()),
+        max_removed_k_vehicles=("removed_k_vehicles", "max"),
+    ).assign(Source=lambda frame: frame.profile.map(PROFILE_LABELS), Class=lambda frame: frame.road_class.map(CLASS_LABELS))
+    reference_comparison = diagnosis["reference_survival_comparison"].loc[
+        diagnosis["reference_survival_comparison"].region.eq(region.value)].assign(
+            Source=lambda frame: frame.profile.map(PROFILE_LABELS), Class=lambda frame: frame.road_class.map(CLASS_LABELS))
+    model_losses = diagnosis["vintage_survival_audit"].groupby(["profile", "road_class"], as_index=False)[[
+        "removed_reference_stock_k_vehicles", "removed_first_model_stock_k_vehicles", "removed_stock_years_k_vehicles"]].sum().assign(
+            Source=lambda frame: frame.profile.map(PROFILE_LABELS), Class=lambda frame: frame.road_class.map(CLASS_LABELS))
+    threshold = diagnosis["metadata"]["tail_survival_threshold"]
+    hard_zero_age = diagnosis["metadata"]["survival_treatment"]["hard_zero_age"]
+    age_cap_note = "No maximum-age cap is selected." if hard_zero_age is None else f"The configured age cap forces zero at age {hard_zero_age}."
+    changed_pairs = int(differing_groups.differs_from_native.sum())
+    reference_change = reference_comparison.max_cohort_stock_difference_k_vehicles.max()
+    reference_change_label = (f"{reference_change:,.6f} thousand vehicles" if pd.notna(reference_change)
+                              else "unavailable because native support is incomplete")
+    mo.vstack([mo.md(f"""
+    ## 5. Native survival versus constant retirement
+
+    The approved method preserves native survival observations, then continues the **last observed annual
+    retirement rate** after source support ends. When the extended survival reaches **{100 * threshold:g}% or below**,
+    the next year is zero. {age_cap_note} These are the production calculations for both MOVES and NHTSA + NEMS.
+    The upper panels use independent age axes so each source's complete tail remains readable.
+
+    The lower panels follow the same calibrated historical acquisitions, with **no future sales or future
+    CEUD calibration**. Values are point-year survivors, not Temoa period averages. Native evidence stops when
+    any positive cohort exceeds its known support; missing native tails are never treated as zero.
+    A native comparison line appears only where known-support values differ from production: **{changed_pairs}
+    source/class pairs** in {region.value}. Otherwise, one production line represents the overlapping values.
+    The table quantifies differences that may be too small to see.
+
+    The selected {100 * threshold:g}% threshold governs source extension. Combining annual cohorts into model
+    vintages preserves those stock totals. Only final survival values below Temoa's supported numerical
+    limit end earlier, and that stock loss is measured directly by the production calculation.
+    Physical stock for utilization remains based on the source annual schedule, with the same stock multiplier. The maximum
+    reference-year cohort-stock change from source harmonization in this region is
+    **{reference_change_label}** among cohorts with complete native support; the audit also separates any final tail removal.
+    """), display_chart(survival_chart), display_table(survival_audit[[
+        "Source", "Class", "known_survival_max_age", "retirement_percent", "terminal_age"]].rename(columns={
+            "known_survival_max_age": "Last native age", "retirement_percent": "Last annual retirement (%)",
+            "terminal_age": "Zero-survival age"}), selection=None, pagination=False,
+        label="One row per source and class; the configured threshold applies after native support"),
+        display_chart(projection_chart), display_table(projection_audit[[
+            "Source", "Class", "last_comparable_year", "max_difference_k_vehicles", "max_removed_k_vehicles"]].rename(columns={
+                "last_comparable_year": "Last year with complete native support",
+                "max_difference_k_vehicles": "Largest native/production difference (k)",
+                "max_removed_k_vehicles": "Largest annual small-tail removal (k)"}), selection=None, pagination=False,
+            label=f"Selected region {region.value}; maxima are across the displayed calendar years"),
+        mo.accordion({"Reference-year stock scaling: native evidence and production": display_table(reference_comparison[[
+            "Source", "Class", "native_complete", "native_raw_survivors_k_vehicles", "production_raw_survivors_k_vehicles",
+            "native_multiplier", "production_multiplier", "max_cohort_stock_difference_k_vehicles"]].rename(columns={
+                "native_complete": "Complete native support", "native_raw_survivors_k_vehicles": "Native raw survivors (k)",
+                "production_raw_survivors_k_vehicles": "Production raw survivors (k)", "native_multiplier": "Native multiplier",
+                "production_multiplier": "Production multiplier", "max_cohort_stock_difference_k_vehicles": "Largest cohort-stock change (k)"}),
+            selection=None, pagination=False),
+            "Small-tail retirement across all configured regions": display_table(model_losses[[
+                "Source", "Class", "removed_reference_stock_k_vehicles", "removed_first_model_stock_k_vehicles", "removed_stock_years_k_vehicles"]].rename(columns={
+                    "removed_reference_stock_k_vehicles": "Reference-year stock removed (k)",
+                    "removed_first_model_stock_k_vehicles": "First model-year stock removed (k)",
+                    "removed_stock_years_k_vehicles": "Lifetime stock removed (thousand vehicle-years)"}),
+                selection=None, pagination=False)})])
+    return projection_chart, survival_chart
 
 
 if __name__ == "__main__":
