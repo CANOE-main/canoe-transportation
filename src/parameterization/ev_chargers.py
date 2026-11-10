@@ -85,12 +85,13 @@ def _prepared_stock_identity(
 def prepare_charger_capacity_to_activity(
     bundle: ConfigBundle, *, technology: pd.DataFrame, regions: set[str],
 ) -> tuple[DataSet, list[CapacityToActivity]]:
-    """Expand the reviewed physical conversion without assigning external DQ."""
+    """Register internal charger accounting and expand the physical conversion."""
     rules = load_harmonization_rules(bundle, "ev_chargers")
+    accounting = _charger_electricity_accounting(rules)
     manual_path = resolve_input_path(bundle, "manual", rules["capacity_to_activity_file"])
     template_path = resolve_input_path(bundle, "template", "technology.csv")
-    manual = pd.read_csv(manual_path)
     required = {"category", "sub_category", "c2a", "units", "notes"}
+    manual = pd.read_csv(manual_path, usecols=lambda column: column in required)
     if required - set(manual):
         raise ValueError("Charger capacity-to-activity input lacks required columns")
     selected = manual.loc[manual.category.eq("charger")]
@@ -115,11 +116,16 @@ def prepare_charger_capacity_to_activity(
     digest = hashlib.sha256()
     for path in (manual_path, template_path):
         digest.update(path.name.encode("utf-8") + b"\0" + path.read_bytes() + b"\0")
+    digest.update(json.dumps({
+        "electricity_accounting": accounting,
+        "technology": rules["technology"],
+        "input_commodity": rules["input_commodity"],
+    }, sort_keys=True, allow_nan=False).encode("utf-8"))
     version = digest.hexdigest()[:16]
     dataset = DataSet(
-        data_id=f"canoe-charger-capacity-to-activity:{version}", version=version,
-        label="CANOE reviewed charger capacity-to-activity conversion",
-        description="Version-controlled capacity_to_activity.csv physical energy/power conversion expanded through charger technology mappings; internal assumption.",
+        data_id=f"canoe-charger-internal-assumptions:{version}", version=version,
+        label="CANOE internal charger accounting and capacity conversion",
+        description="Version-controlled capacity_to_activity.csv physical energy/power conversion and configured unity electricity transfer: vehicle electricity consumption includes charging losses. Backend accounting assumptions, not external source measurements.",
     )
     rows = [
         CapacityToActivity(region=region, tech=tech, c2a=value, units=record.units,
@@ -129,6 +135,19 @@ def prepare_charger_capacity_to_activity(
     LOGGER.info("Prepared %d charger capacity_to_activity rows: %s %s per year",
                 len(rows), value, record.units)
     return dataset, rows
+
+
+def _charger_electricity_accounting(rules: dict) -> dict:
+    """Keep charging losses in vehicle consumption, once, across the shared edge."""
+    accounting = rules.get("electricity_accounting", {})
+    if (not isinstance(accounting, dict)
+            or accounting.get("vehicle_energy_basis") != "grid_electricity_including_charging_losses"):
+        raise ValueError("Unsupported charger vehicle electricity energy basis")
+    value = accounting.get("charger_transfer_efficiency")
+    if (isinstance(value, bool) or not isinstance(value, (int, float))
+            or not math.isfinite(value) or value != 1.0):
+        raise ValueError("Charging-inclusive vehicle electricity requires unity charger transfer efficiency")
+    return accounting
 
 
 def _manual_value(
@@ -155,6 +174,8 @@ def _period_value(
         manual.category.eq(infrastructure_category) & manual.sub_category.eq(category)
         & manual.parameter.eq(parameter)
     ]
+    if selected.period.duplicated().any():
+        raise ValueError(f"Duplicate charger period selector: {category}/{parameter}")
     exact = selected.loc[selected.period.eq(str(year))]
     if len(exact) == 1:
         return exact.iloc[0]
@@ -171,6 +192,77 @@ def _period_value(
     if len(remainder) == 1:
         return remainder.iloc[0]
     raise ValueError(f"Missing charger period selector: {category}/{parameter}/{year}")
+
+
+def _rated_power(manual: pd.DataFrame, category: str, kind: str, source_year: int) -> pd.Series:
+    """Select the rated power for the same calendar year as its source cost."""
+    row = _period_value(manual, category, f"{kind}_rated_power", source_year)
+    value = float(row.value)
+    if row.unit != "kW" or not math.isfinite(value) or value <= 0:
+        raise ValueError(f"Charger rated power must be positive finite kW: {category}/{kind}/{source_year}")
+    return row
+
+
+def charger_cost_components(
+    manual: pd.DataFrame, category: str, source_year: int,
+    converter: CerCurrencyConverter,
+) -> tuple[float, list[dict[str, Any]]]:
+    """Divide expenditure per representative port by its rated kW.
+
+    Count shares define the equipment mix. Convert each native per-port cost to
+    target-year CAD before summing expenditure. CAD/kW is numerically equal to
+    million CAD/GW; no additional million factor is applied. Power shares are
+    derived audit evidence, never independent modelling assumptions.
+    """
+    cost_types = {"ldv": ("L1", "L2", "DCFC"), "mhdv": ("50kW", "350kW", "2MW")}
+    if category not in cost_types:
+        raise ValueError(f"Unknown charger cost category: {category}")
+    records = []
+    for kind in cost_types[category]:
+        share = _manual_value(manual, category, f"{kind}_capex_aggregation", "through_2050")
+        if share > 1:
+            raise ValueError(f"Invalid charger cost count share: {category}/{kind}")
+        cost = _period_value(manual, category, f"{kind}_capex", source_year)
+        power = _rated_power(manual, category, kind, source_year)
+        if cost.unit not in {"CAD", "USD"} or not str(cost.currency_year).isdigit():
+            raise ValueError(f"Charger capex requires native CAD/USD per port and dollar year: {category}/{kind}")
+        value = float(cost.value)
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError(f"Charger capex must be positive and finite: {category}/{kind}")
+        converted = converter.convert(value, currency=cost.unit, dollar_year=int(cost.currency_year))
+        kw = float(power.value)
+        records.append({
+            "charger_class": category, "source_year": source_year, "charger_type": kind,
+            "count_share": share, "rated_power_kw": kw,
+            "cost_source_period": str(cost.period), "power_source_period": str(power.period),
+            "source_cost_per_port": value, "source_unit": cost.unit,
+            "source_dollar_year": int(cost.currency_year),
+            "cad_per_usd": converted.cad_per_usd,
+            "source_year_deflator": converted.source_year_deflator,
+            "target_year_deflator": converted.target_year_deflator,
+            "target_dollar_year": converted.target_dollar_year,
+            "cad_2020_cost_per_port": converted.target_cad_value,
+            "weighted_cad_2020_cost_per_port": share * converted.target_cad_value,
+            "weighted_rated_power_kw": share * kw,
+            "cad_2020_cost_per_gw": converted.target_cad_value / kw,
+            "aggregation_basis": "total_expenditure_per_rated_power",
+        })
+    if not math.isclose(sum(row["count_share"] for row in records), 1, abs_tol=1e-9):
+        raise ValueError(f"Charger {category} cost count shares do not sum to one")
+    mean_power = sum(row["weighted_rated_power_kw"] for row in records)
+    mean_expense = sum(row["weighted_cad_2020_cost_per_port"] for row in records)
+    total = mean_expense / mean_power
+    if not math.isfinite(total) or total <= 0:
+        raise ValueError(f"Invalid aggregated charger cost: {category}/{source_year}")
+    for row in records:
+        row["power_share"] = row["weighted_rated_power_kw"] / mean_power
+        row["weighted_cad_2020_cost_per_gw"] = row["power_share"] * row["cad_2020_cost_per_gw"]
+        row["mean_rated_power_kw"] = mean_power
+        row["mean_cad_2020_cost_per_port"] = mean_expense
+    if not math.isclose(sum(row["weighted_cad_2020_cost_per_gw"] for row in records), total,
+                        rel_tol=1e-12, abs_tol=1e-9):
+        raise ValueError(f"Charger expenditure/power reconciliation failed: {category}/{source_year}")
+    return total, records
 
 
 def _context(
@@ -391,6 +483,7 @@ def prepare_ev_charger_rows(
 
     physical_stock = physical_stock_for_consumers(bundle, existing_capacity_rows, physical_stock)
     rules = load_harmonization_rules(bundle, "ev_chargers")
+    electricity_accounting = _charger_electricity_accounting(rules)
     manual_rules = load_harmonization_rules(bundle, "manual_parameters")
     _, frames = validate_manual_registry(
         bundle, source_column=manual_rules["source_column"],
@@ -560,17 +653,11 @@ def prepare_ev_charger_rows(
                 }
             if not math.isclose(sum(port_counts.values()), required_ports, rel_tol=1e-12, abs_tol=1e-8):
                 raise ValueError(f"Charger port reconciliation failed: {region}/{category}")
-            power_kw = {
-                kind: _manual_value(manual, category, f"existing_{kind}_rated_power", "existing")
-                for kind in port_counts
-            }
-            for kind, count in port_counts.items():
-                selected = manual.loc[
-                    manual.category.eq("charger") & manual.sub_category.eq(category)
-                    & manual.parameter.eq(f"existing_{kind}_rated_power")
-                ]
-                if len(selected) != 1 or selected.iloc[0].unit != "kW":
-                    raise ValueError(f"Charger power unit must be kW: {category}/{kind}")
+            # Existing ratings use the same earliest model-year proxy as costs.
+            power_source_year = min(bundle.scenario.periods.model)
+            power_rows = {kind: _rated_power(manual, category, kind, power_source_year)
+                          for kind in port_counts}
+            power_kw = {kind: float(row.value) for kind, row in power_rows.items()}
             gw = sum(port_counts[kind] * power_kw[kind] for kind in port_counts) / 1_000_000
             if not math.isfinite(gw) or gw < 0:
                 raise ValueError(f"Invalid charger GW capacity: {region}/{category}")
@@ -579,6 +666,9 @@ def prepare_ev_charger_rows(
                 "ev_per_port": ratio, "required_ports": required_ports,
                 "observed_public_ports": public, "derived_private_ports": private,
                 **{f"{kind}_ports": count for kind, count in port_counts.items()},
+                **{f"{kind}_rated_power_kw": kw for kind, kw in power_kw.items()},
+                "rated_power_source_year": power_source_year,
+                **{f"{kind}_rated_power_source_period": str(row.period) for kind, row in power_rows.items()},
                 "capacity_gw": gw, "bev_stock_year": bundle.scenario.periods.base_year,
                 "public_charger_as_of": charger_source["as_of"],
             })
@@ -624,40 +714,20 @@ def prepare_ev_charger_rows(
     if (bundle.scenario.economics.cost_reference_currency != "CAD"
             or bundle.scenario.economics.cost_reference_year != 2020):
         raise ValueError("Charger cost units require the reviewed 2020 CAD scenario")
-    cost_types = {"ldv": ("L1", "L2", "DCFC"), "mhdv": ("50kW", "350kW", "2MW")}
     invest_rows, fixed_rows, cost_audit = [], [], []
     excluded_fixed_pairs = 0
     fixed_ratio = _manual_value(manual, "all", "fixed_to_capex_ratio", "all")
     if not 0 <= fixed_ratio <= 1:
         raise ValueError("Invalid reviewed charger fixed cost ratio")
-    for category, kinds in cost_types.items():
+    for category in stock_class_map:
         existing_vintage = bundle.scenario.periods.latest_observed_vintage
         for vintage in [existing_vintage, *bundle.scenario.periods.model]:
             source_year = (
                 bundle.scenario.periods.model[0] if vintage == existing_vintage
                 else bundle.scenario.periods.projection_year(vintage, legacy_at_end=False)
             )
-            weighted = 0.0
-            for kind in kinds:
-                share = _manual_value(manual, category, f"{kind}_capex_aggregation", "through_2050")
-                selected = _period_value(manual, category, f"{kind}_capex_per_GW", source_year)
-                if selected.unit not in {"M CAD", "M USD"} or not str(selected.currency_year).isdigit():
-                    raise ValueError(f"Charger cost currency contract changed: {category}/{kind}")
-                converted = converter.convert(
-                    float(selected.value), currency=selected.unit.split()[1],
-                    dollar_year=int(selected.currency_year),
-                )
-                weighted += share * converted.target_cad_value
-                cost_audit.append({
-                    "charger_class": category, "vintage": vintage, "source_year": source_year,
-                    "charger_type": kind, "count_share": share,
-                    "source_cost_per_gw": float(selected.value), "source_unit": selected.unit,
-                    "source_dollar_year": int(selected.currency_year),
-                    "cad_2020_cost_per_gw": converted.target_cad_value,
-                    "weighted_cad_2020_cost_per_gw": share * converted.target_cad_value,
-                })
-            if not math.isfinite(weighted) or weighted <= 0:
-                raise ValueError(f"Invalid aggregated charger cost: {category}/{vintage}")
+            weighted, components = charger_cost_components(manual, category, source_year, converter)
+            cost_audit.extend({"vintage": vintage, **record} for record in components)
             for region in sorted(model_regions):
                 if vintage == existing_vintage and stock_by_region[region, category] == 0:
                     continue
@@ -678,19 +748,22 @@ def prepare_ev_charger_rows(
                     for period in periods
                 ], fixed_contexts[category], bundle=bundle))
 
-    efficiency_contexts = {
-        "ldv": _context(bundle, [("icct_ev_charge", "ld_charger_efficiency")],
-                        name="ldv_efficiency", digest=digest),
-        "mhdv": _context(bundle, [("icct_hdv_charge", "mhd_charger_efficiency")],
-                         name="mhdv_efficiency", digest=digest),
-    }
     efficiency_rows = []
+    unapplied_efficiencies = []
     utilization_targets, utilization_context = prepare_charger_utilization_targets(bundle, manual=manual)
     utilization_records = []
     for category in ("ldv", "mhdv"):
-        efficiency = _manual_value(manual, category, "efficiency", "all")
-        if not 0 < efficiency <= 1:
+        reviewed_efficiency = _manual_value(manual, category, "efficiency", "all")
+        if not 0 < reviewed_efficiency <= 1:
             raise ValueError(f"Invalid charger efficiency: {category}")
+        source_row = manual.loc[
+            manual.category.eq("charger") & manual.sub_category.eq(category)
+            & manual.parameter.eq("efficiency") & manual.period.eq("all")
+        ].iloc[0]
+        unapplied_efficiencies.append({
+            "charger_class": category, "reviewed_efficiency": reviewed_efficiency,
+            "source": source_row[manual_rules["source_column"]],
+        })
         mapping = rules["technology"][category]
         for region in sorted(model_regions):
             for kind, vintages in (("existing", [bundle.scenario.periods.latest_observed_vintage]),
@@ -698,12 +771,16 @@ def prepare_ev_charger_rows(
                 if kind == "existing" and stock_by_region[region, category] == 0:
                     continue
                 tech = mapping[kind]
-                efficiency_rows.extend(validate_parameter_rows(Efficiency, [
-                    {"region": region, "tech": tech, "vintage": vintage,
-                     "input_comm": rules["input_commodity"], "output_comm": mapping["output"],
-                     "efficiency": efficiency, "units": "PJ/PJ"}
+                efficiency_rows.extend(
+                    Efficiency.model_validate({
+                        "region": region, "tech": tech, "vintage": vintage,
+                        "input_comm": rules["input_commodity"], "output_comm": mapping["output"],
+                        "efficiency": electricity_accounting["charger_transfer_efficiency"],
+                        "units": "PJ/PJ", "data_id": assumption_dataset.data_id,
+                        "notes": "Unity accounting transfer; charging losses are already included in vehicle electricity consumption.",
+                    })
                     for vintage in vintages
-                ], efficiency_contexts[category], bundle=bundle))
+                )
                 for vintage in vintages:
                     selected = utilization_targets.loc[
                         utilization_targets.region.eq(region) & utilization_targets.tech_or_group.eq(tech)
@@ -739,7 +816,7 @@ def prepare_ev_charger_rows(
     fixed_rows.extend(h2_fixed)
     efficiency_rows.extend(h2_efficiency)
     contexts = [*capacity_contexts, *invest_contexts.values(), *fixed_contexts.values(),
-                *efficiency_contexts.values(), utilization_context, *h2_contexts]
+                utilization_context, *h2_contexts]
     output_dir = resolve_artifact_path(bundle, "ev_chargers_processed")
     output_dir.mkdir(parents=True, exist_ok=True)
     frames_to_write = {
@@ -765,6 +842,12 @@ def prepare_ev_charger_rows(
         },
         "capacity_rows": len(capacity_rows), "invest_rows": len(invest_rows),
         "fixed_rows": len(fixed_rows), "efficiency_rows": len(efficiency_rows),
+        "electricity_accounting": {
+            **electricity_accounting,
+            "internal_assumption_data_id": assumption_dataset.data_id,
+            "reviewed_efficiencies_not_applied": unapplied_efficiencies,
+            "reason": "Vehicle electricity consumption includes charging losses; an additional charger loss would count them twice.",
+        },
         "existing_investment_rows_excluded": len(capacity_rows),
         "utilization_rows": len(utilization_rows), "utilization_schema_supported": True,
         "utilization_time_basis": rules["utilization_time_basis"],
@@ -794,6 +877,8 @@ def prepare_ev_charger_rows(
         len(utilization), national,
     )
     LOGGER.info("Excluded %d existing charger investment rows; retained their annual fixed-cost basis", len(capacity_rows))
+    LOGGER.info("Normalized charger capex: total converted CAD per representative port / total rated kW = million 2020CAD/GW; existing ratings use source year %d", min(bundle.scenario.periods.model))
+    LOGGER.info("Applied unity charger electricity transfer: losses are included in vehicle consumption; retained %d reviewed loss factors as unapplied evidence", len(unapplied_efficiencies))
     LOGGER.info("Excluded fixed-cost pairs at/after retirement: chargers=%d H2=%d",
                 excluded_fixed_pairs, h2_audit["fixed_period_vintage_pairs_excluded_by_lifetime"])
     LOGGER.info("H2 refueling rows: invest=%d fixed=%d efficiency=%d; no existing station stock input",

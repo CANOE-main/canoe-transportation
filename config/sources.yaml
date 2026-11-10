@@ -1958,9 +1958,9 @@ sources:
     source_type: manual_parameter
     file_type: csv
     version: "2024 updated forecast; reviewed manual extraction"
-    units: "Reviewed dimensionless utilization and shares, kW port ratings, and 2022 CAD million per GW charger capital costs."
+    units: "Reviewed dimensionless utilization and port-count shares, kW port ratings, and 2022 CAD capital costs per port."
     citation: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-    database_note: "Canadian LD/MHD charging projections with reviewed port mixes, utilization and equipment/installation costs. Native costs are CAD2022 per rated charging power; final model costs use the scenario currency and price year."
+    database_note: "Canadian LD/MHD charging projections with reviewed port-count mixes, rated-power trajectories and CAD2022 equipment/installation costs per port. Convert total port expenditure divided by total rated power to model costs. Common 0.20 utilization is a user-reviewed consistency override for vintage-indexed limits, not a direct source observation; final cost/power values beyond 2040 retain the reviewed endpoint."
     database_precedence:
       - table: existing_capacity
         categories: [charger]
@@ -1969,7 +1969,7 @@ sources:
       - table: cost_invest
         categories: [charger]
     data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 2}
-    validation_rule: "Select 35 cited charger rows from the compact charger table with unique category/subcategory/parameter/period keys."
+    validation_rule: "Select 37 cited charger rows from the compact charger table with unique category/subcategory/parameter/period keys."
     refresh_notes: >
       Review the source report tables and all charger utilization/share/cost rows together
       before changing the version-controlled values or derivation notes.
@@ -1985,14 +1985,14 @@ sources:
         applies_to: [charger]
         produces: [charger_utilization, charger_type_share, charger_cost_invest]
         parameter_modules: [ev_chargers]
-        units: "Dimensionless utilization rate or share; kW port rating; 2022 CAD million per GW."
-        validation_rule: "Require all 35 cited rows and preserve the reviewed derivation notes."
+        units: "Dimensionless utilization rate or port-count share; kW port rating; 2022 CAD per port."
+        validation_rule: "Require all 37 cited rows, matched cost/power source years, and reviewed derivation/override notes."
         adapter:
           manual_parameter_path: "charger_parameters.csv"
           expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
           unique_key: [category, sub_category, parameter, period]
           source_selector: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-          expected_rows: 35
+          expected_rows: 37
 
   transport_canada_ev_dashboard:
     # No API: permit HTML republishing only when every parsed observation is unchanged.
@@ -2081,9 +2081,9 @@ sources:
     source_type: manual_parameter
     file_type: csv
     version: "2024 report; reviewed residential L1 installation cost"
-    units: "2021 USD million per GW of residential L1 charging power."
+    units: "USD per residential L1 port; reviewed 2021 dollar-year basis."
     citation: "Lommele, S., Desai, R., Johnson, C., Snelling, A., Brown, A., Singer, M., Bennett, J., Cappellucci, J., Levene, J., & Hoehne, C. (2024). Assessment of Alternative Fueling Infrastructure in the United States (NREL/TP-5400-88513). NREL. https://doi.org/10.2172/2447838"
-    database_note: "U.S. residential L1 port cost estimate, represented by the reviewed cost midpoint and normalized to rated charging power in 2021 USD."
+    database_note: "U.S. residential L1 installation cost midpoint of 550 USD per port from the 100–1000 USD range; equipment cost is zero. The 2021 dollar year is a reviewed manual basis, not explicitly stated in the source table. Normalize to rated power only after currency conversion and port-count aggregation."
     data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 2, dq_time: 2}
     validation_rule: "Select the reviewed residential L1 cost row from charger_parameters.csv."
     refresh_notes: "Review the report and L1 installation-cost treatment before editing the manual row."
@@ -2097,7 +2097,7 @@ sources:
         applies_to: [charger]
         produces: [cost_invest]
         parameter_modules: [ev_chargers]
-        units: "2021 USD million per GW"
+        units: "USD per port, with reviewed 2021 dollar year"
         validation_rule: "Require one reviewed cost and its native currency/year."
         adapter:
           manual_parameter_path: "charger_parameters.csv"
@@ -2115,8 +2115,7 @@ sources:
     version: "v1.2; reviewed charger efficiency"
     units: "Dimensionless LD charger efficiency."
     citation: "ICCT. (2024). EV CHARGE v1.2 Documentation. EV CHARGE Model Documentation. https://theicct.github.io/EVCHARGE-doc/versions/v1.2/"
-    database_note: "EV CHARGE v1.2 L2 charging-efficiency assumption applied to aggregate light-duty charging, with one loss factor across charger types."
-    database_precedence: [efficiency]
+    database_note: "EV CHARGE v1.2 L2 charging-efficiency assumption retained as reviewed evidence; not applied as an additional loss to charging-inclusive vehicle electricity consumption."
     data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 3, dq_time: 2}
     validation_rule: "Select the reviewed LD charger efficiency row."
     refresh_notes: "Review the ICCT model assumption and manual efficiency together before editing."
@@ -2128,7 +2127,7 @@ sources:
         short_name: icct_ld_charger_efficiency
         inputs: [category, sub_category, parameter, value]
         applies_to: [charger]
-        produces: [efficiency]
+        produces: [reviewed_charger_efficiency_evidence]
         parameter_modules: [ev_chargers]
         units: fraction
         validation_rule: "Require one bounded LD charger efficiency."
@@ -2148,8 +2147,7 @@ sources:
     version: "v1.2; reviewed charger efficiency"
     units: "Dimensionless MHD charger efficiency."
     citation: "ICCT. (2024). HDV CHARGE v1.2 Documentation. HDV CHARGE Model Documentation. https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/"
-    database_note: "HDV CHARGE v1.2 efficiency assumption for higher-power charging, represented by one loss factor across medium/heavy-duty charger types."
-    database_precedence: [efficiency]
+    database_note: "HDV CHARGE v1.2 global efficiency includes equipment, onboard charging where applicable and battery losses. Retained as reviewed evidence; not applied as an additional loss to charging-inclusive vehicle electricity consumption."
     data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 3, dq_time: 2}
     validation_rule: "Select the reviewed MHD charger efficiency row."
     refresh_notes: "Review the ICCT model assumption and manual efficiency together before editing."
@@ -2161,7 +2159,7 @@ sources:
         short_name: icct_mhd_charger_efficiency
         inputs: [category, sub_category, parameter, value]
         applies_to: [charger]
-        produces: [efficiency]
+        produces: [reviewed_charger_efficiency_evidence]
         parameter_modules: [ev_chargers]
         units: fraction
         validation_rule: "Require one bounded MHD charger efficiency."

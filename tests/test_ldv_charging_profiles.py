@@ -184,7 +184,7 @@ def test_preparation_can_reuse_evidence_and_has_complete_dq_and_labels(
         all(getattr(r, field) == value for field, value in expected_dq.items())
         for r in result.rows
     )
-    for tech, target in (("T_LDV_CHRG_EX", 0.15), ("T_LDV_CHRG_N", 0.2)):
+    for tech, target in (("T_LDV_CHRG_EX", 0.2), ("T_LDV_CHRG_N", 0.2)):
         assert np.mean([r.factor for r in result.rows if r.tech == tech]) == pytest.approx(target)
     pd.testing.assert_frame_equal(result.hourly, evidence.hourly)
     assert {c.source_key for c in result.provenance_contexts[0].contributors} == {
@@ -381,6 +381,7 @@ def test_existing_capacity_preparation_keeps_charging_provenance(
     bundle, evidence, monkeypatch
 ):
     from canoe_schema.v4_0 import ExistingCapacity
+    from parameterization.build_existing_capacity import ExistingCapacityPreparation
     from validation.insertion import validate_parameter_rows
     from validation.provenance import resolve_provenance
 
@@ -406,7 +407,14 @@ def test_existing_capacity_preparation_keeps_charging_provenance(
     )
     monkeypatch.setattr(
         "parameterization.build_existing_capacity.prepare_existing_capacity_rows",
-        lambda b: (rows, [context], {}),
+        lambda b: ExistingCapacityPreparation(
+            existing_capacity_rows=rows,
+            physical_stock=pd.DataFrame([{
+                "region": "ON", "tech": "T_LDV_C_BEV_EX", "vintage": 2020,
+                "surviving_k_vehicles": 1., "units": "k vehicles", "data_id": context.data_id,
+            }]),
+            annual_acquisitions=pd.DataFrame(), provenance_contexts=[context], audit={},
+        ),
     )
     charging = prepare_charging_profile_rows(bundle, evidence=evidence, publish=False)
     c = sqlite3.connect(":memory:")
@@ -470,13 +478,13 @@ def test_profile_scaling_rejects_missing_duplicate_or_mixed_vintage_targets(prob
         select_profile_utilization_targets(targets, regions=["ON"], technologies=["CHARGER"])
 
 
-def test_legacy_comparison_uses_kind_specific_targets_for_all_vintages(bundle, evidence):
+def test_legacy_comparison_uses_uniform_reviewed_targets_for_all_vintages(bundle, evidence):
     payload = load_config_bundle("config/scenarios/legacy_comparison.yaml").scenario.model_dump()
     payload["geography"]["regions"] = ["ON"]
     legacy = replace(bundle, scenario=ScenarioConfig.model_validate(payload))
     result = prepare_charging_profile_rows(legacy, evidence=evidence, publish=False)
     assert set(result.utilization_targets) == {
-        ("ON", "T_LDV_CHRG_EX", 0.15), ("ON", "T_LDV_CHRG_N", 0.2),
+        ("ON", "T_LDV_CHRG_EX", 0.2), ("ON", "T_LDV_CHRG_N", 0.2),
     }
     assert len(result.rows) == 17520
     validate_charging_preparation(result, seasons=result.seasons, times_of_day=result.times_of_day)

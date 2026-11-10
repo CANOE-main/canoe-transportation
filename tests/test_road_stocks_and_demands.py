@@ -108,6 +108,12 @@ def test_road_capacity_to_activity_uses_template_category_owners() -> None:
     )
     assert rows["tech"].tolist() == ["T_CAR_EX", "T_CAR_N"]
     assert rows["c2a"].tolist() == [3.504, 3.504]
+    with_explanation = reconcile_road_capacity_to_activity(
+        manual.assign(speed="not consumed", load=99999, hours=-1),
+        technology, road_classes={"cars"}, activity_units={"cars": "bn passenger-km"},
+    )
+    pd.testing.assert_frame_equal(rows, with_explanation)
+    assert not {"speed", "load", "hours"} & set(with_explanation)
     with pytest.raises(ValueError, match="unit mismatch"):
         reconcile_road_capacity_to_activity(
             manual.assign(units="PJ/GW"), technology, road_classes={"cars"},

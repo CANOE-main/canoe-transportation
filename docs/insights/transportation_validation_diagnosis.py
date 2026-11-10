@@ -186,6 +186,10 @@ def _(diagnosis, mo):
 
     **2025 evaluation**, shared **CEUD 2023 edition**; observed stock, activity and energy are held
     constant through 2025. Backend stock is normalized to CEUD; legacy stock is independently reconstructed.
+    This comparison uses production's **fixed-lifetime mode** (`survival_curves: false`).
+    Road stock comes from annual sales and configured survival schedules, including their harmonized tails,
+    followed by CEUD calibration and fixed-lifetime eligibility allocation. Curve-mode installed capacity
+    and the separate physical-stock handoff are examined in [stock_cohort_diagnosis.py](stock_cohort_diagnosis.py).
     CEUD observation year, UF calibration year, evaluation year and model labels are different concepts.
     Prospective **model period 2025 represents demand calendar year 2030**; baseline accounting here is calendar 2025.
     Scenario: [{scenario['scenario']['name']}](../../{diagnosis['scenario_path']}).
@@ -195,7 +199,9 @@ def _(diagnosis, mo):
     It is also the explicitly selected **inherited-parameter snapshot**, substituting for missing
     `Input data/canoe_ALL_cm.sqlite`. Legacy efficiency-dependent energy is conditional on that substitution;
     it does not establish the original input's historical identity. Reference files remain immutable.
-    No efficiencies, costs, charging assumptions or scientific calibration are changed by this comparison.
+    The comparison preserves each method's vehicle efficiencies, costs and calibration.
+    Production charger transfers are now **1.0 PJ/PJ** because vehicle electricity consumption
+    already includes charging losses; Section 6 explains the accounting correction.
     """), mo.accordion({"Reproduce offline, in order": mo.md(f"""
     ```powershell
     uv run --offline python src/build_transport.py --scenario {diagnosis['scenario_path']} --overwrite
@@ -229,7 +235,7 @@ def _(mo):
 
     The default shows each method's **native ExistingCapacity parameter**. Legacy exports the
     **sum of original acquisitions** in each vintage; the backend exports **already surviving,
-    CEUD-scaled stock after fixed-lifetime allocation**. These are deliberately different meanings,
+    CEUD-scaled stock after fixed-lifetime allocation in this scenario**. These are deliberately different meanings,
     even though both use thousand vehicles. The legacy calculation has not been normalized to CEUD
     or forced through the backend's allocation.
 
@@ -474,7 +480,8 @@ def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, disp
     activity and energy agreement. Right means more energy; above means more service. Each class has
     symmetric axes so all four quadrants remain visible. Tooltips retain total PJ and billion passenger-km
     or tonne-km. `Service = Σ(stock × c2a × UF)`; `energy = Σ(service / cohort efficiency)`.
-    Vehicle-input energy counts PHEV blend input once and excludes upstream charger losses.
+    Energy retains each vehicle source's consumption boundary and counts PHEV blend input once.
+    Embedded charging losses remain in vehicle electricity consumption; no extra charger-loss multiplier is applied.
     CEUD secondary energy has its reported fleet/fuel boundary; unsupported fuels and composition can differ.
     Black cross = CEUD at zero difference. Black triangles have zero energy difference and use the distinct
     calendar-2025 demand targets (backend real GDP; legacy workbook price index) for their service difference. They combine
@@ -603,7 +610,88 @@ def _(BUILDS, BUILD_LABELS, CLASS_LABELS, alt, class_grid, diagnosis, display_ch
 
 
 @app.cell(hide_code=True)
+def _(diagnosis, display_table, mo, region):
+    backend_costs = diagnosis["charging"]["backend_cost_basis"]
+    backend_costs = backend_costs.loc[backend_costs.region.eq(region.value)].copy()
+    backend_costs["Class"] = backend_costs.charger_class.map({"ldv": "LDV", "mhdv": "MHDV"})
+    backend_costs["Rate basis"] = backend_costs.status.map({
+        "existing_implied_capex_from_fixed_cost": "Existing: fixed cost / ratio",
+        "new_investment_rate": "New investment",
+        "existing_capex_unavailable_zero_fixed_ratio": "Existing: capex unavailable",
+    })
+    cost_components = diagnosis["charging"]["source_components"].copy()
+    cost_components["Class"] = cost_components.charger_class.map({"ldv": "LDV", "mhdv": "MHDV"})
+    cost_components["Currency/year"] = cost_components.source_currency + cost_components.source_dollar_year.astype(str)
+    mo.vstack([
+        mo.md("""
+        ## 5. Charger costs: power, throughput and source year
+
+        Costs now start from **native capex per port and rated kW for the same source year**.
+        Convert each component to CAD2020, then calculate
+        **`M CAD2020/GW = Σ(count share × CAD2020/port) / Σ(count share × kW/port)`**.
+        CAD/kW and million CAD/GW are numerically equal. This conserves total expenditure and
+        total rated power; it replaces the former count-weighted average of normalized rates.
+
+        The first new vintage, **model label 2025 → cost source year 2030**, uses that year's
+        matched costs and powers. Existing implied capex uses the first-model-year cost proxy;
+        it explains fixed costs and is not charged again as investment in existing infrastructure.
+        Fixed O&M is **1% of the corrected capital rate per year**, within the infrastructure lifetime.
+
+        Both existing/new LDV and MHDV annual utilization targets are **20%**. Thus the
+        throughput denominator is **`31.536 × 0.2 = 6.3072 PJ/year per GW`** for both classes.
+        The table separates capital cost per rated GW from cost per annual energy throughput.
+        Profiled LDV keeps its hourly shape and the configured annual-floor slack.
+
+        Higher-power equipment can cost more per port and less per kW. In the
+        [Dunsky/NRCan source](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada),
+        Table 21's calendar-2025 MHDV ports cost **78,637 / 234,129 / 645,224 CAD2022**
+        at **50 / 350 / 2,000 kW**, or **1,572.74 / 668.94 / 322.61 CAD2022/kW**.
+        LDV L2 is **15,000 CAD2022 / 7.2 kW ≈ 2,083.33 CAD2022/kW** (Table 12).
+
+        Power shares are derived as **`count share × rated kW / Σ(count share × rated kW)`**.
+        Weighting each component's CAD/kW rate by these shares gives the same aggregate.
+        The component table retains native amounts, rating trajectories and both kinds of share;
+        the report independently reconstructs the rates and checks them against SQLite.
+
+        **Framework comparison:** [HDVCHARGE v1.2](https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/#calculate-number-of-required-chargers)
+        explicitly excludes costs from its calculations and outputs. Separately,
+        [ICCT's 2025 facility-cost study, Table 5](https://theicct.org/wp-content/uploads/2025/10/ID-408-%E2%80%93-Energizing-trucks_technical-brief_final.pdf)
+        finds lower behind-the-meter cost per MW at its largest prototype despite higher cost per port.
+        This supports the direction of the scale effect; its US sites, 2025 prices and grid boundary
+        do not independently validate Canadian model rates.
+        """),
+        display_table(backend_costs[[
+            "Class", "vintage", "source_year", "Rate basis", "cost_mcad_per_gw", "utilization",
+            "throughput_pj_year_per_gw", "cost_mcad_per_pj_year",
+        ]].rename(columns={
+            "vintage": "Model vintage", "source_year": "Cost source year",
+            "cost_mcad_per_gw": "M CAD2020/GW", "utilization": "Utilization",
+            "throughput_pj_year_per_gw": "PJ/year per GW",
+            "cost_mcad_per_pj_year": "M CAD2020 per PJ/year",
+        }), selection=None, pagination=False, label="One row per charger class and vintage; existing rates are implied capex proxies"),
+        display_table(cost_components[[
+            "Class", "source_year", "charger_type", "source_cost_per_port", "Currency/year",
+            "rated_power_kw", "count_share", "power_share", "weighted_cost_per_gw",
+        ]].rename(columns={
+            "source_year": "Source year", "charger_type": "Charger type",
+            "source_cost_per_port": "Native capex/port",
+            "rated_power_kw": "Rated kW/port", "count_share": "Port-count share",
+            "power_share": "Rated-power share", "weighted_cost_per_gw": "Contribution (M CAD2020/GW)",
+        }), selection=None, page_size=12, format_mapping={
+            "Port-count share": "{:.2%}", "Rated-power share": "{:.2%}",
+        }, label="One row per class, cost source year and charger type; contributions sum to the capital rate above"),
+    ])
+    return
+
+
+@app.cell(hide_code=True)
 def _(alt, diagnosis, display_chart, mo, pd, display_table):
+    fixed_comparison = diagnosis["charging"]["harmonized_costs"]
+    fixed_comparison = fixed_comparison.loc[fixed_comparison.table.eq("cost_fixed")].copy()
+    fixed_comparison["Class"] = fixed_comparison.charger_class.map({"ldv": "LDV", "mhdv": "MHDV"})
+    fixed_comparison[["reference_vintage", "reference_period", "backend_vintage"]] = fixed_comparison[[
+        "reference_vintage", "reference_period", "backend_vintage",
+    ]].astype("Int64")
     harmonized = diagnosis["charging"]["harmonized_costs"]
     harmonized = harmonized.loc[harmonized.table.eq("cost_invest")].copy()
     harmonized["Class"] = harmonized.charger_class.map({"ldv": "Light-duty charging", "mhdv": "Medium/heavy-duty charging"})
@@ -630,7 +718,7 @@ def _(alt, diagnosis, display_chart, mo, pd, display_table):
     ).properties(width=430, height=110).facet(column=alt.Column("Class:N", title=None))
     mo.vstack([
         mo.md("""
-        ## 5. Charging: the separate legacy charger-cost variant
+        ### The separate legacy charger-cost variant
 
         **Yes—the legacy line uses the supplied charger-cost variant inputs:** `CostInvest.csv`,
         `CostFixed.csv`, and `CostVariable_ALL.csv` in `legacy_backend/legacy_vatiant_charger_costs/`
@@ -644,7 +732,7 @@ def _(alt, diagnosis, display_chart, mo, pd, display_table):
         The table exposes the original CSV rate, the throughput conversion factor and the resulting per-GW rate.
         Both rates use **million CAD2020/GW**. Convert reference million CAD2020/(PJ/year)
         using **reference rate × c2a × backend utilization**. Here c2a = 31.536 PJ/year
-        per GW; new-charger utilization is 20% LDV and 30% MHDV. This is equivalent to
+        per GW; existing/new charger utilization is 20% for both LDV and MHDV. This is equivalent to
         dividing backend per-GW cost by utilized throughput before comparison.
 
         The common-utilization interpretation remains conditional: reference embedded
@@ -669,6 +757,16 @@ def _(alt, diagnosis, display_chart, mo, pd, display_table):
             "harmonized_relative_percent": "Difference (%)", "scope_status": "Coverage",
         }), selection=None, pagination=False, format_mapping={"Difference (%)": "{:+.4f}%"}, label="All years, including missing backend coverage"),
         mo.accordion({
+            "Annual fixed O&M comparison by cohort and active period": display_table(fixed_comparison[[
+                "Class", "reference_vintage", "reference_period", "backend_vintage",
+                "reference_million_cad_per_gw", "backend_million_cad_per_gw", "harmonized_relative_percent", "scope_status",
+            ]].rename(columns={
+                "reference_vintage": "Legacy vintage", "reference_period": "Active model period",
+                "backend_vintage": "Backend vintage", "reference_million_cad_per_gw": "Legacy (M CAD2020/GW/year)",
+                "backend_million_cad_per_gw": "Backend (M CAD2020/GW/year)",
+                "harmonized_relative_percent": "Difference (%)", "scope_status": "Coverage",
+            }), selection=None, page_size=10, format_mapping={"Difference (%)": "{:+.4f}%"},
+                label="One row per class, reference cohort and active period; existing cohorts use the historical rate bridge"),
             "Separate legacy charger-cost CSV identities": display_table(pd.DataFrame([
                 {"Input file": record["path"].replace("\\", "/").rsplit("/", 1)[-1],
                  "Charger rows": record["selected_rows"], "Total CSV rows": record["total_rows"],
@@ -687,6 +785,61 @@ def _(alt, diagnosis, display_chart, mo, pd, display_table):
         }),
     ])
     return charging_chart, charging_residual_chart
+
+
+@app.cell(hide_code=True)
+def _(diagnosis, display_table, mo, pd, region):
+    charger_transfers = diagnosis["charging"]["backend_efficiency"]
+    charger_transfers = charger_transfers.loc[charger_transfers.region.eq(region.value)].copy()
+    if charger_transfers.empty or not charger_transfers.efficiency.eq(1.0).all():
+        raise ValueError("Charging capture lacks the current unity electricity transfers; rebuild and recapture")
+    transfer_summary = charger_transfers.groupby(
+        ["tech", "input_comm", "output_comm", "efficiency"], as_index=False,
+    ).agg(first_vintage=("vintage", "min"), last_vintage=("vintage", "max"), rows=("vintage", "count"))
+    charging_accounting = diagnosis["charging_metadata"]["electricity_accounting"]
+    mo.vstack([
+        mo.md("""
+        ## 6. Charging losses: vehicle accounting and proxy limits
+
+        **The former 0.95 LDV and 0.80 MHDV factors applied charging losses twice.**
+        [ATB BEV assumptions](https://atb.nlr.gov/transportation/2024/battery_electric_vehicle_assumptions)
+        include onboard-charger and EVSE losses in fuel economy. The
+        [LDV PHEV](https://atb.nlr.gov/transportation/2024/plug-in_hybrid) and
+        [MHDV PHEV](https://atb.nlr.gov/transportation/2024/plug-in_hybrid_mdhd)
+        assumptions likewise adjust electric consumption for charging losses. The production
+        consumption/ratio calculations preserve that source boundary.
+
+        Vehicle efficiencies are retained. Existing/new charger technologies now transfer electricity
+        at **1.0 PJ/PJ**, preserving the capacity, utilization and cost representation while applying
+        no additional loss. Explicit transfer rows are required for the electricity route.
+        This is an accounting factor, not a claim of physically lossless charging. Relative to the
+        former chain, electricity required for the same downstream activity falls by **5% for LDV**
+        and **20% for MHDV**, before other system effects; these are arithmetic changes, not solver results.
+
+        HDVCHARGE's global 0.80 includes equipment, onboard charging where applicable, and battery losses;
+        it cannot be stacked on consumption that already includes those losses. Its power-delivery ratio
+        describes session power, a separate concept. The reviewed ICCT factors remain unapplied audit
+        evidence. Unity rows use an internal accounting dataset, without an external DQ claim.
+        **Motorcycles:** their consumption does not include charging losses. With the shared unity
+        LDV charger transfer, motorcycle charging losses are currently unrepresented.
+        **Intercity buses:** EPRI does not disclose whether its consumption includes charging losses;
+        that boundary remains unknown. Neither exception establishes physically lossless charging.
+        """),
+        display_table(transfer_summary.rename(columns={
+            "tech": "Charger technology", "input_comm": "Input electricity", "output_comm": "Output electricity",
+            "efficiency": "Transfer (PJ/PJ)", "first_vintage": "First vintage", "last_vintage": "Last vintage",
+            "rows": "Vintage rows",
+        }), selection=None, pagination=False, label="Current SQLite electricity transfers by technology in the selected region"),
+        mo.accordion({
+            "Reviewed factors retained but not applied": display_table(
+                pd.DataFrame(charging_accounting["reviewed_efficiencies_not_applied"]),
+                selection=None, pagination=False),
+            "Accounting boundary and complete SQLite row evidence": mo.vstack([
+                mo.json(charging_accounting), display_table(charger_transfers, selection=None, page_size=10),
+            ]),
+        }),
+    ])
+    return
 
 
 @app.cell(hide_code=True)

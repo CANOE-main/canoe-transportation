@@ -42,7 +42,9 @@ def reconcile_road_capacity_to_activity(
     required_technology = {"tech", "category"}
     if required_manual - set(manual) or required_technology - set(technology):
         raise ValueError("Capacity-to-activity input or technology template lacks columns")
-    selected = manual.loc[manual["category"].isin(road_classes)].copy()
+    selected = manual.loc[
+        manual["category"].isin(road_classes), ["category", "sub_category", "units", "c2a", "notes"],
+    ].copy()
     if (
         set(selected["category"]) != road_classes
         or selected.duplicated("category").any()

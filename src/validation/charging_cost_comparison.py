@@ -192,6 +192,79 @@ def fixed_cost_ratios(reference: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return rows[["region", "tech", "vintage", "period", "cost_fixed", "cost_invest", "ratio", "status"]]
 
 
+def backend_cost_basis(
+    backend: dict[str, pd.DataFrame], *, rules: ChargingComparisonRules,
+    periods: ScenarioPeriods, utilization: dict[str, float],
+    fixed_to_capex_ratio: float, target_year: int,
+) -> pd.DataFrame:
+    """Expose built rates independently of legacy coverage or denominator choices.
+
+    Existing infrastructure has no investment row. Its fixed-cost rate implies a
+    capital-cost proxy through the reviewed fixed/capital ratio; it is not an
+    observed historical investment. Throughput uses configured utilization, not
+    dispatch, and applies no additional charging-loss adjustment.
+    """
+    if not isfinite(fixed_to_capex_ratio) or not 0 <= fixed_to_capex_ratio <= 1:
+        raise ValueError("Invalid charger fixed-to-capital cost ratio")
+    owners = {tech: (category, kind) for category, group in rules.groups.items()
+              for kind, tech in (("existing", group.existing), ("new", group.new))}
+    expected_unit = f"$M {target_year}CAD / GW"
+    for table in ("cost_invest", "cost_fixed"):
+        if not backend[table].units.eq(expected_unit).all():
+            raise ValueError(f"Backend {table} charger units differ from expected {expected_unit}")
+    investments = backend["cost_invest"].copy()
+    if not investments.tech.map(lambda tech: owners[tech][1] == "new").all():
+        raise ValueError("Existing charger infrastructure unexpectedly has investment rows")
+    investments["status"] = "new_investment_rate"
+    existing_techs = {group.existing for group in rules.groups.values()}
+    fixed = backend["cost_fixed"].loc[backend["cost_fixed"].tech.isin(existing_techs)]
+    keys = ["region", "tech", "vintage"]
+    if fixed.groupby(keys).cost.nunique().gt(1).any():
+        raise ValueError("Existing charger fixed-cost rate varies across periods")
+    existing = fixed.drop_duplicates(keys).copy()
+    existing["cost"] = existing.cost / fixed_to_capex_ratio if fixed_to_capex_ratio > 0 else None
+    existing["status"] = ("existing_implied_capex_from_fixed_cost" if fixed_to_capex_ratio > 0
+                          else "existing_capex_unavailable_zero_fixed_ratio")
+    records = []
+    for row in pd.concat([existing, investments], ignore_index=True).to_dict("records"):
+        category, kind = owners[row["tech"]]
+        if kind == "existing" and row["vintage"] != periods.latest_observed_vintage:
+            raise ValueError("Existing charger cost proxy has an unexpected vintage")
+        if kind == "new" and row["vintage"] not in periods.model:
+            raise ValueError("New charger investment has an unconfigured vintage")
+        conversion = backend["capacity_to_activity"].loc[
+            backend["capacity_to_activity"].region.eq(row["region"])
+            & backend["capacity_to_activity"].tech.eq(row["tech"])
+        ]
+        c2a = float(conversion.c2a.iloc[0]) if len(conversion) == 1 else None
+        if c2a is None or not isfinite(c2a) or c2a <= 0:
+            raise ValueError(f"Missing positive charger capacity-to-activity: {row['region']}/{row['tech']}")
+        target = utilization.get(row["tech"])
+        if target is None or not isfinite(target) or not 0 < target <= 1:
+            raise ValueError(f"Missing positive annual utilization target: {row['tech']}")
+        throughput = c2a * target
+        cost = float(row["cost"]) if pd.notna(row["cost"]) else None
+        records.append({
+            "charger_class": category, "region": row["region"], "tech": row["tech"],
+            "vintage": row["vintage"],
+            "source_year": (min(periods.model) if kind == "existing"
+                            else periods.projection_year(row["vintage"], legacy_at_end=False)),
+            "source_year_status": ("existing_first_model_year_proxy" if kind == "existing"
+                                   else "new_projection_year"),
+            "cost_mcad_per_gw": cost, "c2a": c2a, "utilization": target,
+            "throughput_pj_year_per_gw": throughput,
+            "cost_mcad_per_pj_year": cost / throughput if cost is not None else None,
+            "target_dollar_year": target_year, "fixed_to_capex_ratio": fixed_to_capex_ratio,
+            "status": row["status"], "aggregation_basis": "total_expenditure_per_rated_power",
+        })
+    return pd.DataFrame(records, columns=[
+        "charger_class", "region", "tech", "vintage", "source_year", "source_year_status",
+        "cost_mcad_per_gw", "c2a", "utilization", "throughput_pj_year_per_gw",
+        "cost_mcad_per_pj_year", "target_dollar_year", "fixed_to_capex_ratio", "status",
+        "aggregation_basis",
+    ]).sort_values(["charger_class", "region", "source_year", "vintage"]).reset_index(drop=True)
+
+
 def compare_cost_frames(
     reference: dict[str, pd.DataFrame], backend: dict[str, pd.DataFrame], *,
     rules: ChargingComparisonRules, periods: ScenarioPeriods,
@@ -315,10 +388,61 @@ def verify_build_snapshot(bundle: ConfigBundle, database: Path, report: dict[str
                 raise ValueError(f"Charging comparison input changed since build: {path}")
 
 
+def _source_components_for_year(
+    manual: pd.DataFrame, *, category: str, source_year: int,
+    converter: CerCurrencyConverter,
+) -> pd.DataFrame:
+    """Independently reconstruct fleet expenditure divided by installed power.
+
+    Native capex is currency per port. CAD per kW is numerically equal to million
+    CAD per GW; the million-currency and million-kW factors cancel. Count shares
+    weight expenditure and power before division, never normalized rates alone.
+    """
+    kinds = [str(row.parameter).removesuffix("_capex_aggregation") for row in manual.itertuples()
+             if row.category == "charger" and row.sub_category == category
+             and str(row.parameter).endswith("_capex_aggregation")]
+    if not kinds or len(set(kinds)) != len(kinds):
+        raise ValueError("Charger cost component shares are missing or duplicated")
+    shares = {kind: _manual_value(manual, category, f"{kind}_capex_aggregation", "through_2050")
+              for kind in kinds}
+    if not isclose(sum(shares.values()), 1, rel_tol=0, abs_tol=1e-9):
+        raise ValueError("Charger cost component shares do not sum to one")
+    records = []
+    for kind, share in shares.items():
+        capex = _period_value(manual, category, f"{kind}_capex", source_year)
+        power = _period_value(manual, category, f"{kind}_rated_power", source_year)
+        if capex.unit not in {"CAD", "USD"} or not str(capex.currency_year).isdigit():
+            raise ValueError("Charger component requires currency per port and a dollar year")
+        capex_value, power_kw = float(capex.value), float(power.value)
+        if power.unit != "kW" or not isfinite(power_kw) or power_kw <= 0:
+            raise ValueError("Charger component requires positive rated power in kW")
+        if not isfinite(capex_value) or capex_value <= 0:
+            raise ValueError("Charger component requires positive per-port capex")
+        conversion = converter.convert(capex_value, currency=capex.unit, dollar_year=int(capex.currency_year))
+        records.append({
+            "charger_class": category, "source_year": source_year, "charger_type": kind,
+            "count_share": share, "source_cost_per_port": capex_value,
+            "source_unit": capex.unit, "cost_source_period": capex.period,
+            "power_source_period": power.period, "rated_power_kw": power_kw,
+            **asdict(conversion), "cad_2020_cost_per_port": conversion.target_cad_value,
+            "weighted_cad_2020_cost_per_port": share * conversion.target_cad_value,
+            "weighted_rated_power_kw": share * power_kw,
+            "cad_2020_cost_per_gw": conversion.target_cad_value / power_kw,
+            "source_notes": capex.notes, "power_notes": power.notes,
+            "aggregation_basis": "total_expenditure_per_rated_power",
+        })
+    result = pd.DataFrame(records)
+    mean_power_kw = float(result.weighted_rated_power_kw.sum())
+    result["fleet_mean_rated_power_kw"] = mean_power_kw
+    result["power_share"] = result.weighted_rated_power_kw / mean_power_kw
+    result["weighted_cost_per_gw"] = result.weighted_cad_2020_cost_per_port / mean_power_kw
+    return result
+
+
 def _source_cost_components(
     bundle: ConfigBundle, backend: dict[str, pd.DataFrame], converter: CerCurrencyConverter,
     rules: ChargingComparisonRules,
-) -> tuple[pd.DataFrame, dict[str, float], dict[str, Any]]:
+) -> tuple[pd.DataFrame, dict[str, float], dict[str, Any], float]:
     charger_rules = load_harmonization_rules(bundle, "ev_chargers")
     manual_rules = load_harmonization_rules(bundle, "manual_parameters")
     _, frames = validate_manual_registry(
@@ -339,28 +463,15 @@ def _source_cost_components(
         policy = charger_rules["utilization"][category]
         for kind, tech in (("existing", group.existing), ("new", group.new)):
             utilization[tech] = _manual_value(manual, category, "max_annual_utilization", policy["source_period"][kind])
-        kinds = [str(row.parameter).removesuffix("_capex_aggregation") for row in manual.itertuples()
-                 if row.category == "charger" and row.sub_category == category
-                 and str(row.parameter).endswith("_capex_aggregation")]
-        shares = {kind: _manual_value(manual, category, f"{kind}_capex_aggregation", "through_2050") for kind in kinds}
-        if not kinds or not isclose(sum(shares.values()), 1, abs_tol=1e-9):
-            raise ValueError("Charger cost component shares do not sum to one")
         vintages = [bundle.scenario.periods.latest_observed_vintage, *bundle.scenario.periods.model]
         for vintage in vintages:
             existing = vintage == bundle.scenario.periods.latest_observed_vintage
             source_year = min(bundle.scenario.periods.model) if existing else bundle.scenario.periods.projection_year(vintage, legacy_at_end=False)
-            weighted = 0.0
-            for kind, share in shares.items():
-                row = _period_value(manual, category, f"{kind}_capex_per_GW", source_year)
-                if row.unit not in {"M CAD", "M USD"}:
-                    raise ValueError("Charger component lacks the native million-currency unit")
-                conversion = converter.convert(float(row.value), currency=row.unit.split()[1], dollar_year=int(row.currency_year))
-                contribution = share * conversion.target_cad_value
-                weighted += contribution
-                records.append({"charger_class": category, "backend_vintage": vintage,
-                                "source_year": source_year, "charger_type": kind,
-                                "count_share": share, **asdict(conversion),
-                                "weighted_cost_per_gw": contribution, "source_notes": row.notes})
+            components = _source_components_for_year(
+                manual, category=category, source_year=source_year, converter=converter,
+            )
+            weighted = float(components.weighted_cost_per_gw.sum())
+            records.extend(components.assign(backend_vintage=vintage).to_dict("records"))
             tech = group.existing if existing else group.new
             for table, expected in (("cost_invest", weighted), ("cost_fixed", weighted * fixed_ratio)):
                 selected = backend[table].loc[backend[table].tech.eq(tech) & backend[table].vintage.eq(vintage)]
@@ -372,7 +483,7 @@ def _source_cost_components(
                     raise ValueError(f"Missing backend {table} charger cost: {tech}/{vintage}")
                 if not all(isclose(value, expected, rel_tol=1e-10, abs_tol=1e-9) for value in selected.cost):
                     raise ValueError(f"Backend {table} differs from current reviewed source calculation: {tech}/{vintage}")
-    return pd.DataFrame(records), utilization, {"path": str(path), "sha256": file_sha256(path)}
+    return pd.DataFrame(records), utilization, {"path": str(path), "sha256": file_sha256(path)}, fixed_ratio
 
 
 def prepare_charging_cost_comparison(
@@ -391,7 +502,7 @@ def prepare_charging_cost_comparison(
                                     cer_rules["components"]["macro-indicators"]["output_file"])
     converter = CerCurrencyConverter(pd.read_csv(macro_path), scenario=bundle.scenario.economics.cer_scenario,
                                      target_year=bundle.scenario.economics.cost_reference_year)
-    components, utilization, manual_identity = _source_cost_components(bundle, backend, converter, rules)
+    components, utilization, manual_identity, fixed_ratio = _source_cost_components(bundle, backend, converter, rules)
     comparisons, coverage = compare_cost_frames(reference, backend, rules=rules, periods=bundle.scenario.periods,
                                                converter=converter, utilization=utilization)
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=bundle.repo_root,
@@ -399,6 +510,10 @@ def prepare_charging_cost_comparison(
     frames = {"reference_rows": pd.concat(reference.values(), ignore_index=True),
               "comparisons": comparisons, "fixed_ratios": fixed_cost_ratios(reference),
               "source_components": components, "variable_coverage": coverage,
+              "backend_cost_basis": backend_cost_basis(
+                  backend, rules=rules, periods=bundle.scenario.periods, utilization=utilization,
+                  fixed_to_capex_ratio=fixed_ratio, target_year=converter.target_year,
+              ),
               **{f"backend_{name}": frame for name, frame in backend.items()}}
     inherited_identity = None
     if rules.legacy_baseline is not None:
@@ -415,7 +530,12 @@ def prepare_charging_cost_comparison(
                   "reference_context_baseline": inherited_identity,
                   "cer_macro": {"path": str(macro_path), "sha256": file_sha256(macro_path)}},
         "build_timestamp_utc": report.get("timestamp_utc"), "build_content_verified": True,
-        "component_reconciliation": {"relative_tolerance": 1e-10, "absolute_tolerance": 1e-9, "status": "passed"},
+        "electricity_accounting": report["ev_chargers"]["electricity_accounting"],
+        "component_reconciliation": {
+            "relative_tolerance": 1e-10, "absolute_tolerance": 1e-9, "status": "passed",
+            "method": "Independent reconstruction of per-port expenditure divided by matching rated power, checked against built investment and fixed costs",
+            "normalization": "sum(count_share * target_year_CAD_per_port) / sum(count_share * rated_kW)",
+        },
         "reference_basis_status": ("confirmed" if rules.reference_basis.denominator is not None else
                                    "currency_confirmed_denominator_unresolved") if rules.reference_basis else "unresolved",
         "implementation_files": {str(path.relative_to(bundle.repo_root)): file_sha256(path) for path in (
@@ -431,7 +551,8 @@ def prepare_charging_cost_comparison(
             "Historical fixed-cost bridges pool cohorts; they do not establish equal surviving infrastructure stock.",
             "Fixed costs are annual by table semantics, even where the source/backend unit label omits /year.",
             "Throughput normalization uses configured backend utilization, not optimized dispatch; no charger loss, discount or lifetime adjustment is applied.",
-            "Production aggregation weights per-GW rates by port-count shares; this is not total fleet expenditure divided by total rated power.",
+            "Production capital costs are total port expenditure divided by total rated power using source-year-matched per-port capex and rated kW; utilization affects throughput normalization, not investment per GW.",
+            "Existing backend capital-cost proxies are inferred from built annual fixed costs and the reviewed fixed/capital ratio using first-model-year costs; no historical investment is observed.",
             "Absent variable-cost entries are not explicit zeros or proof that electricity supply is free.",
         ],
     }

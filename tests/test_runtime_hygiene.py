@@ -139,7 +139,7 @@ def test_doctor_runs_without_mutating_by_default() -> None:
             ],
         "file_count": 7,
         "component_count": 18,
-        "selected_cited_rows": 127,
+            "selected_cited_rows": 129,
         }
 
 

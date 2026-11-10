@@ -919,16 +919,16 @@ flowchart LR
 
   %% ############ Processes ###########
   p0["`**Aggregated capital and fixed costs**
-    Cost of GW installed of charging ports, aggregated from projected type shares:<br>
-    • *LDVs*: Derived type shares from Table 6 used to aggregate Table 12 per-port installation and equipment costs<br>
-    • *LDVs L1*: Estimated capital costs of L1 residential from Table 2 (NRL, 2024) <br>
-    • *MHDVs*: Derived type shares from Table 38, primary scenario, to aggregate Table 21 per-port power and capital cost assumptions<br>
-    • *Fixed costs*: 1% of capital costs, as per OEO assumptions from Borlaug et al. 2021
-    `"]
+    Match per-port CAPEX and rated kW at each cost source year; convert money to CAD2020.<br>
+    • *Capital rate*: Σ(count share × cost/port) / Σ(count share × rated kW)<br>
+    • *Units*: CAD/kW = million CAD/GW<br>
+    • *Annual fixed O&M*: 1% of capital rate during the vintage's lifetime<br>
+    Prospective vintage 2025 uses source 2030; existing costs use the first model year. #to-review`"]
   p0_2@{shape: hex, label: "**inputs/0_manual_params/**
-    Cost aggregation weights; defaults are:
+    Native per-port CAPEX, power trajectories and port-count shares:
     • *(L1, L2, DCFC)* = [0.12, 0.87, 0.01]
-    • *(50, 350, 2000) kW* = [0.82, 0.16, 0.02]"}
+    • *(50, 350, 2000) kW* = [0.82, 0.16, 0.02]<br>
+    Derive power shares; hold final source values through 2050. #to-review"}
   s4 & s5 -- inputs/0_manual_params/ --> p0
   s1 --> p0_2 -- ev_chargers.py --> p0
   p0 -- ev_chargers.py --> o0 & o0_2
@@ -938,23 +938,25 @@ flowchart LR
     [$M 2020CAD/GW]`"/]
 
   p1["`**Annual EV charger utilization rate**
-    • *LDVs*: existing chargers average 15%; new chargers average 20% in every vintage. With a profile, scale hourly ceilings to this mean and set the annual floor to UF × 0.98 (2% slack); without a profile, enforce annual equality to UF.<br>
-    • *MHDVs*: annual utilization equals 30%; no hourly charging profile or floor slack`"]
+    • *All chargers*: reviewed mean UF = 0.20 for existing/new vintages<br>
+    • *Profiled LDV*: scale hourly ceilings to mean UF; annual floor = UF × 0.98<br>
+    • *Other chargers*: annual equality to UF, without slack. #to-review`"]
   p1_2@{shape: hex, label: "**inputs/0_manual_params/**
-    • *LDV charger UF*: select 0.15 for existing and 0.20 for new chargers<br>
-    • *MHDV charger UF*: 0.30 for existing and new chargers"}
+    • *LDV and MHDV UF*: common 0.20<br>
+    Reviewed override for the vintage-indexed annual limit. #to-review"}
   s1 --> p1_2 -- ev_chargers.py --> p1
   p1 -- ev_chargers.py --> o1[/"`***limit_annual_capacity_factor***
     *Indexed by capacity vintage*<br>
-    *New LDV with profile: ≥ 0.196*
-    *New LDV w/o profile: = 0.20*
-    *MHDV: = 0.30*`"/]
+    *LDV with profile: ≥ 0.196*
+    *LDV w/o profile: = 0.20*
+    *MHDV: = 0.20* #to-review`"/]
 
   p2["`**Existing charging infrastructure capacity**
     • Fetch TC total public LD chargers by province and distribute by type using national shares<br>
     • EV-to-charger port ratios determine total ports, from which public port capacity is known<br>
     • Thus, the remainder LD charger capacity is private, distributed by L1/L2 shares from Pollution Probe survey<br>
-    • MHD charger capacity derived with EV-to-port ratio and distributed with Dunsky's share estimates`"]
+    • MHD charger capacity derived with EV-to-port ratio and distributed with Dunsky's share estimates<br>
+    Convert ports to GW with first-model-year registered ratings; 2025 LDV DCFC is 125 kW. #to-review`"]
   p2_2@{shape: hex, label: "**config/scenarios/**
     • *LDEV_to_port_ratio* = 1
     • *MHDEV_to_port_ratio* = 1.5"}
@@ -976,10 +978,10 @@ flowchart LR
 
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
-| Aggregated capital and fixed costs | LDV and MHDV chargers | Use per-port capital and installation cost assumptions through 2040 from Dunsky's assessment and aggregate using average fixed type shares; fixed costs are assumed to be 1% of capital costs as per OEO assumptions |
-| Annual EV charger UF | LDV and MHDV chargers | Use average annual charging port utilization rate assumptions from Dunsky's assessment; public LDV charger ports are used up to 6 hours/day, and depot MHDV ports up to 8 hours/day, as per discussion with operators (ICCT EV CHARGE, 2024) |
-| Existing charging capacity | LDV and MHDV chargers | - Fetch total public LD charger counts from TC EV dashboard<br>- Use EV-to-port ratios from Dunsky's assessment to determine remaining private port counts<br>- Distribute L1/L2 shares using Pollution Probe's survey estimates |
-| Charger efficiency | LDV and MHDV chargers | Use charger efficiencies from ICCT EV CHARGE and HDV CHARGE model assumptions |
+| Aggregated capital and fixed costs | LDV and MHDV chargers | Match native per-port costs and ratings by source year; convert currency, then divide total port expenditure by total rated power. Derive power shares from count shares × kW. Fixed O&M is 1% annually within the vintage lifetime. #to-review |
+| Annual EV charger UF | LDV and MHDV chargers | Reviewed common UF = 0.20 for every existing/new vintage. Profiled LDV ceilings have mean 0.20 and annual floor 0.196; no-profile LDV and MHDV use equality 0.20. #to-review |
+| Existing charging capacity | LDV and MHDV chargers | Preserve TC public counts, reviewed EV-to-port ratios and private/type mixes. Convert ports with first-model-year registered power trajectories; audit the selected source year and ratings. #to-review |
+| Charger efficiency | LDV and MHDV chargers | Unity accounting transfer avoids repeating losses embedded in vehicle consumption. Reviewed ICCT factors remain unapplied; motorcycle losses are omitted, and EPRI's intercity-bus boundary is undisclosed. #to-review |
 
 ### `limit_new_capacity_share` for LD-PEV range composition
 

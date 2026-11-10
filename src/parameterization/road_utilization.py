@@ -472,7 +472,7 @@ def prepare_road_utilization(
         raise ValueError("CEUD activity and stock selectors do not cover the same road classes")
     manual_file = resolve_input_path(bundle, "manual", factor_rules["manual_file"])
     technology_file = resolve_input_path(bundle, "template", "technology.csv")
-    manual = pd.read_csv(manual_file)
+    manual = pd.read_csv(manual_file, usecols=["category", "sub_category", "units", "c2a", "notes"])
     technology = pd.read_csv(technology_file) if technology is None else technology.copy()
     expanded = reconcile_road_capacity_to_activity(
         manual, technology, road_classes=road_classes,
