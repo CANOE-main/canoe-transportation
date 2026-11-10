@@ -816,6 +816,16 @@ def _(diagnosis, display_table, mo, pd, region):
         assumptions likewise adjust electric consumption for charging losses. The production
         consumption/ratio calculations preserve that source boundary.
 
+        LDV BEV and PHEV electricity use in the default build comes from the
+        [NRCan fuel consumption ratings](https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64), not ATB. NRCan's battery-electric ratings
+        are the US EPA label values: 1,096 of 1,250 rows (model years 2012–2026) match EPA
+        `vehicles.csv` by model year, make and range within 2 km, with median deviations of +0.124%,
+        +0.028% and +0.016% for model years 2012–2016, 2017–2021 and 2022–2026. EPA label electricity is
+        the AC energy to recharge the battery from the outlet and includes the vehicle charger's losses
+        ([EPA EV/PHEV test procedure](https://www.fueleconomy.gov/feg/pdfs/EPA%20test%20procedure%20for%20EVs-PHEVs-11-14-2017.pdf); for PHEVs,
+        [40 CFR 600.116-12(c)(8)](https://www.law.cornell.edu/cfr/text/40/600.116-12)). NRCan's PHEV ratings were not matched to EPA;
+        their basis rests on the same procedure.
+
         Vehicle efficiencies are retained. Existing/new charger technologies now transfer electricity
         at **1.0 PJ/PJ**, preserving the capacity, utilization and cost representation while applying
         no additional loss. Explicit transfer rows are required for the electricity route.

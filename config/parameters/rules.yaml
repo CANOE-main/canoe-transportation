@@ -2622,6 +2622,8 @@ parameterization:
   ev_chargers:
     transformation_version: "6"
     electricity_accounting:
+      # NRCan ratings are EPA label values: AC recharge energy including charger losses
+      # (EPA EV/PHEV test procedure; 40 CFR 600.116-12). ATB consumption includes them too.
       vehicle_energy_basis: grid_electricity_including_charging_losses
       charger_transfer_efficiency: 1.0  # Vehicle consumption owns charging losses; this edge preserves infrastructure capacity and costs.
     utilization_time_basis: technology_kind
