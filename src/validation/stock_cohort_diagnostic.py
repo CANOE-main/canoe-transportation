@@ -144,6 +144,55 @@ def cohort_lineage(annual: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(rows, ignore_index=True)
 
 
+def stock_age_comparison(mapped: pd.DataFrame, report5: pd.DataFrame, targets: pd.DataFrame,
+                         *, periods, report_year: int) -> pd.DataFrame:
+    """Recover the deprecated MTO comparison from d545859, without a production path.
+
+    As in that revision, accepted car/light-truck counts define Ontario ages,
+    commercial Report 5 defines truck ages, and only the configured historical
+    window is renormalized to each region/class CEUD total. These are surviving
+    stock before fixed-lifetime redistribution, never installation equivalents.
+    """
+    accepted = mapped.loc[mapped.mapping_accepted & mapped.report_year.eq(report_year)].copy()
+    accepted["age"] = report_year - pd.to_numeric(accepted.MODEL_YEAR, errors="coerce")
+    accepted["FIT_ACTIVE"] = pd.to_numeric(accepted.FIT_ACTIVE, errors="raise")
+    accepted = accepted.loc[accepted.age.between(0, periods.base_year - periods.existing[0])]
+    age_map = {}
+    for name, source_class in [("cars", "Car"), ("passenger_light_trucks", "Light Truck"),
+                                ("freight_light_trucks", "Light Truck")]:
+        ages = accepted.loc[accepted.nrcan_ceud_class.eq(source_class)].groupby("age").FIT_ACTIVE.sum()
+        age_map[name] = ages
+    commercial = report5.loc[report5.VEHICLE_CLASS.eq("COMMERCIAL") & report5.year.eq(report_year)]
+    if commercial.AGE.duplicated().any():
+        raise ValueError("Duplicate commercial Report 5 ages in stock-age comparison")
+    commercial = commercial.set_index("AGE").AGE_DIST
+    for name in ("medium_trucks", "heavy_trucks"):
+        age_map[name] = commercial.loc[commercial.index.to_series().between(0, periods.base_year - periods.existing[0])]
+    rows = []
+    for target in targets.itertuples(index=False):
+        ages = age_map[target.road_class]
+        if ages.empty or not np.isfinite(ages).all() or ages.lt(0).any() or ages.sum() <= 0:
+            raise ValueError(f"Invalid MTO age comparison evidence for {target.road_class}")
+        for age, value in ages.items():
+            year = periods.base_year - int(age)
+            rows.append({"region": target.region, "road_class": target.road_class,
+                         "vintage": periods.existing_vintage(year), "vintage_year": year,
+                         "vehicles_k": target.ceud_stock_k_vehicles * value / ages.sum()})
+    return pd.DataFrame(rows)
+
+
+def comparison_lineage(annual: pd.DataFrame, stock_age: pd.DataFrame, *, physical_survivors: bool) -> pd.DataFrame:
+    """Restore d545859's explicit sales-versus-MTO quantity comparison."""
+    curve_column = "calibrated_surviving_k_vehicles" if physical_survivors else "curve_solver_capacity_k_vehicles"
+    sales = annual[COHORT_KEYS + [curve_column]].rename(columns={curve_column: "vehicles_k"}).copy()
+    sales["method"] = "Sales cohorts"
+    sales["basis"] = "Physical survivors" if physical_survivors else "Installed-equivalent acquisitions"
+    deprecated = stock_age.merge(annual[["region", "road_class"]].drop_duplicates(),
+                                 on=["region", "road_class"], how="inner", validate="many_to_one")
+    deprecated["method"], deprecated["basis"] = "Deprecated MTO age allocation", "Physical survivors before fixed redistribution"
+    return pd.concat([sales, deprecated], ignore_index=True)
+
+
 def historical_retention(
     acquisitions: pd.DataFrame, schedule: pd.DataFrame, *, years: list[int], allow_unknown: bool = False,
 ) -> pd.DataFrame:
@@ -270,9 +319,11 @@ def load_stock_cohort_diagnosis(
     report5_path = resolve_artifact_path(bundle, "ontario_vehicle_population") / mto_rules["reports"][5][
         "distribution_output_template"].format(year=bundle.scenario.existing_capacity.vehicle_population_year)
     report5 = pd.read_csv(report5_path)
+    mapped_path = resolve_artifact_path(bundle, "road_aggregation", road_rules["mapped_current_stock_file"])
+    mapped = pd.read_csv(mapped_path, low_memory=False)
     dashboard_path = resolve_artifact_path(bundle, "tc_ev_dashboard_interim") / assorted["tc_ev_dashboard"]["output_file"]
     dashboard = pd.read_csv(dashboard_path)
-    source_paths.extend([report5_path, dashboard_path,
+    source_paths.extend([mapped_path, report5_path, dashboard_path,
                          resolve_artifact_path(bundle, "road_aggregation", road_rules["nlr_weights_file"])])
     annual_frames, composition_frames, production_audits, production_curves, projections = [], [], [], [], []
     vintage_audits, reference_comparisons = [], []
@@ -353,6 +404,9 @@ def load_stock_cohort_diagnosis(
               "historical_projection": pd.concat(projections, ignore_index=True),
               "vintage_survival_audit": pd.concat(vintage_audits, ignore_index=True),
               "reference_survival_comparison": pd.concat(reference_comparisons, ignore_index=True)}
+    result["stock_age"] = stock_age_comparison(
+        mapped, report5, result["calibration"][["region", "road_class", "ceud_stock_k_vehicles"]].drop_duplicates(),
+        periods=bundle.scenario.periods, report_year=bundle.scenario.existing_capacity.vehicle_population_year)
     result["metadata"] = {
         "scenario_path": str(bundle.scenario_path), "scenario": bundle.scenario.model_dump(mode="json"),
         "reference_year": bundle.scenario.periods.base_year, "regions": regions,

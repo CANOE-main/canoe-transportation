@@ -20,6 +20,7 @@ uv run python -m validation.charging_cost_comparison --scenario config/scenarios
 uv run python -m validation.vehicle_cost_diagnostic --scenario config/scenarios/validation_baseline.yaml --write-report
 uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite
 uv run python -m validation.ceud_calibration_diagnostic --baseline outputs/sqlite/validation_baseline.sqlite --baseline-report outputs/validation/validation_baseline.json --calibrated outputs/sqlite/validation_energy_calibration.sqlite
+uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration_regions.yaml --overwrite
 uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
 uv run python -m validation.documentation_support --write-report --write-nonroad-report
 uv run python scripts/export_documentation_figures.py
@@ -32,6 +33,13 @@ uv run python scripts/export_documentation_figures.py
     uses observed 2023 and [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy)/[*EIA NEMS*](https://github.com/EIAgov/NEMS) survival curves for its separate diagnostic
     purpose. It is **not** the calibration off/on comparison. Figure captions and the
     manifest retain those distinct identities.
+
+The regional calibrated build supplies the ten-region `base_year` anchor
+heatmaps. Run it after the matched Ontario audit: its immutable diagnostic capture
+becomes the calibration notebook's selected evidence, while the saved paired audit
+continues to describe the Ontario OFF/ON databases. The regional capture's Ontario
+slice uses the same methods; broader geography is not part of the paired audit.
+`BCT` retains the backend's existing BC-plus-territories boundary.
 
 The cohort notebook also recalculates both survival alternatives at reference
 2025 across the default regions, using already prepared registered inputs. It
@@ -66,7 +74,8 @@ carry class/powertrain/unit suffixes. Use the ID when requesting a correction.
 | `stock_cohort_diagnosis.py` | `cohort-*`: acquisitions, survivor calibration, vintage aggregation and retirement. |
 | `ldv_efficiency_diagnosis.py` | `ldv-eff-*`: composition, range shares, consumption bridges and comparisons. |
 | `vehicle_cost_diagnosis.py` | `vehicle-cost-1` to `vehicle-cost-5`: source prices, model investment, age-dependent M&R, service costs and range aggregation. |
-| `ceud_calibration_diagnosis.py` | `ceud-cal-1` to `ceud-cal-4`: closure, factors, coverage and trajectories. |
+| `ceud_calibration_diagnosis.py` | `ceud-cal-1` to `ceud-cal-4`: closure, factors, coverage and trajectories; `ceud-cal-5-cars` and `ceud-cal-5-trucks`: regional `base_year` anchor heatmaps. |
+| `charging_profile_diagnosis.py` | `charging-profile-1`: the same representative week before and after production full-year utilization rescaling. |
 | `documentation_support.py` | `fleet-100-1`: Ontario marginal compositions; `nonroad-1`: final non-road efficiency parameters. |
 
 The blanket title/ID requirement exempts exactly
@@ -81,7 +90,7 @@ records exported filenames/hashes, generators, actual notebook control values,
 chart units and year domains, and captured evidence identity. It hashes plotted
 data without publishing raw tables. Selective exports use, for example,
 `uv run python scripts/export_documentation_figures.py --groups cost nonroad`;
-the other groups are `notebooks`, `calibration`, `fleet` and `comparison`.
+the other groups are `notebooks`, `calibration`, `fleet`, `comparison` and `charging`.
 Each requested figure prefix must produce a chart, and duplicate identities fail.
 Essential labels and units are visible in the static figures. Captions
 state what the evidence supports and what it cannot establish.

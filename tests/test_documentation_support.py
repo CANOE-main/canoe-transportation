@@ -37,9 +37,10 @@ def counts():
     ])
     statcan = pd.DataFrame([
         {"region": "ON", "year": year, "vehicle_group": group, "powertrain": fuel, "count": value,
-         "status": "reported", "population": "Registered stock"}
+         "status": "reported", "population": "New registrations", "source": "statcan_new",
+         "source_table": "20-10-0025-01"}
         for year in (2023, 2024) for group in ("Cars", "Light trucks")
-        for fuel, value in (("all", 10000), ("gasoline", 9800), ("bev", 199), ("phev", 1), ("other", 0))
+        for fuel, value in (("gasoline", 9800), ("diesel", 0), ("hev", 0), ("bev", 199), ("phev", 1), ("other", 23))
     ])
     return mto, statcan
 
@@ -58,19 +59,18 @@ def test_marginals_keep_denominators_and_unmapped_population_separate(counts, se
     mto, stock = counts
     result = derive_fleet_shares(mto, stock, settings)
     assert result.groupby("panel").icons.sum().eq(100).all()
-    assert len(result.panel.unique()) == 7
+    assert len(result.panel.unique()) == 6
     sizes = result.loc[result.dimension.eq("Size class") & result.vehicle_group.eq("Cars")]
     assert sizes.denominator.eq(601).all()
     assert sizes.loc[sizes.category.eq("Two-seater"), "icons"].iloc[0] == 0
     assert sizes.loc[sizes.category.eq("Two-seater"), "count"].iloc[0] == 1
-    coverage = result.loc[result.dimension.eq("Mapping coverage")]
-    assert coverage.denominator.eq(4501).all()
-    assert coverage.loc[coverage.category.eq("Unresolved classification"), "count"].iloc[0] == 3000
+    assert not result.dimension.eq("Mapping coverage").any()
     fuels = result.loc[result.dimension.eq("Powertrain")]
     assert fuels.source_year.eq(2024).all()
     assert fuels.carried_forward_years.eq(1).all()
     assert fuels.denominator.eq(10000).all()
-    assert fuels.source.str.contains("registered stock").all()
+    assert fuels.source.str.contains("20-10-0025-01 new registrations").all()
+    assert not fuels.category.eq("other").any()
     assert "powertrain" not in sizes.columns  # independent marginal rows, no fabricated cross-tab
 
 
@@ -78,28 +78,51 @@ def test_top_models_are_canonical_counts_with_other_remainder(counts, settings):
     mto, stock = counts
     result = derive_fleet_shares(mto, stock, settings)
     models = result.loc[result.dimension.eq("Leading models") & result.vehicle_group.eq("Cars")]
-    assert set(models.category) == {"Honda Civic", "Toyota Camry", "Toyota Corolla", "Other / unidentified mapped models"}
-    assert models.loc[models.category.eq("Other / unidentified mapped models"), "count"].iloc[0] == 1
+    assert settings.top_models_per_vehicle_group == 5
+    assert set(models.category) == {"Honda Civic", "Toyota Camry", "Toyota Corolla", "Mazda MX-5", "Other / unidentified mapped models"}
+    assert models.loc[models.category.eq("Other / unidentified mapped models"), "count"].iloc[0] == 0
     assert models["count"].sum() == 601
 
 
-def test_latest_suppressed_stock_cells_remain_remainder_not_zero(counts, settings):
+def test_leading_models_keep_five_and_the_exact_remaining_count(counts, settings):
+    mto, registrations = counts
+    extra = pd.concat([
+        mto.iloc[[0]].assign(FIT_ACTIVE=50, canonical_make="Acura", canonical_model="Integra", MAKE="ACUR", MODEL="INTEG"),
+        mto.iloc[[0]].assign(FIT_ACTIVE=2, canonical_make="Tesla", canonical_model="Model 3", MAKE="TESL", MODEL="MODEL3"),
+    ], ignore_index=True)
+    result = derive_fleet_shares(pd.concat([mto, extra], ignore_index=True), registrations, settings)
+    models = result.loc[result.dimension.eq("Leading models") & result.vehicle_group.eq("Cars")]
+    assert len(models) == 6
+    assert "Tesla Model 3" in set(models.category)
+    assert "Mazda MX-5" not in set(models.category)
+    assert models.loc[models.category.eq("Other / unidentified mapped models"), "count"].iloc[0] == 1
+    assert models["count"].sum() == 653
+
+
+def test_suppressed_represented_fuels_fail_without_fabricating_remainder(counts, settings):
     mto, stock = counts
     stock.loc[stock.year.eq(2024) & stock.powertrain.eq("bev"), "count"] = float("nan")
-    result = derive_fleet_shares(mto, stock, settings)
-    suppressed = result.loc[result.category.eq("Unreported / suppressed fuel remainder")]
-    assert len(suppressed) == 2
-    assert suppressed["count"].eq(199).all()
-    assert suppressed.source_year.eq(2024).all()
+    with pytest.raises(ValueError, match="missing or suppressed"):
+        derive_fleet_shares(mto, stock, settings)
 
 
-def test_rejects_duplicate_mto_and_invalid_statcan_total(counts, settings):
+def test_rejects_duplicate_mto_and_registered_stock_substitution(counts, settings):
     mto, stock = counts
     with pytest.raises(ValueError, match="duplicated"):
         derive_fleet_shares(pd.concat([mto, mto.iloc[:1]]), stock, settings)
-    stock.loc[stock.powertrain.eq("all"), "count"] = 10
-    with pytest.raises(ValueError, match="exceed"):
+    stock["source"] = "statcan_stock"
+    with pytest.raises(ValueError, match="new registrations, not registered stock"):
         derive_fleet_shares(mto, stock, settings)
+
+
+def test_archived_new_registration_lineage_is_retained(counts, settings):
+    mto, registrations = counts
+    registrations["source_table"] = "20-10-0021-01"
+    result = derive_fleet_shares(mto, registrations, settings)
+    assert result.loc[result.dimension.eq("Powertrain"), "source"].str.contains("20-10-0021-01").all()
+    registrations["source_table"] = "23-10-0308-01"
+    with pytest.raises(ValueError, match="source-table lineage"):
+        derive_fleet_shares(mto, registrations, settings)
 
 
 def test_infographic_is_static_complete_and_identified(counts, settings):
@@ -108,7 +131,7 @@ def test_infographic_is_static_complete_and_identified(counts, settings):
     spec = fleet_100_chart(evidence).to_dict(validate=True)
     assert spec["usermeta"]["figure_id"] == "fleet-100-1"
     assert "separate views" in spec["title"]["text"]
-    assert len(spec["vconcat"]) == 3
+    assert len(spec["vconcat"]) == 2
     assert all(len(row["hconcat"]) == 3 for row in spec["vconcat"][:2])
     assert "StatCan" in " ".join(spec["title"]["subtitle"])
 
@@ -116,13 +139,14 @@ def test_infographic_is_static_complete_and_identified(counts, settings):
 def test_infographic_does_not_label_tiny_positive_shares_as_zero(counts, settings):
     import json
     mto, stock = counts
-    stock.loc[stock.powertrain.eq("all"), "count"] = 10001
-    stock.loc[stock.powertrain.eq("other"), "count"] = 1
+    stock.loc[stock.powertrain.eq("gasoline"), "count"] = 100000
     evidence = FleetPresentationEvidence(derive_fleet_shares(mto, stock, settings), {}, settings)
     spec = fleet_100_chart(evidence).to_dict(validate=True)
     rendered = json.dumps(spec)
-    assert "Other fuels: <0.01% (0 symbols)" in rendered
-    assert "Other fuels: 0.00%" not in rendered
+    assert "Plug-in hybrid: <0.01% (n = 0)" in rendered
+    assert "Plug-in hybrid: 0.00%" not in rendered
+    assert "Other fuels:" not in rendered
+    assert "n = # of symbols" in rendered
     assert "#222222" in rendered
     assert "rounded to 0.01%" in " ".join(spec["title"]["subtitle"])
 

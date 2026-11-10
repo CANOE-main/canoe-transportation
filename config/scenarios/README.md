@@ -20,6 +20,7 @@ Keep one YAML per demonstrated, repeatable workflow. The current supported set i
 | `legacy_comparison.yaml` | Reproducible legacy-timing comparison: ten provinces, observed 2023, [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) survival-curve selection and configured legacy SQLite comparison. Uses the shared constant-retirement tail to 0.5% survival, then zero. |
 | `validation_baseline.yaml` | Ontario prospective-2025 comparison for both legacy variants: 2023 [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) held constant for historical parameters, sales-survival stock anchored to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm), [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) fixed lifetimes and representative new LDV ranges. |
 | `validation_energy_calibration.yaml` | Matched Ontario calibration-on comparison: same fleet/activity/source/representation as validation_baseline, optional [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) reported-liquid-energy adjustment enabled and its diagnostic evidence captured. Scientific acceptance remains separate. |
+| `validation_energy_calibration_regions.yaml` | Prospective-2025 calibration anchor evidence for all ten model regions, including the existing BC-plus-territories `BCT` region. Uses the Ontario calibration pair's methods and source selections with broader geography and no Ontario-only legacy comparison. It does not replace the matched Ontario OFF/ON audit. |
 | `notebook_diagnostics.yaml` | Shared stock/efficiency notebook prerequisite: Ontario observed-2023, [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) curves, explicit future ranges, both captured diagnostics, no charging profile or embodied emissions. |
 
 Retain these names and selections. For a new supported comparison, use a concise
@@ -249,10 +250,15 @@ Temoa end a grouped curve early. Report that adjustment without recalibrating it
 method is assessed in `docs/insights/stock_cohort_diagnosis.py`.
 
 !!! warning "Calibration closure is conditional on the selected evidence"
-    Utilization is reference-year activity divided by calibrated physical surviving stock
-    times C2A. Existing efficiency aggregation and EV charger counts also use survivors.
+    Utilization is the backend's projected `base_year` demand divided by calibrated
+    physical surviving stock times C2A. The demand owner projects native CEUD
+    observations with CER real GDP; the optional historical car-CAGR selection
+    changes the car/light-truck split while preserving that passenger-LDV total.
+    Existing efficiency aggregation and EV charger counts also use survivors.
     Acquisition weights construct the combined vintage survival curves. Calibration closes stock and
-    activity by construction; energy remains an independent check. Aggregate powertrain
+    activity by construction. Optional efficiency calibration subsequently fits the
+    supported CEUD liquid-energy boundary at unchanged activity; total-energy
+    residuals retain their fuel-boundary limitations. Aggregate powertrain
     composition can change when the cohort ages change, even with unchanged annual shares.
 
 `parameterization.ceud_inputs` writes labeled parameter evidence separately from

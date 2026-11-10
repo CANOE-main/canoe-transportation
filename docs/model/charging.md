@@ -39,6 +39,19 @@ $$f'_h=f_h\frac{u}{\bar f},\qquad
     $u=0.20$, that floor is 0.196. Without a profile, annual utilization equals 0.20.
     This $\boldsymbol{u}$ is not the PHEV distance utility factor used in consumption calculations.
 
+![A representative week before and after annual utilization rescaling](../assets/figures/charging-profile-1.svg)
+
+*Figure charging-profile-1. The same registered week is shown before and after
+rescaling for both inherited travel simulations. Every hourly value is multiplied
+by $0.20/\bar f$, computed from the complete 8,760-hour year. Titles report the
+actual full-year means and multiplier. Timing, daily peaks and relative variation
+are preserved; the illustrated week's mean need not equal 20%. The dashed line
+marks the annual target, rather than a flat hourly charging requirement.*
+
+The [read-only charging notebook](../insights/charging_profile_diagnosis.py) calls
+the production hourly transformation and rescaling functions on verified registered
+source bytes. It performs no source acquisition, simulation, or production writes.
+
 ## Representative time can change the annual mean
 
 An explicit hour-to-slice mapping projects the profile to model slices. A selected

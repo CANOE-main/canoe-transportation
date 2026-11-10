@@ -406,7 +406,7 @@ def calibrate_sales_activity(
     baseline: pd.DataFrame, annual: pd.DataFrame, capacity: pd.DataFrame,
     technology: pd.DataFrame, *, selected_pairs: set[tuple[str, str]], base_year: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Close base-year class activity on retained stock without changing fleet totals."""
+    """Close projected base-year demand on retained stock without changing fleet totals."""
     result = baseline.copy()
     result["calibration_basis"] = "mean_observed_ceud_activity_per_stock"
     records = []
@@ -430,12 +430,16 @@ def calibrate_sales_activity(
             raise ValueError(f"Nonunique utilization owner: {(region, road_class)}")
         previous = float(result.loc[mask, "utilization"].iloc[0])
         result.loc[mask, "utilization"] = utilization
-        result.loc[mask, "calibration_basis"] = "base_year_activity_on_retained_sales_survivors"
+        result.loc[mask, "calibration_basis"] = "projected_base_year_demand_on_retained_sales_survivors"
         records.append({
             "region": region, "road_class": road_class, "base_year": base_year,
             "retained_stock_k_vehicles": float(selected.capacity.sum()),
             "reported_stock_k_vehicles": float(target.iloc[0].stock_k_vehicles),
             "target_activity_bn": activity, "modelled_activity_bn": denominator * utilization,
+            "target_basis": target.iloc[0].get("activity_projection", "projected_base_year_demand"),
+            "ceud_observed_year": target.iloc[0].get("ceud_observed_year"),
+            "observed_activity_bn": target.iloc[0].get("observed_activity_bn"),
+            "base_year_gdp_index": target.iloc[0].get("base_year_gdp_index"),
             "activity_residual_bn": denominator * utilization - activity,
             "capacity_activity_denominator_bn": denominator,
             "utilization": utilization, "prior_mean_utilization": previous,
@@ -523,7 +527,10 @@ def prepare_road_utilization(
         for name in capacity_rules["ceud_sales_series"]
     }
     calibration = pd.DataFrame()
+    demand_metadata: dict[str, Any] = {}
     if sales_pairs:
+        from parameterization.build_demand import road_base_year_activity
+
         if not existing_capacity_contexts:
             raise ValueError("Sales utilization calibration requires prepared stock provenance")
         base_annual = derive_road_annual_utilization(
@@ -532,6 +539,16 @@ def prepare_road_utilization(
             region_output_map=demand_rules["region_output_map"],
             activity_to_billion_factor=float(demand_rules["activity_to_billion_factor"]),
         )
+        projected_demand, demand_metadata = road_base_year_activity(bundle)
+        targets = projected_demand.rename(columns={"service": "road_class", "baseline_demand": "observed_activity_bn"})
+        base_annual = base_annual.drop(columns="activity_bn").merge(
+            targets[["region", "road_class", "ceud_observed_year", "observed_activity_bn",
+                     "projected_base_year_demand", "activity_projection"]],
+            on=["region", "road_class"], how="left", validate="one_to_one",
+        ).rename(columns={"projected_base_year_demand": "activity_bn"})
+        if base_annual.activity_bn.isna().any():
+            raise ValueError("Projected base-year demand lacks activity calibration coverage")
+        base_annual["base_year_gdp_index"] = demand_metadata["base_year_gdp_index"]
         baseline, calibration = calibrate_sales_activity(
             baseline, base_annual,
             physical_stock.rename(columns={"surviving_k_vehicles": "capacity"}), expanded,
@@ -587,6 +604,7 @@ def prepare_road_utilization(
         "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
         "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None,
         "sales_activity_calibration": calibration.to_dict("records"),
+        "demand_baseline": demand_metadata,
         "calibrated_physical_stock": physical_stock.to_dict("records"),
     }, sort_keys=True).encode()).hexdigest()
     contexts: list[ResolvedProvenance] = []
@@ -601,6 +619,15 @@ def prepare_road_utilization(
             for selector in (activity[road_class], stock[road_class])
         ]
         if any(name == road_class for _, name in sales_pairs):
+            inputs.append(resolve_provenance(
+                bundle.sources, source_key="cer_canadas_energy_future", component_key="macro-indicators",
+                transformation="road_utilization_demand_input", transformation_version="1",
+            ))
+            if scenario.demand.future_car_demand == "extrapolated" and road_class == "passenger_light_trucks":
+                inputs.append(resolve_provenance(
+                    bundle.sources, source_key=CEUD, component_key=activity["cars"]["table_id"],
+                    transformation="road_utilization_passenger_ldv_residual_input", transformation_version="1",
+                ))
             owners = technologies_by_class[road_class]
             ids = set(physical_stock.loc[physical_stock.tech.isin(owners), "data_id"])
             stock_inputs = [context for context in existing_capacity_contexts or []
@@ -611,10 +638,10 @@ def prepare_road_utilization(
         context = resolve_composite_provenance(
             inputs=inputs,
             dataset_key=f"road_utilization.flat.{road_class}",
-            transformation=("CEUD base-year activity divided by retained sales-survival stock and manual capacity-to-activity; "
+            transformation=("Native CEUD activity projected by the configured demand method to base_year (CER real GDP; optional historical car CAGR and residual passenger-light-truck split), divided by retained sales-survival stock and manual capacity-to-activity; "
                             "physical stock is counted separately from capacity before survival is applied" if any(name == road_class for _, name in sales_pairs)
                             else "Mean CEUD annual activity-to-stock ratio divided by manual capacity-to-activity"),
-            transformation_version="2", governing_source_id=source_id,
+            transformation_version="3", governing_source_id=source_id,
             data_quality=bundle.sources.resolved_data_quality(
                 CEUD, activity[road_class]["table_id"],
             ),
@@ -656,6 +683,7 @@ def prepare_road_utilization(
         "manual_assumption_data_id": assumption_dataset.data_id,
         "input_content_digest": input_digest,
         "sales_activity_calibration": calibration.to_dict("records"),
+        "demand_baseline": demand_metadata,
         **age_audit,
     })
     output = resolve_artifact_path(bundle, "road_utilization_processed")

@@ -78,6 +78,13 @@ artifacts:
     producers: [reviewers]
     consumers: [reviewers]
     validation_surfaces: [marimo.check]
+  charging_profile_notebook:
+    path: docs/insights/charging_profile_diagnosis.py
+    layer: documentation
+    owner: validation.charging_profile_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers, publication]
+    validation_surfaces: [marimo.check, validation.charging_profile_diagnostic.load_diagnostic]
   vehicle_cost_notebook:
     path: docs/insights/vehicle_cost_diagnosis.py
     layer: documentation

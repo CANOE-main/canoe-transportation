@@ -21,7 +21,15 @@ The model expresses the same service using a reviewed capacity-to-activity
 constant $\boldsymbol{a}$ (billion service-km per thousand vehicles per year) and dimensionless
 annual utilization $\boldsymbol{u}$:
 
-$$Q=\sum_v N_v a u,\qquad u=\frac{Q^{CEUD}}{\sum_vN_v a}.$$
+$$Q=\sum_v N_v a u,\qquad u=\frac{D^{backend}_b}{\sum_vN_v a}.$$
+
+For the five sales-derived car and truck classes, **$D^{backend}_b$ is the
+backend's projected service demand at `base_year` $b$**. Under the GDP-indexed
+selection, it equals the latest observed CEUD activity multiplied by
+$G_b/G_{t_0}$. The optional car-demand extrapolation retains its selected car /
+passenger-light-truck split at that same calendar year. Stock extension and the
+interval-end demand for the first future period do not replace this reference-year
+target.
 
 !!! tip "Modeler note: activity uses physical survivors"
     Cars and trucks use calibrated physical survivors, including when curve-mode
@@ -30,7 +38,7 @@ $$Q=\sum_v N_v a u,\qquad u=\frac{Q^{CEUD}}{\sum_vN_v a}.$$
     directly; explanatory speed/load/hours columns do not recompute it.
 
 !!! warning "Calibration closure: what activity agreement establishes"
-    This fits reference activity by construction. It does not independently validate
+    This fits projected reference-year demand by construction. It does not independently validate
     stock, load, mileage or future available capacity. Buses and motorcycles retain
     the mean of the latest five eligible observed annual ratios, excluding 2020–2021.
 

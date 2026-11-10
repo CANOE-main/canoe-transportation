@@ -7,6 +7,62 @@ which quantity belongs in the database. This also affects the ages used in
 
 ## Sales, survival and stock calibration
 
+The first question is how to infer an annual cohort when only aggregate stock is
+observed. The production method starts with annual sales and a survival schedule.
+The earlier stock-based method instead allocated the observed class total over an
+Ontario MTO age distribution. These alternatives can reproduce the same class
+total while giving different vintage sizes. They also differ from the choice of
+how Temoa subsequently retires those vehicles.
+
+The illustrated reference is 2025 using CEUD's registered 2023 edition. Its
+2024–2025 sales and stock values follow the explicit constant-extension policy;
+they are held estimates, while cohort ages and survival are evaluated at 2025.
+The first three views select the EPA MOVES survival schedule. Model vintages group
+annual inputs; the oldest bin retains the lower history endpoint and can therefore
+include one additional annual cohort.
+
+| Derivation and retirement representation | Cohort quantity and interpretation |
+| --- | --- |
+| Sales with fixed lifetimes | Sales multiplied by reference-year survival, scaled to class stock, then redistributed into lifetime-eligible vintages while preserving the technology total. |
+| Sales with annual survival curves | Original-installation-equivalent acquisitions scaled to the same class stock. Temoa applies absolute survival to these acquisitions; the reference-year survivors remain a separate quantity. |
+| Earlier MTO stock-age allocation | Class stock distributed using accepted mapped car/light-truck ages and commercial Report 5 truck ages. The configured historical window is retained and renormalized before allocation. This remains a read-only diagnostic comparison. |
+
+![Sales survivors and fixed-lifetime allocation](../assets/figures/cohort-1.svg)
+
+*Figure cohort-1. Ontario annual sales divide into surviving vehicles and
+cumulative retirements. The stock-calibrated survivor estimate and the
+fixed-lifetime redistribution show the two subsequent operations. A redistribution
+changes vintage placement; it does not create additional class stock.*
+
+![Sales acquisitions and physical survivors with annual curves enabled](../assets/figures/cohort-2.svg)
+
+*Figure cohort-2. With curves enabled, acquisitions are the installation basis;
+the lower physical-survivor curve represents those acquisitions after historical
+retirement. The difference is required by the absolute-survival contract and
+must not be interpreted as a disagreement in the number of operating vehicles.*
+
+![Sales-based and earlier stock-based cohort sizes](../assets/figures/cohort-3.svg)
+
+*Figure cohort-3. Recovered from the specified
+[historical notebook](https://github.com/CANOE-main/canoe-transportation/blob/d54585992ccebc413d89b9dec603ee11fba75c15/docs/insights/stock_cohort_diagnosis.py),
+the curves-on view compares solid sales-based installation equivalents against
+striped MTO age-allocated surviving stock. Colours retain the annual cohort
+positions within each model vintage. These default quantities differ: their
+height difference combines cohort derivation and quantity basis. The notebook's
+“Physical surviving stock” selection compares the two methods on the same
+survivor basis. Both are shown before fixed-lifetime redistribution; the earlier
+method is diagnostic evidence, not a restored production option.*
+
+![Comparable physical-survivor cohort sizes with curves enabled](../assets/figures/cohort-3-survivors.svg)
+
+*Figure cohort-3-survivors. The recovered chart's physical-survivor selection
+puts both methods on the same quantity basis at reference 2025. Solid bars are
+sales multiplied by the selected survival schedule and calibrated to class stock;
+striped bars allocate that same stock total using MTO ages. Each class therefore
+has the same survivor total across methods, while its distribution over annual
+cohorts and model vintages can differ. Light trucks combine passenger and freight
+services. Neither distribution is independently validated by this fitted equality.*
+
 For region $\boldsymbol{r}$, vehicle class $\boldsymbol{c}$, acquisition year $\boldsymbol{y}$ and reference year $\boldsymbol{b}$,
 let $\boldsymbol{A_{rcy}}$ be annual acquisitions in thousand vehicles and $\boldsymbol{S_c(a)}$ the fraction
 surviving to age $\boldsymbol{a}$ (dimensionless). Raw surviving stock is $A_{rcy}S_c(b-y)$.

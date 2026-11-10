@@ -40,26 +40,35 @@ registry and typed validators determine what can execute.
 
 ![Legacy activity and energy differences on the recorded comparison basis](../assets/figures/comparison-activity-energy.svg)
 
-*Figure comparison-activity-energy. The recorded Ontario 2025 comparison separates
-service and total-energy residuals for the current backend and inherited recipe.
-Its exploratory energy-sensitivity points use that notebook's total-energy
-boundary; they are not the new production gasoline/diesel calibration. Agreement
-with a fitted quantity is closure. Legacy recipe reconstruction does not prove
-which saved SQLite was produced by a historical execution.*
+*Figure comparison-activity-energy. Ontario at `base_year = 2025`. The activity
+zero uses the backend's projected demand: latest observed CEUD activity multiplied
+by CER real GDP(2025)/real GDP(observation year). Only colored model results are
+shown. The upper view preserves the total-energy comparison; the lower view uses
+the supported gasoline/diesel boundary and adds actual production energy
+calibration. Blue squares are `v2.0 w/o efficiency calibration`; green crosses are
+`v2.0 after energy calibration` and close at zero on the fitted boundary. Legacy
+liquid splits and the heavy-truck calibration boundary remain unresolved, so no
+liquid-closure result is fabricated for them. Legacy recipe reconstruction does
+not establish which SQLite a historical execution produced.*
 
 !!! warning "Interpretation limit: total-energy residuals depend on the boundary"
-    The refreshed baseline gives the following diagnostics. Current activity closes
-    to its fitted [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) target for all five classes. The total-energy column uses
+    Current activity closes to the backend's projected `base_year` demand for all
+    five sales-derived road classes. The total-energy view uses
     vehicle-input energy, including electricity, against [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)'s reported class total;
     it is a **boundary-sensitive residual**, not an identified efficiency error.
 
-| Class | Current total-energy difference from reported [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) | Reconstructed legacy service difference from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) |
-| --- | ---: | ---: |
-| Cars | +11.33% | −16.44% |
-| Passenger light trucks | +7.59% | −9.12% |
-| Freight light trucks | +5.75% | −9.15% |
-| Medium trucks | +9.51% | −5.53% |
-| Heavy trucks | −0.17% | −5.90% |
+| Calibration step | What changes | Reference and remaining limit |
+| --- | --- | --- |
+| Activity through UFs | One class UF closes `Σ(physical stock × c2a × UF)` while retaining stock and reviewed c2a. | Native CEUD observed activity indexed by real GDP to `base_year`; later service demand follows its separate trajectory. |
+| Energy through efficiencies | One supported class consumption multiplier closes represented gasoline/diesel energy with activity, stock and PHEV energy splits fixed. | Reported CEUD liquid energy; electric consumption is transferred by the same factor without an observed electricity target. |
+| Total-energy diagnostic | Reports all vehicle-input energy and each method's own assumptions. | It includes fuels outside the fitted liquid boundary; a remaining total-energy residual is compatible with exact liquid closure. |
+
+Demand remains anchored to the latest CEUD observation rather than the stock
+extension policy. If that observation predates `base_year`, calibrating UFs to a
+held historical activity would leave a gap before the projected demand trajectory
+begins. Production now uses the same reference-year projection as the demand owner.
+Changing a common UF scales activity and energy together; the subsequent
+efficiency fit changes energy while preserving that calibrated activity.
 
 !!! note "Recorded legacy comparison identity"
     The comparison is Ontario reference 2025 with [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) 2023 held constant. The inherited

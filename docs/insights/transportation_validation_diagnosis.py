@@ -27,6 +27,7 @@ def _():
     CASE_LABELS = {
         "Backend before calibration": "5-year avg.",
         **BUILD_LABELS,
+        "Current backend": "v2.0 w/o efficiency calibration",
         "Backend energy sensitivity": "v2.0 energy sensitivity",
     }
     BUILDS = list(BUILD_LABELS.values())
@@ -400,9 +401,9 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis
     ## 2. Utilization: calibration values, bounds and sensitivity
 
     Grey = arithmetic mean of `activity_y / (stock_y × c2a)` for observed **2017, 2018, 2019, 2022, 2023**;
-    2020–2021 are excluded. Blue = **2023 [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) class activity held at 2025 / Σ(inserted stock × c2a)**.
+    2020–2021 are excluded. Blue = **latest observed CEUD activity × CER real GDP(2025)/real GDP(observation year) / Σ(physical stock × c2a)**.
     The table exposes target, denominator and resulting change. Reviewed manual c2a and efficiency stay fixed.
-    This is historical activity calibration, separate from GDP-indexed service demand.
+    This calibrates UFs to the backend's projected demand at `base_year`; later demand continues along its independent GDP trajectory.
 
     Purple triangles = **native legacy central calibration**, with a line showing its **±2.5% parameter bounds**.
     Its denominator is raw model-vintage capacity × workbook survival at **2023** × own c2a.
@@ -413,9 +414,10 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis
     Only UF changes; stock, composition, efficiencies and c2a are held fixed. The native legacy point uses
     its own complete parameters and is independent of that sensitivity.
     """), display_chart(utilization_chart), display_table(calibration[[
-        "Class", "source_years", "ceud_activity_bn", "stock_denominator_k_vehicles", "c2a",
+        "Class", "source_years", "ceud_activity_bn", "target_activity_bn", "stock_denominator_k_vehicles", "c2a",
         "capacity_activity_denominator_bn", "prior_mean_utilization", "implemented_utilization", "calibration_percent",
-    ]].rename(columns={"ceud_activity_bn": "2023 activity held at 2025 (bn)", "stock_denominator_k_vehicles": "Backend stock (k)",
+    ]].rename(columns={"ceud_activity_bn": "CEUD historical activity (bn)",
+        "target_activity_bn": "Projected base-year demand (bn)", "stock_denominator_k_vehicles": "Backend stock (k)",
         "capacity_activity_denominator_bn": "Σ stock × c2a (bn)", "prior_mean_utilization": "Grey UF", "implemented_utilization": "Blue UF",
         "calibration_percent": "UF change (%)", "source_years": "Grey source years"}), selection=None, pagination=False,
         label="c2a: billion passenger-km or tonne-km per thousand vehicles; UF = target / capacity-activity denominator"),
@@ -427,25 +429,28 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis
 
 
 @app.cell(hide_code=True)
-def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, display_chart, mo, pd, display_table, identified_chart, source_legend_style):
-    target_rows = cases.loc[cases.case.eq(CASES[1])].copy()
-    references = []
-    for label, column in [("NRCan CEUD 2023 held at 2025", "ceud_activity_bn"),
-                           ("Backend real-GDP 2025 target", "current_base_year_demand_bn"),
-                           ("Legacy workbook 2025 target", "legacy_calendar_base_year_demand_bn")]:
-        references.append(target_rows.assign(Reference=label, utilization=float("nan"), Service=lambda frame: frame[column],
-                                            Energy=lambda frame: frame.ceud_secondary_energy_pj))
-    reference_points = pd.concat(references, ignore_index=True)
-    reconciliation_data = pd.concat([
-        cases.assign(Kind="Case", Service=lambda frame: frame.implied_activity_bn, Energy=lambda frame: frame.implied_vehicle_input_pj),
-        reference_points.assign(Kind="Reference"),
-    ], ignore_index=True)
-    reconciliation_data["Point"] = reconciliation_data["case"].where(reconciliation_data.Kind.eq("Case"), reconciliation_data.Reference)
-    point_order = CASES + [item["Reference"].iloc[0] for item in references]
-    point_colors = CASE_COLORS + ["#111111"] * 3
-    point_shapes = CASE_SHAPES + ["cross", "triangle-up", "triangle-down"]
+def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, calibration, cases, class_grid, diagnosis, display_chart, mo, pd, display_table, identified_chart, source_legend_style):
+    from validation.ceud_calibration_diagnostic import load_calibration_diagnostic
+    from validation.transportation_research import energy_calibration_cases
+
+    fitted_capture = load_calibration_diagnostic()
+    liquid_results = energy_calibration_cases(diagnosis["fleet"], fitted_capture.frames)
+    liquid_results = liquid_results.loc[liquid_results.region.isin(cases.region.unique())].copy()
+    liquid_results["Class"] = liquid_results.road_class.map(CLASS_LABELS)
+    liquid_results["Point"] = liquid_results.case.replace({**CASE_LABELS, "Backend after energy calibration": "v2.0 after energy calibration"})
+    liquid_results["Energy difference (%)"] = liquid_results.energy_difference_percent
+    liquid_results["Service difference (%)"] = liquid_results.activity_difference_percent
+    liquid_results["Energy"] = liquid_results.energy_pj
+    liquid_results["Service"] = liquid_results.implied_activity_bn
+    liquid_results["Kind"] = "Case"
+    reconciliation_data = cases.assign(Kind="Case", Point=lambda frame: frame.case,
+                                       Service=lambda frame: frame.implied_activity_bn,
+                                       Energy=lambda frame: frame.implied_vehicle_input_pj)
+    point_order = CASES + ["v2.0 after energy calibration"]
+    point_colors = CASE_COLORS + ["#238443"]
+    point_shapes = CASE_SHAPES + ["cross"]
     reconciliation_data["Energy difference (%)"] = 100 * (reconciliation_data.Energy / reconciliation_data.ceud_secondary_energy_pj - 1)
-    reconciliation_data["Service difference (%)"] = 100 * (reconciliation_data.Service / reconciliation_data.ceud_activity_bn - 1)
+    reconciliation_data["Service difference (%)"] = 100 * (reconciliation_data.Service / reconciliation_data.current_base_year_demand_bn - 1)
     # Symmetric per-class extents keep all four quadrants visible, even for near closure.
     residual_extents = []
     for class_name, group in reconciliation_data.groupby("Class"):
@@ -456,7 +461,7 @@ def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, disp
                                      "Energy difference (%)": sign * x_limit, "Service difference (%)": sign * y_limit})
     residual_plot_data = pd.concat([reconciliation_data, pd.DataFrame(residual_extents)], ignore_index=True)
     residual_x = alt.X("Energy difference (%):Q", title="Energy difference from NRCan CEUD (%)", scale=alt.Scale(zero=False, nice=False))
-    residual_y = alt.Y("Service difference (%):Q", title="Service difference from NRCan CEUD (%)", scale=alt.Scale(zero=False, nice=False))
+    residual_y = alt.Y("Service difference (%):Q", title="Activity difference from projected base-year demand (%)", scale=alt.Scale(zero=False, nice=False))
     residual_points = alt.Chart().transform_filter(alt.datum.Kind != "Extent").mark_point(filled=True, size=100, strokeWidth=1.5).encode(
         x=residual_x, y=residual_y,
         color=alt.Color("Point:N", scale=alt.Scale(domain=point_order, range=point_colors), title=None,
@@ -471,24 +476,47 @@ def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, disp
     residual_bounds = alt.Chart().transform_filter(alt.datum.Kind == "Extent").mark_point(opacity=0).encode(x=residual_x, y=residual_y)
     zero_energy = alt.Chart().transform_aggregate(groupby=["Class"]).mark_rule(color="#777", strokeDash=[5, 4]).encode(x=alt.datum(0))
     zero_service = alt.Chart().transform_aggregate(groupby=["Class"]).mark_rule(color="#777", strokeDash=[5, 4]).encode(y=alt.datum(0))
-    activity_energy_chart = class_grid(alt.layer(residual_bounds, zero_energy, zero_service, residual_points,
-                                                data=residual_plot_data), relative=True)
+    total_energy_view = class_grid(alt.layer(residual_bounds, zero_energy, zero_service, residual_points,
+                                           data=residual_plot_data), relative=True).properties(
+                                               title="Reported class total energy: boundary-sensitive comparison")
+    liquid_extents = []
+    for class_name, group in liquid_results.groupby("Class"):
+        x_limit = max(1., float(group["Energy difference (%)"].abs().max()) * 1.12)
+        y_limit = max(1., float(group["Service difference (%)"].abs().max()) * 1.12)
+        for sign in [-1, 1]:
+            liquid_extents.append({"Class": class_name, "Kind": "Extent",
+                                   "Energy difference (%)": sign * x_limit, "Service difference (%)": sign * y_limit})
+    liquid_plot_data = pd.concat([liquid_results, pd.DataFrame(liquid_extents)], ignore_index=True)
+    liquid_x = alt.X("Energy difference (%):Q", title="Liquid-energy difference from fitted CEUD boundary (%)",
+                    scale=alt.Scale(zero=False, nice=False))
+    liquid_points = residual_points.encode(x=liquid_x)
+    liquid_bounds = residual_bounds.encode(x=liquid_x)
+    liquid_energy_view = class_grid(alt.layer(liquid_bounds, zero_energy, zero_service, liquid_points,
+                                            data=liquid_plot_data), relative=True).properties(
+                                                title="Supported gasoline/diesel boundary: production calibration closure")
+    activity_energy_chart = alt.vconcat(total_energy_view, liquid_energy_view, spacing=35).resolve_scale(
+        x="independent", y="independent")
     activity_energy_chart = identified_chart(activity_energy_chart, "comparison-activity-energy",
                                             "Activity and energy agreement are separate comparisons")
     mo.vstack([mo.md("""
     ## 3. Baseline activity–energy reconciliation
 
-    **x = energy difference from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) (%); y = service difference from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) (%)**.
-    Each difference is `100 × (model / CEUD − 1)`. Dashed axes meet at **(0, 0)**: simultaneous
-    activity and energy agreement. Right means more energy; above means more service. Each class has
+    **x = energy difference from the declared CEUD fuel boundary (%); y = activity difference from backend projected `base_year` demand (%)**.
+    Differences are `100 × (model / reference − 1)`. Activity uses native CEUD observations
+    indexed by CER real GDP to 2025. Dashed axes meet at **(0, 0)**: simultaneous
+    activity and energy closure. Right means more energy; above means more service. Each class has
     symmetric axes so all four quadrants remain visible. Tooltips retain total PJ and billion passenger-km
     or tonne-km. `Service = Σ(stock × c2a × UF)`; `energy = Σ(service / cohort efficiency)`.
     Energy retains each vehicle source's consumption boundary and counts PHEV blend input once.
     Embedded charging losses remain in vehicle electricity consumption; no extra charger-loss multiplier is applied.
     [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) secondary energy has its reported fleet/fuel boundary; unsupported fuels and composition can differ.
-    Black cross = [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) at zero difference. Black triangles have zero energy difference and use the distinct
-    calendar-2025 demand targets (backend real GDP; legacy workbook price index) for their service difference. They combine
-    observed energy with projected service for context; they are not independent observations.
+    Only colored results are drawn. The upper view preserves total-energy results and their
+    boundary-sensitive interpretation. The lower view compares supported gasoline/diesel energy:
+    the blue square is **v2.0 w/o efficiency calibration** and the green cross is
+    **v2.0 after energy calibration**, computed from final emitted efficiency evidence at
+    unchanged stock, c2a and UF. The green result closes at zero; electricity and other fuels
+    are outside that fitted target. Heavy trucks remain pending until their boundary is resolved.
+    Legacy liquid-energy splits are unestablished, so legacy appears only in the upper view.
 
     A common UF change with fixed composition/efficiency scales **both** totals. Collinearity of backend cases
     is an accounting identity, not evidence of fit. If the energy-per-service ratio differs from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm),
@@ -499,7 +527,8 @@ def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, disp
     Gaps suggest a mismatch in aggregate energy per unit service, but do not by themselves identify
     efficiency error. Fleet composition, service units/load, cohort efficiency, supported fuels, energy
     boundaries and the missing inherited input identity need reconciliation before recommending a new
-    efficiency or utilization calibration. **No further scientific recalibration is implemented.**
+    efficiency or utilization calibration. The implemented optional efficiency fit establishes
+    liquid-energy closure, not independent validation of each powertrain.
     """), display_chart(activity_energy_chart), display_table(cases[[
         "Class", "case", "implied_vehicle_input_pj", "implied_activity_bn", "energy_difference_percent", "activity_difference_percent",
         "energy_per_service_pj_per_bn", "ceud_energy_per_service_pj_per_bn",
@@ -509,7 +538,7 @@ def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, disp
         pagination=False, label="Passenger and freight units stay separate; energy sensitivity is conditional, legacy energy uses the declared inherited snapshot"),
         display_table(calibration[["Class", "implemented_utilization", "energy_closing_utilization", "energy_closure_activity_difference_percent"]],
                     selection=None, pagination=False, label="Backend sensitivity: UF needed for energy closure and resulting historical activity error")])
-    return (activity_energy_chart,)
+    return activity_energy_chart, fitted_capture
 
 
 @app.cell(hide_code=True)

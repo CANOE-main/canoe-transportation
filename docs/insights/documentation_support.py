@@ -34,14 +34,15 @@ def _(evidence, mo):
     # What would separate samples of 100 Ontario vehicles show?
 
     The reference is **{evidence.settings.reference_year}**. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) supplies mapped FIT_ACTIVE vehicle size and canonical
-    make/model counts; [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) table **23-10-0308-01 supplies registered stock**, not new registrations.
+    make/model counts; [*StatCan*](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501) table **20-10-0025-01 supplies new registrations**, with **20-10-0021-01** retained for older years before current-table coverage.
     The latest captured [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) observation at or before the reference is displayed with its own year and any carry-forward.
 
     Each panel has its own denominator. There is **no inferred joint distribution** linking a size class, model and powertrain.
-    Unresolved [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) classifications cannot be assigned to Cars or Light trucks and appear separately in the coverage panel.
+    Unresolved [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) classifications cannot be assigned to Cars or Light trucks; their coverage remains inspectable in the vehicle-population notebook.
+    Powertrain panels include only represented fuels and normalize their new-registration counts. They describe an acquisition-year snapshot, not total registrations across vintages.
 
     Counts remain exact in the table. Largest-remainder rounding assigns {evidence.settings.icons_per_panel} symbols to each panel;
-    small positive categories can receive zero symbols without disappearing from the table or legend.
+    small positive categories can receive zero symbols without disappearing from the table or legend. **n = # of symbols**.
 
     Captured stock build: `{evidence.metadata['stock_build']}`. Captured efficiency/[*StatCan*](https://www.statcan.gc.ca/en/developers/wds) build:
     `{evidence.metadata['efficiency_build']}`. This notebook only reads recorded evidence.

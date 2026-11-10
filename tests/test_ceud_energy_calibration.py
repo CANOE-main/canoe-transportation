@@ -57,6 +57,8 @@ def calibration_inputs():
                           "year": [2030, 2035], "electricity_share": [.3, .5]})
     return dict(annual=periods.copy(), periods=periods, payloads=periods.to_dict("records"),
                 physical_stock=physical, c2a=c2a, factors=factors, split_audit=split, ceud=ceud,
+                activity_targets=pd.DataFrame([{"region": "ON", "road_class": "cars",
+                                                "base_year": 2025, "target_activity_bn": .5}]),
                 relationships=periods[["tech", "powertrain"]], base_year=2025, source_edition=2023,
                 regions=["ON"], calibration_rules=rules, stock_rules=road["existing_capacity"],
                 demand_rules=road["demand"], efficiency_rules=efficiencies)
@@ -175,6 +177,33 @@ def test_scenario_opt_in_requires_flat_emitted_activity():
         ScenarioConfig.model_validate(scenario)
 
 
+def test_energy_fit_preserves_projected_activity_instead_of_held_ceud(calibration_inputs):
+    calibration_inputs["factors"]["factor"] *= 1.1
+    calibration_inputs["activity_targets"]["target_activity_bn"] *= 1.1
+    result = calibrate_consumption(**calibration_inputs)
+    row = result.summary.iloc[0]
+    assert row.ceud_activity_bn == pytest.approx(.5)
+    assert row.target_activity_bn == pytest.approx(.55)
+    assert row.activity_bn == pytest.approx(.55)
+    assert row.activity_residual_bn == pytest.approx(0.)
+    assert row.calibrated_liquid_energy_pj == pytest.approx(3.4)
+
+
+@pytest.mark.parametrize("defect", ["missing", "duplicate", "wrong_year", "nonfinite"])
+def test_energy_fit_rejects_incomplete_projected_activity_contract(calibration_inputs, defect):
+    targets = calibration_inputs["activity_targets"]
+    if defect == "missing":
+        calibration_inputs["activity_targets"] = targets.iloc[:0]
+    elif defect == "duplicate":
+        calibration_inputs["activity_targets"] = pd.concat([targets, targets], ignore_index=True)
+    elif defect == "wrong_year":
+        targets["base_year"] = 2020
+    else:
+        targets["target_activity_bn"] = float("nan")
+    with pytest.raises(ValueError, match="projected"):
+        calibrate_consumption(**calibration_inputs)
+
+
 def test_read_only_diagnostic_checks_emitted_rows_and_identified_charts(calibration_inputs):
     from validation.ceud_calibration_diagnostic import (
         CEUDCalibrationDiagnostic, calibration_charts, validate_calibration_evidence,
@@ -227,3 +256,30 @@ def test_final_comparison_checks_representatives_future_and_unchanged_edges(cali
     after.loc[after.tech.eq("charger"), "efficiency"] *= .9
     with pytest.raises(ValueError, match="do not match fitted class factors"):
         compare_efficiency_frames(before, after, diagnostic)
+
+
+def test_base_year_anchor_heatmaps_do_not_mix_historical_or_future_vintages():
+    from validation.ceud_calibration_diagnostic import CEUDCalibrationDiagnostic, calibration_anchor_charts
+
+    summary = pd.DataFrame([
+        {"region": region, "road_class": mode, "base_year": 2025, "status": status}
+        for region in ["ON", "QC"]
+        for mode, status in [("cars", "calibrate"), ("heavy_trucks", "unsupported_fuel_boundary")]
+    ])
+    trajectories = pd.DataFrame([
+        {"region": row.region, "mode": row.road_class, "vintage": vintage, "powertrain": fuel,
+         "unadjusted_efficiency": 2., "efficiency": 2.2 if row.status == "calibrate" else 2.,
+         "units": "bn passenger-km/PJ" if row.road_class == "cars" else "bn tonne-km/PJ"}
+        for row in summary.itertuples() for vintage in [2020, 2025, 2030] for fuel in ["diesel", "bev"]
+    ])
+    charts = calibration_anchor_charts(CEUDCalibrationDiagnostic(
+        {"summary": summary, "trajectories": trajectories}, {}, {}))
+    assert set(charts) == {"ceud-cal-5-cars", "ceud-cal-5-trucks"}
+    for identity, chart in charts.items():
+        spec = chart.to_dict(validate=True)
+        assert spec["usermeta"]["figure_id"] == identity
+        data = [row for rows in spec["datasets"].values() for row in rows]
+        assert {row["vintage"] for row in data} == {2025}
+        assert {row["region"] for row in data} == {"ON", "QC"}
+        assert all(row["cell_label"] == "pending" for row in data) if identity.endswith("trucks") else \
+               all(row["efficiency_change"] == pytest.approx(.1) for row in data)

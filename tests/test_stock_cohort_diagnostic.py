@@ -5,6 +5,8 @@ import pytest
 
 from validation.stock_cohort_diagnostic import (
     cohort_lineage,
+    comparison_lineage,
+    stock_age_comparison,
     historical_retention,
     reference_survival_comparison,
     retirement_projection,
@@ -146,3 +148,34 @@ def test_reference_calibration_comparison_exposes_shape_changes_despite_equal_st
     assert result.native_multiplier == 1.2
     assert result.production_multiplier == 1.
     assert result.max_cohort_stock_difference_k_vehicles == 20.
+
+
+def test_restored_stock_age_comparison_keeps_survivors_distinct(annual):
+    from validation.config_models import ScenarioPeriods
+
+    periods = ScenarioPeriods(period_mode="prospective", base_year=2025,
+                              existing=[2000, 2005, 2010, 2015, 2020],
+                              model=[2025, 2030], step=5)
+    mapped = pd.DataFrame({"mapping_accepted": [True, True, True, False],
+                           "report_year": 2025, "MODEL_YEAR": [1999, 2005, 2020, 2020],
+                           "FIT_ACTIVE": [900., 1., 3., 900.],
+                           "nrcan_ceud_class": "Car"})
+    report5 = pd.DataFrame({"VEHICLE_CLASS": ["COMMERCIAL"], "year": [2025],
+                            "AGE": [5], "AGE_DIST": [1.]})
+    selected = annual.loc[annual.profile.eq("moves") & annual.region.eq("ON")]
+    targets = selected[["region", "road_class", "ceud_stock_k_vehicles"]].drop_duplicates()
+    stock = stock_age_comparison(mapped, report5, targets, periods=periods, report_year=2025)
+    assert stock.vehicles_k.tolist() == [189., 63.]
+    # Out-of-history and unresolved rows cannot consume the observed-stock total.
+    assert stock.vehicles_k.sum() == 252.
+    lineage = comparison_lineage(selected, stock, physical_survivors=False)
+    assert lineage.groupby("method").vehicles_k.sum().to_dict() == {
+        "Sales cohorts": 360., "Deprecated MTO age allocation": 252.}
+    physical = comparison_lineage(selected, stock, physical_survivors=True)
+    assert physical.groupby("method").vehicles_k.sum().eq(252.).all()
+    # The chart may load every province, but an Ontario selection must retain
+    # only Ontario's stock-age comparator and its own class-stock denominator.
+    all_regions = pd.concat([stock, stock.assign(region="QC", vehicles_k=stock.vehicles_k * 100)])
+    regional = comparison_lineage(selected, all_regions, physical_survivors=True)
+    assert set(regional.region) == {"ON"}
+    assert regional.groupby("method").vehicles_k.sum().eq(252.).all()

@@ -1090,6 +1090,7 @@ def prepare_efficiency_rows(
             c2a=pd.DataFrame([row.model_dump() for row in road_utilization.capacity_to_activity_rows]),
             factors=pd.DataFrame([row.model_dump() for row in road_utilization.flat_factor_rows]),
             split_audit=split_audit, ceud=provincial, relationships=relationships,
+            activity_targets=pd.DataFrame(road_utilization.audit["sales_activity_calibration"]),
             base_year=scenario.periods.base_year,
             source_edition=scenario.sources.selections[CEUD].year,
             regions=list(scenario.geography.regions), calibration_rules=calibration_rules,

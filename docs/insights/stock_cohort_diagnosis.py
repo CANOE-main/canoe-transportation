@@ -14,7 +14,7 @@ def _():
     import marimo as mo
     import numpy as np
     import pandas as pd
-    from validation.stock_cohort_diagnostic import cohort_lineage, load_stock_cohort_diagnosis
+    from validation.stock_cohort_diagnostic import comparison_lineage, load_stock_cohort_diagnosis
 
     CLASS_LABELS = {
         "cars": "Cars", "passenger_light_trucks": "Passenger light trucks",
@@ -149,7 +149,7 @@ def _():
         return mo.ui.altair_chart(identified_chart(chart, figure_id, title), chart_selection=False, legend_selection=False)
 
     return (CLASS_LABELS, PROFILE_LABELS, STOCK_LABELS, alt, build_cohort_hatching,
-            cohort_style_legend, cohort_lineage, display_chart, display_table,
+            cohort_style_legend, comparison_lineage, display_chart, display_table,
             load_stock_cohort_diagnosis, mo, pd, stock_grid)
 
 
@@ -192,7 +192,8 @@ def _(diagnosis, mo):
 
 @app.cell
 def _(diagnosis, mo):
-    region = mo.ui.dropdown(diagnosis["metadata"]["regions"], value=diagnosis["metadata"]["regions"][0], label="Region")
+    region = mo.ui.dropdown(diagnosis["metadata"]["regions"],
+        value="ON" if "ON" in diagnosis["metadata"]["regions"] else diagnosis["metadata"]["regions"][0], label="Region")
     profile = mo.ui.dropdown(list(diagnosis["annual"].profile.unique()),
         value=diagnosis["metadata"]["selected_profile"], label="Survival source")
     mo.hstack([region, profile], justify="start")
@@ -319,26 +320,34 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("""
-    ## 3. Annual contributions within each model vintage
+    lineage_basis = mo.ui.dropdown(
+        ["Acquisitions versus stock", "Physical surviving stock"],
+        value="Acquisitions versus stock", label="Paired cohort comparison",
+    )
+    mo.vstack([mo.md("""
+    ## 3. Sales cohorts versus the deprecated MTO method
 
-    Solid bars show installed-equivalent acquisitions; striped bars show physical survivors at the
-    reference year. Colours identify the actual acquisition year's position within its model vintage.
-    Each annual segment sums exactly to the corresponding vintage total; partial bins remain visible.
-    The installation basis is the quantity supplied to absolute survival curves. Physical survivors
-    instead support activity and efficiency weighting. Both are shown before fixed-lifetime redistribution.
-    """)
-    return
+    Solid sales bars and striped MTO bars retain the annual-position colours from the transportation
+    comparison. **Default quantities differ:** curve-mode sales parameters are calibrated acquisitions;
+    deprecated MTO quantities are age-allocated survivors **before fixed-lifetime redistribution**. Select physical surviving stock for a like-quantity
+    comparison. Each annual segment sums exactly to its model-vintage total; partial bins remain visible.
+    The acquisition view uses the production installation basis. In the configured prospective bins
+    this equals calibrated acquisitions; right-labelled synthetic bins would use their own normalized basis.
+    Both methods are shown before fixed-lifetime redistribution here. The deprecated MTO distribution still
+    uses its original historical-window restriction and renormalization; it is not unfiltered source stock.
+    """), lineage_basis])
+    return (lineage_basis,)
 
 
 @app.cell(hide_code=True)
-def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, cohort_lineage,
-      diagnosis, display_chart, display_table, mo, pd, profile, region, stock_grid):
+def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, comparison_lineage,
+      diagnosis, display_chart, display_table, lineage_basis, mo, pd, profile, region, stock_grid):
     paired_annual = diagnosis["annual"].loc[
         diagnosis["annual"].region.eq(region.value) & diagnosis["annual"].profile.eq(profile.value)]
-    paired_lineage = cohort_lineage(paired_annual)
+    paired_lineage = comparison_lineage(paired_annual, diagnosis["stock_age"],
+        physical_survivors=lineage_basis.value == "Physical surviving stock")
     paired_lineage["Class"] = paired_lineage.road_class.map(STOCK_LABELS)
-    paired_lineage["evidence"] = paired_lineage.method
+    paired_lineage["evidence"] = paired_lineage.method.replace({"Deprecated MTO age allocation": "Deprecated MTO"})
     paired_step = diagnosis["metadata"]["scenario"]["periods"]["step"]
     paired_lineage["annual_position"] = ((paired_lineage.vintage_year - paired_lineage.vintage - 1) % paired_step + 1).astype(int)
     paired_lineage["cohort_position"] = "Year " + paired_lineage.annual_position.astype(str)
@@ -346,8 +355,9 @@ def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, cohort_line
     paired_lineage.loc[paired_lineage.vintage_year.le(paired_lineage.vintage), "interval"] += "; oldest proxy includes lower endpoint"
     paired_contributions = paired_lineage.groupby(["Class", "evidence", "vintage", "vintage_year",
         "annual_position", "cohort_position", "interval"], as_index=False).vehicles_k.sum()
-    paired_builds = ["Installed-equivalent acquisitions", "Physical survivors"]
-    paired_bases = ["Installation basis", "Reference-year stock"]
+    paired_builds = ["Sales cohorts", "Deprecated MTO"]
+    paired_bases = [("Physical surviving stock" if lineage_basis.value == "Physical surviving stock"
+                     else "Installed-equivalent acquisitions"), "Physical surviving stock"]
     paired_positions = [f"Year {position}" for position in range(1, paired_step + 1)]
     paired_rectangles, paired_hatches, paired_extents = build_cohort_hatching(
         paired_contributions, paired_builds, value_column="vehicles_k", period_step=paired_step)
@@ -355,7 +365,8 @@ def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, cohort_line
                                 paired_extents.assign(Kind="Extent")], ignore_index=True)
     paired_x = alt.X("x0:Q", title="Model vintage", scale=alt.Scale(domain=paired_rectangles.attrs["x_domain"], nice=False, zero=False),
         axis=alt.Axis(values=paired_rectangles.attrs["vintage_ticks"], format="d", labelAngle=0))
-    paired_y = alt.Y("y0:Q", title="Acquisitions / survivors (thousand)", scale=alt.Scale(nice=False, zero=False))
+    paired_y = alt.Y("y0:Q", title=("Surviving stock (thousand)" if lineage_basis.value == "Physical surviving stock"
+        else "Acquisitions / stock (thousand)"), scale=alt.Scale(nice=False, zero=False))
     paired_bars = alt.Chart().transform_filter(alt.datum.Kind == "Stock").mark_rect().encode(
         x=paired_x, x2="x1:Q", y=paired_y, y2="y1:Q",
         color=alt.Color("cohort_position:N", scale=alt.Scale(domain=paired_positions, scheme="blues"), legend=None),
@@ -366,7 +377,10 @@ def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, cohort_line
         x=paired_x, x2="x1:Q", y=paired_y, y2="y1:Q")
     paired_chart = alt.hconcat(stock_grid(alt.layer(paired_bounds, paired_bars, paired_stripes, data=paired_geometry)),
         cohort_style_legend(paired_positions, paired_builds, paired_bases), spacing=18).resolve_scale(color="independent", x="independent", y="independent")
-    mo.vstack([display_chart(paired_chart, 'cohort-3', 'Annual contributions within each representative vintage'), mo.accordion({"Annual contributions and explicit quantity basis":
+    mo.vstack([display_chart(paired_chart,
+        "cohort-3-survivors" if lineage_basis.value == "Physical surviving stock" else "cohort-3",
+        "Sales and MTO physical-survivor cohorts, curves on" if lineage_basis.value == "Physical surviving stock"
+        else "Sales-based cohorts versus MTO stock-age reconstruction, curves on"), mo.accordion({"Annual contributions and explicit quantity basis":
         display_table(paired_lineage[["road_class", "evidence", "basis", "vintage", "vintage_year", "vehicles_k"]],
                       selection=None, page_size=10)})])
     return (paired_chart,)

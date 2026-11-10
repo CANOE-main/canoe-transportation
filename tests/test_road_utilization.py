@@ -182,3 +182,86 @@ def test_cli_explicitly_prepares_stock_once_before_utilization(monkeypatch) -> N
     monkeypatch.setattr(sys, "argv", ["road_utilization"])
     layer.main()
     assert events == ["stock", "utilization"]
+
+
+def test_sales_uf_closes_projected_demand_and_retains_cer_provenance(isolated_bundle):
+    from parameterization.build_demand import road_base_year_activity
+
+    bundle = isolated_bundle
+    stock, contexts = stock_inputs(bundle)
+    prepared = prepare_road_utilization(bundle, existing_capacity_rows=stock, existing_capacity_contexts=contexts)
+    expected, metadata = road_base_year_activity(bundle)
+    calibration = pd.DataFrame(prepared.audit["sales_activity_calibration"])
+    comparison = calibration.merge(expected[["region", "service", "gdp_indexed_base_year_demand"]],
+                                   left_on=["region", "road_class"], right_on=["region", "service"])
+    assert len(comparison) == 5
+    assert metadata["base_year_gdp_index"] != pytest.approx(1.)
+    assert comparison.target_activity_bn.to_numpy() == pytest.approx(comparison.gdp_indexed_base_year_demand.to_numpy())
+    assert comparison.modelled_activity_bn.to_numpy() == pytest.approx(comparison.target_activity_bn.to_numpy())
+    assert comparison.target_activity_bn.to_numpy() == pytest.approx(
+        comparison.observed_activity_bn.to_numpy() * metadata["base_year_gdp_index"])
+    for context in prepared.provenance_contexts:
+        if "road_utilization.flat." in context.component_key and any(name in context.component_key for name in calibration.road_class):
+            assert "cer_canadas_energy_future" in {contributor.source_key for contributor in context.contributors}
+
+
+@pytest.mark.parametrize("defect", ["missing", "duplicate", "nonfinite", "infeasible"])
+def test_projected_activity_calibration_rejects_invalid_target(defect):
+    from parameterization.road_utilization import calibrate_sales_activity
+
+    annual = pd.DataFrame([{"region": "ON", "road_class": "cars", "year": 2025,
+                            "activity_bn": 2., "stock_k_vehicles": 1.}])
+    if defect == "missing":
+        annual = annual.iloc[:0]
+    elif defect == "duplicate":
+        annual = pd.concat([annual, annual])
+    else:
+        annual["activity_bn"] = float("nan") if defect == "nonfinite" else 3.
+    with pytest.raises(ValueError):
+        calibrate_sales_activity(
+            pd.DataFrame([{"region": "ON", "road_class": "cars", "utilization": .2}]), annual,
+            pd.DataFrame([{"region": "ON", "tech": "car", "capacity": 1.}]),
+            pd.DataFrame([{"category": "cars", "tech": "car", "c2a": 2.}]),
+            selected_pairs={("ON", "cars")}, base_year=2025,
+        )
+
+
+@pytest.mark.parametrize("future_car_demand", ["GDP-indexed", "extrapolated"])
+def test_reference_year_activity_uses_selected_passenger_split_without_changing_total(monkeypatch, future_car_demand):
+    from parameterization.build_demand import road_base_year_activity
+    from parameterization.road_stocks_and_demands import extrapolate_passenger_ldv_demand
+
+    bundle = load_config_bundle("config/scenarios/default.yaml")
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
+        "geography": bundle.scenario.geography.model_copy(update={"regions": ["ON"]}),
+        "demand": bundle.scenario.demand.model_copy(update={"future_car_demand": future_car_demand}),
+    }))
+    road_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
+    provincial = pd.DataFrame([
+        {"region": "ON", "year": year, "table_id": selector["table_id"],
+         "raw_series": selector["raw_series"], "unit": "millions",
+         "value": 1000. * .98 ** (year - 2013) if service == "cars" else 1000.}
+        for service, selector in road_rules["activity_series"].items() for year in range(2013, 2024)
+    ])
+    macro = pd.DataFrame([
+        {"source_id": "cer_canadas_energy_future", "edition": 2026, "scenario": "Current Measures",
+         "region": "Canada", "variable_key": "real_gdp", "year": year, "value": value, "unit": "M CAD2020"}
+        for year, value in [(2023, 100.), (2025, 110.)]
+    ])
+    monkeypatch.setattr("parameterization.build_demand.file_sha256", lambda path: "fixture-macro")
+    baseline, metadata = road_base_year_activity(bundle, provincial=provincial, macro=macro)
+    passengers = baseline.set_index("service").loc[["cars", "passenger_light_trucks"]]
+    assert passengers.projected_base_year_demand.sum() == pytest.approx(passengers.baseline_demand.sum() * 1.1)
+    if future_car_demand == "GDP-indexed":
+        assert passengers.projected_base_year_demand.tolist() == pytest.approx(passengers.gdp_indexed_base_year_demand.tolist())
+    else:
+        rules = {**road_rules, "car_extrapolation": {
+            **road_rules["car_extrapolation"], **load_harmonization_rules(bundle, "ceud_inputs")["cagr"]}}
+        expected, _ = extrapolate_passenger_ldv_demand(
+            provincial, baseline, regions=["ON"], base_year=2023, periods=[2020], step=5,
+            gdp_indices={2020: 1.1}, rules=rules,
+        )
+        assert passengers.loc["cars", "projected_base_year_demand"] == pytest.approx(expected["ON", 2020, "cars"])
+        assert passengers.loc["passenger_light_trucks", "projected_base_year_demand"] == pytest.approx(expected["ON", 2020, "passenger_light_trucks"])
+        assert passengers.loc["cars", "projected_base_year_demand"] != pytest.approx(passengers.loc["cars", "gdp_indexed_base_year_demand"])
+    assert metadata["future_car_demand"] == future_car_demand

@@ -1,7 +1,7 @@
 """Recorded presentation evidence for separate Ontario fleet composition marginals.
 
 No joint size/model/powertrain distribution is inferred. MTO supplies mapped
-FIT_ACTIVE size/model evidence; StatCan supplies a distinct registered-stock fuel
+FIT_ACTIVE size/model evidence; StatCan supplies a distinct new-registration fuel
 marginal. Reading the notebook never loads mutable interim inputs or runs ETL.
 """
 
@@ -39,6 +39,7 @@ class FleetPresentation(BaseModel):
     icons_per_panel: int = Field(gt=0)
     top_models_per_vehicle_group: int = Field(gt=0)
     vehicle_groups: list[str]
+    powertrains: list[str]
     size_class_order: dict[str, list[str]]
     figure_id: str
     exact_table: str
@@ -142,38 +143,31 @@ def derive_fleet_shares(mapped: pd.DataFrame, statcan: pd.DataFrame, settings: F
         top.loc["Other / unidentified mapped models"] = int(local.FIT_ACTIVE.sum() - top.sum())
         output.append(_panel(top, group=group, dimension="Leading models", year=settings.mto_report_year,
                              source="MTO canonical make/model FIT_ACTIVE", denominator_label=denominator, settings=settings))
-    coverage = pd.Series("Unresolved classification", index=fleet.index)
-    coverage.loc[fleet.mapping_outcome.eq("out_of_scope")] = "Out of scope / unclassified"
-    coverage.loc[fleet.mapping_outcome.eq("mapped_non_ldv")] = "Mapped non-LDV"
-    coverage.loc[accepted] = "Mapped " + fleet.loc[accepted, "group"]
-    coverage_counts = fleet.groupby(coverage, sort=True).FIT_ACTIVE.sum()
-    output.append(_panel(coverage_counts, group="All MTO records", dimension="Mapping coverage", year=settings.mto_report_year,
-                         source="MTO FIT_ACTIVE report records", denominator_label="All FIT_ACTIVE vehicles in the captured MTO report records",
-                         settings=settings))
+    if not statcan.source.eq("statcan_new").all():
+        raise ValueError("LDV powertrain snapshots require StatCan new registrations, not registered stock")
     available = statcan.loc[statcan.region.eq(settings.region) & statcan.year.le(settings.statcan_maximum_year)]
     if available.empty:
-        raise ValueError("No registered-stock StatCan year supports the requested reference")
+        raise ValueError("No new-registration StatCan year supports the requested reference")
     year = int(available.year.max())
     if year > settings.reference_year or settings.mto_report_year > settings.reference_year:
         raise ValueError("Presentation cannot use observations later than its reference year")
     for group in settings.vehicle_groups:
         local = available.loc[available.year.eq(year) & available.vehicle_group.eq(group)]
-        totals = local.loc[local.powertrain.eq("all")]
-        if len(totals) != 1 or totals["count"].isna().any() or totals["count"].iloc[0] <= 0:
-            raise ValueError(f"StatCan registered-stock denominator is unavailable for {group}/{year}")
         if local.status.eq("geography_proxy").any():
             raise ValueError("Ontario fleet illustration cannot silently substitute a geographic proxy")
-        fuels = local.loc[local.powertrain.ne("all")]
+        fuels = local.loc[local.powertrain.isin(settings.powertrains)]
         if fuels.powertrain.duplicated().any():
             raise ValueError("Duplicate StatCan fuel categories")
-        counts = fuels.set_index("powertrain")["count"].dropna()
-        residual = float(totals["count"].iloc[0]) - counts.sum()
-        if residual < 0:
-            raise ValueError("StatCan component counts exceed the registered-stock total")
-        if residual or fuels["count"].isna().any():
-            counts.loc["Unreported / suppressed fuel remainder"] = residual
+        if (set(fuels.powertrain) != set(settings.powertrains) or fuels["count"].isna().any()
+                or not fuels.status.eq("reported").all()):
+            raise ValueError(f"StatCan represented new-registration fuels are missing or suppressed for {group}/{year}")
+        counts = fuels.set_index("powertrain")["count"].reindex(settings.powertrains)
+        tables = sorted(set(fuels.source_table.dropna()))
+        if not tables or set(tables) - {"20-10-0025-01", "20-10-0021-01"}:
+            raise ValueError("LDV powertrain snapshot lacks registered new-registration source-table lineage")
         output.append(_panel(counts, group=group, dimension="Powertrain", year=year,
-                             source="StatCan 23-10-0308-01 registered stock", denominator_label=f"All registered {group.lower()} in StatCan {year}; not new registrations",
+                             source=f"StatCan {' / '.join(tables)} new registrations",
+                             denominator_label=f"Represented {group.lower()} new registrations in StatCan {year}; other fuels excluded",
                              settings=settings))
     result = pd.concat(output, ignore_index=True)
     result["panel"] = result.vehicle_group + " — " + result.dimension
@@ -185,7 +179,7 @@ def _controls(repo_root: Path | None = None) -> tuple[Path, PathsConfig, FleetPr
     paths = PathsConfig.model_validate(load_yaml(root / "config/paths.yaml"))
     config = root / paths.config.parameters / "documentation.yaml"
     payload = load_yaml(config)
-    if payload.get("version") != 1 or set(payload) - {"version", "fleet_100", "nonroad", "publication_figures"}:
+    if payload.get("version") != 1 or set(payload) - {"version", "fleet_100", "nonroad", "publication_figures", "charging_profile"}:
         raise ValueError("Unsupported documentation presentation configuration")
     return root, paths, FleetPresentation.model_validate(payload["fleet_100"]), config
 
@@ -196,11 +190,14 @@ def build_fleet_100(*, repo_root: Path | None = None) -> FleetPresentationEviden
     stock = load_notebook_evidence("vehicle_stock", repo_root=root)
     efficiency = load_notebook_evidence("efficiency", repo_root=root)
     mapped = pd.read_csv(stock.paths["mapped_fleet"])
-    native_stock = pd.read_csv(efficiency.paths["benchmark_statcan_stock"])
+    native_registrations = pd.read_csv(efficiency.paths["benchmark_statcan_new"])
     spec = load_harmonization_rules(efficiency.bundle, "ldv_composition_benchmark")
     geography = load_harmonization_rules(efficiency.bundle, "statcan_tables")["geography"]
-    annual = _statcan(native_stock, spec, "statcan_stock", [settings.region], geography)
+    annual = _statcan(native_registrations, spec, "statcan_new", [settings.region], geography)
     shares = derive_fleet_shares(mapped, annual, settings)
+    selected_year = int(shares.loc[shares.dimension.eq("Powertrain"), "source_year"].iloc[0])
+    excluded = annual.loc[annual.year.eq(selected_year) & ~annual.powertrain.isin(settings.powertrains),
+                          ["vehicle_group", "year", "powertrain", "count", "status"]]
     metadata = {
         "figure_id": settings.figure_id, "reference_year": settings.reference_year,
         "stock_build": stock.metadata["build_id"], "efficiency_build": efficiency.metadata["build_id"],
@@ -208,9 +205,10 @@ def build_fleet_100(*, repo_root: Path | None = None) -> FleetPresentationEviden
         "settings_sha256": file_sha256(config), "settings_path": str(config.relative_to(root)),
         "generator": "validation.documentation_support.fleet_100_chart",
         "generator_sha256": file_sha256(Path(__file__)),
+        "excluded_powertrain_counts": excluded.astype(object).where(excluded.notna(), None).to_dict("records"),
         "input_files": {
             "mapped_fleet": {"path": str(stock.paths["mapped_fleet"].relative_to(root)), "sha256": file_sha256(stock.paths["mapped_fleet"])},
-            "benchmark_statcan_stock": {"path": str(efficiency.paths["benchmark_statcan_stock"].relative_to(root)), "sha256": file_sha256(efficiency.paths["benchmark_statcan_stock"])},
+            "benchmark_statcan_new": {"path": str(efficiency.paths["benchmark_statcan_new"].relative_to(root)), "sha256": file_sha256(efficiency.paths["benchmark_statcan_new"])},
         },
         "manifest_hashes": {
             "vehicle_stock": file_sha256(Path(stock.metadata["manifest"])),
@@ -218,8 +216,9 @@ def build_fleet_100(*, repo_root: Path | None = None) -> FleetPresentationEviden
         },
         "limitations": [
             "Each 100-symbol panel is a separate marginal with its own stated denominator; symbols cannot be matched across panels.",
-            "MTO size/model shares condition on accepted mapped FIT_ACTIVE stock; unresolved classification is excluded from both Cars and Light trucks and shown separately.",
-            "StatCan is annual registered stock, not new registrations; its population and observation dates differ from MTO FIT_ACTIVE records.",
+            "MTO size/model shares condition on accepted mapped FIT_ACTIVE stock; unresolved classification is excluded from both Cars and Light trucks. Mapping coverage remains in the vehicle-population notebook.",
+            "StatCan powertrain shares describe annual new registrations, not the surviving all-vintage MTO stock; no joint distribution is inferred.",
+            "Powertrain panels normalize only represented fuels; other fuels are excluded, as in the production fuel-share calculation.",
             "An older StatCan observation is displayed as carry-forward to the reference year, not presented as a 2025 observation.",
             "Integer symbols use largest-remainder rounding; the exact table retains every category, including positive shares receiving zero symbols.",
         ],
@@ -228,7 +227,7 @@ def build_fleet_100(*, repo_root: Path | None = None) -> FleetPresentationEviden
 
 
 def fleet_100_chart(evidence: FleetPresentationEvidence):
-    """A static seven-panel infographic; exact shares and coverage remain visible."""
+    """Six independent marginal views with exact shares and source denominators."""
     settings = evidence.settings
     colours = ["#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#b07aa1", "#76b7b2", "#edc948", "#9c755f", "#bab0ab"]
 
@@ -236,7 +235,7 @@ def fleet_100_chart(evidence: FleetPresentationEvidence):
         rows = rows.reset_index(drop=True).copy()
         labels = [str(value).replace("Sport utility vehicle:", "SUV:").replace("Station wagon:", "Wagon:")
                   .replace("Other / unidentified mapped models", "Other mapped models") for value in rows.category]
-        labels = [{"gasoline": "Gasoline", "diesel": "Diesel", "bev": "BEV", "hev": "Hybrid", "phev": "Plug-in hybrid", "other": "Other fuels"}.get(value, value) for value in labels]
+        labels = [{"gasoline": "Gasoline", "diesel": "Diesel", "bev": "BEV", "hev": "Hybrid", "phev": "Plug-in hybrid"}.get(value, value) for value in labels]
         palette = dict(zip(labels, colours, strict=False))
         symbols = []
         offset = 0
@@ -249,7 +248,7 @@ def fleet_100_chart(evidence: FleetPresentationEvidence):
             color=alt.Color("category:N", scale=alt.Scale(domain=labels, range=[palette[label] for label in labels]), legend=None),
         ).properties(width=settings.panel_width, height=settings.panel_height)
         percentages = ["<0.01%" if 0 < value < 0.0001 else f"{value:.2%}" for value in rows.share]
-        legends = [{"index": index, "label": f"{label}: {percentage} ({row.icons} symbols)", "category": label}
+        legends = [{"index": index, "label": f"{label}: {percentage} (n = {row.icons})", "category": label}
                    for index, (label, percentage, row) in enumerate(zip(labels, percentages, rows.itertuples(index=False)))]
         legend_base = alt.Chart(alt.Data(values=legends)).encode(y=alt.Y("index:O", axis=None))
         legend_keys = legend_base.mark_square(size=65, filled=True).encode(
@@ -257,10 +256,10 @@ def fleet_100_chart(evidence: FleetPresentationEvidence):
             color=alt.Color("category:N", scale=alt.Scale(domain=labels, range=[palette[label] for label in labels]), legend=None),
         )
         legend_text = legend_base.mark_text(align="left", fontSize=11, color="#222222").encode(x=alt.value(15), text="label:N")
-        legend = alt.layer(legend_keys, legend_text).properties(width=335, height=max(35, len(rows) * 17))
+        legend = alt.layer(legend_keys, legend_text).properties(width=settings.panel_width + 50, height=max(35, len(rows) * 17))
         first = rows.iloc[0]
         carry = f"; {first.source_year} carried to {first.reference_year}" if first.carried_forward_years else ""
-        subtitle = [f"{first.source_year} · n = {int(first.denominator):,}{carry}",
+        subtitle = [f"{first.source_year} · {int(first.denominator):,} vehicles{carry}",
                     *textwrap.wrap(first.denominator_label.replace("MTO", "Ontario MTO"), width=45)]
         group_title = first.vehicle_group.replace("All MTO records", "All Ontario MTO records")
         return alt.vconcat(grid, legend, spacing=7).properties(
@@ -270,14 +269,13 @@ def fleet_100_chart(evidence: FleetPresentationEvidence):
     for group in settings.vehicle_groups:
         group_rows = evidence.shares.loc[evidence.shares.vehicle_group.eq(group)]
         groups.append(alt.hconcat(*(panel(group_rows.loc[group_rows.dimension.eq(dimension)])
-                                  for dimension in ("Size class", "Leading models", "Powertrain")), spacing=25).resolve_scale(color="independent"))
-    coverage = panel(evidence.shares.loc[evidence.shares.dimension.eq("Mapping coverage")])
-    chart = alt.vconcat(*groups, coverage, spacing=30).resolve_scale(color="independent").configure_view(stroke=None)
+                                  for dimension in ("Size class", "Leading models", "Powertrain")), spacing=8).resolve_scale(color="independent"))
+    chart = alt.vconcat(*groups, spacing=30).resolve_scale(color="independent").configure_view(stroke=None)
     return identified_chart(chart, settings.figure_id, f"Ontario vehicles around {settings.reference_year}: separate views of 100").properties(
-        title=alt.Title(f"Ontario vehicles around {settings.reference_year}: separate views of 100", anchor="start", fontSize=20,
+        title=alt.Title(f"Ontario vehicles around {settings.reference_year}: separate views of 100", anchor="start", fontSize=20, offset=35,
                         subtitle=[f"Figure {settings.figure_id} · Every panel has its own denominator; these are not the same 100 vehicles.",
-                                  "Ontario MTO size/model marginals do not establish powertrain. StatCan fuel shares are independent registered-stock evidence.",
-                                  "Percentages are rounded to 0.01%; exact counts and shares remain in the table. Symbols use largest remainders."], subtitleFontSize=12))
+                                  "Ontario MTO size/model marginals do not establish powertrain. StatCan shares are independent new-registration snapshots.",
+                                  "n = # of symbols. Percentages are rounded to 0.01%; exact counts and shares remain in the table. Symbols use largest remainders."], subtitleFontSize=12))
 
 
 def write_evidence(evidence: FleetPresentationEvidence, *, repo_root: Path | None = None) -> Path:

@@ -146,8 +146,73 @@ def calibration_charts(diagnostic: CEUDCalibrationDiagnostic, *, region: str,
         "ceud-cal-3": identified_chart(boundary_chart, "ceud-cal-3", "Reported fuel coverage limits the calibration target"),
         "ceud-cal-4": identified_chart(line, "ceud-cal-4", f"{CLASS_LABELS[road_class]}: {powertrain} trajectory keeps its relative change"),
     }
+    charts.update(calibration_anchor_charts(diagnostic))
     for chart in charts.values():
         chart.to_dict(validate=True)
+    return charts
+
+
+def calibration_anchor_charts(diagnostic: CEUDCalibrationDiagnostic) -> dict[str, alt.TopLevelMixin]:
+    """Compare prepared base-year range-anchor efficiencies across captured regions.
+
+    Every cell is one region/class/powertrain at model vintage base_year. The
+    percentage scale permits comparisons across passenger and freight service
+    units; before/after prepared range-anchor efficiencies remain in tooltips.
+    These explicit range rows precede representative aggregation. Its common
+    class multiplier preserves the same percentage adjustment in final rows.
+    An unsupported
+    class is labelled pending, rather than presented as an independently verified
+    zero adjustment.
+    """
+    summary = diagnostic.frames["summary"][["region", "road_class", "base_year", "status"]]
+    anchors = diagnostic.frames["trajectories"].merge(
+        summary, left_on=["region", "mode"], right_on=["region", "road_class"],
+        how="left", validate="many_to_one")
+    anchors = anchors.loc[anchors.vintage.eq(anchors.base_year)].copy()
+    if anchors.empty:
+        return {}
+    if anchors.duplicated(["region", "road_class", "powertrain"]).any():
+        raise ValueError("CEUD base-year anchor has ambiguous region/class/powertrain efficiencies")
+    anchors["vehicle_class"] = anchors.road_class.map(CLASS_LABELS)
+    anchors["efficiency_change"] = anchors.efficiency / anchors.unadjusted_efficiency - 1
+    anchors["cell_label"] = [f"{value:+.1%}" if status == "calibrate" else "pending"
+                             for value, status in zip(anchors.efficiency_change, anchors.status, strict=True)]
+    maximum = max(float(anchors.efficiency_change.abs().max()), .01)
+    charts = {}
+    for group, car_selection in [("cars", True), ("trucks", False)]:
+        selected = anchors.loc[anchors.road_class.eq("cars") == car_selection].copy()
+        if selected.empty:
+            continue
+        base = alt.Chart(selected).encode(
+            x=alt.X("powertrain:N", title="Powertrain / range", axis=alt.Axis(labelAngle=-35, labelLimit=180)),
+            y=alt.Y("region:N", title="Region", sort=sorted(selected.region.unique())),
+            tooltip=["region:N", "vehicle_class:N", "powertrain:N", "base_year:O", "status:N",
+                     alt.Tooltip("unadjusted_efficiency:Q", title="Prepared range anchor before", format=".5g"),
+                     alt.Tooltip("efficiency:Q", title="Prepared range anchor after", format=".5g"), "units:N",
+                     alt.Tooltip("efficiency_change:Q", title="Efficiency change", format="+.2%")],
+        )
+        tiles = base.mark_rect(stroke="white", strokeWidth=1).encode(
+            color=alt.condition(alt.datum.status == "calibrate",
+                alt.Color("efficiency_change:Q", title="Efficiency change", scale=alt.Scale(
+                    domain=[-maximum, maximum], scheme="redblue"), legend=alt.Legend(format="+.0%")),
+                alt.value("#e2e8f0")))
+        labels = base.mark_text(fontSize=9).encode(
+            text="cell_label:N", color=alt.condition(
+                (alt.datum.status == "calibrate") & (abs(alt.datum.efficiency_change) > maximum * .6),
+                alt.value("white"), alt.value("#172033")))
+        chart = (tiles + labels).properties(width=720, height=max(70, 25 * selected.region.nunique()))
+        if not car_selection:
+            chart = chart.facet(row=alt.Row("vehicle_class:N", title=None,
+                sort=[value for key, value in CLASS_LABELS.items() if key != "cars"],
+                header=alt.Header(labelAngle=0, labelAlign="left", labelLimit=180)), spacing=30)
+        identity = "ceud-cal-5-" + group
+        title = f"Prepared base-year range-anchor efficiency changes: {group}"
+        years = ", ".join(str(int(year)) for year in sorted(selected.base_year.unique()))
+        chart = chart.properties(title=alt.Title(title, subtitle=[
+            f"Model vintage {years} only; explicit ranges before representative aggregation"], anchor="start"))
+        chart = identified_chart(chart, identity, title)
+        chart.to_dict(validate=True)
+        charts[identity] = chart
     return charts
 
 

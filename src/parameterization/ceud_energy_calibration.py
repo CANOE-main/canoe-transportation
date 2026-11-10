@@ -93,6 +93,7 @@ def calibrate_consumption(
     *, annual: pd.DataFrame, periods: pd.DataFrame, payloads: list[dict],
     physical_stock: pd.DataFrame, c2a: pd.DataFrame, factors: pd.DataFrame,
     split_audit: pd.DataFrame, ceud: pd.DataFrame, relationships: pd.DataFrame,
+    activity_targets: pd.DataFrame,
     base_year: int, source_edition: int, regions: list[str],
     calibration_rules: dict, stock_rules: dict, demand_rules: dict,
     efficiency_rules: dict,
@@ -120,6 +121,16 @@ load/(k*consumption), before any new-vehicle representative aggregation.
     if not np.isfinite(resolution) or resolution <= 0:
         raise ValueError("CEUD reported energy resolution must be finite and positive")
     classes = calibration_rules["classes"]
+    _unique(activity_targets, ["region", "road_class"], "projected activity targets")
+    expected_targets = {(stock_rules["region_output_map"].get(region, region), name)
+                        for region in regions for name in classes}
+    selected_targets = activity_targets.loc[activity_targets.road_class.isin(classes)]
+    if (set(selected_targets[["region", "road_class"]].itertuples(index=False, name=None)) != expected_targets
+            or not selected_targets.base_year.eq(base_year).all()
+            or not np.isfinite(selected_targets.target_activity_bn).all()
+            or selected_targets.target_activity_bn.le(0).any()):
+        raise ValueError("CEUD energy calibration lacks complete projected base-year activity targets")
+    targets = selected_targets.set_index(["region", "road_class"]).target_activity_bn
     owner = {tech: name for name in classes for tech in stock_rules["fuel_technology"][name].values()}
     selected = physical_stock.loc[physical_stock.tech.isin(owner)].copy()
     selected["road_class"] = selected.tech.map(owner)
@@ -202,7 +213,8 @@ load/(k*consumption), before any new-vehicle representative aggregation.
             if len(identities) != 1 or any(int(row.ceud_observed_year) > min(base_year, source_edition) for row in target_rows):
                 raise ValueError(f"Incompatible CEUD calibration observation years or statuses: {region}/{name}")
             observed_year, observation_status = next(iter(identities))
-            target_activity = float(activity_target.value) * demand_rules["activity_to_billion_factor"]
+            ceud_activity = float(activity_target.value) * demand_rules["activity_to_billion_factor"]
+            target_activity = float(targets.loc[(region, name)])
             actual_activity = float(group.activity_bn.sum())
             if not np.isclose(actual_activity, target_activity, rtol=rtol, atol=atol):
                 raise ValueError(f"CEUD energy calibration requires unchanged calibrated activity: {region}/{name}")
@@ -233,7 +245,11 @@ load/(k*consumption), before any new-vehicle representative aggregation.
                 "observed_year": observed_year, "observation_status": observation_status,
                 "status": spec["status"], "ceud_stock_k_vehicles": float(stock.value),
                 "physical_stock_k_vehicles": float(group.surviving_k_vehicles.sum()),
-                "ceud_activity_bn": target_activity, "activity_bn": actual_activity,
+                "ceud_activity_bn": ceud_activity, "target_activity_bn": target_activity,
+                "activity_target_basis": str(selected_targets.loc[
+                    selected_targets.region.eq(region) & selected_targets.road_class.eq(name)
+                ].iloc[0].get("target_basis", "projected_base_year_demand")),
+                "activity_bn": actual_activity,
                 "activity_residual_bn": actual_activity - target_activity,
                 "ceud_total_energy_pj": float(total.value), "ceud_liquid_target_pj": target,
                 "excluded_reported_energy_pj": excluded_energy,

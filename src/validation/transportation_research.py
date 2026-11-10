@@ -577,8 +577,12 @@ def build_research_report(
         revision = None
     if report["existing_capacity"].get("road_stock_method") != "sales_survival":
         raise ValueError("Research requires a production sales-derived cohort build")
-    sales_rows = frames["stock_activity_energy"]
-    closure = all(isclose(row.implied_activity_bn, row.ceud_activity_bn,
+    sales_rows = frames["stock_activity_energy"].merge(
+        pd.DataFrame(report["road_utilization"]["sales_activity_calibration"])[
+            ["region", "road_class", "target_activity_bn"]],
+        on=["region", "road_class"], how="left", validate="one_to_one",
+    )
+    closure = all(isclose(row.implied_activity_bn, row.target_activity_bn,
                          abs_tol=bundle.scenario.comparison.absolute_tolerance,
                          rel_tol=bundle.scenario.comparison.relative_tolerance)
                   for row in sales_rows.itertuples(index=False))
@@ -957,7 +961,7 @@ def deepen_fleet_diagnosis(
     if calibration.empty:
         raise ValueError("Captured report lacks the implemented utilization calibration audit")
     _require_unique(calibration, keys, "utilization calibration audit")
-    calibration = calibration[keys + ["prior_mean_utilization", "utilization", "capacity_activity_denominator_bn"]].rename(
+    calibration = calibration[keys + ["prior_mean_utilization", "utilization", "capacity_activity_denominator_bn", "target_activity_bn"]].rename(
         columns={"utilization": "implemented_utilization"},
     )
     calibration = summary.merge(calibration, on=keys, how="outer", validate="one_to_one", indicator=True)
@@ -975,17 +979,17 @@ def deepen_fleet_diagnosis(
     calibration["energy_closing_utilization"] = calibration.implemented_utilization * calibration.energy_scale
     calibration["energy_closure_feasible"] = calibration.energy_closing_utilization.le(1)
     calibration["activity_at_energy_closure_bn"] = calibration.implied_activity_bn * calibration.energy_scale
-    calibration["energy_closure_activity_difference_percent"] = 100 * (calibration.activity_at_energy_closure_bn / calibration.ceud_activity_bn.where(calibration.ceud_activity_bn.ne(0)) - 1)
+    calibration["energy_closure_activity_difference_percent"] = 100 * (calibration.activity_at_energy_closure_bn / calibration.target_activity_bn.where(calibration.target_activity_bn.ne(0)) - 1)
     calibration["prior_energy_pj"] = calibration.implied_vehicle_input_pj * calibration.prior_mean_utilization / calibration.implemented_utilization
     calibration["prior_activity_bn"] = calibration.implied_activity_bn * calibration.prior_mean_utilization / calibration.implemented_utilization
     calibration["energy_difference_percent"] = 100 * (
         calibration.implied_vehicle_input_pj / calibration.ceud_secondary_energy_pj.where(calibration.ceud_secondary_energy_pj.ne(0)) - 1
     )
-    calibration["activity_accounting_residual_bn"] = calibration.implied_activity_bn - calibration.ceud_activity_bn
+    calibration["activity_accounting_residual_bn"] = calibration.implied_activity_bn - calibration.target_activity_bn
     calibration["energy_significant"] = calibration.energy_difference_percent.abs().ge(significance)
 
     def explain_energy(row: pd.Series) -> str:
-        activity_closes = isclose(row.implied_activity_bn, row.ceud_activity_bn,
+        activity_closes = isclose(row.implied_activity_bn, row.target_activity_bn,
                                  rel_tol=relative_tolerance, abs_tol=absolute_tolerance)
         closure = "Activity closes" if activity_closes else f"Activity residual {row.activity_accounting_residual_bn:+.4g} bn service-km"
         label = "significant" if row.energy_significant else f"below {significance:g}% significance"
@@ -1156,6 +1160,8 @@ def reconstruct_comparison(result, bundle, rules) -> dict[str, pd.DataFrame]:
     comparison["baseline_activity_energy_cases"] = comparison["baseline_activity_energy_cases"].merge(
         service[["region", "road_class", "current_base_year_demand_bn", "legacy_calendar_base_year_demand_bn"]],
         on=["region", "road_class"], validate="many_to_one")
+    cases = comparison["baseline_activity_energy_cases"]
+    cases["activity_difference_percent"] = 100 * (cases.implied_activity_bn / cases.current_base_year_demand_bn - 1)
     # Recompute the original grey arithmetic mean from the same observed CEUD
     # edition, keeping every year's numerator and denominator available for review.
     ceud = pd.concat([read_ceud_input(bundle, region) for region in bundle.scenario.geography.regions], ignore_index=True)
@@ -1977,6 +1983,57 @@ def harmonized_charging_costs(comparisons: pd.DataFrame) -> pd.DataFrame:
         lambda value: "missing cost-year bridge or utilization" if pd.isna(value) else "conditional effective-output basis"
     )
     return selected
+
+
+def energy_calibration_cases(
+    fleet: dict[str, pd.DataFrame], calibration_frames: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """Compare actual production liquid-energy calibration at unchanged activity.
+
+    Reconcile the common cohorts before combining separate immutable captures.
+    Legacy total-energy reconstruction has no established liquid split and is
+    intentionally absent from this additional fuel-comparable view.
+    """
+    keys = ["region", "tech", "vintage"]
+    detail = fleet["fleet_cohort_accounting"]
+    calibrated = calibration_frames["cohorts"]
+    calibrated = calibrated.loc[calibrated.region.isin(detail.region.unique())]
+    _require_unique(calibrated, keys, "calibrated comparison cohorts")
+    aligned = detail.merge(calibrated, on=keys, how="outer", suffixes=("_off", "_on"),
+                           validate="one_to_one", indicator=True)
+    if not aligned._merge.eq("both").all():
+        raise ValueError("Energy comparison captures have different physical cohort coverage")
+    for before, after in (("capacity", "surviving_k_vehicles"), ("c2a_off", "c2a_on"),
+                          ("factor", "annual_utilization"), ("efficiency", "unadjusted_efficiency")):
+        if not all(isclose(left, right, rel_tol=1e-9, abs_tol=1e-10)
+                   for left, right in zip(aligned[before], aligned[after], strict=True)):
+            raise ValueError(f"Energy comparison captures differ before fitting: {before}")
+    summary = calibration_frames["summary"]
+    summary = summary.loc[summary.region.isin(detail.region.unique()) & summary.status.eq("calibrate")]
+    _require_unique(summary, ["region", "road_class"], "calibrated class summary")
+    cases = fleet["baseline_activity_energy_cases"]
+    current = cases.loc[cases.case.eq("Current backend")]
+    joined = summary.merge(current[["region", "road_class", "current_base_year_demand_bn", "utilization"]],
+                           on=["region", "road_class"], how="left", validate="one_to_one")
+    if joined.current_base_year_demand_bn.isna().any() or not all(
+        isclose(row.activity_bn, row.current_base_year_demand_bn, rel_tol=1e-9, abs_tol=1e-9)
+        and isclose(row.calibrated_liquid_energy_pj, row.ceud_liquid_target_pj, rel_tol=1e-9, abs_tol=1e-8)
+        for row in joined.itertuples()
+    ):
+        raise ValueError("Energy comparison does not close projected activity and fitted liquid energy")
+    comparable = cases.loc[~cases.case.eq("Legacy recipe")].merge(
+        joined[["region", "road_class", "unadjusted_liquid_energy_pj", "ceud_liquid_target_pj", "utilization"]]
+        .rename(columns={"utilization": "calibrated_utilization"}),
+        on=["region", "road_class"], how="inner", validate="many_to_one",
+    )
+    comparable["energy_pj"] = (comparable.unadjusted_liquid_energy_pj
+                                * comparable.utilization / comparable.calibrated_utilization)
+    after = joined.assign(case="Backend after energy calibration", energy_pj=lambda frame: frame.calibrated_liquid_energy_pj,
+                          implied_activity_bn=lambda frame: frame.activity_bn)
+    result = pd.concat([comparable, after], ignore_index=True)
+    result["energy_difference_percent"] = 100 * (result.energy_pj / result.ceud_liquid_target_pj - 1)
+    result["activity_difference_percent"] = 100 * (result.implied_activity_bn / result.current_base_year_demand_bn - 1)
+    return result
 
 
 def load_validation_diagnosis(*, repo_root: Path | None = None) -> dict[str, Any]:

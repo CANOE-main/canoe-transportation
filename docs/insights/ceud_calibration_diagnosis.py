@@ -32,8 +32,10 @@ def _(diagnosis, mo):
     # [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration: keep activity fixed, examine energy
 
     This optional evaluation fits reported gasoline and diesel energy for cars,
-    passenger/freight light trucks and medium trucks. Heavy-truck energy lacks a
-    comparable fuel breakdown in the selected evidence, so its parameters stay unchanged.
+    passenger/freight light trucks and medium trucks. Heavy-truck diesel L/100 km
+    evidence supports consumption estimates; its aggregate PJ series has no
+    fuel-resolved PJ components establishing the same calibration boundary.
+    That target remains pending and its parameters stay unchanged.
     The ordinary scenarios keep energy calibration **off**.
     This evaluated option requires fixed lifetimes and flat emitted utilization.
     Curve-mode reference-only cohorts can lack emitted activity/efficiency rows;
@@ -60,7 +62,9 @@ def _(mo):
     ## What is fitted, and what stays fixed?
 
     The existing activity calibration assigns annual utilization to physical surviving
-    stock so that class activity matches [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm). Solver installation-equivalent capacity
+    stock so that class activity matches backend projected demand at `periods.base_year`.
+    That demand starts from the latest observed [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) activity
+    and follows real GDP growth to the base year. Solver installation-equivalent capacity
     in survival-curve mode is not the physical stock used here. For region $\boldsymbol{r}$, vehicle
     class $\boldsymbol{c}$, technology $\boldsymbol{i}$ and vintage $\boldsymbol{v}$:
 
@@ -136,6 +140,9 @@ def _(charts, mo):
         mo.md("**Figure ceud-cal-3.** These additive parts reconstruct the reported total within source rounding. [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) reports energy to 0.000001 PJ; the complete audit retains the signed component-total residual and its rounding allowance. Fitted closure uses a separate tighter tolerance. Missing electricity evidence is not a zero electricity measurement; full class-total closure is not claimed."),
         mo.ui.altair_chart(charts["ceud-cal-4"], chart_selection=False, legend_selection=False),
         mo.md("**Figure ceud-cal-4.** Historical cohort means and future model vintages retain their relative consumption changes. Model vintage labels are not observation years; source-year selections remain in captured annual/period evidence."),
+        mo.md("## Regional base-year anchors\nEach cell shows the prepared range-anchor service-efficiency change for the model vintage equal to `periods.base_year`, before representative aggregation. Tooltips retain those anchor values and units. The common class multiplier gives final representatives the same percentage adjustment, separately checked at the SQL boundary. Truck rows retain passenger light trucks, freight light trucks, medium trucks and heavy trucks separately. Pending cells have no supported calibration target."),
+        *[mo.ui.altair_chart(charts[identity], chart_selection=False, legend_selection=False)
+          for identity in ("ceud-cal-5-cars", "ceud-cal-5-trucks") if identity in charts],
     ])
     return
 
@@ -144,7 +151,8 @@ def _(charts, mo):
 def _(diagnosis, mo, region):
     summary = diagnosis.frames["summary"].loc[lambda frame: frame.region.eq(region.value)]
     activity_view = summary[["road_class", "base_year", "observed_year", "observation_status",
-                             "physical_stock_k_vehicles", "ceud_activity_bn", "activity_bn", "activity_residual_bn"]]
+                             "physical_stock_k_vehicles", "ceud_activity_bn", "target_activity_bn",
+                             "activity_bn", "activity_residual_bn"]]
     energy_view = summary[["road_class", "status", "ceud_liquid_target_pj", "unadjusted_liquid_energy_pj",
                            "consumption_multiplier", "calibrated_liquid_energy_pj", "liquid_residual_pj",
                            "calibrated_electric_energy_pj", "electricity_target_status"]]
@@ -160,8 +168,9 @@ def _(diagnosis, mo, region):
         })}),
         mo.md("""### Check the final database boundary
 
-The explicit read-only comparison checks the supplied OFF database against its
-successful-build report and the ON database against this immutable capture:
+After preparing the Ontario OFF/ON scenarios, the explicit read-only comparison
+checks the supplied OFF database against its successful-build report and the ON
+database against the current immutable capture:
 
 ```sh
 uv run python -m validation.ceud_calibration_diagnostic --baseline outputs/sqlite/validation_baseline.sqlite --calibrated outputs/sqlite/validation_energy_calibration.sqlite --baseline-report outputs/validation/validation_baseline.json
@@ -171,7 +180,10 @@ The configured report records source fingerprints, final cohort/representative/f
 efficiencies, unchanged parameter families, PHEV splits, provenance and DQ. The OFF
 annual/period exports were not separately captured: their byte equality is not claimed.
 The common-factor invariant and final SQL comparison establish the checked propagation
-scope. Calibration closure remains distinct from independent empirical validation.
+scope. Prepare the regional calibration scenario after this paired Ontario check
+to supply all-region heatmaps; a regional capture cannot stand in for an Ontario
+paired-build comparison. Calibration closure remains distinct from independent
+empirical validation.
 """),
     ])
     return

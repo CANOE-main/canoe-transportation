@@ -28,7 +28,7 @@ async function renderDocumentation() {
         figure.append(label);
         caption.remove();
       }
-      if (image.naturalWidth > 1000) {
+      if (image.naturalWidth > 1000 || image.naturalHeight > 1000) {
         figure.classList.add(image.naturalHeight > image.naturalWidth ? "portrait-figure" : "wide-figure");
       }
     }

@@ -68,6 +68,84 @@ def real_gdp_indices(
     return {period: float(gdp[period + step] / gdp[anchor_year]) for period in periods}
 
 
+def road_base_year_activity(
+    bundle: ConfigBundle, *, provincial: pd.DataFrame | None = None,
+    macro: pd.DataFrame | None = None,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Project native CEUD road activity to the model reference year.
+
+    Demand and UF calibration share this calculation. Source extension of stock
+    or other historical evidence never replaces the native demand observation.
+    This helper reads registered normalized inputs and does not publish artifacts.
+    """
+    inactive = sorted({CEUD_PROVINCIAL, CER} - active_source_keys(bundle))
+    if inactive:
+        raise ValueError(f"Road base-year demand requires active sources: {inactive}")
+    scenario = bundle.scenario
+    regions = list(scenario.geography.regions)
+    rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
+    selectors = sorted({(int(item["table_id"]), item["raw_series"])
+                        for item in rules["activity_series"].values()})
+    if provincial is None:
+        provincial = pd.concat([
+            read_ceud_observations(bundle, region, required_series=selectors)
+            for region in regions
+        ], ignore_index=True)
+    observed_years = set(provincial.groupby("region").year.max())
+    if set(provincial.region) != set(regions) or len(observed_years) != 1:
+        raise ValueError("Road base-year demand requires matching provincial CEUD observation years")
+    observed_year = int(observed_years.pop())
+    cer_rules = load_harmonization_rules(bundle, "cer_enerfuture")
+    edition = configured_edition(bundle)
+    selected_scenario = configured_scenario(bundle, cer_rules)
+    macro_file = resolve_input_path(
+        bundle, "interim", str(cer_rules["interim_subdir_template"]).format(edition=edition),
+    ) / cer_rules["components"]["macro-indicators"]["output_file"]
+    if macro is None:
+        macro = pd.read_csv(macro_file)
+    if set(macro.source_id) != {CER} or set(macro.edition) != {edition}:
+        raise ValueError("CER macro artifact identity differs from selected edition")
+    base_year = scenario.periods.base_year
+    step = scenario.periods.step
+    index = real_gdp_indices(
+        macro, scenario=selected_scenario, base_year=base_year,
+        periods=[base_year - step], step=step, observed_year=observed_year,
+    )[base_year - step]
+    baseline = derive_road_baseline_demand(
+        provincial, regions=regions, base_year=observed_year, rules=rules,
+    )
+    baseline["ceud_observed_year"] = observed_year
+    baseline["base_year"] = base_year
+    baseline["gdp_indexed_base_year_demand"] = baseline.baseline_demand * index
+    baseline["projected_base_year_demand"] = baseline.gdp_indexed_base_year_demand
+    baseline["activity_projection"] = "native_ceud_activity_indexed_by_cer_real_gdp"
+    car_audit = []
+    if scenario.demand.future_car_demand == "extrapolated":
+        extrapolation_rules = {**rules, "car_extrapolation": {
+            **rules["car_extrapolation"],
+            **load_harmonization_rules(bundle, "ceud_inputs")["cagr"],
+        }}
+        period = base_year - step
+        projected, car_audit = extrapolate_passenger_ldv_demand(
+            provincial, baseline, regions=regions, base_year=observed_year,
+            periods=[period], step=step, gdp_indices={period: index}, rules=extrapolation_rules,
+        )
+        for service in ("cars", "passenger_light_trucks"):
+            selected = baseline.service.eq(service)
+            baseline.loc[selected, "projected_base_year_demand"] = [
+                projected[region, period, service] for region in baseline.loc[selected, "region"]
+            ]
+            baseline.loc[selected, "activity_projection"] = (
+                "native_ceud_car_nonpandemic_cagr" if service == "cars"
+                else "cer_real_gdp_passenger_ldv_total_less_projected_cars"
+            )
+    return baseline, {"ceud_observed_year": observed_year, "base_year_gdp_index": index,
+                      "cer_edition": edition, "cer_scenario": selected_scenario,
+                      "macro_sha256": file_sha256(macro_file),
+                      "future_car_demand": scenario.demand.future_car_demand,
+                      "car_extrapolation": car_audit}
+
+
 def validate_demand_outputs(
     rows: list[Demand], *, regions: set[str], commodities: set[str],
     periods: list[int], template_units: dict[str, str],
@@ -157,8 +235,10 @@ def prepare_demand_rows(
         macro, scenario=selected_scenario, base_year=base_year,
         periods=[base_year - step], step=step, observed_year=observed_year,
     )[base_year - step]
+    road_baseline, _ = road_base_year_activity(bundle, provincial=provincial, macro=macro)
     baseline = pd.concat([
-        derive_road_baseline_demand(provincial, regions=regions, base_year=observed_year, rules=road_rules),
+        road_baseline.drop(columns=["ceud_observed_year", "base_year", "gdp_indexed_base_year_demand",
+                                    "projected_base_year_demand", "activity_projection"]),
         derive_offroad_baseline_demand(provincial, national, regions=regions,
                                        base_year=observed_year, rules=offroad_rules),
     ], ignore_index=True)

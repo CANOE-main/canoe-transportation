@@ -172,12 +172,14 @@ def export(groups):
         original = mo.ui.altair_chart
         for name, prefixes in settings["notebooks"].items():
             captured = {}
+            captured_controls = {}
+            active_prefixes = prefixes
 
             def collect(chart, *args, **kwargs):
                 meta = chart.usermeta
                 if meta is not alt.Undefined:
                     identity = meta["figure_id"]
-                    if any(matches(identity, p) for p in prefixes):
+                    if any(matches(identity, p) for p in active_prefixes):
                         if identity in captured:
                             raise ValueError(f"Nonunique displayed figure identity: {identity}")
                         captured[identity] = chart
@@ -188,6 +190,29 @@ def export(groups):
                 module, path = notebook_module(name)
                 print(f"Executing {name}", flush=True)
                 _, definitions = module.app.run()
+                for identity in captured:
+                    captured_controls[identity] = notebook_controls(definitions)
+                for view in settings.get("notebook_views", {}).get(name, []):
+                    active_prefixes = view["figure_prefixes"]
+                    previous = set(captured)
+                    if name == "stock_cohort_diagnosis":
+                        overrides = {"lineage_basis": mo.ui.dropdown(
+                            options=["Acquisitions versus stock", "Physical surviving stock"],
+                            value=view["lineage_basis"], label="Paired cohort comparison")}
+                    elif name == "ldv_efficiency_diagnosis":
+                        families = mo.ui.dictionary({
+                            group: mo.ui.dropdown(options=sorted(definitions["diagnostic"].frames["bridge"].loc[
+                                lambda frame: frame.vehicle_group.eq(group), "powertrain_family"].dropna().unique()),
+                                value=family, label=f"{group}: powertrain family", full_width=True)
+                            for group, family in view["family_controls"].items()
+                        })
+                        overrides = {"class_controls": definitions["class_controls"],
+                            "family_controls": families, "bridge_metric": definitions["bridge_metric"]}
+                    else:
+                        raise ValueError(f"No publication control override contract for {name}")
+                    _, variant = module.app.run(defs=overrides)
+                    for identity in set(captured) - previous:
+                        captured_controls[identity] = notebook_controls(variant)
             finally:
                 mo.ui.altair_chart = original
             missing = [prefix for prefix in prefixes if not any(matches(identity, prefix) for identity in captured)]
@@ -201,10 +226,9 @@ def export(groups):
                     if source.is_relative_to(ROOT / "src") and source.is_file():
                         local_helpers.add(source)
             evidence["local_callable_files"] = {path.relative_to(ROOT).as_posix(): file_sha256(path) for path in sorted(local_helpers)}
-            controls = notebook_controls(definitions)
             for chart in captured.values():
                 save(chart, path.relative_to(ROOT).as_posix(), evidence,
-                     {"notebook_controls": controls, "selected_id_prefixes": prefixes,
+                     {"notebook_controls": captured_controls[chart.usermeta["figure_id"]], "selected_id_prefixes": prefixes,
                       "selection_note": "Actual selector values from the executed notebook; plotted domains below identify which values enter this figure."})
 
     if "cost" in groups:
@@ -269,8 +293,28 @@ def export(groups):
             if chart.usermeta is alt.Undefined or chart.usermeta.get("figure_id") != expected:
                 raise ValueError(f"Comparison notebook figure identity is missing/different: {name}; expected {expected}")
             evidence = {key: value for key, value in definitions["diagnosis"].items() if key.endswith("metadata")}
+            if name == "activity_energy_chart":
+                evidence["calibrated_capture"] = definitions["fitted_capture"].metadata
+                helpers = [ROOT / "src/validation/transportation_research.py",
+                           ROOT / "src/validation/ceud_calibration_diagnostic.py"]
+                evidence["comparison_helpers"] = {
+                    helper.relative_to(ROOT).as_posix(): file_sha256(helper) for helper in helpers}
             save(chart, path.relative_to(ROOT).as_posix(), evidence,
                  {"notebook_controls": notebook_controls(definitions), "chart": name})
+
+    if "charging" in groups:
+        active_group = "charging"
+        from validation.charging_profile_diagnostic import load_diagnostic, profile_chart
+        diagnostic = load_diagnostic()
+        helper = ROOT / "src/validation/charging_profile_diagnostic.py"
+        save(profile_chart(diagnostic), "docs/insights/charging_profile_diagnosis.py",
+             {"source_identity": diagnostic.metadata,
+              "chart_owner": {"path": helper.relative_to(ROOT).as_posix(), "sha256": file_sha256(helper)},
+              "production_helpers": {path: file_sha256(ROOT / path) for path in (
+                  "src/fetching/legacy_charging_profiles.py", "src/parameterization/ldv_charging_profiles.py",
+                  "src/parameterization/ev_chargers.py")},
+              "annual_checks": diagnostic.annual.to_dict("records")},
+             diagnostic.settings.model_dump(mode="json"))
 
     # Publish only after every requested group succeeds. Remove only stale files
     # whose previous manifest explicitly assigned them to these notebooks.
@@ -292,8 +336,8 @@ def export(groups):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--groups", nargs="+", choices=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison"],
-                        default=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison"])
+    parser.add_argument("--groups", nargs="+", choices=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison", "charging"],
+                        default=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison", "charging"])
     export(parser.parse_args().groups)
 
 

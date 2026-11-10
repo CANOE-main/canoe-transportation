@@ -514,7 +514,7 @@ def deeper_fleet_fixture():
         for year, raw, allocated, eligible in ((2024, 2., 0., False), (2025, 3., 5., True))
     ])
     calibration = {"region": "ON", "road_class": "cars", "prior_mean_utilization": .4,
-                   "utilization": .5, "capacity_activity_denominator_bn": 20.}
+                   "utilization": .5, "capacity_activity_denominator_bn": 20., "target_activity_bn": 10.}
     return {
         "sales_cohorts": sales, "road_age_cohorts": ages,
         "fleet_cohort_accounting": detail, "stock_activity_energy": summary,
@@ -829,3 +829,30 @@ def test_demand_diagnosis_tail_policy_changes_only_historical_calibration_contex
     assert original["demand_baseline_comparison"].iloc[0].current_activity_bn == 10.
     assert changed["demand_baseline_comparison"].iloc[0].current_activity_bn == 10.
     assert changed["demand_base_year_bridge"].iloc[0].historical_calibration_target_bn == 10.
+
+
+def test_production_energy_comparison_reconciles_common_cohorts_and_fitted_boundary():
+    detail = pd.DataFrame([{"region": "ON", "tech": "car", "vintage": 2020, "capacity": 10.,
+                            "c2a": 2., "factor": .55, "efficiency": 2.}])
+    cases = pd.DataFrame([
+        {"region": "ON", "road_class": "cars", "case": name, "utilization": uf,
+         "current_base_year_demand_bn": 11., "implied_activity_bn": 20 * uf}
+        for name, uf in [("Current backend", .55), ("Backend before calibration", .5),
+                         ("Backend energy sensitivity", .4), ("Legacy recipe", .3)]
+    ])
+    cohort = detail.rename(columns={"capacity": "surviving_k_vehicles", "factor": "annual_utilization",
+                                    "efficiency": "unadjusted_efficiency"})
+    summary = pd.DataFrame([{"region": "ON", "road_class": "cars", "status": "calibrate",
+                             "activity_bn": 11., "unadjusted_liquid_energy_pj": 5.,
+                             "calibrated_liquid_energy_pj": 4., "ceud_liquid_target_pj": 4.}])
+    fleet = {"fleet_cohort_accounting": detail, "baseline_activity_energy_cases": cases}
+    calibrated = {"cohorts": cohort, "summary": summary}
+    results = research.energy_calibration_cases(fleet, calibrated).set_index("case")
+    assert "Legacy recipe" not in results.index
+    assert results.loc["Current backend", "energy_difference_percent"] == pytest.approx(25.)
+    assert results.loc["Backend after energy calibration", "energy_difference_percent"] == pytest.approx(0.)
+    assert results.loc["Backend after energy calibration", "activity_difference_percent"] == pytest.approx(0.)
+    assert results.loc["Backend before calibration", "activity_difference_percent"] < 0
+    cohort["annual_utilization"] = .5
+    with pytest.raises(ValueError, match="differ before fitting"):
+        research.energy_calibration_cases(fleet, calibrated)

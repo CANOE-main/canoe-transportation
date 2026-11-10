@@ -6,7 +6,8 @@ fleet_100:
   mto_report_year: 2025
   statcan_maximum_year: 2025
   icons_per_panel: 100
-  top_models_per_vehicle_group: 3
+  top_models_per_vehicle_group: 5
+  powertrains: [gasoline, diesel, bev, hev, phev]
   vehicle_groups: [Cars, Light trucks]
   size_class_order:
     Cars: [Two-seater, Minicompact, Subcompact, Compact, Mid-size, Full-size, "Station wagon: Small", "Station wagon: Mid-size"]
@@ -14,8 +15,14 @@ fleet_100:
   figure_id: fleet-100-1
   exact_table: ontario_100_shares.csv
   panel_columns: 10
-  panel_width: 220
-  panel_height: 220
+  panel_width: 250
+  panel_height: 250
+charging_profile:
+  scenario: config/scenarios/validation_baseline.yaml
+  region: "ON"
+  profiles: [nhts, tts]
+  week_start: "2018-01-08"
+  figure_id: charging-profile-1
 nonroad:
   scenario: config/scenarios/validation_baseline.yaml
   region: "ON"
@@ -32,9 +39,18 @@ nonroad:
   panel_height: 190
 publication_figures:
   notebooks:
-    vehicle_population_diagnosis: [population-19, population-20, population-21]
-    stock_cohort_diagnosis: [cohort-4, cohort-5]
-    ldv_efficiency_diagnosis: [ldv-eff-3, ldv-eff-6-cars-, ldv-eff-6-medium-trucks-]
+    vehicle_population_diagnosis: [population-11-cars, population-11-light-trucks, population-19, population-20, population-21]
+    stock_cohort_diagnosis: [cohort-1, cohort-2, cohort-3, cohort-3-survivors, cohort-4, cohort-5]
+    ldv_efficiency_diagnosis: [ldv-eff-2-gasoline, ldv-eff-2-phev-35-miles, ldv-eff-2-bev-300-miles, ldv-eff-3, ldv-eff-4-light-trucks-gasoline, ldv-eff-7-light-trucks-gasoline, ldv-eff-5-light-trucks-gasoline, ldv-eff-6-light-trucks-gasoline, ldv-eff-6-cars-bev-mj-vkm, ldv-eff-6-light-trucks-phev-mj-vkm, ldv-eff-6-heavy-trucks-diesel-mj-vkm, ldv-eff-6-medium-trucks-]
+  notebook_views:
+    stock_cohort_diagnosis:
+      - figure_prefixes: [cohort-3-survivors]
+        lineage_basis: Physical surviving stock
+    ldv_efficiency_diagnosis:
+      - figure_prefixes: [ldv-eff-4-light-trucks-gasoline, ldv-eff-7-light-trucks-gasoline, ldv-eff-5-light-trucks-gasoline, ldv-eff-6-light-trucks-gasoline]
+        family_controls: {Cars: gasoline, Light trucks: gasoline, Medium trucks: diesel, Heavy trucks: diesel}
+      - figure_prefixes: [ldv-eff-6-light-trucks-phev-mj-vkm]
+        family_controls: {Cars: bev, Light trucks: phev, Medium trucks: diesel, Heavy trucks: diesel}
   cost:
     figure_ids: [vehicle-cost-1, vehicle-cost-3, vehicle-cost-5]
     region: "ON"
