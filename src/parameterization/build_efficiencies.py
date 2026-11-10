@@ -542,6 +542,7 @@ def prepare_efficiency_rows(
     existing_capacity_audit: dict | None = None,
     physical_stock: pd.DataFrame | None = None,
     range_evidence: RangeEvidence | None = None,
+    road_utilization=None,
 ) -> EfficiencyPreparation:
     """Offline source-to-schema preparation; no connection or transaction is required."""
     supplied_capacity = (existing_capacity_rows is not None, existing_capacity_contexts is not None,
@@ -1066,6 +1067,81 @@ def prepare_efficiency_rows(
         atb_audit, endpoints=endpoints, rules=rules, range_weights=historical_weights,
         regions=scenario.geography.regions,
     )], ignore_index=True)
+    calibration = None
+    calibration_rules = None
+    if scenario.efficiencies.ceud_energy_calibration:
+        from parameterization.build_existing_capacity import physical_stock_for_consumers
+        from parameterization.ceud_energy_calibration import calibrate_consumption
+        from parameterization.road_utilization import prepare_road_utilization
+
+        calibration_rules = load_harmonization_rules(bundle, "ceud_energy_calibration")
+        physical_stock = physical_stock_for_consumers(bundle, existing_capacity_rows, physical_stock)
+        if road_utilization is None:
+            road_utilization = prepare_road_utilization(
+                bundle, existing_capacity_rows=existing_capacity_rows,
+                existing_capacity_contexts=existing_capacity_contexts, physical_stock=physical_stock,
+            )
+        if road_utilization.age_factor_artifact is not None:
+            raise ValueError("CEUD energy calibration requires emitted flat utilization")
+        stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
+        calibration = calibrate_consumption(
+            annual=pd.DataFrame(annual_records), periods=pd.DataFrame(period_records), payloads=payloads,
+            physical_stock=physical_stock,
+            c2a=pd.DataFrame([row.model_dump() for row in road_utilization.capacity_to_activity_rows]),
+            factors=pd.DataFrame([row.model_dump() for row in road_utilization.flat_factor_rows]),
+            split_audit=split_audit, ceud=provincial, relationships=relationships,
+            base_year=scenario.periods.base_year,
+            source_edition=scenario.sources.selections[CEUD].year,
+            regions=list(scenario.geography.regions), calibration_rules=calibration_rules,
+            stock_rules=stock_rules, demand_rules=road_rules, efficiency_rules=rules,
+        )
+        annual_records = calibration.annual.to_dict("records")
+        period_records = calibration.periods.to_dict("records")
+        payloads = calibration.payloads
+        # Every fitted value also depends on all cohort, efficiency and activity
+        # contributors entering its class denominator, including future transfers.
+        source_by_pair = {}
+        physical_keys = set(physical_stock[["region", "tech", "vintage"]].itertuples(index=False, name=None))
+        for record in payloads:
+            if ((record["region"], record["tech"], record["vintage"]) in physical_keys
+                    and record["mode"] in calibration_rules["classes"]):
+                source_by_pair.setdefault((record["region"], record["mode"]), set()).update(record["components"])
+        utilization_contexts = {context.data_id: context for context in road_utilization.provenance_contexts}
+        blend_contracts = {spec["tech"]: spec for spec in phev_blend_relationships(rules).values()}
+        source_regions = {rules["region_output_map"].get(region, region): region for region in scenario.geography.regions}
+        for (region, mode), contributors in source_by_pair.items():
+            class_techs = set(stock_rules["fuel_technology"][mode].values())
+            for factor in road_utilization.flat_factor_rows:
+                if factor.region == region and factor.tech_or_group in class_techs:
+                    for contributor in utilization_contexts[factor.data_id].contributors:
+                        contributors.update((contributor.source_key, str(component.component_key))
+                                            for component in contributor.components)
+            blend_techs = calibration.cohorts.loc[
+                calibration.cohorts.region.eq(region) & calibration.cohorts.road_class.eq(mode),
+                "phev_blend_tech",
+            ].dropna().unique()
+            for blend_tech in blend_techs:
+                spec = blend_contracts[blend_tech]
+                role = spec["aggregation_role"]
+                contributors.update({
+                    (ATB, "phev_vehicle_inputs"),
+                    (ATB, "phev_utility_factor_ldv" if role == "ldv" else "phev_utility_factor_mdhd"),
+                    ("argonne_rd_greet", "fuel_heating_values"),
+                    tuple(map(str, aggregation_component(bundle, role, source_regions[region]))),
+                })
+                if spec.get("existing_representative"):
+                    contributors.add((OMEGA, OMEGA_COMPONENT))
+        for record in payloads:
+            spec = calibration_rules["classes"].get(record["mode"])
+            if spec is not None and spec["status"] == "calibrate":
+                contributors = source_by_pair[record["region"], record["mode"]] | set(record["components"])
+                contributors.add((CEUD, str(spec["table_id"])))
+                contributors.add((CEUD, str(road_rules["activity_series"][record["mode"]]["table_id"])))
+                record["components"] = (record["components"][0], *sorted(contributors - {record["components"][0]}))
+        LOGGER.info("CEUD liquid-energy calibration: fitted %s region/classes; unsupported boundaries=%s; maximum residual %.3g PJ",
+                    int(calibration.summary.status.eq("calibrate").sum()),
+                    int(calibration.summary.status.ne("calibrate").sum()),
+                    calibration.summary.liquid_residual_pj.abs().max())
     if file_sha256(stock_path) != existing_capacity_audit["annual_stock_evidence"]["sha256"]:
         raise ValueError("Annual stock evidence changed during efficiency preparation")
     from parameterization.build_existing_capacity import validate_capacity_handoff
@@ -1079,6 +1155,16 @@ def prepare_efficiency_rows(
          "sha256": file_sha256(path)}
         for path in sorted(set(paths))
     ]
+    calibration_identity = {} if calibration is None else {
+        "ceud_energy_calibration": {
+            "rules": calibration_rules,
+            "summary": calibration.summary.replace({np.nan: None}).to_dict("records"),
+            "physical_activity": calibration.cohorts[["region", "tech", "vintage", "surviving_k_vehicles", "c2a", "annual_utilization"]].to_dict("records"),
+            "cohort_accounting": calibration.cohorts.replace({np.nan: None}).to_dict("records"),
+            "activity_input_digest": road_utilization.audit["input_content_digest"],
+            "manual_capacity_to_activity_dataset": road_utilization.assumption_dataset.model_dump(mode="json"),
+        },
+    }
     digest = hashlib.sha256(
         json.dumps(
             {
@@ -1098,6 +1184,7 @@ def prepare_efficiency_rows(
                 "existing_keys": sorted(existing_keys),
                 "historical_range_rules": range_rules.existing.model_dump(),
                 "historical_range_weights": range_evidence.bucket_totals.to_dict("records"),
+                **calibration_identity,
             },
             sort_keys=True,
         ).encode()
@@ -1110,6 +1197,7 @@ def prepare_efficiency_rows(
         "catalogue_aggregation": rules["ratings"]["composition"]["uncovered_cohort"],
         "historical_aggregation": rules["historical_aggregation"],
         "ceud_extrapolation": ceud_extrapolation,
+        **calibration_identity,
     }
     assumption = DataSet(
         data_id="transport-efficiency-structure:" + digest[:16],
@@ -1284,6 +1372,12 @@ def prepare_efficiency_rows(
     ]
     if catalogue_comparison is not None:
         exports.append((catalogue_comparison, interim / rules["files"]["catalogue_rating_weights"]))
+    if calibration is not None:
+        exports.extend([
+            (calibration.summary, validation / calibration_rules["files"]["summary"]),
+            (calibration.cohorts, interim / calibration_rules["files"]["cohorts"]),
+            (calibration.trajectories, interim / calibration_rules["files"]["trajectories"]),
+        ])
     for frame, path in exports:
         write_dataframe_atomic(frame, path)
     validation.mkdir(parents=True, exist_ok=True)

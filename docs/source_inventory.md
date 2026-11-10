@@ -12,6 +12,10 @@ cited CSV records, with each shared file's header counted once. These are the
 backend's reviewed excerpts, not the size of the publisher's full model or report.
 KiB, MiB and GiB use powers of 1,024. Totals use unrounded bytes.
 
+The size census is historical. Current modeling roles below reflect the selected
+backend contracts; current editions and component coverage must be read from the
+source registry rather than inferred from these dated file counts.
+
 ## Parameter and mapping inputs
 
 | Abbreviation | Source family | Main transport use | Components | Native inputs | Raw size |
@@ -22,14 +26,14 @@ KiB, MiB and GiB use powers of 1,024. Totals use unrounded bytes.
 | *CER CEF* | [Canada's Energy Future](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) | GDP-based demand growth and monetary conversions; end-use benchmarks and provisional fuel-price evidence | 3 | CSV | 9.79 MiB |
 | *Dunsky* | [Electric Vehicle Charging Infrastructure for Canada](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada) | Charger utilization, port ratings/type mix and investment costs | 1 | Manual CSV excerpt | 18.45 KiB |
 | *EIA NEMS* | [National Energy Modeling System transportation inputs](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) | Selectable heavy-truck survival and lifetime proxy | 1 | XLSX | 720.03 KiB |
-| *EPA MOVES5* | [Population and Activity report, Table C-1](https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf) | Default heavy-truck survival and lifetime proxy | 1 | PDF | 3.67 MiB |
+| *EPA MOVES* | [Population and Activity report](https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf) | Default car/light-truck/heavy survival and lifetimes; heavy schedule also proxies medium trucks. File count/size below refer to the historical census. | 1 | PDF | 3.67 MiB |
 | *EPA OMEGA* | [OMEGA v2.5 baseline](https://github.com/USEPA/EPA_OMEGA_Model) | LDV BEV/PHEV sales-weighted range mix for existing archetypes, optional new-capacity shares and representative ranges | 1 | Native parent `aggregated_vehicles.csv` | 498.10 KiB |
 | *EPRI REGEN* | [US-REGEN v2025 transportation assumptions](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html) | Intercity-bus prices/consumption; aviation efficiency improvement; rail/marine investment and efficiency ratios | 3 | HTML/JavaScript payload; manual CSV excerpts | 95.71 KiB |
 | *FAA* | [Economic Values 2024](https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost) | Aircraft capacity, load, speed and utilization for service-cost normalization; passenger/freight maintenance costs | 2 | Two PDF sections | 1.45 MiB |
 | *GCAM* / *GCAM Canada* | [JGCRI GCAM transport inputs](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) | Canadian motorcycle consumption, purchase costs and M&R | 1 | CSV | 1.00 MiB |
 | *GREET* / *GREET2* | [Argonne R&D GREET 2025 Rev.1](https://greet.anl.gov/greet/versions.html) | Road-vehicle embodied emissions, marine HFO/MDO intensity ratio and fuel-HHV reference | 3 | Registered GREET1/GREET2 XLSM pair; manual CSV excerpt | 33.20 MiB |
-| *ICCT EV CHARGE* | [EV CHARGE v1.2](https://theicct.github.io/EVCHARGE-doc/versions/v1.2/) | LDV charger efficiency | 1 | Manual CSV excerpt | 260 B |
-| *ICCT HDV CHARGE* | [HDV CHARGE v1.2](https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/) | MHDV charger efficiency | 1 | Manual CSV excerpt | 252 B |
+| *ICCT EV CHARGE* | [EV CHARGE v1.2](https://theicct.github.io/EVCHARGE-doc/versions/v1.2/) | Retained LDV charging-loss evidence; former factor is not applied on top of loss-inclusive vehicle consumption | 1 | Manual CSV excerpt | 260 B |
+| *ICCT HDV CHARGE* | [HDV CHARGE v1.2](https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/) | Retained MHDV charging-loss evidence; former factor is not applied on top of loss-inclusive vehicle consumption | 1 | Manual CSV excerpt | 252 B |
 | *IEA The Future of Hydrogen* | [The Future of Hydrogen](https://www.iea.org/reports/the-future-of-hydrogen) | Hydrogen-refueling efficiency | 1 | Manual CSV excerpt | 183 B |
 | *MTO* | [Ontario vehicle population, Reports A/4/5](https://data.ontario.ca/dataset/vehicle-population-data) | LDV class/age weights; Ontario medium-truck GVWR mix; truck, motorcycle and bus ages; retention diagnostics | 3 | Annual ZIPs containing text reports | 22.88 MiB |
 | *NHTSA CAFE* | [2024 Final Rule Central Analysis](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) | Car, light-truck and medium-truck survival schedules and fixed median lifetimes | 1 | ZIP containing workbook inputs | 8.79 MiB |

@@ -9,13 +9,14 @@ app = marimo.App(width="full")
 @app.cell
 def _():
     import altair as alt
+    from validation.notebook_figures import identified_chart
     import marimo as mo
     import pandas as pd
 
     from validation.ldv_efficiency_diagnostic import COHORT, VIEW_MODES, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, load_diagnostic, nrcan_anchor_endpoints, practical_axis, production_trajectory_data, supported_display_years
 
-    def chart_ui(chart):
-        return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
+    def chart_ui(chart, figure_id, title):
+        return mo.ui.altair_chart(identified_chart(chart, figure_id, title), chart_selection=False, legend_selection=False)
 
     def table_ui(frame, label):
         if not frame.empty:
@@ -495,7 +496,7 @@ def distribution_plot(alt, chart_ui, composition_class_columns, composition_view
                 components.append(component_rows)
             family_rows = pd.concat(components, ignore_index=True)
         for unit, panel in family_rows.groupby("native_unit", sort=False):
-            family_panels.append(chart_ui(distribution_chart(panel, f"{range_label(powertrain)} · {unit}", unit)))
+            family_panels.append(chart_ui(distribution_chart(panel, f"{range_label(powertrain)} · {unit}", unit), f"ldv-eff-1-{powertrain}-{unit}", f"Rated consumption distribution: {range_label(powertrain)} ({unit})"))
     cohort_summary = diagnostic.frames["rating_summary"]
     cohort_summary = cohort_summary.loc[cohort_summary.vehicle_group.eq(distribution_group.value)]
     consumption_columns = {"year": "Model year", "rating_class": "Size class", "powertrain": "Powertrain / range",
@@ -752,7 +753,7 @@ def composition_plot(alt, chart_ui, composition_class_columns, composition_view,
                     header=alt.Header(labelFontSize=11, labelExpr="split(datum.label, ': ')", labelLimit=130,
                                       titleFontSize=12, titlePadding=8, labelPadding=5)),
                 spacing=20).configure_legend(offset=8, padding=0, titlePadding=8)
-            outputs.append(chart_ui(chart))
+            outputs.append(chart_ui(chart, f"ldv-eff-2-{powertrain}", f"Empirical composition changes {range_label(powertrain)} consumption"))
         return mo.vstack(outputs)
 
     composition_overview()
@@ -990,7 +991,7 @@ def _(alt, chart_ui, diagnostic, mo, range_color, range_label, table_ui):
         "anchor_powertrain": "NRCan anchor", "anchor_consumption_mj_per_vkm": "Cohort anchor (MJ/vkm)",
         "parameter_reference_consumption_mj_per_vkm": "Projection reference (MJ/vkm)", "atb_reference_year": "ATB reference year",
         "source_years": "Historical source years", "cohort_stock_coverage": "Included cohort share"}
-    mo.vstack([chart_ui(shares_chart),
+    mo.vstack([chart_ui(shares_chart, 'ldv-eff-3', 'OMEGA range composition transferred to Canadian vehicle families'),
         table_ui(diagnostic.frames["projection_anchors"][list(anchor_columns)].rename(columns=anchor_columns), "Projection levels and source cohorts"),
         mo.accordion({"Projection anchor provenance and technical fields": table_ui(diagnostic.frames["projection_anchors"], "Full recorded anchor audit")})])
     return
@@ -1102,7 +1103,7 @@ def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, 
         native_domains = {unit: [float(frame.value.min()), float(frame.value.max())]
                           for unit, frame in raw.groupby("units")}
 
-        def curves(frame, title, *, native=False):
+        def curves(frame, title, figure_id, *, native=False):
             if frame.empty:
                 return []
             frame = frame.copy()
@@ -1112,7 +1113,7 @@ def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, 
             return [chart_ui(trajectory_chart(panel, title + (f" · {unit}" if frame.axis_basis.nunique() > 1 else ""),
                                               native=native, facet="axis_basis", width=composition_view["line_plot_width"],
                                               year_domain=native_years if native else [start, end],
-                                              y_domain=native_domains.get(unit) if native else None))
+                                              y_domain=native_domains.get(unit) if native else None), f"{figure_id}-{group}-{family}-{unit}", title)
                     for unit, panel in frame.groupby("axis_basis", sort=False)]
 
         comparison = composition_heatmap_data(bridge_diagnostic, group, family,
@@ -1134,7 +1135,7 @@ def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, 
             for powertrain, panel in comparison.groupby("powertrain", sort=True):
                 heatmaps.append(chart_ui(class_consumption_heatmap(panel, years=years, classes=ordered,
                     maximum=maximum, width=composition_view["heatmap_plot_width"],
-                    title="2. Class consumption changes · " + range_label(powertrain))))
+                    title="2. Class consumption changes · " + range_label(powertrain)), f"ldv-eff-7-{group}-{powertrain}", f"Production minus catalogue consumption: {group}, {range_label(powertrain)}"))
         composition_columns = {"year": "Model year", "rating_class": "Size class", "powertrain": "Powertrain / range",
             "catalogue_native_consumption": "Cohort fallback median", "production_native_consumption": "Production", "native_unit": "Native unit",
             "catalogue_mj_per_vkm": "Cohort fallback median (total MJ/vkm)", "production_mj_per_vkm": "Production (total MJ/vkm)",
@@ -1158,18 +1159,19 @@ def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, 
                 + "Unweighted rated subclasses retain hierarchical family/cohort medians and recorded outer class weights. "
                 + (f"Supported BEV families use median eligible-trim range; {bev_reference} anchors future projections, with ATB relative changes and range ratios."
                    if family == "bev" else f"The latest observed NRCan cohort anchors the {bridge_diagnostic.summary['atb_reference_year']} reference point; future periods apply ATB changes from that point."))
-        period_title = "4. Production periods"
+        metric_name = "service efficiency" if bridge_metric.value == "service_efficiency" else "consumption"
+        period_title = f"{group}: {family.upper()} {metric_name} after vintage aggregation"
         if chosen_class != COHORT:
-            period_title = "4. Diagnostic class recalculation"
+            period_title = f"{group}: {family.upper()} {metric_name} for {chosen_class}"
         bridge_columns = {"powertrain": "Powertrain / range", "year": "Source year", "value": "Value", "units": "Unit",
             "series": "Evidence / method", "vintage": "Model vintage", "stage": "Stage", "sample_kind": "Point type",
             "source_years": "Contributing source years", "cohort_stock_coverage": "Included cohort share"}
         return mo.vstack([
             mo.hstack([class_controls[group], family_controls[group]], widths="equal"), mo.md(note),
-            *curves(raw, "1. Native catalogue trajectories", native=True),
+            *curves(raw, f"Native consumption evidence: {group}, {family.upper()}", "ldv-eff-4", native=True),
             *heatmaps, *composition_details,
-            *curves(rows.loc[rows.stage.eq("Harmonised before indexing")], "3. Harmonised source energy"),
-            *curves(rows.loc[rows.stage.eq("Indexed bridge") & rows.metric.eq(bridge_metric.value)], period_title),
+            *curves(rows.loc[rows.stage.eq("Harmonised before indexing")], f"Energy use before trajectory indexing: {group}, {family.upper()}", "ldv-eff-5"),
+            *curves(rows.loc[rows.stage.eq("Indexed bridge") & rows.metric.eq(bridge_metric.value)], period_title, "ldv-eff-6"),
             mo.accordion({"Bridge values and source timing": table_ui(rows[[field for field in bridge_columns if field in rows]].rename(columns=bridge_columns),
                               f"{group}: displayed values and their units"),
                           "Full bridge provenance and technical fields": table_ui(rows, f"{group}: complete recorded bridge evidence")}),
@@ -1280,7 +1282,7 @@ def composition_benchmark_plot(alt, benchmark_scope, chart_ui, diagnostic, mo, t
         comparison_columns = {"year": "Calendar / report year", "vehicle_group": "Vehicle group", "powertrain_label": "Powertrain",
             "source_label": "Counted population", "count": "Count", "share_percent": "Share (%)",
             "denominator": "Denominator count", "comparison_overlap": "Counterpart availability"}
-        return mo.vstack([mo.md(context), chart_ui(chart),
+        return mo.vstack([mo.md(context), chart_ui(chart, f"ldv-eff-8-{scope}", f"Population comparability: {scope.replace(chr(95), chr(32))}"),
             table_ui(frame[list(comparison_columns)].rename(columns=comparison_columns), "Counts, shares and their exact denominators"),
             mo.accordion({"Comparison definitions, source labels and technical audit": table_ui(frame, "Full comparison cells · original field names")})])
     benchmark_output = benchmark_panels()

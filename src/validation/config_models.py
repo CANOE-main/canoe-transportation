@@ -81,6 +81,7 @@ class OutputPaths(MappingModel):
     validation: str
     logs: str
     build_log: str = Field(min_length=1)
+    documentation: str
 
     @field_validator("build_log")
     @classmethod
@@ -109,6 +110,7 @@ class ArtifactRoute(MappingModel):
     layer: Literal[
         "cache",
         "documentation",
+        "publication",
         "external",
         "interim",
         "processed",
@@ -143,6 +145,7 @@ class PathsConfig(MappingModel):
     @model_validator(mode="after")
     def validate_artifact_layers(self) -> Self:
         layer_roots = {
+            "publication": self.outputs.documentation,
             "cache": self.inputs.cache,
             "documentation": "docs",
             "external": self.inputs.external,
@@ -377,6 +380,7 @@ class ScenarioRoadUtilization(MappingModel):
 
 class ScenarioEfficiencies(MappingModel):
     atb_trajectory: str = Field(min_length=1)
+    ceud_energy_calibration: bool = Field(strict=True)
 
 
 class ScenarioCosts(MappingModel):
@@ -421,12 +425,18 @@ class ScenarioConfig(MappingModel):
     embodied_materials: Literal["conventional", "lightweight"]
     row_note_overrides: ScenarioRowNoteOverrides
     # Explicit review preparation; ordinary production runs have no notebook work.
-    notebook_diagnostics: list[Literal["vehicle_stock", "efficiency"]] = Field(default_factory=list)
+    notebook_diagnostics: list[Literal["vehicle_stock", "efficiency", "ceud_calibration"]] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_parameter_horizons(self) -> Self:
         if len(set(self.notebook_diagnostics)) != len(self.notebook_diagnostics):
             raise ValueError("notebook_diagnostics cannot repeat a notebook")
+        if self.efficiencies.ceud_energy_calibration and self.road_utilization.vkt_schedules:
+            raise ValueError("CEUD energy calibration requires emitted flat annual utilization")
+        if self.efficiencies.ceud_energy_calibration and self.lifetimes.survival_curves:
+            raise ValueError("CEUD energy calibration currently requires fixed lifetimes: reference-only curve cohorts lack emitted activity/efficiency coverage")
+        if "ceud_calibration" in self.notebook_diagnostics and not self.efficiencies.ceud_energy_calibration:
+            raise ValueError("CEUD calibration diagnostics require the optional calibration to be enabled")
         if (self.road_utilization.vkt_schedules
                 and self.lifetimes.survival_curve_max_age is not None
                 and self.lifetimes.survival_curve_max_age < self.periods.step):

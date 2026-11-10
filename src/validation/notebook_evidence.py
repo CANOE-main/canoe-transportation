@@ -29,7 +29,7 @@ from utils import (
 from validation.config_models import PathsConfig, ScenarioIdentity
 
 
-Profile = Literal["vehicle_stock", "efficiency"]
+Profile = Literal["vehicle_stock", "efficiency", "ceud_calibration"]
 Digest = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
 # Accept historical captures while all new releases use an informative UTC name.
 BUILD_ID_PATTERN = r"(?:[A-Za-z0-9][A-Za-z0-9_.-]*-\d{8}T\d{6}Z(?:-[1-9]\d*)?|[0-9a-f]{32})"
@@ -92,9 +92,10 @@ def _controls(repo_root: Path | None = None) -> tuple[Path, PathsConfig, dict]:
     return root, paths, rules
 
 
-def prepare_command(repo_root: Path | None = None) -> str:
+def prepare_command(repo_root: Path | None = None, *, profile: Profile | None = None) -> str:
     _, _, rules = _controls(repo_root)
-    return f"uv run python src/build_transport.py --scenario {rules['prepare_scenario']} --overwrite"
+    scenario = rules.get("prepare_scenarios", {}).get(profile, rules["prepare_scenario"])
+    return f"uv run python src/build_transport.py --scenario {scenario} --overwrite"
 
 
 def _within(directory: Path, name: str) -> Path:
@@ -167,6 +168,9 @@ def stage_notebook_evidence(bundle: ConfigBundle, report: dict) -> NotebookPubli
             if profile == "vehicle_stock":
                 from validation.vehicle_stock_diagnostic import collect_stock_inputs
                 paths = collect_stock_inputs(bundle)
+            elif profile == "ceud_calibration":
+                from validation.ceud_calibration_diagnostic import collect_calibration_inputs
+                paths = collect_calibration_inputs(bundle)
             else:
                 from validation.ldv_efficiency_diagnostic import collect_efficiency_inputs
                 paths = collect_efficiency_inputs(bundle)
@@ -201,7 +205,7 @@ def stage_notebook_evidence(bundle: ConfigBundle, report: dict) -> NotebookPubli
                 profile=profile, build_id=build_id, built_at=report["timestamp_utc"],
                 scenario=bundle.scenario.scenario,
                 database=EvidenceDatabase(path=report["database"], sha256=report["database_sha256"]),
-                prepare_command=f"uv run python src/build_transport.py --scenario {rules['prepare_scenario']} --overwrite",
+                prepare_command=f"uv run python src/build_transport.py --scenario {rules.get('prepare_scenarios', {}).get(profile, rules['prepare_scenario'])} --overwrite",
                 files=files, config=config,
             )
             write_text_atomic(manifest.model_dump_json(indent=2) + "\n", profile_dir / "manifest.json")
@@ -321,7 +325,7 @@ def load_notebook_evidence(profile: Profile, *, repo_root: Path | None = None) -
     root, paths, rules = _controls(repo_root)
     directory = resolve_repo_path(root, paths.artifacts["notebook_evidence"].path)
     index_path = directory / rules["latest_file"]
-    command = prepare_command(root)
+    command = prepare_command(root, profile=profile)
     if not index_path.is_file():
         raise FileNotFoundError(f"No prepared notebook evidence. Run first: {command}")
     index = NotebookIndex.model_validate_json(index_path.read_text(encoding="utf-8"))

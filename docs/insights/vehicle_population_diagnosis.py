@@ -9,6 +9,7 @@ app = marimo.App(width="full")
 @app.cell
 def _():
     import altair as alt
+    from validation.notebook_figures import identified_chart
     import marimo as mo
     import pandas as pd
 
@@ -59,10 +60,10 @@ def _():
     ]
 
 
-    def chart_ui(chart: alt.TopLevelMixin) -> mo.Html:
+    def chart_ui(chart: alt.TopLevelMixin, figure_id: str, title: str) -> mo.Html:
         """Render an Altair chart without marimo selection callbacks."""
         return mo.ui.altair_chart(
-            chart,
+            identified_chart(chart, figure_id, title),
             chart_selection=False,
             legend_selection=False,
         )
@@ -548,10 +549,10 @@ def _(STATUS_COLORS, STATUS_ORDER, alt, chart_ui, evidence, mo, pd):
                 """),
                 mo.ui.tabs(
                     {
-                        "Passenger": chart_ui(registration_share_chart("PASSENGER")),
+                        "Passenger": chart_ui(registration_share_chart("PASSENGER"), 'population-1-passenger', 'Passenger registration statuses across report years'),
                         "Commercial": chart_ui(
                             registration_share_chart("COMMERCIAL")
-                        ),
+                        , 'population-1-commercial', 'Commercial registration statuses across report years'),
                     }
                 ),
                 mo.md("""
@@ -560,8 +561,8 @@ def _(STATUS_COLORS, STATUS_ORDER, alt, chart_ui, evidence, mo, pd):
                 color scale keeps small administrative buckets visible beside fit-active
                 stock.
                 """),
-                chart_ui(registration_heatmap("PASSENGER")),
-                chart_ui(registration_heatmap("COMMERCIAL")),
+                chart_ui(registration_heatmap("PASSENGER"), 'population-2-passenger', 'Passenger stock by status and model year'),
+                chart_ui(registration_heatmap("COMMERCIAL"), 'population-2-commercial', 'Commercial stock by status and model year'),
                 mo.ui.tabs(
                     {
                         "Registration-status definitions": mo.ui.table(
@@ -870,8 +871,8 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
                 mo.stat(f"{used_family_count:,}", "Unique canonical families linked", f"Across {crosswalk_count:,} reviewed MTO intervals", bordered=True),
             ], widths="equal"),
             mo.ui.tabs({
-                "Passenger row coverage": chart_ui(edition_row_coverage_chart("PASSENGER")),
-                "Commercial row coverage": chart_ui(edition_row_coverage_chart("COMMERCIAL")),
+                "Passenger row coverage": chart_ui(edition_row_coverage_chart("PASSENGER"), 'population-3-passenger', 'Reviewed passenger mapping coverage across editions'),
+                "Commercial row coverage": chart_ui(edition_row_coverage_chart("COMMERCIAL"), 'population-3-commercial', 'Reviewed commercial mapping coverage across editions'),
             }),
 
             mo.md("""
@@ -893,7 +894,7 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             canonical make, canonical model, and NLR ATB class, and then asks whether any
             accepted MTO key points to each family.
             """),
-            chart_ui(family_use_chart),
+            chart_ui(family_use_chart, 'population-4', 'How canonical family mappings support parameterization'),
 
             mo.md("""
             ## Coverage by model year and report edition
@@ -910,8 +911,8 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             1981 dynamic mapping floor and the age-based survival transition window.
             """),
             mo.vstack([
-                chart_ui(mapping_model_year_chart("PASSENGER")),
-                chart_ui(mapping_model_year_chart("COMMERCIAL")),
+                chart_ui(mapping_model_year_chart("PASSENGER"), 'population-5-passenger', 'Passenger mapping coverage by model year'),
+                chart_ui(mapping_model_year_chart("COMMERCIAL"), 'population-5-commercial', 'Commercial mapping coverage by model year'),
             ]),
 
             mo.md("""
@@ -1046,8 +1047,8 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
               this alone does not establish model nonexistence or a missing rating.
             """),
             mo.vstack([
-                chart_ui(unmapped_share_chart("PASSENGER")),
-                chart_ui(unmapped_share_chart("COMMERCIAL")),
+                chart_ui(unmapped_share_chart("PASSENGER"), 'population-6-passenger', 'Passenger stock without a resolved class mapping'),
+                chart_ui(unmapped_share_chart("COMMERCIAL"), 'population-6-commercial', 'Commercial stock without a resolved class mapping'),
             ]),
             mo.ui.table(unmapped_reason_summary[["VEHICLE_CLASS", "reason_label", "unresolved_fit_active_stock", "share_of_unresolved_stock", "share_of_total_stock", "unresolved_rows", "share_of_total_rows"]], selection=None, pagination=False, page_size=10, format_mapping={"share_of_unresolved_stock": "{:.2%}", "share_of_total_stock": "{:.2%}", "share_of_total_rows": "{:.2%}"}, label="Relative and absolute unresolved-stock attribution"),
         ])
@@ -1180,7 +1181,7 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
             key_totals = key_totals.dropna(axis=1, how="all")
             visible_columns = [column for column in visible_columns if column in key_totals]
             unresolved_tabs[reason_labels.get(reason_code, reason_code)] = mo.vstack([
-                chart_ui(reason_chart),
+                chart_ui(reason_chart, 'population-7', 'Why vehicle identities remain unresolved'),
                 mo.ui.table(key_totals, selection=None, pagination=True, page_size=10, visible_columns=visible_columns, freeze_columns_left=["VEHICLE_CLASS", "MAKE", "MODEL"], wrapped_columns=[column for column in ["unresolved_reason_detail", "rating_model_labels"] if column in visible_columns], label=f"Top 20 unresolved make-model keys: {reason_labels.get(reason_code, reason_code)}"),
             ])
 
@@ -1415,8 +1416,8 @@ def _(NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
             stack position and color remain stable across editions. Two-seaters and vans
             follow the size-ordered classes because they are separate source categories.
             """),
-            chart_ui(edition_composition_chart("Car")),
-            chart_ui(edition_composition_chart("Light Truck")),
+            chart_ui(edition_composition_chart("Car"), 'population-8-cars', 'Car size composition across observed editions'),
+            chart_ui(edition_composition_chart("Light Truck"), 'population-8-light-trucks', 'Light-truck size composition across observed editions'),
             mo.md("""
             The area chart below isolates the latest snapshot and model-year vintages
             from 2000 onward. Each colored area is an NLR ATB class contribution in
@@ -1424,7 +1425,7 @@ def _(NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
             contributions accumulate to the total mapped 2000+ stock across the
             displayed data.
             """),
-            chart_ui(latest_vintage_area),
+            chart_ui(latest_vintage_area, 'population-9', 'Mapped fleet composition by model year'),
             mo.ui.table(edition_ratings_composition.sort_values(["nrcan_ceud_class", "report_year", "within_edition_ceud_share"], ascending=[True, True, False]), selection=None, pagination=True, page_size=10, format_mapping={"within_edition_ceud_share": "{:.2%}"}),
         ])
         return mapped_composition_output
@@ -1550,8 +1551,8 @@ def _(NLR_ORDER, NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
 
         def composition_tab(empirical: pd.DataFrame, wards_frame: pd.DataFrame, class_column: str, legend_title: str) -> mo.Html:
             return mo.vstack([
-                chart_ui(model_year_comparison_chart(empirical, wards_frame, "Car", class_column, legend_title)),
-                chart_ui(model_year_comparison_chart(empirical, wards_frame, "Light Truck", class_column, legend_title)),
+                chart_ui(model_year_comparison_chart(empirical, wards_frame, "Car", class_column, legend_title), 'population-10-cars', 'Car composition: registrations versus sales reference'),
+                chart_ui(model_year_comparison_chart(empirical, wards_frame, "Light Truck", class_column, legend_title), 'population-10-light-trucks', 'Light-truck composition: registrations versus sales reference'),
                 mo.ui.tabs({
                     "MTO latest-stock table": mo.ui.table(empirical.sort_values(["nrcan_ceud_class", class_column, "model_year"]), selection=None, pagination=True, page_size=10, format_mapping={"within_model_year_share": "{:.2%}"}),
                     "Wards 2018/2021 table": mo.ui.table(wards_frame.sort_values(["nrcan_ceud_class", "year", class_column]), selection=None, pagination=False, page_size=10, format_mapping={"market_share": "{:.2%}"}),
@@ -1782,8 +1783,8 @@ def _(alt, chart_ui, evidence, mo, pd):
             does not establish an otherwise unsupported consumption configuration.
             """),
             mo.vstack([
-                chart_ui(top_family_heatmap("Car")),
-                chart_ui(top_family_heatmap("Light Truck")),
+                chart_ui(top_family_heatmap("Car"), 'population-11-cars', 'Canonical car families represented in observed stock'),
+                chart_ui(top_family_heatmap("Light Truck"), 'population-11-light-trucks', 'Canonical light-truck families represented in observed stock'),
             ]),
             mo.md("""
             A blank model-year cell means no accepted FIT_ACTIVE observation exists for
@@ -1998,7 +1999,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                 """),
                 mo.vstack(
                     [
-                        chart_ui(percentile_family_heatmap(bucket))
+                        chart_ui(percentile_family_heatmap(bucket), f"population-12-{bucket}", 'Canonical families across stock-size groups')
                         for bucket in percentile_bucket_order
                     ]
                 ),
@@ -2264,10 +2265,10 @@ def _(alt, chart_ui, evidence, mo, pd):
                 coverage, and Report-specific construction as well as genuine fleet
                 composition.
                 """),
-                chart_ui(age_distribution_chart("Car versus Passenger")),
+                chart_ui(age_distribution_chart("Car versus Passenger"), 'population-13-cars', 'Car age evidence and the broader passenger register'),
                 chart_ui(
                     age_distribution_chart("Light Truck versus Commercial")
-                ),
+                , 'population-13-light-trucks', 'Light-truck age evidence and the commercial register'),
                 mo.ui.table(
                     age_comparison.sort_values(
                         ["comparison", "series", "age"]
@@ -2478,7 +2479,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                 the Class 8 audit rows, but a separate Heavy Truck chart would add no
                 information.
                 """),
-                chart_ui(weight_share_chart("Medium Trucks")),
+                chart_ui(weight_share_chart("Medium Trucks"), 'population-14', 'Medium-truck weight classes in registration evidence'),
                 # chart_ui(weight_share_chart("Heavy Trucks")),
                 mo.ui.table(
                     weight_comparison.sort_values(
@@ -2752,8 +2753,8 @@ def _(alt, chart_ui, evidence, mo, pd):
                 rescale fleet weights, calibrate retention, or alter accepted parameters.
                 """),
                 coverage_note,
-                chart_ui(comparison_chart("Stock")),
-                chart_ui(comparison_chart("Sales")),
+                chart_ui(comparison_chart("Stock"), 'population-15-stock', 'Registration and CEUD stocks measure different populations'),
+                chart_ui(comparison_chart("Sales"), 'population-15-sales', 'Registration cohorts and CEUD sales have different meanings'),
             ]
         )
         return validation_output
@@ -2896,7 +2897,7 @@ def heavy_truck_survival_comparison_chart(
             lifetimes and survival curves. The scenario source profile also resolves the car,
             light-truck and medium-truck schedules.
             """),
-            chart_ui(heavy_truck_chart),
+            chart_ui(heavy_truck_chart, 'population-16', 'Heavy-truck survival schedules from alternative sources'),
             mo.ui.table(
                 median_rows[[
                     "evidence_source", "target_class", "median_equivalent_age",
@@ -3264,10 +3265,10 @@ def _(alt, chart_ui, evidence, mo, pd):
             mo.ui.tabs({
                 "Passenger distributions": chart_ui(
                     histogram_matrix("PASSENGER", "#457b9d")
-                ),
+                , 'population-17-passenger', 'Passenger retention distributions and their exposure'),
                 "Commercial distributions": chart_ui(
                     histogram_matrix("COMMERCIAL", "#e76f51")
-                ),
+                , 'population-17-commercial', 'Commercial retention distributions and their exposure'),
             }),
             mo.ui.table(
                 distribution_summary,
@@ -3382,7 +3383,7 @@ def passenger_status_proxy(
                 )
                 .properties(width=700, height=300, title="Fit-active share by age")
             )
-            return mo.vstack([chart_ui(counts), chart_ui(share)])
+            return mo.vstack([chart_ui(counts, f"population-18-counts-{vehicle_class}", 'Registration status counts by age'), chart_ui(share, f"population-18-share-{vehicle_class}", 'Fit-active share by age')])
 
 
         status_proxy_output = mo.vstack([
@@ -3578,7 +3579,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             a maximum starting age of 35, the oldest contributing vintage is
             `2016 - 35 = 1981`.
             """),
-            chart_ui(coverage_chart),
+            chart_ui(coverage_chart, 'population-19', 'Mapped exposure supporting apparent retention estimates'),
             mo.md("""
             #### 2. Empirical annual rates, exposure, and vintage support
 
@@ -3593,7 +3594,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             Point area represents starting exposure; the color legend distinguishes Car
             and Light Truck.
             """),
-            chart_ui(annual_chart),
+            chart_ui(annual_chart, 'population-20', 'MTO apparent retirement rates and supporting exposure'),
             mo.md("""
             Hovering reports exposure and both support counts. The configured decision gate
             evaluates starting ages 0 through 35. This keeps all eligible early evidence
@@ -3622,7 +3623,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             cumulative product already exist. It never enters an MTO numerator,
             denominator, weight, rate, interpolation, or calibration step.
             """),
-            chart_ui(cumulative_chart),
+            chart_ui(cumulative_chart, 'population-21', 'Cumulative MTO retention and NHTSA survival'),
             mo.ui.tabs({
                 "Decision gate": mo.ui.table(decision, selection=None, pagination=False, page_size=10, format_mapping={"mapped_fit_active_exposure_share": "{:.2%}", "in_bounds_rate_share": "{:.2%}"}),
                 "Final MTO class-age output": mo.ui.table(mto_curves.sort_values(["vehicle_class", "age"]), selection=None, pagination=True, page_size=10, format_mapping={"annual_retirement_rate": "{:.2%}", "annual_survival_factor": "{:.2%}", "cumulative_survival": "{:.2%}", "cumulative_scrappage": "{:.2%}"}),
@@ -3777,13 +3778,13 @@ def _(alt, chart_ui, evidence, mo, pd):
             imposes a 1990 floor after transition construction. It therefore loses the
             age-35 rate and sharply reduces exposure in the oldest ages.
             """),
-            chart_ui(scope_annual_chart),
+            chart_ui(scope_annual_chart, 'population-22', 'Annual retention sensitivity to population scope'),
             mo.md("""
             The cumulative curves below are independently compounded from each method's
             own annual MTO rates. NHTSA does not enter this comparison. Differences between
             the lines arise only from excluding 1981-1989 vintages.
             """),
-            chart_ui(scope_cumulative_chart),
+            chart_ui(scope_cumulative_chart, 'population-23', 'Cumulative retention sensitivity to population scope'),
             mo.md(f"""
             Exposure and distinct-vintage support show what the conditioning removes.
             The production estimator begins with the empirical age-0 transition. In these generated artifacts annual evidence

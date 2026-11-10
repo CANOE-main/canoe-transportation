@@ -1615,7 +1615,59 @@ parameterization:
 
   notebook_diagnostics:
     prepare_scenario: config/scenarios/notebook_diagnostics.yaml
+    prepare_scenarios:
+      ceud_calibration: config/scenarios/validation_energy_calibration.yaml
     latest_file: latest.json
+  ceud_energy_calibration:
+    method: class_liquid_energy_ratio
+    transfer: uniform_all_powertrains_and_years
+    phev_split: preserve_emitted_horizon_mean
+    electricity_target: unobserved
+    energy_boundary: vehicle_input_without_additional_charger_losses
+    liquid_powertrains: [gasoline, diesel, hev]
+    tolerances: {absolute: 1.0e-8, relative: 1.0e-9}
+    # Cached CEUD energy cells are rounded to six decimal PJ. Allow half a
+    # reported unit per summed component plus total, independently of fit closure.
+    reported_energy_resolution_pj: 1.0e-6
+    files:
+      summary: ceud_energy_calibration_summary.csv
+      cohorts: ceud_energy_calibration_cohorts.csv
+      trajectories: ceud_energy_calibration_trajectories.csv
+    # CEUD totals include fuels absent from the represented fleet. Fit only reported
+    # gasoline + diesel; retain the other amounts and the unobserved electricity boundary.
+    # One class scalar preserves all relative trajectories and shared PHEV fractions.
+    # Transfer to electric/hydrogen technologies is an explicit unvalidated assumption.
+    classes:
+      cars:
+        status: calibrate
+        table_id: 20
+        total_series: Car Energy Use (PJ)
+        liquid_series: ["Cars|Energy Use by Energy Source (PJ)|Motor Gasoline", "Cars|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
+        excluded_series: ["Cars|Energy Use by Energy Source (PJ)|Natural Gas", "Cars|Energy Use by Energy Source (PJ)|Propane"]
+      passenger_light_trucks:
+        status: calibrate
+        table_id: 34
+        total_series: Passenger Light Truck Energy Use (PJ)
+        liquid_series: ["Passenger Light Trucks|Energy Use by Energy Source (PJ)|Motor Gasoline", "Passenger Light Trucks|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
+        excluded_series: ["Passenger Light Trucks|Energy Use by Energy Source (PJ)|Natural Gas", "Passenger Light Trucks|Energy Use by Energy Source (PJ)|Propane"]
+      freight_light_trucks:
+        status: calibrate
+        table_id: 35
+        total_series: Freight Light Truck Energy Use (PJ)
+        liquid_series: ["Freight Light Trucks|Energy Use by Energy Source (PJ)|Motor Gasoline", "Freight Light Trucks|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
+        excluded_series: ["Freight Light Trucks|Energy Use by Energy Source (PJ)|Natural Gas", "Freight Light Trucks|Energy Use by Energy Source (PJ)|Propane"]
+      medium_trucks:
+        status: calibrate
+        table_id: 36
+        total_series: Medium Truck Energy Use (PJ)
+        liquid_series: ["Medium Trucks|Energy Use by Energy Source (PJ)|Motor Gasoline", "Medium Trucks|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
+        excluded_series: []
+      heavy_trucks:
+        status: unsupported_fuel_boundary
+        table_id: 36
+        total_series: Heavy Truck Energy Use1 (PJ)
+        liquid_series: []
+        excluded_series: []
   rating_stock_benchmark:
     files:
       matches: rating_stock_match_audit.csv

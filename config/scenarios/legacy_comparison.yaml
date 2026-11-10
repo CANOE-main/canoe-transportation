@@ -15,7 +15,7 @@ geography:
 periods:
   # prospective: interval-end inputs; legacy: prior timing and vintage bins.
   period_mode: legacy
-  base_year: 2023  # Latest observed stock/demand year.
+  base_year: 2023  # Model reference year; selected source policy handles later-than-observed inputs.
   # Existing-capacity vintages; legacy mode must include base_year.
   existing: [2000, 2005, 2010, 2015, 2020, 2023]
   model: [2025, 2030, 2035, 2040, 2045]
@@ -87,6 +87,7 @@ road_utilization:
   vkt_schedules: false
 
 efficiencies:
+  ceud_energy_calibration: false  # Optional CEUD-reported liquid-energy fit; no default promotion.
   atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
 
 costs:
