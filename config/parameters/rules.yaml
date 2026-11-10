@@ -1249,12 +1249,6 @@ parameterization:
           raw_series: Inter-City Buses|Activity|Passenger-kilometres (millions)
           commodity: T_D_pkm_hdv_bic
           units: bn passenger-km
-    ontario_report_a:
-      age_distribution_file: ontario_vehicle_population_ldv_age_distribution.csv
-      truncation_findings_file: ontario_vehicle_population_age_truncation_findings.csv
-      count_column: FIT_ACTIVE
-      age_column: age
-      historical_review_minimum_model_year: 2000
     existing_capacity:
       output_units: k vehicles
       historical_fuel_types: [Gasoline, Diesel]

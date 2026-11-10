@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 
 from parameterization.road_stocks_and_demands import (
-    derive_ldv_age_distributions,
     distribute_existing_road_capacity,
 )
 from parameterization.build_existing_capacity import prepare_existing_capacity_rows
@@ -23,216 +22,6 @@ from validation.insertion import cleanup_transport_parameter_batches
 
 
 ROOT = Path(__file__).resolve().parents[1]
-
-
-def _varying_powertrain_stock_inputs() -> dict:
-    bundle = load_config_bundle(
-        "config/scenarios/legacy_comparison.yaml", repo_root=ROOT,
-    )
-    rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
-        "existing_capacity"
-    ].copy()
-    rules["ceud_stock_series"] = {"cars": rules["ceud_stock_series"]["cars"]}
-    rules["survival_curve_classes"] = ["cars"]
-    rules["report5_age_classes"] = {}
-    stock_series = rules["ceud_stock_series"]["cars"]
-    registrations = pd.DataFrame([
-        {
-            "scenario_region": "ON", "reference_year": year,
-            "vehicle_type": "Passenger cars", "fuel_type": fuel,
-            "scaled_value": count, "source_table_id": "20-10-0025-01",
-        }
-        for year, counts in (
-            (2005, {"Gasoline": 90, "Diesel": 10, "Battery electric": 0}),
-            (2015, {"Gasoline": 75, "Diesel": 15, "Battery electric": 10}),
-            (2023, {"Gasoline": 50, "Diesel": 10, "Battery electric": 40}),
-        )
-        for fuel, count in counts.items()
-    ])
-    return {
-        "provincial": pd.DataFrame([
-            {
-                "region": "ON", "year": 2023,
-                "table_id": stock_series["table_id"],
-                "raw_series": stock_series["raw_series"],
-                "unit": "thousands", "value": 100.0,
-            }
-        ]),
-        "ldv_age": pd.DataFrame([
-            {
-                "report_year": 2025, "nrcan_ceud_class": road_class,
-                "age": age, "fit_active_stock": count,
-            }
-            for road_class in ("Car", "Light Truck")
-            for age, count in ((0, 30), (8, 20), (23, 50), (24, 100))
-        ]),
-        "report5_age": pd.DataFrame(),
-        "ldv_registrations": registrations,
-        "truck_registrations": pd.DataFrame(),
-        "dashboard": pd.DataFrame(columns=["source_region", "ytd_market_share"]),
-        "regions": ["ON"],
-        "period_config": ScenarioPeriods(
-            period_mode="prospective", base_year=2023,
-            existing=[2000, 2005, 2010, 2015, 2020], model=[2025], step=5,
-        ),
-        "vehicle_population_year": 2025,
-        "survival_curves": True,
-        "survival_curve_max_age": 29,
-        "fixed_lifetimes_by_class": {"cars": 14},
-        "curve_ages_by_class": {"cars": set(range(30))},
-        "rules": rules, "cohort_method": "stock_age",
-    }
-
-
-@pytest.mark.parametrize("survival_curves", [False, True])
-def test_production_age_coverage_is_independent_of_lifetime_mode(
-    survival_curves: bool,
-) -> None:
-    periods = _varying_powertrain_stock_inputs()["period_config"]
-    mapped = pd.DataFrame({
-        "report_year": [2025] * 5,
-        "MODEL_YEAR": [2025, 2011, 2002, 2001, 2026],
-        "FIT_ACTIVE": [10, 20, 30, 40, 50],
-        "nrcan_ceud_class": ["Car"] * 5,
-        "nlr_atb_class": ["Compact"] * 5,
-        "mapping_accepted": [True] * 5,
-    })
-    distribution, findings = derive_ldv_age_distributions(
-        mapped, survival_curves=survival_curves, maximum_age=10,
-        median_lifetimes={"Car": 14}, historical_review_minimum_model_year=2000,
-        period_config=periods,
-    )
-    assert distribution.age.tolist() == [0, 14, 23]
-    assert distribution.fit_active_stock.sum() == 60
-    assert set(findings.cutoff_basis) == {"configured_historical_vintage_coverage"}
-    assert findings.cutoff_age.tolist() == [23.0]
-    assert findings.over_cutoff_fit_active_stock.tolist() == [40]
-    assert findings.negative_age_fit_active_stock.tolist() == [50]
-
-
-def test_powertrain_totals_survive_lifetime_modes_and_tight_curve_support() -> None:
-    arguments = _varying_powertrain_stock_inputs()
-    expected = {
-        "T_LDV_C_GSL_EX": 75.0,
-        "T_LDV_C_DSL_EX": 11.0,
-        "T_LDV_C_BEV_EX": 14.0,
-    }
-    for curves, maximum_age in ((True, 29), (False, 29), (True, 9)):
-        cohorts, shares, _, capacity = distribute_existing_road_capacity(
-            **(arguments | {
-                "survival_curves": curves,
-                "survival_curve_max_age": maximum_age,
-            })
-        )
-        assert capacity.groupby("tech").capacity.sum().to_dict() == pytest.approx(expected)
-        assert cohorts.cohort_k_vehicles.sum() == pytest.approx(100.0)
-        assert shares.capacity.sum() == pytest.approx(100.0)
-        assert not cohorts.loc[
-            ~cohorts.eligible_first_model_period, "cohort_k_vehicles"
-        ].any()
-        assert not shares.loc[
-            ~shares.eligible_first_model_period, "capacity"
-        ].any()
-        assert set(capacity.units) == {"k vehicles"}
-        expected_vintages = {2000, 2010, 2020} if curves and maximum_age == 29 else {2020}
-        assert set(capacity.vintage) == expected_vintages
-        if curves and maximum_age == 29:
-            # All represented ages survive: retain the original curve-mode rows.
-            assert capacity.loc[
-                capacity.tech.eq("T_LDV_C_BEV_EX"), ["vintage", "capacity"]
-            ].set_index("vintage").capacity.to_dict() == pytest.approx({2010: 2.0, 2020: 12.0})
-        if not curves:
-            # Age eight survives annually but its prospective model vintage does not.
-            assert 2023 - 8 + 14 > 2025
-            assert not cohorts.loc[cohorts.age.eq(8), "eligible_first_model_period"].any()
-        for (region, road_class, vintage_year, vintage), group in shares.groupby(
-            ["region", "road_class", "vintage_year", "vintage"]
-        ):
-            cohort = cohorts.loc[
-                cohorts.region.eq(region) & cohorts.road_class.eq(road_class)
-                & cohorts.vintage_year.eq(vintage_year) & cohorts.vintage.eq(vintage)
-            ]
-            assert group.capacity.sum() == pytest.approx(cohort.cohort_k_vehicles.sum())
-            assert group.cohort_k_vehicles.unique().tolist() == pytest.approx(
-                [group.capacity.sum()]
-            )
-
-
-def test_positive_powertrain_without_eligible_cohort_is_rejected() -> None:
-    arguments = _varying_powertrain_stock_inputs()
-    registrations = arguments["ldv_registrations"].copy()
-    registrations.loc[
-        registrations.reference_year.eq(2023) & registrations.fuel_type.eq("Diesel"),
-        "scaled_value",
-    ] = 0
-    with pytest.raises(ValueError, match="no eligible same-technology cohort.*T_LDV_C_DSL_EX"):
-        distribute_existing_road_capacity(**(arguments | {
-            "ldv_registrations": registrations,
-            "survival_curve_max_age": 9,
-        }))
-
-
-def test_zero_powertrain_stock_does_not_require_an_eligible_cohort() -> None:
-    arguments = _varying_powertrain_stock_inputs()
-    registrations = arguments["ldv_registrations"].copy()
-    registrations.loc[registrations.fuel_type.eq("Diesel"), "scaled_value"] = 0
-    _, shares, _, capacity = distribute_existing_road_capacity(**(arguments | {
-        "ldv_registrations": registrations,
-        "survival_curve_max_age": 9,
-    }))
-    assert shares.loc[shares.tech.eq("T_LDV_C_DSL_EX"), "capacity"].sum() == 0
-    assert "T_LDV_C_DSL_EX" not in set(capacity.tech)
-    assert capacity.capacity.sum() == pytest.approx(100.0)
-
-
-def test_curve_eligibility_requires_the_complete_model_vintage_age_block() -> None:
-    arguments = _varying_powertrain_stock_inputs()
-    with pytest.raises(ValueError, match="no eligible same-technology cohort"):
-        distribute_existing_road_capacity(**(arguments | {
-            "survival_curve_max_age": 5,
-        }))
-
-
-def test_accepted_curve_eligibility_never_applies_the_fixed_median() -> None:
-    arguments = _varying_powertrain_stock_inputs()
-    results = []
-    for median in (1., 100.):
-        cohorts, _, _, capacity = distribute_existing_road_capacity(**(arguments | {
-            "survival_curves": True, "fixed_lifetimes_by_class": {"cars": median},
-        }))
-        assert set(cohorts.eligibility_basis) == {"accepted_survival_curve_support"}
-        assert cohorts.fixed_lifetime_years.isna().all()
-        results.append(capacity)
-    pd.testing.assert_frame_equal(results[0], results[1])
-
-
-@pytest.mark.parametrize("median", [16., 17., 20.])
-def test_different_fixed_medians_can_share_the_same_prospective_vintage_cutoff(median) -> None:
-    arguments = _varying_powertrain_stock_inputs()
-    ages = pd.DataFrame([
-        {"report_year": 2025, "nrcan_ceud_class": "Car", "age": age, "fit_active_stock": 25.}
-        for age in (0, 14, 15, 19)
-    ])
-    cohorts, _, _, _ = distribute_existing_road_capacity(**(arguments | {
-        "provincial": arguments["provincial"].assign(year=2025),
-        "ldv_age": ages, "survival_curves": False,
-        "period_config": ScenarioPeriods(
-            period_mode="prospective", base_year=2025,
-            existing=[2000, 2005, 2010, 2015, 2020], model=[2025], step=5,
-        ),
-        "fixed_lifetimes_by_class": {"cars": median},
-    }))
-    eligible = cohorts.loc[cohorts.eligible_first_model_period]
-    assert set(cohorts.eligibility_basis) == {"fixed_lifetime"}
-    assert set(cohorts.fixed_lifetime_years) == {median}
-    assert eligible.vintage_year.min() == 2011
-    assert eligible.vintage.min() == 2010
-    annual_2010 = cohorts.loc[cohorts.vintage_year.eq(2010)].iloc[0]
-    # The annual cohort passes for every median, but its five-year model-vintage
-    # label (2005) still fails the strict first-period survival inequality.
-    assert 2010 + median > 2025
-    assert annual_2010.vintage == 2005
-    assert not annual_2010.eligible_first_model_period
 
 
 def test_fixed_lifetime_sources_resolve_nhtsa_and_nems_medians() -> None:
@@ -268,7 +57,7 @@ def test_truck_stock_eligibility_traces_selected_lifetime_source(
     routes = dict(bundle.paths.artifacts)
     for family in (
         "existing_capacity_interim", "existing_capacity_processed",
-        "existing_capacity_validation", "road_stocks_and_demands",
+        "existing_capacity_validation",
     ):
         routes[family] = routes[family].model_copy(update={"path": str(tmp_path / family)})
     scenario = bundle.scenario.model_copy(update={
@@ -346,18 +135,20 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
             for name, item in rules["ceud_stock_series"].items()
         ]
     )
-    ldv_age = pd.DataFrame(
-        [
-            {
-                "report_year": 2025,
-                "nrcan_ceud_class": group,
-                "age": age,
-                "fit_active_stock": 50,
-            }
-            for group in ("Car", "Light Truck")
-            for age in (0, 3, 20, 24)
-        ]
-    )
+    sales_cohorts = pd.DataFrame([
+        {"ceud_region": "ON", "road_class": name, "vintage_year": year,
+         "age": 2023 - year, "sales_k_vehicles": stocks[name] / 3,
+         "surviving_k_vehicles": stocks[name] / 3, "stock_calibration_multiplier": 1.,
+         "stock_calibration_basis": "base_year_ceud_stock",
+         "calibrated_surviving_k_vehicles": stocks[name] / 3,
+         "calibrated_acquisitions_k_vehicles": stocks[name] / 3,
+         "ceud_stock_k_vehicles": stocks[name]}
+        for name in rules["ceud_sales_series"] for year in (2003, 2020, 2023)
+    ])
+    annual_survival = pd.DataFrame([
+        {"road_class": name, "age": age, "survival_probability": float(age < 40)}
+        for name in rules["ceud_sales_series"] for age in range(41)
+    ])
     report5 = pd.DataFrame(
         [
             {"year": 2025, "VEHICLE_CLASS": group, "AGE": age, "AGE_DIST": 1 / 3}
@@ -431,8 +222,8 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
 
     cohorts, shares, excluded, capacity = distribute_existing_road_capacity(
         provincial=provincial,
-        cohort_method="stock_age",
-        ldv_age=ldv_age,
+        sales_cohorts=sales_cohorts,
+        annual_survival=annual_survival,
         report5_age=report5,
         ldv_registrations=ldv,
         truck_registrations=truck,
@@ -444,7 +235,7 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
         ),
         vehicle_population_year=2025,
         survival_curves=True,
-        survival_curve_max_age=25,
+        survival_curve_max_age=40,
         fixed_lifetimes_by_class={
             "cars": 14,
             "passenger_light_trucks": 16,
@@ -454,7 +245,7 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
             "motorcycles": 17,
         },
         curve_ages_by_class={
-            name: set(range(26))
+            name: set(range(41))
             for name in rules["survival_curve_classes"]
         },
         rules=rules,
@@ -476,10 +267,6 @@ def test_road_vintage_fuel_shares_and_dashboard_override() -> None:
     assert set(historical_cars["fuel_type"]) == {"Gasoline", "Diesel"}
     assert historical_cars["historical_combustion_backfill"].all()
     assert "pre_evidence_non_combustion" in set(excluded["exclusion_reason"])
-    assert not cohorts.loc[
-        cohorts["road_class"].eq("cars") & cohorts["age"].eq(24),
-        "eligible_first_model_period",
-    ].any()
     medium_latest = shares.loc[
         shares["road_class"].eq("medium_trucks") & shares["vintage"].eq(2023)
     ]

@@ -14,7 +14,7 @@ def _():
     import numpy as np
     from math import ceil, floor
     from validation.transportation_research import load_validation_diagnosis
-    from validation.notebook_figures import identified_chart
+    from validation.notebook_figures import identified_chart, source_legend_style
 
     CLASS_LABELS = {
         "cars": "Cars", "passenger_light_trucks": "Passenger light trucks",
@@ -170,7 +170,7 @@ def _():
     def display_chart(chart):
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
 
-    return BUILDS, BUILD_LABELS, CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, class_grid, cohort_style_legend, build_cohort_hatching, display_chart, display_table, load_validation_diagnosis, mo, pd, stock_grid, identified_chart
+    return BUILDS, BUILD_LABELS, CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, class_grid, cohort_style_legend, build_cohort_hatching, display_chart, display_table, load_validation_diagnosis, mo, pd, stock_grid, identified_chart, source_legend_style
 
 
 @app.cell
@@ -185,13 +185,13 @@ def _(diagnosis, mo):
     mo.vstack([mo.md(f"""
     # Transportation validation: independent methods
 
-    **2025 evaluation**, shared **CEUD 2023 edition**; observed stock, activity and energy are held
-    constant through 2025. Backend stock is normalized to CEUD; legacy stock is independently reconstructed.
+    **2025 evaluation**, shared **[*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) 2023 edition**; observed stock, activity and energy are held
+    constant through 2025. Backend stock is normalized to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm); legacy stock is independently reconstructed.
     This comparison uses production's **fixed-lifetime mode** (`survival_curves: false`).
     Road stock comes from annual sales and configured survival schedules, including their harmonized tails,
-    followed by CEUD calibration and fixed-lifetime eligibility allocation. Curve-mode installed capacity
+    followed by [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration and fixed-lifetime eligibility allocation. Curve-mode installed capacity
     and the separate physical-stock handoff are examined in [stock_cohort_diagnosis.py](stock_cohort_diagnosis.py).
-    CEUD observation year, UF calibration year, evaluation year and model labels are different concepts.
+    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) observation year, UF calibration year, evaluation year and model labels are different concepts.
     Prospective **model period 2025 represents demand calendar year 2030**; baseline accounting here is calendar 2025.
     Scenario: [{scenario['scenario']['name']}](../../{diagnosis['scenario_path']}).
 
@@ -236,8 +236,8 @@ def _(mo):
 
     The default shows each method's **native ExistingCapacity parameter**. Legacy exports the
     **sum of original acquisitions** in each vintage; the backend exports **already surviving,
-    CEUD-scaled stock after fixed-lifetime allocation in this scenario**. These are deliberately different meanings,
-    even though both use thousand vehicles. The legacy calculation has not been normalized to CEUD
+    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)-scaled stock after fixed-lifetime allocation in this scenario**. These are deliberately different meanings,
+    even though both use thousand vehicles. The legacy calculation has not been normalized to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)
     or forced through the backend's allocation.
 
     Switch to **surviving stock at calendar 2025** to compare the backend stock with legacy
@@ -317,7 +317,7 @@ def _(BUILDS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, mo, pd
     retirement. The legacy history starts in 2005, and its car powertrain shares are missing in **2005 and
     2006**, so those products become zero in the native recipe. Its older representative vintage also
     gives every annual segment in a bin the same lower survival fraction. The backend instead retains
-    annual-age survival over 2000–2025 and scales the resulting stock to CEUD. None of those differences
+    annual-age survival over 2000–2025 and scales the resulting stock to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm). None of those differences
     is corrected away here. The adjacent columns show the actual export and the separate point-year stock.
     """), display_chart(stock_comparison_chart), display_table(stock_totals[stock_table_columns].rename(columns={
         "evidence": "Build", "parameter_k_vehicles": "Native ExistingCapacity (k)",
@@ -370,7 +370,7 @@ def _(BUILDS, alt, display_chart, mo, pd, stock_grid, display_table, build_cohor
     **2005 → 2000**; the backend oldest proxy includes **2000–2005**, an extra lower endpoint
     (zero allocated stock here). Hover identifies that boundary exception.
 
-    **{lineage_note}** Backend lineage retains its annual survival, CEUD multiplier and technology-specific
+    **{lineage_note}** Backend lineage retains its annual survival, [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) multiplier and technology-specific
     redistribution in either view. The audit table preserves both quantities separately.
     """), display_chart(vintage_chart), mo.accordion({"Full annual lineage": display_table(selected_lineage, selection=None, page_size=10)})])
     return (vintage_chart,)
@@ -400,7 +400,7 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis
     ## 2. Utilization: calibration values, bounds and sensitivity
 
     Grey = arithmetic mean of `activity_y / (stock_y × c2a)` for observed **2017, 2018, 2019, 2022, 2023**;
-    2020–2021 are excluded. Blue = **2023 CEUD class activity held at 2025 / Σ(inserted stock × c2a)**.
+    2020–2021 are excluded. Blue = **2023 [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) class activity held at 2025 / Σ(inserted stock × c2a)**.
     The table exposes target, denominator and resulting change. Reviewed manual c2a and efficiency stay fixed.
     This is historical activity calibration, separate from GDP-indexed service demand.
 
@@ -409,7 +409,7 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis
     It already includes the 2024–2025 extended sales in vintage 2020; it is a recipe calibration identity,
     not an observation of calendar-2023 acquisitions. Bounds are constraints, not realized solver operation.
 
-    Orange = **unimplemented backend energy sensitivity**: blue UF × CEUD energy / backend energy.
+    Orange = **unimplemented backend energy sensitivity**: blue UF × [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) energy / backend energy.
     Only UF changes; stock, composition, efficiencies and c2a are held fixed. The native legacy point uses
     its own complete parameters and is independent of that sensitivity.
     """), display_chart(utilization_chart), display_table(calibration[[
@@ -427,10 +427,10 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis
 
 
 @app.cell(hide_code=True)
-def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, display_chart, mo, pd, display_table, identified_chart):
+def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, display_chart, mo, pd, display_table, identified_chart, source_legend_style):
     target_rows = cases.loc[cases.case.eq(CASES[1])].copy()
     references = []
-    for label, column in [("CEUD 2023 held at 2025", "ceud_activity_bn"),
+    for label, column in [("NRCan CEUD 2023 held at 2025", "ceud_activity_bn"),
                            ("Backend real-GDP 2025 target", "current_base_year_demand_bn"),
                            ("Legacy workbook 2025 target", "legacy_calendar_base_year_demand_bn")]:
         references.append(target_rows.assign(Reference=label, utilization=float("nan"), Service=lambda frame: frame[column],
@@ -455,14 +455,14 @@ def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, disp
             residual_extents.append({"Class": class_name, "Kind": "Extent",
                                      "Energy difference (%)": sign * x_limit, "Service difference (%)": sign * y_limit})
     residual_plot_data = pd.concat([reconciliation_data, pd.DataFrame(residual_extents)], ignore_index=True)
-    residual_x = alt.X("Energy difference (%):Q", title="Energy difference from CEUD (%)", scale=alt.Scale(zero=False, nice=False))
-    residual_y = alt.Y("Service difference (%):Q", title="Service difference from CEUD (%)", scale=alt.Scale(zero=False, nice=False))
+    residual_x = alt.X("Energy difference (%):Q", title="Energy difference from NRCan CEUD (%)", scale=alt.Scale(zero=False, nice=False))
+    residual_y = alt.Y("Service difference (%):Q", title="Service difference from NRCan CEUD (%)", scale=alt.Scale(zero=False, nice=False))
     residual_points = alt.Chart().transform_filter(alt.datum.Kind != "Extent").mark_point(filled=True, size=100, strokeWidth=1.5).encode(
         x=residual_x, y=residual_y,
         color=alt.Color("Point:N", scale=alt.Scale(domain=point_order, range=point_colors), title=None,
-                        legend=alt.Legend(orient="bottom", columns=2, labelLimit=320)),
+                        legend=alt.Legend(orient="bottom", columns=2, labelLimit=360, labelFontStyle=source_legend_style())),
         shape=alt.Shape("Point:N", scale=alt.Scale(domain=point_order, range=point_shapes), title=None,
-                        legend=alt.Legend(orient="bottom", columns=2, labelLimit=320)),
+                        legend=alt.Legend(orient="bottom", columns=2, labelLimit=360, labelFontStyle=source_legend_style())),
         stroke=alt.Stroke("Point:N", scale=alt.Scale(domain=point_order, range=point_colors), legend=None),
         tooltip=["Class:N", "Point:N", alt.Tooltip("utilization:Q", format=".6f"),
                  alt.Tooltip("Energy difference (%):Q", format="+.4f"), alt.Tooltip("Service difference (%):Q", format="+.4f"),
@@ -478,20 +478,20 @@ def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, disp
     mo.vstack([mo.md("""
     ## 3. Baseline activity–energy reconciliation
 
-    **x = energy difference from CEUD (%); y = service difference from CEUD (%)**.
+    **x = energy difference from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) (%); y = service difference from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) (%)**.
     Each difference is `100 × (model / CEUD − 1)`. Dashed axes meet at **(0, 0)**: simultaneous
     activity and energy agreement. Right means more energy; above means more service. Each class has
     symmetric axes so all four quadrants remain visible. Tooltips retain total PJ and billion passenger-km
     or tonne-km. `Service = Σ(stock × c2a × UF)`; `energy = Σ(service / cohort efficiency)`.
     Energy retains each vehicle source's consumption boundary and counts PHEV blend input once.
     Embedded charging losses remain in vehicle electricity consumption; no extra charger-loss multiplier is applied.
-    CEUD secondary energy has its reported fleet/fuel boundary; unsupported fuels and composition can differ.
-    Black cross = CEUD at zero difference. Black triangles have zero energy difference and use the distinct
+    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) secondary energy has its reported fleet/fuel boundary; unsupported fuels and composition can differ.
+    Black cross = [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) at zero difference. Black triangles have zero energy difference and use the distinct
     calendar-2025 demand targets (backend real GDP; legacy workbook price index) for their service difference. They combine
     observed energy with projected service for context; they are not independent observations.
 
     A common UF change with fixed composition/efficiency scales **both** totals. Collinearity of backend cases
-    is an accounting identity, not evidence of fit. If the energy-per-service ratio differs from CEUD,
+    is an accounting identity, not evidence of fit. If the energy-per-service ratio differs from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm),
     one common UF cannot meet both targets: energy closure necessarily moves activity off its target.
     The table quantifies the tradeoff. The native legacy point also loses stock between its 2023 calibration
     and 2025 evaluation, so its service need not close the original activity target.
@@ -570,10 +570,10 @@ def _(BUILDS, BUILD_LABELS, CLASS_LABELS, alt, class_grid, diagnosis, display_ch
     mo.vstack([mo.md(f"""
     ## 4. Demand: workbook meaning and calendar alignment
 
-    Both methods anchor to the same **2023 CEUD observed activity**. Backend demand multiplies it by
-    **CER real GDP(calendar year) / real GDP(2023)**. The active legacy `growth_rate_type='gdp'` selects
+    Both methods anchor to the same **2023 [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) observed activity**. Backend demand multiplies it by
+    **[*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) real GDP(calendar year) / real GDP(2023)**. The active legacy `growth_rate_type='gdp'` selects
     workbook `gdp`, whose formulas are **column C / C$2**: GDP-deflator levels normalized to 2023.
-    This interpretation is checked against actual formulas and the registered CER macro source values,
+    This interpretation is checked against actual formulas and the registered [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) macro source values,
     rather than inferred from a column name or previous report.
 
     Specific contradiction: the compiler describes national GDP activity growth, yet calendar 2030 uses
@@ -646,7 +646,7 @@ def _(diagnosis, display_table, mo, region):
         Profiled LDV keeps its hourly shape and the configured annual-floor slack.
 
         Higher-power equipment can cost more per port and less per kW. In the
-        [Dunsky/NRCan source](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada),
+        [*Dunsky*/*NRCan Ratings* source](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada),
         Table 21's calendar-2025 MHDV ports cost **78,637 / 234,129 / 645,224 CAD2022**
         at **50 / 350 / 2,000 kW**, or **1,572.74 / 668.94 / 322.61 CAD2022/kW**.
         LDV L2 is **15,000 CAD2022 / 7.2 kW ≈ 2,083.33 CAD2022/kW** (Table 12).
@@ -809,7 +809,7 @@ def _(diagnosis, display_table, mo, pd, region):
         ## 6. Charging losses: vehicle accounting and proxy limits
 
         **The former 0.95 LDV and 0.80 MHDV factors applied charging losses twice.**
-        [ATB BEV assumptions](https://atb.nlr.gov/transportation/2024/battery_electric_vehicle_assumptions)
+        [*NLR ATB* BEV assumptions](https://atb.nlr.gov/transportation/2024/battery_electric_vehicle_assumptions)
         include onboard-charger and EVSE losses in fuel economy. The
         [LDV PHEV](https://atb.nlr.gov/transportation/2024/plug-in_hybrid) and
         [MHDV PHEV](https://atb.nlr.gov/transportation/2024/plug-in_hybrid_mdhd)

@@ -96,11 +96,6 @@ class OutputPaths(MappingModel):
 
 class LegacyPaths(MappingModel):
     root: str
-    reference_sqlite: str
-    schema_path: str = Field(alias="schema")
-    transportation_compiler: str
-    charging_profiles: str
-    constraints: str
 
 
 class ArtifactRoute(MappingModel):

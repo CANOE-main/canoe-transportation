@@ -1174,10 +1174,9 @@ def test_registered_moves6_document_retains_approved_car_rate(bundle, rules):
     assert set(frame.cache_sha256) == {request.expected_sha256}
 
 
-@pytest.mark.parametrize("flag", ["--moves-survival", "--moves5-survival"])
-def test_moves_source_cli_accepts_current_and_compatible_flags(monkeypatch, flag):
-    monkeypatch.setattr(sys, "argv", ["assorted_sources", flag])
-    assert adapter.parse_args().moves5_survival
+def test_moves_source_cli_accepts_current_flag(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["assorted_sources", "--moves-survival"])
+    assert adapter.parse_args().moves_survival
 
 
 def test_moves5_pdf_normalizes_three_native_annual_classes_with_source_locators(

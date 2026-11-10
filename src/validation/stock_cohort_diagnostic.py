@@ -1,4 +1,4 @@
-"""Read-only comparisons of production sales cohorts and deprecated age allocation.
+"""Read-only comparisons of production sales cohorts and retirement representations.
 
 The production owners perform survival, calibration and allocation. This module
 loads registered evidence without publication and prepares notebook comparisons.
@@ -21,7 +21,6 @@ from parameterization.road_lifetimes_survival import (
     resolved_road_lifetime_rules,
 )
 from parameterization.road_stocks_and_demands import (
-    derive_ldv_age_distributions,
     derive_sales_survival_cohorts,
     distribute_existing_road_capacity,
 )
@@ -83,8 +82,7 @@ def summarize_annual_ledgers(annual: pd.DataFrame) -> dict[str, pd.DataFrame]:
     """Keep additions, physical stock and redistribution as distinct quantities."""
     values = [
         "sales_k_vehicles", "surviving_k_vehicles", "calibrated_surviving_k_vehicles",
-        "calibrated_acquisitions_k_vehicles", "fixed_allocated_k_vehicles", "deprecated_mto_k_vehicles",
-        "deprecated_mto_physical_k_vehicles",
+        "calibrated_acquisitions_k_vehicles", "fixed_allocated_k_vehicles",
     ]
     required = {*COHORT_KEYS, *values, "stock_calibration_multiplier", "ceud_stock_k_vehicles"}
     if required - set(annual):
@@ -129,26 +127,21 @@ def summarize_annual_ledgers(annual: pd.DataFrame) -> dict[str, pd.DataFrame]:
     targets = calibration.set_index(GROUP_KEYS).ceud_stock_k_vehicles
     if not np.allclose(allocated.reindex(targets.index), targets, atol=1e-8):
         raise ValueError("Fixed redistribution does not conserve calibrated class stock")
-    mto_physical = annual.groupby(GROUP_KEYS).deprecated_mto_physical_k_vehicles.sum()
-    if not np.allclose(mto_physical.reindex(targets.index), targets, atol=1e-8):
-        raise ValueError("MTO physical comparison does not recover the same class stock target")
     return {"vintage": vintage.reset_index(drop=True), "calibration": calibration.drop(columns=["factor_count", "target_count"])}
 
 
-def comparison_lineage(annual: pd.DataFrame, *, physical_survivors: bool) -> pd.DataFrame:
-    """Compare methods while explicitly retaining their different input meanings."""
+def cohort_lineage(annual: pd.DataFrame) -> pd.DataFrame:
+    """Compare installation-equivalent inputs with physical survivors by annual cohort."""
     selected = annual[COHORT_KEYS + [
-        "curve_solver_capacity_k_vehicles", "calibrated_surviving_k_vehicles", "deprecated_mto_physical_k_vehicles",
+        "curve_solver_capacity_k_vehicles", "calibrated_surviving_k_vehicles",
     ]].copy()
-    curve_column = "calibrated_surviving_k_vehicles" if physical_survivors else "curve_solver_capacity_k_vehicles"
-    sales = selected[COHORT_KEYS + [curve_column]].rename(columns={curve_column: "vehicles_k"})
-    sales["method"] = "Sales cohorts"
-    sales["basis"] = "Physical survivors" if physical_survivors else "Installed-equivalent acquisitions"
-    deprecated = selected[COHORT_KEYS + ["deprecated_mto_physical_k_vehicles"]].rename(
-        columns={"deprecated_mto_physical_k_vehicles": "vehicles_k"}
-    )
-    deprecated["method"], deprecated["basis"] = "Deprecated MTO age allocation", "Physical survivors before fixed redistribution"
-    return pd.concat([sales, deprecated], ignore_index=True)
+    rows = []
+    for column, label in [("curve_solver_capacity_k_vehicles", "Installed-equivalent acquisitions"),
+                          ("calibrated_surviving_k_vehicles", "Physical survivors")]:
+        frame = selected[COHORT_KEYS + [column]].rename(columns={column: "vehicles_k"})
+        frame["method"], frame["basis"] = label, label
+        rows.append(frame)
+    return pd.concat(rows, ignore_index=True)
 
 
 def historical_retention(
@@ -273,15 +266,13 @@ def load_stock_cohort_diagnosis(
                         for key in ["nhtsa_cafe", "eia_nems", "epa_moves5"])
     ldv, trucks, fuel_paths, warnings = _read_fuel_evidence(bundle)
     source_paths.extend(fuel_paths)
-    mapped_path = resolve_artifact_path(bundle, "road_aggregation") / road_rules["mapped_current_stock_file"]
-    mapped = pd.read_csv(mapped_path, low_memory=False)
     mto_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
     report5_path = resolve_artifact_path(bundle, "ontario_vehicle_population") / mto_rules["reports"][5][
         "distribution_output_template"].format(year=bundle.scenario.existing_capacity.vehicle_population_year)
     report5 = pd.read_csv(report5_path)
     dashboard_path = resolve_artifact_path(bundle, "tc_ev_dashboard_interim") / assorted["tc_ev_dashboard"]["output_file"]
     dashboard = pd.read_csv(dashboard_path)
-    source_paths.extend([mapped_path, report5_path, dashboard_path,
+    source_paths.extend([report5_path, dashboard_path,
                          resolve_artifact_path(bundle, "road_aggregation", road_rules["nlr_weights_file"])])
     annual_frames, composition_frames, production_audits, production_curves, projections = [], [], [], [], []
     vintage_audits, reference_comparisons = [], []
@@ -305,14 +296,8 @@ def load_stock_cohort_diagnosis(
             history_start=min(bundle.scenario.periods.existing), rules=rules,
         )
         reference_comparisons.append(reference_survival_comparison(sales, selected).assign(profile=profile))
-        ages, _ = derive_ldv_age_distributions(
-            mapped, survival_curves=False, maximum_age=maximum_age,
-            median_lifetimes={}, historical_review_minimum_model_year=int(
-                road_family["ontario_report_a"]["historical_review_minimum_model_year"]),
-            period_config=bundle.scenario.periods,
-        )
         common = dict(
-            provincial=provincial, ldv_age=ages, report5_age=report5,
+            provincial=provincial, report5_age=report5,
             ldv_registrations=ldv, truck_registrations=trucks, dashboard=dashboard,
             regions=regions, period_config=bundle.scenario.periods,
             vehicle_population_year=bundle.scenario.existing_capacity.vehicle_population_year,
@@ -320,26 +305,18 @@ def load_stock_cohort_diagnosis(
             fixed_lifetimes_by_class=lifetimes, curve_ages_by_class={}, rules=rules,
         )
         off_cohorts, off_shares, _, _ = distribute_existing_road_capacity(**common, sales_cohorts=sales)
-        _, old_shares, _, _ = distribute_existing_road_capacity(**common, cohort_method="stock_age")
         group = ["ceud_region", "road_class", "vintage", "vintage_year"]
         off = off_shares.groupby(group, as_index=False).capacity.sum().rename(columns={"capacity": "fixed_allocated_k_vehicles"})
-        old = old_shares.groupby(group, as_index=False)[["capacity", "raw_capacity"]].sum().rename(columns={
-            "capacity": "deprecated_mto_k_vehicles", "raw_capacity": "deprecated_mto_physical_k_vehicles"})
         annual = sales.merge(off_cohorts[group].drop_duplicates(), on=["ceud_region", "road_class", "vintage_year"],
                              how="left", validate="one_to_one").merge(off, on=group, how="left", validate="one_to_one")
-        annual = annual.merge(old, on=group, how="outer", validate="one_to_one")
-        # Deprecated ages may include a source-year not represented in sales. Keep
-        # those rows visible; their sales quantities are explicitly zero.
         for column in ["sales_k_vehicles", "surviving_k_vehicles", "calibrated_surviving_k_vehicles",
-                       "calibrated_acquisitions_k_vehicles", "fixed_allocated_k_vehicles", "deprecated_mto_k_vehicles",
-                       "deprecated_mto_physical_k_vehicles"]:
+                       "calibrated_acquisitions_k_vehicles", "fixed_allocated_k_vehicles"]:
             annual[column] = annual[column].fillna(0.)
         for column in ["stock_calibration_multiplier", "ceud_stock_k_vehicles"]:
             annual[column] = annual.groupby(["ceud_region", "road_class"])[column].transform(lambda values: values.ffill().bfill())
         annual["profile"], annual["region"] = profile, annual.ceud_region
         for method, shares, quantity in [("Sales fixed mode", off_shares, "capacity"),
-                                         ("Sales curve-mode survivors", off_shares, "raw_capacity"),
-                                         ("Deprecated MTO age allocation", old_shares, "raw_capacity")]:
+                                         ("Sales curve-mode survivors", off_shares, "raw_capacity")]:
             composition = shares.groupby(["ceud_region", "road_class", "tech"], as_index=False)[quantity].sum()
             composition["profile"], composition["method"] = profile, method
             composition_frames.append(composition.rename(columns={"ceud_region": "region", quantity: "physical_stock_k_vehicles"}))

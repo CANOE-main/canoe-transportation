@@ -1,7 +1,7 @@
 """Refreshable transport parameter comparison against the transport-only legacy SQLite.
 
 Prepare: uv run python src/build_transport.py --scenario config/scenarios/legacy_comparison.yaml --overwrite
-Open: uv run marimo edit docs/insights/transport_comparison_diagnosis.py
+Open: uv run marimo edit docs/insights/legacy_comparison_diagnosis.py
 """
 
 import marimo
@@ -12,6 +12,7 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    from validation.notebook_figures import source_markdown
     from html import escape
     import json
 
@@ -105,15 +106,14 @@ def _():
         parts.extend([mo.md("#### Traced sources and assumptions"), explanation_table(diagnostic, table_name)])
         grains = table_rows["comparison_grain"].dropna().drop_duplicates().tolist()
         if grains:
-            parts.append(mo.md("**Comparison basis:** " + "; ".join(grains)))
+            parts.append(mo.md(source_markdown("**Comparison basis:** " + "; ".join(grains))))
         return mo.vstack(parts)
 
     return (
         ComparisonConfig, alt, explanation_table, find_repo_root, json,
         load_config_bundle, load_diagnostic, load_yaml, mo, pd,
         ranked_observations, ranked_rows, resolve_configured_path,
-        resolve_repo_path, table_panel, wrapped_text,
-    )
+        resolve_repo_path, table_panel, wrapped_text, source_markdown)
 
 
 @app.cell
@@ -210,7 +210,7 @@ def comparison_prerequisites(
 
 
 @app.cell(hide_code=True)
-def comparison_preparation_context(comparison_prepare_command, missing_comparison_inputs, mo):
+def comparison_preparation_context(comparison_prepare_command, missing_comparison_inputs, mo, source_markdown):
     preparation_text = (
         "**Preparation required.** Missing comparison inputs:\n\n"
         + "\n".join(f"- {label}: `{path}`" for label, path in missing_comparison_inputs.items())
@@ -219,7 +219,7 @@ def comparison_preparation_context(comparison_prepare_command, missing_compariso
         "Comparison inputs are present. The loader validates their fingerprints and period grid."
     )
     mo.vstack([
-        mo.callout(mo.md(preparation_text), kind="warn" if missing_comparison_inputs else "info"),
+        mo.callout(mo.md(source_markdown(preparation_text)), kind="warn" if missing_comparison_inputs else "info"),
         mo.md(f"```powershell\n{comparison_prepare_command}\n```\n\nAfter preparation finishes, click **Reload**."),
     ])
     return
@@ -233,14 +233,14 @@ def _(comparison_config_path, load_diagnostic, missing_comparison_inputs, mo):
 
 
 @app.cell
-def _(diagnostic, mo, pd):
+def _(diagnostic, mo, pd, source_markdown):
     mo.vstack([
         mo.hstack([
             mo.stat(str(diagnostic.summary["table"].nunique()), label="Parameter tables"),
             mo.stat(f"{diagnostic.summary['compared'].sum():,}", label="Comparable rows"),
             mo.stat(f"{diagnostic.summary['different'].sum():,}", label="Numeric differences"),
         ], justify="space-around"),
-        mo.md("**Shared comparison regions:** " + ", ".join(diagnostic.metadata["shared_regions"])),
+        mo.md(source_markdown("**Shared comparison regions:** " + ", ".join(diagnostic.metadata["shared_regions"]))),
         mo.md("""
         ## Comparison coverage
 
@@ -323,13 +323,13 @@ def _(diagnostic, mo):
     ## Road investment costs: what drives the gap?
 
     This investigation reconstructs **{len(road_review.attribution):,} matched ON
-    ATB-backed investment rows**, checks their legacy worksheet values against the
+    [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)-backed investment rows**, checks their legacy worksheet values against the
     supplied SQLite, and tests the same prices with different aggregation weights.
 
     Manufacturing-cost estimates use the source-family retail markups in the
     production rules: **LDV {road_review.metadata['applied_rpe_by_family']['ldv']:g}**
     and **MHDV {road_review.metadata['applied_rpe_by_family']['mhdv']:g}**. The
-    [2024 ATB definitions]({road_review.metadata['primary_sources']['ATB 2024 definitions']})
+    [2024 *NLR ATB* definitions]({road_review.metadata['primary_sources']['ATB 2024 definitions']})
     document these factors for Autonomie-derived prices. The source MSRP remains
     unchanged for retail-based repair calculations. This study checks the actual
     audit factor and rejects stale purchase prices.
@@ -471,7 +471,7 @@ def _(diagnostic, mo):
         value="phev_35_miles", label="LDV source/architecture test", searchable=True,
     )
     mo.vstack([
-        mo.md("### LDV manufacturing cost and architecture\n\nCompare class-level manufacturing costs before aggregation. Parallel→EREV holds the ANL case, class, year and dollar basis fixed. ATB→same architecture also contains dollar-year and source-assumption effects. FCEVs have no supported alternative-range comparison."),
+        mo.md("### LDV manufacturing cost and architecture\n\nCompare class-level manufacturing costs before aggregation. Parallel→EREV holds the ANL case, class, year and dollar basis fixed. [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)→same architecture also contains dollar-year and source-assumption effects. FCEVs have no supported alternative-range comparison."),
         ldv_test,
     ])
     return (ldv_test,)
@@ -500,7 +500,7 @@ def _(diagnostic, ldv_test, mo, road_review):
             format_mapping={label: "{:+.3f}" for field, label in architecture_labels.items() if field.endswith("percent")},
         ),
         mo.accordion({"Fuel-cell and hydrogen-storage source inputs": mo.vstack([
-            mo.md("The registered ATB archive contains changed component coefficients; official ATB documentation also describes production-volume adjustments. These values support a source-input mechanism, but do not quantify its full-vehicle contribution. The old stack-cost column has conflicting dollar-year labels, and the storage columns have different denominators. No range mismatch is inferred from FCEV400 names."),
+            mo.md("The registered [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) archive contains changed component coefficients; official [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) documentation also describes production-volume adjustments. These values support a source-input mechanism, but do not quantify its full-vehicle contribution. The old stack-cost column has conflicting dollar-year labels, and the storage columns have different denominators. No range mismatch is inferred from FCEV400 names."),
             mo.ui.table(
                 road_review.hydrogen_inputs, selection=None, page_size=10,
                 show_data_types=False, show_column_summaries=False,
@@ -514,7 +514,7 @@ def _(diagnostic, ldv_test, mo, road_review):
 
 
 @app.cell
-def _(mo, road_review):
+def _(mo, road_review, source_markdown):
     mo.vstack([
         mo.md("### Measured effects and remaining questions\n\nStatus distinguishes controlled effects, source-input changes, legacy formulas and unsupported explanations. Review the interpretation against the refreshed numerical evidence. The native-basis residual can contain several mechanisms."),
         mo.ui.table(
@@ -523,12 +523,12 @@ def _(mo, road_review):
             wrapped_columns=["status", "driver", "scope", "interpretation", "evidence"],
         ),
         mo.md(
-            "**Source documentation:** " + " · ".join(
+            source_markdown("**Source documentation:** " + " · ".join(
                 f"[{title}]({url})" for title, url in road_review.metadata["primary_sources"].items()
             ) + "\n\n**Numerical checks:** maximum factor-identity error "
             f"{road_review.metadata['maximum_reconciliation_error']:.3g}; maximum legacy worksheet/SQLite "
             f"difference {road_review.metadata['maximum_workbook_error']:.3g}. "
-            "The explicit report command above also exports all five road-study CSVs with hashes."
+            "The explicit report command above also exports all five road-study CSVs with hashes.")
         ),
     ])
     return
@@ -668,21 +668,21 @@ def _(diagnostic, mo, pd, ranked_observations, row_picker, selected_ranking, sel
 
 
 @app.cell
-def _(diagnostic, explanation_table, mo, table_picker):
+def _(diagnostic, explanation_table, mo, table_picker, source_markdown):
     assumption_sections = diagnostic.metadata["assumption_excerpts"][table_picker.value]
     mo.vstack([
         mo.md("### Traced sources and assumptions"),
         explanation_table(diagnostic, table_picker.value),
         mo.accordion({
-            section["heading"]: mo.md(section["text"])
+            section["heading"]: mo.md(source_markdown(section["text"]))
             for section in assumption_sections
         }),
         mo.md(
             "**Current scenario selections:** "
-            f"CEUD {diagnostic.bundle.scenario.periods.base_year}; "
+            f"[*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) {diagnostic.bundle.scenario.periods.base_year}; "
             f"demand {diagnostic.bundle.scenario.demand.future_car_demand}; "
-            f"efficiency ATB {diagnostic.bundle.scenario.efficiencies.atb_trajectory}; "
-            f"cost ATB {diagnostic.bundle.scenario.costs.atb_trajectory}; "
+            f"efficiency [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) {diagnostic.bundle.scenario.efficiencies.atb_trajectory}; "
+            f"cost [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) {diagnostic.bundle.scenario.costs.atb_trajectory}; "
             f"charging {diagnostic.bundle.scenario.charging_profiles.travel_behavior_source}."
         ),
     ])

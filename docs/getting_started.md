@@ -10,11 +10,12 @@ cd canoe-transportation
 uv sync --frozen
 ```
 
-Python 3.13 or later is required. The lockfile pins dependencies, including the
-authoritative CANOE schema package. Registered caches, reviewed manual tables,
-mapping files and external-model results are distinct prerequisites. Installing
-packages does not generate a reviewed mapping or run GREET. Replaying registered
-GREET outputs does not require the Windows/Excel setup used to generate them.
+!!! note "Prerequisites: registered and reviewed inputs"
+    Python 3.13 or later is required. The lockfile pins dependencies, including the
+    authoritative CANOE schema package. Registered caches, reviewed manual tables,
+    mapping files and external-model results are distinct prerequisites. Installing
+    packages does not generate a reviewed mapping or run [*ANL GREET*](https://greet.anl.gov/greet/versions.html). Replaying registered
+    [*ANL GREET*](https://greet.anl.gov/greet/versions.html) outputs does not require the Windows/Excel setup used to generate them.
 
 | Location | What the researcher does here |
 | --- | --- |
@@ -35,24 +36,26 @@ machine-readable identities and data-quality scores remain in the source registr
 uv run --offline python src/build_transport.py --scenario config/scenarios/default.yaml --overwrite
 ```
 
-The command replays production prerequisites from registered local inputs on every
-invocation. `--overwrite` permits replacing the configured SQLite. Add
-`--download-sources` only to acquire missing registered caches; it does not authorize
-an unreviewed source refresh. Run scenarios **serially** because preparation paths
-are shared even when the final database names differ.
+!!! warning "Modeler note: run scenarios serially"
+    The command replays production prerequisites from registered local inputs on every
+    invocation. `--overwrite` permits replacing the configured SQLite. Add
+    `--download-sources` only to acquire missing registered caches; it does not authorize
+    an unreviewed source refresh. Run scenarios **serially** because preparation paths
+    are shared even when the final database names differ.
 
 The default scenario covers ten modeled regions with a prospective 2025 reference,
-sales-derived cohorts and fixed MOVES lifetimes. BCT combines British Columbia and
+sales-derived cohorts and fixed [*EPA MOVES*](https://www.epa.gov/moves) lifetimes. BCT combines British Columbia and
 the territories, subject to source-specific proxy limits. Consult the
 [scenario guide](scenario_configuration.md) before changing the full YAML template.
 
 ## Inspect what was produced
 
-Read the configured JSON validation report first. Check the scenario/source identity,
-row counts, exclusions, parameter support, provenance and foreign-key/integrity
-results. Then inspect the relevant processed parameter table and its source/cohort
-audit. A missing or removed row needs its documented disposition; absence is not
-automatically zero. Use the build log for preparation timings and warnings.
+!!! tip "Start with the validation report"
+    Read the configured JSON validation report first. Check the scenario/source identity,
+    row counts, exclusions, parameter support, provenance and foreign-key/integrity
+    results. Then inspect the relevant processed parameter table and its source/cohort
+    audit. A missing or removed row needs its documented disposition; absence is not
+    automatically zero. Use the build log for preparation timings and warnings.
 
 SQLite parameter values can be queried directly, for example:
 
@@ -63,8 +66,8 @@ WHERE region = 'ON'
 ORDER BY tech, vintage;
 ```
 
-Use the actual table schema when selecting additional columns. The v4 schema and
-row models are supplied by `canoe-schema`, not local legacy SQL.
+Use the actual table schema when selecting additional columns. The authoritative
+v4 schema and row models are supplied by `canoe-schema`.
 
 ## Prepare diagnostics explicitly
 
@@ -85,7 +88,8 @@ methods and in the [publication/evidence guide](publication.md).
 uv run python -m fetching.source_updater --scenario config/scenarios/default.yaml
 ```
 
-This produces a proposal and audit. Review the source-specific diff before using
-the same command with `--source <registered-source-id> --apply`. Rebuild and compare
-affected parameters after adoption. Do not edit a captured notebook configuration
-to make old evidence appear current.
+!!! warning "Modeler note: source updates require review"
+    This produces a proposal and audit. Review the source-specific diff before using
+    the same command with `--source <registered-source-id> --apply`. Rebuild and compare
+    affected parameters after adoption. Do not edit a captured notebook configuration
+    to make old evidence appear current.

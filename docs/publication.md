@@ -6,10 +6,11 @@ documentation does not download transport sources, change a scenario or run ETL.
 
 ## Prepare model evidence explicitly
 
-Registered source bytes, reviewed mappings and external-model outputs must already
-be available as described in [Getting started](getting_started.md). Run this
-sequence serially: the scenario databases have separate names, but production
-preparation paths are shared.
+!!! warning "Preparation: shared artifact paths"
+    Registered source bytes, reviewed mappings and external-model outputs must already
+    be available as described in [Getting started](getting_started.md). Run this
+    sequence serially: the scenario databases have separate names, but production
+    preparation paths are shared.
 
 ```sh
 uv sync --frozen --group docs
@@ -17,7 +18,6 @@ uv run python src/build_transport.py --scenario config/scenarios/validation_base
 uv run python -m validation.transportation_research --scenario config/scenarios/validation_baseline.yaml --write-report
 uv run python -m validation.charging_cost_comparison --scenario config/scenarios/validation_baseline.yaml --write-report
 uv run python -m validation.vehicle_cost_diagnostic --scenario config/scenarios/validation_baseline.yaml --write-report
-uv run python -m validation.documentation_support --write-nonroad-report
 uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite
 uv run python -m validation.ceud_calibration_diagnostic --baseline outputs/sqlite/validation_baseline.sqlite --baseline-report outputs/validation/validation_baseline.json --calibrated outputs/sqlite/validation_energy_calibration.sqlite
 uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
@@ -25,31 +25,34 @@ uv run python -m validation.documentation_support --write-report --write-nonroad
 uv run python scripts/export_documentation_figures.py
 ```
 
-The Ontario baseline and calibrated databases use identical fleet, activity,
-representation, currency and source selections. Their only modeling difference
-is the explicit energy-calibration switch. The stock/efficiency notebook build
-uses observed 2023 and NHTSA/NEMS survival curves for its separate diagnostic
-purpose. It is **not** the calibration off/on comparison. Figure captions and the
-manifest retain those distinct identities.
+!!! note "Comparison basis: keep the builds distinct"
+    The Ontario baseline and calibrated databases use identical fleet, activity,
+    representation, currency and source selections. Their only modeling difference
+    is the explicit energy-calibration switch. The stock/efficiency notebook build
+    uses observed 2023 and [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy)/[*EIA NEMS*](https://github.com/EIAgov/NEMS) survival curves for its separate diagnostic
+    purpose. It is **not** the calibration off/on comparison. Figure captions and the
+    manifest retain those distinct identities.
 
 The cohort notebook also recalculates both survival alternatives at reference
 2025 across the default regions, using already prepared registered inputs. It
 records those source/configuration hashes and invokes no transport build. Its
 source-based comparisons are distinct from final SQLite off/on checks.
 
-The commands capture source/configuration hashes and build/database identities.
-Changed or missing evidence must be regenerated through its owner; editing a
-capture hash is not a refresh. Local evidence bundles and notebook session state
-remain ignored. Selected SVGs, their manifest and the exact Ontario share table
-are the prepared publication inputs that travel with the documentation.
+!!! warning "Evidence identity: regenerate changed captures"
+    The commands capture source/configuration hashes and build/database identities.
+    Changed or missing evidence must be regenerated through its owner; editing a
+    capture hash is not a refresh. Local evidence bundles and notebook session state
+    remain ignored. Selected SVGs, their manifest and the exact Ontario share table
+    are the prepared publication inputs that travel with the documentation.
 
-The paired calibration audit uses the baseline build report's database/configuration
-hashes and 31 efficiency-input fingerprints, together with the calibrated immutable
-capture. It verifies final uncalibrated/calibrated SQLite rows. Separate baseline
-preaggregation annual/period exports were not captured, so it does not claim byte
-equality of those intermediate files. The calibrated capture retains unadjusted
-annual/period values; focused transformation tests establish common-factor
-propagation before aggregation.
+!!! warning "Evidence limit: uncaptured intermediate exports"
+    The paired calibration audit uses the baseline build report's database/configuration
+    hashes and 31 efficiency-input fingerprints, together with the calibrated immutable
+    capture. It verifies final uncalibrated/calibrated SQLite rows. Separate baseline
+    preaggregation annual/period exports were not captured, so it does not claim byte
+    equality of those intermediate files. The calibrated capture retains unadjusted
+    annual/period values; focused transformation tests establish common-factor
+    propagation before aggregation.
 
 ## Figure identities and selections
 
@@ -85,9 +88,10 @@ state what the evidence supports and what it cannot establish.
 
 ## Build and preview the prepared publication
 
-Install locked dependencies, then prepare the explicitly pinned local Mermaid and
-MathJax packages. This preparation uses network access; later rendering uses their
-verified local bytes.
+!!! note "Rendering dependency preparation"
+    Install locked dependencies, then prepare the explicitly pinned local Mermaid and
+    MathJax packages. This preparation uses network access; later rendering uses their
+    verified local bytes.
 
 ```sh
 uv sync --frozen --group docs
@@ -127,18 +131,20 @@ landscape sheets for readability.
 | Build/render identities and page review images | `outputs/validation/documentation/` |
 | Selected publication assets | `docs/assets/figures/` |
 
-The manual GitHub Actions workflow builds both deliverables from committed prepared
-assets and uploads a review artifact. Its `deploy` input defaults to false. The
-optional publishing job targets the repository project site
-`https://canoe-main.github.io/canoe-transportation/`; enabling Pages or dispatching
-publication is a separate action. No transport inputs are required for routine
-site/PDF rendering.
+!!! note "Publishing is an explicit operation"
+    The manual GitHub Actions workflow builds both deliverables from committed prepared
+    assets and uploads a review artifact. Its `deploy` input defaults to false. The
+    optional publishing job targets the repository project site
+    `https://canoe-main.github.io/canoe-transportation/`; enabling Pages or dispatching
+    publication is a separate action. No transport inputs are required for routine
+    site/PDF rendering.
 
 ## Interpret the checks separately
 
-Configuration checks establish supported selections; parameter checks establish
-keys, units, coverage and conservation; source/DQ checks establish traceability;
-legacy comparisons establish agreement on their recorded comparison basis.
-Calibration closure establishes agreement with fitted totals. None of those
-checks is an optimization run or independent validation of each technology.
-Reported residuals and unsupported coverage remain part of the research result.
+!!! tip "Interpret each check on its own basis"
+    Configuration checks establish supported selections; parameter checks establish
+    keys, units, coverage and conservation; source/DQ checks establish traceability;
+    legacy comparisons establish agreement on their recorded comparison basis.
+    Calibration closure establishes agreement with fitted totals. None of those
+    checks is an optimization run or independent validation of each technology.
+    Reported residuals and unsupported coverage remain part of the research result.

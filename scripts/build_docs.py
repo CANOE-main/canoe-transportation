@@ -20,7 +20,10 @@ from urllib.parse import unquote, urlsplit
 
 from mkdocs.config import load_config
 
-from docs_hooks import ROOT, artifact_path
+if __package__:
+    from .docs_hooks import ROOT, artifact_path
+else:
+    from docs_hooks import ROOT, artifact_path
 
 LOGGER = logging.getLogger("documentation")
 
@@ -224,16 +227,35 @@ def render_pdf_pages(output, directory):
     pages = directory / "pdf_pages"
     pages.mkdir(parents=True, exist_ok=True)
     report = []
+    sheets = []
     with pymupdf.open(output) as document:
         for index, page in enumerate(document):
             # Review images are regenerated alongside their exact PDF identity.
             zoom = min(1.7, 1600 / page.rect.width)
             page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), alpha=False).save(pages / f"page-{index+1:03}.png")
+            outside = sum(not page.rect.contains(pymupdf.Rect(block[:4]))
+                          for block in page.get_text("blocks") if block[6] == 0)
             report.append({"page": index+1, "width_pt": page.rect.width, "height_pt": page.rect.height,
-                           "text_characters": len(page.get_text().strip())})
+                           "text_characters": len(page.get_text().strip()), "outside_page_text_blocks": outside})
+        # Small, reproducible overview sheets supplement the full-resolution pages;
+        # they are review inputs, not an automated claim of visual correctness.
+        for first in range(0, len(document), 16):
+            with pymupdf.open() as overview:
+                sheet = overview.new_page(width=1200, height=1600)
+                for position, source in enumerate(range(first, min(first + 16, len(document)))):
+                    column, row = position % 4, position // 4
+                    cell = pymupdf.Rect(column*300+8, row*400+8, (column+1)*300-8, (row+1)*400-28)
+                    sheet.show_pdf_page(cell, document, source)
+                    sheet.insert_text((column*300+12, (row+1)*400-10), f"Page {source+1}", fontsize=12)
+                name = f"contact-{first//16+1:02}.png"
+                sheet.get_pixmap(alpha=False).save(directory / name)
+                sheets.append(name)
     expected_pages = {f"page-{index+1:03}.png" for index in range(len(report))}
     for stale in pages.glob("page-*.png"):
         if stale.name not in expected_pages:
+            stale.unlink()
+    for stale in directory.glob("contact-*.png"):
+        if stale.name not in sheets:
             stale.unlink()
     (directory / "pdf_pages.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     LOGGER.info("Rendered %d PDF pages for visual review at %s", len(report), pages)

@@ -122,7 +122,7 @@ def prepared_inputs(isolated_legacy_bundle, tmp_path_factory):
     directory = tmp_path_factory.mktemp("ev_charger_inputs")
     isolated = {
         "existing_capacity_interim", "existing_capacity_processed", "existing_capacity_validation",
-        "road_stocks_and_demands", "lifetime_validation", "road_lifetimes_survival",
+        "lifetime_validation", "road_lifetimes_survival",
         "vehicle_survival_interim", "lifetime_parameters", "ev_chargers_processed", "ev_chargers_validation",
     }
 
@@ -132,7 +132,7 @@ def prepared_inputs(isolated_legacy_bundle, tmp_path_factory):
         return resolve_artifact_path(config, family, *parts)
 
     with pytest.MonkeyPatch.context() as patch:
-        for owner in ("ev_chargers", "build_existing_capacity", "road_stocks_and_demands",
+        for owner in ("ev_chargers", "build_existing_capacity",
                       "road_lifetimes_survival", "build_lifetime_parameters"):
             patch.setattr(f"parameterization.{owner}.resolve_artifact_path", artifact_path)
         fleet = prepare_existing_capacity_rows(bundle)

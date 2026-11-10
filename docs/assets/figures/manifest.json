@@ -5,7 +5,7 @@
       "sha256": "b6b69f0f26e295d87a9d7f888158aefd94bb075a41471731d60f0a7d594f04e8",
       "title": "Source-class investment trajectories retain their price basis",
       "generator": "docs/insights/vehicle_cost_diagnosis.py",
-      "generator_sha256": "d42278961f6d2bf21e755dcac1535236e6d10e4bd34705f449cfe298155639ac",
+      "generator_sha256": "f5cd655e4c4c95a9c92491d37f8796dd86e9a05712d15b3a86511a3bd851f192",
       "group": "cost",
       "selections": {
         "function": "source_price_chart",
@@ -41,10 +41,10 @@
             14,
             15
           ],
-          "build_timestamp_utc": "2026-11-10T05:48:22.814686+00:00",
-          "capture_id": "validation_baseline-ba62ee16ffd5082f",
-          "captured_at": "2026-11-10T05:49:20.563803+00:00",
-          "cost_input_digest": "f8eeb0e86c8d3a9894f69d74803477312098cd244d4e0ca52e60cf51d4b3917d",
+          "build_timestamp_utc": "2026-11-10T14:12:49.108939+00:00",
+          "capture_id": "validation_baseline-cfa70106005e0063",
+          "captured_at": "2026-11-10T14:15:23.330663+00:00",
+          "cost_input_digest": "3505319284f4f41b348b129429027e6a94df2804f5cc35e0f630e4a1a56956cd",
           "cost_metadata": [
             {
               "component": "mhdv_maintenance_coefficients",
@@ -89,7 +89,7 @@
               "status": "source_documented"
             }
           ],
-          "database_sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394",
+          "database_sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e",
           "emitted_reconciliation": {
             "investment_shared_rows": 255,
             "maintenance_shared_rows": 806
@@ -105,7 +105,7 @@
             "investment": {
               "path": "investment.csv",
               "rows": 285,
-              "sha256": "58f4bc82e142923e3da122707c657d674feee023a2741518f0a3b3fcfa063b0f"
+              "sha256": "3eb594ff7e758081641e3e5846715c8f2d1c19e5f1ba2d0de5e11da4afe80379"
             },
             "investment_audit": {
               "path": "investment_audit.csv",
@@ -172,7 +172,7 @@
             "build_report": {
               "path": "inputs/build_report.json",
               "source": "outputs\\validation\\validation_baseline.json",
-              "source_sha256": "037a054ee05b1e4780ef6fa736acd2ff83a2e09e6ae18527d406d511f139991d"
+              "source_sha256": "e044a9602675893a29f69abcdc920b00468646e1d43a579e09fd9988ded4713b"
             },
             "class_multipliers": {
               "path": "inputs/class_multipliers.csv",
@@ -187,11 +187,11 @@
             "cost_integrity": {
               "path": "inputs/cost_integrity.json",
               "source": "inputs\\validation\\transport_costs\\cost_integrity.json",
-              "source_sha256": "82e0fe314ef6735fb18fd8446ffb8aec149d8dd7757fd8a53b6b55aa3fc88bae"
+              "source_sha256": "e7f5b49f59bba8453e1f0c172f770acfd09133c84b8f15722693969ae9553f5b"
             },
             "database": {
               "source": "outputs\\sqlite\\validation_baseline.sqlite",
-              "source_sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394"
+              "source_sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e"
             },
             "macro": {
               "path": "inputs/macro.csv",
@@ -206,7 +206,7 @@
             "paths": {
               "path": "inputs/paths.yaml",
               "source": "config\\paths.yaml",
-              "source_sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "source_sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "powertrain_multipliers": {
               "path": "inputs/powertrain_multipliers.csv",
@@ -231,7 +231,7 @@
             "rules": {
               "path": "inputs/rules.yaml",
               "source": "config\\parameters\\rules.yaml",
-              "source_sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "source_sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "scenario": {
               "path": "inputs/scenario.yaml",
@@ -532,8 +532,8 @@
         "vega_lite_sha256": "8afc4b6fc382192675b333f9e1872f6c079b6cdf214bb21850779de9ea348ae4",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T05:54:50.176637+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "vehicle-cost-3": {
@@ -541,7 +541,7 @@
       "sha256": "ed8cc2640b490f1b5628cecbe5d3b9dd51631a27c5847ea04c1fe8728a2ad937",
       "title": "Empirical age relationships determine maintenance and repair costs",
       "generator": "docs/insights/vehicle_cost_diagnosis.py",
-      "generator_sha256": "d42278961f6d2bf21e755dcac1535236e6d10e4bd34705f449cfe298155639ac",
+      "generator_sha256": "f5cd655e4c4c95a9c92491d37f8796dd86e9a05712d15b3a86511a3bd851f192",
       "group": "cost",
       "selections": {
         "function": "maintenance_age_chart",
@@ -578,10 +578,10 @@
             14,
             15
           ],
-          "build_timestamp_utc": "2026-11-10T05:48:22.814686+00:00",
-          "capture_id": "validation_baseline-ba62ee16ffd5082f",
-          "captured_at": "2026-11-10T05:49:20.563803+00:00",
-          "cost_input_digest": "f8eeb0e86c8d3a9894f69d74803477312098cd244d4e0ca52e60cf51d4b3917d",
+          "build_timestamp_utc": "2026-11-10T14:12:49.108939+00:00",
+          "capture_id": "validation_baseline-cfa70106005e0063",
+          "captured_at": "2026-11-10T14:15:23.330663+00:00",
+          "cost_input_digest": "3505319284f4f41b348b129429027e6a94df2804f5cc35e0f630e4a1a56956cd",
           "cost_metadata": [
             {
               "component": "mhdv_maintenance_coefficients",
@@ -626,7 +626,7 @@
               "status": "source_documented"
             }
           ],
-          "database_sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394",
+          "database_sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e",
           "emitted_reconciliation": {
             "investment_shared_rows": 255,
             "maintenance_shared_rows": 806
@@ -642,7 +642,7 @@
             "investment": {
               "path": "investment.csv",
               "rows": 285,
-              "sha256": "58f4bc82e142923e3da122707c657d674feee023a2741518f0a3b3fcfa063b0f"
+              "sha256": "3eb594ff7e758081641e3e5846715c8f2d1c19e5f1ba2d0de5e11da4afe80379"
             },
             "investment_audit": {
               "path": "investment_audit.csv",
@@ -709,7 +709,7 @@
             "build_report": {
               "path": "inputs/build_report.json",
               "source": "outputs\\validation\\validation_baseline.json",
-              "source_sha256": "037a054ee05b1e4780ef6fa736acd2ff83a2e09e6ae18527d406d511f139991d"
+              "source_sha256": "e044a9602675893a29f69abcdc920b00468646e1d43a579e09fd9988ded4713b"
             },
             "class_multipliers": {
               "path": "inputs/class_multipliers.csv",
@@ -724,11 +724,11 @@
             "cost_integrity": {
               "path": "inputs/cost_integrity.json",
               "source": "inputs\\validation\\transport_costs\\cost_integrity.json",
-              "source_sha256": "82e0fe314ef6735fb18fd8446ffb8aec149d8dd7757fd8a53b6b55aa3fc88bae"
+              "source_sha256": "e7f5b49f59bba8453e1f0c172f770acfd09133c84b8f15722693969ae9553f5b"
             },
             "database": {
               "source": "outputs\\sqlite\\validation_baseline.sqlite",
-              "source_sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394"
+              "source_sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e"
             },
             "macro": {
               "path": "inputs/macro.csv",
@@ -743,7 +743,7 @@
             "paths": {
               "path": "inputs/paths.yaml",
               "source": "config\\paths.yaml",
-              "source_sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "source_sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "powertrain_multipliers": {
               "path": "inputs/powertrain_multipliers.csv",
@@ -768,7 +768,7 @@
             "rules": {
               "path": "inputs/rules.yaml",
               "source": "config\\parameters\\rules.yaml",
-              "source_sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "source_sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "scenario": {
               "path": "inputs/scenario.yaml",
@@ -1064,8 +1064,8 @@
         "vega_lite_sha256": "14a38c6d9ce960fa82204ed888bc068e5367998dc5f0ab1be31ef40fea1a1015",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T05:54:50.176637+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "vehicle-cost-5": {
@@ -1073,7 +1073,7 @@
       "sha256": "30bda74f9995f9ef972e3a9da25fac3ce839589bcf43f73bc33bf91266ee049b",
       "title": "A representative range cost preserves the specified range mix",
       "generator": "docs/insights/vehicle_cost_diagnosis.py",
-      "generator_sha256": "d42278961f6d2bf21e755dcac1535236e6d10e4bd34705f449cfe298155639ac",
+      "generator_sha256": "f5cd655e4c4c95a9c92491d37f8796dd86e9a05712d15b3a86511a3bd851f192",
       "group": "cost",
       "selections": {
         "function": "range_cost_chart",
@@ -1109,10 +1109,10 @@
             14,
             15
           ],
-          "build_timestamp_utc": "2026-11-10T05:48:22.814686+00:00",
-          "capture_id": "validation_baseline-ba62ee16ffd5082f",
-          "captured_at": "2026-11-10T05:49:20.563803+00:00",
-          "cost_input_digest": "f8eeb0e86c8d3a9894f69d74803477312098cd244d4e0ca52e60cf51d4b3917d",
+          "build_timestamp_utc": "2026-11-10T14:12:49.108939+00:00",
+          "capture_id": "validation_baseline-cfa70106005e0063",
+          "captured_at": "2026-11-10T14:15:23.330663+00:00",
+          "cost_input_digest": "3505319284f4f41b348b129429027e6a94df2804f5cc35e0f630e4a1a56956cd",
           "cost_metadata": [
             {
               "component": "mhdv_maintenance_coefficients",
@@ -1157,7 +1157,7 @@
               "status": "source_documented"
             }
           ],
-          "database_sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394",
+          "database_sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e",
           "emitted_reconciliation": {
             "investment_shared_rows": 255,
             "maintenance_shared_rows": 806
@@ -1173,7 +1173,7 @@
             "investment": {
               "path": "investment.csv",
               "rows": 285,
-              "sha256": "58f4bc82e142923e3da122707c657d674feee023a2741518f0a3b3fcfa063b0f"
+              "sha256": "3eb594ff7e758081641e3e5846715c8f2d1c19e5f1ba2d0de5e11da4afe80379"
             },
             "investment_audit": {
               "path": "investment_audit.csv",
@@ -1240,7 +1240,7 @@
             "build_report": {
               "path": "inputs/build_report.json",
               "source": "outputs\\validation\\validation_baseline.json",
-              "source_sha256": "037a054ee05b1e4780ef6fa736acd2ff83a2e09e6ae18527d406d511f139991d"
+              "source_sha256": "e044a9602675893a29f69abcdc920b00468646e1d43a579e09fd9988ded4713b"
             },
             "class_multipliers": {
               "path": "inputs/class_multipliers.csv",
@@ -1255,11 +1255,11 @@
             "cost_integrity": {
               "path": "inputs/cost_integrity.json",
               "source": "inputs\\validation\\transport_costs\\cost_integrity.json",
-              "source_sha256": "82e0fe314ef6735fb18fd8446ffb8aec149d8dd7757fd8a53b6b55aa3fc88bae"
+              "source_sha256": "e7f5b49f59bba8453e1f0c172f770acfd09133c84b8f15722693969ae9553f5b"
             },
             "database": {
               "source": "outputs\\sqlite\\validation_baseline.sqlite",
-              "source_sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394"
+              "source_sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e"
             },
             "macro": {
               "path": "inputs/macro.csv",
@@ -1274,7 +1274,7 @@
             "paths": {
               "path": "inputs/paths.yaml",
               "source": "config\\paths.yaml",
-              "source_sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "source_sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "powertrain_multipliers": {
               "path": "inputs/powertrain_multipliers.csv",
@@ -1299,7 +1299,7 @@
             "rules": {
               "path": "inputs/rules.yaml",
               "source": "config\\parameters\\rules.yaml",
-              "source_sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "source_sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "scenario": {
               "path": "inputs/scenario.yaml",
@@ -1602,16 +1602,16 @@
         "vega_lite_sha256": "f10aed5801c2f8135963136d87b768973f354328a4f02d8aa2af03ca9e18844c",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T05:54:50.176637+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "ceud-cal-1": {
       "file": "ceud-cal-1.svg",
-      "sha256": "1249d1f6ef7b610bcf0cddd772d3dd0db4ef6e7a3035a7d1670bdf91e87f01e3",
+      "sha256": "e59c370e758e2a7fa260ab068659abfa7a9a71cedfd45420c6bdda400100c70f",
       "title": "Liquid energy closes while fleet activity stays fixed",
       "generator": "docs/insights/ceud_calibration_diagnosis.py",
-      "generator_sha256": "a0ea139939d90a7593443f4dbd882d1725f335d386c79c38a09ab192f1e01c21",
+      "generator_sha256": "8647e61507bbf3612a4c9754c9e6956404f0614799b33a22600a5e0215dc9f58",
       "group": "calibration",
       "selections": {
         "region": "ON",
@@ -1622,8 +1622,8 @@
         "capture": {
           "version": 1,
           "profile": "ceud_calibration",
-          "build_id": "validation_energy_calibration-20261110T055209Z",
-          "built_at": "2026-11-10T05:52:09.907106Z",
+          "build_id": "validation_energy_calibration-20261110T142316Z",
+          "built_at": "2026-11-10T14:23:16.843682Z",
           "scenario": {
             "name": "validation_energy_calibration",
             "description": "Opt-in CEUD-reported liquid-energy calibration on the unchanged Ontario validation fleet.",
@@ -1631,7 +1631,7 @@
           },
           "database": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_energy_calibration.sqlite",
-            "sha256": "2a20e2cbeea5545c2526ffa450b6d446870c6e0f9fa57d7348efb45df83779e5"
+            "sha256": "8539fb84e7b6a06dacd1d841cc3441c431540060e2eddd20af5a03da40c72f14"
           },
           "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite",
           "config": {
@@ -1643,7 +1643,7 @@
             "paths": {
               "path": "config/paths.yaml",
               "source": "config/paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "sources": {
               "path": "config/sources.yaml",
@@ -1653,7 +1653,7 @@
             "rules": {
               "path": "config/parameters/rules.yaml",
               "source": "config/parameters/rules.yaml",
-              "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "conversion": {
               "path": "config/parameters/conversion.yaml",
@@ -1740,14 +1740,14 @@
             "representative_audit": {
               "path": "files/representative_audit.json",
               "source": "inputs/validation/ldv_range_representation/representative_conservation.json",
-              "sha256": "f8d49ad356b08b7b6a366e7ea64c3915bca1f7828f970d11e485312b941aa8b0"
+              "sha256": "88aa91052647deed594da5b77dfd35588fc34faac9f42931a2ae7f28bf460ddc"
             }
           },
-          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\validation_energy_calibration-20261110T055209Z\\ceud_calibration\\manifest.json"
+          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\validation_energy_calibration-20261110T142316Z\\ceud_calibration\\manifest.json"
         },
         "chart_owner": {
           "path": "src/validation/ceud_calibration_diagnostic.py",
-          "sha256": "11a28dc55589210997bd35871d82523dcb16b4f82586c38969c3f513d5bdb8cf"
+          "sha256": "b72b8bea0e2a3b12b7655ceefa8794124c9bda72226f614fbfaca6686130cc2c"
         }
       },
       "plotted_context": {
@@ -1772,7 +1772,7 @@
               "domain": [
                 "Unadjusted",
                 "Calibrated",
-                "CEUD target"
+                "NRCan CEUD target"
               ],
               "range": [
                 "#64748b",
@@ -1816,16 +1816,16 @@
           ]
         },
         "data_fingerprints": {
-          "data-5b6284e4fe1f57c610f49009b7f9d669": {
+          "data-c89199efd6e98d3a34c3eba011064d14": {
             "rows": 12,
-            "sha256": "7c76613cd27a8720e2cde044b3161e19fee4e26d988b395a87925621ce4109e2"
+            "sha256": "5d79bc16b68c5fbbb191e9e5faa802401d8d3838fc020a50766124d77a5fe41d"
           }
         },
-        "vega_lite_sha256": "291138b059d1f649e06d8c31578214020c3108f6734ea14b33f07f8b943e2c4e",
+        "vega_lite_sha256": "dbc982027ec7662ecae5429aa8ca5ae0ce3906865b50ea00ba76e54dac8a0790",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:03:09.884970+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "ceud-cal-2": {
@@ -1833,7 +1833,7 @@
       "sha256": "9012147b8974065eb327b36607d79c363a47904e8af3af42be9a4c885716ef29",
       "title": "One class multiplier changes every represented consumption level",
       "generator": "docs/insights/ceud_calibration_diagnosis.py",
-      "generator_sha256": "a0ea139939d90a7593443f4dbd882d1725f335d386c79c38a09ab192f1e01c21",
+      "generator_sha256": "8647e61507bbf3612a4c9754c9e6956404f0614799b33a22600a5e0215dc9f58",
       "group": "calibration",
       "selections": {
         "region": "ON",
@@ -1844,8 +1844,8 @@
         "capture": {
           "version": 1,
           "profile": "ceud_calibration",
-          "build_id": "validation_energy_calibration-20261110T055209Z",
-          "built_at": "2026-11-10T05:52:09.907106Z",
+          "build_id": "validation_energy_calibration-20261110T142316Z",
+          "built_at": "2026-11-10T14:23:16.843682Z",
           "scenario": {
             "name": "validation_energy_calibration",
             "description": "Opt-in CEUD-reported liquid-energy calibration on the unchanged Ontario validation fleet.",
@@ -1853,7 +1853,7 @@
           },
           "database": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_energy_calibration.sqlite",
-            "sha256": "2a20e2cbeea5545c2526ffa450b6d446870c6e0f9fa57d7348efb45df83779e5"
+            "sha256": "8539fb84e7b6a06dacd1d841cc3441c431540060e2eddd20af5a03da40c72f14"
           },
           "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite",
           "config": {
@@ -1865,7 +1865,7 @@
             "paths": {
               "path": "config/paths.yaml",
               "source": "config/paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "sources": {
               "path": "config/sources.yaml",
@@ -1875,7 +1875,7 @@
             "rules": {
               "path": "config/parameters/rules.yaml",
               "source": "config/parameters/rules.yaml",
-              "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "conversion": {
               "path": "config/parameters/conversion.yaml",
@@ -1962,14 +1962,14 @@
             "representative_audit": {
               "path": "files/representative_audit.json",
               "source": "inputs/validation/ldv_range_representation/representative_conservation.json",
-              "sha256": "f8d49ad356b08b7b6a366e7ea64c3915bca1f7828f970d11e485312b941aa8b0"
+              "sha256": "88aa91052647deed594da5b77dfd35588fc34faac9f42931a2ae7f28bf460ddc"
             }
           },
-          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\validation_energy_calibration-20261110T055209Z\\ceud_calibration\\manifest.json"
+          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\validation_energy_calibration-20261110T142316Z\\ceud_calibration\\manifest.json"
         },
         "chart_owner": {
           "path": "src/validation/ceud_calibration_diagnostic.py",
-          "sha256": "11a28dc55589210997bd35871d82523dcb16b4f82586c38969c3f513d5bdb8cf"
+          "sha256": "b72b8bea0e2a3b12b7655ceefa8794124c9bda72226f614fbfaca6686130cc2c"
         }
       },
       "plotted_context": {
@@ -2058,8 +2058,8 @@
         "vega_lite_sha256": "6bb115fbd8421914d2657f84e883bafd9a2a34c8d27cfa4813efc5910a524476",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:03:09.884970+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "ceud-cal-3": {
@@ -2067,7 +2067,7 @@
       "sha256": "5f808bcba7621b5d6a5a43b770798a635c59b14d97c9ac768f689b52a1ab93aa",
       "title": "Reported fuel coverage limits the calibration target",
       "generator": "docs/insights/ceud_calibration_diagnosis.py",
-      "generator_sha256": "a0ea139939d90a7593443f4dbd882d1725f335d386c79c38a09ab192f1e01c21",
+      "generator_sha256": "8647e61507bbf3612a4c9754c9e6956404f0614799b33a22600a5e0215dc9f58",
       "group": "calibration",
       "selections": {
         "region": "ON",
@@ -2078,8 +2078,8 @@
         "capture": {
           "version": 1,
           "profile": "ceud_calibration",
-          "build_id": "validation_energy_calibration-20261110T055209Z",
-          "built_at": "2026-11-10T05:52:09.907106Z",
+          "build_id": "validation_energy_calibration-20261110T142316Z",
+          "built_at": "2026-11-10T14:23:16.843682Z",
           "scenario": {
             "name": "validation_energy_calibration",
             "description": "Opt-in CEUD-reported liquid-energy calibration on the unchanged Ontario validation fleet.",
@@ -2087,7 +2087,7 @@
           },
           "database": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_energy_calibration.sqlite",
-            "sha256": "2a20e2cbeea5545c2526ffa450b6d446870c6e0f9fa57d7348efb45df83779e5"
+            "sha256": "8539fb84e7b6a06dacd1d841cc3441c431540060e2eddd20af5a03da40c72f14"
           },
           "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite",
           "config": {
@@ -2099,7 +2099,7 @@
             "paths": {
               "path": "config/paths.yaml",
               "source": "config/paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "sources": {
               "path": "config/sources.yaml",
@@ -2109,7 +2109,7 @@
             "rules": {
               "path": "config/parameters/rules.yaml",
               "source": "config/parameters/rules.yaml",
-              "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "conversion": {
               "path": "config/parameters/conversion.yaml",
@@ -2196,14 +2196,14 @@
             "representative_audit": {
               "path": "files/representative_audit.json",
               "source": "inputs/validation/ldv_range_representation/representative_conservation.json",
-              "sha256": "f8d49ad356b08b7b6a366e7ea64c3915bca1f7828f970d11e485312b941aa8b0"
+              "sha256": "88aa91052647deed594da5b77dfd35588fc34faac9f42931a2ae7f28bf460ddc"
             }
           },
-          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\validation_energy_calibration-20261110T055209Z\\ceud_calibration\\manifest.json"
+          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\validation_energy_calibration-20261110T142316Z\\ceud_calibration\\manifest.json"
         },
         "chart_owner": {
           "path": "src/validation/ceud_calibration_diagnostic.py",
-          "sha256": "11a28dc55589210997bd35871d82523dcb16b4f82586c38969c3f513d5bdb8cf"
+          "sha256": "b72b8bea0e2a3b12b7655ceefa8794124c9bda72226f614fbfaca6686130cc2c"
         }
       },
       "plotted_context": {
@@ -2273,8 +2273,8 @@
         "vega_lite_sha256": "7833c22132a430abcf98f4cf0618675fe502f59239c9e621f83638c9a3dab1b1",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:03:09.884970+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "ceud-cal-4": {
@@ -2282,7 +2282,7 @@
       "sha256": "3d7ef6bc043f3f43331211c6e1545d009497209f147c3bdeb37e6005b88f39fa",
       "title": "Cars: gasoline trajectory keeps its relative change",
       "generator": "docs/insights/ceud_calibration_diagnosis.py",
-      "generator_sha256": "a0ea139939d90a7593443f4dbd882d1725f335d386c79c38a09ab192f1e01c21",
+      "generator_sha256": "8647e61507bbf3612a4c9754c9e6956404f0614799b33a22600a5e0215dc9f58",
       "group": "calibration",
       "selections": {
         "region": "ON",
@@ -2293,8 +2293,8 @@
         "capture": {
           "version": 1,
           "profile": "ceud_calibration",
-          "build_id": "validation_energy_calibration-20261110T055209Z",
-          "built_at": "2026-11-10T05:52:09.907106Z",
+          "build_id": "validation_energy_calibration-20261110T142316Z",
+          "built_at": "2026-11-10T14:23:16.843682Z",
           "scenario": {
             "name": "validation_energy_calibration",
             "description": "Opt-in CEUD-reported liquid-energy calibration on the unchanged Ontario validation fleet.",
@@ -2302,7 +2302,7 @@
           },
           "database": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_energy_calibration.sqlite",
-            "sha256": "2a20e2cbeea5545c2526ffa450b6d446870c6e0f9fa57d7348efb45df83779e5"
+            "sha256": "8539fb84e7b6a06dacd1d841cc3441c431540060e2eddd20af5a03da40c72f14"
           },
           "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite",
           "config": {
@@ -2314,7 +2314,7 @@
             "paths": {
               "path": "config/paths.yaml",
               "source": "config/paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "sources": {
               "path": "config/sources.yaml",
@@ -2324,7 +2324,7 @@
             "rules": {
               "path": "config/parameters/rules.yaml",
               "source": "config/parameters/rules.yaml",
-              "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "conversion": {
               "path": "config/parameters/conversion.yaml",
@@ -2411,14 +2411,14 @@
             "representative_audit": {
               "path": "files/representative_audit.json",
               "source": "inputs/validation/ldv_range_representation/representative_conservation.json",
-              "sha256": "f8d49ad356b08b7b6a366e7ea64c3915bca1f7828f970d11e485312b941aa8b0"
+              "sha256": "88aa91052647deed594da5b77dfd35588fc34faac9f42931a2ae7f28bf460ddc"
             }
           },
-          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\validation_energy_calibration-20261110T055209Z\\ceud_calibration\\manifest.json"
+          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\validation_energy_calibration-20261110T142316Z\\ceud_calibration\\manifest.json"
         },
         "chart_owner": {
           "path": "src/validation/ceud_calibration_diagnostic.py",
-          "sha256": "11a28dc55589210997bd35871d82523dcb16b4f82586c38969c3f513d5bdb8cf"
+          "sha256": "b72b8bea0e2a3b12b7655ceefa8794124c9bda72226f614fbfaca6686130cc2c"
         }
       },
       "plotted_context": {
@@ -2561,16 +2561,16 @@
         "vega_lite_sha256": "deb5f4bc4f1196784435189e159888d960c25b600f061f29cdc4b619a265eea4",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:03:09.884970+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "nonroad-1": {
       "file": "nonroad-1.svg",
-      "sha256": "0e02188cd7b9c68135ea83e982d6b9e23fa31631004d1ebe70a1e50fe233a444",
+      "sha256": "bd58e16478c39698a8e2a81bcf749aa0a7aa693e939018614cfcbd941addeaa6",
       "title": "Non-road parameters use different service and energy denominators",
       "generator": "docs/insights/documentation_support.py",
-      "generator_sha256": "8ea330422746a9dd90fdd029a171f91140073f0d6dc271052604420f0b76ea5a",
+      "generator_sha256": "7a28a46b3baf51265a81b356329941906f2e54532cfd69571a724eceb76f8c5e",
       "group": "nonroad",
       "selections": {
         "scenario": "config/scenarios/validation_baseline.yaml",
@@ -2591,9 +2591,9 @@
       "evidence": {
         "build_report": {
           "path": "outputs\\validation\\validation_baseline.json",
-          "sha256": "037a054ee05b1e4780ef6fa736acd2ff83a2e09e6ae18527d406d511f139991d"
+          "sha256": "e044a9602675893a29f69abcdc920b00468646e1d43a579e09fd9988ded4713b"
         },
-        "build_timestamp_utc": "2026-11-10T05:48:22.814686+00:00",
+        "build_timestamp_utc": "2026-11-10T14:12:49.108939+00:00",
         "capacity_units": {
           "freight_air": [
             "bn tonne-km"
@@ -2614,12 +2614,12 @@
         },
         "database": {
           "path": "outputs\\sqlite\\validation_baseline.sqlite",
-          "sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394"
+          "sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e"
         },
         "excluded_existing_suffix": "_EX",
         "figure_id": "nonroad-1",
         "generator": "validation.documentation_support.nonroad_efficiency_chart",
-        "generator_sha256": "e1ae5884efcdcb0beda1f97c860483d3d191ffa54f72a37a8c21c38b66ef9810",
+        "generator_sha256": "ea94bc7fd475760ea140a337afecfe1c00093314f451faa5c23ba51ff2147d0d",
         "limitations": [
           "These are emitted new-vintage/model-period parameters, not measured consumption or independent model validation.",
           "Each panel retains its own service/energy unit. Passenger, freight and off-road energy-service values cannot be ranked on one common scale.",
@@ -2680,7 +2680,7 @@
           "parameters": [
             {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\rules.yaml",
-              "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\conversion.yaml",
@@ -2697,7 +2697,7 @@
           ],
           "paths": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
-            "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+            "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
           },
           "scenario": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
@@ -2869,7 +2869,7 @@
           "anchor": "start",
           "subtitle": [
             "Figure nonroad-1 \u00b7 ON \u00b7 validation_baseline \u00b7 emitted new-vintage parameters",
-            "Build 2026-11-10T05:48:22.814686+00:00 \u00b7 model-vintage labels; source years remain distinct.",
+            "Build 2026-11-10T14:12:49.108939+00:00 \u00b7 model-vintage labels; source years remain distinct.",
             "Panel scales and units differ. Equal fuel trajectories can overlap; these are model inputs, not observed performance."
           ],
           "subtitleFontSize": 11
@@ -3291,11 +3291,11 @@
             "sha256": "622c87cf1df59ce4a40d2cf6b03ec89f7dd4a9c4fa6f31963c084de4bfc447f7"
           }
         },
-        "vega_lite_sha256": "6b66050e66bfc08f75d28a1932c2008a7f763a18f5162b75285861af1d51f2a6",
+        "vega_lite_sha256": "c035620734de2bc69f493aa3f20b77f576c5400719e0493680173f4bedffe76f",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:03:09.884970+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1",
       "exact_table": {
         "file": "nonroad_efficiency_rows.csv",
@@ -3308,7 +3308,7 @@
       "sha256": "3afe362c7770077576ea968b79c3f83d0cf4827e7a07cee0b942e11aab858342",
       "title": "Charger costs on a common throughput and monetary basis",
       "generator": "docs/insights/transportation_validation_diagnosis.py",
-      "generator_sha256": "21fb1aac4c31ffefff3a68be19aa5f038b9674dcbc0f0ce30fb509fc72aa320e",
+      "generator_sha256": "96e25be05551225076f4f54bdc2813205c69c3db54615c146cd16378db0d6fc8",
       "group": "comparison",
       "selections": {
         "notebook_controls": {
@@ -4925,7 +4925,7 @@
             "parameters": [
               {
                 "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\rules.yaml",
-                "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+                "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
               },
               {
                 "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\conversion.yaml",
@@ -4942,7 +4942,7 @@
             ],
             "paths": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "scenario": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
@@ -5370,7 +5370,7 @@
           "files": {
             "build_report": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\validation_baseline.json",
-              "sha256": "037a054ee05b1e4780ef6fa736acd2ff83a2e09e6ae18527d406d511f139991d"
+              "sha256": "e044a9602675893a29f69abcdc920b00468646e1d43a579e09fd9988ded4713b"
             },
             "ceud_manifest": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_parameter_inputs_manifest.json",
@@ -5378,7 +5378,7 @@
             },
             "database": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_baseline.sqlite",
-              "sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394"
+              "sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e"
             },
             "road_age_cohorts": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_age_cohorts.csv",
@@ -5573,7 +5573,7 @@
             "relative_tolerance": 1e-06,
             "survival_rows": 0
           },
-          "revision": "b5f5632c0fcc245963d706137ff446490bac071c",
+          "revision": "8a50a7535bde9141450eaacbbb6740b1b9bb855b",
           "sales_activity_closure": {
             "classes_checked": 5,
             "interpretation": "calibration check, not independent validation",
@@ -6812,7 +6812,7 @@
         "charging_metadata": {
           "scenario": "validation_baseline",
           "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
-          "repository_commit": "b5f5632c0fcc245963d706137ff446490bac071c",
+          "repository_commit": "8a50a7535bde9141450eaacbbb6740b1b9bb855b",
           "period_mapping": {
             "period_mode": "prospective",
             "base_year": 2025,
@@ -6988,11 +6988,11 @@
           "files": {
             "database": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_baseline.sqlite",
-              "sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394"
+              "sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e"
             },
             "build_report": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\validation_baseline.json",
-              "sha256": "037a054ee05b1e4780ef6fa736acd2ff83a2e09e6ae18527d406d511f139991d"
+              "sha256": "e044a9602675893a29f69abcdc920b00468646e1d43a579e09fd9988ded4713b"
             },
             "manual_charger_parameters": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\charger_parameters.csv",
@@ -7007,7 +7007,7 @@
               "sha256": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
             }
           },
-          "build_timestamp_utc": "2026-11-10T05:48:22.814686+00:00",
+          "build_timestamp_utc": "2026-11-10T14:12:49.108939+00:00",
           "build_content_verified": true,
           "electricity_accounting": {
             "vehicle_energy_basis": "grid_electricity_including_charging_losses",
@@ -7214,16 +7214,16 @@
         "vega_lite_sha256": "d600be696c035a4f82f722ddf23dc130ae9b0687970cd871a0011942c64bc0e7",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T05:54:50.176637+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "comparison-activity-energy": {
       "file": "comparison-activity-energy.svg",
-      "sha256": "da894c5dd0b9552a9eebd0f38d71f329f7166afbe0edd4dd81c8ee3232fdd03d",
+      "sha256": "d7f0939592142fff2ed64e2cc84313fc11bfd444ea8a3e3e9ba5878acc84a1e5",
       "title": "Activity and energy agreement are separate comparisons",
       "generator": "docs/insights/transportation_validation_diagnosis.py",
-      "generator_sha256": "21fb1aac4c31ffefff3a68be19aa5f038b9674dcbc0f0ce30fb509fc72aa320e",
+      "generator_sha256": "96e25be05551225076f4f54bdc2813205c69c3db54615c146cd16378db0d6fc8",
       "group": "comparison",
       "selections": {
         "notebook_controls": {
@@ -8840,7 +8840,7 @@
             "parameters": [
               {
                 "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\rules.yaml",
-                "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+                "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
               },
               {
                 "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\parameters\\conversion.yaml",
@@ -8857,7 +8857,7 @@
             ],
             "paths": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "scenario": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
@@ -9285,7 +9285,7 @@
           "files": {
             "build_report": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\validation_baseline.json",
-              "sha256": "037a054ee05b1e4780ef6fa736acd2ff83a2e09e6ae18527d406d511f139991d"
+              "sha256": "e044a9602675893a29f69abcdc920b00468646e1d43a579e09fd9988ded4713b"
             },
             "ceud_manifest": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\ceud_parameter_inputs\\ceud_parameter_inputs_manifest.json",
@@ -9293,7 +9293,7 @@
             },
             "database": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_baseline.sqlite",
-              "sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394"
+              "sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e"
             },
             "road_age_cohorts": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\1_interim\\existing_capacity\\road_existing_capacity_age_cohorts.csv",
@@ -9488,7 +9488,7 @@
             "relative_tolerance": 1e-06,
             "survival_rows": 0
           },
-          "revision": "b5f5632c0fcc245963d706137ff446490bac071c",
+          "revision": "8a50a7535bde9141450eaacbbb6740b1b9bb855b",
           "sales_activity_closure": {
             "classes_checked": 5,
             "interpretation": "calibration check, not independent validation",
@@ -10727,7 +10727,7 @@
         "charging_metadata": {
           "scenario": "validation_baseline",
           "scenario_path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
-          "repository_commit": "b5f5632c0fcc245963d706137ff446490bac071c",
+          "repository_commit": "8a50a7535bde9141450eaacbbb6740b1b9bb855b",
           "period_mapping": {
             "period_mode": "prospective",
             "base_year": 2025,
@@ -10903,11 +10903,11 @@
           "files": {
             "database": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\validation_baseline.sqlite",
-              "sha256": "53a22ae1f4d17a7d0b9fe92b237fc77bd795eba3eca2506fa1b64a94b8e47394"
+              "sha256": "c79de527051013af35a78b0ea7f0cdfb89d5952453bdb454104718eaa36d787e"
             },
             "build_report": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\validation_baseline.json",
-              "sha256": "037a054ee05b1e4780ef6fa736acd2ff83a2e09e6ae18527d406d511f139991d"
+              "sha256": "e044a9602675893a29f69abcdc920b00468646e1d43a579e09fd9988ded4713b"
             },
             "manual_charger_parameters": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\0_manual_params\\charger_parameters.csv",
@@ -10922,7 +10922,7 @@
               "sha256": "cf566a66d538ee04a41230414f5aa70c953adb622ea1cde55ce0def2262c7afc"
             }
           },
-          "build_timestamp_utc": "2026-11-10T05:48:22.814686+00:00",
+          "build_timestamp_utc": "2026-11-10T14:12:49.108939+00:00",
           "build_content_verified": true,
           "electricity_accounting": {
             "vehicle_energy_basis": "grid_electricity_including_charging_losses",
@@ -11049,7 +11049,7 @@
             "channel": "x",
             "field": "Energy difference (%)",
             "type": "quantitative",
-            "title": "Energy difference from CEUD (%)",
+            "title": "Energy difference from NRCan CEUD (%)",
             "scale": {
               "nice": false,
               "zero": false
@@ -11059,7 +11059,7 @@
             "channel": "y",
             "field": "Service difference (%)",
             "type": "quantitative",
-            "title": "Service difference from CEUD (%)",
+            "title": "Service difference from NRCan CEUD (%)",
             "scale": {
               "nice": false,
               "zero": false
@@ -11082,7 +11082,7 @@
                 "v2.0 backend",
                 "Legacy variant",
                 "v2.0 energy sensitivity",
-                "CEUD 2023 held at 2025",
+                "NRCan CEUD 2023 held at 2025",
                 "Backend real-GDP 2025 target",
                 "Legacy workbook 2025 target"
               ],
@@ -11108,7 +11108,7 @@
                 "v2.0 backend",
                 "Legacy variant",
                 "v2.0 energy sensitivity",
-                "CEUD 2023 held at 2025",
+                "NRCan CEUD 2023 held at 2025",
                 "Backend real-GDP 2025 target",
                 "Legacy workbook 2025 target"
               ],
@@ -11133,7 +11133,7 @@
                 "v2.0 backend",
                 "Legacy variant",
                 "v2.0 energy sensitivity",
-                "CEUD 2023 held at 2025",
+                "NRCan CEUD 2023 held at 2025",
                 "Backend real-GDP 2025 target",
                 "Legacy workbook 2025 target"
               ],
@@ -11152,7 +11152,7 @@
             "channel": "x",
             "field": "Energy difference (%)",
             "type": "quantitative",
-            "title": "Energy difference from CEUD (%)",
+            "title": "Energy difference from NRCan CEUD (%)",
             "scale": {
               "nice": false,
               "zero": false
@@ -11162,7 +11162,7 @@
             "channel": "y",
             "field": "Service difference (%)",
             "type": "quantitative",
-            "title": "Service difference from CEUD (%)",
+            "title": "Service difference from NRCan CEUD (%)",
             "scale": {
               "nice": false,
               "zero": false
@@ -11203,30 +11203,30 @@
           ]
         },
         "data_fingerprints": {
-          "data-ca46f99ef52e5190f1bd1a6cd597c471": {
+          "data-f0fcdf6b93bf449d6bcbc9ead125dab2": {
             "rows": 45,
-            "sha256": "07b0ad9b3c6f4b7d9a9e608bf236c7c55f33ae478c0f48800c82d142f0b548d8"
+            "sha256": "731656c5fc6460979f29419633e1d65f5803752068e4bb529844dbbdcdbf076f"
           }
         },
-        "vega_lite_sha256": "cd904cda1764989cf6807ba25e4bdda4f15b0c16c7b3bfacf72fe244c7aa913b",
+        "vega_lite_sha256": "982d798f274d65e3716334ce412eddaddf03f34bb06e5f62b74d361b6327d065",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T05:54:50.176637+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:26:57.639208+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "population-19": {
       "file": "population-19.svg",
-      "sha256": "75ffb700a3a12dae903857ae6e7ceef9ded0145db9dbe820ecbccb1b0276cc86",
-      "title": "Mapped exposure supporting apparent retention estimates",
+      "sha256": "cf8f3a5a4bb32ba48b8cde4512859bab2a5e6176c56383009e05ae00a9f43375",
+      "title": "Ontario MTO mapped exposure supporting apparent retention estimates",
       "generator": "docs/insights/vehicle_population_diagnosis.py",
-      "generator_sha256": "463a1a8314ee08ff7a4fd7ed5c45a8ab83366eb8cec0f3414b9d84321a598003",
+      "generator_sha256": "180ad938e3345ade19dc4e90140cf0116370b8afaffffdfd9ae8baf69b4341c7",
       "group": "notebooks",
       "selections": {
         "notebook_controls": {
+          "reference_year": 2026,
           "reference_make": "All makes",
           "reference_powertrain": null,
-          "reference_year": 2026,
           "reference_audit_family": null
         },
         "selected_id_prefixes": [
@@ -11240,8 +11240,8 @@
         "capture": {
           "version": 1,
           "profile": "vehicle_stock",
-          "build_id": "notebook_diagnostics-20261110T055620Z",
-          "built_at": "2026-11-10T05:56:20.095938Z",
+          "build_id": "notebook_diagnostics-20261110T143310Z",
+          "built_at": "2026-11-10T14:33:10.417449Z",
           "scenario": {
             "name": "notebook_diagnostics",
             "description": "Road stock evidence and the existing-to-future efficiency bridge",
@@ -11249,7 +11249,7 @@
           },
           "database": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_notebook_diagnostics.sqlite",
-            "sha256": "6e8961d176a2a64e5820f7b1039fa0f40c6404dd394281bd5226ddf421be927d"
+            "sha256": "38dd4f994d3fc7c33017ad61ea24e71d98919c868d7ba27e9ad07beb6d0d24b6"
           },
           "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite",
           "config": {
@@ -11261,7 +11261,7 @@
             "paths": {
               "path": "config/paths.yaml",
               "source": "config/paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "sources": {
               "path": "config/sources.yaml",
@@ -11271,7 +11271,7 @@
             "rules": {
               "path": "config/parameters/rules.yaml",
               "source": "config/parameters/rules.yaml",
-              "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "conversion": {
               "path": "config/parameters/conversion.yaml",
@@ -11401,17 +11401,17 @@
               "sha256": "27b778c0b423fffe591ef465e0ea7fd0b8fa01bef009e3354e996423fc963e51"
             }
           },
-          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\vehicle_stock\\manifest.json"
+          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\vehicle_stock\\manifest.json"
         },
         "local_callable_files": {
           "src/validation/notebook_evidence.py": "a4f4321b63eacff435db3d1bade96a74a63119b59c9535b9d3f354a6d99e67dc",
-          "src/validation/notebook_figures.py": "432915cf0e0c2c80187821ab0644d5485999bcb3acc75da4c7261f27d31cfa33",
+          "src/validation/notebook_figures.py": "f13d80eb4366f375e29d53cf413bb1894e91f08dcd6c6ef3af1a99c2a5fcebaa",
           "src/validation/vehicle_stock_diagnostic.py": "e895007730535165cb8821fa050ba7c94fcfaa01ac60c17bb0c4e339e9f921a4"
         }
       },
       "plotted_context": {
         "title": {
-          "text": "Mapped exposure supporting apparent retention estimates",
+          "text": "Ontario MTO mapped exposure supporting apparent retention estimates",
           "anchor": "start",
           "fontSize": 16,
           "offset": 14,
@@ -11478,25 +11478,25 @@
             "sha256": "fbc91881652974da09979691e8f698958150053044ea8b85ea7440caa3fad44c"
           }
         },
-        "vega_lite_sha256": "57c785cd4db43b68e1bb136c537f29912c441cc956c3afd96d516bc78364436b",
+        "vega_lite_sha256": "13fd1f174b919c0a2b69ce7631a38ace085ac53ecb51b1f976449141cb358f93",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:07:26.569592+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "population-20": {
       "file": "population-20.svg",
-      "sha256": "46a40f850f9a4a12d836a8207a577841f2e6cf4c34de12f7b692bb22174e2656",
-      "title": "MTO apparent retirement rates and supporting exposure",
+      "sha256": "233c4636e4905da94a66b8eeea1872a18eec46ef2e108c28bb3f6d2e4d4b1192",
+      "title": "Ontario MTO apparent retirement rates and supporting exposure",
       "generator": "docs/insights/vehicle_population_diagnosis.py",
-      "generator_sha256": "463a1a8314ee08ff7a4fd7ed5c45a8ab83366eb8cec0f3414b9d84321a598003",
+      "generator_sha256": "180ad938e3345ade19dc4e90140cf0116370b8afaffffdfd9ae8baf69b4341c7",
       "group": "notebooks",
       "selections": {
         "notebook_controls": {
+          "reference_year": 2026,
           "reference_make": "All makes",
           "reference_powertrain": null,
-          "reference_year": 2026,
           "reference_audit_family": null
         },
         "selected_id_prefixes": [
@@ -11510,8 +11510,8 @@
         "capture": {
           "version": 1,
           "profile": "vehicle_stock",
-          "build_id": "notebook_diagnostics-20261110T055620Z",
-          "built_at": "2026-11-10T05:56:20.095938Z",
+          "build_id": "notebook_diagnostics-20261110T143310Z",
+          "built_at": "2026-11-10T14:33:10.417449Z",
           "scenario": {
             "name": "notebook_diagnostics",
             "description": "Road stock evidence and the existing-to-future efficiency bridge",
@@ -11519,7 +11519,7 @@
           },
           "database": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_notebook_diagnostics.sqlite",
-            "sha256": "6e8961d176a2a64e5820f7b1039fa0f40c6404dd394281bd5226ddf421be927d"
+            "sha256": "38dd4f994d3fc7c33017ad61ea24e71d98919c868d7ba27e9ad07beb6d0d24b6"
           },
           "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite",
           "config": {
@@ -11531,7 +11531,7 @@
             "paths": {
               "path": "config/paths.yaml",
               "source": "config/paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "sources": {
               "path": "config/sources.yaml",
@@ -11541,7 +11541,7 @@
             "rules": {
               "path": "config/parameters/rules.yaml",
               "source": "config/parameters/rules.yaml",
-              "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "conversion": {
               "path": "config/parameters/conversion.yaml",
@@ -11671,17 +11671,17 @@
               "sha256": "27b778c0b423fffe591ef465e0ea7fd0b8fa01bef009e3354e996423fc963e51"
             }
           },
-          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\vehicle_stock\\manifest.json"
+          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\vehicle_stock\\manifest.json"
         },
         "local_callable_files": {
           "src/validation/notebook_evidence.py": "a4f4321b63eacff435db3d1bade96a74a63119b59c9535b9d3f354a6d99e67dc",
-          "src/validation/notebook_figures.py": "432915cf0e0c2c80187821ab0644d5485999bcb3acc75da4c7261f27d31cfa33",
+          "src/validation/notebook_figures.py": "f13d80eb4366f375e29d53cf413bb1894e91f08dcd6c6ef3af1a99c2a5fcebaa",
           "src/validation/vehicle_stock_diagnostic.py": "e895007730535165cb8821fa050ba7c94fcfaa01ac60c17bb0c4e339e9f921a4"
         }
       },
       "plotted_context": {
         "title": {
-          "text": "MTO apparent retirement rates and supporting exposure",
+          "text": "Ontario MTO apparent retirement rates and supporting exposure",
           "anchor": "start",
           "fontSize": 16,
           "offset": 14,
@@ -11788,25 +11788,25 @@
             "sha256": "91908ee72506d7506214189ca402c0ffa3d059fb57665b8b5c98e0b076cc4ecb"
           }
         },
-        "vega_lite_sha256": "a9d2f93cf5989d3a54f7e2b2ebb8f57ebf2e815570400b27485d453e4df3613a",
+        "vega_lite_sha256": "b4c4e09393191e01cc748f21ab3051d1a1bbb156645a984f72df2b2767f2b06a",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:07:26.569592+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "population-21": {
       "file": "population-21.svg",
-      "sha256": "2bbaea965e39e1207bbfcb02b52f97e4da3f037f255c13ca9bfbfa279c8153d1",
-      "title": "Cumulative MTO retention and NHTSA survival",
+      "sha256": "f720333bc5cf9d6e14f8f22bd349568034bf827ff444a9cafb20f87c0038ef53",
+      "title": "Cumulative Ontario MTO retention and NHTSA CAFE survival",
       "generator": "docs/insights/vehicle_population_diagnosis.py",
-      "generator_sha256": "463a1a8314ee08ff7a4fd7ed5c45a8ab83366eb8cec0f3414b9d84321a598003",
+      "generator_sha256": "180ad938e3345ade19dc4e90140cf0116370b8afaffffdfd9ae8baf69b4341c7",
       "group": "notebooks",
       "selections": {
         "notebook_controls": {
+          "reference_year": 2026,
           "reference_make": "All makes",
           "reference_powertrain": null,
-          "reference_year": 2026,
           "reference_audit_family": null
         },
         "selected_id_prefixes": [
@@ -11820,8 +11820,8 @@
         "capture": {
           "version": 1,
           "profile": "vehicle_stock",
-          "build_id": "notebook_diagnostics-20261110T055620Z",
-          "built_at": "2026-11-10T05:56:20.095938Z",
+          "build_id": "notebook_diagnostics-20261110T143310Z",
+          "built_at": "2026-11-10T14:33:10.417449Z",
           "scenario": {
             "name": "notebook_diagnostics",
             "description": "Road stock evidence and the existing-to-future efficiency bridge",
@@ -11829,7 +11829,7 @@
           },
           "database": {
             "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_notebook_diagnostics.sqlite",
-            "sha256": "6e8961d176a2a64e5820f7b1039fa0f40c6404dd394281bd5226ddf421be927d"
+            "sha256": "38dd4f994d3fc7c33017ad61ea24e71d98919c868d7ba27e9ad07beb6d0d24b6"
           },
           "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite",
           "config": {
@@ -11841,7 +11841,7 @@
             "paths": {
               "path": "config/paths.yaml",
               "source": "config/paths.yaml",
-              "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+              "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
             },
             "sources": {
               "path": "config/sources.yaml",
@@ -11851,7 +11851,7 @@
             "rules": {
               "path": "config/parameters/rules.yaml",
               "source": "config/parameters/rules.yaml",
-              "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+              "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
             },
             "conversion": {
               "path": "config/parameters/conversion.yaml",
@@ -11981,17 +11981,17 @@
               "sha256": "27b778c0b423fffe591ef465e0ea7fd0b8fa01bef009e3354e996423fc963e51"
             }
           },
-          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\vehicle_stock\\manifest.json"
+          "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\vehicle_stock\\manifest.json"
         },
         "local_callable_files": {
           "src/validation/notebook_evidence.py": "a4f4321b63eacff435db3d1bade96a74a63119b59c9535b9d3f354a6d99e67dc",
-          "src/validation/notebook_figures.py": "432915cf0e0c2c80187821ab0644d5485999bcb3acc75da4c7261f27d31cfa33",
+          "src/validation/notebook_figures.py": "f13d80eb4366f375e29d53cf413bb1894e91f08dcd6c6ef3af1a99c2a5fcebaa",
           "src/validation/vehicle_stock_diagnostic.py": "e895007730535165cb8821fa050ba7c94fcfaa01ac60c17bb0c4e339e9f921a4"
         }
       },
       "plotted_context": {
         "title": {
-          "text": "Cumulative MTO retention and NHTSA survival",
+          "text": "Cumulative Ontario MTO retention and NHTSA CAFE survival",
           "anchor": "start",
           "fontSize": 16,
           "offset": 14,
@@ -12025,8 +12025,8 @@
             "title": "Evidence source",
             "scale": {
               "domain": [
-                "Solid: MTO transition evidence",
-                "Dashed: NHTSA legacy schedule"
+                "Solid: Ontario MTO transition evidence",
+                "Dashed: NHTSA CAFE legacy schedule"
               ],
               "range": [
                 [
@@ -12077,30 +12077,29 @@
           ]
         },
         "data_fingerprints": {
-          "data-fd91ad91556597a6ab5b48cff43cb3d8": {
+          "data-94bf0ee2556a75e73e75c8efbffda58c": {
             "rows": 148,
-            "sha256": "372bfaac466f9194642433dbc9982b987ccd61e443f9f0ba337ea14b8b71764f"
+            "sha256": "d627e11dcb1ec0e9ff46e3a438c7196de4efd2055d6c39cf9e8d79c21246d31b"
           }
         },
-        "vega_lite_sha256": "e064039a642147f2f60b483aede6f015626a60ec8c70b7fbb35608672f3bb7cd",
+        "vega_lite_sha256": "571f4ece0b31b08674c6dc6f575ef6e284a7bf733df759d6fe9d0b183d970bb9",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:07:26.569592+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "cohort-4": {
       "file": "cohort-4.svg",
-      "sha256": "760a78548a6f9635040197fbbffb0f7901ee0124ec9364e4d94a7ac7496b6df2",
-      "title": "CEUD stock calibration changes the level of inferred cohorts",
+      "sha256": "bd10843ce9284205f53b8c08bfa3d5adc10619015172c7a2ca740d266fba9bb2",
+      "title": "NRCan CEUD stock calibration changes the level of inferred cohorts",
       "generator": "docs/insights/stock_cohort_diagnosis.py",
-      "generator_sha256": "59268646fe5f97257f44afa6dc461aa602b822127aa76ebc432d9f868c8b4932",
+      "generator_sha256": "b40f502862d68eb4bd7aec9a16dc9b7b6422d7bc483c6f924c3953d876c2f655",
       "group": "notebooks",
       "selections": {
         "notebook_controls": {
-          "profile": "moves",
           "region": "ON",
-          "lineage_basis": "Acquisitions versus stock"
+          "profile": "moves"
         },
         "selected_id_prefixes": [
           "cohort-4",
@@ -12356,10 +12355,6 @@
               "sha256": "ba9c89d8f296dde144933be286d71415ed855e2433163e584a5581abf065e87b"
             },
             {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\2_processed\\road_aggregation\\ontario_vehicle_population_current_stock_mapped.csv",
-              "sha256": "f89428a2e936acc042794ce8db4e2fc1b6a627bde642e0418fd72182218cd84e"
-            },
-            {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\2_processed\\road_aggregation\\ontario_vehicle_population_nlr_atb_class_weights.csv",
               "sha256": "f90f930cf9545a2414d5dc65e9afabb3f431ef9fc22ac5475029ed978153681a"
             }
@@ -12372,20 +12367,20 @@
           "tail_survival_threshold": 0.005
         },
         "configuration_fingerprints": {
-          "config/paths.yaml": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19",
+          "config/paths.yaml": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159",
           "config/sources.yaml": "00fc1517fd4c747f2e0a255d5c235c18546ff2ef2c79b2da0dbbf8eca0404af8",
-          "config/parameters/rules.yaml": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e",
+          "config/parameters/rules.yaml": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c",
           "config/parameters/conversion.yaml": "6400be364e8509c89856803c8575d83ca2bfcc2bde29e61bb8f59bb80f5c57a2",
           "config/scenarios/default.yaml": "9c5b1e9182c55809e8e6732175d1e18f96ff2a441d3db2fabba49ce5f4667577"
         },
         "local_callable_files": {
-          "src/validation/notebook_figures.py": "432915cf0e0c2c80187821ab0644d5485999bcb3acc75da4c7261f27d31cfa33",
-          "src/validation/stock_cohort_diagnostic.py": "0826320ab1f12b20fde27d7546f3dc4372e1078d586f4d468d3a6291b1b5139e"
+          "src/validation/notebook_figures.py": "f13d80eb4366f375e29d53cf413bb1894e91f08dcd6c6ef3af1a99c2a5fcebaa",
+          "src/validation/stock_cohort_diagnostic.py": "405ef6d91f11cf8c5ed5238794309c88f59ac6df02f64b4137958080049ef31e"
         }
       },
       "plotted_context": {
         "title": {
-          "text": "CEUD stock calibration changes the level of inferred cohorts",
+          "text": "NRCan CEUD stock calibration changes the level of inferred cohorts",
           "anchor": "start",
           "fontSize": 16,
           "offset": 14,
@@ -12446,8 +12441,8 @@
         "parameters": [],
         "plotted_domains": {
           "Source": [
-            "MOVES",
-            "NHTSA + NEMS"
+            "EPA MOVES",
+            "NHTSA CAFE + EIA NEMS"
           ],
           "profile": [
             "moves",
@@ -12467,30 +12462,29 @@
           ]
         },
         "data_fingerprints": {
-          "data-43a753ce8237a0edd0bfd557be5abc32": {
+          "data-603b7353377f4c24ac014571e7ecbed2": {
             "rows": 100,
-            "sha256": "52cd42e769ad66322ef1463696c68b1716a0ca226fa40a130a53c1ce149fe585"
+            "sha256": "82a37ef9721cc7b097bc0cdd7e623393eff0af67feac3a14f3ca8936d16ffd24"
           }
         },
-        "vega_lite_sha256": "0c0ad5107b7a99b621e6f23fa47d504a63d6c8f17cad9702cba05b7d26ee72bd",
+        "vega_lite_sha256": "e89d31207b1e74067b6fc02901bbe01b159663fac2ca2b35d84e6dfcb2c25078",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:07:26.569592+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "cohort-5": {
       "file": "cohort-5.svg",
-      "sha256": "44b5174fab088251a7da44e458894a2bcc195b3a46c9689b6f775cabe7c518cf",
+      "sha256": "d5e0d25f21f4b452667fae4e2c0b8201cd351ec88ba787e1a279d6163c753570",
       "title": "Native survival and the shared constant-retirement tail",
       "generator": "docs/insights/stock_cohort_diagnosis.py",
-      "generator_sha256": "59268646fe5f97257f44afa6dc461aa602b822127aa76ebc432d9f868c8b4932",
+      "generator_sha256": "b40f502862d68eb4bd7aec9a16dc9b7b6422d7bc483c6f924c3953d876c2f655",
       "group": "notebooks",
       "selections": {
         "notebook_controls": {
-          "profile": "moves",
           "region": "ON",
-          "lineage_basis": "Acquisitions versus stock"
+          "profile": "moves"
         },
         "selected_id_prefixes": [
           "cohort-4",
@@ -12746,10 +12740,6 @@
               "sha256": "ba9c89d8f296dde144933be286d71415ed855e2433163e584a5581abf065e87b"
             },
             {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\2_processed\\road_aggregation\\ontario_vehicle_population_current_stock_mapped.csv",
-              "sha256": "f89428a2e936acc042794ce8db4e2fc1b6a627bde642e0418fd72182218cd84e"
-            },
-            {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\2_processed\\road_aggregation\\ontario_vehicle_population_nlr_atb_class_weights.csv",
               "sha256": "f90f930cf9545a2414d5dc65e9afabb3f431ef9fc22ac5475029ed978153681a"
             }
@@ -12762,15 +12752,15 @@
           "tail_survival_threshold": 0.005
         },
         "configuration_fingerprints": {
-          "config/paths.yaml": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19",
+          "config/paths.yaml": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159",
           "config/sources.yaml": "00fc1517fd4c747f2e0a255d5c235c18546ff2ef2c79b2da0dbbf8eca0404af8",
-          "config/parameters/rules.yaml": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e",
+          "config/parameters/rules.yaml": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c",
           "config/parameters/conversion.yaml": "6400be364e8509c89856803c8575d83ca2bfcc2bde29e61bb8f59bb80f5c57a2",
           "config/scenarios/default.yaml": "9c5b1e9182c55809e8e6732175d1e18f96ff2a441d3db2fabba49ce5f4667577"
         },
         "local_callable_files": {
-          "src/validation/notebook_figures.py": "432915cf0e0c2c80187821ab0644d5485999bcb3acc75da4c7261f27d31cfa33",
-          "src/validation/stock_cohort_diagnostic.py": "0826320ab1f12b20fde27d7546f3dc4372e1078d586f4d468d3a6291b1b5139e"
+          "src/validation/notebook_figures.py": "f13d80eb4366f375e29d53cf413bb1894e91f08dcd6c6ef3af1a99c2a5fcebaa",
+          "src/validation/stock_cohort_diagnostic.py": "405ef6d91f11cf8c5ed5238794309c88f59ac6df02f64b4137958080049ef31e"
         }
       },
       "plotted_context": {
@@ -12853,8 +12843,8 @@
         "parameters": [],
         "plotted_domains": {
           "Source": [
-            "MOVES",
-            "NHTSA + NEMS"
+            "EPA MOVES",
+            "NHTSA CAFE + EIA NEMS"
           ],
           "profile": [
             "moves",
@@ -12868,36 +12858,36 @@
           ]
         },
         "data_fingerprints": {
-          "data-2ba22533d1eae50472404f1d1fab86e4": {
+          "data-1826f34b0a272f85de785bad18c2ae3e": {
             "rows": 1008,
-            "sha256": "334119759b55cde9b7d40af8949174c6038e594933b905c45569051519024d29"
+            "sha256": "8405ec0515513adddd7ec0c53071a5b92bcc96f60173aa238151fca5ee98be41"
           }
         },
-        "vega_lite_sha256": "adc74276be31d6eb96586a997834d06856009c3a5e49bf7248e2013c91837096",
+        "vega_lite_sha256": "963ca66ff04116549adfe7dafd5e6eb39eefdea3f1cc71ab53d42fa279e7fb64",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:07:26.569592+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "ldv-eff-3": {
       "file": "ldv-eff-3.svg",
-      "sha256": "ec15f9e064e4304ba98dced5a093e7343dc2549187d2223e2e40f04ff660427a",
-      "title": "OMEGA range composition transferred to Canadian vehicle families",
+      "sha256": "2b3b8683f70f9946ecf9b5d67f99c3f0c071b09b4afd46e924180ac37369b295",
+      "title": "EPA OMEGA range composition transferred to Canadian vehicle families",
       "generator": "docs/insights/ldv_efficiency_diagnosis.py",
-      "generator_sha256": "9d3970ea979ffd379e0319c6759ab80dc085b832eb22d8aab6cfac8d1a698435",
+      "generator_sha256": "3980879e2da17ded00a8eaf1ede451715d83ecd3d5eba4096baffcf9ff2a79ec",
       "group": "notebooks",
       "selections": {
         "notebook_controls": {
           "distribution_metric": "Consumption",
           "distribution_group": "Cars",
           "vehicle_group": "Cars",
-          "pev_filters": {
+          "mto_filters": {
             "year": 2023,
             "rating_class": null,
             "powertrain": null
           },
-          "mto_filters": {
+          "pev_filters": {
             "year": 2023,
             "rating_class": null,
             "powertrain": null
@@ -13184,8 +13174,8 @@
           "build": {
             "version": 1,
             "profile": "efficiency",
-            "build_id": "notebook_diagnostics-20261110T055620Z",
-            "built_at": "2026-11-10T05:56:20.095938Z",
+            "build_id": "notebook_diagnostics-20261110T143310Z",
+            "built_at": "2026-11-10T14:33:10.417449Z",
             "scenario": {
               "name": "notebook_diagnostics",
               "description": "Road stock evidence and the existing-to-future efficiency bridge",
@@ -13193,7 +13183,7 @@
             },
             "database": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_notebook_diagnostics.sqlite",
-              "sha256": "6e8961d176a2a64e5820f7b1039fa0f40c6404dd394281bd5226ddf421be927d"
+              "sha256": "38dd4f994d3fc7c33017ad61ea24e71d98919c868d7ba27e9ad07beb6d0d24b6"
             },
             "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite",
             "config": {
@@ -13205,7 +13195,7 @@
               "paths": {
                 "path": "config/paths.yaml",
                 "source": "config/paths.yaml",
-                "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+                "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
               },
               "sources": {
                 "path": "config/sources.yaml",
@@ -13215,7 +13205,7 @@
               "rules": {
                 "path": "config/parameters/rules.yaml",
                 "source": "config/parameters/rules.yaml",
-                "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+                "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
               },
               "conversion": {
                 "path": "config/parameters/conversion.yaml",
@@ -13405,143 +13395,143 @@
                 "sha256": "11416afad36668a00051481f15f433135aa05e2d691845181ed3e6576a803232"
               }
             },
-            "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\manifest.json"
+            "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\manifest.json"
           },
           "inputs": {
             "ratings": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\ratings.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\ratings.csv.gz",
               "sha256": "0b304d022454c4bf07938aecc098aeb90a5ede5fee539cd9099005d9ed32cb6d"
             },
             "rating_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\rating_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\rating_weights.csv.gz",
               "sha256": "b03465791ec5d70ed172d08e69f455204d0ced3f50e0f5f503807eacd25446ad"
             },
             "atb": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb.csv.gz",
               "sha256": "d70835cc2d690c859de0633fb7ddcaaff96af0acf15241bc7fb7cb87944a2f03"
             },
             "annual": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\annual.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\annual.csv.gz",
               "sha256": "e28833a7054289924aa0d858ea5b6e479cc140d79eeadb72a943b923cb93a245"
             },
             "periods": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\periods.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\periods.csv.gz",
               "sha256": "755d8c2d1a0220eae0f62190e6de5bbcb554b663adfbcc7f408b0376359bcca9"
             },
             "loads": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\loads.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\loads.csv.gz",
               "sha256": "9e6b5c204b752bb067dd48e04b62216fef3bf50b9e8388560f120730f18868ce"
             },
             "relationships": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\relationships.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\relationships.csv.gz",
               "sha256": "efd94ac2d0b7995b38c3150582e7d1ba902b2ccd4de4a65ad52abf2ec99f71d2"
             },
             "composition_observations": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_observations.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_observations.csv.gz",
               "sha256": "a5f7a65a09a0881194090d982fa9459d3dd7dac3ef0016a59019a6e52b440760"
             },
             "composition_variants": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_variants.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_variants.csv.gz",
               "sha256": "87100cac745ca3a1900aa521a8775469bb1203b1e24d96c7d7c058c97c59460d"
             },
             "composition_matches": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_matches.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_matches.csv.gz",
               "sha256": "a9ccd8dab50cfb108a1e7a25dac303e6070981b36add91f874003d902e0d4054"
             },
             "composition_coverage": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_coverage.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_coverage.csv.gz",
               "sha256": "b03465791ec5d70ed172d08e69f455204d0ced3f50e0f5f503807eacd25446ad"
             },
             "catalogue_rating_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\catalogue_rating_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\catalogue_rating_weights.csv.gz",
               "sha256": "13edb903602c6fcb9ca18ba9f2e970289dcebbdebda606d532481b5c86a39f76"
             },
             "rating_class_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\rating_class_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\rating_class_weights.csv.gz",
               "sha256": "de75ab91590c68e52b2e30b3148211326d8a74f59c475e64b5ec32ce9874559c"
             },
             "annual_cohort_stock": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\annual_cohort_stock.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\annual_cohort_stock.csv.gz",
               "sha256": "c934460e20ce45bbd1cb85835184a2f9592c0be0b1575e0fa04be1c09be650f7"
             },
             "final_efficiency": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\final_efficiency.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\final_efficiency.csv.gz",
               "sha256": "2cbc7aeb02a7765c0d76d8b32f158072586445aac6215dbcd43e69f39eceb42c"
             },
             "final_splits": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\final_splits.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\final_splits.csv.gz",
               "sha256": "74229e5f40e26654f7f412c92045547e3c8bebc1b34b1d80ea7c40c972d28b9c"
             },
             "integrity": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\integrity.json",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\integrity.json",
               "sha256": "f11385594570514bdc72049d5a2f700dfe52a37d7799f004b38cbfcb22af2b0c"
             },
             "raw_ratings_battery_electric_2012_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_battery_electric_2012_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_battery_electric_2012_2026.csv.gz",
               "sha256": "b85cf0bbe271e3596da0a3ed0efacf5a93e450169fa747e70d9aa0708d46afea"
             },
             "raw_ratings_plug_in_hybrid_2012_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_plug_in_hybrid_2012_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_plug_in_hybrid_2012_2026.csv.gz",
               "sha256": "9cca0097a252350fccb30525e7346031c0019c725a4b2eccf4f626bfc3c43123"
             },
             "raw_ratings_fuel_consumption_1995_2014": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_1995_2014.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_1995_2014.csv.gz",
               "sha256": "2a26fbd0b6c87d61b655934efd68086ac3a52b08e8b726e3ddd41b6a9d49730d"
             },
             "raw_ratings_fuel_consumption_2015_2024": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2015_2024.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2015_2024.csv.gz",
               "sha256": "a12d4431b738c21a75ddd6494c0e8da952f6464c8322b4aa29ededccb9a629dd"
             },
             "raw_ratings_fuel_consumption_2025": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2025.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2025.csv.gz",
               "sha256": "9cee8c07f3226e1130bae98679971dcfcc78751b1ebec96a57e340333f3ead67"
             },
             "raw_ratings_fuel_consumption_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2026.csv.gz",
               "sha256": "9e93989e3e57e75ef8ef894204d7abad17176c45b02317abda9e7e579436c1c4"
             },
             "atb_vehicles": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb_vehicles.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb_vehicles.csv.gz",
               "sha256": "ec2cacc6ed3d41a7cdb5a49d72acd28f88754470542bd49cc864e3b9374097a0"
             },
             "atb_phev": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb_phev.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb_phev.csv.gz",
               "sha256": "1a5912d357d7c5d6fcecee32e78e1b8442c8861109cf0257afaac92933a9d5f4"
             },
             "ceud": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\ceud.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\ceud.csv.gz",
               "sha256": "85347ba7c9f27d859f3cfb42c9530b684230bce8a8a7fb5eef6434236003af57"
             },
             "omega_records": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\omega_records.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\omega_records.csv.gz",
               "sha256": "6fccfd7b9f938b39384d01b697a5f389228c64f0f2f38b4291d3e1961dcb2396"
             },
             "omega_buckets": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\omega_buckets.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\omega_buckets.csv.gz",
               "sha256": "5e8df8c4acd35a9e3a289bd2d0aa56dd47225176f11a2998798366b072a7307a"
             },
             "benchmark_statcan_new": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_statcan_new.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_statcan_new.csv.gz",
               "sha256": "2fce5e2b76e99006e29a5060a6dcc7262f24e045224be27dd9309ce405e63a98"
             },
             "benchmark_statcan_stock": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_statcan_stock.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_statcan_stock.csv.gz",
               "sha256": "2d05016c366f337b9e0cb83d0566ab95d4b7b744b2591ff4fe173f1814729496"
             },
             "benchmark_mto_passenger_cohorts": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_passenger_cohorts.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_passenger_cohorts.csv.gz",
               "sha256": "0eb8e4b433fb583f5da310f8b8b49ebf78d3f9c5322aa59d5b36fa8b82eb4b7d"
             },
             "benchmark_mto_commercial_cohorts": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_commercial_cohorts.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_commercial_cohorts.csv.gz",
               "sha256": "1e9971d7683ac2c4ea7673326adbdbe363c0e6d0edbb14c228a6f1489288eec2"
             },
             "benchmark_mto_mapped": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_mapped.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_mapped.csv.gz",
               "sha256": "8393e2ae4a6ca08cf1abf35d9d6aa8d2c557f12625b69f15637d6ffe801a84d9"
             },
             "benchmark_izev_records": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_izev_records.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_izev_records.csv.gz",
               "sha256": "11416afad36668a00051481f15f433135aa05e2d691845181ed3e6576a803232"
             }
           },
@@ -13616,12 +13606,12 @@
         "local_callable_files": {
           "src/validation/ldv_efficiency_diagnostic.py": "c35bd1430d440ed417988ffc4fbdd47cee7ccc3a72ba65f90f6b28687ded22e9",
           "src/validation/notebook_evidence.py": "a4f4321b63eacff435db3d1bade96a74a63119b59c9535b9d3f354a6d99e67dc",
-          "src/validation/notebook_figures.py": "432915cf0e0c2c80187821ab0644d5485999bcb3acc75da4c7261f27d31cfa33"
+          "src/validation/notebook_figures.py": "f13d80eb4366f375e29d53cf413bb1894e91f08dcd6c6ef3af1a99c2a5fcebaa"
         }
       },
       "plotted_context": {
         "title": {
-          "text": "OMEGA range composition transferred to Canadian vehicle families",
+          "text": "EPA OMEGA range composition transferred to Canadian vehicle families",
           "anchor": "start",
           "fontSize": 16,
           "offset": 14,
@@ -13704,31 +13694,31 @@
             "sha256": "c27867868d5a1a5856472495774c60e016a552a7e0064a7fc51c19c8cfdb0e6a"
           }
         },
-        "vega_lite_sha256": "dd72b6c6e33361e31ee5b8c708f3a48a51cd17e79e7d53e8dd7e378d399d4b14",
+        "vega_lite_sha256": "780495f2b97e3e9583dd044b44f3732c958c4426197c421065b96407f75b22c8",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:07:26.569592+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "ldv-eff-6-cars-bev-mj-vkm": {
       "file": "ldv-eff-6-cars-bev-mj-vkm.svg",
-      "sha256": "0afe1c3d0643fb9fe3809d293f3bca247befa9c6da9a4259d09b8ab9bc1ab4d9",
+      "sha256": "281df2131f08adbd14165e900b0aee89593624f733ff83bad5066055af37dd07",
       "title": "Cars: BEV consumption after vintage aggregation",
       "generator": "docs/insights/ldv_efficiency_diagnosis.py",
-      "generator_sha256": "9d3970ea979ffd379e0319c6759ab80dc085b832eb22d8aab6cfac8d1a698435",
+      "generator_sha256": "3980879e2da17ded00a8eaf1ede451715d83ecd3d5eba4096baffcf9ff2a79ec",
       "group": "notebooks",
       "selections": {
         "notebook_controls": {
           "distribution_metric": "Consumption",
           "distribution_group": "Cars",
           "vehicle_group": "Cars",
-          "pev_filters": {
+          "mto_filters": {
             "year": 2023,
             "rating_class": null,
             "powertrain": null
           },
-          "mto_filters": {
+          "pev_filters": {
             "year": 2023,
             "rating_class": null,
             "powertrain": null
@@ -14015,8 +14005,8 @@
           "build": {
             "version": 1,
             "profile": "efficiency",
-            "build_id": "notebook_diagnostics-20261110T055620Z",
-            "built_at": "2026-11-10T05:56:20.095938Z",
+            "build_id": "notebook_diagnostics-20261110T143310Z",
+            "built_at": "2026-11-10T14:33:10.417449Z",
             "scenario": {
               "name": "notebook_diagnostics",
               "description": "Road stock evidence and the existing-to-future efficiency bridge",
@@ -14024,7 +14014,7 @@
             },
             "database": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_notebook_diagnostics.sqlite",
-              "sha256": "6e8961d176a2a64e5820f7b1039fa0f40c6404dd394281bd5226ddf421be927d"
+              "sha256": "38dd4f994d3fc7c33017ad61ea24e71d98919c868d7ba27e9ad07beb6d0d24b6"
             },
             "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite",
             "config": {
@@ -14036,7 +14026,7 @@
               "paths": {
                 "path": "config/paths.yaml",
                 "source": "config/paths.yaml",
-                "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+                "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
               },
               "sources": {
                 "path": "config/sources.yaml",
@@ -14046,7 +14036,7 @@
               "rules": {
                 "path": "config/parameters/rules.yaml",
                 "source": "config/parameters/rules.yaml",
-                "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+                "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
               },
               "conversion": {
                 "path": "config/parameters/conversion.yaml",
@@ -14236,143 +14226,143 @@
                 "sha256": "11416afad36668a00051481f15f433135aa05e2d691845181ed3e6576a803232"
               }
             },
-            "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\manifest.json"
+            "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\manifest.json"
           },
           "inputs": {
             "ratings": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\ratings.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\ratings.csv.gz",
               "sha256": "0b304d022454c4bf07938aecc098aeb90a5ede5fee539cd9099005d9ed32cb6d"
             },
             "rating_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\rating_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\rating_weights.csv.gz",
               "sha256": "b03465791ec5d70ed172d08e69f455204d0ced3f50e0f5f503807eacd25446ad"
             },
             "atb": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb.csv.gz",
               "sha256": "d70835cc2d690c859de0633fb7ddcaaff96af0acf15241bc7fb7cb87944a2f03"
             },
             "annual": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\annual.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\annual.csv.gz",
               "sha256": "e28833a7054289924aa0d858ea5b6e479cc140d79eeadb72a943b923cb93a245"
             },
             "periods": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\periods.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\periods.csv.gz",
               "sha256": "755d8c2d1a0220eae0f62190e6de5bbcb554b663adfbcc7f408b0376359bcca9"
             },
             "loads": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\loads.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\loads.csv.gz",
               "sha256": "9e6b5c204b752bb067dd48e04b62216fef3bf50b9e8388560f120730f18868ce"
             },
             "relationships": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\relationships.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\relationships.csv.gz",
               "sha256": "efd94ac2d0b7995b38c3150582e7d1ba902b2ccd4de4a65ad52abf2ec99f71d2"
             },
             "composition_observations": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_observations.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_observations.csv.gz",
               "sha256": "a5f7a65a09a0881194090d982fa9459d3dd7dac3ef0016a59019a6e52b440760"
             },
             "composition_variants": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_variants.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_variants.csv.gz",
               "sha256": "87100cac745ca3a1900aa521a8775469bb1203b1e24d96c7d7c058c97c59460d"
             },
             "composition_matches": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_matches.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_matches.csv.gz",
               "sha256": "a9ccd8dab50cfb108a1e7a25dac303e6070981b36add91f874003d902e0d4054"
             },
             "composition_coverage": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_coverage.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_coverage.csv.gz",
               "sha256": "b03465791ec5d70ed172d08e69f455204d0ced3f50e0f5f503807eacd25446ad"
             },
             "catalogue_rating_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\catalogue_rating_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\catalogue_rating_weights.csv.gz",
               "sha256": "13edb903602c6fcb9ca18ba9f2e970289dcebbdebda606d532481b5c86a39f76"
             },
             "rating_class_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\rating_class_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\rating_class_weights.csv.gz",
               "sha256": "de75ab91590c68e52b2e30b3148211326d8a74f59c475e64b5ec32ce9874559c"
             },
             "annual_cohort_stock": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\annual_cohort_stock.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\annual_cohort_stock.csv.gz",
               "sha256": "c934460e20ce45bbd1cb85835184a2f9592c0be0b1575e0fa04be1c09be650f7"
             },
             "final_efficiency": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\final_efficiency.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\final_efficiency.csv.gz",
               "sha256": "2cbc7aeb02a7765c0d76d8b32f158072586445aac6215dbcd43e69f39eceb42c"
             },
             "final_splits": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\final_splits.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\final_splits.csv.gz",
               "sha256": "74229e5f40e26654f7f412c92045547e3c8bebc1b34b1d80ea7c40c972d28b9c"
             },
             "integrity": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\integrity.json",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\integrity.json",
               "sha256": "f11385594570514bdc72049d5a2f700dfe52a37d7799f004b38cbfcb22af2b0c"
             },
             "raw_ratings_battery_electric_2012_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_battery_electric_2012_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_battery_electric_2012_2026.csv.gz",
               "sha256": "b85cf0bbe271e3596da0a3ed0efacf5a93e450169fa747e70d9aa0708d46afea"
             },
             "raw_ratings_plug_in_hybrid_2012_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_plug_in_hybrid_2012_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_plug_in_hybrid_2012_2026.csv.gz",
               "sha256": "9cca0097a252350fccb30525e7346031c0019c725a4b2eccf4f626bfc3c43123"
             },
             "raw_ratings_fuel_consumption_1995_2014": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_1995_2014.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_1995_2014.csv.gz",
               "sha256": "2a26fbd0b6c87d61b655934efd68086ac3a52b08e8b726e3ddd41b6a9d49730d"
             },
             "raw_ratings_fuel_consumption_2015_2024": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2015_2024.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2015_2024.csv.gz",
               "sha256": "a12d4431b738c21a75ddd6494c0e8da952f6464c8322b4aa29ededccb9a629dd"
             },
             "raw_ratings_fuel_consumption_2025": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2025.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2025.csv.gz",
               "sha256": "9cee8c07f3226e1130bae98679971dcfcc78751b1ebec96a57e340333f3ead67"
             },
             "raw_ratings_fuel_consumption_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2026.csv.gz",
               "sha256": "9e93989e3e57e75ef8ef894204d7abad17176c45b02317abda9e7e579436c1c4"
             },
             "atb_vehicles": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb_vehicles.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb_vehicles.csv.gz",
               "sha256": "ec2cacc6ed3d41a7cdb5a49d72acd28f88754470542bd49cc864e3b9374097a0"
             },
             "atb_phev": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb_phev.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb_phev.csv.gz",
               "sha256": "1a5912d357d7c5d6fcecee32e78e1b8442c8861109cf0257afaac92933a9d5f4"
             },
             "ceud": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\ceud.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\ceud.csv.gz",
               "sha256": "85347ba7c9f27d859f3cfb42c9530b684230bce8a8a7fb5eef6434236003af57"
             },
             "omega_records": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\omega_records.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\omega_records.csv.gz",
               "sha256": "6fccfd7b9f938b39384d01b697a5f389228c64f0f2f38b4291d3e1961dcb2396"
             },
             "omega_buckets": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\omega_buckets.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\omega_buckets.csv.gz",
               "sha256": "5e8df8c4acd35a9e3a289bd2d0aa56dd47225176f11a2998798366b072a7307a"
             },
             "benchmark_statcan_new": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_statcan_new.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_statcan_new.csv.gz",
               "sha256": "2fce5e2b76e99006e29a5060a6dcc7262f24e045224be27dd9309ce405e63a98"
             },
             "benchmark_statcan_stock": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_statcan_stock.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_statcan_stock.csv.gz",
               "sha256": "2d05016c366f337b9e0cb83d0566ab95d4b7b744b2591ff4fe173f1814729496"
             },
             "benchmark_mto_passenger_cohorts": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_passenger_cohorts.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_passenger_cohorts.csv.gz",
               "sha256": "0eb8e4b433fb583f5da310f8b8b49ebf78d3f9c5322aa59d5b36fa8b82eb4b7d"
             },
             "benchmark_mto_commercial_cohorts": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_commercial_cohorts.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_commercial_cohorts.csv.gz",
               "sha256": "1e9971d7683ac2c4ea7673326adbdbe363c0e6d0edbb14c228a6f1489288eec2"
             },
             "benchmark_mto_mapped": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_mapped.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_mapped.csv.gz",
               "sha256": "8393e2ae4a6ca08cf1abf35d9d6aa8d2c557f12625b69f15637d6ffe801a84d9"
             },
             "benchmark_izev_records": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_izev_records.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_izev_records.csv.gz",
               "sha256": "11416afad36668a00051481f15f433135aa05e2d691845181ed3e6576a803232"
             }
           },
@@ -14447,7 +14437,7 @@
         "local_callable_files": {
           "src/validation/ldv_efficiency_diagnostic.py": "c35bd1430d440ed417988ffc4fbdd47cee7ccc3a72ba65f90f6b28687ded22e9",
           "src/validation/notebook_evidence.py": "a4f4321b63eacff435db3d1bade96a74a63119b59c9535b9d3f354a6d99e67dc",
-          "src/validation/notebook_figures.py": "432915cf0e0c2c80187821ab0644d5485999bcb3acc75da4c7261f27d31cfa33"
+          "src/validation/notebook_figures.py": "f13d80eb4366f375e29d53cf413bb1894e91f08dcd6c6ef3af1a99c2a5fcebaa"
         }
       },
       "plotted_context": {
@@ -14503,8 +14493,8 @@
             "scale": {
               "domain": [
                 "Production trajectory",
-                "ATB indexing",
-                "Reference-only NRCan aggregates"
+                "NLR ATB indexing",
+                "Reference-only NRCan Ratings aggregates"
               ],
               "range": [
                 [],
@@ -14905,34 +14895,34 @@
           },
           "chart.layer[0].data": {
             "rows": 35,
-            "sha256": "b66935a490e279c69d081eded91250a0be02c9970c8249c2f88cf6bac2541121"
+            "sha256": "e1bf979a5a86c1a6784db88270016c5aec84ce75a9bfff4a90f77496c5b07319"
           }
         },
-        "vega_lite_sha256": "57224f22132e73d3d4c81eae7b6ca6093b5f3d202bcc0a9712f4884de821fc3a",
+        "vega_lite_sha256": "d2d9bf58c71771c992c9b44de49ea976e07217befc290e6aeb00647ef03180a5",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:07:26.569592+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "ldv-eff-6-medium-trucks-diesel-mj-vkm": {
       "file": "ldv-eff-6-medium-trucks-diesel-mj-vkm.svg",
-      "sha256": "97851e72554b22cd02f88d39adce1d27d72c7e9065867ee995b5e03018ec54cf",
+      "sha256": "50dec65d69c9b211ddee10fb1909dc5bf60d83c81c4fd2e664f87bd9d6c5e66a",
       "title": "Medium trucks: DIESEL consumption after vintage aggregation",
       "generator": "docs/insights/ldv_efficiency_diagnosis.py",
-      "generator_sha256": "9d3970ea979ffd379e0319c6759ab80dc085b832eb22d8aab6cfac8d1a698435",
+      "generator_sha256": "3980879e2da17ded00a8eaf1ede451715d83ecd3d5eba4096baffcf9ff2a79ec",
       "group": "notebooks",
       "selections": {
         "notebook_controls": {
           "distribution_metric": "Consumption",
           "distribution_group": "Cars",
           "vehicle_group": "Cars",
-          "pev_filters": {
+          "mto_filters": {
             "year": 2023,
             "rating_class": null,
             "powertrain": null
           },
-          "mto_filters": {
+          "pev_filters": {
             "year": 2023,
             "rating_class": null,
             "powertrain": null
@@ -15219,8 +15209,8 @@
           "build": {
             "version": 1,
             "profile": "efficiency",
-            "build_id": "notebook_diagnostics-20261110T055620Z",
-            "built_at": "2026-11-10T05:56:20.095938Z",
+            "build_id": "notebook_diagnostics-20261110T143310Z",
+            "built_at": "2026-11-10T14:33:10.417449Z",
             "scenario": {
               "name": "notebook_diagnostics",
               "description": "Road stock evidence and the existing-to-future efficiency bridge",
@@ -15228,7 +15218,7 @@
             },
             "database": {
               "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_notebook_diagnostics.sqlite",
-              "sha256": "6e8961d176a2a64e5820f7b1039fa0f40c6404dd394281bd5226ddf421be927d"
+              "sha256": "38dd4f994d3fc7c33017ad61ea24e71d98919c868d7ba27e9ad07beb6d0d24b6"
             },
             "prepare_command": "uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite",
             "config": {
@@ -15240,7 +15230,7 @@
               "paths": {
                 "path": "config/paths.yaml",
                 "source": "config/paths.yaml",
-                "sha256": "c30c36d1edcaed86e4de2b6476b91e7c177c9bb4eaac12fbe47e6f8ea6c28a19"
+                "sha256": "2f8fca8dedbe90b2c88ad6a22a9b7db61e058ae5ba6245ea5944900fe5724159"
               },
               "sources": {
                 "path": "config/sources.yaml",
@@ -15250,7 +15240,7 @@
               "rules": {
                 "path": "config/parameters/rules.yaml",
                 "source": "config/parameters/rules.yaml",
-                "sha256": "8ff747c9d43d17d93cec5fb7719fb9ae749bfc3cd6266dd7dc3ec5c8232f126e"
+                "sha256": "e39af227dd1eb96dbcff8744466699e45bd2ff639fea143489e3311d0e326d9c"
               },
               "conversion": {
                 "path": "config/parameters/conversion.yaml",
@@ -15440,143 +15430,143 @@
                 "sha256": "11416afad36668a00051481f15f433135aa05e2d691845181ed3e6576a803232"
               }
             },
-            "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\manifest.json"
+            "manifest": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\manifest.json"
           },
           "inputs": {
             "ratings": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\ratings.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\ratings.csv.gz",
               "sha256": "0b304d022454c4bf07938aecc098aeb90a5ede5fee539cd9099005d9ed32cb6d"
             },
             "rating_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\rating_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\rating_weights.csv.gz",
               "sha256": "b03465791ec5d70ed172d08e69f455204d0ced3f50e0f5f503807eacd25446ad"
             },
             "atb": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb.csv.gz",
               "sha256": "d70835cc2d690c859de0633fb7ddcaaff96af0acf15241bc7fb7cb87944a2f03"
             },
             "annual": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\annual.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\annual.csv.gz",
               "sha256": "e28833a7054289924aa0d858ea5b6e479cc140d79eeadb72a943b923cb93a245"
             },
             "periods": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\periods.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\periods.csv.gz",
               "sha256": "755d8c2d1a0220eae0f62190e6de5bbcb554b663adfbcc7f408b0376359bcca9"
             },
             "loads": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\loads.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\loads.csv.gz",
               "sha256": "9e6b5c204b752bb067dd48e04b62216fef3bf50b9e8388560f120730f18868ce"
             },
             "relationships": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\relationships.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\relationships.csv.gz",
               "sha256": "efd94ac2d0b7995b38c3150582e7d1ba902b2ccd4de4a65ad52abf2ec99f71d2"
             },
             "composition_observations": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_observations.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_observations.csv.gz",
               "sha256": "a5f7a65a09a0881194090d982fa9459d3dd7dac3ef0016a59019a6e52b440760"
             },
             "composition_variants": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_variants.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_variants.csv.gz",
               "sha256": "87100cac745ca3a1900aa521a8775469bb1203b1e24d96c7d7c058c97c59460d"
             },
             "composition_matches": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_matches.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_matches.csv.gz",
               "sha256": "a9ccd8dab50cfb108a1e7a25dac303e6070981b36add91f874003d902e0d4054"
             },
             "composition_coverage": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\composition_coverage.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\composition_coverage.csv.gz",
               "sha256": "b03465791ec5d70ed172d08e69f455204d0ced3f50e0f5f503807eacd25446ad"
             },
             "catalogue_rating_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\catalogue_rating_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\catalogue_rating_weights.csv.gz",
               "sha256": "13edb903602c6fcb9ca18ba9f2e970289dcebbdebda606d532481b5c86a39f76"
             },
             "rating_class_weights": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\rating_class_weights.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\rating_class_weights.csv.gz",
               "sha256": "de75ab91590c68e52b2e30b3148211326d8a74f59c475e64b5ec32ce9874559c"
             },
             "annual_cohort_stock": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\annual_cohort_stock.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\annual_cohort_stock.csv.gz",
               "sha256": "c934460e20ce45bbd1cb85835184a2f9592c0be0b1575e0fa04be1c09be650f7"
             },
             "final_efficiency": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\final_efficiency.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\final_efficiency.csv.gz",
               "sha256": "2cbc7aeb02a7765c0d76d8b32f158072586445aac6215dbcd43e69f39eceb42c"
             },
             "final_splits": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\final_splits.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\final_splits.csv.gz",
               "sha256": "74229e5f40e26654f7f412c92045547e3c8bebc1b34b1d80ea7c40c972d28b9c"
             },
             "integrity": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\integrity.json",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\integrity.json",
               "sha256": "f11385594570514bdc72049d5a2f700dfe52a37d7799f004b38cbfcb22af2b0c"
             },
             "raw_ratings_battery_electric_2012_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_battery_electric_2012_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_battery_electric_2012_2026.csv.gz",
               "sha256": "b85cf0bbe271e3596da0a3ed0efacf5a93e450169fa747e70d9aa0708d46afea"
             },
             "raw_ratings_plug_in_hybrid_2012_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_plug_in_hybrid_2012_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_plug_in_hybrid_2012_2026.csv.gz",
               "sha256": "9cca0097a252350fccb30525e7346031c0019c725a4b2eccf4f626bfc3c43123"
             },
             "raw_ratings_fuel_consumption_1995_2014": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_1995_2014.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_1995_2014.csv.gz",
               "sha256": "2a26fbd0b6c87d61b655934efd68086ac3a52b08e8b726e3ddd41b6a9d49730d"
             },
             "raw_ratings_fuel_consumption_2015_2024": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2015_2024.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2015_2024.csv.gz",
               "sha256": "a12d4431b738c21a75ddd6494c0e8da952f6464c8322b4aa29ededccb9a629dd"
             },
             "raw_ratings_fuel_consumption_2025": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2025.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2025.csv.gz",
               "sha256": "9cee8c07f3226e1130bae98679971dcfcc78751b1ebec96a57e340333f3ead67"
             },
             "raw_ratings_fuel_consumption_2026": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\raw_ratings_fuel_consumption_2026.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\raw_ratings_fuel_consumption_2026.csv.gz",
               "sha256": "9e93989e3e57e75ef8ef894204d7abad17176c45b02317abda9e7e579436c1c4"
             },
             "atb_vehicles": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb_vehicles.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb_vehicles.csv.gz",
               "sha256": "ec2cacc6ed3d41a7cdb5a49d72acd28f88754470542bd49cc864e3b9374097a0"
             },
             "atb_phev": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\atb_phev.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\atb_phev.csv.gz",
               "sha256": "1a5912d357d7c5d6fcecee32e78e1b8442c8861109cf0257afaac92933a9d5f4"
             },
             "ceud": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\ceud.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\ceud.csv.gz",
               "sha256": "85347ba7c9f27d859f3cfb42c9530b684230bce8a8a7fb5eef6434236003af57"
             },
             "omega_records": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\omega_records.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\omega_records.csv.gz",
               "sha256": "6fccfd7b9f938b39384d01b697a5f389228c64f0f2f38b4291d3e1961dcb2396"
             },
             "omega_buckets": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\omega_buckets.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\omega_buckets.csv.gz",
               "sha256": "5e8df8c4acd35a9e3a289bd2d0aa56dd47225176f11a2998798366b072a7307a"
             },
             "benchmark_statcan_new": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_statcan_new.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_statcan_new.csv.gz",
               "sha256": "2fce5e2b76e99006e29a5060a6dcc7262f24e045224be27dd9309ce405e63a98"
             },
             "benchmark_statcan_stock": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_statcan_stock.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_statcan_stock.csv.gz",
               "sha256": "2d05016c366f337b9e0cb83d0566ab95d4b7b744b2591ff4fe173f1814729496"
             },
             "benchmark_mto_passenger_cohorts": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_passenger_cohorts.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_passenger_cohorts.csv.gz",
               "sha256": "0eb8e4b433fb583f5da310f8b8b49ebf78d3f9c5322aa59d5b36fa8b82eb4b7d"
             },
             "benchmark_mto_commercial_cohorts": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_commercial_cohorts.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_commercial_cohorts.csv.gz",
               "sha256": "1e9971d7683ac2c4ea7673326adbdbe363c0e6d0edbb14c228a6f1489288eec2"
             },
             "benchmark_mto_mapped": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_mto_mapped.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_mto_mapped.csv.gz",
               "sha256": "8393e2ae4a6ca08cf1abf35d9d6aa8d2c557f12625b69f15637d6ffe801a84d9"
             },
             "benchmark_izev_records": {
-              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_izev_records.csv.gz",
+              "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_izev_records.csv.gz",
               "sha256": "11416afad36668a00051481f15f433135aa05e2d691845181ed3e6576a803232"
             }
           },
@@ -15651,7 +15641,7 @@
         "local_callable_files": {
           "src/validation/ldv_efficiency_diagnostic.py": "c35bd1430d440ed417988ffc4fbdd47cee7ccc3a72ba65f90f6b28687ded22e9",
           "src/validation/notebook_evidence.py": "a4f4321b63eacff435db3d1bade96a74a63119b59c9535b9d3f354a6d99e67dc",
-          "src/validation/notebook_figures.py": "432915cf0e0c2c80187821ab0644d5485999bcb3acc75da4c7261f27d31cfa33"
+          "src/validation/notebook_figures.py": "f13d80eb4366f375e29d53cf413bb1894e91f08dcd6c6ef3af1a99c2a5fcebaa"
         }
       },
       "plotted_context": {
@@ -15699,7 +15689,7 @@
             "scale": {
               "domain": [
                 "Production trajectory",
-                "ATB indexing"
+                "NLR ATB indexing"
               ],
               "range": [
                 [],
@@ -16044,22 +16034,22 @@
           },
           "chart.layer[0].data": {
             "rows": 9,
-            "sha256": "cc0c75666fdbafab6c4618182e5ded63f813c82cc31f8e44fc307de1bf608d6c"
+            "sha256": "6afb26bda25ce409d53752c6dfbe7ee057aa5a5b1199b5c6dc320ab1e02a6257"
           }
         },
-        "vega_lite_sha256": "96066b7e4c3e45d39cc3d6865bf16d9fdbc18f1db825d93603cc5417923b14d0",
+        "vega_lite_sha256": "00a86eb6468a4d73860f95306b4f410f3f342313c8e5fe06847e21a3b91a32a5",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:07:26.569592+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1"
     },
     "fleet-100-1": {
       "file": "fleet-100-1.svg",
-      "sha256": "b844b2e4229af1b500f8a424d9729023510aa2d97dd3b3913bf818adb00339d3",
+      "sha256": "9358fab00e3c31ef1670f7dcc4d9b2127765360de3b4aacc22f8d9a189685348",
       "title": "Ontario vehicles around 2025: separate views of 100",
       "generator": "docs/insights/documentation_support.py",
-      "generator_sha256": "8ea330422746a9dd90fdd029a171f91140073f0d6dc271052604420f0b76ea5a",
+      "generator_sha256": "7a28a46b3baf51265a81b356329941906f2e54532cfd69571a724eceb76f8c5e",
       "group": "fleet",
       "selections": {
         "reference_year": 2025,
@@ -16100,21 +16090,21 @@
         "panel_height": 220
       },
       "evidence": {
-        "efficiency_build": "notebook_diagnostics-20261110T055620Z",
+        "efficiency_build": "notebook_diagnostics-20261110T143310Z",
         "efficiency_database": {
           "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_notebook_diagnostics.sqlite",
-          "sha256": "6e8961d176a2a64e5820f7b1039fa0f40c6404dd394281bd5226ddf421be927d"
+          "sha256": "38dd4f994d3fc7c33017ad61ea24e71d98919c868d7ba27e9ad07beb6d0d24b6"
         },
         "figure_id": "fleet-100-1",
         "generator": "validation.documentation_support.fleet_100_chart",
-        "generator_sha256": "e1ae5884efcdcb0beda1f97c860483d3d191ffa54f72a37a8c21c38b66ef9810",
+        "generator_sha256": "ea94bc7fd475760ea140a337afecfe1c00093314f451faa5c23ba51ff2147d0d",
         "input_files": {
           "benchmark_statcan_stock": {
-            "path": "outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\efficiency\\files\\benchmark_statcan_stock.csv.gz",
+            "path": "outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\efficiency\\files\\benchmark_statcan_stock.csv.gz",
             "sha256": "2d05016c366f337b9e0cb83d0566ab95d4b7b744b2591ff4fe173f1814729496"
           },
           "mapped_fleet": {
-            "path": "outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T055620Z\\vehicle_stock\\files\\mapped_fleet.csv.gz",
+            "path": "outputs\\validation\\notebook_evidence\\builds\\notebook_diagnostics-20261110T143310Z\\vehicle_stock\\files\\mapped_fleet.csv.gz",
             "sha256": "8393e2ae4a6ca08cf1abf35d9d6aa8d2c557f12625b69f15637d6ffe801a84d9"
           }
         },
@@ -16126,8 +16116,8 @@
           "Integer symbols use largest-remainder rounding; the exact table retains every category, including positive shares receiving zero symbols."
         ],
         "manifest_hashes": {
-          "efficiency": "fd2f9beaddc3897a27dd20865571d811028d5a56a843211a495acccd4377c253",
-          "vehicle_stock": "bd1286dc777710bf0f73bda16a233ede71a39214548c0b097270f8596afc7fc8"
+          "efficiency": "054ff4451fe136ce72db1d696b8fc0c5662c66b06507daf3d86fcf35c7599458",
+          "vehicle_stock": "b605753cb9947045c3fc90a54e42ae1424df035d608b4c0d2c4d14d80d97e36d"
         },
         "reference_year": 2025,
         "settings": {
@@ -16170,10 +16160,10 @@
         },
         "settings_path": "config\\parameters\\documentation.yaml",
         "settings_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1",
-        "stock_build": "notebook_diagnostics-20261110T055620Z",
+        "stock_build": "notebook_diagnostics-20261110T143310Z",
         "stock_database": {
           "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_notebook_diagnostics.sqlite",
-          "sha256": "6e8961d176a2a64e5820f7b1039fa0f40c6404dd394281bd5226ddf421be927d"
+          "sha256": "38dd4f994d3fc7c33017ad61ea24e71d98919c868d7ba27e9ad07beb6d0d24b6"
         },
         "table": {
           "path": "ontario_100_shares.csv",
@@ -16187,7 +16177,7 @@
           "fontSize": 20,
           "subtitle": [
             "Figure fleet-100-1 \u00b7 Every panel has its own denominator; these are not the same 100 vehicles.",
-            "MTO size/model marginals do not establish powertrain. StatCan fuel shares are independent registered-stock evidence.",
+            "Ontario MTO size/model marginals do not establish powertrain. StatCan fuel shares are independent registered-stock evidence.",
             "Percentages are rounded to 0.01%; exact counts and shares remain in the table. Symbols use largest remainders."
           ],
           "subtitleFontSize": 12
@@ -16814,11 +16804,11 @@
             "sha256": "ddb6b6812626795124aa496aa40fcc18085d059adef16f068dbde685060826a1"
           }
         },
-        "vega_lite_sha256": "aa75808441140d612f175350fd55b0d516e89d530cb785bb0430ca5c54b583aa",
+        "vega_lite_sha256": "1954e106f9ae91e8edad307fa3f9c3e63444617bbbd8e5d919728d5aae278861",
         "domain_note": "Year fields retain their source names: model vintages, observation years, projection years and dollar years are not interchangeable. Data are the chart's input rows; any Vega-Lite filters are recorded separately."
       },
-      "exported_at": "2026-11-10T06:03:09.884970+00:00",
-      "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
+      "exported_at": "2026-11-10T14:35:06.145035+00:00",
+      "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
       "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1",
       "exact_table": {
         "file": "ontario_100_shares.csv",
@@ -16828,8 +16818,8 @@
     }
   },
   "version": 2,
-  "exported_at": "2026-11-10T06:07:26.569592+00:00",
+  "exported_at": "2026-11-10T14:35:06.145035+00:00",
   "selections_sha256": "bad05e8da4eb3aa57aa729672e90312d11caa00b11bba618d3e63f6a77c93ef1",
-  "exporter_sha256": "e9088fa9e98aa12f8e2d07dcb440c5105892b1cdf0eaa2bbc062a50ab13e7a0c",
-  "revision": "b5f5632c0fcc245963d706137ff446490bac071c"
+  "exporter_sha256": "002a206192bb2a08f6ca42cbb70722d519f3fd23d31ee5d50d68c85bbee7bcd6",
+  "revision": "8a50a7535bde9141450eaacbbb6740b1b9bb855b"
 }

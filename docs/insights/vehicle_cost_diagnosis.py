@@ -8,6 +8,7 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    from validation.notebook_figures import source_markdown
     import marimo as mo
     from validation.vehicle_cost_diagnostic import (
         ROAD_MODES, investment_trajectory_chart, load_diagnostic,
@@ -23,7 +24,7 @@ def _():
                            show_data_types=False, show_column_summaries=False)
 
     return (ROAD_MODES, investment_trajectory_chart, load_diagnostic, maintenance_age_chart,
-            mo, range_cost_chart, service_maintenance_chart, show_chart, show_table, source_price_chart)
+            mo, range_cost_chart, service_maintenance_chart, show_chart, show_table, source_price_chart, source_markdown)
 
 
 @app.cell
@@ -47,7 +48,7 @@ def _(diagnostic, mo):
     Compare source-class prices, emitted investment costs and age-dependent maintenance and repair (M&R).
     These are **parameter diagnostics**, not optimized vehicle choices or independent validation of empirical assumptions.
 
-    **Recorded scenario:** {scenario['scenario']['name']} · ATB {diagnostic.metadata['trajectory']} ·
+    **Recorded scenario:** {scenario['scenario']['name']} · [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) {diagnostic.metadata['trajectory']} ·
     {scenario['economics']['cost_reference_year']} CAD · range representation
     `{scenario['BEV_PHEV_range_representation']['mode']}` · build {diagnostic.metadata['build_timestamp_utc']}.
     **Evidence capture:** `{diagnostic.metadata['capture_id']}`.
@@ -81,7 +82,7 @@ def _(currency, diagnostic, mo, price_basis, show_chart, source_class, source_pr
     mo.vstack([mo.md("""
     ## 1. What price is being represented?
 
-    ATB supplies retail-price-equivalent projections. Production estimates manufacturing cost by dividing by
+    [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) supplies retail-price-equivalent projections. Production estimates manufacturing cost by dividing by
     the configured family markup, **1.5 for LDVs and 1.2 for MHDVs**. This does not change the retail MSRP used
     in the repair equation. The Conservative case is a manufacturing-cost proxy obtained from AEO retail prices.
 
@@ -167,7 +168,7 @@ def _(currency, diagnostic, maintenance_age_chart, maintenance_class, maintenanc
     \(B\) in USD/mile and a dimensionless multiplier. The registered evidence does not establish a validated
     age domain. Displaying a long-age curve therefore does not establish empirical support at that age.
     [Islam et al. (2022), §3.3](https://publications.anl.gov/anlpubs/2023/11/179337.pdf#page=88)
-    describes BEAN's use of Burnham's methods; registered workbook cells supply the coefficients here.
+    describes [*ANL BEAN*](https://publications.anl.gov/anlpubs/2023/11/179337.pdf)'s use of Burnham's methods; registered workbook cells supply the coefficients here.
     """), show_chart(age_figure)])
     return (age_figure,)
 
@@ -205,7 +206,7 @@ def _(diagnostic, mo, range_cost_chart, range_family, range_mode, region, show_c
     ## 5. What is preserved by a representative range cost?
 
     With common capacity units and the same class composition, the representative purchase cost is the sum of
-    each range cost multiplied by its OMEGA within-family sales share. It sits within the range-cost envelope.
+    each range cost multiplied by its [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) within-family sales share. It sits within the range-cost envelope.
     This illustration compares the arithmetic without changing the selected production representation.
 
     The US modeled range mix is transferred across regions and vintages. It is neither current Canadian sales
@@ -216,15 +217,15 @@ def _(diagnostic, mo, range_cost_chart, range_family, range_mode, region, show_c
 
 
 @app.cell
-def _(diagnostic, mo, show_table):
+def _(diagnostic, mo, show_table, source_markdown):
     mo.vstack([mo.md("""
     ## Evidence and remaining limitations
 
-    The source-step table ranks all adjacent ATB price changes by magnitude. This is an investigation aid;
+    The source-step table ranks all adjacent [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) price changes by magnitude. This is an investigation aid;
     it applies no arbitrary defect threshold or smoothing. Source changes, architecture differences and
     aggregation can all be consequential without being implementation errors.
     """), show_table(diagnostic.frames["source_steps"][["vehicle_class", "powertrain", "previous_source_year", "source_year", "previous_native_price", "retail_native", "relative_change", "source_unit"]], "Source price steps, largest absolute proportional change first"),
-        mo.md("\n".join(f"- {item}" for item in diagnostic.metadata["limitations"])),
+        mo.md(source_markdown("\n".join(f"- {item}" for item in diagnostic.metadata["limitations"]))),
         mo.accordion({"Complete cost and monetary audit": mo.vstack([
             show_table(diagnostic.frames["investment_audit"], "Production investment derivation before optional new-range aggregation"),
             show_table(diagnostic.frames["maintenance_audit"], "Production M&R derivation before optional new-range aggregation")]),

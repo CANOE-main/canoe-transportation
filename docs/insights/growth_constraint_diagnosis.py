@@ -163,7 +163,7 @@ def _(growth_tables, inspect_table, mo):
                 ## Source identity and literature definitions
 
                 The manifest identifies each registered file, hash and access route.
-                HATCH national series and aggregate estimates have different grains;
+                [*HATCH*](https://zenodo.org/records/10231865) national series and aggregate estimates have different grains;
                 an aggregate estimate cannot stand in for every national series.
                 """
             ),
@@ -172,19 +172,19 @@ def _(growth_tables, inspect_table, mo):
                 r"""
                 | Evidence | Meaning of growth and consequence for this diagnostic |
                 |---|---|
-                | [Odenweller et al. (2022)](https://doi.org/10.1038/s41560-022-01097-4), supplied PDF pp. 9–10 | Emergence is the early, approximately exponential phase, when capacity is small relative to the ceiling. Annual fractional growth is $b=e^k-1$. Conventional wind/solar evidence uses moving seven-year exponential fits; complete emergency analogues use logistic fits. Their 15% floor and policy-conditioned demand pull are research assumptions, not vehicle lower bounds. Gompertz $k$ is not an emergence fraction: they match its initial seven-year growth. |
-                | [Nemet et al. (2023)](https://doi.org/10.1038/s43247-023-01056-1), main pp. 7–8; supplied SI pp. 16–21 | Logistic $k$ characterizes early continuous relative growth. Formative growth uses projected data below 2.5% of fitted saturation; inflection growth uses a linear fit over ±5 years normalized by inflection level. Whole-series and fastest ten-year exponential growth are distinct observed-window questions. $T_{10–90}=\ln(81)/k$ is a duration. Their Gompertz maximum slope $Lk/e$ has level/year units before normalization. |
+                | [Odenweller et al. (2022)](https://doi.org/10.1038/s41560-022-01097-4), supplied PDF pp. 9–10 | Emergence is the early, approximately exponential phase, when capacity is small relative to the ceiling. Annual fractional growth is $b=e^k-1$. Conventional wind/solar evidence uses moving seven-year exponential fits; complete emergency analogues use logistic fits. Their 15% floor and policy-conditioned demand pull are research assumptions, not vehicle lower bounds. Gompertz $\boldsymbol{k}$ is not an emergence fraction: they match its initial seven-year growth. |
+                | [Nemet et al. (2023)](https://doi.org/10.1038/s43247-023-01056-1), main pp. 7–8; supplied SI pp. 16–21 | Logistic $\boldsymbol{k}$ characterizes early continuous relative growth. Formative growth uses projected data below 2.5% of fitted saturation; inflection growth uses a linear fit over ±5 years normalized by inflection level. Whole-series and fastest ten-year exponential growth are distinct observed-window questions. $T_{10–90}=\ln(81)/k$ is a duration. Their Gompertz maximum slope $Lk/e$ has level/year units before normalization. |
                 | [Edwards et al. (2024)](https://doi.org/10.1073/pnas.2215679121), main methods; supplied SI pp. 9–15 and section F | SHARD analogy selection compares manufacturing, infrastructure, institutions and adoption context. The 20-observation/global/capacity screen was specific to DACCS. Logistic projections retain a ceiling and use a continuous coefficient in a discretized growth equation. SI tail and synthetic-early-data tests expose coefficient sensitivity. These choices do not justify copying a single DACCS analogue rate to vehicles. |
-                | [Greene & Nemet extended research (2026)](https://doi.org/10.1038/s41467-026-73563-6), methods and SI pp. 4–5, 30 | The release adds country and technology characteristics and national logistic estimates. It standardizes some observations by cumulative calculation. Its 10–90 average continuous growth $\ln(9)/T$ differs from early logistic $k$ and discrete $b$. Associations with technology granularity/lifetime/adopter context help screen analogues; they do not estimate a Canadian vehicle parameter. |
+                | [Greene & Nemet extended research (2026)](https://doi.org/10.1038/s41467-026-73563-6), methods and SI pp. 4–5, 30 | The release adds country and technology characteristics and national logistic estimates. It standardizes some observations by cumulative calculation. Its 10–90 average continuous growth $\ln(9)/T$ differs from early logistic $\boldsymbol{k}$ and discrete $\boldsymbol{b}$. Associations with technology granularity/lifetime/adopter context help screen analogues; they do not estimate a Canadian vehicle parameter. |
 
-                Here $k$ has units **year⁻¹**, because its exponential argument contains
-                years. A percentage reported from $k$ is not automatically a discrete annual
+                Here $\boldsymbol{k}$ has units **year⁻¹**, because its exponential argument contains
+                years. A percentage reported from $\boldsymbol{k}$ is not automatically a discrete annual
                 fraction. At finite logistic deployment,
                 $\dot C/C=k(1-C/L)$; at inflection this is $k/2$.
                 Gompertz has $\dot C/C=k\ln(L/C)$ and no finite, constant low-stock limit.
                 We therefore never map a Gompertz coefficient directly into a growth rate.
 
-                Notation differs: Nemet's exponential $a e^{bt}$ uses $b$ as a continuous
+                Notation differs: Nemet's exponential $a e^{bt}$ uses $\boldsymbol{b}$ as a continuous
                 log-slope; Odenweller's $b=e^k-1$ is a discrete annual fraction. A
                 continuous exponential coefficient also needs `expm1` before it is used
                 as a discrete annual fractional increase. Native reported columns retain
@@ -245,7 +245,7 @@ def _(growth_tables, inspect_table, mo, pd):
         [
             mo.md(
                 """
-                ## Original versus extended HATCH
+                ## Original versus extended [*HATCH*](https://zenodo.org/records/10231865)
 
                 [Original release 10231865](https://zenodo.org/records/10231865) and
                 [extended release 19579793](https://zenodo.org/records/19579793) are both
@@ -393,7 +393,7 @@ def _(growth_config, growth_tables, inspect_table, mo):
                 **year intervals**, require observed endpoints and enforce the configured
                 gap limit. A zero-containing window has no log-growth estimate. No
                 interpolation, positive floor or clipping creates early observations.
-                Fit $R^2$ alone cannot establish an identifiable ceiling or transferable rate.
+                Fit $\\boldsymbol{R^2}$ alone cannot establish an identifiable ceiling or transferable rate.
                 """
             ),
             inspect_table(curation_summary),
@@ -565,12 +565,12 @@ def _(
                 recreates legacy ceiling bounds (0.9–1.1 × observed maximum, inflection
                 inside the sample); broader profiles allow unobserved inflection years.
                 They are **optimizer sensitivity settings**, not assumed future ceilings.
-                Curves end at their fitted observation endpoints. The raw EAFO 2026 point
+                Curves end at their fitted observation endpoints. The raw [*EAFO Norway*](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet) 2026 point
                 remains visible but is excluded from annual estimates and fits.
 
                 Bound hits, Jacobian conditioning, unobserved inflections, family choice,
                 ceiling sensitivity and removal of the last five years expose uncertainty
-                beyond $R^2$. These ranges are structural sensitivity, not confidence
+                beyond $\boldsymbol{R^2}$. These ranges are structural sensitivity, not confidence
                 intervals. A good early-phase fit can leave ceiling and midpoint nearly
                 unidentified. Observed-window estimates avoid a future ceiling but depend
                 on the selected phase, policy, denominator and time window.
@@ -656,9 +656,9 @@ def _(alt, chart_ui, growth_tables, inspect_table, mo, np, pd):
             ),
             mo.md(
                 """
-                No broad HATCH quantile or fastest-country coefficient is assigned to a
+                No broad [*HATCH*](https://zenodo.org/records/10231865) quantile or fastest-country coefficient is assigned to a
                 target. The original published logistic column is a reported coefficient
-                percentage: division by 100 recovers $k$, and `expm1(k)` gives an early
+                percentage: division by 100 recovers $\\boldsymbol{k}$, and `expm1(k)` gives an early
                 discrete annual fraction. The original Delta T field reports the **inverse**
                 10–90 duration as a percentage (4% means 1/T=0.04 year⁻¹, or T=25 years).
                 Extended Delta T reports years; 2.197/T is a different growth measure. Extended fit
@@ -847,7 +847,7 @@ def _(alt, chart_ui, growth_tables, inspect_table, mo):
                 """
                 ## Refreshed Norway vehicle evidence
 
-                [EAFO Norway fleet and registrations](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet)
+                [*EAFO Norway* fleet and registrations](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet)
                 was acquired on 7 October 2026. The page advertises fleet coverage Q2 2026
                 and registrations July 2026; 2026 entries are partial snapshots/YTD, so
                 annual fitting and period totals stop at the latest complete year, **2025**.
@@ -857,7 +857,7 @@ def _(alt, chart_ui, growth_tables, inspect_table, mo):
                 M1 passenger vehicles, N1 vans and N2/N3 trucks are observation classes,
                 not exact CANOE road-class matches. M1 includes vehicles outside a Canadian
                 car-only class; N2/N3 cannot distinguish medium from heavy trucks. H₂ is the
-                EAFO fuel category and needs a drivetrain definition before a strict FCEV
+                [*EAFO Norway*](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet) fuel category and needs a drivetrain definition before a strict FCEV
                 transfer. Policy, imports/exports, scrappage and replacement affect stock;
                 gross registrations are a proxy for model additions, not a stock change.
                 """
@@ -979,7 +979,7 @@ def _(growth_tables, inspect_table, mo, reference_region, reference_target):
                 FCEV/FCHEV grouping requires review.
 
                 Reference stock is in **thousand vehicles**, with its year shown below.
-                It combines processed CEUD totals, MTO age evidence, cohort handling and
+                It combines processed [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) totals, [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) age evidence, cohort handling and
                 inferred registration fuel shares. The cohort audit conserves class stock;
                 processed stock also applies the configured small-row threshold, reconciled
                 here. These are inferred powertrain references, not a direct census.
@@ -987,7 +987,7 @@ def _(growth_tables, inspect_table, mo, reference_region, reference_target):
                 Fuel evidence varies by cohort and source year. AB/NL Canada proxies and
                 BC/BCT, PE/PEI aliases are explicit. Passenger and freight light trucks
                 share an unallocated registration pool. The medium-truck BEV dashboard
-                override retains its own reporting year and YTD sales coverage. StatCan
+                override retains its own reporting year and YTD sales coverage. [*StatCan*](https://www.statcan.gc.ca/en/developers/wds)
                 23-10-0308 is **registered stock**; it cannot supply gross-additions history.
 
                 Missing FCEV/CNG representation does not establish zero deployment.
@@ -1141,7 +1141,7 @@ def _(
                 The median and quartiles of those overlapping windows summarize a
                 **conditional analogue range**, not statistical confidence bounds. The
                 starting level scales the bound; observed growth in the matched windows
-                supplies the rate. Absolute $C_0$ alone never establishes growth speed.
+                supplies the rate. Absolute $\boldsymbol{C_0}$ alone never establishes growth speed.
 
                 Fleet share is an observable maturity proxy, not $C/L$ for a known future
                 market. Its cross-country denominator, class mix and policies require
@@ -1251,10 +1251,10 @@ def _(
                 |---|---|---|
                 | `growth_capacity` | Active stock or available capacity. A cumulative installation total needs retirement accounting; annual production needs utilization/capacity interpretation. Count/share labels alone do not settle meaning. Convert fleet share with its changing fleet denominator. | Available group stock at the model reference, including surviving vintages and lifetime weighting. |
                 | `growth_new_capacity` | Gross installations/new registrations; aggregate annual counts into comparable model-period additions. Production of vehicles can be a sales/supply proxy after trade and allocation review. Installed-stock differences are net change and omit replacements. Market share needs the year's total sales denominator. | One previous gross-additions period, period width, region/class allocation, replacement/trade treatment. |
-                | `growth_new_capacity_delta` | Change between comparable period additions, not between stock observations. Test the recurrence jointly for $R,S$. For $R=0$, $S$ bounds the second difference of period additions. Negative prior changes matter. | Two previous additions periods and their difference, consistent widths/units; evidence for acceleration allowance. |
+                | `growth_new_capacity_delta` | Change between comparable period additions, not between stock observations. Test the recurrence jointly for $R,S$. For $R=0$, $\boldsymbol{S}$ bounds the second difference of period additions. Negative prior changes matter. | Two previous additions periods and their difference, consistent widths/units; evidence for acceleration allowance. |
 
-                $R$ is a **fraction per constraint transition** and $S$ has capacity units
-                (here k vehicles). $C_i$ is available stock; $N_i$ is the model's new-vintage
+                $\boldsymbol{R}$ is a **fraction per constraint transition** and $\boldsymbol{S}$ has capacity units
+                (here k vehicles). $\boldsymbol{C_i}$ is available stock; $\boldsymbol{N_i}$ is the model's new-vintage
                 capacity variable. The seed recurs on every transition.
                 [Temoa's documentation](https://docs.temoaproject.org/en/latest/extensions/growth_rates.html)
                 calls rates annual; the
@@ -1262,14 +1262,14 @@ def _(
                 applies `1 + rate` directly, without elapsed-year exponentiation. This
                 snapshot is pinned; a later engine revision must be rechecked.
 
-                If a discrete annual fraction $b$ is to retain its interpretation over equal
+                If a discrete annual fraction $\boldsymbol{b}$ is to retain its interpretation over equal
                 $\Delta$ years, supply $R=(1+b)^\Delta-1$; for logistic emergence this is
-                $R=e^{k\Delta}-1$. A constant native $R$ can represent a constant annual
+                $R=e^{k\Delta}-1$. A constant native $\boldsymbol{R}$ can represent a constant annual
                 fraction only with equal transition widths. A two-year 2023→2025 stock
                 demonstration differs from a five-year 2020→2025 label transition.
                 This diagnostic does not resolve that first-period production contract.
 
-                An annual recurrence seed $s$ aggregates to
+                An annual recurrence seed $\boldsymbol{s}$ aggregates to
                 $S=s[(1+b)^\Delta-1]/b$ (or $s\Delta$ at $b=0$), not just the same seed.
                 This equivalence is for stock/level recurrences, not an automatic rule for
                 period-additions deltas. Annual sales rates compared between unequal
@@ -1323,7 +1323,7 @@ def _(growth_config, growth_tables, inspect_table, mo, selected_reference):
                 accepted CANOE vintage mappings. Incomplete blocks remain missing; no
                 interpolation or cumulative sum fills them. Counts are divided by 1,000.
 
-                For fixed $R$, the smallest nonnegative constant seed covering observed
+                For fixed $\boldsymbol{R}$, the smallest nonnegative constant seed covering observed
                 level transitions is $\max(0,\max_i[y_i-(1+R)y_{i-1}])$.
                 For delta it is $\max(0,\max_i[D_i-(1+R)D_{i-1}])$.
                 These full-history residual bounds absorb regime changes and shocks as well
@@ -1527,8 +1527,8 @@ def _(
                 $N_n=N_0+nD_0+S n(n+1)/2$: additions can grow quadratically, and their
                 cumulative sum faster still. Native delta $R=0$ is **not** zero level growth.
 
-                A positive prior $D$ can decelerate under an upper bound; a negative prior
-                $D$ may force further decline. A negative upper bound conflicts with
+                A positive prior $\boldsymbol{D}$ can decelerate under an upper bound; a negative prior
+                $\boldsymbol{D}$ may force further decline. A negative upper bound conflicts with
                 nonnegative new capacity and is flagged, never clipped. Literal empty/null
                 rate handling is not assumed; the demonstration supplies explicit zero.
                 This supports testing an acceleration allowance separately from level
@@ -1641,7 +1641,7 @@ def _(
 
                 Curves start at the selected deployment reference and share the same
                 **early continuous coefficient** $k=\ln(1+b)$. Configured ceiling multiples
-                test how unknown maturity changes local growth at the same $C_0$.
+                test how unknown maturity changes local growth at the same $\boldsymbol{C_0}$.
                 The dashed line marks reference-year class stock; it sets no future cap.
 
                 The constant-rate line approximates emergence. Logistic growth is lower

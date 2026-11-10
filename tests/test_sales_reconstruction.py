@@ -173,10 +173,6 @@ def allocation_inputs(sales_inputs, *, regions=("ON",), lifetime=4):
     ])
     return {
         "provincial": sales_inputs["provincial"],
-        "ldv_age": pd.DataFrame({
-            "report_year": [2025, 2025], "nrcan_ceud_class": ["Car", "Car"],
-            "age": [0, 2], "fit_active_stock": [50.0, 50.0],
-        }),
         "report5_age": pd.DataFrame(), "ldv_registrations": registrations,
         "truck_registrations": pd.DataFrame(),
         "dashboard": pd.DataFrame(columns=["source_region", "ytd_market_share"]),
@@ -198,7 +194,7 @@ def test_sales_allocation_needs_no_population_ages_and_preserves_technology_tota
     for lifetime in (4, 10):
         args = allocation_inputs(sales_inputs, lifetime=lifetime)
         cohorts, shares, _, capacity = distribute_existing_road_capacity(**(args | {
-            "sales_cohorts": sales, "ldv_age": pd.DataFrame(),
+            "sales_cohorts": sales,
         }))
         assert capacity.groupby("tech").capacity.sum().to_dict() == pytest.approx(expected)
         assert capacity.capacity.sum() == pytest.approx(999.0)
@@ -221,8 +217,6 @@ def test_partial_regional_sales_cannot_fall_back_to_population_ages(sales_inputs
     sales = derive_sales_survival_cohorts(**sales_inputs)
     with pytest.raises(ValueError, match="complete regional car/truck sales coverage"):
         distribute_existing_road_capacity(**(args | {"sales_cohorts": sales}))
-    _, _, _, stock = distribute_existing_road_capacity(**(args | {"cohort_method": "stock_age"}))
-    assert stock.groupby("region").capacity.sum().to_dict() == pytest.approx({"ON": 999, "QC": 100})
 
 
 def test_each_region_gets_its_own_reported_stock_calibration(sales_inputs, caplog):

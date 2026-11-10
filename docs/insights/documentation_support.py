@@ -8,11 +8,12 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    from validation.notebook_figures import source_markdown
     import marimo as mo
     from validation.documentation_support import (
         fleet_100_chart, load_evidence, load_nonroad_evidence, nonroad_efficiency_chart,
     )
-    return fleet_100_chart, load_evidence, load_nonroad_evidence, mo, nonroad_efficiency_chart
+    return fleet_100_chart, load_evidence, load_nonroad_evidence, mo, nonroad_efficiency_chart, source_markdown
 
 
 @app.cell
@@ -32,17 +33,17 @@ def _(evidence, mo):
     mo.md(f"""
     # What would separate samples of 100 Ontario vehicles show?
 
-    The reference is **{evidence.settings.reference_year}**. MTO supplies mapped FIT_ACTIVE vehicle size and canonical
-    make/model counts; StatCan table **23-10-0308-01 supplies registered stock**, not new registrations.
-    The latest captured StatCan observation at or before the reference is displayed with its own year and any carry-forward.
+    The reference is **{evidence.settings.reference_year}**. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) supplies mapped FIT_ACTIVE vehicle size and canonical
+    make/model counts; [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) table **23-10-0308-01 supplies registered stock**, not new registrations.
+    The latest captured [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) observation at or before the reference is displayed with its own year and any carry-forward.
 
     Each panel has its own denominator. There is **no inferred joint distribution** linking a size class, model and powertrain.
-    Unresolved MTO classifications cannot be assigned to Cars or Light trucks and appear separately in the coverage panel.
+    Unresolved [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) classifications cannot be assigned to Cars or Light trucks and appear separately in the coverage panel.
 
     Counts remain exact in the table. Largest-remainder rounding assigns {evidence.settings.icons_per_panel} symbols to each panel;
     small positive categories can receive zero symbols without disappearing from the table or legend.
 
-    Captured stock build: `{evidence.metadata['stock_build']}`. Captured efficiency/StatCan build:
+    Captured stock build: `{evidence.metadata['stock_build']}`. Captured efficiency/[*StatCan*](https://www.statcan.gc.ca/en/developers/wds) build:
     `{evidence.metadata['efficiency_build']}`. This notebook only reads recorded evidence.
     """)
     return
@@ -56,13 +57,13 @@ def _(evidence, fleet_100_chart, mo):
 
 
 @app.cell
-def _(evidence, mo):
+def _(evidence, mo, source_markdown):
     mo.vstack([
         mo.ui.table(evidence.shares[["vehicle_group", "dimension", "category", "count", "denominator", "share", "icons", "source_year", "reference_year", "carried_forward_years", "denominator_label"]],
                     selection=None, label="Exact marginal shares, including categories receiving zero symbols", page_size=15,
                     format_mapping={"share": "{:.4%}", "count": "{:,.0f}", "denominator": "{:,.0f}"},
                     show_column_summaries=False, show_data_types=False),
-        mo.md("\n".join(f"- {item}" for item in evidence.metadata["limitations"])),
+        mo.md(source_markdown("\n".join(f"- {item}" for item in evidence.metadata["limitations"]))),
         mo.accordion({"Captured source identities and presentation selections": mo.json(evidence.metadata)}),
         mo.md("""
         Reproduce the evidence only after refreshing its registered notebook captures:
@@ -92,7 +93,7 @@ def _(load_nonroad_evidence, mo):
 
 
 @app.cell
-def _(mo, nonroad, nonroad_efficiency_chart):
+def _(mo, nonroad, nonroad_efficiency_chart, source_markdown):
     nonroad_figure = nonroad_efficiency_chart(nonroad)
     mo.vstack([
         mo.md("""
@@ -107,7 +108,7 @@ def _(mo, nonroad, nonroad_efficiency_chart):
         mo.ui.altair_chart(nonroad_figure, chart_selection=False, legend_selection=False),
         mo.ui.table(nonroad.rows, selection=None, page_size=12, label="Exact final non-road parameter rows, units and provenance IDs",
                     show_column_summaries=False, show_data_types=False),
-        mo.md("\n".join(f"- {item}" for item in nonroad.metadata["limitations"])),
+        mo.md(source_markdown("\n".join(f"- {item}" for item in nonroad.metadata["limitations"]))),
         mo.accordion({"Recorded non-road build and capacity-unit evidence": mo.json(nonroad.metadata)}),
         mo.md("""
         Capture after the configured scenario build, then export the same notebook generator explicitly:

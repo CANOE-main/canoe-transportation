@@ -1991,7 +1991,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--tc-dashboard-only", action="store_true")
     parser.add_argument(
-        "--moves-survival", "--moves5-survival", dest="moves5_survival", action="store_true",
+        "--moves-survival", action="store_true",
         help="Prepare the registered EPA car/truck survival source for use or comparison.",
     )
     return parser.parse_args()
@@ -2001,7 +2001,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
     args = parse_args()
     try:
-        if args.moves5_survival:
+        if args.moves_survival:
             output_dir = fetch_and_normalize_moves5_survival(
                 args.scenario, download=not args.no_download
             )

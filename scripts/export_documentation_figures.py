@@ -290,8 +290,12 @@ def export(groups):
     print(manifest_path, flush=True)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--groups", nargs="+", choices=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison"],
                         default=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison"])
     export(parser.parse_args().groups)
+
+
+if __name__ == "__main__":
+    main()

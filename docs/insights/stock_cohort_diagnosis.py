@@ -14,7 +14,7 @@ def _():
     import marimo as mo
     import numpy as np
     import pandas as pd
-    from validation.stock_cohort_diagnostic import comparison_lineage, load_stock_cohort_diagnosis
+    from validation.stock_cohort_diagnostic import cohort_lineage, load_stock_cohort_diagnosis
 
     CLASS_LABELS = {
         "cars": "Cars", "passenger_light_trucks": "Passenger light trucks",
@@ -23,7 +23,7 @@ def _():
     }
     STOCK_LABELS = {**CLASS_LABELS, "passenger_light_trucks": "Light trucks", "freight_light_trucks": "Light trucks"}
     STOCK_ORDER = ["Cars", "Light trucks", "Medium trucks", "Heavy trucks"]
-    PROFILE_LABELS = {"moves": "MOVES", "nhtsa_nems": "NHTSA + NEMS"}
+    PROFILE_LABELS = {"moves": "EPA MOVES", "nhtsa_nems": "NHTSA CAFE + EIA NEMS"}
 
     def stock_grid(chart):
         return chart.properties(width=370, height=190).facet(
@@ -149,7 +149,7 @@ def _():
         return mo.ui.altair_chart(identified_chart(chart, figure_id, title), chart_selection=False, legend_selection=False)
 
     return (CLASS_LABELS, PROFILE_LABELS, STOCK_LABELS, alt, build_cohort_hatching,
-            cohort_style_legend, comparison_lineage, display_chart, display_table,
+            cohort_style_legend, cohort_lineage, display_chart, display_table,
             load_stock_cohort_diagnosis, mo, pd, stock_grid)
 
 
@@ -168,7 +168,7 @@ def _(diagnosis, mo):
     **Reference year: {reference_year}**, from `periods.base_year` in
     `{diagnosis['metadata']['scenario_path']}`. This notebook recomputes the production owners'
     calculations from registered inputs. It does not build a database, publish parameters or download sources.
-    CEUD **sales, stock and energy** beyond the latest observed year are held constant under the selected
+    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) **sales, stock and energy** beyond the latest observed year are held constant under the selected
     policy; held values are estimates, not additional observations. There is no extrapolated diagnostic scenario.
 
     With curves **off**, existing capacity is surviving stock assigned to fixed-lifetime vintages.
@@ -184,9 +184,8 @@ def _(diagnosis, mo):
     [Inspected Temoa capacity rule](https://github.com/TemoaProject/temoa/blob/cb2f51503ddb4dc6607c73635098d34c5e2d1283/temoa/components/capacity.py#L471)
     and [annual survival/period averaging](https://github.com/TemoaProject/temoa/blob/cb2f51503ddb4dc6607c73635098d34c5e2d1283/temoa/components/technology.py#L116).
 
-    The deprecated MTO method is retained here as an explicit comparison. Its Ontario age distribution is a
-    proxy outside Ontario. Cars and trucks migrate to sales cohorts; motorcycles and buses keep their separate
-    stock methods. Every chart states whether its numbers are acquisitions or surviving stock.
+    Cars and trucks use sales cohorts; motorcycles and buses keep their separate stock methods.
+    Every chart states whether its numbers are acquisitions or surviving stock.
     """)
     return (reference_year,)
 
@@ -208,7 +207,7 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
     ].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
     off_values = off_annual.groupby(["Class", "vintage_year"], as_index=False)[[
         "sales_k_vehicles", "surviving_k_vehicles", "calibrated_surviving_k_vehicles",
-        "fixed_allocated_k_vehicles", "deprecated_mto_k_vehicles",
+        "fixed_allocated_k_vehicles",
     ]].sum()
     off_values["retired_k_vehicles"] = off_values.sales_k_vehicles - off_values.surviving_k_vehicles
     off_portions = off_values.drop(columns="sales_k_vehicles").melt(
@@ -216,12 +215,11 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
     off_portions["Kind"] = off_portions.Component.isin(["surviving_k_vehicles", "retired_k_vehicles"]).map({True: "Sales", False: "Model"})
     off_portions["Component"] = off_portions.Component.map({
         "surviving_k_vehicles": "Raw surviving sales", "retired_k_vehicles": "Cumulative retirements",
-        "calibrated_surviving_k_vehicles": "CEUD-stock scaling", "fixed_allocated_k_vehicles": "Fixed-lifetime allocation",
-        "deprecated_mto_k_vehicles": "Deprecated MTO age allocation",
+        "calibrated_surviving_k_vehicles": "NRCan CEUD-stock scaling", "fixed_allocated_k_vehicles": "Fixed-lifetime allocation",
     })
-    off_legend = ["Raw surviving sales", "Cumulative retirements", "CEUD-stock scaling",
-                  "Fixed-lifetime allocation", "Deprecated MTO age allocation"]
-    off_colors = ["#4477aa", "#d9d9d9", "#cc8844", "#222222", "#b2182b"]
+    off_legend = ["Raw surviving sales", "Cumulative retirements", "NRCan CEUD-stock scaling",
+                  "Fixed-lifetime allocation"]
+    off_colors = ["#4477aa", "#d9d9d9", "#cc8844", "#222222"]
     off_bars = alt.Chart().transform_filter(alt.datum.Kind == "Sales").mark_bar().encode(
         x=alt.X("vintage_year:O", title="Annual cohort year", axis=alt.Axis(labelAngle=0, labelExpr="toNumber(datum.label) % 5 == 0 ? datum.label : ''")),
         y=alt.Y("Vehicles:Q", title="Thousand vehicles", stack="zero"),
@@ -234,7 +232,7 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
         x="vintage_year:O", y=alt.Y("Vehicles:Q", stack=None), order="vintage_year:O",
         color=alt.Color("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=off_legend, range=off_colors),
                         legend=alt.Legend(orient="right", direction="vertical", columns=1, labelLimit=280, symbolType="stroke", symbolSize=350)),
-        strokeDash=alt.StrokeDash("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=off_legend, range=[[1, 0], [1, 0], [1, 0], [5, 3], [2, 2]]),
+        strokeDash=alt.StrokeDash("Component:N", title="Stock flow / allocation", scale=alt.Scale(domain=off_legend, range=[[1, 0], [1, 0], [1, 0], [5, 3]]),
                                   legend=alt.Legend(orient="right", direction="vertical", columns=1, labelLimit=280, symbolType="stroke", symbolSize=350)),
         tooltip=["Class:N", "vintage_year:O", "Component:N", alt.Tooltip("Vehicles:Q", format=",.3f")],
     )
@@ -246,11 +244,9 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
     ## 1. Curves off: survivors and fixed-lifetime redistribution
 
     Blue + grey reconstruct raw sales. Blue is sales × cumulative annual survival at {reference_year};
-    orange applies one CEUD stock multiplier per region/class. The black dashed line redistributes
-    ineligible surviving stock within each technology, preserving its total. Red shows the deprecated MTO
-    age allocation after its fixed-lifetime redistribution, with the same fuel-share rules. **Bars are unchanged; line widths
-    are 30% larger.** Light-truck plots combine passenger and freight; tables retain those services separately.
-    Cohort year is the sales year for CEUD and the age-implied year for MTO.
+    orange applies one [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock multiplier per region/class. The black dashed line redistributes
+    ineligible surviving stock within each technology, preserving its total. Light-truck plots combine
+    passenger and freight; tables retain those services separately. Cohort year is the sales year.
 
     Eligibility requires both the annual cohort and its representative model vintage to remain alive at
     the first model period. Passing that test does not guarantee a full period of effective capacity:
@@ -272,12 +268,12 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
         diagnosis["annual"].region.eq(region.value) & diagnosis["annual"].profile.eq(profile.value)
     ].assign(Class=lambda frame: frame.road_class.map(STOCK_LABELS))
     on_values = on_annual.groupby(["Class", "vintage_year"], as_index=False)[[
-        "sales_k_vehicles", "calibrated_acquisitions_k_vehicles", "deprecated_mto_physical_k_vehicles",
+        "sales_k_vehicles", "calibrated_acquisitions_k_vehicles", "calibrated_surviving_k_vehicles",
     ]].sum().melt(id_vars=["Class", "vintage_year"], var_name="Stage", value_name="Vehicles")
     on_values["Stage"] = on_values.Stage.replace({
-        "sales_k_vehicles": "Raw acquisitions", "calibrated_acquisitions_k_vehicles": "CEUD-stock scaling",
-        "deprecated_mto_physical_k_vehicles": "Deprecated MTO surviving stock"})
-    on_legend = ["Raw acquisitions", "CEUD-stock scaling", "Deprecated MTO surviving stock"]
+        "sales_k_vehicles": "Raw acquisitions", "calibrated_acquisitions_k_vehicles": "NRCan CEUD-stock scaling",
+        "calibrated_surviving_k_vehicles": "Physical survivors"})
+    on_legend = ["Raw acquisitions", "NRCan CEUD-stock scaling", "Physical survivors"]
     on_encoding = dict(
         x=alt.X("vintage_year:O", title="Annual cohort year", axis=alt.Axis(labelAngle=0,
             labelExpr="toNumber(datum.label) % 5 == 0 ? datum.label : ''")),
@@ -300,22 +296,22 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
     ## 2. Curves on: acquisitions before and after stock calibration
 
     Blue and orange are **original-installation equivalents**, not survivors. One region/class multiplier preserves
-    annual sales shape while its surviving stock closes to CEUD at the reference year {reference_year}.
+    annual sales shape while its surviving stock closes to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) at the reference year {reference_year}.
     No fixed-lifetime redistribution is applied to acquisitions. Aggregated model vintages use
     acquisition-weighted combined vintage curves, preserving the contributions of their actual sales years.
 
-    The red comparison is **MTO surviving stock before fixed-lifetime redistribution**, using its historical
-    coverage and renormalization. It has a different quantity basis from acquisitions.
+    The red comparison shows **physical survivors before fixed-lifetime redistribution**. It has a
+    different quantity basis from acquisitions, even though both describe the same annual sales cohorts.
     Under the approved curve-mode capacity contract, physical
     survivors are used separately for utilization and efficiency weights. The table keeps raw and calibrated
-    acquisitions adjacent, including cumulative totals; future survival is not a new CEUD calibration.
-    Matching point-year physical stock does not force Temoa's first model-period average to equal CEUD stock.
+    acquisitions adjacent, including cumulative totals; future survival is not a new [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration.
+    Matching point-year physical stock does not force Temoa's first model-period average to equal [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock.
     """), display_chart(acquisitions_chart, 'cohort-2', 'Curve mode separates acquisitions from physical survivors'), display_table(acquisitions[[
         "Class", "vintage", "sales_k_vehicles", "calibrated_acquisitions_k_vehicles",
-        "cumulative_sales_k_vehicles", "cumulative_calibrated_acquisitions_k_vehicles", "deprecated_mto_physical_k_vehicles",
+        "cumulative_sales_k_vehicles", "cumulative_calibrated_acquisitions_k_vehicles", "calibrated_surviving_k_vehicles",
     ]].rename(columns={"vintage": "Model vintage", "sales_k_vehicles": "Raw acquisitions (k)",
         "calibrated_acquisitions_k_vehicles": "Calibrated acquisitions (k)",
-        "deprecated_mto_physical_k_vehicles": "MTO surviving stock (k)",
+        "calibrated_surviving_k_vehicles": "Physical surviving stock (k)",
         "cumulative_sales_k_vehicles": "Cumulative raw (k)",
         "cumulative_calibrated_acquisitions_k_vehicles": "Cumulative calibrated (k)"}), selection=None, page_size=15)])
     return (acquisitions_chart,)
@@ -323,34 +319,26 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
 
 @app.cell(hide_code=True)
 def _(mo):
-    lineage_basis = mo.ui.dropdown(
-        ["Acquisitions versus stock", "Physical surviving stock"],
-        value="Acquisitions versus stock", label="Paired cohort comparison",
-    )
-    mo.vstack([mo.md("""
-    ## 3. Sales cohorts versus the deprecated MTO method
+    mo.md("""
+    ## 3. Annual contributions within each model vintage
 
-    Solid sales bars and striped MTO bars retain the annual-position colours from the transportation
-    comparison. **Default quantities differ:** curve-mode sales parameters are calibrated acquisitions;
-    deprecated MTO quantities are age-allocated survivors **before fixed-lifetime redistribution**. Select physical surviving stock for a like-quantity
-    comparison. Each annual segment sums exactly to its model-vintage total; partial bins remain visible.
-    The acquisition view uses the production installation basis. In the configured prospective bins
-    this equals calibrated acquisitions; right-labelled synthetic bins would use their own normalized basis.
-    Both methods are shown before fixed-lifetime redistribution here. The deprecated MTO distribution still
-    uses its original historical-window restriction and renormalization; it is not unfiltered source stock.
-    """), lineage_basis])
-    return (lineage_basis,)
+    Solid bars show installed-equivalent acquisitions; striped bars show physical survivors at the
+    reference year. Colours identify the actual acquisition year's position within its model vintage.
+    Each annual segment sums exactly to the corresponding vintage total; partial bins remain visible.
+    The installation basis is the quantity supplied to absolute survival curves. Physical survivors
+    instead support activity and efficiency weighting. Both are shown before fixed-lifetime redistribution.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
-def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, comparison_lineage,
-      diagnosis, display_chart, display_table, lineage_basis, mo, pd, profile, region, stock_grid):
+def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, cohort_lineage,
+      diagnosis, display_chart, display_table, mo, pd, profile, region, stock_grid):
     paired_annual = diagnosis["annual"].loc[
         diagnosis["annual"].region.eq(region.value) & diagnosis["annual"].profile.eq(profile.value)]
-    paired_lineage = comparison_lineage(paired_annual,
-        physical_survivors=lineage_basis.value == "Physical surviving stock")
+    paired_lineage = cohort_lineage(paired_annual)
     paired_lineage["Class"] = paired_lineage.road_class.map(STOCK_LABELS)
-    paired_lineage["evidence"] = paired_lineage.method.replace({"Deprecated MTO age allocation": "Deprecated MTO"})
+    paired_lineage["evidence"] = paired_lineage.method
     paired_step = diagnosis["metadata"]["scenario"]["periods"]["step"]
     paired_lineage["annual_position"] = ((paired_lineage.vintage_year - paired_lineage.vintage - 1) % paired_step + 1).astype(int)
     paired_lineage["cohort_position"] = "Year " + paired_lineage.annual_position.astype(str)
@@ -358,9 +346,8 @@ def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, comparison_
     paired_lineage.loc[paired_lineage.vintage_year.le(paired_lineage.vintage), "interval"] += "; oldest proxy includes lower endpoint"
     paired_contributions = paired_lineage.groupby(["Class", "evidence", "vintage", "vintage_year",
         "annual_position", "cohort_position", "interval"], as_index=False).vehicles_k.sum()
-    paired_builds = ["Sales cohorts", "Deprecated MTO"]
-    paired_bases = [("Physical surviving stock" if lineage_basis.value == "Physical surviving stock"
-                     else "Installed-equivalent acquisitions"), "Physical surviving stock"]
+    paired_builds = ["Installed-equivalent acquisitions", "Physical survivors"]
+    paired_bases = ["Installation basis", "Reference-year stock"]
     paired_positions = [f"Year {position}" for position in range(1, paired_step + 1)]
     paired_rectangles, paired_hatches, paired_extents = build_cohort_hatching(
         paired_contributions, paired_builds, value_column="vehicles_k", period_step=paired_step)
@@ -368,8 +355,7 @@ def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, comparison_
                                 paired_extents.assign(Kind="Extent")], ignore_index=True)
     paired_x = alt.X("x0:Q", title="Model vintage", scale=alt.Scale(domain=paired_rectangles.attrs["x_domain"], nice=False, zero=False),
         axis=alt.Axis(values=paired_rectangles.attrs["vintage_ticks"], format="d", labelAngle=0))
-    paired_y = alt.Y("y0:Q", title=("Surviving stock (thousand)" if lineage_basis.value == "Physical surviving stock"
-        else "Acquisitions / stock (thousand)"), scale=alt.Scale(nice=False, zero=False))
+    paired_y = alt.Y("y0:Q", title="Acquisitions / survivors (thousand)", scale=alt.Scale(nice=False, zero=False))
     paired_bars = alt.Chart().transform_filter(alt.datum.Kind == "Stock").mark_rect().encode(
         x=paired_x, x2="x1:Q", y=paired_y, y2="y1:Q",
         color=alt.Color("cohort_position:N", scale=alt.Scale(domain=paired_positions, scheme="blues"), legend=None),
@@ -401,7 +387,7 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
         x=alt.X("Class:N", sort=list(CLASS_LABELS.values())), y="region:N", text=alt.Text("multiplier:Q", format=".2f"),
         color=alt.condition((alt.datum.multiplier > 1.8) | (alt.datum.multiplier < .75), alt.value("white"), alt.value("black")))
     calibration_chart = alt.layer(calibration_tiles, calibration_labels).properties(width=470, height=270).facet(
-        column=alt.Column("Source:N", title=None))
+        column=alt.Column("Source:N", title=None, header=alt.Header(labelFontStyle="italic")))
     selected_composition = diagnosis["composition"].loc[
         diagnosis["composition"].profile.eq(profile.value) & diagnosis["composition"].region.eq(region.value)].copy()
     selected_composition["Class"] = selected_composition.road_class.map(CLASS_LABELS)
@@ -409,9 +395,9 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
         ["road_class", "method"]).physical_stock_k_vehicles.transform("sum")
     largest_factor = calibration.loc[calibration.multiplier.idxmax()]
     mo.vstack([mo.md(f"""
-    ## 4. CEUD-stock scaling across regions and classes
+    ## 4. [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)-stock scaling across regions and classes
 
-    Each factor is `CEUD reference stock / reconstructed raw survivors`, separately by region and class.
+    Each factor is `NRCan CEUD reference stock / reconstructed raw survivors`, separately by region and class.
     Values above one increase original-installation equivalents; values below one reduce them. This is a level
     calibration, not evidence that every historical sales count was wrong. Large factors can reflect incomplete
     history before {diagnosis['metadata']['scenario']['periods']['existing'][0]}, regional fleet boundaries
@@ -420,7 +406,7 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
 
     The largest factor shown is **{largest_factor.multiplier:.3f}** for {largest_factor.region}
     {largest_factor.Class.lower()} using {largest_factor.Source}: {largest_factor.raw_survivors_k_vehicles:,.2f}
-    thousand reconstructed survivors must match {largest_factor.ceud_stock_k_vehicles:,.2f} thousand CEUD stock.
+    thousand reconstructed survivors must match {largest_factor.ceud_stock_k_vehicles:,.2f} thousand [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock.
     This identifies the size of the mismatch; the aggregate inputs cannot isolate which explanation causes it.
 
     The same class factor is used for acquisitions and physical survivors. Utilization uses calibrated physical
@@ -428,11 +414,11 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
     are preserved; changing annual age weights can still change aggregate technology composition. The composition
     audit makes that consequence visible. LDV shares represent new registrations; truck shares include registered
     stock proxies and the existing medium-truck EV override.
-    """), display_chart(calibration_chart, 'cohort-4', 'CEUD stock calibration changes the level of inferred cohorts'), display_table(calibration[[
+    """), display_chart(calibration_chart, 'cohort-4', 'NRCan CEUD stock calibration changes the level of inferred cohorts'), display_table(calibration[[
         "Source", "region", "Class", "raw_sales_k_vehicles", "raw_survivors_k_vehicles", "ceud_stock_k_vehicles",
         "multiplier", "adjustment_percent", "stock_residual_k_vehicles",
     ]].rename(columns={"region": "Region", "raw_sales_k_vehicles": "Raw sales (k)", "raw_survivors_k_vehicles": "Raw survivors (k)",
-        "ceud_stock_k_vehicles": "CEUD stock (k)", "multiplier": "Stock multiplier", "adjustment_percent": "Adjustment (%)",
+        "ceud_stock_k_vehicles": "NRCan CEUD stock (k)", "multiplier": "Stock multiplier", "adjustment_percent": "Adjustment (%)",
         "stock_residual_k_vehicles": "Closure residual (k)"}), selection=None, page_size=10),
         mo.accordion({"Technology composition: selected source and region": display_table(selected_composition[[
             "Class", "tech", "method", "physical_stock_k_vehicles", "share_percent"]].rename(columns={
@@ -459,7 +445,7 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
         detail=["road_class:N", "profile:N", "Method:N"], order="age:Q",
         tooltip=["Source:N", "Class:N", "Method:N", "age:Q", alt.Tooltip("survival_probability:Q", format=".6f")],
     ).properties(width=180, height=170).facet(
-        row=alt.Row("Source:N", title=None), column=alt.Column("Class:N", sort=list(CLASS_LABELS.values()), title=None,
+        row=alt.Row("Source:N", title=None, header=alt.Header(labelFontStyle="italic")), column=alt.Column("Class:N", sort=list(CLASS_LABELS.values()), title=None,
             header=alt.Header(labelFontSize=10))).resolve_scale(x="independent")
     historical_projection = diagnosis["historical_projection"].loc[
         diagnosis["historical_projection"].region.eq(region.value)].copy()
@@ -487,7 +473,7 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
         strokeDash=alt.StrokeDash("Method:N", scale=alt.Scale(domain=projection_methods, range=projection_dashes)),
         detail=["road_class:N", "profile:N", "Method:N"], order="calendar_year:Q",
         tooltip=["Source:N", "Class:N", "Method:N", "calendar_year:O", alt.Tooltip("retained_k_vehicles:Q", format=",.6f")],
-    ).properties(width=180, height=170).facet(row=alt.Row("Source:N", title=None),
+    ).properties(width=180, height=170).facet(row=alt.Row("Source:N", title=None, header=alt.Header(labelFontStyle="italic")),
         column=alt.Column("Class:N", sort=list(CLASS_LABELS.values()), title=None,
             header=alt.Header(labelFontSize=10))).resolve_scale(y="independent")
     survival_audit = diagnosis["production_survival_audit"].assign(
@@ -518,11 +504,11 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
 
     The approved method preserves native survival observations, then continues the **last observed annual
     retirement rate** after source support ends. When the extended survival reaches **{100 * threshold:g}% or below**,
-    the next year is zero. {age_cap_note} These are the production calculations for both MOVES and NHTSA + NEMS.
+    the next year is zero. {age_cap_note} These are the production calculations for both [*EPA MOVES*](https://www.epa.gov/moves) and [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) + [*EIA NEMS*](https://github.com/EIAgov/NEMS).
     The upper panels use independent age axes so each source's complete tail remains readable.
 
     The lower panels follow the same calibrated historical acquisitions, with **no future sales or future
-    CEUD calibration**. Values are point-year survivors, not Temoa period averages. Native evidence stops when
+    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration**. Values are point-year survivors, not Temoa period averages. Native evidence stops when
     any positive cohort exceeds its known support; missing native tails are never treated as zero.
     A native comparison line appears only where known-support values differ from production: **{changed_pairs}
     source/class pairs** in {region.value}. Otherwise, one production line represents the overlapping values.

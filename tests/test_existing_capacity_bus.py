@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import sqlite3
 
 import pandas as pd
 import pytest
+import yaml
 
 from parameterization.road_stocks_and_demands import distribute_existing_bus_capacity
 from validation.config_models import ScenarioPeriods
@@ -159,10 +161,16 @@ def test_prospective_bus_cohorts_also_survive_on_the_model_vintage() -> None:
     )
 
 
-def test_bus_capacity_has_efficiency_and_lifetime_in_standalone_sqlite(tmp_path: Path) -> None:
-    bundle = load_config_bundle(
-        "config/scenarios/default.yaml", repo_root=ROOT
-    )
+def test_bus_capacity_has_efficiency_and_lifetime_in_standalone_sqlite(
+    isolated_legacy_bundle, tmp_path: Path,
+) -> None:
+    # The fixture owns a complete private artifact namespace, not only SQLite.
+    # Ontario retains all three bus classes while keeping this support check bounded.
+    scenario = isolated_legacy_bundle.scenario.model_copy(update={
+        "geography": isolated_legacy_bundle.scenario.geography.model_copy(update={"regions": ["ON"]}),
+    })
+    bundle = replace(isolated_legacy_bundle, scenario=scenario)
+    bundle.scenario_path.write_text(yaml.safe_dump(scenario.model_dump(mode="json", by_alias=True)), encoding="utf-8")
     database = tmp_path / "transport.sqlite"
     report = bootstrap_database(
         bundle=bundle,
@@ -176,7 +184,7 @@ def test_bus_capacity_has_efficiency_and_lifetime_in_standalone_sqlite(tmp_path:
             f"SELECT COUNT(*), COUNT(DISTINCT x.tech), COUNT(DISTINCT x.region) "
             f"FROM existing_capacity x WHERE {bus}"
         ).fetchone()
-        assert rows > 0 and technologies == 9 and regions == 10
+        assert rows > 0 and technologies == 9 and regions == 1
         missing = connection.execute(
             f"SELECT COUNT(*) FROM existing_capacity x WHERE {bus} AND "
             "(NOT EXISTS (SELECT 1 FROM efficiency e WHERE e.region=x.region "

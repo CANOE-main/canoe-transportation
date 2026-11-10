@@ -20,20 +20,21 @@ equipment. Scenario YAML controls regions, timing, survival, technology trajecto
 range representation and charging behavior. Interactive notebooks inspect captured
 evidence; the figures in this report are static selections from those calculations.
 
-The optional [CEUD energy calibration](model/energy.md#optional-ceud-energy-calibration)
-is an explicit comparison with an uncalibrated reference. It is not the default and
-does not establish scientific acceptance. [Vehicle-cost diagnostics](model/technology.md)
-expose both investment trajectories and age-dependent maintenance and repair.
+!!! note "Opt-in calibration"
+    The optional [*NRCan CEUD* energy calibration](model/energy.md#optional-ceud-energy-calibration)
+    is an explicit comparison with an uncalibrated reference. It is not the default and
+    does not establish scientific acceptance. [Vehicle-cost diagnostics](model/technology.md)
+    expose both investment trajectories and age-dependent maintenance and repair.
 
 ## Findings that matter for interpretation
 
 - **The fleet is reconstructed.** Annual sales and transferred survival schedules
-  establish cohort shape; one class-level factor matches CEUD reference stock.
+  establish cohort shape; one class-level factor matches [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) reference stock.
   Stock agreement therefore tests calibration closure, not the accuracy of each cohort.
 - **Vehicle detail affects several parameters together.** Reviewed make/model mappings,
   class weights and range shares link consumption, costs and manufacturing emissions.
   Unmapped vehicles and transferred composition remain material limitations: 47.66%
-  of the MTO FIT_ACTIVE coverage population is unresolved in the published snapshot.
+  of the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) FIT_ACTIVE coverage population is unresolved in the published snapshot.
   Composition figures consequently describe the supported subset.
 - **Activity and energy are different constraints.** Matching travel activity does
   not imply matching energy. The optional energy adjustment fits only an explicitly
@@ -57,8 +58,8 @@ the reference layer.
 **Terms used throughout:** LDVs are light-duty vehicles (cars and light trucks);
 MHDVs are medium- and heavy-duty vehicles. BEV means battery-electric vehicle,
 PHEV plug-in hybrid electric vehicle, HEV hybrid electric vehicle and FCEV
-fuel-cell electric vehicle. CEUD is Natural Resources Canada's Comprehensive
-Energy Use Database; ATB is the Transportation Annual Technology Baseline. MTO
+fuel-cell electric vehicle. [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) is Natural Resources Canada's Comprehensive
+Energy Use Database; [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) is the Transportation Annual Technology Baseline. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data)
 is Ontario's Ministry of Transportation. Service means passenger-km or tonne-km,
 which accounts for both travel distance and the passengers or freight carried.
 
@@ -70,4 +71,4 @@ which accounts for both travel distance and the passengers or freight carried.
 
 The report retains unresolved scientific limits where they affect use. The
 charging-simulation refactor and technology-adoption constraints remain explicitly
-upcoming work. They are not prerequisites silently executed by the documentation.
+upcoming work.

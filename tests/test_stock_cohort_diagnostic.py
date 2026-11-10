@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from validation.stock_cohort_diagnostic import (
-    comparison_lineage,
+    cohort_lineage,
     historical_retention,
     reference_survival_comparison,
     retirement_projection,
@@ -17,9 +17,9 @@ def annual():
     rows = []
     for profile in ["moves", "nhtsa_nems"]:
         for region, scale in [("ON", 1.), ("QC", 2.)]:
-            for vintage, year, sales, survivors, allocated, mto, mto_physical in [
-                (2000, 2001, 100., 50., 0., 40., 90.),
-                (2005, 2006, 200., 160., 252., 212., 162.),
+            for vintage, year, sales, survivors, allocated in [
+                (2000, 2001, 100., 50., 0.),
+                (2005, 2006, 200., 160., 252.),
             ]:
                 rows.append({
                     "profile": profile, "region": region, "road_class": "cars",
@@ -29,8 +29,6 @@ def annual():
                     "calibrated_acquisitions_k_vehicles": sales * scale * 1.2,
                     "curve_solver_capacity_k_vehicles": sales * scale * 1.2,
                     "fixed_allocated_k_vehicles": allocated * scale,
-                    "deprecated_mto_k_vehicles": mto * scale,
-                    "deprecated_mto_physical_k_vehicles": mto_physical * scale,
                     "stock_calibration_multiplier": 1.2, "ceud_stock_k_vehicles": 252. * scale,
                 })
     return pd.DataFrame(rows)
@@ -51,30 +49,19 @@ def test_redistribution_is_cumulative_within_each_region_and_source(annual):
 
 def test_paired_native_inputs_never_alias_survivors_as_acquisitions(annual):
     selected = annual.loc[annual.profile.eq("moves") & annual.region.eq("ON")]
-    native = comparison_lineage(selected, physical_survivors=False)
-    physical = comparison_lineage(selected, physical_survivors=True)
+    native = cohort_lineage(selected)
     native_totals = native.groupby("method").vehicles_k.sum()
-    physical_totals = physical.groupby("method").vehicles_k.sum()
-    assert native_totals["Sales cohorts"] == 360.
-    assert physical_totals["Sales cohorts"] == 252.
-    assert native_totals["Deprecated MTO age allocation"] == physical_totals["Deprecated MTO age allocation"] == 252.
-    assert native.loc[native.method.eq("Sales cohorts"), "basis"].eq("Installed-equivalent acquisitions").all()
-    assert native.loc[native.method.eq("Deprecated MTO age allocation"), "vehicles_k"].tolist() == [90., 162.]
-    assert physical.loc[physical.method.eq("Deprecated MTO age allocation"), "vehicles_k"].tolist() == [90., 162.]
-    assert selected.deprecated_mto_k_vehicles.tolist() == [40., 212.]
+    assert native_totals["Installed-equivalent acquisitions"] == 360.
+    assert native_totals["Physical survivors"] == 252.
+    assert native.loc[native.method.eq("Installed-equivalent acquisitions"), "basis"].eq("Installed-equivalent acquisitions").all()
+    assert native.loc[native.method.eq("Physical survivors"), "vehicles_k"].tolist() == [60., 192.]
 
 
 def test_right_labelled_bins_use_the_kernel_installation_basis(annual):
     annual["curve_solver_capacity_k_vehicles"] = annual.calibrated_acquisitions_k_vehicles * .9
-    native = comparison_lineage(annual, physical_survivors=False)
-    assert native.loc[native.method.eq("Sales cohorts"), "vehicles_k"].sum() == pytest.approx(
+    native = cohort_lineage(annual)
+    assert native.loc[native.method.eq("Installed-equivalent acquisitions"), "vehicles_k"].sum() == pytest.approx(
         annual.curve_solver_capacity_k_vehicles.sum())
-
-
-def test_mto_physical_comparison_must_preserve_the_class_stock_target(annual):
-    annual.loc[0, "deprecated_mto_physical_k_vehicles"] += 1.
-    with pytest.raises(ValueError, match="MTO physical comparison"):
-        summarize_annual_ledgers(annual)
 
 
 @pytest.mark.parametrize("column", ["calibrated_acquisitions_k_vehicles", "calibrated_surviving_k_vehicles", "ceud_stock_k_vehicles"])

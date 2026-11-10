@@ -61,7 +61,7 @@ def test_impact_routes_have_live_owners_producers_and_validation_surfaces(monkey
             if consumer.startswith("docs."):
                 # Notebook routes are document files, not installed runtime packages.
                 assert (REPO_ROOT / Path(*consumer.split("."))).with_suffix(".py").is_file()
-            elif consumer not in {"reviewers", "publication_reviewers", "temoa"}:
+            elif consumer not in {"reviewers", "publication_reviewers", "temoa", "readers", "github_pages", "publication"}:
                 _resolve_dotted_object(consumer)
         for surface in route.validation_surfaces:
             _assert_live_interface(surface)
@@ -74,7 +74,6 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
         "ontario_vehicle_population",
         "road_aggregation",
         "road_lifetimes_survival",
-        "road_stocks_and_demands",
         "vehicle_mapping_review",
         "database",
         "database_validation",
@@ -88,6 +87,7 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
         "output_validation",
         "cache",
         "documentation",
+        "publication",
         "legacy",
         "logs",
     }

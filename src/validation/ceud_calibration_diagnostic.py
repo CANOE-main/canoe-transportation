@@ -16,7 +16,7 @@ from parameterization.ceud_energy_calibration import validate_emitted_calibratio
 from utils import (ConfigBundle, file_sha256, load_config_bundle, load_harmonization_rules,
                    resolve_artifact_path, resolve_input_path, write_text_atomic)
 from validation.notebook_evidence import load_notebook_evidence
-from validation.notebook_figures import identified_chart
+from validation.notebook_figures import identified_chart, source_legend_style
 
 
 CLASS_LABELS = {
@@ -89,12 +89,13 @@ def calibration_charts(diagnostic: CEUDCalibrationDiagnostic, *, region: str,
         "unadjusted_liquid_energy_pj", "calibrated_liquid_energy_pj", "ceud_liquid_target_pj"],
         var_name="basis", value_name="energy_pj")
     comparison["basis"] = comparison.basis.map({"unadjusted_liquid_energy_pj": "Unadjusted",
-        "calibrated_liquid_energy_pj": "Calibrated", "ceud_liquid_target_pj": "CEUD target"})
+        "calibrated_liquid_energy_pj": "Calibrated", "ceud_liquid_target_pj": "NRCan CEUD target"})
     energy = alt.Chart(comparison).mark_bar().encode(
         x=alt.X("vehicle_class:N", title=None, sort=order, axis=alt.Axis(labelAngle=-15)),
-        xOffset=alt.XOffset("basis:N", sort=["Unadjusted", "Calibrated", "CEUD target"]),
+        xOffset=alt.XOffset("basis:N", sort=["Unadjusted", "Calibrated", "NRCan CEUD target"]),
         y=alt.Y("energy_pj:Q", title="Gasoline + diesel energy (PJ)", scale=alt.Scale(zero=True)),
-        color=alt.Color("basis:N", title=None, scale=alt.Scale(domain=["Unadjusted", "Calibrated", "CEUD target"], range=["#64748b", "#087e8b", "#c56824"])),
+        color=alt.Color("basis:N", title=None, scale=alt.Scale(domain=["Unadjusted", "Calibrated", "NRCan CEUD target"], range=["#64748b", "#087e8b", "#c56824"]),
+                        legend=alt.Legend(labelFontStyle=source_legend_style())),
         tooltip=["vehicle_class:N", "basis:N", alt.Tooltip("energy_pj:Q", format=".3f")],
     ).properties(width=700, height=280)
     multiplier = alt.Chart(summary).mark_bar().encode(
@@ -325,7 +326,7 @@ def compare_calibration_databases(baseline: Path, calibrated: Path, *, baseline_
     return report
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path, required=True)
     parser.add_argument("--calibrated", type=Path, required=True)
@@ -334,3 +335,7 @@ if __name__ == "__main__":
     result = compare_calibration_databases(args.baseline, args.calibrated, baseline_report=args.baseline_report)
     print(json.dumps({"status": result["status"], "efficiency": result["efficiency"],
                       "final_liquid_accounting": result["final_liquid_accounting"]}, indent=2))
+
+
+if __name__ == "__main__":
+    main()

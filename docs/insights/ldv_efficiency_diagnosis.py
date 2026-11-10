@@ -8,8 +8,9 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    from validation.notebook_figures import source_markdown
     import altair as alt
-    from validation.notebook_figures import identified_chart
+    from validation.notebook_figures import identified_chart, source_legend_style
     import marimo as mo
     import pandas as pd
 
@@ -57,11 +58,11 @@ def _():
         return rows[fields].sort_values([field for field in ("year", "Make", "Model", "source_row") if field in fields],
                                         kind="stable").rename(columns=columns)
 
-    return COHORT, VIEW_MODES, alt, chart_ui, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, gasoline_hev_classification_view, load_diagnostic, mo, nrcan_anchor_endpoints, pd, practical_axis, production_trajectory_data, supported_display_years, table_ui
+    return COHORT, VIEW_MODES, alt, chart_ui, composition_class_columns, composition_detail_frames, composition_heatmap_data, composition_review_cases, composition_review_summary, composition_view_settings, distribution_metric_rows, gasoline_hev_classification_view, load_diagnostic, mo, nrcan_anchor_endpoints, pd, practical_axis, production_trajectory_data, supported_display_years, table_ui, source_legend_style, source_markdown
 
 
 @app.cell
-def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints, pd, production_trajectory_data):
+def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints, pd, production_trajectory_data, source_legend_style):
     def range_label(value):
         return str(value).replace("_miles", "").replace("_existing_representative", " existing").replace("_", " ").upper()
 
@@ -196,13 +197,13 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
         lines = base.mark_line(strokeWidth=2.4)
         if indexed:
             segments = pd.concat([trajectory["solid"].assign(connection_kind="Production trajectory"),
-                                  trajectory["indexing"].assign(connection_kind="ATB indexing"),
-                                  trajectory["reference"].assign(connection_kind="Reference-only NRCan aggregates")], ignore_index=True)
+                                  trajectory["indexing"].assign(connection_kind="NLR ATB indexing"),
+                                  trajectory["reference"].assign(connection_kind="Reference-only NRCan Ratings aggregates")], ignore_index=True)
             segments["range_label"] = segments.trajectory_powertrain.map(range_label)
             segment_data = inline_data(segments, ["year", "value", facet, "range_label", "trajectory_id",
                                                   "connection_kind", *tooltip_columns])
-            line_patterns = {"Production trajectory": [], "ATB indexing": [6, 4],
-                             "Reference-only NRCan aggregates": [2, 3]}
+            line_patterns = {"Production trajectory": [], "NLR ATB indexing": [6, 4],
+                             "Reference-only NRCan Ratings aggregates": [2, 3]}
             line_styles = [name for name in line_patterns if name in set(segments.connection_kind)]
             segment_base = alt.Chart(segment_data).encode(
                 x=base.encoding.x, y=base.encoding.y, color=color, detail="trajectory_id:N", order="year:Q",
@@ -212,14 +213,14 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
                 strokeDash=alt.StrokeDash("connection_kind:N", title="Trajectory / line evidence", sort=line_styles,
                     scale=alt.Scale(domain=line_styles, range=[line_patterns[name] for name in line_styles]),
                     legend=alt.Legend(orient="right", symbolType="stroke", symbolStrokeWidth=3,
-                                      symbolSize=500, labelLimit=310)),
+                                      symbolSize=500, labelLimit=340, labelFontStyle=source_legend_style())),
             )
         else:
             lines = lines.encode(
                 strokeDash=alt.StrokeDash("style_category:N", title=style_title, sort=styles,
                     scale=alt.Scale(domain=styles, range=dashes[:len(styles)]),
                     legend=alt.Legend(orient="right", symbolType="stroke", symbolStrokeWidth=3,
-                                      symbolSize=500, labelLimit=310)),
+                                      symbolSize=500, labelLimit=340, labelFontStyle=source_legend_style())),
             )
         marker_order = {"Final prepared period CSV": "diamond", "Recalculated period": "circle", "NRCan range aggregate": "square",
                         "Cohort fallback median": "cross",
@@ -232,7 +233,8 @@ def trajectory_helpers(alt, composition_view, diagnostic, nrcan_anchor_endpoints
         points = base.mark_point(size=65, filled=True, opacity=.95).encode(
             shape=alt.Shape("marker_category:N", title="Period / anchor evidence" if indexed else style_title + " · markers", sort=marker_styles,
                             scale=alt.Scale(domain=marker_styles, range=marker_shapes),
-                            legend=alt.Legend(orient="right", labelLimit=310)),
+                            legend=alt.Legend(orient="right", labelLimit=340, labelFontStyle=source_legend_style(),
+                                labelExpr="{'NRCan range aggregate':'NRCan Ratings range aggregate','ATB class recalculation':'NLR ATB class recalculation','NRCan-cohort projection anchor':'NRCan Ratings cohort projection anchor','CEUD-cohort projection anchor':'NRCan CEUD cohort projection anchor','ATB source projection':'NLR ATB source projection'}[datum.label] || datum.label")),
         )
         if indexed:
             points = points.transform_filter(alt.FieldOneOfPredicate(field="sample_kind", oneOf=["period", "base_year_anchor"]))
@@ -314,7 +316,7 @@ def _(mo):
     mo.md("""
     # Historical and future road efficiency
 
-    Follow NRCan ratings through vehicle composition, cohort aggregation and ATB
+    Follow [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) through vehicle composition, cohort aggregation and [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)
     projections. This notebook and the vehicle-stock notebook use the **same latest
     successful diagnostic build**, including its captured data and modelling rules.
     Display years, class order and chart dimensions use current diagnostic settings.
@@ -352,14 +354,14 @@ def _(diagnostic, mo):
         mo.md(f"""
         Evidence build: **{build['build_id']}** ·
         base year **{diagnostic.summary['base_year']}** · region **{diagnostic.summary['region']}** ·
-        MTO edition **{diagnostic.summary['population_year']}** · ATB **{diagnostic.summary['atb_trajectory']}**.
-        Production uses **documented MTO gasoline composition, iZEV PEV acquisitions,
+        [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) edition **{diagnostic.summary['population_year']}** · [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) **{diagnostic.summary['atb_trajectory']}**.
+        Production uses **documented [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) gasoline composition, [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) PEV acquisitions,
         and hierarchical catalogue medians where empirical weights are unavailable**.
         Historical period efficiencies and load factors use raw cohort-stock weights
         before lifetime eligibility or redistribution.
 
         The captured canonical/source-link tables cover **{vehicle_reference['canonical_identities']:,} identities**,
-        including **{vehicle_reference['identities_without_mto_link']:,} without MTO links**.
+        including **{vehicle_reference['identities_without_mto_link']:,} without [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) links**.
         They retain **{vehicle_reference['unlinked_identity_intervals']:,} unlinked identity intervals** and
         **{vehicle_reference['configuration_unresolved_intervals']:,} configuration-uncertain intervals**;
         the matching review separates actionable issues from expected exclusions.
@@ -376,7 +378,7 @@ def _(diagnostic, mo):
 @app.cell(hide_code=True)
 def _(composition_view, mo):
     mo.md(f"""
-    ## NRCan catalogue distributions
+    ## [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) catalogue distributions
 
     Distinct eligible trims form one median per canonical family, model year, size
     class and powertrain/range. Boxes span the middle half of family medians, with
@@ -552,13 +554,13 @@ def _(composition_view, diagnostic, mo):
 
     Target model years span **{min(composition_view['years'])}–{max(composition_view['years'])}**;
     these are annual cohorts, with `*` after the build's baseline. Unsupported ends
-    are trimmed and missing interior cohorts remain empty. The iZEV supported
+    are trimmed and missing interior cohorts remain empty. The [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) supported
     window is **{supported['izev_model_year_min']}–{supported['izev_model_year_max']}**;
     displayed own-year cohorts are **{', '.join(map(str, displayed_supported_years))}**.
     {temporal_composition} Later cohorts and unsupported class/range cells use
     hierarchical catalogue medians.
 
-    Column shares use the captured MTO snapshot pooled across vintages and fuels,
+    Column shares use the captured [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) snapshot pooled across vintages and fuels,
     matching production's outer class weights. They describe mapped surviving
     stock, not new sales or powertrain-specific shares. Each powertrain shares an
     axis across classes; unlike body types have no common measured size scale.
@@ -595,23 +597,23 @@ def _(diagnostic, mo):
         gasoline = gasoline.drop_duplicates(["year", "rating_class", "powertrain"])
         empirical_classes = int(gasoline.aggregation_method.eq("mto_identity_supported_weighted").sum())
         return mo.md(f"""
-        **Recorded modelling rules.** iZEV includes eligible new **purchases and leases**, model years
+        **Recorded modelling rules.** [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) includes eligible new **purchases and leases**, model years
         **{policy['izev_model_year_min']}–{policy['izev_model_year_max']}**. The **{minimum:,}-record** threshold
         applies to the whole provincial BEV/PHEV pool **before size-class/range matching**;
         smaller pools use the whole national pool. Own-year cohorts use one source model year;
         historical proxies use the full supported window. Clear PEV families use their median
         eligible-trim range for allocation; contradictory identities or classes remain unallocated.
-        Documented MTO identities must cover **{policy['mto_selection']['minimum_resolved_count_share']:.0%}** of
+        Documented [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) identities must cover **{policy['mto_selection']['minimum_resolved_count_share']:.0%}** of
         gasoline-compatible family counts before weighting that class; otherwise it uses its median.
-        MTO does not observe fuel; compatible gasoline trims exclude hybrids and alternative fuels.
+        [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) does not observe fuel; compatible gasoline trims exclude hybrids and alternative fuels.
         Gasoline-capable FFVs may contribute their X/Z ratings; E85 and diesel modes do not.
-        HEVs use NRCan model signals plus compatible FuelEconomy.gov configuration evidence,
-        with class consumption based on catalogue family medians, without MTO make–model
-        weighting. Configured outer size-class weights still apply; MTO supplies no observed
+        HEVs use [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) model signals plus compatible FuelEconomy.gov configuration evidence,
+        with class consumption based on catalogue family medians, without [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) make–model
+        weighting. Configured outer size-class weights still apply; [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) supplies no observed
         HEV model or fuel shares.
         Unweighted rated subclasses use **distinct trim → family median → cohort median**,
         retaining their outer class weights. Only absent rated classes require renormalization.
-        **{empirical_classes}/{len(gasoline)} gasoline class-year cohorts** receive MTO weights;
+        **{empirical_classes}/{len(gasoline)} gasoline class-year cohorts** receive [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) weights;
         the class tables show eligible/resolved and whole-mapped coverage separately.
 
         Supported families retrieve **all eligible target-year configurations** before medians.
@@ -622,10 +624,10 @@ def _(diagnostic, mo):
         **{policy['family_matching']['consumption_dispersion']['maximum_relative_p90_p10_span']:.0%}**.
         This central-spread rule measures representative adequacy, not statistical confidence.
 
-        Counts proxy activity under **equal annual distance within each CEUD class**;
+        Counts proxy activity under **equal annual distance within each [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) class**;
         the common VKT factor cancels. This is an assumption, not measured use.
         **Allocated own-year incentive records in the supported window:** {'; '.join(coverage)}.
-        These shares measure eligible-record matching, not market coverage. iZEV
+        These shares measure eligible-record matching, not market coverage. [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1)
         lacks VINs and may contain repeat requests or demonstrators; legitimate
         identical native rows remain acquisition records, not identifiable unique vehicles.
         """)
@@ -662,7 +664,7 @@ def composition_plot(alt, chart_ui, composition_class_columns, composition_view,
         ranking_labels = "; ".join(f"{row.nrcan_vehicle_class} **{row.aggregation_weight:.1%}**" if pd.notna(row.aggregation_weight)
             else f"{row.nrcan_vehicle_class} (historical catalogue; no current stock weight)"
             for row in ranked.itertuples(index=False))
-        outputs = [mo.md(f"**{vehicle_group.value} · {report_year} MTO stock, all vintages:** {ranking_labels}. "
+        outputs = [mo.md(f"**{vehicle_group.value} · {report_year} [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) stock, all vintages:** {ranking_labels}. "
             f"Shown classes cover **{ranked.aggregation_weight.sum():.1%}** of mapped {vehicle_group.value.lower()} stock. "
             "Columns run from smaller to larger within each body family; unlike body types have no common volume scale.")]
         for powertrain in powertrains:
@@ -765,9 +767,9 @@ def _(mo):
     mo.md("""
     ### Inspect the observations and matched Ratings rows
 
-    PEV and gasoline MTO evidence have independent filters. The source tables retain
+    PEV and gasoline [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) evidence have independent filters. The source tables retain
     native labels, vehicle and request years, recipient geography, counts, selection
-    decisions and unresolved matches. The compatible-match tables retain NRCan component
+    decisions and unresolved matches. The compatible-match tables retain [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) component
     and row identities, original range buckets, assigned production buckets and row
     contributions. Family tables show individual and aggregate consumption together.
     Selecting **All size classes** also retains observations whose class is unresolved.
@@ -921,15 +923,15 @@ def ambiguity_review(composition_review_cases, composition_review_summary, diagn
 
         One row groups a source description and province. **Source-count exposure**
         counts each own-year observation once, retaining legitimate native records.
-        Repeated target-year or geographic applications add no exposure. iZEV counts
-        acquisitions; MTO counts fit-active stock, so their totals represent different populations.
+        Repeated target-year or geographic applications add no exposure. [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) counts
+        acquisitions; [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) counts fit-active stock, so their totals represent different populations.
 
         The main table shows identity, year, class and configuration issues. Expected
         program/estimator exclusions and historical catalogue limits appear separately.
         A historical proxy's pooled-window count appears once per description across
         its affected years. **Do not add proxy exposure to own-year exposure.**
         Proxy-era gaps and gasoline-only exclusions do not imply supported-year
-        iZEV failures. The audit retains all applications and candidate details.
+        [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) failures. The audit retains all applications and candidate details.
         """),
         reviewed_table("Actionable matching issue", "Matching issues requiring identity, year or configuration review"),
         mo.accordion({
@@ -949,28 +951,28 @@ def _(diagnostic, mo, range_label):
     bev_anchor = range_label(diagnostic.summary["anchor_powertrains"]["bev"])
     phev_anchor = range_label(diagnostic.summary["anchor_powertrains"]["phev"])
     mo.md(f"""
-    ## OMEGA range composition and projection anchors
+    ## [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) range composition and projection anchors
 
-    **{bev_anchor}** and **{phev_anchor}** provide the historical NRCan cohort
-    anchors through {diagnostic.summary['atb_reference_year']}. ATB supplies later
+    **{bev_anchor}** and **{phev_anchor}** provide the historical [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) cohort
+    anchors through {diagnostic.summary['atb_reference_year']}. [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) supplies later
     relative changes and ratios between range variants.
     Existing fleet consumption combines independently aggregated range-period values
-    using recorded OMEGA shares; ranges can have different observed years.
+    using recorded [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) shares; ranges can have different observed years.
 
     In consumption units, the projection is
     `C_range(p) = C_NRCan-anchor × C_ATB-range(p) / C_ATB-anchor({diagnostic.summary['atb_reference_year']})`.
     Source year {diagnostic.summary['atb_reference_year']} holds the cohort anchor;
-    annual 2024–2025 values and later points apply ATB changes from that year.
-    Annual points between reported ATB years use linear consumption interpolation.
+    annual 2024–2025 values and later points apply [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) changes from that year.
+    Annual points between reported [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) years use linear consumption interpolation.
     A 2025 base year combines the observed 2021–2023 cohort with those projected
-    2024–2025 values. Later NRCan observations remain visible in the source views.
+    2024–2025 values. Later [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) observations remain visible in the source views.
     A range variant can change
-    level at the transition because historical NRCan populations and ATB range
+    level at the transition because historical [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) populations and [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) range
     comparisons describe different vehicle mixes.
 
     The bars compare cars and light trucks within each powertrain family; colors
     identify range classes. The table records each projection anchor's source years,
-    cohort coverage and ATB reference year.
+    cohort coverage and [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) reference year.
     """)
     return
 
@@ -991,7 +993,7 @@ def _(alt, chart_ui, diagnostic, mo, range_color, range_label, table_ui):
         "anchor_powertrain": "NRCan anchor", "anchor_consumption_mj_per_vkm": "Cohort anchor (MJ/vkm)",
         "parameter_reference_consumption_mj_per_vkm": "Projection reference (MJ/vkm)", "atb_reference_year": "ATB reference year",
         "source_years": "Historical source years", "cohort_stock_coverage": "Included cohort share"}
-    mo.vstack([chart_ui(shares_chart, 'ldv-eff-3', 'OMEGA range composition transferred to Canadian vehicle families'),
+    mo.vstack([chart_ui(shares_chart, 'ldv-eff-3', 'EPA OMEGA range composition transferred to Canadian vehicle families'),
         table_ui(diagnostic.frames["projection_anchors"][list(anchor_columns)].rename(columns=anchor_columns), "Projection levels and source cohorts"),
         mo.accordion({"Projection anchor provenance and technical fields": table_ui(diagnostic.frames["projection_anchors"], "Full recorded anchor audit")})])
     return
@@ -1017,19 +1019,19 @@ def _(composition_view, diagnostic, mo, range_label):
     PHEV comparisons use utility-weighted total energy on both sides.
 
     Graphs 3 and 4 span {composition_view['bridge_years'][0]}–{composition_view['bridge_years'][1]}.
-    Graph 3 labels the final NRCan source observation beside its multi-year,
+    Graph 3 labels the final [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) source observation beside its multi-year,
     stock-weighted cohort anchor. Graph 4 shows prepared production trajectories
-    alongside dotted **Reference-only NRCan aggregates** for historical ranges.
+    alongside dotted **Reference-only [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) aggregates** for historical ranges.
     Historical range references end with the existing cohorts. Solid trajectories
-    connect each series' prepared production periods. **Dashed segments show ATB indexing** from the {diagnostic.summary['atb_reference_year']}
+    connect each series' prepared production periods. **Dashed segments show [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) indexing** from the {diagnostic.summary['atb_reference_year']}
     cohort reference to the first later **new-vehicle parameter of the same range
     or powertrain**. Existing cohort averages and range-blended representatives
     retain their solid production path. Triangular reference
-    markers identify the ATB reference levels. Historical reference squares and
+    markers identify the [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) reference levels. Historical reference squares and
     **Final prepared period CSV** diamonds distinguish calculated aggregates from
     published parameters. The audit table retains source details and model vintages.
-    Detailed ATB-class selections are diagnostic recalculations using parent loads,
-    cohort counts and OMEGA shares. Light trucks use passenger service units.
+    Detailed [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)-class selections are diagnostic recalculations using parent loads,
+    cohort counts and [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) shares. Light trucks use passenger service units.
     The grey line marks the build's base year. Tooltips retain source years and vintages.
 
     Partial historical periods report coverage; wholly empty periods require a
@@ -1037,11 +1039,11 @@ def _(composition_view, diagnostic, mo, range_label):
 
     **Source year and model vintage differ.** In this {bridge_periods.period_mode} build,
     historical vintage **{anchor_vintage}** represents the
-    **{anchor_window[0]}–{anchor_window[-1]}** cohort window. The observed NRCan/CEUD
-    anchor aligns with ATB at **{diagnostic.summary['atb_reference_year']}**.
-    Later annual values apply ATB consumption changes from that aligned year.
+    **{anchor_window[0]}–{anchor_window[-1]}** cohort window. The observed [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64)/[*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)
+    anchor aligns with [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) at **{diagnostic.summary['atb_reference_year']}**.
+    Later annual values apply [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) consumption changes from that aligned year.
     A 2025 base year therefore combines observed 2021–2023 values with projected
-    2024–2025 values in vintage 2020. Other BEV ranges use ATB range ratios relative
+    2024–2025 values in vintage 2020. Other BEV ranges use [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) range ratios relative
     to the shared **{bev_reference}** anchor at the same reference year.
     The first future parameter has vintage **{bridge_periods.model[0]}** and uses
     source year **{bridge_periods.projection_year(bridge_periods.model[0], legacy_at_end=True)}**.
@@ -1079,7 +1081,7 @@ def _(diagnostic):
 
 
 @app.cell
-def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, class_consumption_heatmap, class_controls, composition_heatmap_data, composition_view, family_controls, mo, pd, range_label, table_ui, trajectory_chart):
+def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, class_consumption_heatmap, class_controls, composition_heatmap_data, composition_view, family_controls, mo, pd, range_label, table_ui, trajectory_chart, source_markdown):
     def bridge_view(group):
         chosen_class, family = class_controls.value[group], family_controls.value[group]
         bev_reference = range_label(bridge_diagnostic.summary["anchor_powertrains"]["bev"])
@@ -1120,17 +1122,17 @@ def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, 
             atb_class=chosen_class, years=tuple(native_years))
         heatmaps = []
         if comparison.empty or comparison.delta_mj_per_vkm.notna().sum() == 0:
-            heatmaps.append(mo.md("**2. Class consumption changes:** no comparable NRCan total-energy class estimates under this selection. "
-                "Medium/heavy CEUD histories have no separate NRCan catalogue composition estimator; missing MJ conversions remain unavailable."))
+            heatmaps.append(mo.md("**2. Class consumption changes:** no comparable [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) total-energy class estimates under this selection. "
+                "Medium/heavy [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) histories have no separate [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) catalogue composition estimator; missing MJ conversions remain unavailable."))
         else:
             available = set(comparison.rating_class)
             ordered = [size for size in composition_view["class_order"].get(group, []) if size in available]
             ordered += sorted(available - set(ordered))
             maximum = float(comparison.delta_mj_per_vkm.abs().max())
-            heatmaps.append(mo.md("**2. Class consumption changes · production − catalogue median.** "
+            heatmaps.append(mo.md(source_markdown("**2. Class consumption changes · production − catalogue median.** "
                 "Negative/blue means lower production consumption; positive/red means higher. Grey means missing; white means zero. "
                 + ("All comparable cells are zero under the selected aggregation policy." if maximum == 0 else
-                   "The same symmetric MJ/vkm colour scale applies to every range panel.")))
+                   "The same symmetric MJ/vkm colour scale applies to every range panel."))))
             years = list(range(native_years[0], native_years[1] + 1))
             for powertrain, panel in comparison.groupby("powertrain", sort=True):
                 heatmaps.append(chart_ui(class_consumption_heatmap(panel, years=years, classes=ordered,
@@ -1167,7 +1169,7 @@ def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, 
             "series": "Evidence / method", "vintage": "Model vintage", "stage": "Stage", "sample_kind": "Point type",
             "source_years": "Contributing source years", "cohort_stock_coverage": "Included cohort share"}
         return mo.vstack([
-            mo.hstack([class_controls[group], family_controls[group]], widths="equal"), mo.md(note),
+            mo.hstack([class_controls[group], family_controls[group]], widths="equal"), mo.md(source_markdown(note)),
             *curves(raw, f"Native consumption evidence: {group}, {family.upper()}", "ldv-eff-4", native=True),
             *heatmaps, *composition_details,
             *curves(rows.loc[rows.stage.eq("Harmonised before indexing")], f"Energy use before trajectory indexing: {group}, {family.upper()}", "ldv-eff-5"),
@@ -1182,8 +1184,8 @@ def bridge_plot(COHORT, VIEW_MODES, bridge_diagnostic, bridge_metric, chart_ui, 
 
 
 @app.cell(hide_code=True)
-def _(diagnostic, mo):
-    mo.accordion({"Recorded assumptions and limitations": mo.md("\n\n".join(diagnostic.summary["limitations"]))})
+def _(diagnostic, mo, source_markdown):
+    mo.accordion({"Recorded assumptions and limitations": mo.md(source_markdown("\n\n".join(diagnostic.summary["limitations"])))})
     return
 
 
@@ -1192,19 +1194,19 @@ def _(diagnostic, mo):
     mo.md(f"""
     ## Independent composition benchmarks
 
-    **Diagnostic only · {diagnostic.summary['region']}.** StatCan provides independent
+    **Diagnostic only · {diagnostic.summary['region']}.** [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) provides independent
     population counts; the broad-class mappings reuse reviewed source links. These
     comparisons examine coverage and selection, not consumption or range allocation.
 
     Compare annual registered-stock Cars/light-truck shares with available mapped
-    MTO FIT_ACTIVE cohorts. Compare new BEV/PHEV shares over
+    [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) FIT_ACTIVE cohorts. Compare new BEV/PHEV shares over
     **{min(diagnostic.summary['benchmark_calendar_years'])}–{max(diagnostic.summary['benchmark_calendar_years'])}**
-    with iZEV purchases and leases, using request calendar year alongside registration
+    with [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) purchases and leases, using request calendar year alongside registration
     calendar year. Timing, incentive eligibility and class coverage can cause differences.
     Other request years remain in the audits; acquisition records are not identifiable unique vehicles.
 
-    MTO fuel is unobserved. Its catalogue-compatible subset has its own denominator
-    and report year and does not establish full-fleet fuel shares. StatCan stock
+    [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) fuel is unobserved. Its catalogue-compatible subset has its own denominator
+    and report year and does not establish full-fleet fuel shares. [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) stock
     powertrain shares remain a separate reference. Tables retain exact populations,
     request/model years and native classes; missing or suppressed cells remain missing.
     """)
@@ -1224,7 +1226,7 @@ def _(mo):
 
 
 @app.cell
-def composition_benchmark_plot(alt, benchmark_scope, chart_ui, diagnostic, mo, table_ui):
+def composition_benchmark_plot(alt, benchmark_scope, chart_ui, diagnostic, mo, table_ui, source_markdown):
     def benchmark_panels():
         scope = benchmark_scope.value
         region = diagnostic.summary["region"]
@@ -1282,7 +1284,7 @@ def composition_benchmark_plot(alt, benchmark_scope, chart_ui, diagnostic, mo, t
         comparison_columns = {"year": "Calendar / report year", "vehicle_group": "Vehicle group", "powertrain_label": "Powertrain",
             "source_label": "Counted population", "count": "Count", "share_percent": "Share (%)",
             "denominator": "Denominator count", "comparison_overlap": "Counterpart availability"}
-        return mo.vstack([mo.md(context), chart_ui(chart, f"ldv-eff-8-{scope}", f"Population comparability: {scope.replace(chr(95), chr(32))}"),
+        return mo.vstack([mo.md(source_markdown(context)), chart_ui(chart, f"ldv-eff-8-{scope}", f"Population comparability: {scope.replace(chr(95), chr(32))}"),
             table_ui(frame[list(comparison_columns)].rename(columns=comparison_columns), "Counts, shares and their exact denominators"),
             mo.accordion({"Comparison definitions, source labels and technical audit": table_ui(frame, "Full comparison cells · original field names")})])
     benchmark_output = benchmark_panels()
@@ -1325,9 +1327,9 @@ def _(diagnostic, mo, table_ui):
             "vehicle_group": "Vehicle group", "powertrain": "Powertrain", "source_label": "Source make / model",
             "model_year": "Vehicle model year", "source_geography": "Native geography", "outcome": "Mapping / coverage result"})
         return mo.ui.tabs({
-            "Coverage and gaps": mo.vstack([mo.md("Mapped percentages use each source's **available-count denominator**. MTO's available cohort table is not all MTO stock; exact population definitions remain in the technical audit."),
+            "Coverage and gaps": mo.vstack([mo.md("Mapped percentages use each source's **available-count denominator**. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data)'s available cohort table is not all [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) stock; exact population definitions remain in the technical audit."),
                 table_ui(coverage_view, "Available counts, mapped counts and coverage gaps"),
-                mo.md("**MTO fuel is unobserved.** The following shares condition on catalogue-compatible families only; their year may not overlap StatCan stock."),
+                mo.md("**[*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) fuel is unobserved.** The following shares condition on catalogue-compatible families only; their year may not overlap [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) stock."),
                 table_ui(subset_view, "MTO catalogue-compatible subset · coverage only")]),
             "Request year / model year": table_ui(timing_view, "Two separate clocks · request records, not unique vehicles"),
             "Native observations": table_ui(native_view, "Native source populations and mapped broad classes"),

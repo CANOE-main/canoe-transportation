@@ -508,7 +508,6 @@ def build_existing_capacity_artifacts(
     road_cohorts, road_shares, road_exclusions, road_capacity = (
         distribute_existing_road_capacity(
             provincial=provincial,
-            ldv_age=pd.DataFrame(),
             report5_age=pd.read_csv(report5_file),
             ldv_registrations=pd.read_csv(ldv_file),
             truck_registrations=pd.read_csv(truck_file),

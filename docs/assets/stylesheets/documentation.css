@@ -1,7 +1,7 @@
 :root { --md-text-font: Arial, sans-serif; --md-code-font: Consolas, monospace;
   --md-primary-fg-color: #0f3460; --md-primary-fg-color--light: #e8eef6;
   --md-accent-fg-color: #0969da; --md-default-fg-color: #1a1a2e; }
-.md-grid { max-width: 86rem; }
+.md-grid { max-width: 80rem; }
 .md-typeset { font-size: .79rem; line-height: 1.6; }
 .md-typeset h1 { color: #0f3460; font-weight: 650; border-bottom: 2px solid #0f3460; padding-bottom: .4rem; }
 .md-typeset h2 { color: #0f3460; border-bottom: 1px solid #d0d7de; padding-bottom: .3rem; }
@@ -10,6 +10,8 @@
 .md-typeset table:not([class]) tr:nth-child(even) td { background: #f8f9fb; }
 .md-typeset figure { margin: 1.5rem 0; }
 .md-typeset figcaption { color: #48545a; font-size: .72rem; text-align: left; max-width: none; margin: .5rem 0 1rem; }
+.md-typeset .admonition, .md-typeset details { font-size: inherit; line-height: inherit; box-shadow: none; }
+.md-typeset .admonition-title, .md-typeset summary { font-weight: 650; }
 .canoe-mermaid { background: white !important; overflow: auto; padding: 1rem 0; }
 .canoe-mermaid svg { height: auto; min-width: 680px; }
 .md-typeset .arithmatex { overflow-x: auto; overflow-y: hidden; }
@@ -35,6 +37,8 @@
   .md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4 { break-after: avoid-page; }
   #print-site-page p, #print-site-page pre, #print-site-page blockquote { page-break-inside: auto; }
   .md-typeset p { orphans: 3; widows: 3; }
+  .md-typeset .admonition, .md-typeset details { font-size: 9.2pt !important; line-height: 1.45; break-inside: auto; }
+  .md-typeset .admonition-title, .md-typeset summary { break-after: avoid-page; }
   .md-typeset table:not([class]) { font-size: 7.4pt; line-height: 1.35; width: 100%; display: table; }
   .md-typeset table:not([class]) th, .md-typeset table:not([class]) td { min-width: 0; padding: 1.7mm 2mm; overflow-wrap: anywhere; }
   .md-typeset table:not([class]) th { overflow-wrap: normal; }

@@ -261,9 +261,10 @@ def fleet_100_chart(evidence: FleetPresentationEvidence):
         first = rows.iloc[0]
         carry = f"; {first.source_year} carried to {first.reference_year}" if first.carried_forward_years else ""
         subtitle = [f"{first.source_year} · n = {int(first.denominator):,}{carry}",
-                    *textwrap.wrap(first.denominator_label, width=45)]
+                    *textwrap.wrap(first.denominator_label.replace("MTO", "Ontario MTO"), width=45)]
+        group_title = first.vehicle_group.replace("All MTO records", "All Ontario MTO records")
         return alt.vconcat(grid, legend, spacing=7).properties(
-            title=alt.Title(f"{first.vehicle_group} · {first.dimension}", subtitle=subtitle, anchor="start", fontSize=13, subtitleFontSize=10))
+            title=alt.Title(f"{group_title} · {first.dimension}", subtitle=subtitle, anchor="start", fontSize=13, subtitleFontSize=10))
 
     groups = []
     for group in settings.vehicle_groups:
@@ -275,7 +276,7 @@ def fleet_100_chart(evidence: FleetPresentationEvidence):
     return identified_chart(chart, settings.figure_id, f"Ontario vehicles around {settings.reference_year}: separate views of 100").properties(
         title=alt.Title(f"Ontario vehicles around {settings.reference_year}: separate views of 100", anchor="start", fontSize=20,
                         subtitle=[f"Figure {settings.figure_id} · Every panel has its own denominator; these are not the same 100 vehicles.",
-                                  "MTO size/model marginals do not establish powertrain. StatCan fuel shares are independent registered-stock evidence.",
+                                  "Ontario MTO size/model marginals do not establish powertrain. StatCan fuel shares are independent registered-stock evidence.",
                                   "Percentages are rounded to 0.01%; exact counts and shares remain in the table. Symbols use largest remainders."], subtitleFontSize=12))
 
 

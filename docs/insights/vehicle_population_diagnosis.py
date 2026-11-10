@@ -8,6 +8,7 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    from validation.notebook_figures import source_markdown
     import altair as alt
     from validation.notebook_figures import identified_chart
     import marimo as mo
@@ -78,8 +79,7 @@ def _():
         load_stock_diagnostic,
         mo,
         pd,
-        prepare_command,
-    )
+        prepare_command, source_markdown)
 
 
 @app.cell
@@ -92,14 +92,14 @@ def introduction(mo, prepare_command):
             | Evidence question | What is shown |
             |---|---|
             | Mapped fit-active stock | How much of the latest Ontario stock is covered by the reviewed map. |
-            | Canonical vehicle reference | Rated and historical identities, exact model-year attributes and source linkages, including families without MTO codes. |
+            | Canonical vehicle reference | Rated and historical identities, exact model-year attributes and source linkages, including families without [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) codes. |
             | Stock that cannot be mapped reliably | Which evidence limits leave make-model keys unresolved. |
             | Class and vintage weights | What the accepted mapped stock implies for class shares and fleet age. |
             | Report A versus Report 5 age profiles | How mapped Car/Light Truck shapes compare with broader Passenger/Commercial stock. |
-            | Report 4 versus Wards truck shares | How the sources distribute medium-duty stock across GVWR classes. |
-            | MTO versus NRCan CEUD | Whether mapped stock and same-model-year registration proxies resemble Ontario stock and sales totals. |
+            | Report 4 versus [*Wards*](https://wardsintelligence.informa.com/automotive-data) truck shares | How the sources distribute medium-duty stock across GVWR classes. |
+            | [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) versus [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) | Whether mapped stock and same-model-year registration proxies resemble Ontario stock and sales totals. |
             | Mapped-cohort retention | What consecutive Report A editions can—and cannot—say about apparent retirement and survival. |
-            | Heavy-truck survival sources | How NEMS and EPA MOVES annual factors translate into cumulative survival and median-equivalent lifetimes. |
+            | Heavy-truck survival sources | How [*EIA NEMS*](https://github.com/EIAgov/NEMS) and [*EPA MOVES*](https://www.epa.gov/moves) annual factors translate into cumulative survival and median-equivalent lifetimes. |
 
             """),
             mo.md("""
@@ -109,7 +109,7 @@ def introduction(mo, prepare_command):
             new build to inspect its updated evidence. Opening the notebook never fetches
             sources, repeats ETL, changes mappings, or promotes diagnostic results.
             `PASSENGER` and `COMMERCIAL` use the same mapping and cohort logic while
-            remaining distinct MTO source categories.
+            remaining distinct [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) source categories.
             """),
             mo.md("""
             ### Working assumptions, owners, and interpretation boundaries
@@ -117,14 +117,14 @@ def introduction(mo, prepare_command):
             | Topic | Owner or generator | Interpretation in this notebook |
             |---|---|---|
             | Ontario Report A, 4, and 5 evidence | `fetching.vehicle_population` | `FIT_ACTIVE` is the administrative proxy for vehicles available for road use; Report A supplies make-model-vintage cohorts, Report 4 supplies GVWR evidence, and Report 5 supplies Passenger/Commercial model-year totals. |
-            | Canonical identities and source links | Two reviewed tables in `config/parameters/`, read by `parameterization.vehicle_reference` | Canonical year/class/powertrain scopes and source links are fixed configuration inputs. Reviewed links retain historical or unrated identities. Catalogue powertrains do not establish MTO propulsion. |
+            | Canonical identities and source links | Two reviewed tables in `config/parameters/`, read by `parameterization.vehicle_reference` | Canonical year/class/powertrain scopes and source links are fixed configuration inputs. Reviewed links retain historical or unrated identities. Catalogue powertrains do not establish [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) propulsion. |
             | Mapping review evidence | `parameterization.road_aggregation --mapping-diagnostics` | Candidate, coverage, and unresolved-key tables are explicit review diagnostics. Row coverage counts make-model-vintage rows; stock coverage sums `FIT_ACTIVE`. |
             | Mapped-fleet composition | `parameterization.road_aggregation` | Class and vintage composition is conditional on accepted mapped LDV stock. Unmapped stock remains visible in coverage diagnostics and is not imputed across mapped classes. |
             | Existing-fleet age weights | `parameterization.road_stocks_and_demands` | The raw comparison charts use the latest snapshot and a common model-year floor of 2000. The downstream stock-cohort cutoff is separate from technology lifetimes: `survival_curve_max_age` only bounds represented cohorts when curves are enabled. |
-            | MHDV weight-class shares | `parameterization.road_fleet_weights`, Report 4 and registered Wards class shares | The scenario selects the regional GVWR source for efficiencies, costs and utilization. This view compares the sources' different coverage. |
-            | NRCan CEUD comparison | `fetching.nrcan_ceud` | CEUD is an external plausibility benchmark. MTO stock is the accepted mapped subset; the MTO “sales” series is a same-model-year registration proxy. |
-            | Accepted lifetime inputs | `parameterization.road_lifetimes_survival` | `road_lifetime_survival_source` selects NHTSA CAFE with NEMS heavy trucks, or MOVES cars/light trucks with its heavy-vehicle rates for medium/heavy trucks. The selected class schedules supply fixed medians or survival curves according to `survival_curves`. |
-            | MTO apparent-retention diagnostics | `parameterization.road_lifetimes_survival --mto-diagnostics` | Consecutive editions supply raw make-model-vintage transitions within the captured age window. Primary pooled curves retain series present in the latest snapshot. Growth remains visible; these diagnostic curves do not select accepted lifetime parameters. |
+            | MHDV weight-class shares | `parameterization.road_fleet_weights`, Report 4 and registered [*Wards*](https://wardsintelligence.informa.com/automotive-data) class shares | The scenario selects the regional GVWR source for efficiencies, costs and utilization. This view compares the sources' different coverage. |
+            | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) comparison | `fetching.nrcan_ceud` | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) is an external plausibility benchmark. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) stock is the accepted mapped subset; the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) “sales” series is a same-model-year registration proxy. |
+            | Accepted lifetime inputs | `parameterization.road_lifetimes_survival` | `road_lifetime_survival_source` selects [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) with [*EIA NEMS*](https://github.com/EIAgov/NEMS) heavy trucks, or [*EPA MOVES*](https://www.epa.gov/moves) cars/light trucks with its heavy-vehicle rates for medium/heavy trucks. The selected class schedules supply fixed medians or survival curves according to `survival_curves`. |
+            | [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) apparent-retention diagnostics | `parameterization.road_lifetimes_survival --mto-diagnostics` | Consecutive editions supply raw make-model-vintage transitions within the captured age window. Primary pooled curves retain series present in the latest snapshot. Growth remains visible; these diagnostic curves do not select accepted lifetime parameters. |
             """),
             mo.md(f"""
             ### Prepare once, then reload after updated builds
@@ -136,7 +136,7 @@ def introduction(mo, prepare_command):
             ```
 
             This build prepares production parameters, complete registered Ontario history,
-            mapping diagnostics, MTO retention evidence and heavy-truck survival
+            mapping diagnostics, [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) retention evidence and heavy-truck survival
             schedules, then records their inputs and configuration together.
             """),
             mo.md("""
@@ -146,7 +146,7 @@ def introduction(mo, prepare_command):
             scores help find labels; they do not establish identity, model year,
             vehicle class or fuel. Proposals cannot overwrite either authoritative
             table. Production uses reviewed source links and their year intervals.
-            NRCan and FuelEconomy.gov retain distinct catalogue coverage.
+            [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) and FuelEconomy.gov retain distinct catalogue coverage.
             """),
         ]
     )
@@ -225,7 +225,7 @@ def canonical_reference_controls(evidence, mo):
         ## Canonical vehicle reference
 
         One reviewed row describes a canonical identity and its supported year,
-        class and powertrain scope. Families without MTO codes are included. Both
+        class and powertrain scope. Families without [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) codes are included. Both
         tables are captured configuration inputs; ordinary builds do not rewrite them.
         Consumption, representative electric range and range allocation are calculated
         downstream from eligible target-year configurations, as shown in the efficiency diagnostic.
@@ -860,9 +860,9 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             This measures the usable scale of the reviewed map and the
             evidence breadth behind it. A Report A *row* is one make/model/model-year
             cohort; fit-active stock is the vehicle count carried by those rows.
-            The NRCan/EPA chart is auxiliary class evidence for review, separate from
+            The [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64)/EPA chart is auxiliary class evidence for review, separate from
             the canonical inventory above. The identity total counts distinct canonical
-            IDs linked to MTO across all reviewed scopes, including unrated identities;
+            IDs linked to [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) across all reviewed scopes, including unrated identities;
             reviewed interval rows are a different count.
             """),
             mo.hstack([
@@ -890,9 +890,9 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
             mo.md("""
             A source link covers a make/model code and a reviewed year interval.
             Several keys can resolve to one canonical family. This chart uses
-            the unified NRCan and FuelEconomy.gov family catalogue, deduplicates by
-            canonical make, canonical model, and NLR ATB class, and then asks whether any
-            accepted MTO key points to each family.
+            the unified [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) and FuelEconomy.gov family catalogue, deduplicates by
+            canonical make, canonical model, and [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) class, and then asks whether any
+            accepted [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) key points to each family.
             """),
             chart_ui(family_use_chart, 'population-4', 'How canonical family mappings support parameterization'),
 
@@ -917,7 +917,7 @@ def _(NLR_ORDER, alt, chart_ui, evidence, mo, pd):
 
             mo.md("""
             **Unused normalized evidence** means the canonical family exists in the
-            combined evidence catalogue but no reviewed MTO make/model code currently
+            combined evidence catalogue but no reviewed [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) make/model code currently
             points to it; it does not mean its source rows are unused elsewhere.
             Source labels follow the reviewed identities; model-year, class and
             powertrain distinctions remain where the reference supports them.
@@ -1030,12 +1030,12 @@ def unmapped_reasons(alt, chart_ui, evidence, mo, pd):
               or general similarity supports the model.
             - **Ambiguous best candidate:** equally strong families or class
               interpretations remain.
-            - **No normalized make agreement:** the MTO make code has no configured
+            - **No normalized make agreement:** the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) make code has no configured
               alias or normalized make-prefix match, so model scoring cannot begin.
             - **Suppressed or unknown source code:** make or model is blank, masked, or
               explicitly unknown.
             - **No model-family candidate:** the make normalized successfully, but no
-              canonical model family was generated for the MTO label.
+              canonical model family was generated for the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) label.
             - **Not present in latest snapshot:** the historical key does not occur in
               the latest fleet snapshot. This lowers its priority for current fleet
               composition and age weights. Raw transitions remain visible;
@@ -1187,10 +1187,10 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
 
         highest_unresolved_output = mo.vstack([
             mo.md("""
-            This view ranks the highest-stock unresolved MTO make-model
+            This view ranks the highest-stock unresolved [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) make-model
             keys within each evidence-limitation category.
 
-            Each bar shows one MTO make/model key within a source category, split
+            Each bar shows one [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) make/model key within a source category, split
             by model year. Tables rank current unresolved stock; the historical-only
             tab instead sums exposure across editions. Those two totals describe
             different populations and must not be added together.
@@ -1202,7 +1202,7 @@ def _(alt, chart_ui, evidence, mo, pd, reason_labels):
             Full candidate labels and scores remain available in the table.
 
             Historical keys absent from the latest edition remain in raw transition
-            evidence. Primary pooled MTO survival curves apply their separate
+            evidence. Primary pooled [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) survival curves apply their separate
             latest-snapshot presence condition.
             Chart data retain every observed model year, while the color legend labels
             only five-year intervals from 1980 onward to keep it compact.
@@ -1401,17 +1401,17 @@ def _(NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
         mapped_composition_output = mo.vstack([
             mo.md("""
             This view shows how accepted mapped `FIT_ACTIVE` stock is
-            distributed across source-native NRCan classes in each Report A edition.
+            distributed across source-native [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) classes in each Report A edition.
 
             Each horizontal bar is one Report A edition and partitions the
-            accepted fit-active fleet into source-native NRCan Ratings classes. Car and
+            accepted fit-active fleet into source-native [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) classes. Car and
             Light Truck are separated because their class vocabularies differ. These are
             relative shares of mapped stock, so a changing segment can reflect both fleet
             evolution and changing mapping coverage. The calculation does not reweight
             mapped classes to represent unresolved stock, so every composition result is
             conditional on the accepted crosswalk.
 
-            NRCan class order is fixed from
+            [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) class order is fixed from
             smaller to larger size classes within each source body-type family, so both
             stack position and color remain stable across editions. Two-seaters and vans
             follow the size-ordered classes because they are separate source categories.
@@ -1420,7 +1420,7 @@ def _(NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
             chart_ui(edition_composition_chart("Light Truck"), 'population-8-light-trucks', 'Light-truck size composition across observed editions'),
             mo.md("""
             The area chart below isolates the latest snapshot and model-year vintages
-            from 2000 onward. Each colored area is an NLR ATB class contribution in
+            from 2000 onward. Each colored area is an [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) class contribution in
             absolute mapped FIT_ACTIVE stock from the 2025 fleet; the class-vintage
             contributions accumulate to the total mapped 2000+ stock across the
             displayed data.
@@ -1575,8 +1575,8 @@ def _(NLR_ORDER, NRCAN_CLASS_ORDER, alt, chart_ui, evidence, mo, pd):
             The stacked areas show the absolute mapped `FIT_ACTIVE` stock observed at each
             model year, with an automatically scaled stock axis so the fleet-size trend is
             visible without a fixed percentage ceiling. The compact stacked bars at right
-            remain Wards 2018 and 2021 new-sales percentages and therefore use their own
-            labelled 0-100% axis. Wards describes Canadian new sales, while the areas
+            remain [*Wards*](https://wardsintelligence.informa.com/automotive-data) 2018 and 2021 new-sales percentages and therefore use their own
+            labelled 0-100% axis. [*Wards*](https://wardsintelligence.informa.com/automotive-data) describes Canadian new sales, while the areas
             describe Ontario surviving registered stock, so differences reflect geography,
             retirement, migration, mapping coverage, and sales history; the bars are
             benchmarks, not inputs to the empirical composition.
@@ -1770,10 +1770,10 @@ def _(alt, chart_ui, evidence, mo, pd):
             identity support covering the configured share of uniquely gasoline-resolved counts in
             that model-year/size-class cohort. All qualifying families use fit-active
             counts; other cohorts use distinct-model catalogue medians. Report A does
-            not observe propulsion or trim. PEV composition uses eligible iZEV purchase
+            not observe propulsion or trim. PEV composition uses eligible [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) purchase
             and lease records with supported family identities; compatible configurations
             supply representative consumption and range in the efficiency workflow.
-            Matched abbreviated MTO make/model keys are retained as list-form tooltips and
+            Matched abbreviated [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) make/model keys are retained as list-form tooltips and
             table columns; keeping them out of the categorical axis preserves heat-map
             alignment and readability when many keys resolve to one normalized family.
             Canonical family names and source links follow the two reviewed tables
@@ -1993,7 +1993,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                 remains interpretable even though the sampled families change. Re-run
                 this cell to reshuffle all three samples.
 
-                Matched abbreviated MTO keys are included in list-form tooltips and tables.
+                Matched abbreviated [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) keys are included in list-form tooltips and tables.
                 A second categorical axis would compress the model-year cells, so the
                 validation labels remain available without changing the heat-map geometry.
                 """),
@@ -2255,7 +2255,7 @@ def _(alt, chart_ui, evidence, mo, pd):
                 Passenger/Commercial classes without make-model mapping. The paired labels
                 are therefore deliberately approximate rather than equivalent.
 
-                These shapes diagnose the source choice for distributing NRCan CEUD stock
+                These shapes diagnose the source choice for distributing [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock
                 over existing-fleet vintages. They do not replace the published age weights:
                 those remain conditional on mapping and on the downstream stock-cohort
                 cutoff. When `survival_curves` is false, accepted median-equivalent ages
@@ -2290,7 +2290,7 @@ def _(alt, chart_ui, evidence, mo, pd):
 @app.cell(hide_code=True)
 def mhdv_weight_source_comparison_heading(mo):
     mo.md("""
-    ### MHDV GVWR shares: Report 4 versus Wards
+    ### MHDV GVWR shares: Report 4 versus [*Wards*](https://wardsintelligence.informa.com/automotive-data)
     """)
     return
 
@@ -2454,8 +2454,8 @@ def _(alt, chart_ui, evidence, mo, pd):
         mhdv_weight_output = mo.vstack(
             [
                 mo.md("""
-                This view compares Report 4 and Wards shares for
-                disaggregating medium-duty truck NLR ATB parameters.
+                This view compares Report 4 and [*Wards*](https://wardsintelligence.informa.com/automotive-data) shares for
+                disaggregating medium-duty truck [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) parameters.
 
                 Report 4 assigns the latest Ontario Commercial `FIT_ACTIVE` stock to EPA
                 GVWR bins using each source interval's upper kilogram bound converted to
@@ -2463,14 +2463,14 @@ def _(alt, chart_ui, evidence, mo, pd):
                 renormalizes Report 4 within Medium Trucks (Classes 3–7) and Heavy Trucks
                 (Class 8). LDT1–2, LDT3–4, and MDV2b are outside this MHDV comparison.
 
-                Wards uses the reviewed Class 3–8 shares from
+                [*Wards*](https://wardsintelligence.informa.com/automotive-data) uses the reviewed Class 3–8 shares from
                 `vehicle_class_market_shares.csv`: Classes 3–7 sum to one within Medium
                 Trucks and Class 8 is the sole Heavy Truck class. The sources are not
-                like-for-like—Report 4 is Ontario registered stock, while Wards is Canadian
+                like-for-like—Report 4 is Ontario registered stock, while [*Wards*](https://wardsintelligence.informa.com/automotive-data) is Canadian
                 sales evidence from a different year—so the bars diagnose the choice of
                 weight-class disaggregation rather than validate one source against the
-                other. These shares are relevant only when combining NLR ATB MHDV
-                efficiency and cost parameters; they do not alter CEUD stock totals,
+                other. These shares are relevant only when combining [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) MHDV
+                efficiency and cost parameters; they do not alter [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock totals,
                 LDV age weights, or survival schedules.
 
                 Only Medium Trucks are charted because Classes 3–7 contain a meaningful
@@ -2506,13 +2506,13 @@ def _(alt, chart_ui, evidence, mo, pd):
 @app.cell(hide_code=True)
 def mapped_stock_sales_validation_heading(mo):
     mo.md("""
-    ### Mapped MTO versus NRCan CEUD stock and sales
+    ### Mapped [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) versus [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock and sales
     """)
     return
 
 
 @app.cell
-def _(alt, chart_ui, evidence, mo, pd):
+def _(alt, chart_ui, evidence, mo, pd, source_markdown):
     def _build_view():
         comparison_years = list(range(2016, 2024))
         vehicle_class_order = ["Car", "Light Truck"]
@@ -2716,16 +2716,16 @@ def _(alt, chart_ui, evidence, mo, pd):
         missing_ceud_years = sorted(set(comparison_years) - observed_ceud_years)
         coverage_note = (
             mo.md(
-                "NRCan CEUD covers all requested comparison years."
+                "[*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) covers all requested comparison years."
             )
             if not missing_ceud_years
             else mo.callout(
                 mo.md(
-                    "The normalized NRCan CEUD artifact is missing requested year(s): "
+                    source_markdown("The normalized NRCan CEUD artifact is missing requested year(s): "
                     + ", ".join(map(str, missing_ceud_years))
                     + ". The MTO lines retain the full 2016–2023 window; refresh the "
                     "configured CEUD source before treating the visual comparison as "
-                    "complete."
+                    "complete.")
                 ),
                 kind="warn",
             )
@@ -2734,20 +2734,20 @@ def _(alt, chart_ui, evidence, mo, pd):
         validation_output = mo.vstack(
             [
                 mo.md("""
-                This view compares mapped Ontario MTO stock and a
-                same-model-year registration proxy with NRCan CEUD stock and sales.
+                This view compares mapped [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) stock and a
+                same-model-year registration proxy with [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock and sales.
 
-                This visual check compares only accepted mapped `FIT_ACTIVE` MTO rows
-                with Ontario NRCan CEUD car and light-truck totals. MTO stock sums all the
+                This visual check compares only accepted mapped `FIT_ACTIVE` [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) rows
+                with Ontario [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) car and light-truck totals. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) stock sums all the
                 mapped fit-active stock in each Report A edition; its sales proxy retains only
-                rows whose model year equals that edition year. NRCan light trucks combine
+                rows whose model year equals that edition year. [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) light trucks combine
                 the source-native passenger and freight light-truck series. All values are
                 shown in thousands of vehicles.
 
-                The comparison is directional rather than a reconciliation. MTO is an
+                The comparison is directional rather than a reconciliation. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) is an
                 administrative Ontario registration extract restricted to mapped rows;
-                CEUD is a separate Ontario stock/sales series with its own definitions and
-                revisions. The same-model-year MTO proxy can include registration timing,
+                [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) is a separate Ontario stock/sales series with its own definitions and
+                revisions. The same-model-year [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) proxy can include registration timing,
                 migration, imports, or vehicles first observed after sale, and it omits
                 unmapped vehicles. No ratio between the lines is used to expand the map,
                 rescale fleet weights, calibrate retention, or alter accepted parameters.
@@ -2774,7 +2774,7 @@ def retention_survival_section(mo):
 @app.cell(hide_code=True)
 def heavy_truck_survival_heading(mo):
     mo.md("""
-    ### Heavy-truck survival: NEMS versus EPA MOVES
+    ### Heavy-truck survival: [*EIA NEMS*](https://github.com/EIAgov/NEMS) versus [*EPA MOVES*](https://www.epa.gov/moves)
     """)
     return
 
@@ -2881,13 +2881,13 @@ def heavy_truck_survival_comparison_chart(
         )
         return mo.vstack([
             mo.md(f"""
-            NEMS annual scrappage is converted to annual survival as `1 − scrappage`.
-            MOVES Table C-1 reports annual conditional survival directly. The production
+            [*EIA NEMS*](https://github.com/EIAgov/NEMS) annual scrappage is converted to annual survival as `1 − scrappage`.
+            [*EPA MOVES*](https://www.epa.gov/moves) Table C-1 reports annual conditional survival directly. The production
             parameterization multiplies each source's annual factors from a 100% age-zero
             baseline; the notebook reads that same conversion. Full source ages are shown
             before the scenario's `survival_curve_max_age` limit, without extrapolation.
 
-            For MOVES, elapsed age follows `S(0) = 1` and
+            For [*EPA MOVES*](https://www.epa.gov/moves), elapsed age follows `S(0) = 1` and
             `S(a + 1) = S(a) × annual_rate(a)`. This gives a heavy-truck median of
             **20 years**. The earlier same-index product applied the current-age
             rate one year early and produced a 19-year median.
@@ -2915,7 +2915,7 @@ def heavy_truck_survival_comparison_chart(
 @app.cell(hide_code=True)
 def retention_method_heading(mo):
     mo.md("""
-    ### MTO apparent-retention construction
+    ### [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) apparent-retention construction
     """)
     return
 
@@ -2970,9 +2970,9 @@ def _(evidence, mo, pd):
         maximum_recurrence_error = max(recurrence_errors, default=0.0)
         mto_retention_method_output = mo.vstack([
             mo.md(r"""
-            **Source boundary.** The scenario selects NHTSA with NEMS or MOVES
+            **Source boundary.** The scenario selects [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) with [*EIA NEMS*](https://github.com/EIAgov/NEMS) or [*EPA MOVES*](https://www.epa.gov/moves)
             road-class schedules for accepted lifetime parameters. This section
-            independently derives MTO apparent retention, and the quality gates
+            independently derives [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) apparent retention, and the quality gates
             assess the administrative evidence used in the displayed comparison.
 
             A raw transition requires the same source category, make/model code and
@@ -2983,15 +2983,15 @@ def _(evidence, mo, pd):
             requires accepted class evidence and latest-snapshot presence of that series.
             This survivorship condition is separate from current-fleet composition weights.
 
-            For category $p$, make/model key $k$, vintage $v$, report year $t$
-            and starting stock $N$:
+            For category $\boldsymbol{p}$, make/model key $\boldsymbol{k}$, vintage $\boldsymbol{v}$, report year $\boldsymbol{t}$
+            and starting stock $\boldsymbol{N}$:
 
             $$
             a=t-v,\qquad D_{p,k,v,t}=N_{p,k,v,t}-N_{p,k,v,t+1},\qquad
             r_{p,k,v,t}=\frac{N_{p,k,v,t+1}}{N_{p,k,v,t}},\qquad q_{p,k,v,t}=1-r_{p,k,v,t}.
             $$
 
-            Negative apparent retirement $q$ and retention $r>1$ remain visible.
+            Negative apparent retirement $\boldsymbol{q}$ and retention $r>1$ remain visible.
             They mix physical retirement with migration, registration changes and
             recoding because the source has no vehicle-level linkage.
 
@@ -3010,7 +3010,7 @@ def _(evidence, mo, pd):
 
             The age-zero rate determines survival at age one; the final annual rate
             determines the following age's terminal point. No smoothing, clipping or
-            NHTSA calibration enters this calculation. NHTSA is comparison evidence.
+            [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) calibration enters this calculation. [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) is comparison evidence.
             The recurrence check below verifies this product directly.
 
             Quality gates assess mapped exposure, annual-rate bounds, age continuity,
@@ -3019,7 +3019,7 @@ def _(evidence, mo, pd):
 
             | Stage | Grain and treatment |
             |---|---|
-            | Raw snapshot | Source category, MTO key, vintage and report year; preserve observed stock. |
+            | Raw snapshot | Source category, [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) key, vintage and report year; preserve observed stock. |
             | Raw transition | Consecutive eligible pairs; calculate un-clipped apparent retirements and retention. |
             | Mapping | Attach reviewed year-specific class evidence without changing raw rates. |
             | Primary pool | Keep accepted-class series present in the latest snapshot; sum counts before calculating rates. |
@@ -3245,7 +3245,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             apparent retirement rates at each starting age before class pooling.
 
             Each small histogram describes the cross-sectional distribution of raw
-            one-year rates across eligible MTO make-model-vintage series at one starting
+            one-year rates across eligible [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) make-model-vintage series at one starting
             age. Every series receives one observation per eligible report-year pair;
             these histograms are counts, not stock-weighted class estimates. Passenger and
             Commercial remain source categories because this view precedes class mapping.
@@ -3409,7 +3409,7 @@ def passenger_status_proxy(
 @app.cell(hide_code=True)
 def survival_comparison_heading(mo):
     mo.md("""
-    ### MTO apparent survival versus accepted NHTSA curves
+    ### [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) apparent survival versus accepted [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) curves
     """)
     return
 
@@ -3468,7 +3468,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             .encode(
                 x=alt.X("age:Q", title="Starting vehicle age", scale=alt.Scale(domain=annual_age_domain)),
                 y=alt.Y("annual_retirement_rate:Q", title="Annual apparent retirement rate", axis=alt.Axis(format="%"), scale=alt.Scale(zero=True)),
-                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right")),
+                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right", titleFontStyle="italic")),
             )
         )
         annual_points = (
@@ -3477,13 +3477,13 @@ def _(alt, chart_ui, evidence, mo, pd):
             .encode(
                 x="age:Q",
                 y="annual_retirement_rate:Q",
-                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right")),
+                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right", titleFontStyle="italic")),
                 size=alt.Size("fit_active_exposure:Q", title="Starting exposure", scale=alt.Scale(range=[20, 240])),
                 tooltip=["vehicle_class:N", "age:Q", alt.Tooltip("annual_retirement_rate:Q", format=".2%"), alt.Tooltip("annual_survival_factor:Q", format=".2%"), alt.Tooltip("fit_active_exposure:Q", format=","), "number_of_vintages:Q", "number_of_transitions:Q"],
             )
         )
         annual_chart = (annual_lines + annual_points).properties(
-            width=700, height=300, title="Exposure-pooled annual MTO retirement rates"
+            width=700, height=300, title="Exposure-pooled annual Ontario MTO retirement rates"
         )
 
         legacy_survival = evidence["legacy_survival"].copy()
@@ -3503,8 +3503,8 @@ def _(alt, chart_ui, evidence, mo, pd):
         mto_comparison["evidence_source"] = "MTO cohort transitions"
         survival_comparison = pd.concat([legacy_comparison, mto_comparison], ignore_index=True)
         survival_line_types = {
-            "MTO cohort transitions": "Solid: MTO transition evidence",
-            "Legacy NHTSA": "Dashed: NHTSA legacy schedule",
+            "MTO cohort transitions": "Solid: Ontario MTO transition evidence",
+            "Legacy NHTSA": "Dashed: NHTSA CAFE legacy schedule",
         }
         survival_comparison["line_type"] = survival_comparison[
             "evidence_source"
@@ -3516,14 +3516,14 @@ def _(alt, chart_ui, evidence, mo, pd):
             .encode(
                 x=alt.X("age:Q", title="Vehicle age", scale=alt.Scale(domain=[0, comparison_age_max])),
                 y=alt.Y("cumulative_survival:Q", title="Cumulative survival", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])),
-                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right")),
+                color=alt.Color("vehicle_class:N", title="NRCan CEUD class", scale=alt.Scale(domain=["Car", "Light Truck"], range=["#457b9d", "#e76f51"]), legend=alt.Legend(orient="right", titleFontStyle="italic")),
                 strokeDash=alt.StrokeDash(
                     "line_type:N",
                     title="Evidence source",
                     scale=alt.Scale(
                         domain=[
-                            "Solid: MTO transition evidence",
-                            "Dashed: NHTSA legacy schedule",
+                            "Solid: Ontario MTO transition evidence",
+                            "Dashed: NHTSA CAFE legacy schedule",
                         ],
                         range=[[1, 0], [7, 4]],
                     ),
@@ -3532,19 +3532,21 @@ def _(alt, chart_ui, evidence, mo, pd):
                         symbolType="stroke",
                         symbolStrokeWidth=3,
                         symbolSize=320,
+                        labelFontStyle="italic",
+                        labelLimit=320,
                     ),
                 ),
                 tooltip=["vehicle_class:N", "evidence_source:N", "age:Q", alt.Tooltip("cumulative_survival:Q", format=".2%")],
             )
-            .properties(width=700, height=300, title="MTO and legacy NHTSA cumulative survival")
+            .properties(width=700, height=300, title="Ontario MTO and legacy NHTSA CAFE cumulative survival")
         )
 
         decision = evidence["mto_survival_decision"].copy()
         decision_outcome = str(decision["decision_outcome"].iloc[0])
         survival_comparison_output = mo.vstack([
             mo.md(f"""
-            This view compares independently derived MTO apparent
-            survival with accepted NHTSA CAFE curves and audits the MTO evidence scope.
+            This view compares independently derived [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) apparent
+            survival with accepted [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) curves and audits the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) evidence scope.
 
             **Decision: {decision_outcome}.** This is the diagnostic decision recorded by
             the generated validation artifact; it does not itself publish or overwrite an
@@ -3552,7 +3554,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             `FIT_ACTIVE` keys observed in consecutive Report A editions, with positive
             starting exposure and nonnegative starting age. Age 0 to 1 is the first
             empirical transition. Class mapping is attached afterwards. Raw and pooled
-            negative retirement rates are preserved, never clipped. The primary MTO
+            negative retirement rates are preserved, never clipped. The primary [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data)
             diagnostic rates use
             only make-model-vintage series that remain present in the latest snapshot;
             latest-snapshot composition weights still do not enter the rate calculation.
@@ -3569,7 +3571,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             the sum of `N_{{p,k,v,t}}`, the FIT_ACTIVE stock at the beginning of every
             eligible historical transition. A series observed over several annual pairs
             contributes its starting exposure to each pair. The mapped share is the part
-            of that exposure whose reviewed vintage-specific crosswalk resolves to CEUD
+            of that exposure whose reviewed vintage-specific crosswalk resolves to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)
             Car or Light Truck. Mapped non-LDV exposure is shown separately and remains
             excluded from the LDV retirement-rate pools. Vintages older than the dynamic
             1981 mapping floor are reported separately rather than treated as unresolved.
@@ -3579,11 +3581,11 @@ def _(alt, chart_ui, evidence, mo, pd):
             a maximum starting age of 35, the oldest contributing vintage is
             `2016 - 35 = 1981`.
             """),
-            chart_ui(coverage_chart, 'population-19', 'Mapped exposure supporting apparent retention estimates'),
+            chart_ui(coverage_chart, 'population-19', 'Ontario MTO mapped exposure supporting apparent retention estimates'),
             mo.md("""
             #### 2. Empirical annual rates, exposure, and vintage support
 
-            **Summary:** This audit shows the pooled annual MTO rates together with the
+            **Summary:** This audit shows the pooled annual [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) rates together with the
             exposure and vintage support behind every class-age estimate.
 
             At each class and age, the empirical rate is total apparent retirements divided
@@ -3594,7 +3596,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             Point area represents starting exposure; the color legend distinguishes Car
             and Light Truck.
             """),
-            chart_ui(annual_chart, 'population-20', 'MTO apparent retirement rates and supporting exposure'),
+            chart_ui(annual_chart, 'population-20', 'Ontario MTO apparent retirement rates and supporting exposure'),
             mo.md("""
             Hovering reports exposure and both support counts. The configured decision gate
             evaluates starting ages 0 through 35. This keeps all eligible early evidence
@@ -3603,27 +3605,27 @@ def _(alt, chart_ui, evidence, mo, pd):
 
             #### 3. Like-for-like cumulative-survival comparison
 
-            **Summary:** This comparison places the direct cumulative product of MTO rates
-            beside accepted NHTSA curves over the same age horizon.
+            **Summary:** This comparison places the direct cumulative product of [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) rates
+            beside accepted [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) curves over the same age horizon.
 
-            Both series display an age-zero baseline. For MTO, the age-0 annual rate is the
+            Both series display an age-zero baseline. For [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data), the age-0 annual rate is the
             first empirical factor and determines survival at age 1; the age-1 rate then
-            determines survival at age 2. The MTO line is not smoothed, interpolated
+            determines survival at age 2. The [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) line is not smoothed, interpolated
             statistically, or fitted: each plotted point is the direct cumulative product
-            of the exposure-pooled MTO factors and straight segments merely connect
+            of the exposure-pooled [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) factors and straight segments merely connect
             consecutive ages. A cumulative product naturally looks smoother than its annual
             inputs because each new rate changes the preceding survival level
             multiplicatively. Declining late-age exposure makes those smooth-looking levels
-            less certain, not more reliable. The age-35 annual rate yields the terminal MTO
-            survival point at age 36; NHTSA is truncated to the same cumulative horizon for
+            less certain, not more reliable. The age-35 annual rate yields the terminal [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data)
+            survival point at age 36; [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) is truncated to the same cumulative horizon for
             comparison. Color identifies vehicle class, while the stroke-symbol legend
-            identifies solid MTO transition evidence and dashed NHTSA legacy schedules.
+            identifies solid [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) transition evidence and dashed [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) legacy schedules.
 
-            NHTSA is loaded only after the MTO transition table, annual pooling, and
-            cumulative product already exist. It never enters an MTO numerator,
+            [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) is loaded only after the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) transition table, annual pooling, and
+            cumulative product already exist. It never enters an [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) numerator,
             denominator, weight, rate, interpolation, or calibration step.
             """),
-            chart_ui(cumulative_chart, 'population-21', 'Cumulative MTO retention and NHTSA survival'),
+            chart_ui(cumulative_chart, 'population-21', 'Cumulative Ontario MTO retention and NHTSA CAFE survival'),
             mo.ui.tabs({
                 "Decision gate": mo.ui.table(decision, selection=None, pagination=False, page_size=10, format_mapping={"mapped_fit_active_exposure_share": "{:.2%}", "in_bounds_rate_share": "{:.2%}"}),
                 "Final MTO class-age output": mo.ui.table(mto_curves.sort_values(["vehicle_class", "age"]), selection=None, pagination=True, page_size=10, format_mapping={"annual_retirement_rate": "{:.2%}", "annual_survival_factor": "{:.2%}", "cumulative_survival": "{:.2%}", "cumulative_scrappage": "{:.2%}"}),
@@ -3764,13 +3766,13 @@ def _(alt, chart_ui, evidence, mo, pd):
         )
         scope_comparison_output = mo.vstack([
             mo.md("""
-            #### 4. Primary MTO diagnostic vintage scope and 1990+ sensitivity
+            #### 4. Primary [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) diagnostic vintage scope and 1990+ sensitivity
 
             **Summary:** This sensitivity isolates how excluding 1981–1989 vintages changes
-            MTO rates, cumulative survival, exposure, and age coverage.
+            [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) rates, cumulative survival, exposure, and age coverage.
 
             Both methods use only raw FIT_ACTIVE make-model-vintage series present in the
-            latest snapshot. The chart's “production” label names the primary MTO
+            latest snapshot. The chart's “production” label names the primary [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data)
             diagnostic aggregation branch; it does not mean the curve is the accepted
             backend lifetime parameter. That branch retains every vintage capable of
             contributing to an observed starting age from 0 through 35; given the first
@@ -3781,7 +3783,7 @@ def _(alt, chart_ui, evidence, mo, pd):
             chart_ui(scope_annual_chart, 'population-22', 'Annual retention sensitivity to population scope'),
             mo.md("""
             The cumulative curves below are independently compounded from each method's
-            own annual MTO rates. NHTSA does not enter this comparison. Differences between
+            own annual [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) rates. [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) does not enter this comparison. Differences between
             the lines arise only from excluding 1981-1989 vintages.
             """),
             chart_ui(scope_cumulative_chart, 'population-23', 'Cumulative retention sensitivity to population scope'),

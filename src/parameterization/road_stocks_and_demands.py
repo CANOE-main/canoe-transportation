@@ -1,9 +1,7 @@
 """Road stock cohorts and allocation, with shared utilization calculations."""
 
-import argparse
 import logging
 from math import isclose, isfinite
-from pathlib import Path
 from typing import Any
 from collections.abc import Mapping, Sequence
 
@@ -11,23 +9,6 @@ import pandas as pd
 
 from validation.config_models import ScenarioPeriods
 
-from utils import (
-    ConfigBundle,
-    load_config_bundle,
-    load_harmonization_rules,
-    resolve_artifact_path,
-    write_dataframe_atomic,
-)
-
-
-ROAD_RULE_KEY = "road_aggregation"
-STOCK_RULE_KEY = "road_stocks_and_demands"
-LIFETIME_RULE_KEY = "road_lifetimes_survival"
-
-
-def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
-    """Load Ontario stock-and-demand rules."""
-    return load_harmonization_rules(bundle, STOCK_RULE_KEY)
 
 
 def reconcile_road_capacity_to_activity(
@@ -298,26 +279,6 @@ def mean_age_utilization_for_period(
     return float(baseline_utilization * values.mean())
 
 
-def median_lifetime_map(medians: pd.DataFrame) -> dict[str, float]:
-    """Return unique CEUD-class median-equivalent ages."""
-    selected = medians.loc[medians["target_system"].eq("nrcan_ceud")].copy()
-    if selected.empty:
-        raise ValueError("No NRCan CEUD median-equivalent lifetimes are available")
-    duplicates = selected.duplicated("target_class", keep=False)
-    if duplicates.any():
-        raise ValueError("Duplicate NRCan CEUD median-equivalent lifetime rows")
-    if selected["median_equivalent_age"].isna().any():
-        missing = selected.loc[
-            selected["median_equivalent_age"].isna(),
-            "target_class",
-        ].tolist()
-        raise ValueError(f"Missing median-equivalent ages for: {missing}")
-    return {
-        str(row.target_class): float(row.median_equivalent_age)
-        for row in selected.itertuples(index=False)
-    }
-
-
 def accepted_curve_ages(
     curves: pd.DataFrame, rules: Mapping[str, Any]
 ) -> dict[str, set[int]]:
@@ -344,213 +305,6 @@ def accepted_curve_ages(
             ].astype(int)
         )
     return result
-
-
-def derive_ldv_age_distributions(
-    mapped_stock: pd.DataFrame,
-    *,
-    survival_curves: bool,
-    maximum_age: int | None,
-    median_lifetimes: dict[str, float],
-    historical_review_minimum_model_year: int,
-    period_config: ScenarioPeriods | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Bound production age evidence by history; retain diagnostic lifetime cutoffs."""
-    required = {
-        "report_year",
-        "MODEL_YEAR",
-        "FIT_ACTIVE",
-        "nrcan_ceud_class",
-        "nlr_atb_class",
-        "mapping_accepted",
-    }
-    missing = sorted(required - set(mapped_stock.columns))
-    if missing:
-        raise ValueError("Mapped Ontario stock missing columns: " + ", ".join(missing))
-    accepted = mapped_stock.loc[mapped_stock["mapping_accepted"]].copy()
-    accepted["report_year"] = pd.to_numeric(
-        accepted["report_year"],
-        errors="raise",
-    ).astype(int)
-    accepted["MODEL_YEAR"] = pd.to_numeric(
-        accepted["MODEL_YEAR"],
-        errors="coerce",
-    ).astype("Int64")
-    accepted["FIT_ACTIVE"] = pd.to_numeric(
-        accepted["FIT_ACTIVE"],
-        errors="coerce",
-    )
-    accepted["age"] = accepted["report_year"] - accepted["MODEL_YEAR"]
-    accepted["before_historical_review_year"] = accepted["MODEL_YEAR"].lt(
-        historical_review_minimum_model_year
-    )
-    accepted["negative_age"] = accepted["age"].lt(0)
-    if period_config is not None:
-        accepted["cutoff_age"] = float(
-            period_config.base_year - period_config.existing[0]
-        )
-        accepted["cutoff_basis"] = "configured_historical_vintage_coverage"
-    elif survival_curves:
-        if maximum_age is None:
-            raise ValueError("An age limit is required when diagnosing stock ages without scenario periods")
-        accepted["cutoff_age"] = float(maximum_age)
-        accepted["cutoff_basis"] = "scenario_survival_curve_max_age"
-    else:
-        accepted["cutoff_age"] = accepted["nrcan_ceud_class"].map(median_lifetimes)
-        missing_medians = sorted(
-            accepted.loc[
-                accepted["cutoff_age"].isna(),
-                "nrcan_ceud_class",
-            ]
-            .dropna()
-            .astype(str)
-            .unique()
-        )
-        if missing_medians:
-            raise ValueError(
-                "Missing median-equivalent lifetime for mapped classes: "
-                + ", ".join(missing_medians)
-            )
-        accepted["cutoff_basis"] = "source_derived_median_equivalent_age"
-    accepted["over_cutoff"] = accepted["age"].gt(accepted["cutoff_age"])
-    accepted["retained"] = (
-        ~accepted["negative_age"] & ~accepted["over_cutoff"] & accepted["age"].notna()
-    )
-
-    findings: list[dict[str, Any]] = []
-    for ceud_class, rows in accepted.groupby("nrcan_ceud_class", dropna=False):
-        retained = rows.loc[rows["retained"]]
-        findings.append(
-            {
-                "report_year": int(rows["report_year"].max()),
-                "nrcan_ceud_class": ceud_class,
-                "cutoff_basis": rows["cutoff_basis"].iloc[0],
-                "cutoff_age": rows["cutoff_age"].iloc[0],
-                "source_rows": len(rows),
-                "source_fit_active_stock": rows["FIT_ACTIVE"].sum(),
-                "negative_age_rows": int(rows["negative_age"].sum()),
-                "negative_age_fit_active_stock": rows.loc[
-                    rows["negative_age"],
-                    "FIT_ACTIVE",
-                ].sum(),
-                "historical_review_minimum_model_year": (
-                    historical_review_minimum_model_year
-                ),
-                "before_historical_review_year_rows": int(
-                    rows["before_historical_review_year"].sum()
-                ),
-                "before_historical_review_year_fit_active_stock": rows.loc[
-                    rows["before_historical_review_year"],
-                    "FIT_ACTIVE",
-                ].sum(),
-                "over_cutoff_rows": int(rows["over_cutoff"].sum()),
-                "over_cutoff_fit_active_stock": rows.loc[
-                    rows["over_cutoff"],
-                    "FIT_ACTIVE",
-                ].sum(),
-                "retained_rows": len(retained),
-                "retained_fit_active_stock": retained["FIT_ACTIVE"].sum(),
-            }
-        )
-
-    retained = accepted.loc[accepted["retained"]].copy()
-    age_distribution = (
-        retained.groupby(
-            [
-                "report_year",
-                "nrcan_ceud_class",
-                "nlr_atb_class",
-                "MODEL_YEAR",
-                "age",
-                "cutoff_basis",
-                "cutoff_age",
-            ],
-            as_index=False,
-            dropna=False,
-        )["FIT_ACTIVE"]
-        .sum(min_count=1)
-        .rename(
-            columns={
-                "MODEL_YEAR": "model_year",
-                "FIT_ACTIVE": "fit_active_stock",
-            }
-        )
-    )
-    totals = age_distribution.groupby(
-        ["report_year", "nrcan_ceud_class", "nlr_atb_class"]
-    )["fit_active_stock"].transform("sum")
-    age_distribution["age_distribution"] = age_distribution["fit_active_stock"] / totals
-    return (
-        age_distribution.sort_values(
-            ["report_year", "nrcan_ceud_class", "nlr_atb_class", "age"],
-            kind="stable",
-        ).reset_index(drop=True),
-        pd.DataFrame(findings),
-    )
-
-
-def build_existing_stock_age_artifacts(
-    scenario_path: str | Path | ConfigBundle,
-    *,
-    lifetime_frames: dict[str, pd.DataFrame] | None = None,
-) -> Path:
-    """Publish Ontario LDV ages within the configured historical vintage window."""
-    bundle = (
-        scenario_path
-        if isinstance(scenario_path, ConfigBundle)
-        else load_config_bundle(scenario_path)
-    )
-    rules = module_rules(bundle)["ontario_report_a"]
-    road_rules = load_harmonization_rules(bundle, ROAD_RULE_KEY)
-    lifetime_rules = load_harmonization_rules(bundle, LIFETIME_RULE_KEY)
-    output_dir = resolve_artifact_path(bundle, "road_stocks_and_demands")
-    mapped = pd.read_csv(
-        resolve_artifact_path(bundle, "road_aggregation")
-        / road_rules["mapped_current_stock_file"],
-        low_memory=False,
-    )
-    if lifetime_frames is None:
-        from parameterization.road_lifetimes_survival import derive_accepted_lifetime_frames
-
-        lifetime_frames = derive_accepted_lifetime_frames(
-            bundle, rules=lifetime_rules, road_rules=road_rules,
-            assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
-        )
-    medians = lifetime_frames["medians"]
-    from parameterization.road_lifetimes_survival import resolved_road_lifetime_rules
-
-    selectors = resolved_road_lifetime_rules(bundle)["fixed_lifetime_sources"]
-    if selectors["cars"]["kind"] == "ceud_median":
-        age_medians = median_lifetime_map(medians)
-    else:
-        age_medians = {}
-        for name, road_class in (("Car", "cars"), ("Light Truck", "passenger_light_trucks")):
-            selector = selectors[road_class]
-            selected = medians.loc[medians.source_id.eq(selector["source_id"])
-                                   & medians.target_class.eq(selector["curve_source_class"])]
-            if len(selected) != 1 or not isfinite(float(selected.iloc[0].median_equivalent_age)):
-                raise ValueError(f"Missing selected source median for {road_class}")
-            age_medians[name] = float(selected.iloc[0].median_equivalent_age)
-    age_distribution, findings = derive_ldv_age_distributions(
-        mapped,
-        survival_curves=bundle.scenario.lifetimes.survival_curves,
-        maximum_age=bundle.scenario.lifetimes.survival_curve_max_age,
-        median_lifetimes=age_medians,
-        historical_review_minimum_model_year=int(
-            rules["historical_review_minimum_model_year"]
-        ),
-        period_config=bundle.scenario.periods,
-    )
-    write_dataframe_atomic(
-        age_distribution,
-        output_dir / str(rules["age_distribution_file"]),
-    )
-    write_dataframe_atomic(
-        findings,
-        resolve_artifact_path(bundle, "lifetime_validation")
-        / str(rules["truncation_findings_file"]),
-    )
-    return output_dir
 
 
 def derive_sales_survival_cohorts(
@@ -657,7 +411,6 @@ def derive_sales_survival_cohorts(
 def distribute_existing_road_capacity(
     *,
     provincial: pd.DataFrame,
-    ldv_age: pd.DataFrame,
     report5_age: pd.DataFrame,
     ldv_registrations: pd.DataFrame,
     truck_registrations: pd.DataFrame,
@@ -671,27 +424,21 @@ def distribute_existing_road_capacity(
     curve_ages_by_class: Mapping[str, set[int]],
     rules: dict[str, Any],
     sales_cohorts: pd.DataFrame | None = None,
-    cohort_method: str = "sales_survival",
     annual_survival: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Allocate annual sales cohorts; retain explicit age-method comparison for diagnostics.
+    """Allocate annual sales cohorts and the motorcycle Report 5 age distribution.
 
     The production caller always uses sales_survival for the five sales-supported
-    road classes. Motorcycles retain Report 5 stock ages. stock_age is a read-only
-    diagnostic option, not a production scenario selection.
+    road classes. Motorcycles retain Report 5 stock ages.
     The returned annual shares also carry exact grouped-curve retirement summaries
     and annual losses in their attrs for the caller's published audit.
     """
     base_year = period_config.base_year
-    if cohort_method not in {"sales_survival", "stock_age"}:
-        raise ValueError("Unknown cohort method")
-    if cohort_method == "stock_age" and sales_cohorts is not None and not sales_cohorts.empty:
-        raise ValueError("Diagnostic stock-age allocation cannot also receive sales cohorts")
     sales_keys = set() if sales_cohorts is None or sales_cohorts.empty else set(
         zip(sales_cohorts.ceud_region, sales_cohorts.road_class, strict=True)
     )
     expected_sales = {(region, name) for region in regions for name in rules["ceud_sales_series"]}
-    if cohort_method == "sales_survival" and sales_keys != expected_sales:
+    if sales_keys != expected_sales:
         raise ValueError("Production road cohorts require complete regional car/truck sales coverage")
     age_classes = {name for name in rules["ceud_stock_series"]
                    if any((region, name) not in sales_keys for region in regions)}
@@ -709,34 +456,13 @@ def distribute_existing_road_capacity(
     curve_classes = set(rules["survival_curve_classes"])
     if survival_curves and set(curve_ages_by_class) != curve_classes:
         raise ValueError("Accepted curves do not cover configured road classes")
-    composite_mode = survival_curves and cohort_method == "sales_survival"
+    composite_mode = survival_curves
     if composite_mode and annual_survival is None:
         raise ValueError("Sales capacity with survival curves requires the shared annual survival schedules")
     historical_fuels = set(rules["historical_fuel_types"])
     if historical_fuels != {"Gasoline", "Diesel"}:
         raise ValueError("Historical fuel rule must select gasoline and diesel")
-    if age_classes.intersection(rules["statcan_ldv_source_types"]) and (ldv_age["report_year"].nunique() != 1 or int(
-        ldv_age["report_year"].iloc[0]
-    ) != vehicle_population_year):
-        raise ValueError("Mapped LDV age evidence is not the configured MTO edition")
-    ldv_age = ldv_age.copy()
-    if not ldv_age.empty:
-        ldv_age["age"] = pd.to_numeric(ldv_age["age"], errors="raise").astype(int)
     age_map: dict[str, pd.DataFrame] = {}
-    for name, ceud_class in (
-        ("cars", "Car"),
-        ("passenger_light_trucks", "Light Truck"),
-        ("freight_light_trucks", "Light Truck"),
-    ):
-        if name not in age_classes:
-            continue
-        selected = ldv_age.loc[ldv_age["nrcan_ceud_class"].eq(ceud_class)]
-        if selected.empty:
-            raise ValueError(f"No mapped MTO age evidence for {name}")
-        by_age = selected.groupby("age", as_index=False)["fit_active_stock"].sum()
-        age_map[name] = by_age.assign(
-            age_share=by_age["fit_active_stock"] / by_age["fit_active_stock"].sum()
-        )
     for name, source_class in rules["report5_age_classes"].items():
         if name not in age_classes:
             continue
@@ -1481,22 +1207,6 @@ def distribute_existing_bus_capacity(
     )
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--scenario",
-        default="config/scenarios/default.yaml",
-    )
-    return parser.parse_args()
-
-
-def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
-    args = parse_args()
-    output_dir = build_existing_stock_age_artifacts(args.scenario)
-    logging.info("Wrote Ontario LDV age-cohort artifacts to %s", output_dir)
-
-
 def derive_road_baseline_demand(
     provincial: pd.DataFrame, *, regions: list[str], base_year: int,
     rules: dict[str, Any],
@@ -1614,7 +1324,3 @@ def extrapolate_passenger_ldv_demand(
                 "combined_gdp_indexed_demand": total,
             })
     return projected, audit
-
-
-if __name__ == "__main__":
-    main()

@@ -25,11 +25,6 @@ outputs:
 
 legacy:
   root: legacy_backend
-  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
-  schema: legacy_backend/canoe_schema.sql
-  transportation_compiler: legacy_backend/transportation[deprecated]/compile_transport.py
-  charging_profiles: legacy_backend/charging_profiles[deprecated]
-  constraints: legacy_backend/model_constraints[deprecated]
 
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
@@ -40,7 +35,7 @@ artifacts:
     owner: scripts.build_docs
     producers: [scripts.build_docs]
     consumers: [readers, github_pages]
-    validation_surfaces: [mkdocs.build]
+    validation_surfaces: [mkdocs.commands.build.build]
   documentation_report:
     path: outputs/documentation/canoe_transportation_report.pdf
     layer: publication
@@ -215,13 +210,6 @@ artifacts:
     producers: [validation.ldv_efficiency_diagnostic, marimo.export]
     consumers: [reviewers]
     validation_surfaces: [validation.ldv_efficiency_diagnostic.load_diagnostic]
-  ldv_epa_supplementation_report:
-    path: outputs/validation/ldv_efficiency_diagnostic/epa_supplementation
-    layer: output_validation
-    owner: validation.ldv_epa_supplementation
-    producers: [validation.ldv_epa_supplementation]
-    consumers: [reviewers]
-    validation_surfaces: [validation.ldv_epa_supplementation]
   statcan_ldv_composition:
     path: inputs/1_interim/fetched_statcan_transport
     layer: interim
@@ -454,13 +442,6 @@ artifacts:
     producers: [parameterization.build_lifetime_parameters.build_lifetime_parameter_artifacts]
     consumers: [build_transport, reviewers]
     validation_surfaces: [parameterization.build_lifetime_parameters.prepare_lifetime_rows]
-  road_stocks_and_demands:
-    path: inputs/2_processed/road_stocks_and_demands
-    layer: processed
-    owner: parameterization.road_stocks_and_demands
-    producers: [parameterization.road_stocks_and_demands.build_existing_stock_age_artifacts]
-    consumers: [parameterization.build_existing_capacity, reviewers]
-    validation_surfaces: [parameterization.road_stocks_and_demands.derive_ldv_age_distributions]
   tc_ev_dashboard_interim:
     path: inputs/1_interim/fetched_transport_canada_ev_dashboard
     layer: interim
@@ -584,7 +565,6 @@ artifacts:
     producers:
       - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
       - parameterization.road_lifetimes_survival.build_lifetime_artifacts
-      - parameterization.road_stocks_and_demands.build_existing_stock_age_artifacts
     consumers: [validation.vehicle_stock_diagnostic, reviewers]
     validation_surfaces:
       - parameterization.road_lifetimes_survival.evaluate_mto_survival_decision
