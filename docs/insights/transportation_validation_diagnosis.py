@@ -845,6 +845,24 @@ def _(diagnosis, display_table, mo, pd, region):
         assumptions likewise adjust electric consumption for charging losses. The production
         consumption/ratio calculations preserve that source boundary.
 
+        Observed LDV BEV/PHEV rated baselines use the
+        [NRCan fuel consumption ratings](https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64).
+        ATB still supplies PHEV range-bucket utility factors and future consumption projections.
+        [PR #12](https://github.com/CANOE-main/canoe-transportation/pull/12) reports that 1,096 of 1,250
+        BEV rows in the registered 2026-09-29 NRCan edition (model years 2012–2026) match EPA
+        `vehicles.csv` by model year, make and range within 2 km, with median deviations of +0.124%,
+        +0.028% and +0.016% for model years 2012–2016, 2017–2021 and 2022–2026. These are the PR's
+        reported results from a loose match, not a one-to-one identity proof or registered production
+        validation; the analysis was not reproduced in this reconciliation. NRCan PHEVs were not matched.
+
+        [EPA label guidance](https://www.epa.gov/greenvehicles/fuel-economy-and-ev-range-testing)
+        explicitly includes EVSE and onboard-charger losses in wall-metered electricity.
+        The [EPA EV/PHEV procedure summary](https://www.fueleconomy.gov/feg/pdfs/EPA%20test%20procedure%20for%20EVs-PHEVs-11-14-2017.pdf)
+        describes AC recharge energy including charger losses; for PHEVs,
+        [40 CFR 600.116-12(c)(8)](https://www.ecfr.gov/current/title-40/chapter-I/subchapter-Q/part-600/subpart-B/section-600.116-12#p-600.116-12(c)(8))
+        requires recharge AC watt-hours to account for charging-system losses. Extending this boundary
+        to NRCan ratings is a corroborated interpretation, including for the unmatched PHEVs.
+
         Vehicle efficiencies are retained. Existing/new charger technologies now transfer electricity
         at **1.0 PJ/PJ**, preserving the capacity, utilization and cost representation while applying
         no additional loss. Explicit transfer rows are required for the electricity route.
