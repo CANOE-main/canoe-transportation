@@ -11,7 +11,8 @@ from pydantic import ValidationError
 from canoe_schema.v4_0 import LimitAnnualCapacityFactor
 
 from parameterization import ev_chargers as layer
-from parameterization.ev_chargers import _validate_shares, prepare_charger_capacity_to_activity, prepare_charger_utilization_targets, prepare_ev_charger_rows
+from parameterization.currency import CerCurrencyConverter
+from parameterization.ev_chargers import _validate_shares, charger_cost_components, prepare_charger_capacity_to_activity, prepare_charger_utilization_targets, prepare_ev_charger_rows
 from parameterization.build_existing_capacity import prepare_existing_capacity_rows
 from parameterization.build_lifetime_parameters import prepare_lifetime_rows
 from utils import load_harmonization_rules, resolve_artifact_path, resolve_input_path
@@ -20,6 +21,99 @@ from validation.insertion import validate_parameter_rows
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def cost_converter():
+    return CerCurrencyConverter(pd.DataFrame([
+        {"scenario": "test", "region": "Canada", "year": year,
+         "variable_key": key, "value": value, "unit": unit}
+        for year in (2020, 2021, 2022)
+        for key, value, unit in (("gdp_deflator", 100., "2020=100"),
+                                 ("cad_per_usd", 1.25, "C$/US$"))
+    ]), scenario="test", target_year=2020)
+
+
+def mhd_cost_inputs():
+    records = []
+    for kind, share, power, expense in (("50kW", .82, 50., 78637.),
+                                        ("350kW", .16, 350., 234129.),
+                                        ("2MW", .02, 2000., 645224.)):
+        for parameter, unit, year, period, value in (
+            (f"{kind}_capex_aggregation", "", "", "through_2050", share),
+            (f"{kind}_rated_power", "kW", "", "all", power),
+            (f"{kind}_capex", "CAD", "2022", "all", expense),
+        ):
+            records.append({"category": "charger", "sub_category": "mhdv", "parameter": parameter,
+                            "unit": unit, "currency_year": year, "period": period, "value": value})
+    return pd.DataFrame(records)
+
+
+def test_native_port_expenditure_divided_by_power_preserves_cost_conservation():
+    rate, components = charger_cost_components(mhd_cost_inputs(), "mhdv", 2025, cost_converter())
+    # A literal 100-port fleet: 82*78,637 + 16*234,129 + 2*645,224 CAD,
+    # divided by 82*50 + 16*350 + 2*2,000 kW. CAD/kW == M CAD/GW.
+    assert rate == pytest.approx(11484746 / 13700)
+    assert rate == pytest.approx(838.3020437956204)
+    assert {row["mean_rated_power_kw"] for row in components} == {137.}
+    assert [row["power_share"] for row in components] == pytest.approx([41/137, 56/137, 40/137])
+    assert sum(row["weighted_cad_2020_cost_per_gw"] for row in components) == pytest.approx(rate)
+    assert sum(row["count_share"] * row["cad_2020_cost_per_gw"] for row in components) != pytest.approx(rate)
+    assert {row["power_source_period"] for row in components} == {"all"}
+
+
+def test_costs_and_rated_powers_select_the_same_source_calendar_year():
+    records = []
+    for kind, share in (("L1", .1), ("L2", .8), ("DCFC", .1)):
+        records.append({"category": "charger", "sub_category": "ldv", "parameter": f"{kind}_capex_aggregation",
+                        "unit": "", "currency_year": "", "period": "through_2050", "value": share})
+    for kind, parameter, unit, year, period, value in (
+        ("L1", "capex", "USD", "2021", "all", 100.),
+        ("L2", "capex", "CAD", "2022", "all", 900.),
+        ("DCFC", "capex", "CAD", "2022", "all", 2000.),
+        ("L1", "rated_power", "kW", "", "all", 1.),
+        ("L2", "rated_power", "kW", "", "2025", 2.),
+        ("L2", "rated_power", "kW", "", "2030", 4.),
+        ("L2", "rated_power", "kW", "", "through_2050", 5.),
+        ("DCFC", "rated_power", "kW", "", "2025", 10.),
+        ("DCFC", "rated_power", "kW", "", "through_2050", 20.),
+    ):
+        records.append({"category": "charger", "sub_category": "ldv", "parameter": f"{kind}_{parameter}",
+                        "unit": unit, "currency_year": year, "period": period, "value": value})
+    manual = pd.DataFrame(records)
+    for source_year, denominator in ((2025, 2.7), (2030, 5.3), (2035, 6.1)):
+        rate, components = charger_cost_components(manual, "ldv", source_year, cost_converter())
+        # USD100 L1 becomes CAD125 before averaging ordinary per-port costs.
+        assert rate == pytest.approx(932.5 / denominator)
+        assert {row["source_year"] for row in components} == {source_year}
+        assert components[0]["cad_2020_cost_per_port"] == 125.
+    with pytest.raises(ValueError, match="Missing charger period selector"):
+        charger_cost_components(manual, "ldv", 2055, cost_converter())
+
+
+@pytest.mark.parametrize("parameter,column,value,match", [
+    ("50kW_capex", "unit", "M CAD", "native CAD/USD per port"),
+    ("50kW_capex", "value", 0., "positive and finite"),
+    ("50kW_capex", "value", float("nan"), "positive and finite"),
+    ("50kW_capex", "currency_year", "", "dollar year"),
+    ("50kW_rated_power", "unit", "MW", "positive finite kW"),
+    ("50kW_rated_power", "value", 0., "positive finite kW"),
+    ("50kW_rated_power", "value", float("inf"), "positive finite kW"),
+    ("50kW_capex_aggregation", "value", .8, "sum to one"),
+])
+def test_native_charger_costs_reject_invalid_source_units_values_and_shares(parameter, column, value, match):
+    manual = mhd_cost_inputs()
+    manual.loc[manual.parameter.eq(parameter), column] = value
+    with pytest.raises(ValueError, match=match):
+        charger_cost_components(manual, "mhdv", 2025, cost_converter())
+
+
+@pytest.mark.parametrize("problem", ["missing", "duplicate"])
+def test_native_charger_costs_reject_incomplete_or_ambiguous_power_coverage(problem):
+    manual = mhd_cost_inputs()
+    selected = manual.parameter.eq("50kW_rated_power")
+    manual = manual.loc[~selected] if problem == "missing" else pd.concat([manual, manual.loc[selected]])
+    with pytest.raises(ValueError, match="Missing charger period selector|Duplicate charger period selector"):
+        charger_cost_components(manual, "mhdv", 2025, cost_converter())
 
 
 @pytest.fixture(scope="module")
@@ -81,10 +175,11 @@ def test_charger_port_capacity_and_provenance(prepared) -> None:
         assert row["required_ports"] == pytest.approx(row["bev_vehicles"] / row["ev_per_port"])
         if row["charger_class"] == "ldv":
             assert row["derived_private_ports"] + row["observed_public_ports"] == pytest.approx(row["required_ports"])
-            expected_kw = row["L1_ports"] * 1.5 + row["L2_ports"] * 7.2 + row["DCFC_ports"] * 50
+            expected_kw = row["L1_ports"] * 1.5 + row["L2_ports"] * 7.2 + row["DCFC_ports"] * 125
         else:
             expected_kw = row["50kW_ports"] * 50 + row["350kW_ports"] * 350
         assert row["capacity_gw"] == pytest.approx(expected_kw / 1_000_000)
+        assert row["rated_power_source_year"] == min(bundle.scenario.periods.model)
     assert all(row.units == "GW" and row.data_id and row.data_source for row in result.capacity_rows)
     assert {row.region for row in result.capacity_rows} == set(
         pd.read_csv(ROOT / "inputs/0_canoe_template/region.csv").region
@@ -142,27 +237,31 @@ def test_charger_costs_utilization_and_efficiency(prepared, prepared_inputs) -> 
     assert set(result.utilization.units) == {"fraction"}
     assert set(result.utilization.loc[result.utilization.vintage.eq(2025) & result.utilization.tech_or_group.str.contains("LDV"), "factor"]) == {0.2}
     assert set(result.utilization.loc[result.utilization.vintage.eq(2030) & result.utilization.tech_or_group.str.contains("LDV"), "factor"]) == {0.2}
-    assert set(result.utilization.loc[result.utilization.tech_or_group.str.contains("MHDV"), "factor"]) == {0.3}
+    assert set(result.utilization.loc[result.utilization.tech_or_group.str.contains("MHDV"), "factor"]) == {0.2}
     historical = result.utilization.loc[
         result.utilization.tech_or_group.eq("T_LDV_CHRG_EX")
     ]
     assert set(historical.vintage) == {bundle.scenario.periods.latest_observed_vintage}
-    assert set(historical.source_period) == {"2025"}
-    assert set(historical.factor) == {0.15}
+    assert set(historical.source_period) == {"all"}
+    assert set(historical.factor) == {0.2}
     context_ids = {context.data_id for context in result.provenance_contexts}
     assert all(row.data_id in context_ids and row.data_source and row.dq_cred is not None
                for row in result.utilization_rows)
     investments = {(r.region, r.tech, r.vintage): r.cost for r in investments_rows}
     conversion = pd.DataFrame(result.audit["cost_conversion"])
     assert conversion.groupby(["charger_class", "vintage"]).count_share.sum().eq(1).all()
+    assert conversion.groupby(["charger_class", "vintage"]).power_share.sum().tolist() == pytest.approx(
+        [1] * conversion.groupby(["charger_class", "vintage"]).ngroups,
+    )
+    assert set(conversion.aggregation_basis) == {"total_expenditure_per_rated_power"}
     for category, tech in (("ldv", "T_LDV_CHRG_N"), ("mhdv", "T_MHDV_CHRG_N")):
         expected = conversion.loc[
             conversion.charger_class.eq(category) & conversion.vintage.eq(2025),
             "weighted_cad_2020_cost_per_gw",
         ].sum()
         assert investments["ON", tech, 2025] == pytest.approx(expected)
-    assert set(conversion.loc[conversion.charger_type.eq("L1"), "source_unit"]) == {"M USD"}
-    assert set(conversion.loc[conversion.charger_type.ne("L1"), "source_unit"]) == {"M CAD"}
+    assert set(conversion.loc[conversion.charger_type.eq("L1"), "source_unit"]) == {"USD"}
+    assert set(conversion.loc[conversion.charger_type.ne("L1"), "source_unit"]) == {"CAD"}
     for row in fixed_rows:
         category = "ldv" if "LDV" in row.tech else "mhdv"
         basis = conversion.loc[
@@ -172,9 +271,23 @@ def test_charger_costs_utilization_and_efficiency(prepared, prepared_inputs) -> 
         assert row.cost == pytest.approx(basis * 0.01)
     assert all(row.units == "$M 2020CAD / GW" for row in [*investments_rows, *fixed_rows])
     assert set(result.utilization.vintage) == {bundle.scenario.periods.latest_observed_vintage, *bundle.scenario.periods.model}
-    assert set(row.efficiency for row in efficiency_rows if "LDV" in row.tech) == {0.95}
-    assert set(row.efficiency for row in efficiency_rows if "MHDV" in row.tech) == {0.8}
+    assert {row.efficiency for row in efficiency_rows} == {1.0}
     assert all(row.units == "PJ/PJ" for row in efficiency_rows)
+    assert all(row.data_id == result.assumption_dataset.data_id
+               and row.data_source is None and row.dq_cred is None and row.dq_geog is None
+               and row.dq_struc is None and row.dq_tech is None and row.dq_time is None
+               for row in efficiency_rows)
+    assert "unity electricity transfer" in result.assumption_dataset.description
+    assert not {"icct_ev_charge", "icct_hdv_charge"} & {
+        source.source_key for context in result.provenance_contexts for source in context.contributors
+    }
+    accounting = result.audit["electricity_accounting"]
+    assert accounting["vehicle_energy_basis"] == "grid_electricity_including_charging_losses"
+    assert accounting["charger_transfer_efficiency"] == 1.0
+    assert accounting["internal_assumption_data_id"] == result.assumption_dataset.data_id
+    assert {row["charger_class"]: row["reviewed_efficiency"]
+            for row in accounting["reviewed_efficiencies_not_applied"]} == {"ldv": 0.95, "mhdv": 0.8}
+    assert all("ICCT" in row["source"] for row in accounting["reviewed_efficiencies_not_applied"])
     assert not result.utilization.duplicated(["region", "vintage", "tech_or_group", "operator"]).any()
     assert all(math.isfinite(row.cost) and row.cost > 0 for row in result.invest_rows)
     output = layer.resolve_artifact_path(bundle, "ev_chargers_processed")
@@ -352,6 +465,37 @@ def test_charger_conversion_rejects_invalid_reviewed_input(legacy_bundle, tmp_pa
         )
 
 
+@pytest.mark.parametrize("basis,value,match", [
+    ("battery_electricity", 1.0, "energy basis"),
+    (None, 1.0, "energy basis"),
+    ("grid_electricity_including_charging_losses", 0.95, "unity"),
+    ("grid_electricity_including_charging_losses", 0.8, "unity"),
+    ("grid_electricity_including_charging_losses", float("nan"), "unity"),
+    ("grid_electricity_including_charging_losses", float("inf"), "unity"),
+    ("grid_electricity_including_charging_losses", None, "unity"),
+    ("grid_electricity_including_charging_losses", True, "unity"),
+])
+def test_charger_accounting_rejects_incompatible_losses_before_input_io(
+    legacy_bundle, monkeypatch, basis, value, match,
+):
+    original = layer.load_harmonization_rules
+
+    def rules(bundle, owner):
+        result = original(bundle, owner)
+        if owner == "ev_chargers":
+            result["electricity_accounting"] = {
+                "vehicle_energy_basis": basis, "charger_transfer_efficiency": value,
+            }
+        return result
+
+    monkeypatch.setattr(layer, "load_harmonization_rules", rules)
+    input_path = Mock(side_effect=AssertionError("Invalid accounting reached input I/O"))
+    monkeypatch.setattr(layer, "resolve_input_path", input_path)
+    with pytest.raises(ValueError, match=match):
+        prepare_charger_capacity_to_activity(legacy_bundle, technology=pd.DataFrame(), regions={"ON"})
+    input_path.assert_not_called()
+
+
 def test_charger_share_contract_rejects_mismatch() -> None:
     manual = pd.read_csv(ROOT / "inputs/0_manual_params/charger_parameters.csv", dtype=str, keep_default_na=False)
     selected = manual.parameter.eq("existing_private_L2_share")
@@ -376,11 +520,11 @@ def test_reviewed_utilization_targets_share_the_annual_basis(legacy_bundle, prof
     assert set(ldv.operator) == {operator}
     assert (ldv.factor / ldv.target_utilization).tolist() == pytest.approx([multiplier] * len(ldv))
     assert set(mhdv.operator) == {"e"}
-    assert set(mhdv.factor) == set(mhdv.target_utilization) == {0.3}
-    assert set(targets.loc[targets.tech_or_group.eq("T_LDV_CHRG_EX"), "target_utilization"]) == {0.15}
+    assert set(mhdv.factor) == set(mhdv.target_utilization) == {0.2}
+    assert set(targets.loc[targets.tech_or_group.eq("T_LDV_CHRG_EX"), "target_utilization"]) == {0.2}
     new = targets.loc[targets.tech_or_group.eq("T_LDV_CHRG_N")]
     assert set(new.target_utilization) == {0.2}
-    assert set(new.source_period) == {"remainder"}
+    assert set(new.source_period) == {"all"}
     assert context.data_quality.missing_fields() == []
     assert {source.source_key for source in context.contributors} == {"dunsky_ev_charging_infrastructure"}
     rows = validate_parameter_rows(
@@ -388,8 +532,8 @@ def test_reviewed_utilization_targets_share_the_annual_basis(legacy_bundle, prof
         targets.drop(columns=["source_period", "units", "target_utilization", "floor_multiplier"]).to_dict("records"),
         context, bundle=selected,
     )
-    assert {(r.operator, r.factor) for r in rows if r.tech_or_group.startswith("T_MHDV_")} == {("e", 0.3)}
-    assert {(r.operator, r.factor) for r in rows if r.tech_or_group == "T_LDV_CHRG_EX"} == {(operator, 0.15 * multiplier)}
+    assert {(r.operator, r.factor) for r in rows if r.tech_or_group.startswith("T_MHDV_")} == {("e", 0.2)}
+    assert {(r.operator, r.factor) for r in rows if r.tech_or_group == "T_LDV_CHRG_EX"} == {(operator, 0.2 * multiplier)}
     assert {(r.operator, r.factor) for r in rows if r.tech_or_group == "T_LDV_CHRG_N"} == {(operator, 0.2 * multiplier)}
 
 

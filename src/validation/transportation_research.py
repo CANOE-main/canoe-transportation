@@ -164,7 +164,7 @@ def fleet_activity_energy(
                 "energy_residual_pj": implied_energy - energy,
                 "energy_relative_difference": implied_energy / energy - 1 if energy else None,
                 "ceud_energy_observed_year": energy_year, "ceud_energy_status": energy_status,
-                "energy_boundary": "vehicle input incl PHEV blend once; excludes upstream charger losses",
+                "energy_boundary": "vehicle-source consumption incl PHEV blend once; no additional charger-loss multiplier",
                 "ceud_boundary_limit": "reported class secondary energy; unsupported fuels and fleet composition differ",
             })
     return detail[[*keys, "road_class", "output_comm", "input_comm", "capacity", "c2a",
@@ -327,6 +327,23 @@ def _verify_accepted_survival(transformed: pd.DataFrame, capacity_audit: dict) -
     return actual
 
 
+def _require_fixed_stock_accounting(bundle: ConfigBundle) -> None:
+    """Keep this comparison on production's reference-year physical-stock basis.
+
+    Fixed-lifetime ExistingCapacity contains surviving stock after eligibility
+    redistribution. Curve-mode ExistingCapacity instead represents installed
+    capacity before survival; its physical-stock handoff is a separate quantity.
+    The accounting and annual lineage below intentionally support the fixed mode.
+    """
+    if bundle.scenario.lifetimes.survival_curves:
+        raise ValueError(
+            "Transportation research requires lifetimes.survival_curves=false: "
+            "curve-mode ExistingCapacity is installed capacity before survival and "
+            "requires separate physical-stock accounting. Use the stock-cohort "
+            "diagnostic to inspect curve-mode production methods."
+        )
+
+
 def road_parameter_comparison(
     database: Path,
     reference: Path,
@@ -469,6 +486,7 @@ def build_research_report(
     build_report: Path | None = None,
 ) -> TransportationResearch:
     """Read a fresh native build and capture its audit evidence before another build."""
+    _require_fixed_stock_accounting(bundle)
     rules = TransportationResearchRules.model_validate(load_harmonization_rules(bundle, "transportation_research"))
     database = database or resolve_configured_path(bundle, "outputs", "sqlite", bundle.scenario.outputs.sqlite_name)
     build_report = build_report or resolve_repo_path(bundle.repo_root, bundle.scenario.outputs.validation_report)
@@ -586,7 +604,7 @@ def build_research_report(
             "The primary legacy comparison replays active fixed_lifetime=False; saved fixed-lifetime messages and disputed SQLite outputs are audit evidence only.",
             "Original Input data/canoe_ALL_cm.sqlite is unavailable; the configured inherited snapshot supports a conditional energy reconstruction, without proving historical identity.",
             "Activity/energy accounting evaluates all inserted base-year cohorts before future retirement; it is not an optimization result.",
-            "Vehicle input energy includes PHEV blend energy once, excluding upstream charger losses; CEUD class energy contains a different fuel/fleet boundary.",
+            "Vehicle-source consumption includes PHEV blend energy once and embedded charging losses; no additional charger-loss multiplier is applied. CEUD class energy contains a different fuel/fleet boundary.",
             "Raw sales-survival stock is retained for diagnosis; explicit class calibration anchors represented stock to base-year CEUD stock.",
         ],
         "configuration": report["config"],
@@ -630,6 +648,7 @@ def refresh_research_comparisons(
     build_report: Path | None = None,
 ) -> TransportationResearch:
     """Recompute DB comparisons while retaining exact captured native audit bytes."""
+    _require_fixed_stock_accounting(bundle)
     rules = TransportationResearchRules.model_validate(
         load_harmonization_rules(bundle, "transportation_research")
     )
@@ -1967,6 +1986,7 @@ def load_validation_diagnosis(*, repo_root: Path | None = None) -> dict[str, Any
         load_harmonization_rules(control, "transportation_research")
     )
     control = load_config_bundle(rules.notebook_scenario, repo_root=control.repo_root)
+    _require_fixed_stock_accounting(control)
     report_directory = resolve_artifact_path(
         control, rules.report_route, control.scenario.scenario.name,
     )

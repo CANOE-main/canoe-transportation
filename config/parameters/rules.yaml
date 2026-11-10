@@ -1037,6 +1037,7 @@ parameterization:
     internal_assumption_files:
       capacity_to_activity.csv:
         expected_columns: [category, sub_category, units, c2a, notes]
+        ignored_columns: [speed, load, hours]  # Explanatory only; consume the reviewed c2a value.
         unique_key: [category, sub_category]
         expected_rows: 10
     powertrain_aliases:
@@ -2567,16 +2568,19 @@ parameterization:
       members: tech_group_member.csv
       decisions: representative_decisions.json
   ev_chargers:
-    transformation_version: "4"
+    transformation_version: "6"
+    electricity_accounting:
+      vehicle_energy_basis: grid_electricity_including_charging_losses
+      charger_transfer_efficiency: 1.0  # Vehicle consumption owns charging losses; this edge preserves infrastructure capacity and costs.
     utilization_time_basis: technology_kind
     utilization:
       ldv:
-        source_period: {existing: "2025", new: remainder}  # Reviewed utilization: 0.15 existing, 0.20 new, for every vintage.
+        source_period: {existing: all, new: all}  # Reviewed uniform utilization: 0.20 for every vintage.
         operator: ge
         floor_multiplier: 0.98  # Annual floor slack; profile mean retains the full utilization target.
         without_profile: {operator: e, floor_multiplier: 1.0}  # No hourly ceiling: set exact annual utilization.
       mhdv:
-        source_period: {existing: all, new: all}  # Reviewed utilization: 0.30, without an hourly profile.
+        source_period: {existing: all, new: all}  # Reviewed uniform utilization: 0.20, without an hourly profile.
         operator: e
         floor_multiplier: 1.0  # Equality uses the full reviewed utilization.
     manual_file: charger_parameters.csv

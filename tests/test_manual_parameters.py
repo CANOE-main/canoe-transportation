@@ -1,8 +1,11 @@
 from collections import defaultdict
 from pathlib import Path
+import shutil
 
 import pandas as pd
 import pytest
+
+from parameterization import manual_parameters as manual_layer
 
 from parameterization.manual_parameters import (
     ManualParameterError,
@@ -56,7 +59,8 @@ def test_every_manual_csv_and_cited_row_is_registered() -> None:
     assert registered_files | set(internal_specs) == actual_files
     for filename, spec in internal_specs.items():
         frame = pd.read_csv(manual_dir / filename)
-        assert list(frame.columns) == spec["expected_columns"]
+        ignored = set(spec.get("ignored_columns", []))
+        assert [column for column in frame if column not in ignored] == spec["expected_columns"]
         assert len(frame) == spec["expected_rows"]
         assert not frame.duplicated(spec["unique_key"]).any()
 
@@ -94,7 +98,9 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
         rules=rules,
     )
 
-    assert registry["manual_file"].nunique() == 7
+    assert registry["manual_file"].nunique() == 6
+    assert set(frames) == set(registry["manual_file"]) | set(rules["internal_assumption_files"])
+    assert list(frames["capacity_to_activity.csv"]) == ["category", "sub_category", "units", "c2a", "notes"]
     assert len(registry) == 18
     assert "epa_moves4_population_activity_2023" not in set(registry["source_id"])
     assert "epa_moves4_population_activity_2023" not in bundle.sources.sources
@@ -106,7 +112,7 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
     charger_rows = reconciliation.loc[
         reconciliation["manual_file"].eq("charger_parameters.csv")
     ]
-    assert len(charger_rows) == 42
+    assert len(charger_rows) == len(frames["charger_parameters.csv"])
     assert set(charger_rows["resolution_status"]) == {"behavior_specific_owner"}
 
     lifetime = resolution.loc[
@@ -133,6 +139,39 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
     ]
     assert len(wards) == 32
     assert set(wards["resolution_status"]) == {"not_technology_scoped"}
+
+
+@pytest.mark.parametrize("explanatory_columns", [True, False])
+def test_c2a_registry_ignores_explanatory_columns_and_needs_no_metadata_workbook(
+    tmp_path, monkeypatch, explanatory_columns,
+):
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    rules = load_harmonization_rules(bundle, "manual_parameters")
+    directory = tmp_path / "manual"
+    directory.mkdir()
+    for path in (REPO_ROOT / bundle.paths.inputs.manual).glob("*.csv"):
+        shutil.copy2(path, directory / path.name)
+    path = directory / "capacity_to_activity.csv"
+    manual = pd.read_csv(path, dtype=str, keep_default_na=False)
+    expected = manual[rules["internal_assumption_files"][path.name]["expected_columns"]].copy()
+    if explanatory_columns:
+        manual[["speed", "load", "hours"]] = "not a parameter"
+    else:
+        manual = manual.drop(columns=["speed", "load", "hours"])
+    manual.to_csv(path, index=False)
+    original_path = manual_layer.resolve_input_path
+
+    def input_path(config, family, *parts):
+        if family == "manual":
+            return directory.joinpath(*parts)
+        return original_path(config, family, *parts)
+
+    monkeypatch.setattr(manual_layer, "resolve_input_path", input_path)
+    _, frames = validate_manual_registry(
+        bundle, source_column=rules["source_column"], notes_column=rules["notes_column"],
+    )
+    assert not (directory / "legacy_metadata.xlsx").exists()
+    pd.testing.assert_frame_equal(frames[path.name], expected)
 
 
 def test_remainder_cannot_overlap_all_selector() -> None:

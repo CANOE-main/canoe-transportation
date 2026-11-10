@@ -183,6 +183,35 @@ def test_research_freshness_rejects_stale_database_before_reading_shared_artifac
         _verify_build(replace(bundle, repo_root=tmp_path), database, report)
 
 
+@pytest.mark.parametrize("entrypoint", [research.build_research_report, research.refresh_research_comparisons])
+def test_research_rejects_curve_capacity_before_reading_report_artifacts(tmp_path, entrypoint):
+    root = Path(__file__).resolve().parents[1]
+    bundle = load_config_bundle("config/scenarios/validation_baseline.yaml", repo_root=root)
+    curve_scenario = bundle.scenario.model_copy(update={
+        "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": True}),
+    })
+    bundle = replace(bundle, repo_root=tmp_path, scenario=curve_scenario)
+    with pytest.raises(ValueError, match="requires separate physical-stock accounting"):
+        entrypoint(bundle)
+
+
+def test_validation_diagnosis_rejects_curve_mode_before_reading_captures(monkeypatch):
+    root = Path(__file__).resolve().parents[1]
+    bundle = load_config_bundle("config/scenarios/validation_baseline.yaml", repo_root=root)
+    curve_scenario = bundle.scenario.model_copy(update={
+        "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": True}),
+    })
+    curve_bundle = replace(bundle, scenario=curve_scenario)
+    monkeypatch.setattr(research, "load_config_bundle", lambda *args, **kwargs: curve_bundle)
+
+    def reject_capture_read(path):
+        pytest.fail("Curve-mode accounting must be rejected before captured reports are read")
+
+    monkeypatch.setattr(research, "_load_captured_report", reject_capture_read)
+    with pytest.raises(ValueError, match="requires separate physical-stock accounting"):
+        research.load_validation_diagnosis(repo_root=root)
+
+
 def test_research_survival_fingerprint_accepts_exact_build_evidence():
     curves = survival_fixture()
     expected = hashlib.sha256(curves.to_csv(index=False).encode("utf-8")).hexdigest()

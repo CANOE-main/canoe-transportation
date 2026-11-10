@@ -194,10 +194,17 @@ def validate_manual_registry(
     frames: dict[str, pd.DataFrame] = {}
     registry_rows: list[dict[str, Any]] = []
     for filename, spec in sorted(internal_specs.items()):
-        frame = pd.read_csv(manual_dir / filename, dtype=str, keep_default_na=False)
+        path = manual_dir / filename
+        expected = list(spec["expected_columns"])
+        ignored = set(spec.get("ignored_columns", []))
+        columns = list(pd.read_csv(path, nrows=0))
+        if [column for column in columns if column not in ignored] != expected:
+            raise ManualParameterError(
+                f"Invalid registered internal manual assumption: {filename}"
+            )
+        frame = pd.read_csv(path, usecols=expected, dtype=str, keep_default_na=False)
         if (
-            list(frame.columns) != list(spec["expected_columns"])
-            or len(frame) != int(spec["expected_rows"])
+            len(frame) != int(spec["expected_rows"])
             or frame.duplicated(list(spec["unique_key"])).any()
             or frame["notes"].str.strip().eq("").any()
         ):

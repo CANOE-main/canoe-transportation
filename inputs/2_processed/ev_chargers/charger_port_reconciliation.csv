@@ -1,3 +1,3 @@
-region,charger_class,bev_vehicles,ev_per_port,required_ports,observed_public_ports,derived_private_ports,L1_ports,L2_ports,DCFC_ports,capacity_gw,bev_stock_year,public_charger_as_of,50kW_ports,350kW_ports
-ON,ldv,165906.52495295944,1.0,165906.52495295944,13392.0,152514.52495295944,22877.178742943917,140134.12010088752,2895.2261091279956,1.1880427382972059,2025,March 2026,,
-ON,mhdv,4572.776032207926,1.5,3048.517354805284,,,,,,0.3353369090285812,2025,March 2026,2438.8138838442273,609.7034709610568
+region,charger_class,bev_vehicles,ev_per_port,required_ports,observed_public_ports,derived_private_ports,L1_ports,L2_ports,DCFC_ports,L1_rated_power_kw,L2_rated_power_kw,DCFC_rated_power_kw,rated_power_source_year,L1_rated_power_source_period,L2_rated_power_source_period,DCFC_rated_power_source_period,capacity_gw,bev_stock_year,public_charger_as_of,50kW_ports,350kW_ports,50kW_rated_power_kw,350kW_rated_power_kw,50kW_rated_power_source_period,350kW_rated_power_source_period
+ON,ldv,165906.52495295944,1.0,165906.52495295944,13392.0,152514.52495295944,22877.178742943917,140134.12010088752,2895.2261091279956,1.5,7.2,125.0,2025,all,2025,2025,1.4051846964818056,2025,March 2026,,,,,,
+ON,mhdv,4572.776032207926,1.5,3048.517354805284,,,,,,,,,2025,,,,0.3353369090285812,2025,March 2026,2438.8138838442273,609.7034709610568,50.0,350.0,all,all
