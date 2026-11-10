@@ -4,6 +4,9 @@ Compile registered Canadian transportation evidence into validated, provenance-t
 CANOE/Temoa v4 SQLite databases. YAML selects sources, regions, periods and modelling
 options; the native Python build prepares inputs, validates rows and publishes the result.
 
+Read the [transport-system documentation](docs/index.md) for the modeling rationale,
+selected diagnostics and [site/PDF preparation commands](docs/publication.md).
+
 ## Install
 
 Install [Git](https://git-scm.com/downloads) and
@@ -86,7 +89,7 @@ uv run python src/build_transport.py --scenario config/scenarios/notebook_diagno
 Open either notebook as an interactive, read-only app:
 
 ```sh
-uv run --offline marimo run docs/insights/vehicle_stock_diagnosis.py
+uv run --offline marimo run docs/insights/vehicle_population_diagnosis.py
 uv run --offline marimo run docs/insights/ldv_efficiency_diagnosis.py
 ```
 
@@ -165,7 +168,7 @@ or parameter specification.
 | [Executive summary](docs/executive_summary.md) | Project purpose, baseline criteria, retrospective progress and roadmap. | Historical planning context; progress statements and old commands require verification. |
 | [Codebase diagnostic snapshot](docs/codebase_diagnostic_snapshot.md) | Structural metrics, complexity, ownership risks and improvement priorities. | Point-in-time assessment; recheck findings before making architectural changes. |
 | [CANOE-main integration context](docs/canoe_main_orchestrator.md) | Upstream lifecycle, shared-database ownership and the transportation integration seam. | Commit-pinned routing snapshot; reverify upstream. The transport adapter remains planned. |
-| [Vehicle-stock notebook](docs/insights/vehicle_stock_diagnosis.py) | Mapping coverage, unresolved stock, class/vintage weights and retention/survival evidence. | Uses the shared captured bundle above. Administrative retention diagnostics do not establish physical survival assumptions. |
+| [Vehicle-stock notebook](docs/insights/vehicle_population_diagnosis.py) | Mapping coverage, unresolved stock, class/vintage weights and retention/survival evidence. | Uses the shared captured bundle above. Administrative retention diagnostics do not establish physical survival assumptions. |
 | [LDV-efficiency notebook](docs/insights/ldv_efficiency_diagnosis.py) | NRCan distributions/filtering, OMEGA composition and the observed-to-ATB bridge. | Uses the same captured ETL tables; SQLite supplies publication/hash evidence. Sensitivity and exact-powertrain MTO weighting remain diagnostic. |
-| [Transport-comparison notebook](docs/insights/transport_comparison_diagnosis.py) | Ranked parameter and coverage differences against legacy SQLite. | First build [legacy_comparison.yaml](config/scenarios/legacy_comparison.yaml); [comparison config](config/parameters/transport_comparison.yaml) selects fingerprinted inputs. Interpret differences against units, keys and tolerances. |
+| [Transport-comparison notebook](docs/insights/legacy_comparison_diagnosis.py) | Ranked parameter and coverage differences against legacy SQLite. | First build [legacy_comparison.yaml](config/scenarios/legacy_comparison.yaml); [comparison config](config/parameters/transport_comparison.yaml) selects fingerprinted inputs. Interpret differences against units, keys and tolerances. |
 | [Growth-constraint notebook](docs/insights/growth_constraint_diagnosis.py) | HATCH/EAFO evidence, growth calibration, seeds and provisional envelopes. | Exploratory research outside production insertion; its configured prerequisite is `default.yaml`. |

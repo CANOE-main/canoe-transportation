@@ -532,10 +532,14 @@ def prepare_transport_contribution(
     selected_road_utilization = (
         True if include_road_utilization is None else include_road_utilization
     )
+    if (include_efficiencies is not False and bundle.scenario.efficiencies.ceud_energy_calibration
+            and not selected_road_utilization):
+        raise ValueError("CEUD energy calibration requires road utilization in the same contribution")
     road_assumption_dataset: DataSet | None = None
     c2a_rows: list[CapacityToActivity] = []
     flat_factor_rows: list[LimitAnnualCapacityFactor] = []
     road_audit: dict[str, Any] = {}
+    road = None
     if selected_road_utilization:
         from parameterization.road_utilization import prepare_road_utilization
 
@@ -582,6 +586,7 @@ def prepare_transport_contribution(
                 existing_capacity_audit=parameter_audit if selected_capacity else None,
                 physical_stock=capacity_preparation.physical_stock if capacity_preparation else None,
                 range_evidence=range_evidence,
+                road_utilization=road,
             )
         efficiency_rows = efficiencies.efficiency_rows
         split_rows = efficiencies.split_rows
@@ -826,6 +831,18 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
     if not audit["ok"]:
         LOGGER.error("Transport parameter support failed: %s", audit["errors"])
         raise ValueError(f"Transport parameter support failed: {audit['errors']}")
+    calibration = contribution.efficiency_audit.get("ceud_energy_calibration")
+    if calibration is not None:
+        import pandas as pd
+        from parameterization.ceud_energy_calibration import validate_emitted_calibration
+
+        audit["ceud_energy_calibration"] = validate_emitted_calibration({
+            "summary": pd.DataFrame(calibration["summary"]),
+            "cohorts": pd.DataFrame(calibration["cohort_accounting"]),
+            "efficiency": pd.DataFrame([row.model_dump(mode="json") for row in contribution.efficiency_rows]),
+            "splits": pd.DataFrame([row.model_dump(mode="json") for row in contribution.input_split_rows]),
+        }, c2a=pd.DataFrame([row.model_dump(mode="json") for row in contribution.capacity_to_activity_rows]),
+           factors=pd.DataFrame([row.model_dump(mode="json") for row in contribution.flat_road_factor_rows]))
     LOGGER.debug("Transport cross-table parameter support: %s", audit["checks"])
     return audit
 

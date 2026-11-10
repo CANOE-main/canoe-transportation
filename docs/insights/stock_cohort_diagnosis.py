@@ -10,6 +10,7 @@ app = marimo.App(width="full")
 def _():
     from math import ceil, floor
     import altair as alt
+    from validation.notebook_figures import identified_chart
     import marimo as mo
     import numpy as np
     import pandas as pd
@@ -144,8 +145,8 @@ def _():
         formats.update(options.pop("format_mapping", {}))
         return mo.ui.table(frame, format_mapping=formats, **options)
 
-    def display_chart(chart):
-        return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
+    def display_chart(chart, figure_id, title):
+        return mo.ui.altair_chart(identified_chart(chart, figure_id, title), chart_selection=False, legend_selection=False)
 
     return (CLASS_LABELS, PROFILE_LABELS, STOCK_LABELS, alt, build_cohort_hatching,
             cohort_style_legend, comparison_lineage, display_chart, display_table,
@@ -255,7 +256,7 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
     the first model period. Passing that test does not guarantee a full period of effective capacity:
     Temoa prorates fixed lifetimes that end within a period. The table shows signed redistribution by vintage;
     cumulative redistribution must return to zero within each class.
-    """), display_chart(retirement_chart), display_table(redistribution[[
+    """), display_chart(retirement_chart, 'cohort-1', 'Fixed lifetimes redistribute calibrated surviving cohorts'), display_table(redistribution[[
         "Class", "vintage", "calibrated_surviving_k_vehicles", "fixed_allocated_k_vehicles",
         "redistributed_k_vehicles", "cumulative_redistribution_k_vehicles",
     ]].rename(columns={"vintage": "Model vintage", "calibrated_surviving_k_vehicles": "Before allocation (k)",
@@ -309,7 +310,7 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
     survivors are used separately for utilization and efficiency weights. The table keeps raw and calibrated
     acquisitions adjacent, including cumulative totals; future survival is not a new CEUD calibration.
     Matching point-year physical stock does not force Temoa's first model-period average to equal CEUD stock.
-    """), display_chart(acquisitions_chart), display_table(acquisitions[[
+    """), display_chart(acquisitions_chart, 'cohort-2', 'Curve mode separates acquisitions from physical survivors'), display_table(acquisitions[[
         "Class", "vintage", "sales_k_vehicles", "calibrated_acquisitions_k_vehicles",
         "cumulative_sales_k_vehicles", "cumulative_calibrated_acquisitions_k_vehicles", "deprecated_mto_physical_k_vehicles",
     ]].rename(columns={"vintage": "Model vintage", "sales_k_vehicles": "Raw acquisitions (k)",
@@ -379,7 +380,7 @@ def _(STOCK_LABELS, alt, build_cohort_hatching, cohort_style_legend, comparison_
         x=paired_x, x2="x1:Q", y=paired_y, y2="y1:Q")
     paired_chart = alt.hconcat(stock_grid(alt.layer(paired_bounds, paired_bars, paired_stripes, data=paired_geometry)),
         cohort_style_legend(paired_positions, paired_builds, paired_bases), spacing=18).resolve_scale(color="independent", x="independent", y="independent")
-    mo.vstack([display_chart(paired_chart), mo.accordion({"Annual contributions and explicit quantity basis":
+    mo.vstack([display_chart(paired_chart, 'cohort-3', 'Annual contributions within each representative vintage'), mo.accordion({"Annual contributions and explicit quantity basis":
         display_table(paired_lineage[["road_class", "evidence", "basis", "vintage", "vintage_year", "vehicles_k"]],
                       selection=None, page_size=10)})])
     return (paired_chart,)
@@ -427,7 +428,7 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
     are preserved; changing annual age weights can still change aggregate technology composition. The composition
     audit makes that consequence visible. LDV shares represent new registrations; truck shares include registered
     stock proxies and the existing medium-truck EV override.
-    """), display_chart(calibration_chart), display_table(calibration[[
+    """), display_chart(calibration_chart, 'cohort-4', 'CEUD stock calibration changes the level of inferred cohorts'), display_table(calibration[[
         "Source", "region", "Class", "raw_sales_k_vehicles", "raw_survivors_k_vehicles", "ceud_stock_k_vehicles",
         "multiplier", "adjustment_percent", "stock_residual_k_vehicles",
     ]].rename(columns={"region": "Region", "raw_sales_k_vehicles": "Raw sales (k)", "raw_survivors_k_vehicles": "Raw survivors (k)",
@@ -533,12 +534,12 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
     Physical stock for utilization remains based on the source annual schedule, with the same stock multiplier. The maximum
     reference-year cohort-stock change from source harmonization in this region is
     **{reference_change_label}** among cohorts with complete native support; the audit also separates any final tail removal.
-    """), display_chart(survival_chart), display_table(survival_audit[[
+    """), display_chart(survival_chart, 'cohort-5', 'Native survival and the shared constant-retirement tail'), display_table(survival_audit[[
         "Source", "Class", "known_survival_max_age", "retirement_percent", "terminal_age"]].rename(columns={
             "known_survival_max_age": "Last native age", "retirement_percent": "Last annual retirement (%)",
             "terminal_age": "Zero-survival age"}), selection=None, pagination=False,
         label="One row per source and class; the configured threshold applies after native support"),
-        display_chart(projection_chart), display_table(projection_audit[[
+        display_chart(projection_chart, 'cohort-6', 'Historical cohorts retire under alternative survival schedules'), display_table(projection_audit[[
             "Source", "Class", "last_comparable_year", "max_difference_k_vehicles", "max_removed_k_vehicles"]].rename(columns={
                 "last_comparable_year": "Last year with complete native support",
                 "max_difference_k_vehicles": "Largest native/production difference (k)",

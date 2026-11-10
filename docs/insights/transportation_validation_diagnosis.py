@@ -14,6 +14,7 @@ def _():
     import numpy as np
     from math import ceil, floor
     from validation.transportation_research import load_validation_diagnosis
+    from validation.notebook_figures import identified_chart
 
     CLASS_LABELS = {
         "cars": "Cars", "passenger_light_trucks": "Passenger light trucks",
@@ -169,7 +170,7 @@ def _():
     def display_chart(chart):
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
 
-    return BUILDS, BUILD_LABELS, CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, class_grid, cohort_style_legend, build_cohort_hatching, display_chart, display_table, load_validation_diagnosis, mo, pd, stock_grid
+    return BUILDS, BUILD_LABELS, CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, class_grid, cohort_style_legend, build_cohort_hatching, display_chart, display_table, load_validation_diagnosis, mo, pd, stock_grid, identified_chart
 
 
 @app.cell
@@ -426,7 +427,7 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis
 
 
 @app.cell(hide_code=True)
-def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, display_chart, mo, pd, display_table):
+def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, display_chart, mo, pd, display_table, identified_chart):
     target_rows = cases.loc[cases.case.eq(CASES[1])].copy()
     references = []
     for label, column in [("CEUD 2023 held at 2025", "ceud_activity_bn"),
@@ -472,6 +473,8 @@ def _(CASES, CASE_COLORS, CASE_SHAPES, alt, calibration, cases, class_grid, disp
     zero_service = alt.Chart().transform_aggregate(groupby=["Class"]).mark_rule(color="#777", strokeDash=[5, 4]).encode(y=alt.datum(0))
     activity_energy_chart = class_grid(alt.layer(residual_bounds, zero_energy, zero_service, residual_points,
                                                 data=residual_plot_data), relative=True)
+    activity_energy_chart = identified_chart(activity_energy_chart, "comparison-activity-energy",
+                                            "Activity and energy agreement are separate comparisons")
     mo.vstack([mo.md("""
     ## 3. Baseline activity–energy reconciliation
 
@@ -685,7 +688,7 @@ def _(diagnosis, display_table, mo, region):
 
 
 @app.cell(hide_code=True)
-def _(alt, diagnosis, display_chart, mo, pd, display_table):
+def _(alt, diagnosis, display_chart, mo, pd, display_table, identified_chart):
     fixed_comparison = diagnosis["charging"]["harmonized_costs"]
     fixed_comparison = fixed_comparison.loc[fixed_comparison.table.eq("cost_fixed")].copy()
     fixed_comparison["Class"] = fixed_comparison.charger_class.map({"ldv": "LDV", "mhdv": "MHDV"})
@@ -716,6 +719,10 @@ def _(alt, diagnosis, display_chart, mo, pd, display_table):
         y=alt.Y("harmonized_relative_percent:Q", title="Backend / reference − 1 (%)"), color=alt.value("#2166ac"),
         tooltip=["reference_vintage:O", alt.Tooltip("harmonized_relative_percent:Q", format="+.1f")],
     ).properties(width=430, height=110).facet(column=alt.Column("Class:N", title=None))
+    charging_chart = identified_chart(charging_chart, "comparison-charging",
+                                      "Charger costs on a common throughput and monetary basis")
+    charging_residual_chart = identified_chart(charging_residual_chart, "comparison-charging-residual",
+                                               "Charger cost differences after explicit normalization")
     mo.vstack([
         mo.md("""
         ### The separate legacy charger-cost variant

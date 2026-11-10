@@ -30,6 +30,10 @@ inputs/playground/
 /outputs/validation/source_updates/
 /outputs/validation/notebook_evidence/
 /outputs/validation/ldv_efficiency_diagnostic/
+/outputs/validation/vehicle_cost_diagnostic/
+/outputs/validation/documentation_evidence/
+/outputs/validation/documentation/
+/outputs/documentation/
 **/__marimo__/
 /debug.log
 .agents/skills/*

@@ -52,7 +52,9 @@ def test_fresh_annual_stock_reconciles_capacity_but_retains_raw_cohort_weights(h
     bundle, path, stock, inputs = handoff
     actual_path, selected, components = layer.historical_stock_evidence(bundle, **inputs)
     assert actual_path == path
-    pd.testing.assert_frame_equal(selected, stock)
+    # Fixed lifetimes use surviving stock as solver capacity; the consumer
+    # makes that lineage explicit while preserving the raw weighting evidence.
+    pd.testing.assert_frame_equal(selected, stock.assign(solver_capacity_k_vehicles=stock.capacity))
     assert selected.capacity.sum() == inputs["rows"][0].capacity
     assert selected.raw_capacity.tolist() == [8, 3, 1]
     assert selected.loc[selected.capacity.eq(0), "raw_capacity"].sum() == 8

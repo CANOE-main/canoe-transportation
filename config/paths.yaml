@@ -17,6 +17,7 @@ inputs:
 
 outputs:
   root: outputs
+  documentation: outputs/documentation
   sqlite: outputs/sqlite
   validation: outputs/validation
   logs: outputs/logs
@@ -33,6 +34,83 @@ legacy:
 # Stable artifact-family routes for ownership and change-impact retrieval. These are
 # intentionally coarser than module imports or individual files.
 artifacts:
+  documentation_site:
+    path: outputs/documentation/site
+    layer: publication
+    owner: scripts.build_docs
+    producers: [scripts.build_docs]
+    consumers: [readers, github_pages]
+    validation_surfaces: [mkdocs.build]
+  documentation_report:
+    path: outputs/documentation/canoe_transportation_report.pdf
+    layer: publication
+    owner: scripts.build_docs
+    producers: [scripts.build_docs]
+    consumers: [readers]
+    validation_surfaces: [scripts.build_docs]
+  documentation_render_validation:
+    path: outputs/validation/documentation
+    layer: output_validation
+    owner: scripts.build_docs
+    producers: [scripts.build_docs]
+    consumers: [reviewers]
+    validation_surfaces: [scripts.build_docs]
+  documentation_vendor:
+    path: outputs/documentation/vendor
+    layer: publication
+    owner: scripts.build_docs
+    producers: [scripts.build_docs]
+    consumers: [scripts.build_docs]
+    validation_surfaces: [scripts.build_docs]
+  documentation_assets:
+    path: docs/assets/figures
+    layer: documentation
+    owner: scripts.export_documentation_figures
+    producers: [scripts.export_documentation_figures]
+    consumers: [readers, scripts.build_docs]
+    validation_surfaces: [scripts.export_documentation_figures, scripts.build_docs]
+  documentation_evidence:
+    path: outputs/validation/documentation_evidence
+    layer: output_validation
+    owner: validation.documentation_support
+    producers: [validation.documentation_support]
+    consumers: [docs.insights.documentation_support, reviewers]
+    validation_surfaces: [validation.documentation_support]
+  documentation_support_notebook:
+    path: docs/insights/documentation_support.py
+    layer: documentation
+    owner: validation.documentation_support
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  vehicle_cost_notebook:
+    path: docs/insights/vehicle_cost_diagnosis.py
+    layer: documentation
+    owner: validation.vehicle_cost_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  vehicle_cost_diagnostic:
+    path: outputs/validation/vehicle_cost_diagnostic
+    layer: output_validation
+    owner: validation.vehicle_cost_diagnostic
+    producers: [validation.vehicle_cost_diagnostic]
+    consumers: [docs.insights.vehicle_cost_diagnosis, reviewers]
+    validation_surfaces: [validation.vehicle_cost_diagnostic.load_diagnostic]
+  ceud_calibration_notebook:
+    path: docs/insights/ceud_calibration_diagnosis.py
+    layer: documentation
+    owner: validation.ceud_calibration_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers, publication]
+    validation_surfaces: [marimo.check]
+  ceud_calibration_report:
+    path: outputs/validation/ceud_calibration_comparison.json
+    layer: output_validation
+    owner: validation.ceud_calibration_diagnostic
+    producers: [validation.ceud_calibration_diagnostic.compare_calibration_databases]
+    consumers: [reviewers, publication]
+    validation_surfaces: [validation.ceud_calibration_diagnostic]
   ceud_parameter_inputs:
     path: inputs/1_interim/ceud_parameter_inputs
     layer: interim

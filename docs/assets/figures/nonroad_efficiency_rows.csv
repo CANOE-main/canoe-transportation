@@ -1,0 +1,92 @@
+region,input_comm,tech,vintage,output_comm,efficiency,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id,category,sub_category
+ON,T_jtf,T_HDV_AJF_JFL_N,2025,T_D_tkm_hdv_aj,0.4735230817092082,bn tonne-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,jet_fuel
+ON,T_jtf,T_HDV_AJF_JFL_N,2030,T_D_tkm_hdv_aj,0.4976775178307013,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,jet_fuel
+ON,T_jtf,T_HDV_AJF_JFL_N,2035,T_D_tkm_hdv_aj,0.5230640729488891,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,jet_fuel
+ON,T_jtf,T_HDV_AJF_JFL_N,2040,T_D_tkm_hdv_aj,0.5497455975155221,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,jet_fuel
+ON,T_jtf,T_HDV_AJF_JFL_N,2045,T_D_tkm_hdv_aj,0.5777881479870434,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,jet_fuel
+ON,T_spk,T_HDV_AJF_SPK_N,2025,T_D_tkm_hdv_aj,0.4735230817092082,bn tonne-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,spk
+ON,T_spk,T_HDV_AJF_SPK_N,2030,T_D_tkm_hdv_aj,0.4976775178307013,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,spk
+ON,T_spk,T_HDV_AJF_SPK_N,2035,T_D_tkm_hdv_aj,0.5230640729488891,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,spk
+ON,T_spk,T_HDV_AJF_SPK_N,2040,T_D_tkm_hdv_aj,0.5497455975155221,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,spk
+ON,T_spk,T_HDV_AJF_SPK_N,2045,T_D_tkm_hdv_aj,0.5777881479870434,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-air:ON:T02:validation_baseline,freight_air,spk
+ON,T_jtf,T_HDV_AJP_JFL_N,2025,T_D_pkm_hdv_aj,0.8289572669910952,bn passenger-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,jet_fuel
+ON,T_jtf,T_HDV_AJP_JFL_N,2030,T_D_pkm_hdv_aj,0.8712424187110702,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,jet_fuel
+ON,T_jtf,T_HDV_AJP_JFL_N,2035,T_D_pkm_hdv_aj,0.915684538138767,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,jet_fuel
+ON,T_jtf,T_HDV_AJP_JFL_N,2040,T_D_pkm_hdv_aj,0.962393652305021,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,jet_fuel
+ON,T_jtf,T_HDV_AJP_JFL_N,2045,T_D_pkm_hdv_aj,1.0114854007250222,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,jet_fuel
+ON,T_spk,T_HDV_AJP_SPK_N,2025,T_D_pkm_hdv_aj,0.8289572669910952,bn passenger-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,spk
+ON,T_spk,T_HDV_AJP_SPK_N,2030,T_D_pkm_hdv_aj,0.8712424187110702,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,spk
+ON,T_spk,T_HDV_AJP_SPK_N,2035,T_D_pkm_hdv_aj,0.915684538138767,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,spk
+ON,T_spk,T_HDV_AJP_SPK_N,2040,T_D_pkm_hdv_aj,0.962393652305021,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,spk
+ON,T_spk,T_HDV_AJP_SPK_N,2045,T_D_pkm_hdv_aj,1.0114854007250222,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-air:ON:T02:validation_baseline,passenger_air,spk
+ON,T_dsl,T_HDV_RF_DSL_N,2025,T_D_tkm_hdv_r,5.202155717559821,bn tonne-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,diesel
+ON,T_dsl,T_HDV_RF_DSL_N,2030,T_D_tkm_hdv_r,5.333516668395843,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,diesel
+ON,T_dsl,T_HDV_RF_DSL_N,2035,T_D_tkm_hdv_r,5.468194647852577,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,diesel
+ON,T_dsl,T_HDV_RF_DSL_N,2040,T_D_tkm_hdv_r,5.606273415059358,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,diesel
+ON,T_dsl,T_HDV_RF_DSL_N,2045,T_D_tkm_hdv_r,5.747838844168497,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,diesel
+ON,T_h2_mhdv,T_HDV_RF_H2_N,2025,T_D_tkm_hdv_r,8.204394810943175,bn tonne-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,h2
+ON,T_h2_mhdv,T_HDV_RF_H2_N,2030,T_D_tkm_hdv_r,8.622901401289566,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,h2
+ON,T_h2_mhdv,T_HDV_RF_H2_N,2035,T_D_tkm_hdv_r,9.062756033776708,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,h2
+ON,T_h2_mhdv,T_HDV_RF_H2_N,2040,T_D_tkm_hdv_r,9.525047673103735,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,h2
+ON,T_h2_mhdv,T_HDV_RF_H2_N,2045,T_D_tkm_hdv_r,10.845164240212368,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,h2
+ON,T_lng,T_HDV_RF_LNG_N,2025,T_D_tkm_hdv_r,5.202155717559821,bn tonne-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,lng
+ON,T_lng,T_HDV_RF_LNG_N,2030,T_D_tkm_hdv_r,5.333516668395843,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,lng
+ON,T_lng,T_HDV_RF_LNG_N,2035,T_D_tkm_hdv_r,5.468194647852577,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,lng
+ON,T_lng,T_HDV_RF_LNG_N,2040,T_D_tkm_hdv_r,5.606273415059358,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,lng
+ON,T_lng,T_HDV_RF_LNG_N,2045,T_D_tkm_hdv_r,5.747838844168497,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-rail:ON:T02:validation_baseline,freight_rail,lng
+ON,T_dsl,T_HDV_RICP_DSL_N,2025,T_D_pkm_hdv_r,0.7856361542596904,bn passenger-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,diesel
+ON,T_dsl,T_HDV_RICP_DSL_N,2030,T_D_pkm_hdv_r,0.805474451657508,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,diesel
+ON,T_dsl,T_HDV_RICP_DSL_N,2035,T_D_pkm_hdv_r,0.8258136909245489,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,diesel
+ON,T_dsl,T_HDV_RICP_DSL_N,2040,T_D_pkm_hdv_r,0.8466665214707555,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,diesel
+ON,T_dsl,T_HDV_RICP_DSL_N,2045,T_D_pkm_hdv_r,0.8680459121195222,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,diesel
+ON,T_h2_mhdv,T_HDV_RICP_H2_N,2025,T_D_pkm_hdv_r,1.2390381098244077,bn passenger-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,h2
+ON,T_h2_mhdv,T_HDV_RICP_H2_N,2030,T_D_pkm_hdv_r,1.3022415058823602,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,h2
+ON,T_h2_mhdv,T_HDV_RICP_H2_N,2035,T_D_pkm_hdv_r,1.368668910339719,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,h2
+ON,T_h2_mhdv,T_HDV_RICP_H2_N,2040,T_D_pkm_hdv_r,1.4384847800264606,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,h2
+ON,T_h2_mhdv,T_HDV_RICP_H2_N,2045,T_D_pkm_hdv_r,1.637850458269598,bn passenger-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-passenger-rail:ON:T02:validation_baseline,passenger_rail,h2
+ON,T_hfo,T_HDV_WTF_HFO_N,2025,T_D_tkm_hdv_wt,3.626265958774385,bn tonne-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - marine_hfo_energy_intensity: HFO-to-MDO combustion energy-intensity ratio from the GREET Marine Trip model, reflecting its predefined trip characteristics.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T_HDV_WTF_HFO_N:T02:validation_baseline,freight_marine,hfo
+ON,T_hfo,T_HDV_WTF_HFO_N,2030,T_D_tkm_hdv_wt,3.90651831121808,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T_HDV_WTF_HFO_N:T02:validation_baseline,freight_marine,hfo
+ON,T_hfo,T_HDV_WTF_HFO_N,2035,T_D_tkm_hdv_wt,4.208429687556638,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T_HDV_WTF_HFO_N:T02:validation_baseline,freight_marine,hfo
+ON,T_hfo,T_HDV_WTF_HFO_N,2040,T_D_tkm_hdv_wt,4.5336739838768825,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T_HDV_WTF_HFO_N:T02:validation_baseline,freight_marine,hfo
+ON,T_hfo,T_HDV_WTF_HFO_N,2045,T_D_tkm_hdv_wt,4.884054461657311,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T_HDV_WTF_HFO_N:T02:validation_baseline,freight_marine,hfo
+ON,T_lng,T_HDV_WTF_LNG_N,2025,T_D_tkm_hdv_wt,2.7218113477149948,bn tonne-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,lng
+ON,T_lng,T_HDV_WTF_LNG_N,2030,T_D_tkm_hdv_wt,2.9321638264843357,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,lng
+ON,T_lng,T_HDV_WTF_LNG_N,2035,T_D_tkm_hdv_wt,3.1587731870399733,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,lng
+ON,T_lng,T_HDV_WTF_LNG_N,2040,T_D_tkm_hdv_wt,3.402895826297028,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,lng
+ON,T_lng,T_HDV_WTF_LNG_N,2045,T_D_tkm_hdv_wt,3.665885240554689,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,lng
+ON,T_mdo,T_HDV_WTF_MDO_N,2025,T_D_tkm_hdv_wt,3.701663432892393,bn tonne-km/PJ,"nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_efficiency_multipliers: Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG.",T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,mdo
+ON,T_mdo,T_HDV_WTF_MDO_N,2030,T_D_tkm_hdv_wt,3.987742804018696,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,mdo
+ON,T_mdo,T_HDV_WTF_MDO_N,2035,T_D_tkm_hdv_wt,4.295931534374364,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,mdo
+ON,T_mdo,T_HDV_WTF_MDO_N,2040,T_D_tkm_hdv_wt,4.627938323763958,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,mdo
+ON,T_mdo,T_HDV_WTF_MDO_N,2045,T_D_tkm_hdv_wt,4.9856039271543775,bn tonne-km/PJ,,T12,2.0,3.0,3.0,3.0,1.0,efficiency-freight-marine:ON:T02:validation_baseline,freight_marine,mdo
+ON,T_dsl,T_OFF,2025,T_D_pj_off,1.0,PJ/PJ,,,,,,,,transport-efficiency-structure:ON:internal:validation_baseline,off_road,diesel
+ON,T_dsl,T_OFF,2030,T_D_pj_off,1.0,PJ/PJ,,,,,,,,transport-efficiency-structure:ON:internal:validation_baseline,off_road,diesel
+ON,T_dsl,T_OFF,2035,T_D_pj_off,1.0,PJ/PJ,,,,,,,,transport-efficiency-structure:ON:internal:validation_baseline,off_road,diesel
+ON,T_dsl,T_OFF,2040,T_D_pj_off,1.0,PJ/PJ,,,,,,,,transport-efficiency-structure:ON:internal:validation_baseline,off_road,diesel
+ON,T_dsl,T_OFF,2045,T_D_pj_off,1.0,PJ/PJ,,,,,,,,transport-efficiency-structure:ON:internal:validation_baseline,off_road,diesel

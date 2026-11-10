@@ -19,6 +19,7 @@ Keep one YAML per demonstrated, repeatable workflow. The current supported set i
 | `default.yaml` | Canonical production entrypoint/template: ten provinces, prospective 2025, sales-derived calibrated cohorts, MOVES fixed lifetimes and new-capacity range shares. Its run label remains `baseline`. |
 | `legacy_comparison.yaml` | Reproducible legacy-timing comparison: ten provinces, observed 2023, NHTSA/NEMS survival-curve selection and configured legacy SQLite comparison. Uses the shared constant-retirement tail to 0.5% survival, then zero. |
 | `validation_baseline.yaml` | Ontario prospective-2025 comparison for both legacy variants: 2023 CEUD held constant for historical parameters, sales-survival stock anchored to CEUD, MOVES fixed lifetimes and representative new LDV ranges. |
+| `validation_energy_calibration.yaml` | Matched Ontario calibration-on comparison: same fleet/activity/source/representation as validation_baseline, optional CEUD reported-liquid-energy adjustment enabled and its diagnostic evidence captured. Scientific acceptance remains separate. |
 | `notebook_diagnostics.yaml` | Shared stock/efficiency notebook prerequisite: Ontario observed-2023, NHTSA/NEMS curves, explicit future ranges, both captured diagnostics, no charging profile or embodied emissions. |
 
 Retain these names and selections. For a new supported comparison, use a concise
@@ -72,7 +73,7 @@ blanket generated-output deletion to clean them.
 | `outputs` | Database filename, validation report, and setup log. Artifact directories and the automatic build-log naming template remain owned by `config/paths.yaml`. |
 | `comparison` | Optional diagnostics: `mode: none`, `legacy`, or `scenario`, reference SQLite path, numerical tolerances, and provenance inclusion. Integrity validation always runs. |
 | `row_note_overrides.technology` | Replace `technology.notes` by exact technology key for this scenario. Keep `{}` to retain template notes; unknown keys fail. This does not change parameter values or source notes. |
-| `notebook_diagnostics` | Optional list containing `vehicle_stock` and/or `efficiency`; omitted means no notebook preparation. The supplied diagnostic preset selects both. These review artifacts never parameterize production rows. |
+| `notebook_diagnostics` | Optional list containing `vehicle_stock`, `efficiency` and/or `ceud_calibration`; omitted means no notebook preparation. The stock/efficiency diagnostic preset selects the first two. The calibrated validation preset selects the third, which requires energy calibration enabled. These captured review artifacts never parameterize production rows. |
 
 All registry sources marked `active` are available to implemented ETL layers. Scenarios
 do not maintain a second active-source list. A source year selects registered evidence;
@@ -145,6 +146,7 @@ current ATB values. CEUD/load evidence is fixed within one preparation instance.
 | `road_utilization.vkt_schedules` | `false` uses flat CEUD utilization. `true` prepares age-dependent mileage artifacts for supported classes. |
 | Road mileage age | Derived from the explicit survival age cap or the longest derived class endpoint. Omit `road_utilization.vkt_max_age` from YAML; the retired independent setting is rejected. Missing ATB age coverage fails explicitly. |
 | `efficiencies.atb_trajectory` | `Advanced`, `Conservative`, `Constant`, or `Mid`; selected from the pinned ATB release. |
+| `efficiencies.ceud_energy_calibration` | Required boolean. `false` preserves uncalibrated efficiency. `true` fits supported CEUD gasoline/diesel class totals on matched physical stock/activity, retaining unadjusted evidence and unsupported coverage. Requires fixed road lifetimes and flat utilization. The effective class multiplier transfers to all powertrains/years; electricity is not independently calibrated. See the [energy method](../../docs/model/energy.md#optional-ceud-energy-calibration). |
 | `costs.atb_trajectory` | The same ATB choices, independently selectable from efficiencies. |
 | `ev_chargers.ld_evs_per_port` | Positive LDV electric vehicles per charger port. |
 | `ev_chargers.mhd_evs_per_port` | Positive medium/heavy-duty electric vehicles per charger port. |

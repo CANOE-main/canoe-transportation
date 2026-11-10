@@ -135,6 +135,22 @@ extrapolated by the survival rule. The production default uses flat utilization.
 
 ## `efficiency`
 
+### Optional CEUD reported-liquid-energy calibration
+
+`efficiencies.ceud_energy_calibration` remains off by default. For supported
+region/classes, one effective consumption multiplier fits reported gasoline and
+diesel energy using the same reference-year physical fleet and calibrated activity.
+Reported propane/natural gas and unresolved fuel residuals remain separate; missing
+electricity is not zero. Heavy trucks retain factor one where the selected table
+does not disaggregate fuels. The common factor transfers across powertrains, ranges
+and future years, including electricity without independent electric evidence; it
+does not identify individual technology errors. Preserve the emitted PHEV blend,
+unadjusted consumption and all source-native evidence. The [method and governing
+equation](model/energy.md#optional-ceud-energy-calibration) and CEUD notebook expose
+closure and limitations. This implemented opt-in evaluation is not default promotion
+or scientific acceptance. It is supported only with fixed road lifetimes and flat
+annual utilization; incompatible configurations fail before preparation. #to-review
+
 The production road bridge aligns NRCan Ratings / CEUD observations and NLR ATB at 2023. Existing empirical years through 2023 retain their cohort weighting. Annual 2024–2025 consumption follows the aligned observed anchor times ATB(target)/ATB(2023), before aggregation into vintage 2020. ATB 2024 consumption is linearly interpolated between its 2023/2025 points. Sparse later Ratings observations remain diagnostic evidence. Future vintage 2025 uses source year 2030. PHEV components retain their physical energy basis and utility-factor contracts. Buses retain their distinct source/parameter owner. #to-review
 
 

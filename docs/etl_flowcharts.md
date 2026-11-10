@@ -22,7 +22,7 @@ each operation. The legend below is local to these diagrams.
 - [`cost_variable`](#cost_variable)
 - [`emission_embodied`](#emission_embodied)
 - [EV charger parameters](#ev-charger-parameters)
-- [`limit_new_capacity_share` for LDV PEV range composition](#limit_new_capacity_share-for-ldv-pev-range-composition)
+- [`limit_new_capacity_share` for LDV PEV range composition](#limit_new_capacity_share-for-ld-pev-range-composition)
 - [`capacity_factor_tech` for BEV charging profiles](#capacity_factor_tech-for-bev-charging-profiles-pending-refactor)
 
 ### Flowchart Legends
@@ -614,6 +614,11 @@ flowchart LR
 
 ### `cost_invest`
 
+Current parameterization divides ATB retail prices by 1.5 for LDVs and 1.2 for
+MHDVs; retail MSRP is retained separately for the LDV repair equation. #to-review
+The preserved diagram below still shows a common 1.5 factor. #to-fix: its markup
+label needs reconciliation before it can describe MHDV costs accurately.
+
 *Note: Some technologies are not represented in this diagram; see
 `config/parameters/rules.yaml` for implemented harmonization entries.*
 
@@ -698,7 +703,7 @@ flowchart LR
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
 | Reuse road aggregation maps | - Cars and light trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with NRCan efficiency ratings and Autonomie projections<br>- Map truck weight-rating counts to classes that align with Autonomie truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
-| Revert vehicle prices back into manufacturing costs | Road vehicles | A manufacturing to retail price equivalent markup factor (RPE) of 1.5 is generally used in Autonomie TEA and TCO study series |
+| Revert vehicle prices back into manufacturing costs | Road vehicles | Current ATB treatment divides retail prices by RPE 1.5 for LDVs and 1.2 for MHDVs; the resulting manufacturing-cost proxy retains its source and dollar-year evidence. #to-review |
 | Aggregate manufacturing costs using mappings | Cars and trucks | Use mapped weights to aggregate Autonomie projected manufacturing costs of cars, LD, MD, and HD trucks, and school and transit buses |
 | CAPEX of new off-road demand capacity | Off-road modes | Obtain input capital costs of building new supply capacity that satisfies off-road demand, derived as dollars per demand unit |
 | Special handling of buses | Intercity buses | Use EPRI REGEN vehicle purchase cost assumptions for intercity buses |
@@ -822,7 +827,7 @@ flowchart LR
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
 | Reuse road aggregation maps | - Cars and light trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with NRCan efficiency ratings and Autonomie projections<br>- Map truck weight-rating counts to classes that align with Autonomie truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate Autonomie haul classes |
-| Vehicle prices used in repair cost empirical model | Road vehicles | Minimum suggested retail prices (MSRP) are simply manufacturing cost outputs from Autonomie scaled evenly by a markup factor of 1.5; these are used for repair cost estimates, as done in Burnham et al. 2021 |
+| Vehicle prices used in repair cost empirical model | LDVs | Use the registered retail MSRP in the empirical repair relationship, retaining its source-year/currency basis. The investment-cost RPE divisor does not modify this input. #to-review |
 | Aggregate M&R costs using mappings | Cars and trucks | Use mapped weights to aggregate M&R cost curves of cars, LD, MD, and HD trucks, and transit buses |
 | Variable costs from off-road | Off-road modes | - Estimate annual variable costs of rail and marine vessels with CAPEX-to-OPEX ratios used in the OEO model<br>- Estimate M&R costs per demand unit with empirical data from the FAA, converting miles to km and tons to tonnes; same annual utilization and load factors are used for CAPEX and OPEX |
 | Special handling of buses | School and intercity buses | Assume same CAPEX-to-OPEX ratios as those from transit buses |
@@ -1058,6 +1063,12 @@ flowchart LR
 | Existing stock and charging composition | Existing LD BEVs/PHEVs | Existing representatives reuse OMEGA weights for range-specific parameters independently of the new-vehicle mode, preserving stock totals and cohort ages. Frozen charging profiles already contain fleet/range composition; do not multiply them by these shares again. |
 
 ### `capacity_factor_tech` for BEV charging profiles; pending refactor
+
+The preserved diagram describes inherited simulation choices. Current ingestion
+reads registered minute-resolution output, computes hourly means, and scales the
+native 8,760-hour mean to the selected annual utilization; it does not rerun the
+simulation or add a rolling filter. Final representative-period weights need a
+separate mean-consistency correction. #to-review
 
 A light-duty BEV charging demand profile is an aggregated hourly time-series from charging events across 8,760 hours with 15-min resolution from a simulated representative fleet of 2,500 BEVs using RAMP-mobility. They're currently not fetched by canoe-transportation v2 and are taken directly from the `legacy_backend/` evidence directory. New charging profiles with updated assumptions are pending simulation. #to-do
 

@@ -1,7 +1,7 @@
 ---
 title: Unified MVP documentation with MkDocs
 role: Planned content scope, publication approach and acceptance criteria for the MVP report and repository documentation.
-status: planned
+status: implementation_record
 retrieve_when: Building or reviewing the unified MVP documentation and PDF export.
 read_scope: Read the scope and acceptance criteria, then retrieve only the source documents and diagnostic evidence needed for the selected section.
 verify: Reconcile all implementation and validation claims against current code, configuration and recorded evidence.
@@ -11,6 +11,15 @@ repository_commit_reviewed: 06a1b79b9ae81a1708de5d4d07ad3c49e5cc3b11
 ---
 
 # Unified MVP documentation with MkDocs
+
+The 2026-11-10 implementation instruction supersedes the original sequencing and
+deadline below. The approved reading path follows the modeled transport system;
+CEUD calibration and cost diagnostics are in scope, while the CANOE-main adapter,
+charging-simulation refactor and adoption constraints remain deferred. The
+[publication guide](publication.md) records the current content/build route. The
+original proposal below remains planning context, not evidence that a behavior or
+validation result has been delivered. Current notebook names are
+`vehicle_population_diagnosis.py` and `legacy_comparison_diagnosis.py`.
 
 ## Purpose and scope
 

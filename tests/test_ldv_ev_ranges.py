@@ -974,7 +974,7 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
         assert standalone.execute(
             "SELECT DISTINCT vintage, factor FROM limit_annual_capacity_factor "
             "WHERE tech_or_group='T_LDV_CHRG_EX'"
-        ).fetchall() == [(2020, 0.15 * 0.98)]
+        ).fetchall() == [(2020, 0.2 * 0.98)]
         assert standalone.execute(
             "SELECT DISTINCT vintage, factor FROM limit_annual_capacity_factor "
             "WHERE tech_or_group='T_LDV_CHRG_N' AND vintage=2025"
