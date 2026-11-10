@@ -757,8 +757,8 @@ def _(alt, diagnosis, display_chart, mo, pd, display_table, identified_chart):
         ### The separate legacy charger-cost variant
 
         **Yes—the legacy line uses the supplied charger-cost variant inputs:** `CostInvest.csv`,
-        `CostFixed.csv`, and `CostVariable_ALL.csv` in `legacy_backend/legacy_vatiant_charger_costs/`
-        (the directory's spelling is retained). This is a **different reference from the sales-cohort
+        `CostFixed.csv`, and `CostVariable_ALL.csv` in `legacy_backend/legacy_variant_lih_wei_branch/`.
+        This is a **different reference from the sales-cohort
         variant in Sections 1–4**. Its investment and fixed-cost CSV rows govern this comparison;
         the variable-cost CSV contains no mapped charger entries, which does not imply zero operating cost.
         `canoe_ON_16d.sqlite` is not this section's cost source. The original `canoe_on_12d_baseline.sqlite`

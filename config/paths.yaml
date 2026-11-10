@@ -128,7 +128,7 @@ artifacts:
     consumers: [validation.transportation_research]
     validation_surfaces: [validation.transportation_research]
   transportation_validation_charging_inputs:
-    path: legacy_backend/legacy_vatiant_charger_costs
+    path: legacy_backend/legacy_variant_lih_wei_branch
     layer: legacy
     owner: validation.charging_cost_comparison
     producers: [researcher]
