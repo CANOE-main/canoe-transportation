@@ -56,7 +56,7 @@
 
 ## Registered input locations
 
-Downloads and API responses live in [`inputs/0_cache/`](../inputs/0_cache/);
+Downloads and API responses live in `inputs/0_cache/`;
 registered workbooks in [`inputs/0_external_models/`](../inputs/0_external_models/);
 and reviewed excerpts in [`inputs/0_manual_params/`](../inputs/0_manual_params/).
 Registered [*RAMP-mobility*](https://github.com/RAMP-project/RAMP-mobility) outputs and the [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) parent retain their configured
