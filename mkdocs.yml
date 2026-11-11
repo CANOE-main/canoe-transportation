@@ -5,6 +5,8 @@ repo_url: https://github.com/CANOE-main/canoe-transportation
 repo_name: CANOE-main/canoe-transportation
 edit_uri: blob/main/docs/
 docs_dir: docs
+watch:
+  - scripts/docs
 strict: true
 theme:
   name: material

@@ -282,7 +282,8 @@ def test_report_preserves_modified_obsolete_export(tmp_path):
 
 
 def captured_refresh_fixture(tmp_path, monkeypatch):
-    bundle = load_config_bundle("config/scenarios/default.yaml")
+    # Research comparisons explicitly require the fixed-stock accounting preset.
+    bundle = load_config_bundle("config/scenarios/validation_baseline.yaml")
     directory = tmp_path / "report"
     database, baseline, reference = [tmp_path / f"{name}.sqlite" for name in ("database", "baseline", "reference")]
     for path in (database, baseline, reference):
