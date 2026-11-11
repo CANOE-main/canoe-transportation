@@ -1995,8 +1995,8 @@ sources:
           expected_rows: 37
 
   transport_canada_ev_dashboard:
-    # No API: permit HTML republishing only when every parsed observation is unchanged.
-    update: {strategy: tc_dashboard_same_values}
+    # No API: changed observations/publication require an exact reviewed updater report.
+    update: {strategy: tc_dashboard}
     source_id: T25
     title: "Transport Canada electric vehicle dashboard"
     status: active
@@ -2009,8 +2009,11 @@ sources:
     data_quality: {dq_cred: 1, dq_geog: 1, dq_struc: 2, dq_tech: 2, dq_time: 2}
     validation_rule: "Pinned HTML must contain the configured market-share and public-charger sections; validate regional coverage, charger types, counts, and national totals."
     refresh_notes: >
-      Re-pin the HTML hash and byte count and review the table headers, reporting
-      period, and regional coverage before changing the selected edition.
+      Run source_updater with --source transport_canada_ev_dashboard, inspect its
+      table-selection evidence and observation_changes, then use --apply
+      --review-report <report.json> to adopt that exact proposal. Added same-year
+      quarters retain the configured selected quarter; changed years, ambiguous
+      tables or missing selected columns require a separate configuration review.
     adapter:
       access:
         method: https
@@ -2031,6 +2034,8 @@ sources:
         units: fraction
         validation_rule: "Require all CEUD regional share proxies to resolve to a numeric bounded provincial 2026 year-to-date value."
       public_light_duty_chargers:
+        adapter:
+          reporting_date: March 2026
         database_note: "Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers."
         data_quality: {dq_tech: 1}
         label: "March 2026 public light-duty charging ports by province and type"

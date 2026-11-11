@@ -455,7 +455,7 @@ artifacts:
     owner: fetching.assorted_sources
     producers: [fetching.assorted_sources.fetch_and_normalize_tc_dashboard]
     consumers: [parameterization.build_existing_capacity, parameterization.road_stocks_and_demands, parameterization.ev_chargers]
-    validation_surfaces: [fetching.assorted_sources.normalize_tc_ev_dashboard_table, fetching.assorted_sources.normalize_tc_public_chargers]
+    validation_surfaces: [fetching.assorted_sources.normalize_tc_ev_dashboard_table, fetching.assorted_sources.normalize_tc_public_chargers, fetching.publication_tables.select_publication_table]
   existing_capacity_interim:
     path: inputs/1_interim/existing_capacity
     layer: interim

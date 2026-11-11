@@ -37,6 +37,7 @@ from utils import (
     load_config_bundle,
     resolve_artifact_path,
     resolve_input_path,
+    resolve_parameter_path,
     write_text_atomic,
 )
 from validation.config_models import SourcesConfig
@@ -44,6 +45,10 @@ from validation.config_models import SourcesConfig
 
 class UpdateError(ValueError):
     """A candidate cannot safely replace the registered snapshot."""
+
+    def __init__(self, message: str, *, evidence: dict | None = None):
+        super().__init__(message)
+        self.evidence = evidence or {}
 
 
 class CatalogueResource(BaseModel):
@@ -67,6 +72,7 @@ class Candidate:
     edits: list[tuple[tuple[str | int, ...], Any]] = field(default_factory=list)
     files: dict[Path, bytes] = field(default_factory=dict)
     evidence: dict[str, Any] = field(default_factory=dict)
+    review_required: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -577,20 +583,32 @@ def _fueleconomy(bundle, client, settings, folder) -> list[Candidate]:
     ]
 
 
-def _dashboard_frames(bundle, content):
+def _dashboard_shares(bundle, content):
     from fetching import assorted_sources as adapter
 
     rules = adapter.module_rules(bundle)["tc_ev_dashboard"]
     year = bundle.scenario.sources.selections["transport_canada_ev_dashboard"].year
     html = content.decode("utf-8")
-    shares = adapter.normalize_tc_ev_dashboard_table(
+    return adapter.normalize_tc_ev_dashboard_table(
         html,
         table_id=rules["table_id"],
         heading_id=rules["heading_id"],
         year=year,
         quarter_header=rules["quarter_header"],
         ytd_header=rules["ytd_header"],
+        **{key: rules[key] for key in (
+            "heading_text", "table_id_aliases", "heading_id_aliases", "source_regions"
+        ) if key in rules},
     )
+
+
+def _dashboard_frames(bundle, content, *, charger_as_of=None):
+    from fetching import assorted_sources as adapter
+
+    rules = adapter.module_rules(bundle)["tc_ev_dashboard"]
+    year = bundle.scenario.sources.selections["transport_canada_ev_dashboard"].year
+    html = content.decode("utf-8")
+    shares = _dashboard_shares(bundle, content)
     charger = rules["public_chargers"]
     provincial, types = adapter.normalize_tc_public_chargers(
         html,
@@ -598,13 +616,67 @@ def _dashboard_frames(bundle, content):
         heading_id=charger["heading_id"],
         chart_table_id=charger["chart_table_id"],
         province_table_id=charger["province_table_id"],
-        as_of=charger["as_of"],
+        as_of=charger_as_of or bundle.sources.sources[
+            "transport_canada_ev_dashboard"
+        ].component(charger["component_id"]).adapter.get("reporting_date", charger["as_of"]),
         regions=charger["source_regions"],
     )
     return shares, provincial, types
 
 
+def _dashboard_charger_date(bundle, content):
+    """Discover the latest same-year source date; adoption still requires review."""
+    from fetching import assorted_sources as adapter
+
+    rules = adapter.module_rules(bundle)["tc_ev_dashboard"]["public_chargers"]
+    from fetching.publication_tables import select_publication_table
+
+    table = select_publication_table(
+        content.decode("utf-8"), table_id=rules["chart_table_id"],
+        heading_id=rules["heading_id"], required_headers=("Year", "Level 2", "Level 3"),
+    )
+    year = bundle.scenario.sources.selections["transport_canada_ev_dashboard"].year
+    # English source-native month names, independent of the machine locale.
+    months = "January February March April May June July August September October November December".split()
+    dates = []
+    for row in table.rows:
+        parts = row[0].split() if row else []
+        if len(parts) == 2 and parts[0] in months and parts[1] == str(year):
+            dates.append((months.index(parts[0]), row[0]))
+    if not dates or len({label for _, label in dates}) != len(dates):
+        raise UpdateError("TC charger reporting date is missing or ambiguous for the selected year")
+    return max(dates)[1]
+
+
+def _frame_records(frame):
+    return frame.astype(object).where(frame.notna(), None).to_dict("records")
+
+
+def _dashboard_observations(frames):
+    """Canonical JSON records retain all consumed values and represent missing as null."""
+    return {
+        name: sorted(_frame_records(frame),
+                     key=lambda row: json.dumps(row, sort_keys=True))
+        for name, frame in zip(("market_shares", "provincial_chargers", "charger_types"), frames, strict=True)
+    }
+
+
+def _dashboard_changes(before, after):
+    changes = []
+    for component, records in after.items():
+        key = "charger_type" if component == "charger_types" else "source_region"
+        old = {row[key]: row for row in (before or {}).get(component, [])}
+        new = {row[key]: row for row in records}
+        for identity in sorted(old.keys() | new.keys()):
+            if old.get(identity) != new.get(identity):
+                changes.append({"component": component, "key": identity,
+                                "before": old.get(identity), "after": new.get(identity)})
+    return changes
+
+
 def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
+    from fetching import assorted_sources as adapter
+
     source_key = "transport_canada_ev_dashboard"
     source = bundle.sources.sources[source_key]
     url = str(source.adapter["access"]["url"])
@@ -616,7 +688,25 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
         sha != source.adapter["expected_sha256"]
         or len(content) != source.adapter["expected_bytes"]
     )
-    frames = _dashboard_frames(bundle, content)
+    component = source.component("public_light_duty_chargers")
+    registered_date = component.adapter.get("reporting_date", adapter.module_rules(
+        bundle
+    )["tc_ev_dashboard"]["public_chargers"]["as_of"])
+    charger_date = _dashboard_charger_date(bundle, content) if changed else registered_date
+    try:
+        frames = _dashboard_frames(bundle, content, charger_as_of=charger_date)
+    except adapter.AssortedSourcesError as exc:
+        shares = _dashboard_shares(bundle, content)
+        raise UpdateError(str(exc), evidence={
+            "url": url, "sha256": sha, "bytes": len(content),
+            "charger_reporting_date": charger_date,
+            "market_shares": {
+                "publication_selection": shares.attrs.get("publication_selection", {}),
+                "published_observations": shares.attrs.get("published_observations", {}),
+                "observations": _frame_records(shares),
+            },
+            "validation_error": getattr(exc, "evidence", {}),
+        }) from exc
     base = ("sources", source_key, "adapter")
     edits, files = [], {}
     old = resolve_input_path(bundle, "cache", source.adapter["cache_path"])
@@ -625,16 +715,24 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
         source.adapter["expected_sha256"],
         expected_bytes=source.adapter["expected_bytes"],
     )
-    if changed:
-        if local["status"] != "valid":
-            raise UpdateError(
-                "TC HTML republish requires the exact old cache to prove unchanged observations"
-            )
+    previous, reasons = None, []
+    if local["status"] == "valid":
         previous = _dashboard_frames(bundle, old.read_bytes())
-        if not all(a.equals(b) for a, b in zip(frames, previous, strict=True)):
-            raise UpdateError(
-                "TC observations or reporting periods changed; source review is required"
-            )
+    before = _dashboard_observations(previous) if previous is not None else None
+    after = _dashboard_observations(frames)
+    selection = frames[0].attrs.get("publication_selection", {})
+    previous_selection = previous[0].attrs.get("publication_selection", {}) if previous is not None else None
+    published = frames[0].attrs.get("published_observations", {})
+    previous_published = previous[0].attrs.get("published_observations", {}) if previous is not None else None
+    if changed:
+        if previous is None:
+            reasons.append("Exact registered cache unavailable; previous observations cannot be compared")
+        elif before != after:
+            reasons.append("TC observations or reporting periods changed")
+        if previous_selection != selection:
+            reasons.append("TC publication labels, table identity or quarterly coverage changed")
+        if previous_published != published and before == after:
+            reasons.append("TC published quarter observations changed outside the configured selection")
     if changed or local["status"] != "valid":
         target = _snapshot_path(bundle, old, content)
         files[target] = content
@@ -645,6 +743,16 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
                 (base + ("expected_bytes",), len(content)),
             ]
         )
+        if reasons:
+            edits.append((("sources", source_key, "version"),
+                          f"{bundle.scenario.sources.selections[source_key].year}; public chargers {charger_date}; snapshot {sha[:12]}"))
+        if charger_date != registered_date:
+            edits.append((("sources", source_key, "components", "public_light_duty_chargers", "adapter", "reporting_date"), charger_date))
+            # Keep source-native date descriptions consistent with the adopted observations.
+            for key in ("label", "database_note"):
+                value = getattr(component, key)
+                if value and registered_date in value:
+                    edits.append((("sources", source_key, "components", "public_light_duty_chargers", key), value.replace(registered_date, charger_date)))
     return [
         Candidate(
             source_key,
@@ -656,9 +764,15 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
                 "sha256": sha,
                 "bytes_changed": changed,
                 "registered_cache": local,
-                "validation": "same-period market shares and provincial/type charger observations unchanged",
+                "validation": "unique market-share table, bounded same-year quarters, regional coverage and reconciled charger totals",
                 "rows": [len(frame) for frame in frames],
+                "publication_selection": {"before": previous_selection, "after": selection},
+                "published_observations": {"before": previous_published, "after": published},
+                "charger_reporting_date": charger_date,
+                "observations": {"before": before, "after": after},
+                "observation_changes": _dashboard_changes(before, after),
             },
+            reasons,
         )
     ]
 
@@ -1104,6 +1218,7 @@ def run_update(
     sources: set[str] | None = None,
     apply: bool = False,
     session: requests.Session | None = None,
+    review_report: Path | None = None,
 ) -> UpdateRun:
     """Inspect every selected policy and persist the exact proposed/adopted diff."""
     timestamp = (
@@ -1123,12 +1238,16 @@ def run_update(
     text = original.decode("utf-8")
     registry = yaml.load(text, Loader=UniqueKeyLoader)
     report = {
+        "review_schema_version": 1,
         "mode": "apply" if apply else "report",
         "status": "checking",
         "started_utc": timestamp,
         "registry": str(bundle.sources_path),
         "registry_sha256_before": _sha(original),
         "scenario": str(bundle.scenario_path),
+        "scenario_sha256": file_sha256(bundle.scenario_path),
+        "rules_sha256": file_sha256(resolve_parameter_path(bundle, "rules.yaml")),
+        "selected_sources": sorted(sources) if sources is not None else None,
         "sources": [],
         "candidates": [],
         "errors": [],
@@ -1138,6 +1257,8 @@ def run_update(
     owned_client = session is None
     client = session or requests.Session()
     try:
+        if review_report is not None and not apply:
+            raise UpdateError("--review-report requires --apply")
         settings = bundle.sources.updater
         if settings is None:
             raise UpdateError(
@@ -1159,7 +1280,7 @@ def run_update(
             "statcan_tables": ("statcan_transport_tables", _statcan),
             "cer_energy_future": ("cer_canadas_energy_future", _cer),
             "fueleconomy": ("fueleconomy_gov_vehicle_data", _fueleconomy),
-            "tc_dashboard_same_values": (
+            "tc_dashboard": (
                 "transport_canada_ev_dashboard",
                 _tc_dashboard,
             ),
@@ -1203,9 +1324,10 @@ def run_update(
                     )
                 except Exception as exc:
                     errors.append(f"{key}: {exc}")
-                    report["sources"].append(
-                        {"source": key, "status": "error", "reason": str(exc)}
-                    )
+                    report["sources"].append({
+                        "source": key, "status": "error", "reason": str(exc),
+                        "evidence": getattr(exc, "evidence", {}),
+                    })
                     logger.exception("ERROR %s: %s", key, exc)
             edits, files = [], {}
             for candidate in candidates:
@@ -1234,6 +1356,7 @@ def run_update(
                         for path, value in effective
                     ],
                     "evidence": candidate.evidence,
+                    "review_required": candidate.review_required,
                 }
                 report["candidates"].append(row)
                 logger.info(
@@ -1244,6 +1367,12 @@ def run_update(
                     json.dumps(row, ensure_ascii=False, sort_keys=True),
                 )
             updated = edit_registry(text, edits)
+            for path, expected in (
+                (bundle.scenario_path, report["scenario_sha256"]),
+                (resolve_parameter_path(bundle, "rules.yaml"), report["rules_sha256"]),
+            ):
+                if file_sha256(path) != expected:
+                    errors.append(f"Configuration changed during source review: {path}; rerun report-only review")
             diff = "".join(
                 difflib.unified_diff(
                     text.splitlines(keepends=True),
@@ -1261,6 +1390,30 @@ def run_update(
                     str(path): _sha(content) for path, content in files.items()
                 },
             )
+            review_payload = {
+                key: report[key] for key in (
+                    "review_schema_version", "registry_sha256_before", "scenario_sha256",
+                    "rules_sha256", "selected_sources", "candidates", "cache_snapshots",
+                )
+            }
+            report["review_fingerprint"] = _sha(json.dumps(
+                review_payload, sort_keys=True, ensure_ascii=False
+            ).encode("utf-8"))
+            needs_review = any(candidate.review_required for candidate in candidates)
+            if review_report is not None:
+                reviewed = json.loads(Path(review_report).read_text(encoding="utf-8"))
+                reviewed_payload = {key: reviewed.get(key) for key in review_payload}
+                reviewed_fingerprint = _sha(json.dumps(
+                    reviewed_payload, sort_keys=True, ensure_ascii=False
+                ).encode("utf-8"))
+                if (reviewed.get("status") != "report_only" or reviewed.get("errors")
+                    or reviewed.get("review_fingerprint") != reviewed_fingerprint
+                    or reviewed_fingerprint != report["review_fingerprint"]):
+                    errors.append("Reviewed report no longer matches this registry, scenario, rules, source selection or downloaded candidate; run report-only review again")
+                else:
+                    report["reviewed_report"] = str(Path(review_report).resolve())
+            elif apply and needs_review:
+                errors.append("Changed observations or publication identity require --review-report <report.json> from a matching report-only run")
             # Durable evidence precedes any adoption, including full source replacement diffs.
             write_text_atomic(
                 json.dumps(report, indent=2, ensure_ascii=False) + "\n",
@@ -1270,6 +1423,12 @@ def run_update(
             logger.info("REGISTRY DIFF\n%s", diff or "(no changes)")
             handler.flush()
             if apply and not errors and edits:
+                for path, expected in (
+                    (bundle.scenario_path, report["scenario_sha256"]),
+                    (resolve_parameter_path(bundle, "rules.yaml"), report["rules_sha256"]),
+                ):
+                    if file_sha256(path) != expected:
+                        raise UpdateError(f"Configuration changed before publication: {path}")
                 warnings = _publish(bundle, original, updated, files)
                 applied = True
                 report["warnings"] = warnings
@@ -1316,6 +1475,11 @@ def run_update(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--review-report",
+        type=Path,
+        help="with --apply, acknowledge an exact report-only proposal containing observation/publication changes",
+    )
+    parser.add_argument(
         "--scenario",
         required=True,
         help="scenario YAML supplying source/period selections",
@@ -1335,11 +1499,18 @@ def main() -> None:
         load_config_bundle(args.scenario),
         sources=set(args.source) if args.source else None,
         apply=args.apply,
+        review_report=args.review_report,
     )
     print(
         f"Source update {'applied' if result.applied else 'not applied'}; report: {result.report_path}"
     )
     print(f"Diff: {result.diff_path}\nLog: {result.log_path}")
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    for candidate in report["candidates"]:
+        if candidate.get("review_required"):
+            print(f"REVIEW {candidate['source']}: {'; '.join(candidate['review_required'])}")
+    if not args.apply and any(row.get("review_required") for row in report["candidates"]):
+        print("Inspect the evidence and diff; to adopt this exact proposal, rerun with --apply --review-report <report.json>.")
     if result.errors:
         for error in result.errors:
             print(f"ERROR: {error}")

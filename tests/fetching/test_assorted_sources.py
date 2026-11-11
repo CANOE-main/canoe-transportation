@@ -89,6 +89,80 @@ def test_tc_public_charger_parser_reconciles_pinned_html_and_rejects_drift(bundl
         normalize_tc_public_chargers(html.replace("Total public chargers: 13,392", "Total public chargers: 13,393"), **options)
 
 
+def _tc_charger_publication_fixture(*, inconsistent=False):
+    # June source observations reproduce the publisher's 45-port discrepancy.
+    # The success variant is synthetic and does not modify registered source data.
+    counts = {
+        "Newfoundland and Labrador": 230, "Prince Edward Island": 334,
+        "Nova Scotia": 670, "New Brunswick": 539, "Quebec": 13490,
+        "Ontario": 13694 if inconsistent else 13649, "Manitoba": 576,
+        "Saskatchewan": 405, "Alberta": 2121, "British Columbia": 8027,
+        "Yukon": 55, "Northwest Territories": 23, "Nunavut": 0,
+    }
+    chart = ('<table id="figure-6"><tr><th>Year</th><th>Level 2</th><th>Level 3</th></tr>'
+             '<tr><td>June 2026</td><td>31,293</td><td>8,826</td></tr></table>')
+    rows = "".join(f"<tr><td>{region}</td><td>Total public chargers: {value:,}</td></tr>"
+                   for region, value in counts.items())
+    provincial = ('<table id="tbl-portratio2"><tr><th>Province/territory</th>'
+                  f'<th>Charger data</th></tr>{rows}</table>')
+    html = ('<h2 id="public-electric-vehicle-chargers">Public electric vehicle chargers</h2>'
+            f'{chart}<p>Total chargers: <strong>40,119</strong></p>'
+            '<h3 id="ratio-of-light-duty-electric-vehicles-to-public-ev-chargers">Ratio</h3>'
+            f'{provincial}<h2 id="private-ev-chargers-selected-for-funding-or-financing">Private</h2>')
+    options = dict(year=2026, heading_id="public-electric-vehicle-chargers",
+                   chart_table_id="figure-6", province_table_id="tbl-portratio2",
+                   as_of="June 2026", regions=list(counts))
+    return html, chart, provincial, options
+
+
+def test_tc_public_charger_discrepancy_retains_complete_rejected_observations():
+    html, _, _, options = _tc_charger_publication_fixture(inconsistent=True)
+    with pytest.raises(AssortedSourcesError, match="difference \\+45") as caught:
+        normalize_tc_public_chargers(html, **options)
+    evidence = caught.value.evidence
+    assert evidence["national_total"] == 40119
+    assert evidence["printed_national_totals"] == [40119]
+    assert evidence["provincial_total"] == 40164
+    assert evidence["difference"] == 45
+    assert len(evidence["provincial_records"]) == 13
+    assert sum(row["public_chargers"] for row in evidence["provincial_records"]) == 40164
+    assert {row["charger_type"]: row["public_chargers"] for row in evidence["charger_type_records"]} == {
+        "L2": 31293, "DCFC": 8826,
+    }
+
+
+@pytest.mark.parametrize("target", ["chart", "provincial"])
+def test_tc_public_charger_tables_must_belong_to_their_sections(target):
+    html, chart, provincial, options = _tc_charger_publication_fixture()
+    displaced = chart if target == "chart" else provincial
+    html = html.replace(displaced, "") + '<h2 id="unrelated">Unrelated</h2>' + displaced
+    with pytest.raises(AssortedSourcesError, match="outside its configured heading section"):
+        normalize_tc_public_chargers(html, **options)
+
+
+def test_tc_charger_ratio_section_must_itself_belong_to_public_chargers():
+    html, _, provincial, options = _tc_charger_publication_fixture()
+    ratio = '<h3 id="ratio-of-light-duty-electric-vehicles-to-public-ev-chargers">Ratio</h3>'
+    html = html.replace(ratio, "").replace(provincial, "") + ratio + provincial
+    with pytest.raises(AssortedSourcesError, match="outside its configured heading section"):
+        normalize_tc_public_chargers(html, **options)
+
+
+def test_tc_public_charger_headers_allow_only_normalized_presentation_changes():
+    html, _, _, options = _tc_charger_publication_fixture()
+    html = html.replace("Level 2", "LEVEL–2").replace("Province/territory", "PROVINCE / territory")
+    provincial, types = normalize_tc_public_chargers(html, **options)
+    assert int(provincial.public_chargers.sum()) == 40119
+    assert int(types.public_chargers.sum()) == 40119
+
+
+@pytest.mark.parametrize("identifier", ["figure-6", "tbl-portratio2"])
+def test_tc_charger_table_ids_cannot_fall_back_to_structural_similarity(identifier):
+    html, _, _, options = _tc_charger_publication_fixture()
+    with pytest.raises(AssortedSourcesError, match="missing or ambiguous"):
+        normalize_tc_public_chargers(html.replace(f'id="{identifier}"', f'id="renamed-{identifier}"'), **options)
+
+
 def test_tc_dashboard_offline_replay_publishes_both_registered_components(tmp_path, monkeypatch, bundle) -> None:
     class NoNetwork:
         def get(self, *_args, **_kwargs):
