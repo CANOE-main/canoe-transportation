@@ -660,6 +660,7 @@ fetching:
       ytd_header: "2026 year-to-date"
       source_regions: [Newfoundland and Labrador, Prince Edward Island, Nova Scotia, New Brunswick, Quebec, Ontario, Manitoba, Saskatchewan, Alberta, British Columbia, Yukon, Northwest Territories, Nunavut, Canada]
       public_chargers:
+        national_total_precedence: provincial
         component_id: public_light_duty_chargers
         heading_id: public-electric-vehicle-chargers
         chart_table_id: figure-6

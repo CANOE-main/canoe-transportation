@@ -483,13 +483,31 @@ def dashboard_html(bundle, *, share="1%", ytd_share=None, columns=("Q1", "YTD"),
 def pin_dashboard(bundle):
     """Register fixture bytes without touching the repository's accepted snapshot."""
     registry = yaml.safe_load(bundle.sources_path.read_text(encoding="utf-8"))
-    source = registry["sources"][TC]["adapter"]
+    registered = registry["sources"][TC]
+    source = registered["adapter"]
+    charger = registered["components"]["public_light_duty_chargers"]
+    previous_note = charger["adapter"].get("reconciliation_note", "")
+    if previous_note:
+        charger["database_note"] = charger["database_note"].replace(previous_note, "").strip()
+    charger["adapter"]["reconciliation_note"] = ""
+    previous_date = charger["adapter"]["reporting_date"]
+    charger["adapter"]["reporting_date"] = "March 2026"
+    for field in ("label", "database_note"):
+        charger[field] = charger[field].replace(previous_date, "March 2026")
+    registered["version"] = "2026 Q1; isolated test fixture"
     old = dashboard_html(bundle)
     target = resolve_input_path(bundle, "cache", source["cache_path"])
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(old)
     source.update(expected_sha256=digest(old), expected_bytes=len(old))
     return save_registry(bundle, registry), target, old
+
+
+def set_dashboard_charger_precedence(bundle, value):
+    path = bundle.repo_root / "config/parameters/rules.yaml"
+    rules = yaml.safe_load(path.read_text(encoding="utf-8"))
+    rules["fetching"]["assorted_sources"]["tc_ev_dashboard"]["public_chargers"]["national_total_precedence"] = value
+    path.write_text(yaml.safe_dump(rules, sort_keys=False), encoding="utf-8")
 
 
 def dashboard_session(bundle, content):
@@ -778,6 +796,7 @@ def test_tc_change_to_additional_quarter_observations_requires_new_review(isolat
 
 
 def test_tc_rejected_charger_totals_retain_market_and_reconciliation_evidence(isolated_bundle):
+    set_dashboard_charger_precedence(isolated_bundle, "require_equal")
     bundle, _target, _old = pin_dashboard(isolated_bundle)
     content = dashboard_html(bundle, columns=("Q1", "Q2", "YTD"), ytd_share="2%")
     content = content.replace(b"Total public chargers: 1</td>",
@@ -817,3 +836,76 @@ def test_tc_rejected_charger_totals_retain_market_and_reconciliation_evidence(is
 
     assert attempted.errors and not attempted.applied
     assert_preserved(bundle, original, caches)
+
+
+def test_tc_provincial_precedence_preserves_discrepancy_through_review_and_offline_replay(isolated_bundle, monkeypatch):
+    from fetching import assorted_sources as adapter
+
+    set_dashboard_charger_precedence(isolated_bundle, "provincial")
+    bundle, old_path, old = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle, columns=("Q1", "Q2", "YTD"), ytd_share="2%")
+    content = content.replace(b"Total public chargers: 1</td>", b"Total public chargers: 2</td>", 1)
+    session = dashboard_session(bundle, content)
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    review = updater.run_update(bundle, sources={TC}, session=session)
+
+    assert not review.errors and not review.applied
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    assert report["status"] == "report_only"
+    candidate = report["candidates"][0]
+    assert candidate["review_required"]
+    evidence = candidate["evidence"]
+    before, after = (evidence["charger_reconciliation"][name] for name in ("before", "after"))
+    assert not before["discrepancy"]
+    assert {key: after[key] for key in (
+        "national_total_precedence", "authoritative_total", "national_total", "provincial_total", "difference", "discrepancy"
+    )} == {
+        "national_total_precedence": "provincial", "authoritative_total": 14,
+        "national_total": 13, "provincial_total": 14, "difference": 1, "discrepancy": True,
+    }
+    notes = evidence["update_notes"]
+    assert len(notes) == 1 and notes[0]["code"] == "national_total_mismatch"
+    assert notes[0]["reconciliation"] == after
+    assert_preserved(bundle, original, caches)
+    blocked = updater.run_update(bundle, sources={TC}, session=session, apply=True)
+    assert blocked.errors and not blocked.applied
+    assert_preserved(bundle, original, caches)
+
+    applied = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=review.report_path)
+
+    assert applied.applied and not applied.errors
+    assert old_path.read_bytes() == old
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    source = current.sources.sources[TC]
+    assert source.adapter["expected_sha256"] == digest(content)
+    assert resolve_input_path(current, "cache", source.adapter["cache_path"]).read_bytes() == content
+    component = source.component("public_light_duty_chargers")
+    note = component.adapter["reconciliation_note"]
+    assert "provincial total 14" in note and "chart total 13" in note
+    assert "difference +1" in note
+    assert note in component.database_note
+    monkeypatch.setattr(adapter, "load_config_bundle", lambda _path: current)
+    no_network = FakeSession()
+    output = adapter.fetch_and_normalize_tc_dashboard(SCENARIO, download=False, session=no_network)
+    assert no_network.calls == []
+    rules = adapter.module_rules(current)["tc_ev_dashboard"]["public_chargers"]
+    with (output / rules["province_output_file"]).open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    assert len(rows) == 13 and sum(int(row["public_chargers"]) for row in rows) == 14
+    with (output / rules["type_output_file"]).open(encoding="utf-8", newline="") as handle:
+        types = list(csv.DictReader(handle))
+    assert {row["charger_type"]: int(row["public_chargers"]) for row in types} == {"L2": 10, "DCFC": 3}
+    assert sum(float(row["national_share"]) for row in types) == pytest.approx(1.)
+    warnings = [json.loads(line) for line in (output / "warnings.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert len(warnings) == 1 and warnings[0]["code"] == "national_total_mismatch"
+    assert warnings[0]["reconciliation"]["authoritative_total"] == 14
+    with (output / "manifest.csv").open(encoding="utf-8", newline="") as handle:
+        manifest = list(csv.DictReader(handle))
+    charger_manifest = next(row for row in manifest if row["component_id"] == "public_light_duty_chargers")
+    assert int(charger_manifest["warning_count"]) == 1
+    registered, snapshots = current.sources_path.read_bytes(), cache_bytes(current)
+    repeated = updater.run_update(current, sources={TC}, session=session, apply=True)
+    assert not repeated.errors and not repeated.applied
+    assert_preserved(current, registered, snapshots)

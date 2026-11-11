@@ -242,9 +242,12 @@ Inspect the JSON report's selection evidence, full observations, changes and reg
 diff, then repeat with `--apply --review-report <report.json>` to acknowledge that exact
 proposal. Adoption rechecks downloaded bytes, registry, scenario, rules and source
 selection. An unavailable old cache is explicitly reported as an unknown comparison;
-it never establishes unchanged values. Invalid coverage, ambiguous tables, changed years
-and inconsistent charger totals block adoption even with a review report. Manual
-assumptions, reviewed mapping promotion and external-model generation remain separate
+it never establishes unchanged values. Invalid coverage, ambiguous tables and changed
+years block adoption even with a review report. The configured TC charger policy gives
+provincial counts precedence over national aggregates. National inconsistencies remain
+flagged in update notes, normalized warnings and source provenance; the published
+L2/DCFC counts supply a normalized type mix for the authoritative provincial counts.
+Manual assumptions, reviewed mapping promotion and external-model generation remain separate
 review operations. **#to-review**
 
 All selected candidates are validated before adoption. Revision-specific cache paths

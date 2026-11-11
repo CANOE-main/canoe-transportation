@@ -33,6 +33,62 @@ def cost_converter():
     ]), scenario="test", target_year=2020)
 
 
+def _dashboard_observations(bundle):
+    rules = load_harmonization_rules(bundle, "assorted_sources")["tc_ev_dashboard"]["public_chargers"]
+    directory = resolve_artifact_path(bundle, "tc_ev_dashboard_interim")
+    return (pd.read_csv(directory / rules["province_output_file"]),
+            pd.read_csv(directory / rules["type_output_file"]))
+
+
+def _discrepant_charger_observations():
+    provincial = pd.DataFrame({"public_chargers": [40164]})
+    types = pd.DataFrame({"public_chargers": [31293, 8826],
+                          "national_share": [31293 / 40119, 8826 / 40119]})
+    return provincial, types
+
+
+def test_provincial_precedence_preserves_published_type_counts_and_normalized_mix(caplog):
+    provincial, types = _discrepant_charger_observations()
+    before = types.copy(deep=True)
+    assert layer._public_charger_totals(provincial, types, precedence="provincial") == (40164, 40119)
+    pd.testing.assert_frame_equal(types, before)
+    assert types.national_share.sum() == pytest.approx(1)
+    assert sum(40164 * types.national_share) == pytest.approx(40164)
+    assert "difference=+45" in caplog.text
+
+
+def test_strict_charger_total_policy_remains_available():
+    provincial, types = _discrepant_charger_observations()
+    with pytest.raises(ValueError, match="national totals"):
+        layer._public_charger_totals(provincial, types, precedence="require_equal")
+
+
+@pytest.mark.parametrize("change,match", [
+    ("negative", "Negative"), ("fractional", "finite integers"),
+    ("nonfinite", "finite integers"), ("missing", "finite integers"),
+    ("zero_type_total", "type total must be positive"),
+    ("invalid_shares", "type shares"), ("provincial_share_denominator", "type shares"),
+    ("unknown_policy", "national_total_precedence"),
+])
+def test_provincial_precedence_keeps_count_and_type_mix_validation(change, match):
+    provincial, types = _discrepant_charger_observations()
+    precedence = "provincial"
+    if change in {"negative", "fractional", "nonfinite", "missing"}:
+        provincial["public_chargers"] = [{
+            "negative": -1, "fractional": 1.5, "nonfinite": float("inf"), "missing": float("nan"),
+        }[change]]
+    elif change == "zero_type_total":
+        types["public_chargers"] = 0
+    elif change == "invalid_shares":
+        types["national_share"] = [.7, .2]
+    elif change == "provincial_share_denominator":
+        types["national_share"] = types.public_chargers / 40164
+    else:
+        precedence = "unknown"
+    with pytest.raises(ValueError, match=match):
+        layer._public_charger_totals(provincial, types, precedence=precedence)
+
+
 def mhd_cost_inputs():
     records = []
     for kind, share, power, expense in (("50kW", .82, 50., 78637.),
@@ -166,11 +222,14 @@ def isolated_ev_outputs(prepared_inputs, tmp_path, monkeypatch):
 def test_charger_port_capacity_and_provenance(prepared) -> None:
     bundle, result = prepared
     audit = result.audit
-    assert len(result.capacity_rows) == 18
-    assert audit["zero_bev_stock_skipped"] == [["NB", "mhdv"], ["PEI", "mhdv"]]
+    provincial, types = _dashboard_observations(bundle)
+    published_total = int(provincial.public_chargers.sum())
     ports = pd.DataFrame(audit["port_reconciliation"])
     assert len(ports) == 20
-    assert ports.loc[ports.charger_class.eq("ldv"), "observed_public_ports"].sum() == 39220
+    zero_stock = ports.loc[ports.bev_vehicles.eq(0), ["region", "charger_class"]]
+    assert audit["zero_bev_stock_skipped"] == zero_stock.values.tolist()
+    assert len(result.capacity_rows) == len(ports) - len(zero_stock)
+    assert ports.loc[ports.charger_class.eq("ldv"), "observed_public_ports"].sum() == published_total
     for row in ports.to_dict("records"):
         assert row["required_ports"] == pytest.approx(row["bev_vehicles"] / row["ev_per_port"])
         if row["charger_class"] == "ldv":
@@ -184,9 +243,10 @@ def test_charger_port_capacity_and_provenance(prepared) -> None:
     assert {row.region for row in result.capacity_rows} == set(
         pd.read_csv(ROOT / "inputs/0_canoe_template/region.csv").region
     )
-    assert audit["tc_as_of"] == "March 2026"
+    assert audit["tc_as_of"] == provincial.as_of.iloc[0]
     assert audit["bev_stock_year"] == 2023
-    assert sum(audit["tc_type_counts"].values()) == 39220
+    assert audit["tc_public_ports"] == published_total
+    assert audit["tc_type_counts"] == types.set_index("charger_type").public_chargers.to_dict()
     contexts = {context.data_id: context for context in result.provenance_contexts}
     assert len({row.data_id for row in result.capacity_rows}) == len(result.capacity_rows)
     for row in result.capacity_rows:
@@ -208,6 +268,59 @@ def test_charger_port_capacity_and_provenance(prepared) -> None:
         assert context.data_quality == expected
 
 
+def test_charger_preparation_uses_provincial_total_and_source_reporting_date(
+    isolated_ev_outputs, tmp_path, monkeypatch,
+):
+    bundle, stock, contexts, lifetime_rows = isolated_ev_outputs
+    provincial, types = _dashboard_observations(bundle)
+    chart_total = int(types.public_chargers.sum())
+    provincial.loc[provincial.source_region.eq("Ontario"), "public_chargers"] += (
+        chart_total + 45 - int(provincial.public_chargers.sum())
+    )
+    provincial["as_of"] = types["as_of"] = "June 2026"
+    source_key, component_key = "transport_canada_ev_dashboard", "public_light_duty_chargers"
+    source = bundle.sources.sources[source_key]
+    component = source.component(component_key)
+    changed_component = component.model_copy(update={"adapter": {**component.adapter, "reporting_date": "June 2026"}})
+    changed_source = source.model_copy(update={"components": {**source.components, component_key: changed_component}})
+    changed_sources = bundle.sources.model_copy(update={"sources": {**bundle.sources.sources, source_key: changed_source}})
+    selected = replace(bundle, sources=changed_sources)
+    dashboard = load_harmonization_rules(bundle, "assorted_sources")["tc_ev_dashboard"]["public_chargers"]
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    provincial.to_csv(source_dir / dashboard["province_output_file"], index=False)
+    types.to_csv(source_dir / dashboard["type_output_file"], index=False)
+    original_path, original_rules = layer.resolve_artifact_path, layer.load_harmonization_rules
+
+    def artifact_path(config, family, *parts):
+        return source_dir.joinpath(*parts) if family == "tc_ev_dashboard_interim" else original_path(config, family, *parts)
+
+    def rules(config, owner):
+        result = original_rules(config, owner)
+        if owner == "assorted_sources":
+            result["tc_ev_dashboard"]["public_chargers"]["national_total_precedence"] = "provincial"
+        return result
+
+    monkeypatch.setattr(layer, "resolve_artifact_path", artifact_path)
+    monkeypatch.setattr(layer, "load_harmonization_rules", rules)
+    result = prepare_ev_charger_rows(
+        selected, existing_capacity_rows=stock, existing_capacity_contexts=contexts,
+        fixed_lifetime_rows=lifetime_rows,
+    )
+    assert result.audit["tc_as_of"] == "June 2026"
+    assert result.audit["tc_public_ports"] == chart_total + 45
+    assert result.audit["tc_type_total"] == chart_total
+    assert result.audit["tc_type_counts"] == types.set_index("charger_type").public_chargers.to_dict()
+    assert result.audit["tc_total_reconciliation"]["difference"] == 45
+    assert result.audit["tc_total_reconciliation"]["policy"] == "provincial"
+    ports = [row for row in result.audit["port_reconciliation"] if row["charger_class"] == "ldv"]
+    assert sum(row["observed_public_ports"] for row in ports) == chart_total + 45
+    dcfc_share = float(types.loc[types.charger_type.eq("DCFC"), "national_share"].iloc[0])
+    for row in ports:
+        assert row["DCFC_ports"] == pytest.approx(row["observed_public_ports"] * dcfc_share)
+        assert row["L1_ports"] + row["L2_ports"] + row["DCFC_ports"] == pytest.approx(row["required_ports"])
+
+
 def test_charger_costs_utilization_and_efficiency(prepared, prepared_inputs) -> None:
     bundle, result = prepared
     charger_techs = {mapping[kind] for mapping in load_harmonization_rules(bundle, "ev_chargers")["technology"].values()
@@ -217,7 +330,7 @@ def test_charger_costs_utilization_and_efficiency(prepared, prepared_inputs) -> 
     efficiency_rows = [row for row in result.efficiency_rows if row.tech in charger_techs]
     assert len(investments_rows) == 100
     assert all(row.tech.endswith("_N") for row in investments_rows)
-    assert result.audit["existing_investment_rows_excluded"] == 18
+    assert result.audit["existing_investment_rows_excluded"] == len(result.capacity_rows)
     lifetimes = {(row.region, row.tech): row.lifetime for row in prepared_inputs[3]}
     expected_fixed_keys = {
         (row.region, row.tech, row.vintage, period)
@@ -227,8 +340,12 @@ def test_charger_costs_utilization_and_efficiency(prepared, prepared_inputs) -> 
     }
     assert {(row.region, row.tech, row.vintage, row.period) for row in fixed_rows} == expected_fixed_keys
     assert len(fixed_rows) == len(expected_fixed_keys)
-    assert len(efficiency_rows) == 118
-    assert len(result.utilization) == len(result.utilization_rows) == 118
+    expected_efficiency_keys = {(row.region, row.tech, row.vintage)
+                                for row in [*result.capacity_rows, *investments_rows]}
+    assert len(efficiency_rows) == len(expected_efficiency_keys)
+    assert {(row.region, row.tech, row.vintage) for row in efficiency_rows} == expected_efficiency_keys
+    assert len(result.utilization) == len(result.utilization_rows) == len(expected_efficiency_keys)
+    assert {(row.region, row.tech_or_group, row.vintage) for row in result.utilization_rows} == expected_efficiency_keys
     assert "period" not in LimitAnnualCapacityFactor.model_fields
     assert result.audit["utilization_schema_supported"] is True
     assert bundle.scenario.charging_profiles.travel_behavior_source == "none"
@@ -605,7 +722,7 @@ def test_selected_regions_keep_full_source_validation_and_equivalent_rows(prepar
         baseline = [row.model_dump(exclude={"data_id"}) for row in getattr(full, name) if row.region in expected]
         assert actual == baseline
     assert {row["region"] for row in subset.audit["port_reconciliation"]} == expected
-    assert sum(subset.audit["tc_type_counts"].values()) == 39220
+    assert subset.audit["tc_type_counts"] == full.audit["tc_type_counts"]
     scoped_stock = [row for row in stock if row.region in expected]
     scoped_ids = {row.data_id for row in scoped_stock}
     repeated = prepare_ev_charger_rows(

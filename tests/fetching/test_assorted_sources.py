@@ -64,29 +64,19 @@ def test_tc_dashboard_parser_selects_identified_table_and_rejects_drift() -> Non
         )
 
 
-def test_tc_public_charger_parser_reconciles_pinned_html_and_rejects_drift(bundle) -> None:
-    rules = adapter.module_rules(bundle)["tc_ev_dashboard"]["public_chargers"]
-    source = bundle.sources.sources["transport_canada_ev_dashboard"]
-    html = (REPO_ROOT / "inputs" / "0_cache" / source.adapter["cache_path"]).read_text(
-        encoding="utf-8"
-    )
-    options = dict(
-        year=2026, heading_id=rules["heading_id"],
-        chart_table_id=rules["chart_table_id"],
-        province_table_id=rules["province_table_id"],
-        as_of=rules["as_of"], regions=rules["source_regions"],
-    )
+def test_tc_public_charger_parser_reconciles_selected_date_and_rejects_drift() -> None:
+    html, _, _, options = _tc_charger_publication_fixture()
     provincial, types = normalize_tc_public_chargers(html, **options)
     assert len(provincial) == 13
-    assert int(provincial.public_chargers.sum()) == 39220
+    assert int(provincial.public_chargers.sum()) == 40119
     assert types.set_index("charger_type").public_chargers.to_dict() == {
-        "L2": 30741, "DCFC": 8479
+        "L2": 31293, "DCFC": 8826
     }
     assert types.national_share.sum() == pytest.approx(1.0)
     with pytest.raises(AssortedSourcesError, match="national charger total"):
-        normalize_tc_public_chargers(html.replace("Total chargers: <strong>39,220", "Total chargers: <strong>39,221"), **options)
+        normalize_tc_public_chargers(html.replace("Total chargers: <strong>40,119", "Total chargers: <strong>40,120"), **options)
     with pytest.raises(AssortedSourcesError, match="provincial chargers"):
-        normalize_tc_public_chargers(html.replace("Total public chargers: 13,392", "Total public chargers: 13,393"), **options)
+        normalize_tc_public_chargers(html.replace("Total public chargers: 13,649", "Total public chargers: 13,650"), **options)
 
 
 def _tc_charger_publication_fixture(*, inconsistent=False):
@@ -129,6 +119,97 @@ def test_tc_public_charger_discrepancy_retains_complete_rejected_observations():
     assert {row["charger_type"]: row["public_chargers"] for row in evidence["charger_type_records"]} == {
         "L2": 31293, "DCFC": 8826,
     }
+
+
+def test_tc_provincial_precedence_preserves_published_counts_and_normalized_type_mix():
+    html, _, _, options = _tc_charger_publication_fixture(inconsistent=True)
+    provincial, types = normalize_tc_public_chargers(
+        html, **options, national_total_precedence="provincial"
+    )
+    assert len(provincial) == 13
+    assert int(provincial.public_chargers.sum()) == 40164
+    assert provincial.set_index("source_region").loc["Ontario", "public_chargers"] == 13694
+    by_type = types.set_index("charger_type")
+    assert by_type.public_chargers.to_dict() == {"L2": 31293, "DCFC": 8826}
+    assert by_type.national_share.to_dict() == pytest.approx({"L2": 31293 / 40119, "DCFC": 8826 / 40119})
+    assert float(types.national_share.sum()) == pytest.approx(1.0)
+    # Source chart counts describe the mix; applying it retains the full provincial total.
+    assert sum(provincial.public_chargers.sum() * by_type.national_share) == pytest.approx(40164)
+    reconciliation = provincial.attrs["reconciliation"]
+    assert reconciliation == types.attrs["reconciliation"]
+    assert {key: reconciliation[key] for key in (
+        "national_total_precedence", "authoritative_total", "national_total", "provincial_total", "difference", "discrepancy"
+    )} == {
+        "national_total_precedence": "provincial", "authoritative_total": 40164,
+        "national_total": 40119, "provincial_total": 40164, "difference": 45, "discrepancy": True,
+    }
+    assert reconciliation["printed_national_totals"] == [40119]
+    assert reconciliation["flags"]
+    warnings = provincial.attrs["warnings"]
+    assert warnings == types.attrs["warnings"] and len(warnings) == 1
+    assert warnings[0]["source_id"] == "transport_canada_ev_dashboard"
+    assert warnings[0]["component_id"] == "public_light_duty_chargers"
+    assert warnings[0]["code"] == "national_total_mismatch"
+    assert warnings[0]["reconciliation"] == reconciliation
+
+
+def test_tc_provincial_precedence_flags_a_different_printed_national_total():
+    html, _, _, options = _tc_charger_publication_fixture(inconsistent=True)
+    html = html.replace("Total chargers: <strong>40,119", "Total chargers: <strong>40,120")
+    provincial, types = normalize_tc_public_chargers(
+        html, **options, national_total_precedence="provincial"
+    )
+    reconciliation = provincial.attrs["reconciliation"]
+    assert reconciliation["authoritative_total"] == 40164
+    assert reconciliation["national_total"] == 40119
+    assert reconciliation["printed_national_totals"] == [40120]
+    assert reconciliation["discrepancy"]
+    assert reconciliation["flags"]
+    assert provincial.attrs["warnings"]
+    assert float(types.national_share.sum()) == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("summary", ["missing", "ambiguous"])
+def test_tc_provincial_precedence_flags_unavailable_or_ambiguous_national_summary(summary):
+    html, _, _, options = _tc_charger_publication_fixture(inconsistent=True)
+    printed = "<p>Total chargers: <strong>40,119</strong></p>"
+    html = html.replace(printed, "" if summary == "missing" else printed + printed)
+    provincial, types = normalize_tc_public_chargers(
+        html, **options, national_total_precedence="provincial"
+    )
+    evidence = provincial.attrs["reconciliation"]
+    assert evidence["authoritative_total"] == 40164
+    assert evidence["printed_national_totals"] == ([] if summary == "missing" else [40119, 40119])
+    assert evidence["discrepancy"] and evidence["flags"]
+    assert provincial.attrs["warnings"]
+    assert float(types.national_share.sum()) == pytest.approx(1.0)
+
+
+def test_tc_provincial_precedence_preserves_numerical_outputs_when_totals_agree():
+    html, _, _, options = _tc_charger_publication_fixture()
+    strict = normalize_tc_public_chargers(html, **options, national_total_precedence="require_equal")
+    provincial = normalize_tc_public_chargers(html, **options, national_total_precedence="provincial")
+    for expected, observed in zip(strict, provincial, strict=True):
+        pd.testing.assert_frame_equal(expected, observed)
+        assert not observed.attrs["reconciliation"]["discrepancy"]
+        assert observed.attrs["warnings"] == []
+
+
+@pytest.mark.parametrize("defect", ["missing_region", "duplicate_region", "negative_count", "bad_chart_count", "zero_chart_total"])
+def test_tc_provincial_precedence_still_rejects_invalid_observations(defect):
+    html, _, _, options = _tc_charger_publication_fixture(inconsistent=True)
+    if defect == "missing_region":
+        html = html.replace("<tr><td>Nunavut</td><td>Total public chargers: 0</td></tr>", "")
+    elif defect == "duplicate_region":
+        html = html.replace("<td>Nunavut</td>", "<td>Yukon</td>")
+    elif defect == "negative_count":
+        html = html.replace("Total public chargers: 230", "Total public chargers: -230")
+    elif defect == "bad_chart_count":
+        html = html.replace("31,293", "not reported")
+    else:
+        html = html.replace("31,293", "0").replace("8,826", "0")
+    with pytest.raises(AssortedSourcesError):
+        normalize_tc_public_chargers(html, **options, national_total_precedence="provincial")
 
 
 @pytest.mark.parametrize("target", ["chart", "provincial"])

@@ -620,6 +620,7 @@ def _dashboard_frames(bundle, content, *, charger_as_of=None):
             "transport_canada_ev_dashboard"
         ].component(charger["component_id"]).adapter.get("reporting_date", charger["as_of"]),
         regions=charger["source_regions"],
+        national_total_precedence=charger.get("national_total_precedence", "require_equal"),
     )
     return shares, provincial, types
 
@@ -724,6 +725,9 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
     previous_selection = previous[0].attrs.get("publication_selection", {}) if previous is not None else None
     published = frames[0].attrs.get("published_observations", {})
     previous_published = previous[0].attrs.get("published_observations", {}) if previous is not None else None
+    reconciliation = frames[1].attrs["reconciliation"]
+    previous_reconciliation = previous[1].attrs["reconciliation"] if previous is not None else None
+    update_notes = frames[1].attrs["warnings"]
     if changed:
         if previous is None:
             reasons.append("Exact registered cache unavailable; previous observations cannot be compared")
@@ -733,6 +737,8 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
             reasons.append("TC publication labels, table identity or quarterly coverage changed")
         if previous_published != published and before == after:
             reasons.append("TC published quarter observations changed outside the configured selection")
+        if reconciliation != previous_reconciliation and update_notes:
+            reasons.append("TC national aggregate inconsistency retained under provincial count precedence")
     if changed or local["status"] != "valid":
         target = _snapshot_path(bundle, old, content)
         files[target] = content
@@ -753,6 +759,20 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
                 value = getattr(component, key)
                 if value and registered_date in value:
                     edits.append((("sources", source_key, "components", "public_light_duty_chargers", key), value.replace(registered_date, charger_date)))
+        note = " ".join(warning["message"] for warning in update_notes)
+        old_note = component.adapter.get("reconciliation_note", "")
+        if note != old_note:
+            component_base = ("sources", source_key, "components", "public_light_duty_chargers")
+            edits.append((component_base + ("adapter", "reconciliation_note"), note))
+            database_note = component.database_note or ""
+            if old_note:
+                database_note = database_note.replace(old_note, "").strip()
+            database_note = database_note.replace(registered_date, charger_date)
+            if note:
+                database_note = f"{database_note} {note}".strip()
+            # Combine date and reconciliation edits into one final provenance note.
+            edits = [(path, value) for path, value in edits if path != component_base + ("database_note",)]
+            edits.append((component_base + ("database_note",), database_note))
     return [
         Candidate(
             source_key,
@@ -764,13 +784,15 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
                 "sha256": sha,
                 "bytes_changed": changed,
                 "registered_cache": local,
-                "validation": "unique market-share table, bounded same-year quarters, regional coverage and reconciled charger totals",
+                "validation": "unique market-share table, bounded same-year quarters, regional coverage and configured charger-total precedence with aggregate discrepancies retained",
                 "rows": [len(frame) for frame in frames],
                 "publication_selection": {"before": previous_selection, "after": selection},
                 "published_observations": {"before": previous_published, "after": published},
                 "charger_reporting_date": charger_date,
                 "observations": {"before": before, "after": after},
                 "observation_changes": _dashboard_changes(before, after),
+                "charger_reconciliation": {"before": previous_reconciliation, "after": reconciliation},
+                "update_notes": update_notes,
             },
             reasons,
         )

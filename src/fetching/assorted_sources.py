@@ -143,8 +143,11 @@ def normalize_tc_public_chargers(
     province_table_id: str,
     as_of: str,
     regions: list[str],
+    national_total_precedence: Literal["require_equal", "provincial"] = "require_equal",
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Read public LD ports from the same pinned TC dashboard HTML."""
+    if national_total_precedence not in {"require_equal", "provincial"}:
+        raise AssortedSourcesError("Unknown dashboard national_total_precedence policy")
     try:
         chart = select_publication_table(
             html, table_id=chart_table_id, heading_id=heading_id,
@@ -206,26 +209,60 @@ def normalize_tc_public_chargers(
     if set(provincial.source_region) != set(regions) or provincial.source_region.duplicated().any():
         raise AssortedSourcesError("Dashboard provincial charger labels changed")
     provincial_total = int(provincial.public_chargers.sum())
+    if provincial_total <= 0:
+        raise AssortedSourcesError("Dashboard provincial public charger total is zero")
+    printed_totals = [count(value) for value in total_match]
+    flags = []
+    if provincial_total != national:
+        flags.append("provincial_vs_chart_total")
+    if len(printed_totals) != 1:
+        flags.append("national_summary_missing_or_ambiguous")
+    elif printed_totals[0] != provincial_total:
+        flags.append("provincial_vs_printed_national_total")
+    if any(value != national for value in printed_totals):
+        flags.append("printed_national_vs_chart_total")
     evidence = {
         "reporting_date": as_of,
         "national_total": national,
-        "printed_national_totals": [count(value) for value in total_match],
+        "printed_national_totals": printed_totals,
         "provincial_total": provincial_total,
         "difference": provincial_total - national,
+        "national_total_precedence": national_total_precedence,
+        "authoritative_total": provincial_total if national_total_precedence == "provincial" else national,
+        "discrepancy": bool(flags),
+        "flags": flags,
         "provincial_records": provincial.to_dict(orient="records"),
         "charger_type_records": type_counts.to_dict(orient="records"),
         "publication_selection": {"chart": chart.selection, "provincial": province.selection},
     }
-    if len(total_match) != 1 or count(total_match[0]) != national:
+    if national_total_precedence == "require_equal" and (len(printed_totals) != 1 or printed_totals[0] != national):
         raise AssortedSourcesError(
             "Dashboard national charger total does not match L2 and L3", evidence=evidence
         )
-    if provincial_total != national:
+    if national_total_precedence == "require_equal" and provincial_total != national:
         raise AssortedSourcesError(
             "Dashboard provincial chargers do not sum to national total "
             f"({provincial_total:,} != {national:,}; difference {provincial_total - national:+,})",
             evidence=evidence,
         )
+    warnings = []
+    if flags:
+        message = (
+            f"TC public chargers {as_of}: provincial total {provincial_total:,} takes precedence; "
+            f"chart total {national:,}; printed national totals {printed_totals}; "
+            f"provincial-minus-chart difference {provincial_total - national:+,}. "
+            "Published L2/DCFC counts retain their chart-normalized type mix."
+        )
+        warnings.append({
+            "source_id": "transport_canada_ev_dashboard",
+            "component_id": "public_light_duty_chargers",
+            "code": "national_total_mismatch", "message": message,
+            "reconciliation": evidence,
+        })
+        logging.getLogger(__name__).warning("%s", message)
+    for frame in (provincial, type_counts):
+        frame.attrs["reconciliation"] = evidence
+        frame.attrs["warnings"] = warnings
     return provincial, type_counts
 
 
@@ -1763,6 +1800,7 @@ def fetch_and_normalize_tc_dashboard(
         province_table_id=str(charger_rules["province_table_id"]),
         as_of=charger_as_of,
         regions=list(charger_rules["source_regions"]),
+        national_total_precedence=charger_rules.get("national_total_precedence", "require_equal"),
     )
     output_dir = resolve_artifact_path(bundle, "tc_ev_dashboard_interim")
     write_outputs(
@@ -1794,10 +1832,10 @@ def fetch_and_normalize_tc_dashboard(
                 selection=f"{charger_as_of} public light-duty EV chargers",
                 output_files=[str(charger_rules["province_output_file"]),
                               str(charger_rules["type_output_file"])],
-                warning_count=0,
+                warning_count=len(provincial.attrs["warnings"]),
             ),
         ],
-        warnings=[],
+        warnings=provincial.attrs["warnings"],
         output_dir=output_dir,
         rules=module_rules(bundle),
     )
