@@ -452,45 +452,460 @@ def test_fueleconomy_validates_shared_class_and_range_contracts(isolated_bundle,
     assert target.read_bytes() == content
 
 
-def dashboard_html(bundle, *, share="1%"):
+def dashboard_html(bundle, *, share="1%", ytd_share=None, columns=("Q1", "YTD"),
+                   quarter_values=None, reporting_date=None):
     from fetching.assorted_sources import module_rules
 
     rules = module_rules(bundle)["tc_ev_dashboard"]
     chargers = rules["public_chargers"]
-    regions = chargers["source_regions"]
-    province_rows = "".join(f"<tr><td>{region}</td><td>Total public chargers: 1</td></tr>" for region in regions)
-    share_rows = "".join(f"<tr><td>{region}</td><td>{share}</td><td>{share}</td></tr>" for region in regions)
-    return (f'<h2 id="{rules["heading_id"]}">Shares</h2><table id="{rules["table_id"]}">'
-            f'<tr><th>Province/territory</th><th>{rules["quarter_header"]}</th><th>{rules["ytd_header"]}</th></tr>'
+    charger_regions = chargers["source_regions"]
+    year = bundle.scenario.sources.selections[TC].year
+    headers = {quarter: f"Market share ({quarter} {year})" for quarter in ("Q1", "Q2", "Q3", "Q4")}
+    headers["YTD"] = rules["ytd_header"]
+    values = {quarter: share for quarter in ("Q1", "Q2", "Q3", "Q4")}
+    values.update(quarter_values or {})
+    values["YTD"] = share if ytd_share is None else ytd_share
+    header_cells = "".join(f"<th>{headers[column]}</th>" for column in columns)
+    share_cells = "".join(f"<td>{values[column]}</td>" for column in columns)
+    province_rows = "".join(f"<tr><td>{region}</td><td>Total public chargers: 1</td></tr>" for region in charger_regions)
+    share_rows = "".join(f"<tr><td>{region}</td>{share_cells}</tr>" for region in rules["source_regions"])
+    return (f'<h2 id="{rules["heading_id"]}">{rules["heading_text"]}</h2><table id="{rules["table_id"]}">'
+            f'<tr><th>Province/territory</th>{header_cells}</tr>'
             f'{share_rows}</table>'
-            f'<h2 id="{chargers["heading_id"]}">Public</h2><p>Total chargers: <strong>{len(regions)}</strong></p>'
+            f'<h2 id="{chargers["heading_id"]}">Public</h2><p>Total chargers: <strong>{len(charger_regions)}</strong></p>'
             '<h3 id="ratio-of-light-duty-electric-vehicles-to-public-ev-chargers">Ratio</h3>'
             f'<table id="{chargers["chart_table_id"]}"><tr><th>Year</th><th>Level 2</th><th>Level 3</th></tr>'
-            f'<tr><td>{chargers["as_of"]}</td><td>10</td><td>{len(regions)-10}</td></tr></table>'
+            f'<tr><td>{reporting_date or chargers["as_of"]}</td><td>10</td><td>{len(charger_regions)-10}</td></tr></table>'
             f'<table id="{chargers["province_table_id"]}"><tr><th>Province/territory</th><th>Charger data</th></tr>'
             f'{province_rows}</table>').encode("utf-8")
 
 
-@pytest.mark.parametrize("changed_values", [False, True])
-def test_tc_republish_requires_identical_shares_and_chargers(isolated_bundle, changed_values):
-    bundle = isolated_bundle
+def pin_dashboard(bundle):
+    """Register fixture bytes without touching the repository's accepted snapshot."""
     registry = yaml.safe_load(bundle.sources_path.read_text(encoding="utf-8"))
-    source = registry["sources"][TC]["adapter"]
+    registered = registry["sources"][TC]
+    source = registered["adapter"]
+    charger = registered["components"]["public_light_duty_chargers"]
+    previous_note = charger["adapter"].get("reconciliation_note", "")
+    if previous_note:
+        charger["database_note"] = charger["database_note"].replace(previous_note, "").strip()
+    charger["adapter"]["reconciliation_note"] = ""
+    previous_date = charger["adapter"]["reporting_date"]
+    charger["adapter"]["reporting_date"] = "March 2026"
+    for field in ("label", "database_note"):
+        charger[field] = charger[field].replace(previous_date, "March 2026")
+    registered["version"] = "2026 Q1; isolated test fixture"
     old = dashboard_html(bundle)
     target = resolve_input_path(bundle, "cache", source["cache_path"])
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(old)
     source.update(expected_sha256=digest(old), expected_bytes=len(old))
-    bundle = save_registry(bundle, registry)
-    new = dashboard_html(bundle, share="2%" if changed_values else "1%") + b"<!-- harmless footer update -->"
+    return save_registry(bundle, registry), target, old
+
+
+def set_dashboard_charger_precedence(bundle, value):
+    path = bundle.repo_root / "config/parameters/rules.yaml"
+    rules = yaml.safe_load(path.read_text(encoding="utf-8"))
+    rules["fetching"]["assorted_sources"]["tc_ev_dashboard"]["public_chargers"]["national_total_precedence"] = value
+    path.write_text(yaml.safe_dump(rules, sort_keys=False), encoding="utf-8")
+
+
+def dashboard_session(bundle, content):
     session = FakeSession()
-    session.downloads[source["access"]["url"]] = (new, {})
+    session.downloads[bundle.sources.sources[TC].adapter["access"]["url"]] = (content, {})
+    return session
+
+
+@pytest.mark.parametrize("changed_values", [False, True])
+def test_tc_republish_requires_identical_shares_and_chargers(isolated_bundle, changed_values):
+    bundle, target, old = pin_dashboard(isolated_bundle)
+    new = dashboard_html(bundle, share="2%" if changed_values else "1%") + b"<!-- harmless footer update -->"
+    session = dashboard_session(bundle, new)
     original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
     result = updater.run_update(bundle, sources={TC}, apply=True, session=session)
     if changed_values:
         assert result.errors and not result.applied
-        assert "observations" in result.errors[0]
+        assert "review" in " ".join(result.errors).lower()
         assert_preserved(bundle, original, caches)
     else:
         assert result.applied and not result.errors
         assert target.read_bytes() == old
+
+
+def test_tc_additional_reordered_quarter_keeps_configured_observation_columns(isolated_bundle):
+    bundle, target, old = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle, columns=("Q2", "YTD", "Q1"), quarter_values={"Q2": "9%"})
+    session = dashboard_session(bundle, content)
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    result = updater.run_update(bundle, sources={TC}, session=session)
+
+    assert not result.errors and not result.applied
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert report["status"] == "report_only"
+    evidence = report["candidates"][0]["evidence"]
+    selection = evidence["publication_selection"]
+    assert selection["before"]["selected_headers"]["quarter"] == "Market share (Q1 2026)"
+    assert selection["after"]["selected_headers"]["quarter"] == "Market share (Q1 2026)"
+    assert selection["after"]["additional_quarter_columns"] == ["Market share (Q2 2026)"]
+    assert evidence["observations"]["before"] == evidence["observations"]["after"]
+    assert evidence["observation_changes"] == []
+    assert_preserved(bundle, original, caches)
+    applied = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=result.report_path)
+    assert applied.applied and not applied.errors
+    assert target.read_bytes() == old
+
+
+def test_tc_ytd_change_requires_review_then_normalizes_offline_and_is_idempotent(isolated_bundle, monkeypatch):
+    from fetching import assorted_sources as adapter
+
+    bundle, target, old = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle, ytd_share="2%", columns=("Q2", "YTD", "Q1"),
+                             quarter_values={"Q2": "9%"})
+    session = dashboard_session(bundle, content)
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    review = updater.run_update(bundle, sources={TC}, session=session)
+
+    assert not review.errors and not review.applied
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    candidate = report["candidates"][0]
+    assert candidate["review_required"]
+    evidence = candidate["evidence"]
+    assert len(evidence["observations"]["before"]["market_shares"]) == 14
+    assert len(evidence["observations"]["after"]["market_shares"]) == 14
+    assert len(evidence["observation_changes"]) == 14
+    assert all(change["component"] == "market_shares" and
+               change["before"]["ytd_market_share"] == 0.01 and
+               change["after"]["ytd_market_share"] == 0.02
+               for change in evidence["observation_changes"])
+    assert_preserved(bundle, original, caches)
+    blocked = updater.run_update(bundle, sources={TC}, session=session, apply=True)
+    assert blocked.errors and not blocked.applied
+    assert_preserved(bundle, original, caches)
+
+    adopted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=review.report_path)
+
+    assert adopted.applied and not adopted.errors
+    assert target.read_bytes() == old
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    source = current.sources.sources[TC]
+    assert source.adapter["expected_sha256"] == digest(content)
+    assert resolve_input_path(current, "cache", source.adapter["cache_path"]).read_bytes() == content
+    no_network = FakeSession()
+    monkeypatch.setattr(adapter, "load_config_bundle", lambda _path: current)
+    output = adapter.fetch_and_normalize_tc_dashboard(SCENARIO, download=False, session=no_network)
+    assert no_network.calls == []
+    rules = adapter.module_rules(current)["tc_ev_dashboard"]
+    with (output / rules["output_file"]).open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    assert len(rows) == 14
+    assert all(float(row["quarter_market_share"]) == 0.01 for row in rows)
+    assert all(float(row["ytd_market_share"]) == 0.02 for row in rows)
+
+    snapshots, registry = cache_bytes(current), current.sources_path.read_bytes()
+    repeated = updater.run_update(current, sources={TC}, session=session, apply=True)
+    assert not repeated.applied and not repeated.errors
+    assert_preserved(current, registry, snapshots)
+
+
+def test_tc_missing_pinned_baseline_is_reviewable_and_preserved_until_adoption(isolated_bundle):
+    bundle, target, _old = pin_dashboard(isolated_bundle)
+    target.unlink()
+    content = dashboard_html(bundle, ytd_share="2%", columns=("Q1", "Q2", "YTD"))
+    session = dashboard_session(bundle, content)
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    review = updater.run_update(bundle, sources={TC}, session=session)
+
+    assert not review.errors and not review.applied
+    candidate = json.loads(review.report_path.read_text(encoding="utf-8"))["candidates"][0]
+    assert candidate["review_required"]
+    assert candidate["evidence"]["registered_cache"]["status"] == "missing"
+    assert candidate["evidence"]["observations"]["before"] is None
+    assert len(candidate["evidence"]["observations"]["after"]["market_shares"]) == 14
+    assert_preserved(bundle, original, caches)
+    blocked = updater.run_update(bundle, sources={TC}, session=session, apply=True)
+    assert blocked.errors and not blocked.applied
+    assert_preserved(bundle, original, caches)
+    adopted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=review.report_path)
+    assert adopted.applied and not adopted.errors
+    assert not target.exists()
+
+
+def test_tc_review_required_blocks_other_valid_sources_in_the_batch(isolated_bundle):
+    bundle, _target, _old = pin_dashboard(isolated_bundle)
+    session = rating_session(bundle)
+    session.downloads.update(dashboard_session(bundle, dashboard_html(bundle, ytd_share="2%")).downloads)
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    blocked = updater.run_update(bundle, sources={TC, NRCAN}, session=session, apply=True)
+
+    assert blocked.errors and not blocked.applied
+    assert_preserved(bundle, original, caches)
+
+
+def test_tc_review_report_is_only_accepted_for_explicit_apply(isolated_bundle):
+    bundle, _target, _old = pin_dashboard(isolated_bundle)
+    session = dashboard_session(bundle, dashboard_html(bundle, ytd_share="2%"))
+    review = updater.run_update(bundle, sources={TC}, session=session)
+    assert not review.errors
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    rejected = updater.run_update(bundle, sources={TC}, session=session,
+                                  review_report=review.report_path)
+
+    assert rejected.errors and not rejected.applied
+    assert "--apply" in " ".join(rejected.errors)
+    assert_preserved(bundle, original, caches)
+
+
+@pytest.mark.parametrize("changed", ["candidate_bytes", "registry", "rules", "scenario", "selection",
+                                    "failed_report", "tampered_evidence", "missing_report"])
+def test_tc_review_rejects_changed_context_and_untrusted_report(isolated_bundle, changed):
+    bundle, _target, _old = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle, ytd_share="2%")
+    session = dashboard_session(bundle, content)
+    review = updater.run_update(bundle, sources={TC}, session=session)
+    assert not review.errors
+    report_path = review.report_path
+    selection = {TC}
+    if changed == "candidate_bytes":
+        session = dashboard_session(bundle, content + b"<!-- changed after review -->")
+    elif changed == "registry":
+        with bundle.sources_path.open("a", encoding="utf-8") as handle:
+            handle.write("\n# Registry edited after review.\n")
+        bundle = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    elif changed in {"rules", "scenario"}:
+        path = bundle.repo_root / ("config/parameters/rules.yaml" if changed == "rules" else SCENARIO)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write("\n# Configuration edited after review.\n")
+        bundle = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    elif changed == "selection":
+        selection.add(NRCAN)
+        ratings = rating_session(bundle)
+        ratings.downloads.update(session.downloads)
+        session = ratings
+    elif changed in {"failed_report", "tampered_evidence"}:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        if changed == "failed_report":
+            report["status"] = "failed"
+            report["errors"] = ["The reviewed run failed validation."]
+        else:
+            report["candidates"][0]["evidence"]["sha256"] = "0" * 64
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+    else:
+        report_path = report_path.with_name("missing-report.json")
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    result = updater.run_update(bundle, sources=selection, session=session, apply=True,
+                                review_report=report_path)
+
+    assert result.errors and not result.applied
+    assert_preserved(bundle, original, caches)
+
+
+def test_tc_reviewed_charger_reporting_date_updates_metadata_and_offline_parser(isolated_bundle, monkeypatch):
+    from fetching import assorted_sources as adapter
+
+    bundle, target, old = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle, columns=("Q1", "Q2", "YTD"), reporting_date="June 2026")
+    session = dashboard_session(bundle, content)
+    review = updater.run_update(bundle, sources={TC}, session=session)
+    assert not review.errors
+    candidate = json.loads(review.report_path.read_text(encoding="utf-8"))["candidates"][0]
+    assert candidate["review_required"]
+
+    adopted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=review.report_path)
+
+    assert adopted.applied and not adopted.errors
+    assert target.read_bytes() == old
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    source = current.sources.sources[TC]
+    chargers = source.component("public_light_duty_chargers")
+    assert chargers.adapter["reporting_date"] == "June 2026"
+    assert "June 2026" in chargers.label
+    assert "June 2026" in chargers.database_note
+    assert "June 2026" in source.version
+    monkeypatch.setattr(adapter, "load_config_bundle", lambda _path: current)
+    no_network = FakeSession()
+    output = adapter.fetch_and_normalize_tc_dashboard(SCENARIO, download=False, session=no_network)
+    assert no_network.calls == []
+    rules = adapter.module_rules(current)["tc_ev_dashboard"]["public_chargers"]
+    for key in ("province_output_file", "type_output_file"):
+        with (output / rules[key]).open(encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        assert rows and all(row["as_of"] == "June 2026" for row in rows)
+
+
+@pytest.mark.parametrize("configuration", ["rules", "scenario"])
+def test_tc_configuration_edit_during_download_blocks_adoption(isolated_bundle, configuration):
+    bundle, _target, _old = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle) + b"<!-- harmless footer update -->"
+    session = dashboard_session(bundle, content)
+    original_get = session.get
+    path = bundle.repo_root / ("config/parameters/rules.yaml" if configuration == "rules" else SCENARIO)
+
+    def edit_configuration_while_downloading(url, **kwargs):
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write("\n# Edited while the source candidate was downloading.\n")
+        return original_get(url, **kwargs)
+
+    session.get = edit_configuration_while_downloading
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    result = updater.run_update(bundle, sources={TC}, session=session, apply=True)
+
+    assert result.errors and not result.applied
+    assert "chang" in " ".join(result.errors).lower()
+    assert_preserved(bundle, original, caches)
+
+
+def test_tc_change_to_additional_quarter_observations_requires_new_review(isolated_bundle):
+    bundle, _target, _old = pin_dashboard(isolated_bundle)
+    columns = ("Q1", "Q2", "YTD")
+    first_content = dashboard_html(bundle, columns=columns, quarter_values={"Q2": "9%"})
+    session = dashboard_session(bundle, first_content)
+    review = updater.run_update(bundle, sources={TC}, session=session)
+    assert not review.errors
+    adopted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=review.report_path)
+    assert adopted.applied and not adopted.errors
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    next_content = dashboard_html(current, columns=columns, quarter_values={"Q2": "8%"})
+    session = dashboard_session(current, next_content)
+    original, caches = current.sources_path.read_bytes(), cache_bytes(current)
+
+    changed = updater.run_update(current, sources={TC}, session=session)
+
+    assert not changed.errors and not changed.applied
+    candidate = json.loads(changed.report_path.read_text(encoding="utf-8"))["candidates"][0]
+    assert candidate["review_required"]
+    evidence = candidate["evidence"]
+    assert evidence["observations"]["before"] == evidence["observations"]["after"]
+    assert evidence["observation_changes"] == []
+    assert evidence["published_observations"]["before"] != evidence["published_observations"]["after"]
+    assert_preserved(current, original, caches)
+    blocked = updater.run_update(current, sources={TC}, session=session, apply=True)
+    assert blocked.errors and not blocked.applied
+    assert_preserved(current, original, caches)
+
+
+def test_tc_rejected_charger_totals_retain_market_and_reconciliation_evidence(isolated_bundle):
+    set_dashboard_charger_precedence(isolated_bundle, "require_equal")
+    bundle, _target, _old = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle, columns=("Q1", "Q2", "YTD"), ytd_share="2%")
+    content = content.replace(b"Total public chargers: 1</td>",
+                              b"Total public chargers: 2</td>", 1)
+    session = dashboard_session(bundle, content)
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    rejected = updater.run_update(bundle, sources={TC}, session=session)
+
+    assert rejected.errors and not rejected.applied
+    report = json.loads(rejected.report_path.read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+    source = next(row for row in report["sources"] if row["source"] == TC)
+    assert source["status"] == "error"
+    evidence = source["evidence"]
+    assert evidence["sha256"] == digest(content)
+    validation_error = evidence["validation_error"]
+    assert {key: validation_error[key] for key in ("national_total", "provincial_total", "difference")} == {
+        "national_total": 13, "provincial_total": 14, "difference": 1,
+    }
+    assert validation_error["reporting_date"] == "March 2026"
+    assert len(validation_error["provincial_records"]) == 13
+    assert sum(row["public_chargers"] for row in validation_error["provincial_records"]) == 14
+    assert {row["charger_type"] for row in validation_error["charger_type_records"]} == {"L2", "DCFC"}
+    market = evidence["market_shares"]
+    assert market["publication_selection"]["selected_headers"]["quarter"] == "Market share (Q1 2026)"
+    assert len(market["observations"]) == 14
+    assert all(row["ytd_market_share"] == 0.02 for row in market["observations"])
+    assert market["published_observations"]["headers"] == [
+        "Province/territory", "Market share (Q1 2026)", "Market share (Q2 2026)", "2026 year-to-date",
+    ]
+    assert len(market["published_observations"]["rows"]) == 14
+    assert_preserved(bundle, original, caches)
+
+    attempted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                   review_report=rejected.report_path)
+
+    assert attempted.errors and not attempted.applied
+    assert_preserved(bundle, original, caches)
+
+
+def test_tc_provincial_precedence_preserves_discrepancy_through_review_and_offline_replay(isolated_bundle, monkeypatch):
+    from fetching import assorted_sources as adapter
+
+    set_dashboard_charger_precedence(isolated_bundle, "provincial")
+    bundle, old_path, old = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle, columns=("Q1", "Q2", "YTD"), ytd_share="2%")
+    content = content.replace(b"Total public chargers: 1</td>", b"Total public chargers: 2</td>", 1)
+    session = dashboard_session(bundle, content)
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    review = updater.run_update(bundle, sources={TC}, session=session)
+
+    assert not review.errors and not review.applied
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    assert report["status"] == "report_only"
+    candidate = report["candidates"][0]
+    assert candidate["review_required"]
+    evidence = candidate["evidence"]
+    before, after = (evidence["charger_reconciliation"][name] for name in ("before", "after"))
+    assert not before["discrepancy"]
+    assert {key: after[key] for key in (
+        "national_total_precedence", "authoritative_total", "national_total", "provincial_total", "difference", "discrepancy"
+    )} == {
+        "national_total_precedence": "provincial", "authoritative_total": 14,
+        "national_total": 13, "provincial_total": 14, "difference": 1, "discrepancy": True,
+    }
+    notes = evidence["update_notes"]
+    assert len(notes) == 1 and notes[0]["code"] == "national_total_mismatch"
+    assert notes[0]["reconciliation"] == after
+    assert_preserved(bundle, original, caches)
+    blocked = updater.run_update(bundle, sources={TC}, session=session, apply=True)
+    assert blocked.errors and not blocked.applied
+    assert_preserved(bundle, original, caches)
+
+    applied = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=review.report_path)
+
+    assert applied.applied and not applied.errors
+    assert old_path.read_bytes() == old
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    source = current.sources.sources[TC]
+    assert source.adapter["expected_sha256"] == digest(content)
+    assert resolve_input_path(current, "cache", source.adapter["cache_path"]).read_bytes() == content
+    component = source.component("public_light_duty_chargers")
+    note = component.adapter["reconciliation_note"]
+    assert "provincial total 14" in note and "chart total 13" in note
+    assert "difference +1" in note
+    assert note in component.database_note
+    monkeypatch.setattr(adapter, "load_config_bundle", lambda _path: current)
+    no_network = FakeSession()
+    output = adapter.fetch_and_normalize_tc_dashboard(SCENARIO, download=False, session=no_network)
+    assert no_network.calls == []
+    rules = adapter.module_rules(current)["tc_ev_dashboard"]["public_chargers"]
+    with (output / rules["province_output_file"]).open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    assert len(rows) == 13 and sum(int(row["public_chargers"]) for row in rows) == 14
+    with (output / rules["type_output_file"]).open(encoding="utf-8", newline="") as handle:
+        types = list(csv.DictReader(handle))
+    assert {row["charger_type"]: int(row["public_chargers"]) for row in types} == {"L2": 10, "DCFC": 3}
+    assert sum(float(row["national_share"]) for row in types) == pytest.approx(1.)
+    warnings = [json.loads(line) for line in (output / "warnings.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert len(warnings) == 1 and warnings[0]["code"] == "national_total_mismatch"
+    assert warnings[0]["reconciliation"]["authoritative_total"] == 14
+    with (output / "manifest.csv").open(encoding="utf-8", newline="") as handle:
+        manifest = list(csv.DictReader(handle))
+    charger_manifest = next(row for row in manifest if row["component_id"] == "public_light_duty_chargers")
+    assert int(charger_manifest["warning_count"]) == 1
+    registered, snapshots = current.sources_path.read_bytes(), cache_bytes(current)
+    repeated = updater.run_update(current, sources={TC}, session=session, apply=True)
+    assert not repeated.errors and not repeated.applied
+    assert_preserved(current, registered, snapshots)

@@ -1,4 +1,4 @@
-"""Explicit documentation asset setup, offline rendering, preview and PDF checks."""
+"""Explicit documentation asset setup, live preview, offline builds and PDF checks."""
 
 from __future__ import annotations
 
@@ -76,6 +76,14 @@ def prepare_assets():
 
 def build():
     subprocess.run([sys.executable, "-m", "mkdocs", "build", "--strict"], cwd=ROOT, check=True)
+
+
+def serve(port=None):
+    """Use MkDocs' watcher, browser reload and interruptible server lifecycle."""
+    from mkdocs.commands.serve import serve as mkdocs_serve
+
+    options = {} if port is None else {"dev_addr": f"127.0.0.1:{port}"}
+    mkdocs_serve(config_file=str(ROOT / "mkdocs.yml"), **options)
 
 
 @contextmanager
@@ -263,8 +271,9 @@ def render_pdf_pages(output, directory):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["prepare-assets", "build", "serve", "pdf", "check"])
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("command", choices=["prepare-assets", "build", "serve", "pdf", "check"],
+                        help="serve rebuilds on save; build/check/pdf use the prepared publication")
+    parser.add_argument("--port", type=int, help="Override the live-preview port on 127.0.0.1 (serve only)")
     parser.add_argument("--browser-channel", choices=["chrome", "msedge"], help="Use an installed browser instead of Playwright's explicitly installed Chromium")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -278,12 +287,7 @@ def main():
     elif args.command == "pdf":
         pdf(args.browser_channel)
     else:
-        with preview_server(args.port) as url:
-            LOGGER.info("Previewing prepared documentation at %s", url)
-            try:
-                threading.Event().wait()
-            except KeyboardInterrupt:
-                pass
+        serve(args.port)
 
 
 if __name__ == "__main__":

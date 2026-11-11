@@ -13,6 +13,7 @@ from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
 import yaml
+from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import event_priority
 from mkdocs.structure.files import File
 from pymdownx.arithmatex import arithmatex_fenced_format
@@ -50,7 +51,14 @@ def on_config(config):
     for fence in config.mdx_configs["pymdownx.superfences"]["custom_fences"]:
         if fence["name"] == "math":
             fence["format"] = arithmatex_fenced_format(mode="generic")
-    config.site_dir = str(artifact_path("documentation_site"))
+    # Route ordinary builds through paths.yaml, but preserve caller-selected
+    # directories, including the temporary directory owned by `mkdocs serve`.
+    if Path(config.site_dir).resolve() == (ROOT / MkDocsConfig.site_dir.default).resolve():
+        config.site_dir = str(artifact_path("documentation_site"))
+    for source in _CANONICAL.values():
+        path = str((ROOT / source).resolve())
+        if path not in config.watch:
+            config.watch.append(path)
     revision = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True, capture_output=True, text=True,
     ).stdout.strip()
@@ -138,6 +146,9 @@ def on_page_markdown(markdown, page, config, files):
 
 
 def on_post_build(config):
+    # Preview rebuilds must not replace the prepared publication's identity.
+    if Path(config.site_dir).resolve() != artifact_path("documentation_site"):
+        return
     output = artifact_path("documentation_render_validation")
     output.mkdir(parents=True, exist_ok=True)
     identity = {

@@ -5,7 +5,7 @@
 Install Git and [uv](https://docs.astral.sh/uv/getting-started/installation/), then:
 
 ```sh
-git clone --branch v2.0 https://github.com/CANOE-main/canoe-transportation.git
+git clone --branch main https://github.com/CANOE-main/canoe-transportation.git
 cd canoe-transportation
 uv sync --frozen
 ```

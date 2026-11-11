@@ -101,7 +101,8 @@ def calibration_charts(diagnostic: CEUDCalibrationDiagnostic, *, region: str,
     multiplier = alt.Chart(summary).mark_bar().encode(
         y=alt.Y("vehicle_class:N", title=None, sort=order),
         x=alt.X("consumption_multiplier:Q", title="Consumption multiplier (dimensionless)", scale=alt.Scale(zero=True), axis=alt.Axis(tickCount=6)),
-        color=alt.Color("calibration_status:N", title=None, scale=alt.Scale(domain=["Fitted to liquid energy", "Fuel boundary unavailable"], range=["#087e8b", "#94a3b8"])),
+        color=alt.Color("calibration_status:N", title=None, scale=alt.Scale(domain=["Fitted to liquid energy", "Fuel boundary unavailable"], range=["#087e8b", "#94a3b8"]),
+                        legend=alt.Legend(values=sorted(summary.calibration_status.unique()))),
         tooltip=["vehicle_class:N", "status:N", alt.Tooltip("consumption_multiplier:Q", format=".4f")],
     )
     reference = alt.Chart(pd.DataFrame({"reference": [1.]})).mark_rule(strokeDash=[4, 4], color="#334155").encode(x="reference:Q")

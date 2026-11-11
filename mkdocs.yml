@@ -3,8 +3,10 @@ site_description: How transport evidence becomes model parameters
 site_url: https://canoe-main.github.io/canoe-transportation/
 repo_url: https://github.com/CANOE-main/canoe-transportation
 repo_name: CANOE-main/canoe-transportation
-edit_uri: blob/v2.0/docs/
+edit_uri: blob/main/docs/
 docs_dir: docs
+watch:
+  - scripts/docs
 strict: true
 theme:
   name: material
@@ -90,7 +92,7 @@ validation:
     anchors: warn
     unrecognized_links: warn
 extra:
-  repository_branch: v2.0
+  repository_branch: main
   canonical_pages:
     scenario_configuration.md: config/scenarios/README.md
   publication_assets:

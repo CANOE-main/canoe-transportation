@@ -216,8 +216,11 @@ $$c=f(c_{CD,e}+c_{CD,f})+(1-f)c_{CS,f}.$$
 !!! warning "Coverage limit: no separately reported electricity target"
     The registered [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) car/light-truck fuel tables do not separately report electricity.
     The opt-in method therefore fits a **comparable gasoline-plus-diesel boundary**
-    for supported car/light-truck/medium-truck classes. Other reported fuels, electricity
-    without a reported target, and unsupported heavy-truck fuel detail remain visible.
+    for cars and passenger/freight light trucks, medium trucks and heavy trucks.
+    Heavy-truck energy is entirely diesel: its aggregate PJ total supplies the diesel
+    target directly. Within that confirmed heavy-truck total, electricity contributes
+    zero; this does not identify the efficiency of future electric trucks.
+    Other reported fuels and electricity without a reported target remain visible.
     Missing electricity is not a measured zero.
 
 !!! note "Observation basis: 2023 values held at reference 2025"
@@ -274,6 +277,8 @@ This establishes arithmetic closure, not independent validation of consumption,
 fleet composition or the cause of the original mismatch. Off/on results use the
 same physical fleet, activity and captured source definitions.*
 
+<div class="keep-together" markdown="1">
+
 For the recorded Ontario 2025 fleet, with utilization matched to the backend's
 projected 2025 demand, the fitted factors are:
 
@@ -283,9 +288,13 @@ projected 2025 demand, the fitted factors are:
 | Passenger light trucks | 241.974079 | 219.787701 | 0.908311 |
 | Freight light trucks | 80.816287 | 71.790711 | 0.888320 |
 | Medium trucks | 64.415281 | 57.445597 | 0.891801 |
+| Heavy trucks | 160.698184 | 157.009704 | 0.977047 |
+
+</div>
 
 !!! info "Diagnostic finding: the fitted consumption adjustment"
-    Consumption falls by about 9.2–13.8% on the fitted boundary. Efficiency changes
+    Consumption falls by about 2.3–13.8% on the fitted boundary. Heavy-truck service
+    efficiency increases by about 2.35%. Efficiency changes
     by the reciprocal factor, not by the same percentage. These are effective class
     adjustments under the stated fleet/activity assumptions, not measurements of
     technology-specific test-to-road bias.
@@ -294,14 +303,15 @@ projected 2025 demand, the fitted factors are:
 
 *Figure ceud-cal-2. One factor per supported class changes the consumption level
 of all its represented vehicles. Values above one reduce service efficiency;
-values below one increase it. Heavy trucks retain one because their target fuel
-boundary is unsupported, not because their efficiency is independently verified.*
+values below one increase it. Heavy trucks now fit their confirmed diesel aggregate;
+the factor is estimated from that energy target rather than fixed at one.*
 
 ![Reported fuel coverage and unresolved energy](../assets/figures/ceud-cal-3.svg)
 
 *Figure ceud-cal-3. Gasoline/diesel, excluded reported fuels and unresolved coverage
 remain separate. This prevents a fitted subtotal from appearing to validate the
-whole energy account. Missing separately reported electricity remains unknown.*
+whole energy account. For the other classes, missing separately reported electricity
+remains unknown; heavy trucks use the confirmed diesel-only total.*
 
 ![Regional car base-year anchor efficiency changes](../assets/figures/ceud-cal-5-cars.svg)
 
@@ -320,28 +330,27 @@ propagation. Historical and future relative trajectories remain unchanged.*
 light trucks, medium trucks and heavy trucks. Percentage changes make the
 passenger/freight units comparable. Tooltips in the notebook retain the prepared
 range-anchor before/after efficiencies and units, rather than final aggregated
-representative levels. Grey “pending” heavy-truck cells show an
-unfitted boundary, not independently verified zero bias. Blank cells indicate
+representative levels. Heavy-truck cells show the adjustment fitted to the diesel
+aggregate. Blank cells indicate
 unrepresented class/powertrain combinations rather than a zero adjustment.*
 
 Region codes preserve the backend's source boundaries: **BCT** combines British
 Columbia with the three territories; **NLLAB** and **PEI** denote Newfoundland and
 Labrador and Prince Edward Island. No BC-only calibration is inferred from BCT.
 
-!!! warning "Pending: heavy-truck fuel boundary"
-    Diesel-only consumption evidence and diesel-only aggregate energy are
-    different claims. The selected CEUD table 37 reports heavy-truck diesel
-    consumption in L/100 km; table 36 supplies aggregate heavy-truck energy in
-    PJ without fuel-resolved PJ components. The diesel consumption series
-    supports the efficiency proxy above, but does not establish that every PJ
-    of the class total belongs to the same diesel boundary. Current configuration
-    deliberately lists no supported liquid-energy target and retains a multiplier
-    of one. Confirming the source's aggregate fuel definition and reconciling
-    that boundary remains pending for the next iteration.
+!!! note "Confirmed boundary: heavy-truck energy is diesel"
+    The reviewed CEUD heavy-truck energy boundary is entirely diesel.
+    Table 36's `Heavy Truck Energy Use1 (PJ)` therefore supplies the complete diesel
+    energy target. It is selected once, rather than added to a separate diesel
+    component. Table 37's diesel L/100 km series continues to supply the historical
+    consumption proxy; the two quantities serve different stages of the calculation.
+    The same class-factor method now calibrates heavy-truck consumption while
+    preserving the projected activity, physical stock and relative trajectories.
 
 !!! info "Verified implementation: final-parameter propagation"
     The paired final-database check verifies all 574 efficiency rows, including future
-    and representative vehicles: 192 change by the specified class factors, with
+    and representative vehicles: 225 change by the specified class factors, including
+    all 33 heavy-truck rows, with
     maximum relative factor error $4.44\times10^{-16}$. Comparable liquid energy closes
     within $2.84\times10^{-14}$ PJ; activity, PHEV split parameters and all other
     numerical parameter tables are unchanged. The 31 recorded efficiency-input

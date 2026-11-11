@@ -1,104 +1,95 @@
 # CANOE Transportation Backend
 
-Compile registered Canadian transportation evidence into validated, provenance-traceable
-CANOE/Temoa v4 SQLite databases. YAML selects sources, regions, periods and modelling
-options; the native Python build prepares inputs, validates rows and publishes the result.
+Build CANOE/Temoa v4 SQLite databases from registered Canadian transportation data,
+reviewed assumptions and external-model results. YAML selects the scenario; Python
+prepares inputs, calculates parameters, validates their source lineage and publishes
+the database.
 
-Read the [transport-system documentation](docs/index.md) for the modeling rationale,
-selected diagnostics and [site/PDF preparation commands](docs/publication.md).
+Read the current [model documentation](docs/index.md)
+for the methods, figures and assumptions, or start with the commands below.
 
-## Install
+## Install and check
 
 Install [Git](https://git-scm.com/downloads) and
-[uv](https://docs.astral.sh/uv/getting-started/installation/). The project requires
-Python 3.13 or later; uv can provision it.
+[uv](https://docs.astral.sh/uv/getting-started/installation/). Python 3.13 or later is
+required; uv can provision it. Run all commands from the repository root.
 
 ```sh
-git clone --branch v2.0 https://github.com/CANOE-main/canoe-transportation.git
+git clone --branch main https://github.com/CANOE-main/canoe-transportation.git
 cd canoe-transportation
 uv sync --frozen
+uv run --offline python scripts/doctor.py --scenario config/scenarios/default.yaml
 ```
 
-The lockfile supplies the package versions, including `canoe-schema` and marimo.
-Registered manual tables, reviewed mappings and external-model outputs must also be
-available; installation and source downloads do not generate those inputs. See the
-[source registry](config/sources.yaml) and [scenario guidance](config/scenarios/README.md).
-New GREET result generation requires Windows and desktop Excel; replay reads the
-registered result bank. On Windows, use a short clone path or enable repository-local
-long paths with `git config core.longpaths true` if a legacy filename is too long.
+The doctor checks imports, configuration, paths and registered manual tables.
+Supply the registered inputs before building: downloads belong in `inputs/0_cache/`,
+reviewed tables in `inputs/0_manual_params/`, and external-model results in
+`inputs/0_external_models/`. The [source registry](config/sources.yaml) records their
+identity, access and required coverage. Installation and downloads do not create
+reviewed mappings or external-model results. New GREET simulations require Windows
+and desktop Excel; replay uses the registered result bank.
+
+On Windows, use a short clone path or enable repository-local long paths with
+`git config core.longpaths true` if a legacy filename is too long.
 
 ## Build a scenario
 
-From the repository root, build the [default scenario](config/scenarios/default.yaml),
-allowing acquisition of missing registered source caches:
-
-```sh
-uv run python src/build_transport.py --scenario config/scenarios/default.yaml --overwrite --download-sources
-```
-
-For subsequent builds using local inputs and installed dependencies:
+Replay registered local inputs and replace the configured database:
 
 ```sh
 uv run --offline python src/build_transport.py --scenario config/scenarios/default.yaml --overwrite
 ```
 
-`--overwrite` replaces the configured database. Every invocation regenerates production
-prerequisites; no manual fetch/parameter commands are needed. Downloads stay pinned to
-the registry, and mismatched caches fail validation. Run scenarios serially while paths
-are shared. Database/report paths come from scenario YAML and `config/paths.yaml`;
-run logs are saved under `outputs/logs/` by default. Add `--debug` for detailed audits.
+To acquire missing registered source caches, explicitly permit downloads:
 
-To author a scenario, copy the complete [default.yaml template](config/scenarios/default.yaml),
+```sh
+uv run python src/build_transport.py --scenario config/scenarios/default.yaml --overwrite --download-sources
+```
+
+Every build regenerates production prerequisites. Caches stay pinned to the registry;
+mismatched files fail validation. `--overwrite` permits replacing the output, and
+`--debug` adds detailed audits. **Run scenarios serially:** their preparation paths
+are shared even when database names differ.
+
+The default covers ten model regions with a prospective 2025 reference. BCT combines
+British Columbia and the territories. Its main outputs are:
+
+| Output | Default location |
+| --- | --- |
+| SQLite database | `outputs/sqlite/canoe_transport_baseline.sqlite` |
+| Validation report | `outputs/validation/baseline_database_bootstrap.json` |
+| Persistent run log | `outputs/logs/`, named by scenario and UTC start time |
+| Normalized evidence and parameter tables | `inputs/1_interim/` and `inputs/2_processed/` |
+
+Start with the validation report: check source identity, coverage, skipped rows,
+provenance, parameter support, integrity and foreign keys. A successful build checks
+the database; it does not run a Temoa optimization.
+
+To create a scenario, copy every section of [default.yaml](config/scenarios/default.yaml),
 choose distinct output names and follow the [scenario guide](config/scenarios/README.md).
-The [architecture reference](docs/backend_architecture.md#running-and-extending-the-backend)
-explains replay, validation and publication behavior.
 
-## Update source snapshots
+| Configuration | What to change here |
+| --- | --- |
+| `config/scenarios/*.yaml` | Regions, periods, source editions, model options and outputs. |
+| `config/sources.yaml` | Registered source files, access, citations and data-quality evidence. |
+| `config/parameters/*.yaml` | Mappings, aggregation rules, conversions and parameter metadata. |
+| `config/paths.yaml` | Artifact locations and their owners. |
 
-Source maintenance is explicit and separate from builds. Inspect eligible publishers
-without changing the registry or caches:
+## Current model support
 
-```sh
-uv run python -m fetching.source_updater --scenario config/scenarios/default.yaml
-```
-
-Review the printed log, JSON audit and exact registry diff, then adopt selected sources:
-
-```sh
-uv run python -m fetching.source_updater --scenario config/scenarios/default.yaml --source nrcan_fuel_consumption_ratings --apply
-```
-
-Repeat `--source` for a batch; omitting it selects all eligible families. The updater
-validates the complete selection, retains old caches and publishes the registry
-atomically. Changed registered coverage, incompatible layouts and unverifiable replacements
-stop adoption. New years or editions require separate review. Logs default to
-`outputs/logs/source_updates/`; audits and `sources.diff` to
-`outputs/validation/source_updates/`. Review the applied diff, rebuild, and compare outputs
-before committing. See
-[source-update boundaries](docs/backend_architecture.md#explicit-source-updates).
-
-## Load diagnostic notebooks
-
-Prepare the stock and efficiency notebooks together. This preset captures the evidence
-from a successful build; add `--download-sources` if registered caches are missing:
-
-```sh
-uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
-```
-
-Open either notebook as an interactive, read-only app:
-
-```sh
-uv run --offline marimo run docs/insights/vehicle_population_diagnosis.py
-uv run --offline marimo run docs/insights/ldv_efficiency_diagnosis.py
-```
-
-Each command runs a local server; stop it with `Ctrl+C` before opening the other in the
-same terminal. Opening a notebook loads the latest successful recorded bundle and runs
-no ETL. Rebuild the preset to capture newer evidence; missing or incompatible bundles
-provide a rebuild instruction. Comparison and growth research have separate prerequisites
-listed below. See [diagnostic evidence](docs/backend_architecture.md#diagnostic-and-research-evidence)
-for capture, provenance and interpretation.
+- Sales-derived road cohorts support fixed lifetimes or annual survival curves.
+  Car and truck utilization matches projected `base_year` demand using the selected
+  demand method, including the optional car/light-truck split.
+- Light-duty vehicle (LDV) powertrain shares use new registrations. Ontario MTO and Transport Canada iZEV composition
+  evidence informs consumption, with explicit coverage and fallback checks.
+- Optional CEUD energy calibration matches reported gasoline/diesel energy for
+  cars and trucks. Heavy-truck aggregate energy is treated as entirely diesel, as
+  confirmed in the reviewed source interpretation. The option remains off by default;
+  the same class adjustment applies to its powertrains and vintages.
+- Charger costs divide total port expenditure by matched rated power. Registered
+  charging profiles preserve their timing and rescale to the reviewed annual utilization of 20%.
+- Diagnostics and the website/PDF show mapping results, cohort alternatives,
+  consumption matching, regional calibration changes and charging normalization.
 
 ## Backend at a glance
 
@@ -151,24 +142,126 @@ flowchart LR
 ```
 
 The overview is conceptual: scenario labels illustrate configuration ownership.
-[`default.yaml`](config/scenarios/default.yaml) contains the current selections;
+[default.yaml](config/scenarios/default.yaml) contains the current selections;
 `inputs/0_canoe_template/` holds backend-owned structural rows.
 
-## Documentation and resources
+## Core documentation
 
-Use these references for detail rather than treating this README as a second architecture
-or parameter specification.
+| Reference | Use it for |
+| --- | --- |
+| [Backend architecture](docs/backend_architecture.md) | Ownership, artifact paths, build lifecycle and extension points. |
+| [Parameter flowcharts](docs/etl_flowcharts.md) | Source-to-row transformations, equations and conditional branches. |
+| [Assumptions](docs/assumptions.md) | Reviewed treatments, source limitations and unresolved modeling choices. |
+| [Source inventory](docs/source_inventory.md) | Source families and their recorded scope; the registry owns current identities. |
+| [Publication guide](docs/publication.md) | Complete evidence preparation, figure export and rendering commands. |
 
-| Resource | What it covers | How to interpret it |
-| --- | --- | --- |
-| [Backend architecture](docs/backend_architecture.md) | Module ownership, artifact locations, build lifecycle, source maintenance and diagnostics. | Current structural reference; verify interfaces against code/config when changing them. |
-| [ETL flowcharts](docs/etl_flowcharts.md) | Parameter-specific source-to-row lineage, harmonization, equations and conditional branches. | Solid paths describe defaults; dashed paths describe conditional alternatives. Review/planned content needs verification. |
-| [Assumptions](docs/assumptions.md) | Enduring source limitations, data gaps, proxies and modelling treatments. | Read alongside the owning source, parameter and scenario YAML; review markers do not imply acceptance. |
-| [Source inventory](docs/source_inventory.md) | Source families, uses, native formats and input footprint. | Dated inventory; sizes/counts describe its recorded snapshot. `sources.yaml` owns live registrations. |
-| [Executive summary](docs/executive_summary.md) | Project purpose, baseline criteria, retrospective progress and roadmap. | Historical planning context; progress statements and old commands require verification. |
-| [Codebase diagnostic snapshot](docs/codebase_diagnostic_snapshot.md) | Structural metrics, complexity, ownership risks and improvement priorities. | Point-in-time assessment; recheck findings before making architectural changes. |
-| [CANOE-main integration context](docs/canoe_main_orchestrator.md) | Upstream lifecycle, shared-database ownership and the transportation integration seam. | Commit-pinned routing snapshot; reverify upstream. The transport adapter remains planned. |
-| [Vehicle-stock notebook](docs/insights/vehicle_population_diagnosis.py) | Mapping coverage, unresolved stock, class/vintage weights and retention/survival evidence. | Uses the shared captured bundle above. Administrative retention diagnostics do not establish physical survival assumptions. |
-| [LDV-efficiency notebook](docs/insights/ldv_efficiency_diagnosis.py) | NRCan distributions/filtering, OMEGA composition and the observed-to-ATB bridge. | Uses the same captured ETL tables; SQLite supplies publication/hash evidence. Sensitivity and exact-powertrain MTO weighting remain diagnostic. |
-| [Transport-comparison notebook](docs/insights/legacy_comparison_diagnosis.py) | Ranked parameter and coverage differences against legacy SQLite. | First build [legacy_comparison.yaml](config/scenarios/legacy_comparison.yaml); [comparison config](config/parameters/transport_comparison.yaml) selects fingerprinted inputs. Interpret differences against units, keys and tolerances. |
-| [Growth-constraint notebook](docs/insights/growth_constraint_diagnosis.py) | HATCH/EAFO evidence, growth calibration, seeds and provisional envelopes. | Exploratory research outside production insertion; its configured prerequisite is `default.yaml`. |
+## Open diagnostic notebooks
+
+Prepare the shared population/efficiency evidence, then open an app:
+
+```sh
+uv run --offline python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
+uv run --offline marimo run docs/insights/vehicle_population_diagnosis.py
+```
+
+Use the same `marimo run` command with a notebook below. Each starts a local server;
+use separate terminals or stop it with `Ctrl+C` before opening another.
+
+| Notebook under `docs/insights/` | Purpose and prerequisite |
+| --- | --- |
+| [vehicle_population_diagnosis.py](docs/insights/vehicle_population_diagnosis.py), [ldv_efficiency_diagnosis.py](docs/insights/ldv_efficiency_diagnosis.py) | Mapping, composition and consumption; use the shared preset above. |
+| [stock_cohort_diagnosis.py](docs/insights/stock_cohort_diagnosis.py) | Sales/stock cohort alternatives and retirement; recalculates from prepared registered evidence. |
+| [transportation_validation_diagnosis.py](docs/insights/transportation_validation_diagnosis.py) | Activity, energy and charger comparisons; use the [comparison and calibration workflow](#compare-methods-and-calibrate-energy). |
+| [vehicle_cost_diagnosis.py](docs/insights/vehicle_cost_diagnosis.py), [ceud_calibration_diagnosis.py](docs/insights/ceud_calibration_diagnosis.py) | Cost or energy-calibration reports from the [comparison workflow](#compare-methods-and-calibrate-energy). |
+| [charging_profile_diagnosis.py](docs/insights/charging_profile_diagnosis.py) | Annual utilization rescaling; reads registered charging simulations. |
+| [documentation_support.py](docs/insights/documentation_support.py) | Fleet illustrations and non-road parameters; use the [publication evidence preparation](docs/publication.md#prepare-model-evidence-explicitly). |
+| [legacy_comparison_diagnosis.py](docs/insights/legacy_comparison_diagnosis.py) | Parameter differences; use the [legacy comparison commands](#compare-methods-and-calibrate-energy). |
+| [growth_constraint_diagnosis.py](docs/insights/growth_constraint_diagnosis.py) | Exploratory adoption evidence; its preparation remains separate from production. |
+
+These apps do not run ETL. Missing or stale captured evidence gives its preparation
+instruction. The [publication guide](docs/publication.md) provides the complete serial
+sequence for all published figures, including documentation-support evidence.
+
+## Compare methods and calibrate energy
+
+These comparison presets require their configured legacy SQLite and supplied CSV/
+notebook evidence under `legacy_backend/`. Builds do not create that historical evidence.
+
+Build the Ontario control, then capture its fleet, charger and vehicle-cost reports:
+
+```sh
+uv run --offline python src/build_transport.py --scenario config/scenarios/validation_baseline.yaml --overwrite
+uv run --offline python -m validation.transportation_research --scenario config/scenarios/validation_baseline.yaml --write-report
+uv run --offline python -m validation.charging_cost_comparison --scenario config/scenarios/validation_baseline.yaml --write-report
+uv run --offline python -m validation.vehicle_cost_diagnostic --scenario config/scenarios/validation_baseline.yaml --write-report
+```
+
+Build the matched calibration-on case and compare final rows:
+
+```sh
+uv run --offline python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite
+uv run --offline python -m validation.ceud_calibration_diagnostic --baseline outputs/sqlite/validation_baseline.sqlite --baseline-report outputs/validation/validation_baseline.json --calibrated outputs/sqlite/validation_energy_calibration.sqlite
+```
+
+The switch is `efficiencies.ceud_energy_calibration`. It requires fixed road lifetimes
+and flat annual utilization. The comparison holds fleet,
+activity and source selections fixed while checking energy closure and parameter
+changes. Closure is a calibration check, not independent validation of each vehicle.
+For regional anchor heatmaps, run the following **after** the matched Ontario audit:
+
+```sh
+uv run --offline python src/build_transport.py --scenario config/scenarios/validation_energy_calibration_regions.yaml --overwrite
+```
+
+For the separate parameter-by-parameter legacy comparison:
+
+```sh
+uv run --offline python src/build_transport.py --scenario config/scenarios/legacy_comparison.yaml --overwrite
+uv run --offline python -m validation.transport_comparison --write-report
+```
+
+Reports live under `outputs/validation/`. Keep their build fingerprints intact;
+rebuild and recapture stale evidence rather than editing its recorded identity.
+
+## Update source snapshots
+
+Inspect publisher updates without adopting them, then review the audit and registry
+diff before applying a selected source:
+
+```sh
+uv run python -m fetching.source_updater --scenario config/scenarios/default.yaml
+uv run python -m fetching.source_updater --scenario config/scenarios/default.yaml --source nrcan_fuel_consumption_ratings --apply
+```
+
+Repeat `--source` for a batch. The updater validates the selection, retains old caches
+and publishes the registry atomically. New coverage, layouts or editions need review.
+Logs go to `outputs/logs/source_updates/`; audits and exact diffs go to
+`outputs/validation/source_updates/`. Rebuild and compare affected outputs after adoption.
+
+## Develop, check and clean up
+
+Run focused checks for the changed owner, for example:
+
+```sh
+uv run --offline pytest tests/test_road_utilization.py tests/test_ceud_energy_calibration.py
+uv run --offline ruff check src/parameterization/road_utilization.py
+uv run --offline marimo check docs/insights/ldv_efficiency_diagnosis.py
+uv run --offline python src/build_transport.py --help
+```
+
+Inspect cleanup targets before removing runtime scratch:
+
+```sh
+uv run --offline python scripts/clean_runtime.py
+uv run --offline python scripts/clean_runtime.py --apply
+```
+
+`--include-generated` also selects generated inputs and outputs; `--include-cache`
+also selects downloaded caches. Reviewed manual inputs and external-model results
+are outside those cleanup categories. Read the dry-run list before adding either flag.
+
+CANOE-main callers can reuse `prepare_scenario_inputs`, `prepare_transport_contribution`
+and `insert_transport_contribution` from [build_transport.py](src/build_transport.py).
+The caller owns shared structures, transactions and final publication. Full upstream
+adapter integration and representative-time checks remain separate work; see the
+[integration boundary](docs/model/integration.md).

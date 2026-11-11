@@ -32,6 +32,13 @@ def validate_emitted_calibration(frames: dict[str, pd.DataFrame], *,
                                 factors: pd.DataFrame | None = None) -> dict:
     """Check fitted targets against final contribution/SQLite parameter values."""
     summary, cohorts, efficiencies, splits = (frames[name] for name in ("summary", "cohorts", "efficiency", "splits"))
+    if "liquid_target_basis" in summary:
+        aggregate = summary.loc[summary.liquid_target_basis.eq("reported_diesel_total")]
+        if (not aggregate.status.eq("calibrate").all()
+                or not np.array_equal(aggregate.ceud_liquid_target_pj, aggregate.ceud_total_energy_pj)
+                or not aggregate.excluded_reported_energy_pj.eq(0).all()
+                or not aggregate.other_or_unresolved_energy_pj.eq(0).all()):
+            raise ValueError("Emitted CEUD diesel-total boundary differs from its reported aggregate")
     keys = [*KEYS, "input_comm", "output_comm"]
     actual = cohorts.merge(efficiencies[keys + ["efficiency"]], on=keys, how="left", validate="one_to_one")
     if actual.efficiency.isna().any() or not np.allclose(actual.efficiency, actual.calibrated_efficiency, rtol=1e-10, atol=1e-12):
@@ -198,17 +205,33 @@ load/(k*consumption), before any new-vehicle representative aggregation.
     for native_region in regions:
         region = stock_rules["region_output_map"].get(native_region, native_region)
         for name, spec in classes.items():
+            target_basis = spec.get("liquid_target_basis", "reported_fuel_components")
+            liquid_series, excluded_series = spec["liquid_series"], spec["excluded_series"]
+            if (len(set(liquid_series)) != len(liquid_series)
+                    or len(set(excluded_series)) != len(excluded_series)
+                    or set(liquid_series).intersection(excluded_series)):
+                raise ValueError(f"Duplicate or overlapping CEUD energy selectors: {name}")
+            if target_basis == "reported_diesel_total":
+                if (spec["status"] != "calibrate" or liquid_series != [spec["total_series"]]
+                        or excluded_series):
+                    raise ValueError(f"CEUD diesel-total boundary must select only the class total: {name}")
+            elif target_basis != "reported_fuel_components" or spec["total_series"] in [*liquid_series, *excluded_series]:
+                raise ValueError(f"Unsupported or mixed CEUD liquid target boundary: {name}")
             group = detail.loc[detail.region.eq(region) & detail.road_class.eq(name)]
             if group.empty:
                 raise ValueError(f"Missing CEUD calibration class: {region}/{name}")
+            if (target_basis == "reported_diesel_total"
+                    and not group.input_comm.eq(efficiency_rules["input_commodities"]["diesel"]).all()):
+                raise ValueError(f"CEUD diesel-total boundary requires diesel-only existing energy inputs: {region}/{name}")
             stock_spec = stock_rules["ceud_stock_series"][name]
             activity_spec = demand_rules["activity_series"][name]
             stock = _target(ceud, native_region, base_year, stock_spec["table_id"], stock_spec["raw_series"], "thousands")
             activity_target = _target(ceud, native_region, base_year, activity_spec["table_id"], activity_spec["raw_series"], "millions")
             total = _target(ceud, native_region, base_year, spec["table_id"], spec["total_series"], "PJ")
-            fuel_rows = [_target(ceud, native_region, base_year, spec["table_id"], series, "PJ") for series in spec["liquid_series"]]
-            excluded = [_target(ceud, native_region, base_year, spec["table_id"], series, "PJ") for series in spec["excluded_series"]]
-            target_rows = [stock, activity_target, total, *fuel_rows, *excluded]
+            fuel_rows = ([total] if target_basis == "reported_diesel_total" else [
+                _target(ceud, native_region, base_year, spec["table_id"], series, "PJ") for series in liquid_series])
+            excluded = [_target(ceud, native_region, base_year, spec["table_id"], series, "PJ") for series in excluded_series]
+            target_rows = [stock, activity_target, total, *([] if target_basis == "reported_diesel_total" else fuel_rows), *excluded]
             identities = {(int(row.ceud_observed_year), str(row.ceud_value_status)) for row in target_rows}
             if len(identities) != 1 or any(int(row.ceud_observed_year) > min(base_year, source_edition) for row in target_rows):
                 raise ValueError(f"Incompatible CEUD calibration observation years or statuses: {region}/{name}")
@@ -221,7 +244,8 @@ load/(k*consumption), before any new-vehicle representative aggregation.
             target = float(sum(row.value for row in fuel_rows)) if fuel_rows else None
             excluded_energy = float(sum(row.value for row in excluded))
             reported_residual = float(total.value) - (target or 0.) - excluded_energy
-            rounding_allowance = (len(fuel_rows) + len(excluded) + 1) * resolution / 2
+            rounding_allowance = (0. if target_basis == "reported_diesel_total"
+                                  else (len(fuel_rows) + len(excluded) + 1) * resolution / 2)
             unresolved = 0. if abs(reported_residual) <= rounding_allowance + atol else reported_residual
             unadjusted = float(group.unadjusted_liquid_energy_pj.sum())
             if spec["status"] == "calibrate":
@@ -244,6 +268,7 @@ load/(k*consumption), before any new-vehicle representative aggregation.
                 "base_year": base_year, "source_edition": source_edition,
                 "observed_year": observed_year, "observation_status": observation_status,
                 "status": spec["status"], "ceud_stock_k_vehicles": float(stock.value),
+                "liquid_target_basis": target_basis,
                 "physical_stock_k_vehicles": float(group.surviving_k_vehicles.sum()),
                 "ceud_activity_bn": ceud_activity, "target_activity_bn": target_activity,
                 "activity_target_basis": str(selected_targets.loc[
@@ -262,7 +287,8 @@ load/(k*consumption), before any new-vehicle representative aggregation.
                 "consumption_multiplier": multiplier,
                 "unadjusted_electric_energy_pj": float(group.unadjusted_electric_energy_pj.sum()),
                 "calibrated_electric_energy_pj": float(group.unadjusted_electric_energy_pj.sum()) * multiplier,
-                "electricity_target_status": "unobserved_not_zero",
+                "electricity_target_status": ("zero_within_confirmed_diesel_total_not_fitted"
+                                              if target_basis == "reported_diesel_total" else "unobserved_not_zero"),
                 "full_class_residual_pj": float(group.unadjusted_vehicle_energy_pj.sum()) * multiplier - float(total.value),
                 "boundary": calibration_rules["energy_boundary"],
             })

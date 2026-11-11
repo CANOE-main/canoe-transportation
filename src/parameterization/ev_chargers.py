@@ -29,6 +29,40 @@ from validation.provenance import (
 LOGGER = logging.getLogger(__name__)
 
 
+def _public_charger_totals(
+    provincial: pd.DataFrame, types: pd.DataFrame, *, precedence: str,
+) -> tuple[int, int]:
+    """Validate native observations while keeping geographic totals and type mix distinct."""
+    if precedence not in {"require_equal", "provincial"}:
+        raise ValueError(f"Unknown TC public charger national_total_precedence: {precedence!r}")
+    validated_counts = []
+    for frame in (provincial, types):
+        counts = pd.to_numeric(frame.public_chargers, errors="coerce")
+        if counts.isna().any() or any(not math.isfinite(value) or value != int(value) for value in counts):
+            raise ValueError("TC public charger counts must be finite integers")
+        if any(counts < 0):
+            raise ValueError("Negative TC public charger count")
+        validated_counts.append(counts)
+    provincial_total = int(validated_counts[0].sum())
+    chart_total = int(validated_counts[1].sum())
+    if chart_total <= 0:
+        raise ValueError("TC public charger type total must be positive")
+    shares = pd.to_numeric(types.national_share, errors="coerce")
+    if (shares.isna().any() or any(not math.isfinite(value) or value < 0 for value in shares)
+            or not math.isclose(float(shares.sum()), 1, abs_tol=1e-9)
+            or any(abs(shares - validated_counts[1] / chart_total) > 1e-12)):
+        raise ValueError("TC public charger type shares differ from the published type counts")
+    if precedence == "require_equal" and provincial_total != chart_total:
+        raise ValueError("TC public charger national totals or type shares differ")
+    if provincial_total != chart_total:
+        LOGGER.warning(
+            "TC public charger discrepancy: provincial=%d, type chart=%d, difference=%+d; "
+            "using provincial counts and the published type mix",
+            provincial_total, chart_total, provincial_total - chart_total,
+        )
+    return provincial_total, chart_total
+
+
 @dataclass(frozen=True)
 class ChargerPreparation:
     capacity_rows: list[ExistingCapacity]
@@ -515,6 +549,10 @@ def prepare_ev_charger_rows(
     dashboard = load_harmonization_rules(bundle, "assorted_sources")["tc_ev_dashboard"]
     source_dir = resolve_artifact_path(bundle, "tc_ev_dashboard_interim")
     charger_source = dashboard["public_chargers"]
+    charger_as_of = bundle.sources.sources[dashboard["source_id"]].component(
+        charger_source["component_id"]
+    ).adapter.get("reporting_date", charger_source["as_of"])
+    total_precedence = charger_source.get("national_total_precedence", "require_equal")
     province_path = source_dir / charger_source["province_output_file"]
     type_path = source_dir / charger_source["type_output_file"]
     manual_path = resolve_input_path(bundle, "manual", rules["manual_file"])
@@ -526,19 +564,15 @@ def prepare_ev_charger_rows(
         or set(types.charger_type) != {"L2", "DCFC"}
         or types.charger_type.duplicated().any()
         or set(provincial.units) != {"ports"} or set(types.units) != {"ports"}
-        or set(provincial.as_of) != {charger_source["as_of"]}
-        or set(types.as_of) != {charger_source["as_of"]}
+        or set(provincial.as_of) != {charger_as_of}
+        or set(types.as_of) != {charger_as_of}
         or set(provincial.source_year) != {bundle.scenario.sources.selections[dashboard["source_id"]].year}
         or set(types.source_year) != set(provincial.source_year)
     ):
         raise ValueError("Normalized TC public charger coverage or edition changed")
-    if any(types.public_chargers < 0) or any(provincial.public_chargers < 0):
-        raise ValueError("Negative TC public charger count")
-    national = int(types.public_chargers.sum())
-    if (int(provincial.public_chargers.sum()) != national
-            or not math.isclose(float(types.national_share.sum()), 1, abs_tol=1e-9)
-            or any(abs(types.national_share - types.public_chargers / national) > 1e-12)):
-        raise ValueError("TC public charger national totals or type shares differ")
+    national, chart_total = _public_charger_totals(
+        provincial, types, precedence=total_precedence,
+    )
     region_map = rules["public_charger_region_map"]
     if set(sum((list(labels) for labels in region_map.values()), [])) != set(provincial.source_region):
         raise ValueError("TC provinces/territories do not map to template regions")
@@ -615,6 +649,7 @@ def prepare_ev_charger_rows(
         {"files": [(path.name, file_sha256(path)) for path in paths],
          "prepared_stock": stock_identity,
          "scenario": bundle.scenario.ev_chargers.model_dump(),
+         "tc_total_precedence": total_precedence,
          "rules": rules, "stock": sorted((key, value) for key, value in stock_by_region.items()),
          "fixed_lifetimes": sorted((key, value) for key, value in fixed_lives.items())},
         sort_keys=True,
@@ -670,7 +705,7 @@ def prepare_ev_charger_rows(
                 "rated_power_source_year": power_source_year,
                 **{f"{kind}_rated_power_source_period": str(row.period) for kind, row in power_rows.items()},
                 "capacity_gw": gw, "bev_stock_year": bundle.scenario.periods.base_year,
-                "public_charger_as_of": charger_source["as_of"],
+                "public_charger_as_of": charger_as_of,
             })
             if gw > 0:
                 context = _context(
@@ -858,7 +893,14 @@ def prepare_ev_charger_rows(
             "contributors": [item.source_key for item in utilization_context.contributors],
         },
         "tc_public_ports": national, "tc_type_counts": types.set_index("charger_type").public_chargers.to_dict(),
-        "tc_as_of": charger_source["as_of"], "bev_stock_year": bundle.scenario.periods.base_year,
+        "tc_type_total": chart_total,
+        "tc_total_reconciliation": {
+            "policy": total_precedence, "authoritative_total": national,
+            "provincial_total": national, "type_total": chart_total,
+            "difference": national - chart_total, "discrepancy": national != chart_total,
+            "type_mix_basis": "published type counts divided by their own sum",
+        },
+        "tc_as_of": charger_as_of, "bev_stock_year": bundle.scenario.periods.base_year,
         "zero_bev_stock_skipped": [list(key) for key in missing_stock],
         "port_reconciliation": port_records, "cost_conversion": cost_audit,
         "fixed_period_vintage_pairs_excluded_by_lifetime": excluded_fixed_pairs,

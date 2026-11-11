@@ -1,50 +1,38 @@
-# CANOE transportation: from fleet evidence to model parameters
+# CANOE transportation: from fleet evidence to energy system model parameters
 
-The transportation backend describes the vehicles and infrastructure that provide
-Canadian passenger and freight services. It combines registered observations,
-external technology projections and reviewed assumptions into a reproducible
-CANOE/Temoa SQLite database. Its purpose is to make the connection between evidence,
-modeling choices and numerical parameters inspectable.
+The transportation backend explicitly represents vehicle technologies that convert energy into passenger and freight transportation services with **techno-economic** and **life-cycle** parameters. These technologies are modeled alongside their supporting infrastructure, including charging and hydrogen refueling stations.
 
-This report follows the transport system: **vehicles → retirement → activity → energy
-→ technology choices → infrastructure**. Each chapter explains what is measured,
-what must be inferred, and what the resulting parameters mean. It is intended for
-researchers new to the backend and for assessment of the transportation MVP.
+It compiles registered observations, external technology projections and reviewed assumptions into a reproducible **CANOE/Temoa** SQLite database for energy system analysis. Its purpose is to make the connection between evidence, modeling choices and numerical parameters auditable and traceable.
+
+This documentation follows a sequence suitable for scenario analysis of transportation systems:
+``vehicles → retirement → activity → energy → technology choices → infrastructure``.
+Each chapter explains what is measured, what must be inferred, and what the resulting parameters mean. It is **intended for** researchers new to the backend and for aiding its assessment and maintenance.
 
 ## What is delivered
 
-The supported native build prepares registered inputs offline, constructs the selected
-parameter layers, validates schema/provenance/data quality and publishes SQLite
-atomically. It represents road vehicles, air, rail, marine and separate off-road
-equipment. Scenario YAML controls regions, timing, survival, technology trajectories,
-range representation and charging behavior. Interactive notebooks inspect captured
-evidence; the figures in this report are static selections from those calculations.
+The supported **scenario builds** prepare registered and cached inputs locally, constructs the selected parameter layers, validates schema/provenance/data-quality and publishes SQLite
+atomically.
 
-!!! note "Opt-in calibration"
-    The optional [*NRCan CEUD* energy calibration](model/energy.md#optional-ceud-energy-calibration)
-    is an explicit comparison with an uncalibrated reference. It is not the default and
-    does not establish scientific acceptance. [Vehicle-cost diagnostics](model/technology.md)
-    expose both investment trajectories and age-dependent maintenance and repair.
+They incorporate road vehicles, air, rail, and marine modes, including direct energy use from other off-road technologies for full accounting as per the NRCan Comprehensive Energy Use Database ([*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)). Scenario YAML controls regions, timing, survival, technology trajectories, range representation, and light-duty vehicle (LDV) charging behavior. Interactive notebooks in ``docs/insights/`` analyze captured evidence; the figures in this report are static selections from those notebooks.
 
-## Findings that matter for interpretation
+## Aspects that matter for interpretation
 
-- **The fleet is reconstructed.** Annual sales and transferred survival schedules
-  establish cohort shape; one class-level factor matches [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) reference stock.
-  Stock agreement therefore tests calibration closure, not the accuracy of each cohort.
-- **Vehicle detail affects several parameters together.** Reviewed make/model mappings,
-  class weights and range shares link consumption, costs and manufacturing emissions.
+- **The fleet is reconstructed.** Annual sales and US-transferred survival schedules
+  establish cohort sizes; calibration factors rescale cohorts to match *NRCan CEUD* reference year stock. Stock agreement therefore tests calibration closure, not the accuracy of each cohort.
+- **Categorical vehicle detail affects multiple parameters.** Reviewed vehicle make/model mappings, class weights, and range shares link consumption, costs and embodied emissions.
   Unmapped vehicles and transferred composition remain material limitations: 47.66%
-  of the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) FIT_ACTIVE coverage population is unresolved in the published snapshot.
-  Composition figures consequently describe the supported subset.
-- **Activity and energy are different constraints.** Matching travel activity does
-  not imply matching energy. The optional energy adjustment fits only an explicitly
-  comparable reported fuel boundary; it cannot identify technology-specific errors.
-- **Time and capacity definitions matter.** Fixed retirement uses surviving stock;
-  absolute survival curves use installed-equivalent acquisitions. Observation years,
+  of the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) ``FIT_ACTIVE``
+  coverage population is unresolved in the published snapshot.
+  Composition weighting therefore represent the supported subset.
+- **Activity and energy are not always in alignment.** Matching travel activity does
+  not imply matching energy. Thus, energy usage from the road fleet can optionally be rescaled to fit incumbent secondary energy demand as per *NRCan CEUD* reports; it does not identify technology- and composition-specific errors.
+- **Time and capacity definitions matter.** Retirement with fixed, integer lifetimes represent ``existing_capacity`` as surviving stock; retirement with survival curves use installed-equivalent vehicle sales. Observation years,
   model vintages, period endpoints and currency years are kept distinct.
 - **Infrastructure costs depend on the denominator.** Charger costs are aggregated
   as expenditure divided by rated power. Hourly charging ceilings and annual
   utilization constrain the same capacity and must remain consistent.
+!!! note "Opt-in energy calibration"
+    See [*NRCan CEUD* energy calibration](model/energy.md#optional-ceud-energy-calibration) for details; it is an explicit comparison with an uncalibrated reference. This scenario option is **not active by default** and does not establish scientific acceptance.
 
 ## Read and use the backend
 

@@ -505,7 +505,7 @@ class SourceUpdatePolicy(MappingModel):
 
     strategy: Literal[
         "nrcan_ratings", "ontario_population", "statcan_tables",
-        "cer_energy_future", "fueleconomy", "tc_dashboard_same_values", "tc_izev",
+        "cer_energy_future", "fueleconomy", "tc_dashboard", "tc_izev",
     ]
     metadata_url: str | None = Field(default=None, pattern=r"^https://[^\s]+$")
     download_hosts: list[Annotated[str, StringConstraints(pattern=r"^[a-z0-9.-]+$")]] = Field(default_factory=list)

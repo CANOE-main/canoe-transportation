@@ -67,7 +67,8 @@ economics:
   cost_reference_year: 2020
 
 lifetimes:
-  survival_curves: false  # true: road curves; false: road median lifetimes.
+  # WARNING: existing_capacity represented as sales when curves are used; otherwise, as surviving stock.
+  survival_curves: true  # true: road curves; false: road median lifetimes.
   # NHTSA+NEMS or MOVES for cars and trucks; medium trucks share heavy MOVES rates.
   road_lifetime_survival_source: moves  # nhtsa_nems | moves
   survival_curve_max_age: null  # Optional hard zero age; null derives the endpoint.

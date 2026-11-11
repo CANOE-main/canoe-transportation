@@ -230,10 +230,25 @@ Source-specific fetchers retain physical parsing and normalization ownership.
 
 The updater handles NRCan ratings, existing registered Ontario years, StatCan WDS
 metadata/archive pairs, the scenario-selected CER edition, and FuelEconomy's shared
-vehicle/range ZIP. The TC HTML policy permits a revised page only when the exact old
-registered snapshot proves unchanged parsed market shares, charger counts and reporting
-periods. New years/editions, changed coverage or layouts, manual assumptions, reviewed
-mapping promotion and external-model generation remain separate review operations.
+vehicle/range ZIP. The TC HTML policy resolves tables using their section, explicit IDs
+or a unique configured header/regional signature. Label normalization tolerates case,
+spacing and punctuation; fuzzy matches are suggestions only. Additional same-year
+Q1–Q4 columns retain the configured quarter and YTD selections. Every published quarter
+is validated and retained in review evidence. **#to-review**
+
+For TC observation, reporting-date or table-identity changes, first run
+`uv run python src/fetching/source_updater.py --scenario config/scenarios/default.yaml --source transport_canada_ev_dashboard`.
+Inspect the JSON report's selection evidence, full observations, changes and registry
+diff, then repeat with `--apply --review-report <report.json>` to acknowledge that exact
+proposal. Adoption rechecks downloaded bytes, registry, scenario, rules and source
+selection. An unavailable old cache is explicitly reported as an unknown comparison;
+it never establishes unchanged values. Invalid coverage, ambiguous tables and changed
+years block adoption even with a review report. The configured TC charger policy gives
+provincial counts precedence over national aggregates. National inconsistencies remain
+flagged in update notes, normalized warnings and source provenance; the published
+L2/DCFC counts supply a normalized type mix for the authoritative provincial counts.
+Manual assumptions, reviewed mapping promotion and external-model generation remain separate
+review operations. **#to-review**
 
 All selected candidates are validated before adoption. Revision-specific cache paths
 retain old files; one atomic registry replacement activates the validated selection.

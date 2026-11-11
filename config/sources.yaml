@@ -1995,29 +1995,35 @@ sources:
           expected_rows: 37
 
   transport_canada_ev_dashboard:
-    # No API: permit HTML republishing only when every parsed observation is unchanged.
-    update: {strategy: tc_dashboard_same_values}
+    # No API: changed observations/publication require an exact reviewed updater report.
+    update: {strategy: tc_dashboard}
     source_id: T25
     title: "Transport Canada electric vehicle dashboard"
     status: active
     source_type: upstream_download
     file_type: html
-    version: "2026 Q1; page updated August 2026"
+    version: "2026; public chargers June 2026; snapshot b100cabf366a"
     units: "Medium/heavy EV market-share percentages and public light-duty charging port counts."
     citation: "Transport Canada. (2026). Canada's electric vehicle dashboard. https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
     database_note: "Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component."
     data_quality: {dq_cred: 1, dq_geog: 1, dq_struc: 2, dq_tech: 2, dq_time: 2}
     validation_rule: "Pinned HTML must contain the configured market-share and public-charger sections; validate regional coverage, charger types, counts, and national totals."
     refresh_notes: >
-      Re-pin the HTML hash and byte count and review the table headers, reporting
-      period, and regional coverage before changing the selected edition.
+      Run source_updater with --source transport_canada_ev_dashboard, inspect its
+      table-selection evidence and observation_changes, then use --apply
+      --review-report <report.json> to adopt that exact proposal. Added same-year
+      quarters retain the configured selected quarter; changed years, ambiguous
+      tables or missing selected columns require a separate configuration review.
+      Provincial charger counts take precedence over national aggregates. Retain
+      national inconsistencies in update notes and normalized warnings; preserve
+      published L2/DCFC counts and use their normalized mix for provincial totals.
     adapter:
       access:
         method: https
         url: "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
-      cache_path: assorted_sources/transport_canada_ev_dashboard_2026_q1.html
-      expected_sha256: 4ffdbdda087b6a361decfb21b49557d058ef571ced34a4f45d731546a3544091
-      expected_bytes: 91590
+      cache_path: "assorted_sources/transport_canada_ev_dashboard_2026_q1-b100cabf366aab32.html"
+      expected_sha256: "b100cabf366aab321e620ef74db548a89c65b0e1783419647b536ba7b99b1e48"
+      expected_bytes: 96814
     components:
       medium_heavy_ev_market_share:
         database_note: "Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet."
@@ -2031,16 +2037,21 @@ sources:
         units: fraction
         validation_rule: "Require all CEUD regional share proxies to resolve to a numeric bounded provincial 2026 year-to-date value."
       public_light_duty_chargers:
-        database_note: "Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers."
+        adapter:
+          reporting_date: "June 2026"
+          reconciliation_note: 'TC public chargers June 2026: provincial total 40,164 takes
+            precedence; chart total 40,119; printed national totals [40119]; provincial-minus-chart
+            difference +45. Published L2/DCFC counts retain their chart-normalized type mix.'
+        database_note: "Public light-duty charging-port counts by province as of June 2026, with national L2/DCFC shares; provincial counts exclude private chargers. Provincial counts take precedence over national aggregates; published type counts determine the normalized L2/DCFC mix, with aggregate discrepancies retained in update notes. TC public chargers June 2026: provincial total 40,164 takes precedence; chart total 40,119; printed national totals [40119]; provincial-minus-chart difference +45. Published L2/DCFC counts retain their chart-normalized type mix."
         data_quality: {dq_tech: 1}
-        label: "March 2026 public light-duty charging ports by province and type"
+        label: "June 2026 public light-duty charging ports by province and type"
         short_name: public_light_duty_chargers
         inputs: [province, level_2_ports, level_3_ports, national_total]
         applies_to: [charger]
         produces: [existing_capacity]
         parameter_modules: [ev_chargers]
         units: ports
-        validation_rule: "Require all 13 provincial/territorial counts and L2/DCFC types; both sums equal the dashboard national total."
+        validation_rule: "Require all 13 provincial/territorial counts and valid L2/DCFC types. Provincial counts are authoritative; normalized type shares sum to one. Flag discrepancies against national aggregates without blocking ingestion."
 
   pollution_probe_ev_charging_survey:
     source_id: T26

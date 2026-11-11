@@ -652,10 +652,15 @@ fetching:
       component_id: medium_heavy_ev_market_share
       output_file: transport_canada_medium_heavy_ev_market_share_2026.csv
       heading_id: medium-heavy-duty-zev-market-share
+      heading_text: Medium- and heavy-duty EV market share
+      heading_id_aliases: []
       table_id: tbl-mhzev
+      table_id_aliases: []
       quarter_header: "Market share (Q1 2026)"
       ytd_header: "2026 year-to-date"
+      source_regions: [Newfoundland and Labrador, Prince Edward Island, Nova Scotia, New Brunswick, Quebec, Ontario, Manitoba, Saskatchewan, Alberta, British Columbia, Yukon, Northwest Territories, Nunavut, Canada]
       public_chargers:
+        national_total_precedence: provincial
         component_id: public_light_duty_chargers
         heading_id: public-electric-vehicle-chargers
         chart_table_id: figure-6
@@ -1657,10 +1662,12 @@ parameterization:
         liquid_series: ["Medium Trucks|Energy Use by Energy Source (PJ)|Motor Gasoline", "Medium Trucks|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
         excluded_series: []
       heavy_trucks:
-        status: unsupported_fuel_boundary
+        status: calibrate
         table_id: 36
         total_series: Heavy Truck Energy Use1 (PJ)
-        liquid_series: []
+        # Reviewed boundary: the aggregate CEUD heavy-truck PJ total is entirely diesel.
+        liquid_target_basis: reported_diesel_total
+        liquid_series: [Heavy Truck Energy Use1 (PJ)]
         excluded_series: []
   rating_stock_benchmark:
     files:
