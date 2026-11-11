@@ -1,0 +1,263 @@
+source_id,source_class,age,source_measure,source_value,source_unit
+eia_nems_hd_truck_scrappage,Cls 3,1,annual_scrappage_rate,0.0022621569582074,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,2,annual_scrappage_rate,0.0029258262988786,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,3,annual_scrappage_rate,0.0037212965728915,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,4,annual_scrappage_rate,0.0046594465617101,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,5,annual_scrappage_rate,0.00574926272836,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,6,annual_scrappage_rate,0.0069974903272707,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,7,annual_scrappage_rate,0.0084083801835967,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,8,annual_scrappage_rate,0.0099835397786215,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,9,annual_scrappage_rate,0.0117218898258074,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,10,annual_scrappage_rate,0.013619720919613,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,11,annual_scrappage_rate,0.0156708395225183,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,12,annual_scrappage_rate,0.0178667887508258,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,13,annual_scrappage_rate,0.0201971271649037,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,14,annual_scrappage_rate,0.0226497479541297,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,15,annual_scrappage_rate,0.0252112213180876,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,16,annual_scrappage_rate,0.027867144213996,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,17,annual_scrappage_rate,0.0306024836790333,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,18,annual_scrappage_rate,0.033401902371379,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,19,annual_scrappage_rate,0.0362500575655109,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,20,annual_scrappage_rate,0.0391318673910611,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,21,annual_scrappage_rate,0.0420327404753029,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,22,annual_scrappage_rate,0.0449387672399057,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,23,annual_scrappage_rate,0.0478368728582078,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,24,annual_scrappage_rate,0.0507149332802352,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,25,annual_scrappage_rate,0.0535618567862565,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,26,annual_scrappage_rate,0.0563676342620695,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,27,annual_scrappage_rate,0.0591233618387232,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,28,annual_scrappage_rate,0.0618212397504302,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,29,annual_scrappage_rate,0.0644545512830887,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,30,annual_scrappage_rate,0.0670176255565159,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,31,annual_scrappage_rate,0.0695057876467509,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,32,annual_scrappage_rate,0.0719152992460367,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,33,annual_scrappage_rate,0.0742432927070595,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 3,34,annual_scrappage_rate,0.0764877009487264,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,1,annual_scrappage_rate,0.0004040255390923,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,2,annual_scrappage_rate,0.0008970566850254,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,3,annual_scrappage_rate,0.0017497792760319,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,4,annual_scrappage_rate,0.0030621894063165,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,5,annual_scrappage_rate,0.0048934635025634,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,6,annual_scrappage_rate,0.0072467642332975,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,7,annual_scrappage_rate,0.0100689193357461,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,8,annual_scrappage_rate,0.0132625943506257,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,9,annual_scrappage_rate,0.016705017421047,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,10,annual_scrappage_rate,0.0202671482106608,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,11,annual_scrappage_rate,0.0238291123881346,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,12,annual_scrappage_rate,0.0272901434170345,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,13,annual_scrappage_rate,0.0305731616922049,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,14,annual_scrappage_rate,0.0336251560540219,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,15,annual_scrappage_rate,0.0364148380955767,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,16,annual_scrappage_rate,0.0389288952091225,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,17,annual_scrappage_rate,0.0411678314370729,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,18,annual_scrappage_rate,0.0431420258185667,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,19,annual_scrappage_rate,0.0448683403112607,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,20,annual_scrappage_rate,0.0463673986942926,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,21,annual_scrappage_rate,0.0476615275943668,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,22,annual_scrappage_rate,0.0487732821379753,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,23,annual_scrappage_rate,0.0497244516213564,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,24,annual_scrappage_rate,0.0505354383841376,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,25,annual_scrappage_rate,0.0512249138440989,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,26,annual_scrappage_rate,0.0518096717024273,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,27,annual_scrappage_rate,0.0523046151762105,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,28,annual_scrappage_rate,0.0527228304562664,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,29,annual_scrappage_rate,0.0530757114796161,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,30,annual_scrappage_rate,0.0533731113734493,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,31,annual_scrappage_rate,0.0536235037866297,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,32,annual_scrappage_rate,0.0538341431499052,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,33,annual_scrappage_rate,0.0540112171027211,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 4-6,34,annual_scrappage_rate,0.0541599872667546,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,1,annual_scrappage_rate,3.3153731306090377e-37,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,2,annual_scrappage_rate,8.740866382867658e-18,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,3,annual_scrappage_rate,4.058481969085921e-09,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,4,annual_scrappage_rate,2.992310468518418e-05,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,5,annual_scrappage_rate,0.0015921273801368,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,6,annual_scrappage_rate,0.0093801171759334,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,7,annual_scrappage_rate,0.0206981087336021,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,8,annual_scrappage_rate,0.0294659153171884,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,9,annual_scrappage_rate,0.0344962038310927,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,10,annual_scrappage_rate,0.0370099378892995,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,11,annual_scrappage_rate,0.0381900527081533,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,12,annual_scrappage_rate,0.0387287623741397,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,13,annual_scrappage_rate,0.0389716123887118,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,14,annual_scrappage_rate,0.0390804772788397,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,15,annual_scrappage_rate,0.0391291573200326,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,16,annual_scrappage_rate,0.039150900798139,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,17,annual_scrappage_rate,0.0391606079232448,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,18,annual_scrappage_rate,0.0391649405934586,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,19,annual_scrappage_rate,0.0391668742419489,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,20,annual_scrappage_rate,0.039167737181122,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,21,annual_scrappage_rate,0.0391681222817743,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,22,annual_scrappage_rate,0.0391682941376926,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,23,annual_scrappage_rate,0.039168370830215,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,24,annual_scrappage_rate,0.0391684050550047,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,25,annual_scrappage_rate,0.0391684203281405,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,26,annual_scrappage_rate,0.0391684271439192,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,27,annual_scrappage_rate,0.0391684301855234,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,28,annual_scrappage_rate,0.0391684315428672,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,29,annual_scrappage_rate,0.0391684321485943,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,30,annual_scrappage_rate,0.0391684324189056,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,31,annual_scrappage_rate,0.0391684325395345,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,32,annual_scrappage_rate,0.0391684325933663,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,33,annual_scrappage_rate,0.0391684326173892,annual scrappage-rate fraction
+eia_nems_hd_truck_scrappage,Cls 7-8,34,annual_scrappage_rate,0.0391684326281096,annual scrappage-rate fraction
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,0,survival_probability,1.0,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,1,survival_probability,0.992933663,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,2,survival_probability,0.986632767,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,3,survival_probability,0.980631007,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,4,survival_probability,0.973514523,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,5,survival_probability,0.965333294,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,6,survival_probability,0.953145802,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,7,survival_probability,0.938476818,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,8,survival_probability,0.917968036,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,9,survival_probability,0.893661691,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,10,survival_probability,0.859918934,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,11,survival_probability,0.825199748,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,12,survival_probability,0.785191272,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,13,survival_probability,0.742210777,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,14,survival_probability,0.694945584,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,15,survival_probability,0.658681192,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,16,survival_probability,0.606091059,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,17,survival_probability,0.552285652,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,18,survival_probability,0.494962916,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,19,survival_probability,0.442117238,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,20,survival_probability,0.394716566,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,21,survival_probability,0.346365934,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,22,survival_probability,0.302950731,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,23,survival_probability,0.264859431,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,24,survival_probability,0.231752514,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,25,survival_probability,0.201172614,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,26,survival_probability,0.174134416,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,27,survival_probability,0.152922345,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,28,survival_probability,0.1351206,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,29,survival_probability,0.119513433,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,30,survival_probability,0.105697656,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,31,survival_probability,0.093723597,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,32,survival_probability,0.083558148,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,33,survival_probability,0.075147123,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,34,survival_probability,0.068298669,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,35,survival_probability,0.063026763,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,36,survival_probability,0.0457,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,37,survival_probability,0.0374,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,38,survival_probability,0.0306,dimensionless
+nhtsa_cafe_2024_ldv_survival,2b/3 Trucks,39,survival_probability,0.025,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,0,survival_probability,1.0,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,1,survival_probability,0.993432390246118,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,2,survival_probability,0.985062572570613,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,3,survival_probability,0.9738923005478504,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,4,survival_probability,0.9591923893028744,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,5,survival_probability,0.9407079455013112,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,6,survival_probability,0.9168887987280316,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,7,survival_probability,0.8869960122301214,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,8,survival_probability,0.850496388626437,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,9,survival_probability,0.8067482998740281,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,10,survival_probability,0.755276043410783,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,11,survival_probability,0.6957236714976064,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,12,survival_probability,0.6297536729244139,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,13,survival_probability,0.5602610958657724,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,14,survival_probability,0.4894735422997605,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,15,survival_probability,0.4210374678539818,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,16,survival_probability,0.3583181319489291,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,17,survival_probability,0.3031998680258771,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,18,survival_probability,0.2561965619986988,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,19,survival_probability,0.2169192043447746,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,20,survival_probability,0.1850150085708845,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,21,survival_probability,0.1592435732305992,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,22,survival_probability,0.1385571540553264,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,23,survival_probability,0.1219577714523364,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,24,survival_probability,0.1086744236843994,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,25,survival_probability,0.0979554957833666,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,26,survival_probability,0.0892881878099131,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,27,survival_probability,0.0822980834508385,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,28,survival_probability,0.0765917483193743,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,29,survival_probability,0.0719510542887034,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,30,survival_probability,0.059065440266241,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,31,survival_probability,0.0484874928982468,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,32,survival_probability,0.0398039353801495,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,33,survival_probability,0.0326755040742559,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,34,survival_probability,0.0268236935948594,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,35,survival_probability,0.0220198756975806,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,36,survival_probability,0.0180763668516487,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,37,survival_probability,0.0148390955082134,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,38,survival_probability,0.0121815825773526,dimensionless
+nhtsa_cafe_2024_ldv_survival,Cars,39,survival_probability,0.0099999999330638,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,0,survival_probability,1.0,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,1,survival_probability,0.992211384792401,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,2,survival_probability,0.983255023484238,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,3,survival_probability,0.9723700214949008,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,4,survival_probability,0.9591983880840096,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,5,survival_probability,0.9438008757124337,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,6,survival_probability,0.9253964255694708,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,7,survival_probability,0.903870297068017,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,8,survival_probability,0.8790469642211319,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,9,survival_probability,0.8508100327022066,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,10,survival_probability,0.8191583490387615,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,11,survival_probability,0.7837241115640902,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,12,survival_probability,0.7449266927772663,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,13,survival_probability,0.7037215386037156,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,14,survival_probability,0.6601975465731165,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,15,survival_probability,0.6153232287305412,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,16,survival_probability,0.570330305257357,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,17,survival_probability,0.5260202250021262,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,18,survival_probability,0.4831806779943129,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,19,survival_probability,0.4421519807144002,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,20,survival_probability,0.4038760344493273,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,21,survival_probability,0.3685181254414261,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,22,survival_probability,0.3362539493598259,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,23,survival_probability,0.306975746357352,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,24,survival_probability,0.2807629031904499,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,25,survival_probability,0.2573124063117901,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,26,survival_probability,0.2363897941985251,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,27,survival_probability,0.2179312734795539,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,28,survival_probability,0.2015392894341337,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,29,survival_probability,0.1871021635130222,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,30,survival_probability,0.1529906634943785,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,31,survival_probability,0.1250981959640521,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,32,survival_probability,0.1022909390417501,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,33,survival_probability,0.0836417833958995,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,34,survival_probability,0.0683926454794904,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,35,survival_probability,0.0559236516220978,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,36,survival_probability,0.0457279403190747,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,37,survival_probability,0.0373910584372246,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,38,survival_probability,0.030574113797834,dimensionless
+nhtsa_cafe_2024_ldv_survival,Pickups,39,survival_probability,0.0249999992937425,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,0,survival_probability,1.0,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,1,survival_probability,0.993343348797829,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,2,survival_probability,0.985184361232498,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,3,survival_probability,0.974815424638012,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,4,survival_probability,0.9617782001075188,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,5,survival_probability,0.9455522224915976,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,6,survival_probability,0.9252176915079052,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,7,survival_probability,0.9001577414143725,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,8,survival_probability,0.8697797812926183,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,9,survival_probability,0.8333261760585442,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,10,survival_probability,0.7904997078676597,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,11,survival_probability,0.7407196928587644,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,12,survival_probability,0.6848137651238166,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,13,survival_probability,0.6242805550722447,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,14,survival_probability,0.560346621521593,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,15,survival_probability,0.4958117968644341,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,16,survival_probability,0.4336310290495546,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,17,survival_probability,0.3758727737559403,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,18,survival_probability,0.3237983661794721,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,19,survival_probability,0.2782382668947893,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,20,survival_probability,0.23943215594301,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,21,survival_probability,0.2068211032411854,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,22,survival_probability,0.1797808270090977,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,23,survival_probability,0.1574325240967546,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,24,survival_probability,0.1390529223818073,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,25,survival_probability,0.1239375081813067,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,26,survival_probability,0.1114939344848871,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,27,survival_probability,0.1012822050254163,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,28,survival_probability,0.092825120649353,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,29,survival_probability,0.0858613800982386,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,30,survival_probability,0.0758948125706248,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,31,survival_probability,0.0670851384934638,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,32,survival_probability,0.0592980686591631,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,33,survival_probability,0.0524149018049565,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,34,survival_probability,0.0463307152044775,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,35,survival_probability,0.040952765290794,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,36,survival_probability,0.0361990739309974,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,37,survival_probability,0.0319971788023891,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,38,survival_probability,0.0282830288217777,dimensionless
+nhtsa_cafe_2024_ldv_survival,Vans/SUVs,39,survival_probability,0.0250000077904925,dimensionless

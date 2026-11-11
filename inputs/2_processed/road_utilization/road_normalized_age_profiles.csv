@@ -1,0 +1,441 @@
+region,nrcan_ceud_class,age,weighted_vmt_km,normalized_utilization,weight_source
+AB,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+AB,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+AB,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+AB,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+AB,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+AB,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+AB,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+AB,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+AB,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+AB,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+AB,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+AB,Heavy Trucks,0,168009.18751731043,0.9390110673164138,statcan_transport_tables
+AB,Heavy Trucks,1,178921.4135648704,1.0,statcan_transport_tables
+AB,Heavy Trucks,2,169936.90652132744,0.9497851773885886,statcan_transport_tables
+AB,Heavy Trucks,3,157686.0391376061,0.8813145167804908,statcan_transport_tables
+AB,Heavy Trucks,4,145010.00526195116,0.810467581116979,statcan_transport_tables
+AB,Heavy Trucks,5,133734.8226244297,0.7474500673780018,statcan_transport_tables
+AB,Heavy Trucks,6,124109.6061425689,0.6936542902818688,statcan_transport_tables
+AB,Heavy Trucks,7,114463.47761261383,0.6397416347882449,statcan_transport_tables
+AB,Heavy Trucks,8,105568.25105155699,0.5900258048949618,statcan_transport_tables
+AB,Heavy Trucks,9,97365.1004078423,0.5441780190974249,statcan_transport_tables
+AB,Heavy Trucks,10,89801.0547508027,0.5019022204306702,statcan_transport_tables
+AB,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+AB,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+AB,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+AB,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+AB,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+AB,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+AB,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+AB,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+AB,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+AB,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+AB,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+AB,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+AB,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares
+BCT,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+BCT,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+BCT,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+BCT,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+BCT,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+BCT,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+BCT,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+BCT,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+BCT,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+BCT,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+BCT,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+BCT,Heavy Trucks,0,172478.66073515013,0.9318969686500665,statcan_transport_tables
+BCT,Heavy Trucks,1,185083.4014247309,1.0,statcan_transport_tables
+BCT,Heavy Trucks,2,174990.21164690258,0.9454668019923279,statcan_transport_tables
+BCT,Heavy Trucks,3,161967.25767166173,0.8751041769541394,statcan_transport_tables
+BCT,Heavy Trucks,4,149165.50521747975,0.805936697020029,statcan_transport_tables
+BCT,Heavy Trucks,5,137652.2975591738,0.7437311855064096,statcan_transport_tables
+BCT,Heavy Trucks,6,127922.04627520173,0.6911589331646504,statcan_transport_tables
+BCT,Heavy Trucks,7,118051.6280447383,0.6378293630655321,statcan_transport_tables
+BCT,Heavy Trucks,8,108943.90799941018,0.5886206281102692,statcan_transport_tables
+BCT,Heavy Trucks,9,100539.41371964832,0.543211400621116,statcan_transport_tables
+BCT,Heavy Trucks,10,92784.68949877596,0.5013128610374569,statcan_transport_tables
+BCT,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+BCT,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+BCT,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+BCT,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares
+MB,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+MB,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+MB,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+MB,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+MB,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+MB,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+MB,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+MB,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+MB,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+MB,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+MB,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+MB,Heavy Trucks,0,176995.97180256236,0.9251723889714066,statcan_transport_tables
+MB,Heavy Trucks,1,191311.34252649275,1.0,statcan_transport_tables
+MB,Heavy Trucks,2,180097.60351573792,0.9413848710554005,statcan_transport_tables
+MB,Heavy Trucks,3,166294.29912001558,0.8692338725132682,statcan_transport_tables
+MB,Heavy Trucks,4,153365.48249104616,0.8016538928935076,statcan_transport_tables
+MB,Heavy Trucks,5,141611.70217276344,0.7402159239625485,statcan_transport_tables
+MB,Heavy Trucks,6,131775.29187386608,0.6888002045964309,statcan_transport_tables
+MB,Heavy Trucks,7,121678.18331614685,0.6360217941562816,statcan_transport_tables
+MB,Heavy Trucks,8,112355.69541754684,0.587292389116907,statcan_transport_tables
+MB,Heavy Trucks,9,103747.70247225132,0.5422977075072501,statcan_transport_tables
+MB,Heavy Trucks,10,95800.25880889923,0.5007557709006869,statcan_transport_tables
+MB,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+MB,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+MB,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+MB,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+MB,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+MB,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+MB,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+MB,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+MB,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+MB,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+MB,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+MB,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+MB,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares
+NB,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+NB,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+NB,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+NB,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+NB,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+NB,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+NB,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+NB,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+NB,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+NB,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+NB,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+NB,Heavy Trucks,0,173462.93405422487,0.9303934751795506,statcan_transport_tables
+NB,Heavy Trucks,1,186440.40256274302,1.0,statcan_transport_tables
+NB,Heavy Trucks,2,176103.05720292797,0.944554156622054,statcan_transport_tables
+NB,Heavy Trucks,3,162910.0732946259,0.873791683858876,statcan_transport_tables
+NB,Heavy Trucks,4,150080.63492836326,0.8049791400651821,statcan_transport_tables
+NB,Heavy Trucks,5,138515.00908433125,0.7429452370857043,statcan_transport_tables
+NB,Heavy Trucks,6,128761.62689694985,0.690631564441176,statcan_transport_tables
+NB,Heavy Trucks,7,118841.81529120618,0.6374252235977241,statcan_transport_tables
+NB,Heavy Trucks,8,109687.29964898073,0.588323658076567,statcan_transport_tables
+NB,Heavy Trucks,9,101238.46520668347,0.5430071154915768,statcan_transport_tables
+NB,Heavy Trucks,10,93441.74949962183,0.5011883058350283,statcan_transport_tables
+NB,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+NB,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+NB,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+NB,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+NB,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+NB,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+NB,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+NB,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+NB,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+NB,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+NB,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+NB,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+NB,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares
+NLLAB,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+NLLAB,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+NLLAB,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+NLLAB,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+NLLAB,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+NLLAB,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+NLLAB,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+NLLAB,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+NLLAB,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+NLLAB,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+NLLAB,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+NLLAB,Heavy Trucks,0,177963.31305651908,0.9237889035504052,statcan_transport_tables
+NLLAB,Heavy Trucks,1,192644.99970994593,1.0,statcan_transport_tables
+NLLAB,Heavy Trucks,2,181191.30522923928,0.940545072553392,statcan_transport_tables
+NLLAB,Heavy Trucks,3,167220.89585823208,0.8680261419191082,statcan_transport_tables
+NLLAB,Heavy Trucks,4,154264.86958699147,0.8007727676257306,statcan_transport_tables
+NLLAB,Heavy Trucks,5,142459.5728123264,0.7394927095269499,statcan_transport_tables
+NLLAB,Heavy Trucks,6,132600.42952181434,0.6883149301640992,statcan_transport_tables
+NLLAB,Heavy Trucks,7,122454.77728353933,0.6356499128859413,statcan_transport_tables
+NLLAB,Heavy Trucks,8,113086.29879421106,0.5870191230734166,statcan_transport_tables
+NLLAB,Heavy Trucks,9,104434.72845268177,0.5421097283081466,statcan_transport_tables
+NLLAB,Heavy Trucks,10,96446.01566609062,0.5006411576282989,statcan_transport_tables
+NLLAB,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+NLLAB,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+NLLAB,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+NLLAB,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares
+NS,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+NS,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+NS,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+NS,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+NS,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+NS,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+NS,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+NS,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+NS,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+NS,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+NS,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+NS,Heavy Trucks,0,175696.3500742417,0.9270617524078755,statcan_transport_tables
+NS,Heavy Trucks,1,189519.57581887307,1.0,statcan_transport_tables
+NS,Heavy Trucks,2,178628.216672828,0.9425317458685424,statcan_transport_tables
+NS,Heavy Trucks,3,165049.4175960947,0.8708832155356611,statcan_transport_tables
+NS,Heavy Trucks,4,152157.15708645835,0.8028572058006156,statcan_transport_tables
+NS,Heavy Trucks,5,140472.58906094887,0.7412035851916469,statcan_transport_tables
+NS,Heavy Trucks,6,130666.72050699563,0.689462921929901,statcan_transport_tables
+NS,Heavy Trucks,7,120634.83032155699,0.636529655579483,statcan_transport_tables
+NS,Heavy Trucks,8,111374.13072234386,0.5876655761871582,statcan_transport_tables
+NS,Heavy Trucks,9,102824.68395274115,0.5425544221933695,statcan_transport_tables
+NS,Heavy Trucks,10,94932.68530328755,0.5009122930605134,statcan_transport_tables
+NS,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+NS,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+NS,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+NS,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+NS,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+NS,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+NS,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+NS,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+NS,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+NS,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+NS,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+NS,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+NS,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares
+ON,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+ON,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+ON,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+ON,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+ON,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+ON,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+ON,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+ON,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+ON,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+ON,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+ON,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+ON,Heavy Trucks,0,172728.98998335702,0.9315125000164276,statcan_transport_tables
+ON,Heavy Trucks,1,185428.5261661125,1.0,statcan_transport_tables
+ON,Heavy Trucks,2,175273.24054346164,0.9452334231813208,statcan_transport_tables
+ON,Heavy Trucks,3,162207.04302550654,0.8747685503372687,statcan_transport_tables
+ON,Heavy Trucks,4,149398.24924101238,0.8056918335595079,statcan_transport_tables
+ON,Heavy Trucks,5,137871.7101179894,0.7435302052418824,statcan_transport_tables
+ON,Heavy Trucks,6,128135.57597450199,0.6910240760891032,statcan_transport_tables
+ON,Heavy Trucks,7,118252.59557633504,0.6377260177886587,statcan_transport_tables
+ON,Heavy Trucks,8,109132.97405367976,0.5885446878648818,statcan_transport_tables
+ON,Heavy Trucks,9,100717.20278475469,0.5431591614686575,statcan_transport_tables
+ON,Heavy Trucks,10,92951.7989112237,0.5012810101718365,statcan_transport_tables
+ON,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+ON,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+ON,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+ON,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+ON,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+ON,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+ON,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+ON,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+ON,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+ON,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+ON,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,0,30387.945469949223,0.8708837347711987,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,1,34444.99677317156,0.9871541813732122,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,2,34893.22886244148,1.0,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,3,33432.39147737517,0.9581340726355441,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,4,31311.672109734627,0.8973566829591404,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,5,28593.78040341097,0.819465017586517,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,6,26111.119888837824,0.7483148089210919,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,7,23846.000935794582,0.6833990924084999,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,8,21777.067973615685,0.6241058418373021,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,9,19887.73731554667,0.569959787726997,ontario_ministry_transport_vehicle_population
+ON,Medium Trucks,10,18163.40762730213,0.5205424725498229,ontario_ministry_transport_vehicle_population
+PEI,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+PEI,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+PEI,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+PEI,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+PEI,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+PEI,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+PEI,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+PEI,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+PEI,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+PEI,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+PEI,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+PEI,Heavy Trucks,0,177350.93375696044,0.9246624899407765,statcan_transport_tables
+PEI,Heavy Trucks,1,191800.7226272578,1.0,statcan_transport_tables
+PEI,Heavy Trucks,2,180498.93292887416,0.9410753539216463,statcan_transport_tables
+PEI,Heavy Trucks,3,166634.31003942058,0.8687887498904516,statcan_transport_tables
+PEI,Heavy Trucks,4,153695.50894244717,0.8013291443178572,statcan_transport_tables
+PEI,Heavy Trucks,5,141922.82486919034,0.7399493751908365,statcan_transport_tables
+PEI,Heavy Trucks,6,132078.07279111232,0.6886213512750448,statcan_transport_tables
+PEI,Heavy Trucks,7,121963.15132646568,0.6358847331534133,statcan_transport_tables
+PEI,Heavy Trucks,8,112623.78736690781,0.5871916738592217,statcan_transport_tables
+PEI,Heavy Trucks,9,103999.80387259823,0.5422284256702705,statcan_transport_tables
+PEI,Heavy Trucks,10,96037.21667165658,0.5007135288968313,statcan_transport_tables
+PEI,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+PEI,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+PEI,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+PEI,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares
+QC,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+QC,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+QC,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+QC,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+QC,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+QC,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+QC,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+QC,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+QC,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+QC,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+QC,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+QC,Heavy Trucks,0,167405.55140734965,0.9400096146789657,statcan_transport_tables
+QC,Heavy Trucks,1,178089.19057122877,1.0,statcan_transport_tables
+QC,Heavy Trucks,2,169254.41950333357,0.9503913121309762,statcan_transport_tables
+QC,Heavy Trucks,3,157107.82824432358,0.882186210967625,statcan_transport_tables
+QC,Heavy Trucks,4,144448.77361208128,0.8111035439532046,statcan_transport_tables
+QC,Heavy Trucks,5,133205.7380510981,0.7479720561581247,statcan_transport_tables
+QC,Heavy Trucks,6,123594.70731244833,0.6940045429821595,statcan_transport_tables
+QC,Heavy Trucks,7,113978.87080030396,0.6400100446001906,statcan_transport_tables
+QC,Heavy Trucks,8,105112.34308897408,0.590223037972275,statcan_transport_tables
+QC,Heavy Trucks,9,96936.38542378396,0.5443136953616124,statcan_transport_tables
+QC,Heavy Trucks,10,89398.0923467275,0.5019849439484747,statcan_transport_tables
+QC,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+QC,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+QC,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+QC,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+QC,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+QC,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+QC,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+QC,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+QC,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+QC,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+QC,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+QC,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+QC,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares
+SK,Car,0,25623.975168000004,1.0,ontario_ministry_transport_vehicle_population
+SK,Car,1,24750.101376000002,0.9658962441904283,ontario_ministry_transport_vehicle_population
+SK,Car,2,23921.289216000005,0.9335510614244442,ontario_ministry_transport_vehicle_population
+SK,Car,3,23139.148032000005,0.9030272578821756,ontario_ministry_transport_vehicle_population
+SK,Car,4,22397.240448000004,0.8740736088431101,ontario_ministry_transport_vehicle_population
+SK,Car,5,21695.566464000003,0.8466901143072478,ontario_ministry_transport_vehicle_population
+SK,Car,6,21030.907392,0.8207511619143323,ontario_ministry_transport_vehicle_population
+SK,Car,7,20401.653888,0.7961939454842355,ontario_ministry_transport_vehicle_population
+SK,Car,8,19802.977920000005,0.7728300464765734,ontario_ministry_transport_vehicle_population
+SK,Car,9,19234.879488000002,0.7506594648913453,ontario_ministry_transport_vehicle_population
+SK,Car,10,18692.530560000003,0.7294937821881673,ontario_ministry_transport_vehicle_population
+SK,Heavy Trucks,0,166244.20037032934,0.9419572335420078,statcan_transport_tables
+SK,Heavy Trucks,1,176488.05534961208,1.0,statcan_transport_tables
+SK,Heavy Trucks,2,167941.36517636225,0.9515735489502711,statcan_transport_tables
+SK,Heavy Trucks,3,155995.39343558805,0.8838864087803034,statcan_transport_tables
+SK,Heavy Trucks,4,143369.00560644062,0.8123439590426409,statcan_transport_tables
+SK,Heavy Trucks,5,132187.81863280808,0.748990170303322,statcan_transport_tables
+SK,Heavy Trucks,6,122604.08021036872,0.6946876941190014,statcan_transport_tables
+SK,Heavy Trucks,7,113046.52329037822,0.6405335650984422,statcan_transport_tables
+SK,Heavy Trucks,8,104235.2100341509,0.5906077316545151,statcan_transport_tables
+SK,Heavy Trucks,9,96111.56963972717,0.5445783254245508,statcan_transport_tables
+SK,Heavy Trucks,10,88622.82261363725,0.5021462922126987,statcan_transport_tables
+SK,Light Truck,0,27179.094397315643,1.0,ontario_ministry_transport_vehicle_population
+SK,Light Truck,1,26276.927893908207,0.9668066017866829,ontario_ministry_transport_vehicle_population
+SK,Light Truck,2,25409.555457101604,0.9348933811279301,ontario_ministry_transport_vehicle_population
+SK,Light Truck,3,24573.372683181056,0.9041277212535844,ontario_ministry_transport_vehicle_population
+SK,Light Truck,4,23771.27902557273,0.8746163017087322,ontario_ministry_transport_vehicle_population
+SK,Light Truck,5,22998.060736561853,0.8461672931543027,ontario_ministry_transport_vehicle_population
+SK,Light Truck,6,22255.39364128936,0.8188423541988001,ontario_ministry_transport_vehicle_population
+SK,Light Truck,7,21542.120592610943,0.7925989099452321,ontario_ministry_transport_vehicle_population
+SK,Light Truck,8,20855.475099382307,0.7673351729276936,ontario_ministry_transport_vehicle_population
+SK,Light Truck,9,20195.90935845914,0.7430677808181055,ontario_ministry_transport_vehicle_population
+SK,Light Truck,10,19561.042594411912,0.7197091377828935,ontario_ministry_transport_vehicle_population
+SK,Medium Trucks,0,36842.46099281244,0.9031397098961829,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,1,40464.98814294473,0.9919407300044699,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,2,40793.75603697852,1.0,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,3,39141.7346979601,0.9595030833267497,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,4,36362.06087709077,0.8913633950286282,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,5,33102.183788293594,0.811452217302258,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,6,30135.51982161,0.7387287356989855,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,7,27437.942206478954,0.6726015172912038,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,8,24982.701378376252,0.6124148351460958,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,9,22748.481196867804,0.557646154873478,wards_intelligence_2022_sales_shares
+SK,Medium Trucks,10,20716.142649414905,0.5078263112285184,wards_intelligence_2022_sales_shares

@@ -1,0 +1,1537 @@
+"""Compile a complete CANOE v4 transportation scenario from registered inputs."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import logging
+import os
+import shutil
+import sqlite3
+import tempfile
+from collections import Counter
+from collections.abc import Sequence
+from dataclasses import asdict, dataclass, field as dataclass_field, replace
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from canoe_schema import CanoeBaseModel
+from canoe_schema.v4_0 import (
+    Commodity,
+    CommodityLabel,
+    DataSet,
+    Region,
+    TechnologyLabel,
+    TimePeriod,
+    ExistingCapacity,
+    Demand,
+    CapacityToActivity,
+    LimitAnnualCapacityFactor,
+    LifetimeTech,
+    LifetimeProcess,
+    LifetimeSurvivalCurve,
+    Efficiency,
+    LimitTechInputSplitAnnual,
+    CostInvest,
+    CostFixed,
+    CostVariable,
+    EmissionEmbodied,
+    CapacityFactorTech,
+    TimeSeason,
+    TimeOfDay,
+    LimitNewCapacityShare,
+    TechGroup,
+    TechGroupMember,
+    TechGroupLabel,
+)
+from pydantic import ValidationError
+from pydantic_core import PydanticUndefined
+
+from utils import (
+    ConfigBundle,
+    file_sha256,
+    load_config_bundle,
+    load_harmonization_rules,
+    log_duration,
+    resolve_configured_path,
+    resolve_input_path,
+    resolve_parameter_path,
+    resolve_repo_path,
+    write_text_atomic,
+)
+from validation.database_bootstrap import validate_database
+from validation.insertion import ConflictPolicy, insert_models, validate_transport_parameter_support
+from validation.legacy_compare import compare_legacy_costs, compare_legacy_demand, compare_legacy_efficiency, compare_legacy_existing_capacity, compare_legacy_lifetime_tech, compare_legacy_tables, compare_legacy_emission_embodied
+from validation.provenance import (
+    ResolvedProvenance,
+    publish_data_ids,
+    readable_data_id_mapping,
+    registry_rows,
+    source_id_mapping,
+)
+from validation.schema_contract import (
+    TransportationTechnology,
+    create_v4_schema,
+    schema_evidence,
+)
+from validation.sqlite_compare import compare_scenario_databases, validate_scenario_comparison_reference
+from validation.sqlite_utils import quote_identifier
+
+
+LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from parameterization.road_embodied_emissions import EmbodiedEmissionPreparation
+    from parameterization.ldv_charging_profiles import ChargingPreparation
+    from parameterization.ldv_ev_ranges import RangePreparation, RangeEvidence
+
+
+@dataclass(frozen=True)
+class TemplateTable:
+    """One explicitly supported, v4-model-backed bootstrap template."""
+
+    table: str
+    filename: str
+    model: type[CanoeBaseModel]
+    label_model: type[CanoeBaseModel] | None = None
+    label_field: str | None = None
+
+
+@dataclass(frozen=True)
+class TableLoadResult:
+    """Auditable result of loading one CSV template."""
+
+    table: str
+    template: str
+    source_encoding: str
+    source_rows: int
+    inserted_rows: int
+    csv_columns: list[str]
+    target_columns: list[str]
+    inserted_columns: list[str]
+    ignored_fields: list[str]
+    missing_optional_fields: list[str]
+    schema_defaults_used: dict[str, int]
+    blank_values_as_null: dict[str, int]
+    primary_key_columns: list[str]
+    primary_keys: list[tuple[Any, ...]]
+
+
+@dataclass(frozen=True)
+class TransportContribution:
+    """Validated transport-owned rows prepared for a compatible caller connection."""
+
+    dataset: DataSet
+    labels_by_table: dict[str, list[CanoeBaseModel]]
+    rows_by_table: dict[str, list[CanoeBaseModel]]
+    load_results: list[TableLoadResult]
+    parameter_rows: list[ExistingCapacity] = dataclass_field(default_factory=list)
+    demand_rows: list[Demand] = dataclass_field(default_factory=list)
+    road_assumption_dataset: DataSet | None = None
+    charger_assumption_dataset: DataSet | None = None
+    capacity_to_activity_rows: list[CapacityToActivity] = dataclass_field(default_factory=list)
+    capacity_to_activity_categories: tuple[str, ...] = ()
+    flat_road_factor_rows: list[LimitAnnualCapacityFactor] = dataclass_field(default_factory=list)
+    lifetime_tech_rows: list[LifetimeTech] = dataclass_field(default_factory=list)
+    lifetime_process_rows: list[LifetimeProcess] = dataclass_field(default_factory=list)
+    lifetime_survival_curve_rows: list[LifetimeSurvivalCurve] = dataclass_field(default_factory=list)
+    efficiency_rows: list[Efficiency] = dataclass_field(default_factory=list)
+    input_split_rows: list[LimitTechInputSplitAnnual] = dataclass_field(default_factory=list)
+    cost_invest_rows: list[CostInvest] = dataclass_field(default_factory=list)
+    cost_fixed_rows: list[CostFixed] = dataclass_field(default_factory=list)
+    cost_variable_rows: list[CostVariable] = dataclass_field(default_factory=list)
+    charger_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    efficiency_assumption_dataset: DataSet | None = None
+    provenance_contexts: list[ResolvedProvenance] = dataclass_field(default_factory=list)
+    parameter_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    demand_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    road_utilization_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    lifetime_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    efficiency_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    cost_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    existing_vintages: tuple[int, ...] = ()
+    prepared_support_tables: tuple[str, ...] = ()
+    expected_survival_curve_keys: tuple[tuple[str, str, int], ...] = ()
+    support_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    new_technologies: tuple[str, ...] = ()
+    emission_embodied: EmbodiedEmissionPreparation | None = None
+    charging_profiles: ChargingPreparation | None = None
+    range_representation: RangePreparation | None = None
+    scenario_name: str = ""
+
+    @property
+    def emission_embodied_rows(self) -> list[EmissionEmbodied]:
+        return self.emission_embodied.rows if self.emission_embodied is not None else []
+
+    @property
+    def emission_embodied_audit(self) -> dict[str, Any]:
+        return self.emission_embodied.audit if self.emission_embodied is not None else {}
+
+
+TEMPLATE_TABLES = (
+    TemplateTable(
+        table="technology",
+        filename="technology.csv",
+        model=TransportationTechnology,
+        label_model=TechnologyLabel,
+        label_field="tech",
+    ),
+    TemplateTable(
+        table="commodity",
+        filename="commodity.csv",
+        model=Commodity,
+        label_model=CommodityLabel,
+        label_field="name",
+    ),
+)
+
+STANDALONE_BASE_TABLES = (
+    TemplateTable(table="region", filename="region.csv", model=Region),
+    TemplateTable(table="time_period", filename="time_period.csv", model=TimePeriod),
+)
+
+
+class TemplateLoadError(ValueError):
+    """Raised when a template cannot be mapped safely to its v4 row model."""
+
+
+def _read_template(path: Path) -> tuple[list[str], list[dict[str, str | None]], str]:
+    if not path.is_file():
+        raise FileNotFoundError(f"Template CSV does not exist: {path}")
+    if path.stat().st_size <= 0:
+        raise TemplateLoadError(f"Template CSV is empty: {path}")
+    fields: list[str] | None = None
+    rows: list[dict[str, str | None]] = []
+    selected_encoding = ""
+    for encoding in ("utf-8-sig", "cp1252"):
+        try:
+            with path.open("r", encoding=encoding, newline="") as handle:
+                reader = csv.DictReader(handle)
+                fields = reader.fieldnames
+                rows = list(reader)
+        except UnicodeDecodeError:
+            continue
+        selected_encoding = encoding
+        break
+    if fields is None or not fields:
+        raise TemplateLoadError(f"Template CSV has no readable header: {path}")
+    duplicates = sorted(field for field, count in Counter(fields).items() if count > 1)
+    if duplicates:
+        raise TemplateLoadError(f"Template CSV has duplicate fields {duplicates}: {path}")
+    if not rows:
+        raise TemplateLoadError(f"Template CSV has no data rows: {path}")
+    for row_number, row in enumerate(rows, start=2):
+        if None in row:
+            raise TemplateLoadError(f"Template CSV row {row_number} has extra values: {path}")
+    return fields, rows, selected_encoding
+
+
+def _table_columns(connection: sqlite3.Connection, table: str) -> list[str]:
+    columns = [
+        str(row[1])
+        for row in connection.execute(
+            f"PRAGMA table_info({quote_identifier(table)})"
+        ).fetchall()
+    ]
+    if not columns:
+        raise TemplateLoadError(f"Target schema does not define table {table!r}")
+    return columns
+
+
+def _primary_key(row: CanoeBaseModel) -> tuple[Any, ...]:
+    return tuple(getattr(row, field) for field in row.__primary_key__)
+
+
+def _deduplicate_models(rows: Sequence[CanoeBaseModel]) -> list[CanoeBaseModel]:
+    by_key: dict[tuple[type[CanoeBaseModel], tuple[Any, ...]], CanoeBaseModel] = {}
+    for row in rows:
+        identity = (type(row), _primary_key(row))
+        existing = by_key.get(identity)
+        if existing is not None and existing.model_dump(mode="python") != row.model_dump(
+            mode="python"
+        ):
+            raise TemplateLoadError(
+                f"Conflicting {row.table_name()} definitions for {_primary_key(row)}"
+            )
+        by_key[identity] = row
+    return list(by_key.values())
+
+
+def prepare_template_table(
+    connection: sqlite3.Connection,
+    *,
+    specification: TemplateTable,
+    template_path: Path,
+    data_id: str,
+) -> tuple[list[CanoeBaseModel], list[CanoeBaseModel], TableLoadResult]:
+    """Construct validated v4 rows and labels without writing to SQLite."""
+    csv_columns, raw_rows, source_encoding = _read_template(template_path)
+    model_fields = specification.model.model_fields
+    target_columns = _table_columns(connection, specification.table)
+    missing_target_columns = sorted(set(model_fields) - set(target_columns))
+    if missing_target_columns:
+        raise TemplateLoadError(
+            f"Target schema table {specification.table!r} is missing transport "
+            f"columns required by {specification.model.__name__}: "
+            f"{missing_target_columns}"
+        )
+    ignored_fields = [field for field in csv_columns if field not in model_fields]
+    missing_fields = [field for field in model_fields if field not in csv_columns]
+    missing_required = [
+        field
+        for field in missing_fields
+        if field != "data_id" and model_fields[field].is_required()
+    ]
+    if missing_required:
+        raise TemplateLoadError(
+            f"Template {template_path} is missing required {specification.table} "
+            f"fields: {missing_required}"
+        )
+
+    default_counts: Counter[str] = Counter()
+    null_counts: Counter[str] = Counter()
+    rows: list[CanoeBaseModel] = []
+    labels: list[CanoeBaseModel] = []
+    for row_number, raw in enumerate(raw_rows, start=2):
+        payload: dict[str, Any] = {"data_id": data_id} if "data_id" in model_fields else {}
+        for field in csv_columns:
+            if field not in model_fields:
+                continue
+            value = raw[field]
+            field_info = model_fields[field]
+            if value != "":
+                payload[field] = value
+            elif field_info.default is not PydanticUndefined and field_info.default is not None:
+                default_counts[field] += 1
+            elif field_info.is_required():
+                raise TemplateLoadError(
+                    f"Template {template_path} row {row_number} has a blank required "
+                    f"field: {field}"
+                )
+            else:
+                payload[field] = None
+                null_counts[field] += 1
+        try:
+            row = specification.model.model_validate(payload)
+        except ValidationError as exc:
+            raise TemplateLoadError(
+                f"Invalid {specification.table} row {row_number} in {template_path}: {exc}"
+            ) from exc
+        rows.append(row)
+        if specification.label_model is not None:
+            if specification.label_field is None:
+                raise TemplateLoadError(
+                    f"Template {specification.table} has a label model without a field"
+                )
+            label_value = getattr(row, specification.label_field)
+            labels.append(specification.label_model.model_validate({
+                specification.label_model.__primary_key__[0]: label_value
+            }))
+
+    primary_keys = [_primary_key(row) for row in rows]
+    if len(set(primary_keys)) != len(primary_keys):
+        raise TemplateLoadError(
+            f"Template {template_path} contains duplicate {specification.table} keys"
+        )
+    result = TableLoadResult(
+        table=specification.table,
+        template=str(template_path),
+        source_encoding=source_encoding,
+        source_rows=len(raw_rows),
+        inserted_rows=len(rows),
+        csv_columns=csv_columns,
+        target_columns=target_columns,
+        inserted_columns=[field for field in csv_columns if field in model_fields]
+        + (["data_id"] if "data_id" in model_fields else []),
+        ignored_fields=ignored_fields,
+        missing_optional_fields=[
+            field for field in missing_fields if field != "data_id"
+        ],
+        schema_defaults_used=dict(sorted(default_counts.items())),
+        blank_values_as_null=dict(sorted(null_counts.items())),
+        primary_key_columns=list(specification.model.__primary_key__),
+        primary_keys=primary_keys,
+    )
+    return rows, _deduplicate_models(labels), result
+
+
+def _expected_keys(rows: Sequence[CanoeBaseModel]) -> list[tuple[Any, ...]]:
+    return [_primary_key(row) for row in rows]
+
+
+def apply_scenario_economics(
+    connection: sqlite3.Connection, bundle: ConfigBundle
+) -> dict[str, float]:
+    """Apply validated scenario rates after checking the packaged schema defaults."""
+    configured = {
+        "global_discount_rate": bundle.scenario.economics.global_discount_rate,
+        "default_loan_rate": bundle.scenario.economics.default_loan_rate,
+    }
+    connection.executemany(
+        "UPDATE metadata_real SET value = ? WHERE element = ?",
+        [(value, element) for element, value in configured.items()],
+    )
+    actual = {
+        str(element): float(value)
+        for element, value in connection.execute(
+            "SELECT element, value FROM metadata_real "
+            "WHERE element IN ('global_discount_rate', 'default_loan_rate')"
+        )
+    }
+    if actual != configured:
+        raise TemplateLoadError(
+            f"Could not apply configured scenario economics: {actual}"
+        )
+    return actual
+
+
+def apply_technology_note_overrides(
+    rows: Sequence[CanoeBaseModel], overrides: dict[str, str]
+) -> list[CanoeBaseModel]:
+    """Replace technology notes by exact technology key and reject stale keys."""
+    if not overrides:
+        return list(rows)
+    available = {str(row.tech) for row in rows}
+    unknown = sorted(set(overrides) - available)
+    if unknown:
+        raise TemplateLoadError(
+            f"Technology note overrides reference unknown technologies: {unknown}"
+        )
+    return [
+        type(row).model_validate(
+            {
+                **row.model_dump(mode="python"),
+                "notes": overrides.get(str(row.tech), row.notes),
+            }
+        )
+        for row in rows
+    ]
+
+
+def _internal_template_dataset(template_dir: Path) -> DataSet:
+    """Describe the backend-owned template without inventing external provenance."""
+    digest = hashlib.sha256()
+    for specification in TEMPLATE_TABLES:
+        path = template_dir / specification.filename
+        if not path.is_file():
+            raise FileNotFoundError(f"Template CSV does not exist: {path}")
+        digest.update(specification.filename.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    version = digest.hexdigest()[:16]
+    return DataSet(
+        data_id=f"canoe-transport-template:{version}",
+        label="CANOE transportation backend structural template",
+        version=version,
+        description=(
+            "Backend-owned technology and commodity archetypes; this is a structural "
+            "model reference, not an external input source."
+        ),
+    )
+
+
+def prepare_transport_contribution(
+    connection: sqlite3.Connection,
+    *,
+    bundle: ConfigBundle,
+    template_dir: Path,
+    include_existing_capacity: bool | None = None,
+    include_demand: bool | None = None,
+    include_road_utilization: bool | None = None,
+    include_lifetimes: bool | None = None,
+    include_efficiencies: bool | None = None,
+    include_costs: bool | None = None,
+    include_ev_chargers: bool | None = None,
+    include_emission_embodied: bool | None = None,
+    include_charging_profiles: bool | None = None,
+    charging_profiles: ChargingPreparation | None = None,
+    range_evidence: RangeEvidence | None = None,
+) -> TransportContribution:
+    """Prepare the currently supported transport rows without writing to SQLite."""
+    from parameterization.road_lifetimes_survival import require_tail_derivation
+
+    require_tail_derivation(bundle)
+    if not template_dir.is_dir():
+        raise FileNotFoundError(f"Template directory does not exist: {template_dir}")
+    template_dataset = _internal_template_dataset(template_dir)
+    table_rows: dict[str, list[CanoeBaseModel]] = {}
+    table_labels: dict[str, list[CanoeBaseModel]] = {}
+    load_results: list[TableLoadResult] = []
+    for specification in TEMPLATE_TABLES:
+        rows, labels, result = prepare_template_table(
+            connection,
+            specification=specification,
+            template_path=template_dir / specification.filename,
+            data_id=template_dataset.data_id,
+        )
+        if specification.table == "technology":
+            rows = apply_technology_note_overrides(
+                rows, bundle.scenario.row_note_overrides.technology
+            )
+        table_rows[specification.table] = rows
+        if specification.label_model is not None:
+            table_labels[specification.label_model.table_name()] = labels
+        load_results.append(result)
+
+    # Gate representation before preparing other parameter families or touching SQLite.
+    import pandas as pd
+    from parameterization.ldv_ev_ranges import build_range_evidence, prepare_range_rows
+
+    technologies = pd.DataFrame([row.model_dump() for row in table_rows["technology"]])
+    # One fresh, validated read per contribution; standalone family builders retain
+    # their own fallback. This handoff does not reuse artifacts across builds.
+    if range_evidence is None and (
+        bundle.scenario.BEV_PHEV_range_representation.mode != "none"
+        or include_efficiencies is not False or include_costs is not False
+    ):
+        range_evidence = build_range_evidence(bundle)
+    with log_duration(LOGGER, "LDV range selection"):
+        range_preparation = prepare_range_rows(bundle, evidence=range_evidence, technologies=technologies)
+    if include_charging_profiles is not False and charging_profiles is None:
+        from parameterization.ldv_charging_profiles import prepare_charging_profile_rows
+
+        seasons = [TimeSeason(**dict(zip(["sequence", "season", "segment_fraction", "notes"], row)))
+                   for row in connection.execute("SELECT sequence, season, segment_fraction, notes FROM time_season")]
+        times = [TimeOfDay(**dict(zip(["sequence", "tod", "hours", "notes"], row)))
+                 for row in connection.execute("SELECT sequence, tod, hours, notes FROM time_of_day")]
+        with log_duration(LOGGER, "Charging profiles (capacity_factor_tech)"):
+            charging_profiles = prepare_charging_profile_rows(
+                bundle, technologies=technologies, seasons=seasons, times_of_day=times,
+            )
+
+    selected_capacity = True if include_existing_capacity is None else include_existing_capacity
+    parameter_rows: list[ExistingCapacity] = []
+    capacity_contexts: list[ResolvedProvenance] = []
+    contexts: list[ResolvedProvenance] = [*range_preparation.provenance_contexts]
+    if charging_profiles is not None:
+        contexts.extend(charging_profiles.provenance_contexts)
+    parameter_audit: dict[str, Any] = {}
+    capacity_preparation = None
+    if selected_capacity:
+        from parameterization.build_existing_capacity import prepare_existing_capacity_rows
+
+        with log_duration(LOGGER, "Existing capacity"):
+            capacity_preparation = prepare_existing_capacity_rows(bundle)
+        parameter_rows = list(capacity_preparation.existing_capacity_rows)
+        capacity_contexts = capacity_preparation.provenance_contexts
+        parameter_audit = capacity_preparation.audit
+        contexts.extend(capacity_contexts)
+    selected_demand = True if include_demand is None else include_demand
+    demand_rows: list[Demand] = []
+    demand_audit: dict[str, Any] = {}
+    if selected_demand:
+        from parameterization.build_demand import prepare_demand_rows
+
+        with log_duration(LOGGER, "Demand"):
+            demand_rows, demand_contexts, demand_audit = prepare_demand_rows(bundle)
+        contexts.extend(demand_contexts)
+    selected_road_utilization = (
+        True if include_road_utilization is None else include_road_utilization
+    )
+    if (include_efficiencies is not False and bundle.scenario.efficiencies.ceud_energy_calibration
+            and not selected_road_utilization):
+        raise ValueError("CEUD energy calibration requires road utilization in the same contribution")
+    road_assumption_dataset: DataSet | None = None
+    c2a_rows: list[CapacityToActivity] = []
+    flat_factor_rows: list[LimitAnnualCapacityFactor] = []
+    road_audit: dict[str, Any] = {}
+    road = None
+    if selected_road_utilization:
+        from parameterization.road_utilization import prepare_road_utilization
+
+        with log_duration(LOGGER, "Road utilization (capacity_to_activity, limit_annual_capacity_factor)"):
+            road = prepare_road_utilization(
+                bundle, existing_capacity_rows=parameter_rows,
+                existing_capacity_contexts=capacity_contexts,
+                physical_stock=capacity_preparation.physical_stock if capacity_preparation else None,
+            )
+        road_assumption_dataset = road.assumption_dataset
+        c2a_rows = road.capacity_to_activity_rows
+        flat_factor_rows = road.flat_factor_rows
+        contexts.extend(road.provenance_contexts)
+        road_audit = road.audit
+    lifetime_tech_rows: list[LifetimeTech] = []
+    lifetime_curve_rows: list[LifetimeSurvivalCurve] = []
+    lifetime_process_rows: list[LifetimeProcess] = []
+    lifetime_audit: dict[str, Any] = {}
+    if include_lifetimes is not False:
+        from parameterization.build_lifetime_parameters import prepare_lifetime_rows
+
+        with log_duration(LOGGER, "Lifetimes (lifetime_tech, lifetime_survival_curve)"):
+            lifetimes = prepare_lifetime_rows(
+                bundle,
+                annual_acquisitions=capacity_preparation.annual_acquisitions if capacity_preparation else None,
+                cohort_provenance_contexts=capacity_contexts,
+            )
+        lifetime_tech_rows = lifetimes.fixed_rows
+        lifetime_process_rows = lifetimes.process_rows
+        lifetime_curve_rows = lifetimes.curve_rows
+        contexts.extend(lifetimes.provenance_contexts)
+        lifetime_audit = lifetimes.audit
+    efficiency_rows: list[Efficiency] = []
+    split_rows: list[LimitTechInputSplitAnnual] = []
+    efficiency_dataset: DataSet | None = None
+    efficiency_audit: dict[str, Any] = {}
+    if include_efficiencies is not False:
+        from parameterization.build_efficiencies import prepare_efficiency_rows
+
+        with log_duration(LOGGER, "Efficiencies (efficiency, limit_tech_input_split_annual)"):
+            efficiencies = prepare_efficiency_rows(
+                bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
+                existing_capacity_contexts=capacity_contexts if selected_capacity else None,
+                existing_capacity_audit=parameter_audit if selected_capacity else None,
+                physical_stock=capacity_preparation.physical_stock if capacity_preparation else None,
+                range_evidence=range_evidence,
+                road_utilization=road,
+            )
+        efficiency_rows = efficiencies.efficiency_rows
+        split_rows = efficiencies.split_rows
+        efficiency_dataset = efficiencies.assumption_dataset
+        efficiency_audit = efficiencies.audit
+        contexts.extend(efficiencies.provenance_contexts)
+    cost_invest_rows: list[CostInvest] = []
+    cost_fixed_rows: list[CostFixed] = []
+    cost_variable_rows: list[CostVariable] = []
+    cost_audit: dict[str, Any] = {}
+    if include_costs is not False:
+        from parameterization.build_costs import prepare_cost_rows
+
+        with log_duration(LOGGER, "Transport costs (cost_invest, cost_variable)"):
+            costs = prepare_cost_rows(
+                bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
+                fixed_lifetime_rows=lifetime_tech_rows if include_lifetimes is not False else None,
+                survival_curve_rows=lifetime_curve_rows if include_lifetimes is not False else None,
+                range_evidence=range_evidence,
+            )
+        cost_invest_rows = costs.invest_rows
+        cost_variable_rows = costs.variable_rows
+        cost_audit = costs.audit
+        contexts.extend(costs.provenance_contexts)
+        if efficiency_rows:
+            supported = {(r.region, r.tech, r.vintage) for r in efficiency_rows}
+            cost_keys = {
+                (r.region, r.tech, r.vintage)
+                for r in [*cost_invest_rows, *cost_variable_rows]
+            }
+            missing = cost_keys - supported
+            if missing:
+                raise ValueError(
+                    f"Cost technology/vintage lacks prepared efficiency: {sorted(missing)[:8]}"
+                )
+            cost_audit["efficiency_supported_tech_vintages"] = len(cost_keys)
+    charger_audit: dict[str, Any] = {}
+    charger_assumption_dataset = None
+    if selected_capacity and include_ev_chargers is not False:
+        from parameterization.ev_chargers import prepare_ev_charger_rows
+
+        with log_duration(LOGGER, "EV chargers and H2 refueling"):
+            chargers = prepare_ev_charger_rows(
+                bundle, existing_capacity_rows=parameter_rows,
+                existing_capacity_contexts=contexts,
+                physical_stock=capacity_preparation.physical_stock if capacity_preparation else None,
+                fixed_lifetime_rows=lifetime_tech_rows if include_lifetimes is not False else None,
+            )
+        parameter_rows.extend(chargers.capacity_rows)
+        c2a_rows.extend(chargers.capacity_to_activity_rows)
+        charger_assumption_dataset = chargers.assumption_dataset
+        flat_factor_rows.extend(chargers.utilization_rows)
+        if include_efficiencies is not False:
+            efficiency_rows.extend(chargers.efficiency_rows)
+        if include_costs is not False:
+            cost_invest_rows.extend(chargers.invest_rows)
+            cost_fixed_rows.extend(chargers.fixed_rows)
+        contexts.extend(chargers.provenance_contexts)
+        charger_audit = chargers.audit
+    embodied = None
+    if include_emission_embodied is not False:
+        from parameterization.road_embodied_emissions import prepare_emission_embodied_rows
+
+        with log_duration(LOGGER, "Vehicle-cycle emissions (emission_embodied)"):
+            embodied = prepare_emission_embodied_rows(bundle)
+        contexts.extend(embodied.provenance_contexts)
+    support_tables = []
+    if include_lifetimes is not False:
+        support_tables.extend(("lifetime_tech", "lifetime_process", "lifetime_survival_curve"))
+    if selected_capacity:
+        support_tables.append("existing_capacity")
+    if include_efficiencies is not False:
+        support_tables.append("efficiency")
+    if include_costs is not False:
+        support_tables.extend(("cost_invest", "cost_fixed", "cost_variable"))
+    if selected_road_utilization:
+        support_tables.append("limit_annual_capacity_factor")
+    c2a_categories = set()
+    if selected_road_utilization:
+        c2a_categories.update(load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]["activity_series"])
+    if charger_assumption_dataset is not None:
+        c2a_categories.add("charger")
+    if c2a_categories:
+        support_tables.append("capacity_to_activity")
+    if embodied is not None and embodied.audit["enabled"]:
+        support_tables.append("emission_embodied")
+    existing_suffix = load_harmonization_rules(bundle, "efficiencies")["existing_suffix"]
+    contribution = TransportContribution(
+        dataset=template_dataset,
+        scenario_name=bundle.scenario.scenario.name,
+        labels_by_table=table_labels,
+        rows_by_table=table_rows,
+        load_results=load_results,
+        parameter_rows=parameter_rows,
+        demand_rows=demand_rows,
+        road_assumption_dataset=road_assumption_dataset,
+        charger_assumption_dataset=charger_assumption_dataset,
+        capacity_to_activity_rows=c2a_rows,
+        capacity_to_activity_categories=tuple(sorted(c2a_categories)),
+        flat_road_factor_rows=flat_factor_rows,
+        lifetime_tech_rows=lifetime_tech_rows,
+        lifetime_process_rows=lifetime_process_rows,
+        lifetime_survival_curve_rows=lifetime_curve_rows,
+        efficiency_rows=efficiency_rows,
+        input_split_rows=split_rows,
+        efficiency_assumption_dataset=efficiency_dataset,
+        cost_invest_rows=cost_invest_rows,
+        cost_fixed_rows=cost_fixed_rows,
+        cost_variable_rows=cost_variable_rows,
+        charger_audit=charger_audit,
+        provenance_contexts=contexts,
+        parameter_audit=parameter_audit,
+        demand_audit=demand_audit,
+        road_utilization_audit=road_audit,
+        lifetime_audit=lifetime_audit,
+        efficiency_audit=efficiency_audit,
+        cost_audit=cost_audit,
+        emission_embodied=embodied,
+        charging_profiles=charging_profiles if include_charging_profiles is not False else None,
+        range_representation=range_preparation,
+        existing_vintages=tuple(bundle.scenario.periods.existing),
+        prepared_support_tables=tuple(support_tables),
+        expected_survival_curve_keys=tuple(sorted({
+            (row.region, row.tech, row.vintage) for row in lifetime_curve_rows
+        })),
+        new_technologies=tuple(
+            row.tech for row in table_rows["technology"]
+            if not row.tech.endswith(existing_suffix)
+        ),
+    )
+    if range_preparation.audit["mode"] == "representative_archetype":
+        with log_duration(LOGGER, "Representative LDV parameter tables"):
+            contribution = _apply_ldv_range_representation(bundle, contribution)
+    contribution.support_audit.update(_require_transport_parameter_support(contribution))
+    return contribution
+
+
+def _representative_batches(contribution: TransportContribution) -> dict[str, list[CanoeBaseModel]]:
+    return {
+        **contribution.rows_by_table,
+        "existing_capacity": contribution.parameter_rows,
+        "capacity_to_activity": contribution.capacity_to_activity_rows,
+        "limit_annual_capacity_factor": contribution.flat_road_factor_rows,
+        "lifetime_tech": contribution.lifetime_tech_rows,
+        "lifetime_process": contribution.lifetime_process_rows,
+        "lifetime_survival_curve": contribution.lifetime_survival_curve_rows,
+        "efficiency": contribution.efficiency_rows,
+        "limit_tech_input_split_annual": contribution.input_split_rows,
+        "cost_invest": contribution.cost_invest_rows,
+        "cost_fixed": contribution.cost_fixed_rows,
+        "cost_variable": contribution.cost_variable_rows,
+        "emission_embodied": contribution.emission_embodied_rows,
+    }
+
+
+def _apply_ldv_range_representation(bundle: ConfigBundle, contribution: TransportContribution) -> TransportContribution:
+    """Adapt the shared pure range transformation to already-prepared contribution blocks."""
+    ranges = contribution.range_representation
+    if ranges is None or ranges.audit["mode"] != "representative_archetype":
+        return contribution
+    from parameterization.ldv_ev_ranges import prepare_representative_parameters
+
+    result = prepare_representative_parameters(
+        bundle, range_preparation=ranges, batches=_representative_batches(contribution),
+        provenance_contexts=contribution.provenance_contexts,
+        internal_datasets=tuple(d for d in (contribution.dataset, contribution.road_assumption_dataset,
+                                           contribution.efficiency_assumption_dataset,
+                                           contribution.charger_assumption_dataset) if d is not None),
+    )
+    rows = result.batches
+    ranges = replace(ranges, structural_dataset=result.structural_dataset, representative=result,
+                     provenance_contexts=[*ranges.provenance_contexts, *result.provenance_contexts],
+                     audit={**ranges.audit, "representative": result.audit})
+    embodied = contribution.emission_embodied
+    if embodied is not None:
+        embodied = replace(embodied, rows=rows["emission_embodied"],
+            provenance_contexts=[*embodied.provenance_contexts, *result.provenance_contexts],
+            expected_keys=frozenset((r.region, r.tech, r.emis_comm, r.vintage) for r in rows["emission_embodied"]),
+            audit={**embodied.audit, "rows": len(rows["emission_embodied"]),
+                   "technologies": len({r.tech for r in rows["emission_embodied"]}),
+                   "range_representation": result.audit["generated_rows"].get("emission_embodied", 0)})
+    return replace(contribution,
+        rows_by_table={"technology": rows["technology"], "commodity": rows["commodity"]},
+        load_results=[replace(r, inserted_rows=len(rows[r.table])) for r in contribution.load_results],
+        labels_by_table=result.labels, range_representation=ranges,
+        parameter_rows=rows["existing_capacity"], capacity_to_activity_rows=rows["capacity_to_activity"],
+        flat_road_factor_rows=rows["limit_annual_capacity_factor"], lifetime_tech_rows=rows["lifetime_tech"],
+        lifetime_survival_curve_rows=rows["lifetime_survival_curve"],
+        lifetime_process_rows=rows["lifetime_process"], efficiency_rows=rows["efficiency"],
+        expected_survival_curve_keys=tuple(sorted({
+            (row.region, row.tech, row.vintage) for row in rows["lifetime_survival_curve"]
+        })),
+        input_split_rows=rows["limit_tech_input_split_annual"], cost_invest_rows=rows["cost_invest"],
+        cost_fixed_rows=rows["cost_fixed"], cost_variable_rows=rows["cost_variable"], emission_embodied=embodied,
+        provenance_contexts=[*contribution.provenance_contexts, *ranges.provenance_contexts],
+        new_technologies=tuple(r.tech for r in rows["technology"] if r.tech in contribution.new_technologies
+                               or r.data_id == result.structural_dataset.data_id), support_audit={},
+    )
+
+
+def _require_transport_parameter_support(contribution: TransportContribution) -> dict[str, Any]:
+    batches = {
+        "existing_capacity": contribution.parameter_rows,
+        "efficiency": contribution.efficiency_rows,
+        "cost_invest": contribution.cost_invest_rows,
+        "cost_fixed": contribution.cost_fixed_rows,
+        "cost_variable": contribution.cost_variable_rows,
+        "limit_annual_capacity_factor": contribution.flat_road_factor_rows,
+        "emission_embodied": contribution.emission_embodied_rows,
+        "capacity_to_activity": contribution.capacity_to_activity_rows,
+        "lifetime_tech": contribution.lifetime_tech_rows,
+        "lifetime_process": contribution.lifetime_process_rows,
+        "lifetime_survival_curve": contribution.lifetime_survival_curve_rows,
+    }
+    if contribution.emission_embodied is not None and contribution.emission_embodied.audit["enabled"]:
+        from parameterization.road_embodied_emissions import validate_embodied_outputs
+
+        validate_embodied_outputs(
+            contribution.emission_embodied_rows,
+            expected_keys=set(contribution.emission_embodied.expected_keys),
+            technologies={row.tech for row in contribution.rows_by_table["technology"]},
+            emission_commodities={row.name: row.units for row in contribution.rows_by_table["commodity"] if row.flag == "e"},
+            units=contribution.emission_embodied.audit["output_units"],
+            capacity_units=contribution.emission_embodied.audit["capacity_units"],
+        )
+    audit = validate_transport_parameter_support(
+        {table: batches[table] for table in contribution.prepared_support_tables},
+        existing_vintages=contribution.existing_vintages,
+        new_technologies=contribution.new_technologies,
+        expected_survival_curve_keys=contribution.expected_survival_curve_keys,
+        # Match the lifetime preparer's physical technology scope. Unclassified
+        # unlimited fuel-blending processes have no vehicle lifetime contract.
+        lifetime_technologies=[
+            row.tech for row in contribution.rows_by_table.get("technology", [])
+            if row.category and row.tech != "T_OFF"
+        ],
+        capacity_to_activity_technologies=[
+            row.tech for row in contribution.rows_by_table.get("technology", [])
+            if row.category in contribution.capacity_to_activity_categories
+        ],
+    )
+    if not audit["ok"]:
+        LOGGER.error("Transport parameter support failed: %s", audit["errors"])
+        raise ValueError(f"Transport parameter support failed: {audit['errors']}")
+    calibration = contribution.efficiency_audit.get("ceud_energy_calibration")
+    if calibration is not None:
+        import pandas as pd
+        from parameterization.ceud_energy_calibration import validate_emitted_calibration
+
+        audit["ceud_energy_calibration"] = validate_emitted_calibration({
+            "summary": pd.DataFrame(calibration["summary"]),
+            "cohorts": pd.DataFrame(calibration["cohort_accounting"]),
+            "efficiency": pd.DataFrame([row.model_dump(mode="json") for row in contribution.efficiency_rows]),
+            "splits": pd.DataFrame([row.model_dump(mode="json") for row in contribution.input_split_rows]),
+        }, c2a=pd.DataFrame([row.model_dump(mode="json") for row in contribution.capacity_to_activity_rows]),
+           factors=pd.DataFrame([row.model_dump(mode="json") for row in contribution.flat_road_factor_rows]))
+    LOGGER.debug("Transport cross-table parameter support: %s", audit["checks"])
+    return audit
+
+
+@log_duration(LOGGER, "SQLite transport insertion")
+def insert_transport_contribution(
+    connection: sqlite3.Connection,
+    contribution: TransportContribution,
+    *,
+    conflict: ConflictPolicy = "error",
+) -> dict[str, list[CanoeBaseModel]]:
+    """Insert a prepared contribution into a transaction owned by the caller."""
+    # Recheck mutable batches before any SQLite writes, including caller insertions.
+    contribution.support_audit.clear()
+    contribution.support_audit.update(_require_transport_parameter_support(contribution))
+    embodied_rows = [EmissionEmbodied.model_validate(row.model_dump()) for row in contribution.emission_embodied_rows]
+    from validation.insertion import replace_owned_ldv_rows, replace_owned_ldv_representation
+
+    charging = contribution.charging_profiles
+    ranges = contribution.range_representation
+    profile_rows = [CapacityFactorTech.model_validate(row.model_dump()) for row in charging.rows] if charging else []
+    share_rows = [LimitNewCapacityShare.model_validate(row.model_dump()) for row in ranges.share_rows] if ranges else []
+    profile_axes = []
+    if charging is not None:
+        from parameterization.ldv_charging_profiles import validate_charging_preparation
+
+        inherited_seasons = [TimeSeason(sequence=r[0],season=r[1],segment_fraction=r[2],notes=r[3])
+                             for r in connection.execute("SELECT sequence,season,segment_fraction,notes FROM time_season")]
+        inherited_times = [TimeOfDay(sequence=r[0],tod=r[1],hours=r[2],notes=r[3])
+                           for r in connection.execute("SELECT sequence,tod,hours,notes FROM time_of_day")]
+        validate_charging_preparation(charging, seasons=inherited_seasons or charging.seasons,
+                                      times_of_day=inherited_times or charging.times_of_day)
+        profile_axes = ([] if inherited_seasons else charging.seasons, [] if inherited_times else charging.times_of_day)
+    if ranges is not None:
+        from parameterization.ldv_ev_ranges import validate_range_preparation, validate_representative_preparation, _batch_fingerprint
+
+        validate_range_preparation(ranges)
+        if ranges.audit["mode"] == "representative_archetype":
+            if ranges.representative is None:
+                raise ValueError("Representative parameters have not been prepared and validated")
+            validate_representative_preparation(ranges.representative)
+            if _batch_fingerprint(_representative_batches(contribution)) != ranges.representative.fingerprint:
+                raise ValueError("Contribution differs from its validated representative parameters")
+            if contribution.labels_by_table != ranges.representative.labels or ranges.structural_dataset != ranges.representative.structural_dataset:
+                raise ValueError("Contribution differs from its validated representative structure")
+            contexts = {c.data_id: c for c in contribution.provenance_contexts}
+            if any(contexts.get(c.data_id) != c for c in ranges.representative.provenance_contexts):
+                raise ValueError("Contribution lost representative provenance/DQ lineage")
+    # The immutable preparation IDs above remain part of validation fingerprints.
+    # Publish readable aliases only now, across every FK-linked contribution batch.
+    labels, datasets, sources = registry_rows(contribution.provenance_contexts)
+    internal_datasets = [dataset for dataset in (
+        contribution.dataset, contribution.road_assumption_dataset,
+        contribution.charger_assumption_dataset,
+        contribution.efficiency_assumption_dataset, ranges.structural_dataset if ranges else None,
+    ) if dataset is not None]
+    publication_batches = {
+        **_representative_batches(contribution),
+        "demand": contribution.demand_rows,
+        "capacity_factor_tech": profile_rows,
+        "limit_new_capacity_share": share_rows,
+        "tech_group": ranges.group_rows if ranges else [],
+        "tech_group_member": ranges.member_rows if ranges else [],
+    }
+    columns = [column[1] for column in connection.execute("PRAGMA table_info(data_set)")]
+    existing_datasets = [
+        DataSet.model_validate(dict(zip(columns, row, strict=True)))
+        for row in connection.execute("SELECT * FROM data_set")
+    ]
+    published_ids = readable_data_id_mapping(
+        datasets=[*internal_datasets, *datasets], contexts=contribution.provenance_contexts,
+        batches=publication_batches, scenario_name=contribution.scenario_name,
+        existing_datasets=existing_datasets,
+    )
+
+    def insert_published(rows, *, policy=conflict):
+        published = publish_data_ids(rows, published_ids, scenario_name=contribution.scenario_name)
+        insert_models(connection, published, conflict=policy)
+        return published
+
+    LOGGER.info("Publishing %s readable transport dataset IDs for scenario %s",
+                len(published_ids), contribution.scenario_name)
+    # Compact across the complete prepared table, including independently prepared regions.
+    # Keep preparation fingerprints intact; insertion receives compact validated copies.
+    note_keys = next((context.database_note_keys for context in contribution.provenance_contexts), {})
+
+    def insert_parameter_batch(rows):
+        from validation.insertion import compact_parameter_notes
+
+        table = rows[0].table_name()
+        compact = compact_parameter_notes(rows, note_keys.get(table, ()))
+        inserted[table] = insert_published(compact)
+
+    # Narrow replacement of this slice's owned rows permits profile/mode switches;
+    # shared axes, unrelated rows and transaction control remain caller-owned.
+    replacement = dict(ranges=ranges, batches=_representative_batches(contribution),
+        contexts=contribution.provenance_contexts,
+        published_data_ids=published_ids,
+        internal_datasets=[d for d in (contribution.dataset, contribution.road_assumption_dataset,
+                                      contribution.efficiency_assumption_dataset,
+                                      contribution.charger_assumption_dataset) if d is not None])
+    replace_owned_ldv_representation(connection, **replacement, check_only=True)
+    replace_owned_ldv_rows(connection, charging=charging, ranges=ranges)
+    replace_owned_ldv_representation(connection, **replacement)
+    inserted: dict[str, list[CanoeBaseModel]] = {
+        contribution.dataset.table_name(): insert_published([contribution.dataset])
+    }
+    for rows in contribution.labels_by_table.values():
+        inserted[rows[0].table_name()] = insert_published(rows)
+    if charging is not None:
+        for axis_rows in profile_axes:
+            if axis_rows:
+                inserted[axis_rows[0].table_name()] = insert_published(axis_rows, policy="ignore_identical")
+    if ranges is not None and ranges.structural_dataset is not None:
+        inserted.setdefault("data_set", []).extend(
+            insert_published([ranges.structural_dataset], policy="ignore_identical"))
+        group_labels = [TechGroupLabel(group_name=row.group_name) for row in ranges.group_rows]
+        if group_labels:
+            inserted["tech_group_label"] = insert_published(group_labels, policy="ignore_identical")
+        for model, group_rows in ((TechGroup,ranges.group_rows),(TechGroupMember,ranges.member_rows)):
+            if group_rows:
+                validated = [model.model_validate(row.model_dump()) for row in group_rows]
+                inserted[model.table_name()] = insert_published(validated, policy="ignore_identical")
+    for rows in contribution.rows_by_table.values():
+        inserted[rows[0].table_name()] = insert_published(rows)
+    if contribution.road_assumption_dataset is not None:
+        inserted.setdefault("data_set", []).extend(insert_published([contribution.road_assumption_dataset]))
+    if contribution.charger_assumption_dataset is not None:
+        inserted.setdefault("data_set", []).extend(insert_published([contribution.charger_assumption_dataset]))
+    if contribution.efficiency_assumption_dataset is not None:
+        inserted.setdefault("data_set", []).extend(insert_published([contribution.efficiency_assumption_dataset]))
+    if (contribution.parameter_rows or contribution.demand_rows
+            or contribution.flat_road_factor_rows or contribution.lifetime_tech_rows
+            or contribution.lifetime_process_rows
+            or contribution.lifetime_survival_curve_rows or contribution.efficiency_rows
+            or contribution.input_split_rows or contribution.cost_invest_rows
+            or contribution.cost_fixed_rows
+            or contribution.cost_variable_rows or embodied_rows or profile_rows or share_rows):
+        for registry_batch in (labels, datasets, sources):
+            if registry_batch:
+                inserted.setdefault(registry_batch[0].table_name(), []).extend(insert_published(registry_batch))
+        if contribution.parameter_rows:
+            insert_parameter_batch(contribution.parameter_rows)
+        if contribution.demand_rows:
+            insert_parameter_batch(contribution.demand_rows)
+        if contribution.flat_road_factor_rows:
+            insert_parameter_batch(contribution.flat_road_factor_rows)
+        if contribution.lifetime_tech_rows:
+            insert_parameter_batch(contribution.lifetime_tech_rows)
+        if contribution.lifetime_process_rows:
+            insert_parameter_batch(contribution.lifetime_process_rows)
+        if contribution.lifetime_survival_curve_rows:
+            insert_parameter_batch(contribution.lifetime_survival_curve_rows)
+        if contribution.efficiency_rows:
+            insert_parameter_batch(contribution.efficiency_rows)
+        if contribution.cost_invest_rows:
+            insert_parameter_batch(contribution.cost_invest_rows)
+        if contribution.cost_fixed_rows:
+            insert_parameter_batch(contribution.cost_fixed_rows)
+        if contribution.cost_variable_rows:
+            insert_parameter_batch(contribution.cost_variable_rows)
+        if contribution.input_split_rows:
+            insert_parameter_batch(contribution.input_split_rows)
+        if embodied_rows:
+            insert_parameter_batch(embodied_rows)
+        for batch in (profile_rows,share_rows):
+            if batch:
+                insert_parameter_batch(batch)
+    if contribution.capacity_to_activity_rows:
+        inserted["capacity_to_activity"] = insert_published(contribution.capacity_to_activity_rows)
+    LOGGER.info("Inserted transport contribution: %s rows across %s tables; %s cross-table support checks passed",
+                sum(len(rows) for rows in inserted.values()), len(inserted),
+                len(contribution.support_audit["checks"]))
+    return inserted
+
+
+@log_duration(LOGGER, "SQLite assembly")
+def bootstrap_database(
+    *,
+    bundle: ConfigBundle,
+    template_dir: Path,
+    database_path: Path,
+    overwrite: bool = False,
+    comparison_reference: Path | None = None,
+) -> dict[str, Any]:
+    """Build, audit, and atomically publish one package-DDL v4 database."""
+    if database_path.exists() and not overwrite:
+        raise FileExistsError(
+            f"Refusing to overwrite existing SQLite database: {database_path}. "
+            "Pass --overwrite to replace it explicitly."
+        )
+    if comparison_reference is not None:
+        if comparison_reference.resolve() == database_path.resolve():
+            raise ValueError("Comparison reference must differ from the output database")
+        if not comparison_reference.is_file():
+            raise FileNotFoundError(f"Comparison reference is missing: {comparison_reference}")
+        if bundle.scenario.comparison.mode == "scenario":
+            validate_scenario_comparison_reference(comparison_reference)
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{database_path.name}.",
+        suffix=".tmp",
+        dir=database_path.parent,
+    )
+    os.close(descriptor)
+    temporary_path = Path(temporary_name)
+    connection: sqlite3.Connection | None = None
+    try:
+        connection = sqlite3.connect(temporary_path, isolation_level=None)
+        with log_duration(LOGGER, "SQLite schema and scenario economics"):
+            preflight = create_v4_schema(connection)
+            connection.execute("BEGIN IMMEDIATE")
+            preflight["packaged_rates"] = preflight.pop("rates")
+            preflight["configured_rates"] = apply_scenario_economics(connection, bundle)
+
+        contribution = prepare_transport_contribution(
+            connection,
+            bundle=bundle,
+            template_dir=template_dir,
+        )
+        base_load_results: list[TableLoadResult] = []
+        inserted: dict[str, list[CanoeBaseModel]] = {}
+        for specification in STANDALONE_BASE_TABLES:
+            base_rows, _, result = prepare_template_table(
+                connection,
+                specification=specification,
+                template_path=template_dir / specification.filename,
+                data_id=contribution.dataset.data_id,
+            )
+            if specification.table == "time_period" and bundle.scenario.periods.period_mode == "prospective":
+                periods = bundle.scenario.periods
+                base_rows = [TimePeriod(period=year, flag="e", sequence=None) for year in periods.existing]
+                base_rows.extend(
+                    TimePeriod(period=year, flag="f", sequence=index)
+                    for index, year in enumerate([*periods.model, periods.end_of_horizon])
+                )
+                result = replace(result, inserted_rows=len(base_rows), primary_keys=_expected_keys(base_rows))
+            insert_models(connection, base_rows)
+            inserted[specification.table] = base_rows
+            base_load_results.append(result)
+        inserted.update(insert_transport_contribution(connection, contribution))
+
+        expected_primary_keys = {
+            table: _expected_keys(rows) for table, rows in inserted.items()
+        }
+        touched_tables = list(inserted)
+        with log_duration(LOGGER, "Database integrity, keys and provenance validation"):
+            validation = validate_database(
+                connection,
+                expected_primary_keys=expected_primary_keys,
+                touched_tables=touched_tables,
+            )
+            if not validation["ok"]:
+                raise TemplateLoadError(
+                    f"Database validation failed before publish: {validation['errors']}"
+                )
+        LOGGER.info("Database validation passed: integrity ok; foreign-key violations=%s",
+                    validation["foreign_key_violations"])
+        connection.commit()
+        connection.close()
+        connection = None
+        comparison_report = {"enabled": False, "mode": "none"}
+        if comparison_reference is not None:
+            with log_duration(LOGGER, f"Database comparison ({bundle.scenario.comparison.mode})"):
+                comparison_report = compare_transport_database(bundle, temporary_path, comparison_reference)
+        os.replace(temporary_path, database_path)
+    except BaseException:
+        if connection is not None:
+            if connection.in_transaction:
+                connection.rollback()
+            connection.close()
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+    return {
+        "ok": True,
+        "database": str(database_path),
+        "schema": schema_evidence(),
+        "source_id_mapping": source_id_mapping(bundle.sources),
+        "template": {
+            "kind": "backend_internal_reference",
+            "data_id": inserted["data_set"][0].data_id,
+            "content_version": contribution.dataset.version,
+        },
+        "existing_capacity": contribution.parameter_audit,
+        "periods": bundle.scenario.periods.audit(),
+        "demand": contribution.demand_audit,
+        "road_utilization": contribution.road_utilization_audit,
+        "lifetimes": contribution.lifetime_audit,
+        "efficiencies": contribution.efficiency_audit,
+        "costs": contribution.cost_audit,
+        "ev_chargers": contribution.charger_audit,
+        "emission_embodied": contribution.emission_embodied_audit,
+        "charging_profiles": contribution.charging_profiles.audit if contribution.charging_profiles else {"enabled":False},
+        "BEV_PHEV_range_representation": contribution.range_representation.audit if contribution.range_representation else {"mode":"none"},
+        "parameter_support": contribution.support_audit,
+        "comparison": comparison_report,
+        "preflight": preflight,
+        "templates": [
+            {key: value for key, value in asdict(result).items() if key != "primary_keys"}
+            for result in (*base_load_results, *contribution.load_results)
+        ],
+        "touched_table_row_counts": {
+            table: audit["row_count"]
+            for table, audit in validation["touched_table_audit"].items()
+        },
+        "validation": validation,
+    }
+
+
+def compare_transport_database(
+    bundle: ConfigBundle, candidate_path: Path, reference: Path,
+) -> dict[str, Any]:
+    """Run the selected optional comparison before atomic database publication."""
+    comparison = bundle.scenario.comparison
+    if comparison.mode == "scenario":
+        result = compare_scenario_databases(
+            candidate_path, reference,
+            absolute_tolerance=comparison.absolute_tolerance,
+            relative_tolerance=comparison.relative_tolerance,
+            include_provenance=comparison.include_provenance,
+        )
+    elif comparison.mode == "legacy":
+        tolerances = {
+            "absolute_tolerance": comparison.absolute_tolerance,
+            "relative_tolerance": comparison.relative_tolerance,
+        }
+        result = compare_legacy_tables(
+            candidate_path,
+            reference,
+            tables=("technology", "commodity"),
+        )
+        result.update(mode="legacy", **tolerances)
+        result["existing_capacity"] = compare_legacy_existing_capacity(
+            candidate_path, reference, **tolerances,
+        )
+        result["demand"] = compare_legacy_demand(
+            candidate_path, reference, **tolerances,
+        )
+        result["lifetime_tech"] = compare_legacy_lifetime_tech(
+            candidate_path, reference, **tolerances,
+        )
+        result["efficiency"] = compare_legacy_efficiency(
+            candidate_path, reference,
+            **tolerances,
+        )
+        result["costs"] = compare_legacy_costs(
+            candidate_path, reference,
+            **tolerances,
+        )
+        result["emission_embodied"] = compare_legacy_emission_embodied(
+            candidate_path, reference, **tolerances,
+        )
+    else:
+        result = {"enabled": False, "mode": "none"}
+    return result
+
+
+def write_validation_report(report: dict[str, Any], path: Path) -> None:
+    """Write the concise configured validation artifact atomically."""
+    write_text_atomic(json.dumps(report, indent=2) + "\n", path)
+
+
+def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> None:
+    """Replay production prerequisites in order; derived files are never reused.
+
+    Registered caches, reviewed mappings/manual tables and external model results
+    remain inputs. Source adapters own acquisition/normalization; parameter builders
+    retain their live row/provenance/audit handoffs. Shared outputs require serial runs.
+    """
+    from fetching import (
+        assorted_sources, cer_enerfuture, fueleconomy_vehicles,
+        nlr_atb_autonomie, nrcan_ceud, statcan_tables, transport_canada_izev, vehicle_population,
+    )
+    from parameterization.road_aggregation import build_road_aggregation_artifacts
+    from parameterization.ceud_inputs import prepare_ceud_inputs
+
+    from parameterization.road_lifetimes_survival import require_tail_derivation
+
+    require_tail_derivation(bundle)
+    scenario = bundle.scenario_path
+    LOGGER.info("Preparing scenario inputs: cache downloads %s", "enabled" if download else "disabled")
+    for prepare in (
+        nrcan_ceud.fetch_and_normalize,
+        nrcan_ceud.fetch_and_normalize_ratings,
+        statcan_tables.fetch_and_normalize,
+        cer_enerfuture.fetch_and_normalize,
+        nlr_atb_autonomie.fetch_and_normalize,
+        assorted_sources.fetch_and_normalize,
+        assorted_sources.fetch_and_normalize_tc_dashboard,
+    ):
+        with log_duration(LOGGER, f"Prerequisite {prepare.__module__}.{prepare.__name__}"):
+            prepare(scenario, download=download)
+    with log_duration(LOGGER, "CEUD base-year parameter views"):
+        prepare_ceud_inputs(bundle)
+    with log_duration(LOGGER, "Prerequisite Transport Canada iZEV composition"):
+        transport_canada_izev.fetch_izev(bundle, download=download)
+    if "efficiency" in bundle.scenario.notebook_diagnostics:
+        with log_duration(LOGGER, "Notebook StatCan LDV stock composition"):
+            statcan_tables.prepare_ldv_stock_benchmark(bundle)
+    if "vehicle_stock" in bundle.scenario.notebook_diagnostics:
+        # Historical replay publishes a latest-edition handoff. Restore the selected
+        # production edition afterwards, before class weights and review products.
+        with log_duration(LOGGER, "Notebook complete Ontario history"):
+            vehicle_population.fetch_and_normalize(scenario, download=download)
+    # Only the scenario's Report A/4/5 edition is a production prerequisite.
+    with log_duration(LOGGER, f"Ontario vehicle evidence ({bundle.scenario.existing_capacity.vehicle_population_year})"):
+        vehicle_population.fetch_and_normalize(
+            scenario, year=bundle.scenario.existing_capacity.vehicle_population_year,
+            download=download, registered_only=True,
+        )
+    with log_duration(LOGGER, "FuelEconomy class evidence validation"):
+        request = fueleconomy_vehicles.build_request(bundle)
+        if download:
+            fueleconomy_vehicles.fetch_to_cache(request)
+        fueleconomy_vehicles.validate_cache(request)
+    with log_duration(LOGGER, "Road aggregation from reviewed mappings"):
+        build_road_aggregation_artifacts(scenario)
+    if bundle.scenario.notebook_diagnostics:
+        # Explicit preset work remains outside ordinary production prerequisites.
+        with log_duration(LOGGER, "Notebook FuelEconomy model evidence"):
+            fueleconomy_vehicles.fetch_and_normalize(scenario, download=download)
+    if "vehicle_stock" in bundle.scenario.notebook_diagnostics:
+        from parameterization.road_aggregation import build_mapping_diagnostic_artifacts
+        from parameterization.road_lifetimes_survival import build_mto_survival_diagnostic_artifacts
+
+        with log_duration(LOGGER, "Notebook reviewed-mapping diagnostics"):
+            build_mapping_diagnostic_artifacts(scenario)
+        with log_duration(LOGGER, "Notebook MOVES comparison evidence"):
+            assorted_sources.fetch_and_normalize_moves5_survival(scenario, download=download)
+        with log_duration(LOGGER, "Notebook MTO retention diagnostics"):
+            build_mto_survival_diagnostic_artifacts(scenario)
+
+
+def _publish_scenario(
+    candidate: Path, database: Path, report: dict[str, Any], validation: Path,
+    *, notebook_publication=None,
+) -> None:
+    """Stage outputs and restore previous publications on ordinary I/O failure.
+
+    Individual replacements are atomic; database, report and optional notebook
+    index cannot be crash-atomic as a set across power loss or process termination.
+    """
+    validation.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=f".{validation.name}.", dir=validation.parent) as directory:
+        stage = Path(directory)
+        previous = stage / "previous.json"
+        if validation.exists():
+            shutil.copyfile(validation, previous)
+        prepared = stage / "prepared.json"
+        write_validation_report(report, prepared)
+        prepared_index = None
+        if notebook_publication is not None:
+            from validation.notebook_evidence import notebook_index_text
+            prepared_index = stage / "notebook_index.json"
+            # Parse/serialize the existing index before any published file changes.
+            write_text_atomic(notebook_index_text(notebook_publication), prepared_index)
+            if database.exists():
+                shutil.copyfile(database, stage / "previous.sqlite")
+        os.replace(prepared, validation)
+        database_replaced = False
+        try:
+            os.replace(candidate, database)
+            database_replaced = True
+            if prepared_index is not None:
+                # Publish from the index's own shared parent, rather than carrying
+                # a private staging-directory DACL into the notebook's entry point.
+                write_text_atomic(prepared_index.read_text(encoding="utf-8"), notebook_publication.index_path)
+        except BaseException:
+            if database_replaced:
+                if (stage / "previous.sqlite").exists():
+                    os.replace(stage / "previous.sqlite", database)
+                else:
+                    database.unlink()
+            if previous.exists():
+                os.replace(previous, validation)
+            else:
+                validation.unlink()
+            raise
+
+
+def build_from_scenario(
+    scenario_path: str | Path,
+    *,
+    overwrite: bool = False,
+    download_sources: bool = False,
+    debug: bool = False,
+) -> tuple[dict[str, Any], Path]:
+    """Prepare sources, assemble validated rows and publish one complete scenario."""
+    from utils.build_logging import scenario_build_log
+
+    bundle = load_config_bundle(scenario_path)
+    from parameterization.road_lifetimes_survival import require_tail_derivation
+
+    require_tail_derivation(bundle)
+    with scenario_build_log(bundle, debug=debug) as log_path:
+        with log_duration(LOGGER, "Total scenario build"):
+            return _build_scenario(
+                bundle, overwrite=overwrite, download_sources=download_sources,
+                log_path=log_path, debug=debug,
+            )
+
+
+def _build_scenario(
+    bundle: ConfigBundle, *, overwrite: bool, download_sources: bool,
+    log_path: Path, debug: bool,
+) -> tuple[dict[str, Any], Path]:
+    scenario = bundle.scenario
+    periods = scenario.periods
+    from parameterization.vehicle_reference import load_vehicle_reference
+
+    vehicle_parameter_paths = load_vehicle_reference(bundle).paths
+    notebook_controls = {
+        path: file_sha256(path)
+        for path in (
+            bundle.scenario_path, bundle.paths_path, bundle.sources_path,
+            resolve_parameter_path(bundle, "rules.yaml"),
+            resolve_parameter_path(bundle, "conversion.yaml"),
+            *vehicle_parameter_paths,
+        )
+    } if scenario.notebook_diagnostics else {}
+    LOGGER.info(
+        "Scenario %s: period_mode=%s, base_year=%s; %s regions, %s existing vintages, %s model periods (%s-%s, step=%s)",
+        scenario.scenario.name, periods.period_mode, periods.base_year,
+        len(scenario.geography.regions), len(periods.existing), len(periods.model),
+        periods.model[0], periods.end_of_horizon, periods.step,
+    )
+    LOGGER.info(
+        "Selections: road lifetimes=%s; road survival=%s; charging=%s; LDV ranges=%s; embodied emissions=%s",
+        "survival curves" if scenario.lifetimes.survival_curves else "fixed medians",
+        scenario.lifetimes.road_lifetime_survival_source,
+        scenario.charging_profiles.travel_behavior_source,
+        scenario.BEV_PHEV_range_representation.mode, scenario.embodied_emissions,
+    )
+    LOGGER.info(
+        "Trajectories: demand=%s; efficiency=%s; costs=%s; cost basis=%s %s",
+        scenario.demand.cer_scenario, scenario.efficiencies.atb_trajectory,
+        scenario.costs.atb_trajectory, scenario.economics.cost_reference_year,
+        scenario.economics.cost_reference_currency,
+    )
+    database_path = resolve_configured_path(
+        bundle,
+        "outputs",
+        "sqlite",
+        bundle.scenario.outputs.sqlite_name,
+    )
+    if database_path.exists() and not overwrite:
+        raise FileExistsError(
+            f"Refusing to overwrite existing SQLite database: {database_path}. "
+            "Pass --overwrite to replace it explicitly."
+        )
+    validation_path = resolve_repo_path(bundle.repo_root, bundle.scenario.outputs.validation_report)
+    if validation_path.resolve() == database_path.resolve():
+        raise ValueError("Validation report must differ from the output database")
+    comparison = bundle.scenario.comparison
+    reference = None
+    if comparison.mode != "none":
+        reference = resolve_repo_path(bundle.repo_root, comparison.reference_sqlite)
+        if reference.resolve() == database_path.resolve():
+            raise ValueError("Comparison reference must differ from the output database")
+        if not reference.is_file():
+            raise FileNotFoundError(f"Comparison reference is missing: {reference}")
+        if comparison.mode == "scenario":
+            validate_scenario_comparison_reference(reference)
+        if validation_path.resolve() == reference.resolve():
+            raise ValueError("Validation report must differ from the comparison reference")
+    with log_duration(LOGGER, "Scenario prerequisites"):
+        prepare_scenario_inputs(bundle, download=download_sources)
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=f".{database_path.name}.", dir=database_path.parent) as directory:
+        candidate = Path(directory) / database_path.name
+        report = bootstrap_database(
+            bundle=bundle,
+            template_dir=resolve_input_path(bundle, "template"),
+            database_path=candidate,
+            comparison_reference=reference,
+        )
+        report.update(
+            {
+                "database": str(database_path),
+                "database_sha256": file_sha256(candidate),
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+                "scenario": bundle.scenario.scenario.name,
+                "orchestration": {"prerequisites": "replayed", "download_sources": download_sources},
+                "logging": {"path": str(log_path), "verbosity": "DEBUG" if debug else "INFO"},
+                "config": {
+                    "scenario": {
+                        "path": str(bundle.scenario_path),
+                        "sha256": file_sha256(bundle.scenario_path),
+                    },
+                    "paths": {
+                        "path": str(bundle.paths_path),
+                        "sha256": file_sha256(bundle.paths_path),
+                    },
+                    "sources": {
+                        "path": str(bundle.sources_path),
+                        "sha256": file_sha256(bundle.sources_path),
+                    },
+                    "parameters": [
+                        {"path": str(path), "sha256": file_sha256(path)}
+                        for path in (
+                            resolve_parameter_path(bundle, "rules.yaml"),
+                            resolve_parameter_path(bundle, "conversion.yaml"),
+                            *vehicle_parameter_paths,
+                        )
+                    ],
+                    "manual_inputs": [
+                        {"path": str(path), "sha256": file_sha256(path)}
+                        for path in sorted(resolve_input_path(bundle, "manual").glob("*.csv"))
+                    ],
+                },
+            }
+        )
+        notebook_publication = None
+        if scenario.notebook_diagnostics:
+            changed_controls = [str(path) for path, checksum in notebook_controls.items()
+                                if file_sha256(path) != checksum]
+            if changed_controls:
+                raise ValueError("Notebook build configuration changed during preparation; rerun before publication: "
+                                 + "; ".join(changed_controls))
+            from validation.notebook_evidence import stage_notebook_evidence
+            with log_duration(LOGGER, "Recorded notebook evidence"):
+                notebook_publication = stage_notebook_evidence(bundle, report)
+            report["notebook_evidence"] = notebook_publication.bundles
+        if notebook_publication is not None:
+            changed_controls = [str(path) for path, checksum in notebook_controls.items()
+                                if file_sha256(path) != checksum]
+            if changed_controls:
+                raise ValueError("Notebook build configuration changed while recording evidence: "
+                                 + "; ".join(changed_controls))
+        with log_duration(LOGGER, "Database and validation report publication"):
+            _publish_scenario(candidate, database_path, report, validation_path,
+                              notebook_publication=notebook_publication)
+        if notebook_publication is not None:
+            from validation.notebook_evidence import prune_notebook_evidence
+            try:
+                removed = prune_notebook_evidence(notebook_publication)
+                LOGGER.info("Removed %s superseded notebook evidence directories", len(removed))
+            except (OSError, ValueError) as exc:
+                LOGGER.warning("Published notebook evidence; obsolete snapshot cleanup failed: %s", exc)
+    LOGGER.info("Created %s; validation report: %s", database_path, validation_path)
+    return report, validation_path
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--scenario",
+        default="config/scenarios/default.yaml",
+        help="Path to the scenario YAML file.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Explicitly replace the configured SQLite output if it already exists.",
+    )
+    parser.add_argument(
+        "--download-sources", action="store_true",
+        help="Permit source adapters to acquire missing caches; default is offline replay.",
+    )
+    parser.add_argument(
+        "--debug", action="store_true",
+        help="Include configuration mappings, detailed audits and routine start events.",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format="%(levelname)s %(message)s",
+    )
+    try:
+        build_from_scenario(
+            args.scenario,
+            overwrite=args.overwrite,
+            download_sources=args.download_sources,
+            debug=args.debug,
+        )
+    except (
+        OSError,
+        TemplateLoadError,
+        ValidationError,
+        ValueError,
+        sqlite3.Error,
+    ) as exc:
+        raise SystemExit(f"Database build failed: {exc}") from exc
+
+
+if __name__ == "__main__":
+    main()

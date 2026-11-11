@@ -1,0 +1,68 @@
+# Presentation selections only; never model inputs or production prerequisites.
+version: 1
+fleet_100:
+  reference_year: 2025
+  region: "ON"
+  mto_report_year: 2025
+  statcan_maximum_year: 2025
+  icons_per_panel: 100
+  top_models_per_vehicle_group: 5
+  powertrains: [gasoline, diesel, bev, hev, phev]
+  vehicle_groups: [Cars, Light trucks]
+  size_class_order:
+    Cars: [Two-seater, Minicompact, Subcompact, Compact, Mid-size, Full-size, "Station wagon: Small", "Station wagon: Mid-size"]
+    Light trucks: ["Sport utility vehicle: Small", "Sport utility vehicle: Standard", Minivan, "Van: Passenger", "Van: Cargo", "Pickup truck: Small", "Pickup truck: Standard"]
+  figure_id: fleet-100-1
+  exact_table: ontario_100_shares.csv
+  panel_columns: 10
+  panel_width: 250
+  panel_height: 250
+charging_profile:
+  scenario: config/scenarios/validation_baseline.yaml
+  region: "ON"
+  profiles: [nhts, tts]
+  week_start: "2018-01-08"
+  figure_id: charging-profile-1
+nonroad:
+  scenario: config/scenarios/validation_baseline.yaml
+  region: "ON"
+  modes:
+    passenger_air: Passenger air
+    passenger_rail: Passenger rail
+    freight_air: Freight air
+    freight_rail: Freight rail
+    freight_marine: Marine freight
+    off_road: Off-road equipment
+  figure_id: nonroad-1
+  exact_table: nonroad_efficiency_rows.csv
+  panel_width: 300
+  panel_height: 190
+publication_figures:
+  notebooks:
+    vehicle_population_diagnosis: [population-11-cars, population-11-light-trucks, population-19, population-20, population-21]
+    stock_cohort_diagnosis: [cohort-1, cohort-2, cohort-3, cohort-3-survivors, cohort-4, cohort-5]
+    ldv_efficiency_diagnosis: [ldv-eff-2-gasoline, ldv-eff-2-phev-35-miles, ldv-eff-2-bev-300-miles, ldv-eff-3, ldv-eff-4-light-trucks-gasoline, ldv-eff-7-light-trucks-gasoline, ldv-eff-5-light-trucks-gasoline, ldv-eff-6-light-trucks-gasoline, ldv-eff-6-cars-bev-mj-vkm, ldv-eff-6-light-trucks-phev-mj-vkm, ldv-eff-6-heavy-trucks-diesel-mj-vkm, ldv-eff-6-medium-trucks-]
+  notebook_views:
+    stock_cohort_diagnosis:
+      - figure_prefixes: [cohort-3-survivors]
+        lineage_basis: Physical surviving stock
+    ldv_efficiency_diagnosis:
+      - figure_prefixes: [ldv-eff-4-light-trucks-gasoline, ldv-eff-7-light-trucks-gasoline, ldv-eff-5-light-trucks-gasoline, ldv-eff-6-light-trucks-gasoline]
+        family_controls: {Cars: gasoline, Light trucks: gasoline, Medium trucks: diesel, Heavy trucks: diesel}
+      - figure_prefixes: [ldv-eff-6-light-trucks-phev-mj-vkm]
+        family_controls: {Cars: bev, Light trucks: phev, Medium trucks: diesel, Heavy trucks: diesel}
+  cost:
+    figure_ids: [vehicle-cost-1, vehicle-cost-3, vehicle-cost-5]
+    region: "ON"
+    mode: cars
+    vehicle_class: Compact
+    source_year: 2025
+    vintage: 2025
+    currency: CAD
+  calibration:
+    region: "ON"
+    road_class: cars
+    powertrain: gasoline
+  comparison:
+    notebook: transportation_validation_diagnosis
+    charts: [charging_chart, activity_energy_chart]

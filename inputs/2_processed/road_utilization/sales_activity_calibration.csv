@@ -1,0 +1,6 @@
+region,road_class,base_year,retained_stock_k_vehicles,reported_stock_k_vehicles,target_activity_bn,modelled_activity_bn,activity_residual_bn,capacity_activity_denominator_bn,utilization,prior_mean_utilization,future_policy
+ON,cars,2025,3605.2670000000003,3605.267,84.20890228500001,84.20890228500001,0.0,4686.847099999999,0.01796706836990693,0.019160207178010986,same flat level for existing and new vintages
+ON,freight_light_trucks,2025,1215.6319999999998,1215.632,13.233869755,13.233869755,0.0,395.08040000000005,0.033496649681938155,0.034266752736822906,same flat level for existing and new vintages
+ON,heavy_trucks,2025,143.136,143.136,92.801423834,92.801423834,0.0,1395.576,0.06649686139199872,0.07038135398499287,same flat level for existing and new vintages
+ON,medium_trucks,2025,421.75499999999994,421.755,10.899558088,10.899558088,0.0,685.351875,0.015903594176349192,0.01603592542400754,same flat level for existing and new vintages
+ON,passenger_light_trucks,2025,4355.4580000000005,4355.458,121.867879338,121.867879338,0.0,7077.61925,0.017218767361355303,0.017648016174319638,same flat level for existing and new vintages

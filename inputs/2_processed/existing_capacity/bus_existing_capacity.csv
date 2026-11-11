@@ -1,0 +1,17 @@
+region,road_class,tech,vintage,capacity,units
+ON,inter_city_buses,T_HDV_BIC_DSL_EX,2015,0.6123810800795668,k vehicles
+ON,inter_city_buses,T_HDV_BIC_DSL_EX,2020,0.42741945497833705,k vehicles
+ON,inter_city_buses,T_HDV_BIC_GSL_EX,2015,0.09489423114093545,k vehicles
+ON,inter_city_buses,T_HDV_BIC_GSL_EX,2020,0.09230523380115918,k vehicles
+ON,school_buses,T_HDV_BS_CNG_EX,2020,1.3616369083908801,k vehicles
+ON,school_buses,T_HDV_BS_DSL_EX,2015,5.873714454201214,k vehicles
+ON,school_buses,T_HDV_BS_DSL_EX,2020,3.4904734887102205,k vehicles
+ON,school_buses,T_HDV_BS_GSL_EX,2015,0.6777661705532452,k vehicles
+ON,school_buses,T_HDV_BS_GSL_EX,2020,0.6154089781444239,k vehicles
+ON,urban_transit,T_HDV_BT_BEV_EX,2015,1.0691191568386276,k vehicles
+ON,urban_transit,T_HDV_BT_BEV_EX,2020,1.0147254782188766,k vehicles
+ON,urban_transit,T_HDV_BT_CNG_EX,2020,0.11324912732401493,k vehicles
+ON,urban_transit,T_HDV_BT_DSL_EX,2015,2.6999529886299003,k vehicles
+ON,urban_transit,T_HDV_BT_DSL_EX,2020,1.7804375407134398,k vehicles
+ON,urban_transit,T_HDV_BT_GSL_EX,2015,0.03854911151106329,k vehicles
+ON,urban_transit,T_HDV_BT_GSL_EX,2020,0.03796659676406741,k vehicles

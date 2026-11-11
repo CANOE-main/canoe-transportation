@@ -1,0 +1,114 @@
+site_name: CANOE transportation
+site_description: How transport evidence becomes model parameters
+site_url: https://canoe-main.github.io/canoe-transportation/
+repo_url: https://github.com/CANOE-main/canoe-transportation
+repo_name: CANOE-main/canoe-transportation
+edit_uri: blob/v2.0/docs/
+docs_dir: docs
+strict: true
+theme:
+  name: material
+  custom_dir: scripts/docs/overrides
+  font: false
+  palette:
+    primary: custom
+    accent: blue
+  features:
+    - navigation.sections
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+nav:
+  - Overview: index.md
+  - Getting started:
+      - Build and inspect a scenario: getting_started.md
+      - Configure a scenario: scenario_configuration.md
+  - Representing the transport system:
+      - Which vehicles are represented?: model/vehicles.md
+      - How fleets age and retire: model/ageing.md
+      - From vehicles to transport activity: model/activity.md
+      - From activity to energy use: model/energy.md
+      - Technology, costs and embodied emissions: model/technology.md
+      - Charging and refueling infrastructure: model/infrastructure.md
+      - When vehicles charge: model/charging.md
+      - Air, rail, marine and off-road: model/nonroad.md
+  - Choosing and interpreting scenarios:
+      - Why keep alternative representations?: model/choices.md
+      - Adoption constraints and research: model/adoption.md
+      - Integration and current limits: model/integration.md
+  - Technical reference:
+      - Publishing and checking documentation: publication.md
+      - Assumptions and limitations: assumptions.md
+      - Parameter derivations: etl_flowcharts.md
+      - Source coverage: source_inventory.md
+hooks:
+  - scripts/docs_hooks.py
+plugins:
+  - search
+  - print-site:
+      add_to_navigation: true
+      print_page_title: Complete transportation report
+      add_table_of_contents: true
+      toc_depth: 2
+      enumerate_headings: false
+      enumerate_figures: false
+      add_cover_page: true
+      cover_page_template: scripts/docs/report_cover.html
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: canoe-mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+        - name: math
+          class: arithmatex
+  - pymdownx.arithmatex:
+      generic: true
+extra_css:
+  - assets/stylesheets/documentation.css
+extra_javascript:
+  - assets/javascripts/mathjax.js
+  - assets/vendor/mathjax/tex-svg.js
+  - path: assets/javascripts/documentation.js
+    type: module
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn
+extra:
+  repository_branch: v2.0
+  canonical_pages:
+    scenario_configuration.md: config/scenarios/README.md
+  publication_assets:
+    - assets/stylesheets/documentation.css
+    - assets/javascripts/mathjax.js
+    - assets/javascripts/documentation.js
+    - assets/figures/ontario_100_shares.csv
+    - assets/figures/nonroad_efficiency_rows.csv
+  renderer_packages:
+    mermaid:
+      url: https://registry.npmjs.org/mermaid/-/mermaid-11.12.2.tgz
+      integrity: sha512-n34QPDPEKmaeCG4WDMGy0OT6PSyxKCfy2pJgShP+Qow2KLrvWjclwbc3yXfSIf4BanqWEhQEpngWwNp/XhZt6w==
+      prefix: package/dist/
+    elk:
+      url: https://registry.npmjs.org/@mermaid-js/layout-elk/-/layout-elk-0.2.0.tgz
+      integrity: sha512-vjjYGnCCjYlIA/rR7M//eFi0rHM6dsMyN1JQKfckpt30DTC/esrw36hcrvA2FNPHaqh3Q/SyBWzddyaky8EtUQ==
+      prefix: package/dist/
+    mathjax:
+      url: https://registry.npmjs.org/mathjax/-/mathjax-3.2.2.tgz
+      integrity: sha512-Bt+SSVU8eBG27zChVewOicYs7Xsdt40qm4+UpHyX7k0/O9NliPc+x77k1/FEsPsjKPZGJvtRZM1vO+geW0OhGw==
+      prefix: package/es5/

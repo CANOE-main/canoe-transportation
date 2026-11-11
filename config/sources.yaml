@@ -1,0 +1,2584 @@
+# External-source registry.
+#
+# Each `sources` entry owns one external family's identity, release, access/cache
+# contract, source-native units, citation, refresh notes, availability checks, and
+# reviewed data-quality metadata. `components` describe the source-native datasets and
+# their intended downstream roles. Source-specific discovery fields belong only under
+# `adapter` and are validated by the adapter that consumes them.
+#
+# DQ is represented by the named v4 fields `dq_cred`, `dq_geog`, `dq_struc`, `dq_tech`,
+# and `dq_time`. Each source explicitly owns its scores; null means awaiting review.
+# Each null indicator resolves to the registry fallback of 5 for ordinary builds.
+# Explicit component scores take precedence over explicit source scores; remaining
+# indicators inherit the fallback. Placeholders remain visible here for later review.
+# `database_note` populates SQLite data_source.notes and is appended to parameter-row
+# notes for the contributors actually used. Source text heads each labelled block;
+# component notes appear beneath it. database_note_variants hold conditional caveats.
+# database_note_keys retain each distinct treatment once per configured parameter key.
+# These pre-annotations assess registered evidence, not every scenario application.
+# Unresolved judgments remain null; explicit scores use the existing v4 scale
+# (1 excellent, 2 good, 3 acceptable, 4 lacking, 5 unacceptable).
+# `refresh_notes` and component `notes` document acquisition/evidence and are not copied
+# into that database field.
+# Every registered external source/component intended to support final parameter rows
+# resolves the full applicable contract through component/source annotations and the
+# registry fallback before insertion. DQ is source-owned, reviewable provenance evidence, not
+# optional metadata. `dq_time` assessments use actual observation/value years and
+# applicability to modelled time under the pinned data_quality_time descriptions.
+# Publication dates and monetary dollar years are not data years. The schema defines
+# qualitative applicability, not numeric age thresholds or automatic wall-clock decay.
+# Research/methodology sources without an accepted model-time use remain unassessed.
+#
+# Extraction selectors, mappings, formulas, bins, and interim output names belong in
+# `config/parameters/rules.yaml`; run-specific years/trajectories belong in scenario YAML.
+# Regional fleet aggregation selections belong in each scenario's `aggregation_sources`.
+# Backend-owned templates are not external sources and do not belong in this registry.
+#
+# database_precedence selects data_source and its existing component/source DQ for the
+# named parameter table, optionally scoped by actual components, categories, sub_categories
+# or technology_suffixes. Scopes combine; competing source matches are errors. If none
+# applies, the builder's explicit native governor remains. Notes retain every contributor.
+#
+# Stable `source_id` values preserve database provenance across source-family renames
+# and retired registrations. Keep edition details in version/access metadata.
+
+version: 3
+
+# Explicit maintenance only; normal builds never check for or adopt new snapshots.
+updater:
+  timeout_seconds: 120
+  max_download_bytes: 268435456
+
+defaults:
+  required: true
+  component_required: true
+  # First row per identity and distinct source/component treatment; differences retain a note.
+  database_note_keys:
+    capacity_factor_tech: [season, region]
+    cost_invest: [tech, region]
+    cost_fixed: [tech, region]
+    cost_variable: [tech, region]
+    demand: [commodity, region]
+    efficiency: [tech, region]
+    existing_capacity: [tech, region]
+    lifetime_tech: [tech, region]
+    lifetime_survival_curve: [tech, region]
+    limit_annual_capacity_factor: [tech_or_group, region]
+    limit_tech_input_split: [tech, region]
+    limit_tech_input_split_annual: [tech, region]
+    limit_new_capacity_share: [sub_group, region]
+    emission_embodied: [tech, emis_comm, region]
+  data_quality: {dq_cred: 5, dq_geog: 5, dq_struc: 5, dq_tech: 5, dq_time: 5}
+
+sources:
+  nrcan_ceud_transport_provincial:
+    source_id: T01
+    title: "NRCan Comprehensive Energy Use Database Transportation Sector provincial tables"
+    status: active
+    source_type: upstream_download
+    file_type: xls
+    version: "2025"
+    units: "varies"
+    citation: "Natural Resources Canada. (2025). Transportation Sector – Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm"
+    database_precedence:
+      - table: existing_capacity
+        categories: [cars, passenger_light_trucks, freight_light_trucks, motorcycles, medium_trucks, heavy_trucks, school_buses, urban_transit, inter_city_buses]
+      - table: demand
+        components: ['20', '34', '35', '36', '32', '28', '29', '30', '7']
+      - table: limit_annual_capacity_factor
+        categories: [cars, passenger_light_trucks, freight_light_trucks, motorcycles, medium_trucks, heavy_trucks, school_buses, urban_transit, inter_city_buses]
+    database_note: "Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies."
+    # dq_time: Annual observation years align with historical inputs and the selected base year.
+    data_quality: {dq_cred: 2, dq_geog: 1, dq_struc: 2, dq_tech: 2, dq_time: 1}
+    validation_rule: "For each requested year-region-table_id, confirm file exists, can be opened, and contains expected CEUD table structure."
+    refresh_notes: >
+      Legacy workflow used get_nrcan_data.py to download CEUD transport Tables 7, 20-21, and 28-37, strip formatting/noise rows, and inject cleaned arrays
+      into the transport spreadsheet Background Data sheet.
+    adapter:
+      url_template: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/Excel/{year}/tran_{region}_e_{table_id}.xls"
+      cache_path_template: "nrcan_ceud_transport/{year}_tran_{region}_e_{table_id}.xls"
+      regions:
+        allowed: ["AB", "BCT", "MB", "NB", "NL", "NS", "ON", "PE", "QC", "SK"]
+    components:
+      21:
+        database_note: "Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts."
+        label: "Car Explanatory"
+        short_name: car_fleet
+        inputs: [sales, stock, average_distance]
+        applies_to: [cars]
+        produces: [fleet_turnover, occupancy_from_activity]
+        parameter_modules: [road_stocks_and_demands]
+      37:
+        database_note: "Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains."
+        label: "Truck Explanatory"
+        short_name: truck_fleet
+        inputs: [sales, stock, fleet_efficiency, average_distance]
+        applies_to: [passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
+        produces: [fleet_turnover, md_truck_efficiency, hd_truck_efficiency, occupancy_from_activity]
+        parameter_modules: [road_stocks_and_demands, road_efficiencies]
+      31:
+        database_note: "Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported."
+        label: "Bus Explanatory"
+        short_name: bus_fleet
+        inputs: [stock, average_distance]
+        applies_to: [school_buses, transit_buses, inter_city_buses]
+        produces: [fleet_size, occupancy_from_activity]
+        parameter_modules: [road_stocks_and_demands]
+      20:
+        database_note_variants:
+          car_extrapolation: "Car activity follows historical growth; passenger-light-truck activity is the residual within the GDP-indexed passenger-LDV total."
+        database_note: "Provincial passenger-car service activity in passenger-kilometres."
+        label: "Cars"
+        short_name: car_activity
+        inputs: [activity]
+        applies_to: [cars]
+        produces: [demand, utilization_from_stock]
+        parameter_modules: [road_stocks_and_demands]
+      34:
+        database_note: "Provincial passenger-light-truck service activity in passenger-kilometres."
+        label: "Passenger Light Trucks"
+        short_name: passenger_light_trucks_activity
+        inputs: [activity]
+        applies_to: [passenger_light_trucks]
+        produces: [demand, utilization_from_stock]
+        parameter_modules: [road_stocks_and_demands]
+      35:
+        database_note: "Provincial freight-light-truck service activity in tonne-kilometres."
+        label: "Freight Light Trucks"
+        short_name: freight_light_trucks_activity
+        inputs: [activity]
+        applies_to: [freight_light_trucks]
+        produces: [demand, utilization_from_stock]
+        parameter_modules: [road_stocks_and_demands]
+      36:
+        database_note: "Provincial medium- and heavy-truck freight activity in tonne-kilometres."
+        label: ["Medium Trucks", "Heavy Trucks"]
+        short_name: medium_heavy_trucks_activity
+        inputs: [activity]
+        applies_to: [medium_trucks, heavy_trucks]
+        produces: [demand, utilization_from_stock]
+        parameter_modules: [road_stocks_and_demands]
+      32:
+        database_note: "Provincial motorcycle stock, distance travelled and passenger activity."
+        label: "Motorcycle"
+        short_name: motorcycle_fleet_activity
+        inputs: [activity, stock, average_distance]
+        applies_to: [motorcycles]
+        produces: [demand, utilization_from_stock, fleet_size, occupancy_from_activity]
+        parameter_modules: [road_stocks_and_demands]
+      28:
+        database_note: "Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately."
+        label: "School Buses"
+        short_name: school_buses_activity
+        inputs: [activity, fuel_use_by_source]
+        applies_to: [school_buses]
+        produces: [demand, utilization_from_stock, fuel_type_disaggregation]
+        parameter_modules: [road_stocks_and_demands]
+      29:
+        database_note: "Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately."
+        label: "Urban Transit"
+        short_name: urban_transit_activity
+        inputs: [activity, fuel_use_by_source]
+        applies_to: [transit_buses]
+        produces: [demand, utilization_from_stock, fuel_type_disaggregation]
+        parameter_modules: [road_stocks_and_demands]
+      30:
+        database_note: "Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately."
+        label: "Inter-City Buses"
+        short_name: inter_city_buses_activity
+        inputs: [activity, fuel_use_by_source]
+        applies_to: [inter_city_buses]
+        produces: [demand, utilization_from_stock, fuel_type_disaggregation]
+        parameter_modules: [road_stocks_and_demands]
+      14:
+        database_note: "Provincial passenger-air energy use by fuel; aircraft counts and provincial passenger activity are not reported."
+        data_quality: {dq_struc: 3, dq_tech: 3}
+        label: "Passenger Air"
+        short_name: passenger_air_provincial_fuel_use_by_source
+        inputs: [fuel_use_by_source]
+        applies_to: [passenger_air]
+        produces: [stock_from_activity, fuel_type_disaggregation]
+        parameter_modules: [offroad_stocks_and_demands]
+      15:
+        database_note: "Provincial freight-air energy use by fuel; aircraft counts and provincial freight activity are not reported."
+        data_quality: {dq_struc: 3, dq_tech: 3}
+        label: "Freight Air"
+        short_name: freight_air_provincial_fuel_use_by_source
+        inputs: [fuel_use_by_source]
+        applies_to: [freight_air]
+        produces: [stock_from_activity, fuel_type_disaggregation]
+        parameter_modules: [offroad_stocks_and_demands]
+      17:
+        database_note: "Provincial passenger-rail energy use; fleet capacity and passenger activity require separate intensity evidence."
+        data_quality: {dq_struc: 3, dq_tech: 3}
+        label: "Passenger Rail"
+        short_name: passenger_rail_provincial_fuel_use_by_source
+        inputs: [fuel_use_by_source]
+        applies_to: [passenger_rail]
+        produces: [stock_from_activity]
+        parameter_modules: [offroad_stocks_and_demands]
+      18:
+        database_note: "Provincial freight-rail energy use; fleet capacity and freight activity require separate intensity evidence."
+        data_quality: {dq_struc: 3, dq_tech: 3}
+        label: "Freight Rail"
+        short_name: freight_rail_provincial_fuel_use_by_source
+        inputs: [fuel_use_by_source]
+        applies_to: [freight_rail]
+        produces: [stock_from_activity]
+        parameter_modules: [offroad_stocks_and_demands]
+      19:
+        database_note: "Provincial marine-freight energy use by fuel; vessel capacity and freight activity require separate intensity evidence."
+        data_quality: {dq_struc: 3, dq_tech: 3}
+        label: "Marine Freight"
+        short_name: freight_marine_provincial_fuel_use_by_source
+        inputs: [fuel_use_by_source]
+        applies_to: [freight_marine]
+        produces: [stock_from_activity, fuel_type_disaggregation]
+        parameter_modules: [offroad_stocks_and_demands]
+      7:
+        database_note: "Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service."
+        label: "Off-Road"
+        short_name: off_road_fuel_use_by_source
+        inputs: [energy_use_by_mode, fuel_use_by_source]
+        applies_to: [off_road]
+        produces: [demand]
+        parameter_modules: [offroad_stocks_and_demands]
+
+  nrcan_ceud_transport_national:
+    source_id: T02
+    title: "NRCan Comprehensive Energy Use Database Transportation Sector national tables"
+    status: active
+    source_type: upstream_download
+    file_type: xls
+    version: "2025"
+    units: "varies"
+    citation: "Natural Resources Canada. (2025). Transportation Sector – Canada. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_ca.cfm"
+    database_note: "Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity."
+    database_precedence:
+      - table: existing_capacity
+        categories: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
+      - table: demand
+        components: ['20', '21', '26', '27', '28']
+    # dq_time: Annual observation years align with historical inputs and the selected base year.
+    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 1}
+    validation_rule: "For each requested year-table_id, confirm file exists, can be opened, and contains expected CEUD table structure."
+    refresh_notes: >
+      Current national inputs use CEUD transport Tables 20, 21, 26, 27, and 28.
+      These corrected table IDs replace stale registry references to Tables 14-19.
+    adapter:
+      url_template: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/Excel/{year}/tran_ca_e_{table_id}.xls"
+      cache_path_template: "nrcan_ceud_transport/{year}_tran_ca_e_{table_id}.xls"
+    components:
+      20:
+        label: "Passenger Air"
+        short_name: passenger_air_national_activity
+        inputs: [activity, energy_intensity, fuel_use_by_source]
+        applies_to: [passenger_air]
+        produces: [demand, fuel_type_disaggregation]
+        parameter_modules: [offroad_stocks_and_demands]
+      21:
+        label: "Freight Air"
+        short_name: freight_air_national_activity
+        inputs: [activity, energy_intensity, fuel_use_by_source]
+        applies_to: [freight_air]
+        produces: [demand, fuel_type_disaggregation]
+        parameter_modules: [offroad_stocks_and_demands]
+      26:
+        label: "Passenger Rail"
+        short_name: passenger_rail_national_activity
+        inputs: [activity, energy_intensity, fuel_use_by_source]
+        applies_to: [passenger_rail]
+        produces: [demand]
+        parameter_modules: [offroad_stocks_and_demands]
+      27:
+        label: "Freight Rail"
+        short_name: freight_rail_national_activity
+        inputs: [activity, energy_intensity, fuel_use_by_source]
+        applies_to: [freight_rail]
+        produces: [demand]
+        parameter_modules: [offroad_stocks_and_demands]
+      28:
+        label: "Marine Freight"
+        short_name: freight_marine_national_activity
+        inputs: [activity, energy_intensity, fuel_use_by_source]
+        applies_to: [freight_marine]
+        produces: [demand, fuel_type_disaggregation]
+        parameter_modules: [offroad_stocks_and_demands]
+
+  ontario_ministry_transport_vehicle_population:
+    update:
+      strategy: ontario_population
+      metadata_url: https://data.ontario.ca/api/3/action/package_show
+    source_id: T03
+    title: "Ontario Ministry of Transportation vehicle population data"
+    status: active
+    source_type: upstream_download
+    file_type: zip
+    version: "Annual CKAN resources; latest edition discovered at run time"
+    units: "Vehicle counts by registration status; Report 4 weight bounds are kilograms."
+    citation: "Ontario Ministry of Transportation. (2025). Vehicle population data—Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data"
+    database_note: "Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement."
+    # dq_time: Recent stock-report cohorts proxy class/age composition outside their observation year.
+    data_quality: {dq_cred: 1, dq_geog: 2, dq_struc: 2, dq_tech: 2, dq_time: 2}
+    validation_rule: "CKAN metadata must expose one unambiguous annual ZIP per usable year; each ZIP must be integral and contain the configured Report A equivalent, while the latest ZIP must also contain Reports 4 and 5. Report A status columns must reconcile to TOTAL."
+    refresh_notes: >
+      Source ZIP URLs are CKAN resources and may change by release. Discover and
+      sort annual resources from Ontario Data Catalogue package metadata instead
+      of hardcoding a year or resource URL. The 2014 Report 6 member is a
+      schema-compatible predecessor of Report A; the 2015 edition is excluded
+      because it contains only suppressed make/model keys. The 2017 and 2019
+      resources contain a nested VPS.zip. Report 4 remains authoritative for
+      commercial GVWR processing. Report 5 supplies truck, motorcycle, and bus
+      age cohorts; Report A requires the reviewed LDV make/model mapping.
+    adapter:
+      access:
+        method: ckan_package
+        ckan_base_url: "https://data.ontario.ca"
+        package_id: vehicle-population-data
+        resource_selector:
+          format: zip
+          year_fields: [name, url]
+          year_pattern: '(?<!\d)(20\d{2})(?!\d)'
+      cache_path_template: "ontario_vehicle_population/{year}_vehicle_population_data.zip"
+      # Verified archive identities for offline replay; refresh deliberately after source review.
+      registered_resources:
+      - year: 2014
+        resource_id: f512f110-bf88-4c59-b223-af5ea0a14f6d
+        resource_name: Vehicle population data - 2014
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/f512f110-bf88-4c59-b223-af5ea0a14f6d/download/2014.zip
+        resource_format: ZIP
+        created: '2019-12-31T18:20:05.815382'
+        last_modified: '2025-11-06T19:55:49.522670'
+        cache_sha256: 3e4d6bede76fa09e38cfd22cf3aa50d17244d04e7222de79726f15ea421647ae
+      - year: 2016
+        resource_id: f94b0f78-7ebf-4c66-b937-7f7798508606
+        resource_name: Vehicle population data - 2016
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/f94b0f78-7ebf-4c66-b937-7f7798508606/download/2016.zip
+        resource_format: ZIP
+        created: '2019-12-31T18:20:05.815398'
+        last_modified: '2025-11-06T19:56:50.777397'
+        cache_sha256: eb10e08613c53612b316c44f7dcbe72fa74d5064915844db6a915301fe716a7e
+      - year: 2017
+        resource_id: c61643a9-8338-47c9-b0a8-00f7c6298d05
+        resource_name: Vehicle population data - 2017
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/c61643a9-8338-47c9-b0a8-00f7c6298d05/download/vps_2017.zip
+        resource_format: ZIP
+        created: '2019-12-31T18:20:05.815400'
+        last_modified: '2025-11-27T16:31:12.630460'
+        cache_sha256: 3d2f83dc16bf3f36c67471fdd727bc91bfa09c13cf15b2a0bd7d319a6fc47514
+      - year: 2018
+        resource_id: 52a9329b-1486-48af-94c4-e68e3684b50b
+        resource_name: Vehicle population data - 2018
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/52a9329b-1486-48af-94c4-e68e3684b50b/download/2018.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:03:01.015991'
+        last_modified: '2023-10-19T15:03:00.627276'
+        cache_sha256: 9f6a85addd0b60273d4c7940dfca6c5f8e5d74aa14556ad3bb83c018fe3d6f27
+      - year: 2019
+        resource_id: 8ca7517e-b524-4dde-8c20-b488f5978800
+        resource_name: Vehicle population data - 2019
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/8ca7517e-b524-4dde-8c20-b488f5978800/download/vps_2019.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:04:38.259968'
+        last_modified: '2025-11-27T14:47:42.449483'
+        cache_sha256: f1567693c423ffea2cee59ab8e1c8bda80678ff34efb3e19f7d87bf007f996b4
+      - year: 2020
+        resource_id: 0d6c5fc6-bb23-4b6b-8310-35965ef78548
+        resource_name: Vehicle population data - 2020
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/0d6c5fc6-bb23-4b6b-8310-35965ef78548/download/2020.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:05:33.188582'
+        last_modified: '2023-10-19T15:05:32.710224'
+        cache_sha256: 9de874bb917c225f8062ccd001ca971ac41439dd5f5e56ff95b82ad029af0226
+      - year: 2021
+        resource_id: de3411dc-c21b-41f3-ae92-59503b414138
+        resource_name: Vehicle population data - 2021
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/de3411dc-c21b-41f3-ae92-59503b414138/download/2021.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:16:02.156057'
+        last_modified: '2023-10-19T15:16:01.737871'
+        cache_sha256: 1a4a415ba83560e265c781581640ebf3e3a1bff492ba2753b083b841d08c9dfb
+      - year: 2022
+        resource_id: 7ff95539-e7b2-45c7-b2bb-89070ca739cf
+        resource_name: Vehicle population data - 2022
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/7ff95539-e7b2-45c7-b2bb-89070ca739cf/download/2022.zip
+        resource_format: ZIP
+        created: '2023-10-19T15:16:55.865120'
+        last_modified: '2023-10-19T15:16:55.436524'
+        cache_sha256: b15910e2653cd7bbea515ed26cf51102298b5c265f65819434103eba5ef4e3d1
+      - year: 2023
+        resource_id: 997f4781-5ec5-4ac0-b3ec-6f7ab56f475d
+        resource_name: Vehicle population data - 2023
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/997f4781-5ec5-4ac0-b3ec-6f7ab56f475d/download/2023.zip
+        resource_format: ZIP
+        created: '2024-12-12T17:07:15.214683'
+        last_modified: '2024-12-12T17:07:14.921595'
+        cache_sha256: b9d11dfef4119e1343be168594359b35125fa4354c21cba5ef42a600a524bc25
+      - year: 2024
+        resource_id: 285aeac6-0027-4321-87dd-beb7794f4aab
+        resource_name: Vehicle population data - 2024
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/285aeac6-0027-4321-87dd-beb7794f4aab/download/2024.zip
+        resource_format: ZIP
+        created: '2025-05-06T18:03:42.327420'
+        last_modified: '2025-05-06T18:03:41.857994'
+        cache_sha256: fc95b0a3a13fd5022c086588bb196083df8bcd0ecb55968e2368779087330b70
+      - year: 2025
+        resource_id: 36dd48e7-f8a8-43e6-a7fa-3d88d356ebf1
+        resource_name: Vehicle population data - 2025
+        url: https://data.ontario.ca/dataset/1c949987-310c-4bd8-adaa-a9268332e4c0/resource/36dd48e7-f8a8-43e6-a7fa-3d88d356ebf1/download/2025_vps.zip
+        resource_format: ZIP
+        created: '2026-01-27T15:28:24.766209'
+        last_modified: '2026-01-27T15:28:24.477299'
+        cache_sha256: 672201ec44dd78af96adcce5b3459aa205fb9a03f3983d97d029cd72dcf6e69b
+      years:
+        default: latest
+    components:
+      A:
+        database_note: "Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage."
+        label: "Report A: vehicle class, make code, model code, model year, and registration status"
+        short_name: on_vehicle_make_model_vintage_status
+        inputs: [vehicle_class, vehicle_make_code, vehicle_model_code, vehicle_model_year, registration_status_counts]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [fleet_age_disaggregation, vehicle_class_aggregation_weights, apparent_cohort_retention]
+        parameter_modules: [road_aggregation, road_lifetimes_survival, road_efficiencies, road_capex_opex, road_utilization]
+        adapter:
+          raw_member_templates:
+            - "{year}_Reg_Veh_ReportA_Class&Make&Model&Year.TXT"
+            - "{year}_Reg_Veh_Report6_Class&Status&Make&Model&Year.txt"
+          archive_depth: 1
+      4:
+        database_note: "Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares."
+        data_quality: {dq_struc: 3, dq_tech: 3}
+        label: "Report 4: vehicle weight class by registration status"
+        short_name: on_commercial_vehicle_weight_classes
+        inputs: [fit_active_stock, vehicle_gross_weight_buckets, vehicle_class]
+        applies_to: [medium_trucks, heavy_trucks]
+        produces: [epa_weight_class_disaggregation]
+        parameter_modules: [road_aggregation, road_efficiencies, road_capex_opex, road_utilization]
+        adapter:
+          raw_member_template: "{year}_Reg_Veh_Report4_Weight_Class&Status.TXT"
+      5:
+        database_note: "Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes."
+        data_quality: {dq_struc: 3, dq_tech: 3}
+        label: "Report 5: vehicle class by registration status and descriptor"
+        short_name: vehicle_age_distribution_by_class
+        inputs: [fit_active_stock, vehicle_model_year, vehicle_class]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks, motorcycles, transit_buses, school_buses, inter_city_buses]
+        produces: [fleet_age_disaggregation]
+        parameter_modules: [road_stocks_and_demands]
+        adapter:
+          raw_member_template: "{year}_Reg_Veh_Report5_Class&Status&Descriptors.TXT"
+        notes: "Production uses Report 5 age distributions for trucks, motorcycles, and buses; LDV age distributions use Report A."
+
+  statcan_transport_tables:
+    update: {strategy: statcan_tables}
+    source_id: T04
+    title: "Statistics Canada transportation tables"
+    status: active
+    source_type: upstream_download
+    file_type: zip
+    version: "registry-2026-07-21"
+    units: varies by table and characteristic; preserve UOM and SCALAR_FACTOR
+    citation: "Statistics Canada. Web Data Service and cited tables. https://www.statcan.gc.ca/en/developers/wds"
+    database_note: "Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table."
+    # dq_time: Time applicability differs by table; component scores below use actual observation years.
+    data_quality: {dq_cred: 1, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: 2}
+    validation_rule: "WDS metadata must match configured table titles/dimensions/members, and each resolved English full-table ZIP must contain its PID data CSV."
+    refresh_notes: >
+      Resolve current archive URLs through getFullTableDownloadCSV rather than DOI or
+      table-viewer pages. Cache both cube metadata and the authoritative full-table ZIP.
+    adapter:
+      access:
+        method: statcan_wds_full_table_csv
+        language: en
+        cube_metadata_url: "https://www150.statcan.gc.ca/t1/wds/rest/getCubeMetadata"
+        full_table_url_template: "https://www150.statcan.gc.ca/t1/wds/rest/getFullTableDownloadCSV/{product_id}/{language}"
+      cache_path_template: "statcan_transport/{product_id}-eng.zip"
+      metadata_cache_path_template: "statcan_transport/{product_id}-metadata.json"
+    components:
+      "20-10-0021-01":
+        database_note: "Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock."
+        # dq_time: 2011-2021 archived observations supply matching years before current-table coverage.
+        data_quality: {dq_geog: 2, dq_struc: 2, dq_tech: 2, dq_time: 1}
+        label: "New motor vehicle registrations, inactive"
+        short_name: archived_ldv_new_registrations
+        inputs: [sales, fuel_type, vehicle_size_class]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [fuel_type_disaggregation]
+        parameter_modules: [road_stocks_and_demands]
+        version: "2011-2021"
+        citation: "Statistics Canada. Table 20-10-0021-01. https://doi.org/10.25318/2010002101-eng"
+        validation_rule: "Archived annual table must expose 2011-2021 geography, fuel type, LDV type, and number-of-vehicles series."
+        adapter: {product_id: 20100021, frequency: annual, archive_status: archived}
+      "20-10-0025-01":
+        database_note: "Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares."
+        # dq_time: Quarterly observations from 2017 onward aggregate to matching years.
+        data_quality: {dq_geog: 2, dq_struc: 2, dq_tech: 2, dq_time: 1}
+        label: "New motor vehicle registrations, quarterly, by geographic level"
+        short_name: current_ldv_new_registrations
+        inputs: [sales, fuel_type, vehicle_size_class]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [fuel_type_disaggregation]
+        parameter_modules: [road_stocks_and_demands]
+        version: "2017-present"
+        citation: "Statistics Canada. Table 20-10-0025-01. https://doi.org/10.25318/2010002501-eng"
+        validation_rule: "Current quarterly table must expose exact province-level geography, fuel type, LDV type, and number-of-vehicles series."
+        adapter: {product_id: 20100025, frequency: quarterly, archive_status: current}
+      "23-10-0308-01":
+        database_note: "Registered vehicle stock by province, weight class and fuel; stock composition is used as a fuel-mix proxy rather than new-vehicle sales."
+        data_quality: {dq_geog: 2, dq_struc: 3, dq_tech: 2}
+        label: "Vehicle registrations, by type of vehicle and fuel type"
+        short_name: vehicle_registrations_by_size_and_fuel_type
+        inputs: [stock, fuel_type, vehicle_size_class]
+        applies_to: [medium_trucks]
+        produces: [fuel_type_disaggregation]
+        parameter_modules: [road_stocks_and_demands]
+        version: "2017-present"
+        citation: "Statistics Canada. Table 23-10-0308-01. https://doi.org/10.25318/2310030801-eng"
+        validation_rule: "Annual table must expose configured medium and heavy vehicle classes, fuel types, and number-of-vehicles series by province."
+        adapter: {product_id: 23100308, frequency: annual, archive_status: current}
+      "34-10-0254-01":
+        database_note_variants:
+          canada_fallback: "Canada-level reported useful life substitutes where the selected province has no usable value."
+        database_note: "Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets."
+        # dq_time: Latest provincial 2016-2020 useful lives and Canada 2020 fallback persist across vintages.
+        data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 3, dq_time: 3}
+        label: "Average expected useful life of new publicly owned public transit assets, Infrastructure Canada"
+        short_name: buses_lifetimes
+        inputs: [average_useful_life]
+        applies_to: [transit_buses, school_buses, inter_city_buses]
+        produces: [lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        version: "2016-2020"
+        citation: "Statistics Canada. Table 34-10-0254-01. https://doi.org/10.25318/3410025401-eng"
+        validation_rule: "Occasional table must expose the six configured bus asset useful-life members in average years by province and for Canada in 2020."
+        adapter: {product_id: 34100254, frequency: occasional, archive_status: current}
+        notes: >
+          Use each province's latest reported 2016-2020 useful life, falling back to Canada 2020 for missing powertrains and BCT. Gasoline buses inherit diesel useful life; emerging PHEV, FCEV, and FCHEV buses inherit electric useful life.
+      "23-10-0142-01":
+        database_note: "For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet."
+        # dq_time: 2011-2017 for-hire haul shares proxy later heavy-truck composition.
+        data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 3, dq_time: 3}
+        label: "Origin and destination of transported commodities, Canadian Freight Analysis Framework"
+        short_name: freight_shipments_weight_distance
+        inputs: [activity, shipment_weight, shipment_distance]
+        applies_to: [heavy_trucks]
+        produces: [heavy_freight_haul_disaggregation]
+        parameter_modules: [road_aggregation]
+        version: "2011-2017"
+        citation: "Statistics Canada. Table 23-10-0142-01. https://doi.org/10.25318/2310014201-eng"
+        validation_rule: "Annual table must expose origin, destination, Truck (for-hire), every commodity group, and shipments/weight/distance/tonne-kilometre characteristics."
+        adapter: {product_id: 23100142, frequency: annual, archive_status: current}
+
+  cer_canadas_energy_future:
+    update:
+      strategy: cer_energy_future
+      metadata_url: https://open.canada.ca/data/api/3/action/package_show
+    source_id: T05
+    title: "CER Canada's Energy Future"
+    status: active
+    source_type: upstream_download
+    file_type: csv
+    version: "2023 and 2026 editions"
+    units: "Macro units are variable-labelled; demand is PJ; prices are 2022 CAD/GJ."
+    citation: "Canada Energy Regulator. Canada's Energy Future data. https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/"
+    database_note: "Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario."
+    # dq_time: Year-labelled historical/projection values cover 2005-2050; edition is not data year.
+    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 2, dq_tech: 2, dq_time: 1}
+    validation_rule: "For the requested edition, all three official English CSVs must expose configured columns, scenarios, and 2005-2050 coverage."
+    refresh_notes: >
+      Select the report edition explicitly. Cache direct CER-hosted Open Government CSVs;
+      do not scrape the report or visualization. GDP and deflator reference years differ
+      by edition and must remain source-labelled until configured currency harmonization.
+    adapter:
+      access:
+        method: direct_csv_by_edition
+        url_template: "https://www.cer-rec.gc.ca/open/energy/energyfutures{edition}/{resource}-{edition}.csv"
+      cache_path_template: "cer_energy_future/{edition}/{resource}-{edition}.csv"
+      editions:
+        allowed:
+          2023:
+            doi: "https://doi.org/10.35002/zppg-yr91"
+            open_government_record_id: "7643c948-d661-4d90-ab91-e9ac732fc737"
+            scenarios: [Canada Net-zero, Current Measures, Global Net-zero]
+            year_range: [2005, 2050]
+          2026:
+            doi: "https://doi.org/10.35002/rd69-q158"
+            open_government_record_id: "07c42deb-9435-43b9-a416-7ce316f3893d"
+            scenarios: [Canada Net-zero, Current Measures, Higher Scenario, Lower Scenario]
+            year_range: [2005, 2050]
+    components:
+      macro-indicators:
+        database_note: "Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs."
+        data_quality: {dq_struc: 3, dq_tech: 3}
+        label: "Macroeconomic indicators"
+        short_name: macro_indicators_for_demand_and_currency_conversion
+        inputs: [real_gdp, gdp_deflator, cad_per_usd_exchange_rate]
+        applies_to: [all_classes]
+        produces: [demand_growth_index, currency_harmonization]
+        parameter_modules:
+          - road_stocks_and_demands
+          - offroad_stocks_and_demands
+          - road_capex_opex
+          - offroad_capex_opex
+        units: "Variable-labelled: real GDP in constant CAD millions, GDP deflator index, and C$/US$."
+        validation_rule: "Must contain Canada-level real GDP, GDP deflator, and Canada-US exchange-rate series for every edition scenario."
+        adapter: {resource: macro-indicators}
+      end-use-demand:
+        database_note: "Transport energy demand by region, fuel and scenario, retained for benchmarking."
+        label: "End-use energy demand"
+        short_name: transport_fuel_demand_benchmark
+        inputs: [fuel_use]
+        applies_to: [all_classes]
+        produces: [transport_fuel_demand_benchmark]
+        units: PJ
+        notes: "Fetched for output benchmarking only; it is not currently a CANOE scenario input."
+        validation_rule: "Must contain Transportation demand by fuel, region, year, and scenario in PJ."
+        adapter: {resource: end-use-demand}
+      end-use-prices:
+        database_note: "Transport gasoline and diesel prices in 2022 CAD/GJ; provisional evidence for the separately owned fuel sector."
+        label: "End-use energy prices"
+        short_name: transport_gasoline_diesel_prices
+        inputs: [gasoline_price, diesel_price]
+        applies_to: [all_classes]
+        produces: [fuel_price_scenarios]
+        units: "2022 CAD/GJ"
+        notes: "Retained provisionally because fuel prices currently belong to the CANOE fuel-sector backend."
+        validation_rule: "Must contain Transportation gasoline and diesel prices by region, year, and scenario in 2022 CAD/GJ."
+        adapter: {resource: end-use-prices}
+
+  nlr_atb_transportation:
+    source_id: T06
+    title: "2024 Transportation Annual Technology Baseline"
+    status: active
+    source_type: upstream_download
+    file_type: zip
+    version: "2024 v1"
+    units: "Metric-labelled 2022 USD, miles, mi/dge, mi/gge, kWh, and source-labelled maintenance/VMT units."
+    citation: "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data"
+    database_note: "U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately."
+    database_precedence:
+      - table: efficiency
+        categories: [cars, passenger_light_trucks, freight_light_trucks]
+        technology_suffixes: [_N]
+        sub_categories: [bev, bev_150_miles, bev_200_miles, bev_300_miles, bev_400_miles, cng, diesel, fcev, gasoline, hev]
+        components: [vehicles]
+      - table: efficiency
+        categories: [cars, passenger_light_trucks, freight_light_trucks]
+        technology_suffixes: [_N]
+        sub_categories: [phev, phev_35_miles, phev_50_miles]
+        components: [phev_vehicle_inputs]
+      - table: efficiency
+        categories: [medium_trucks, heavy_trucks, school_buses, urban_transit]
+        sub_categories: [bev, cng, diesel, fcev, fchev, gasoline, hev]
+        components: [vehicles]
+      - table: efficiency
+        categories: [medium_trucks, heavy_trucks, school_buses, urban_transit]
+        sub_categories: [phev]
+        components: [phev_vehicle_inputs]
+      - table: efficiency
+        categories: [inter_city_buses]
+        sub_categories: [hev]
+        components: [vehicles]
+      - table: cost_invest
+        categories: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks, school_buses, urban_transit]
+      - table: cost_variable
+        components: [maintenance_ldv]
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 2, dq_tech: 2, dq_time: 2}
+    validation_rule: "The official ZIP must contain one unambiguous member for every required configured component, with expected source columns, all four trajectories, and non-empty data."
+    refresh_notes: >
+      Cache the official release ZIP without unpacking it into the cache. Discover
+      configured members case-insensitively so a harmless release-directory prefix does
+      not break the adapter, but fail on missing or ambiguous matches.
+    adapter:
+      access:
+        method: direct_zip
+        url: "https://atb.nlr.gov/img/other/2024_atb_transportation_data_v1.zip"
+      cache_path: "nlr_atb_autonomie/2024/2024_atb_transportation_data_v1.zip"
+      expected_trajectories: [Advanced, Conservative, Constant, Mid]
+    components:
+      vehicles:
+        database_note: "U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately."
+        data_quality: {dq_time: 1}
+        label: "Transportation ATB vehicle projections"
+        short_name: atb_vehicle_cost_performance_trajectories
+        inputs: [scenario, vehicle_class, size_weight_class, powertrain, fuel_economy, modeled_price, all_electric_range, usable_battery_capacity]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
+        produces: [vehicle_efficiency, vehicle_cost, all_electric_range, usable_battery_capacity]
+        parameter_modules: [road_efficiencies, road_capex_opex]
+        units: "Metric-labelled: mi/dge, mi/gge, 2022 USD, miles, and kWh."
+        validation_rule: "Must retain Advanced, Conservative, Constant, and Mid trajectories and expose configured vehicle dimensions, metric, value, and reference columns. PHEV fuel economy is reconciliation evidence only; other PHEV metrics and all configured non-PHEV metrics remain authoritative."
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2022
+          member_patterns: ["output/vehicles.csv", "*/output/vehicles.csv"]
+          format: csv
+          normalizer: vehicles
+          required_columns: [year, scenario, vehicle_weight_category, vehicle_class, vehicle_powertrain, vehicle_detail, fuel_category, fuel2_category, metric, value, reference]
+      phev_vehicle_inputs:
+        database_note: "Autonomie PHEV charge-sustaining fuel use, charge-depleting electricity use and drive-cycle contributions; combined consumption requires the corresponding fleet utility factors."
+        label: "Transportation ATB source PHEV vehicle inputs"
+        short_name: atb_phev_vehicle_efficiency_inputs
+        inputs: [scenario, vehicle_class, size_weight_class, powertrain, combined_cs_fuel_economy_mi_per_gge, combined_cd_electricity_consumption_wh_per_mi, cycle_contributions, cycle_fuel_economy, cycle_electricity_consumption, all_electric_range]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
+        produces: [utility_weighted_energy_consumption, phev_energy_input_shares]
+        parameter_modules: [road_efficiencies]
+        units: "mi/gge, mi/dge, Wh/mi, miles, and dimensionless cycle contributions."
+        validation_rule: "Must expose one PHEV source-input row per configured vehicle dimension, year, and trajectory. LDV combined fields and MHDV cycle fields are validated before any utility weighting."
+        adapter:
+          member_patterns: ["input/inputs_vehicles.csv", "*/input/inputs_vehicles.csv"]
+          format: csv
+          normalizer: phev_vehicle_inputs
+          required_columns: [year, scenario, fuel_category, fuel2_category, vehicle_weight_category, vehicle_class, vehicle_powertrain, vehicle_detail, "CS(mi/gge)", "CD(Wh/mi)", ARB_contribution, EPA55_contribution, EPA65_contribution, "ARB_CS(mpgde)", "EPA55_CS(mpgde)", "EPA65_CS(mpgde)", "ARB_CD(Wh/mi)", "EPA55_CD(Wh/mi)", "EPA65_CD(Wh/mi)", "range(mi)", reference]
+      phev_utility_factor_ldv:
+        database_note: "Light-duty fleet share of travel in charge-depleting operation by electric range, based on SAE J2841 utility factors supplied with Autonomie."
+        label: "Transportation ATB light-duty fleet PHEV utility factors"
+        short_name: atb_phev_fleet_utility_factors_ldv
+        inputs: [size_weight_class, all_electric_range, fleet_utility_factor]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [utility_weighted_energy_consumption]
+        parameter_modules: [road_efficiencies]
+        units: "Miles and dimensionless fraction of distance in charge-depleting operation."
+        validation_rule: "Weight-category/range keys must be unique, utility factors must lie in [0,1], and only configured bounded interpolation may fill a missing PHEV range."
+        adapter:
+          member_patterns: ["input/phev_uf_ldv.csv", "*/input/phev_uf_ldv.csv"]
+          format: csv
+          normalizer: phev_utility_factor_ldv
+          required_columns: [vehicle_weight_category, "range(mi)", phev_uf, reference, notes]
+      phev_utility_factor_mdhd:
+        database_note: "MHDV share of travel in charge-depleting operation by vehicle class, based on Autonomie range and simulated usage."
+        data_quality: {dq_struc: 3}
+        label: "Transportation ATB medium- and heavy-duty fleet PHEV utility factors"
+        short_name: atb_phev_fleet_utility_factors_mdhd
+        inputs: [vehicle_class, weight_class, fleet_utility_factor]
+        applies_to: [medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
+        produces: [utility_weighted_energy_consumption]
+        parameter_modules: [road_efficiencies]
+        units: "Dimensionless fraction of distance in charge-depleting operation."
+        validation_rule: "Weight-category/class keys must be unique, cover every MHDV PHEV exactly once, and utility factors must lie in [0,1]."
+        adapter:
+          member_patterns: ["input/phev_uf_mdhd.csv", "*/input/phev_uf_mdhd.csv"]
+          format: csv
+          normalizer: phev_utility_factor_mdhd
+          required_columns: [vehicle_weight_category, vehicle_class, phev_uf, reference, notes]
+      maintenance_ldv:
+        database_note: "Burnham light-duty maintenance and repair assumptions by age, class and powertrain in 2020 USD; the repair relationship uses retail vehicle price."
+        label: "Light-duty maintenance and repair assumptions"
+        short_name: atb_ldv_maintenance_repair_assumptions
+        inputs: [class_multiplier, powertrain_multiplier, baseline_repair_cost, maintenance_cost]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_variable_costs]
+        parameter_modules: [road_capex_opex]
+        units: "Source-labelled dimensionless multipliers and USD per mile."
+        validation_rule: "Workbook must expose all configured worksheets and expected columns."
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2020
+          member_patterns: ["input/maintenance_ldv.xlsx", "*/input/maintenance_ldv.xlsx"]
+          format: xlsx
+          normalizer: maintenance_ldv
+          sheets:
+            class_multipliers:
+              required_columns: [vehicle_weight_category, vehicle_class, class_multiplier, notes, reference, reference_url]
+            powertrain_multipliers:
+              required_columns: [vehicle_weight_category, vehicle_powertrain, powertrain_multiplier, notes, reference, reference_url]
+            baseline_repair_cost:
+              required_columns: [vehicle_weight_category, year_index, "baseline_repair_cost($/mi)", dollar_year, notes, reference, reference_url]
+            maintenance_cost:
+              required_columns: [vehicle_weight_category, vehicle_powertrain, "maintenance_cost($/mi)", dollar_year, notes, reference, reference_url]
+      vmt_ldv:
+        database_note: "U.S. age-based mileage profiles from SAFE FRIA 2020 odometer fits; the SUV profile extends beyond the original age coverage by extrapolation."
+        data_quality: {dq_time: 3}
+        label: "Light-duty age-based annual VMT schedules"
+        short_name: atb_ldv_age_vmt
+        inputs: [vehicle_age, annual_vmt]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [annual_mileage_profiles]
+        parameter_modules: [road_utilization]
+        units: "vehicle-miles traveled"
+        validation_rule: "Must expose source vehicle classes, age index, annual VMT, references, and notes."
+        adapter:
+          member_patterns: ["input/vmt_ldv.csv", "*/input/vmt_ldv.csv"]
+          format: csv
+          normalizer: vmt_ldv
+          required_columns: [vehicle_weight_category, vehicle_class, vehicle_class_NHTSA, year_index, "vmt(mi)", reference, notes]
+        notes: "VMT values from SUV vehicle classes for years 26-31 are extrapolated from the 25-year value using a linear regression of the 0-24 year values."
+      vmt_mdhd:
+        database_note: "U.S. truck and bus age-based mileage profiles from Burnham, drawing on VIUS 2002; the underlying activity evidence is dated."
+        data_quality: {dq_struc: 3, dq_time: 4}
+        label: "Medium- and heavy-duty age-based annual VMT schedules"
+        short_name: atb_mdhd_age_vmt
+        inputs: [vehicle_age, annual_vmt]
+        applies_to: [medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
+        produces: [annual_mileage_profiles]
+        parameter_modules: [road_utilization]
+        units: "vehicle-miles traveled"
+        validation_rule: "Must expose source vehicle classes, references, notes, and contiguous numeric age columns."
+        adapter:
+          member_patterns: ["input/vmt_mdhd.csv", "*/input/vmt_mdhd.csv"]
+          format: csv
+          normalizer: vmt_mdhd
+          required_columns: [vehicle_weight_category, vehicle_class, notes, reference]
+          age_column_pattern: "^[0-9]+$"
+
+  anl_autonomie_bean:
+    source_id: T07
+    title: "ANL 2022 Autonomie and BEAN transportation analysis"
+    status: active
+    source_type: registered_external_model
+    file_type: folder
+    version: "ANL/ESD-22/6 (2022 release)"
+    required: false
+    units: "Source-labelled maintenance-and-repair linear-model coefficients."
+    citation: "Islam, E. S., Vijayagopal, R., and Rousseau, A. A Comprehensive Simulation Study to Evaluate Future Vehicle Energy and Cost Reduction Potential. ANL/ESD-22/6, 2022."
+    database_note: "MHDV age-based maintenance-and-repair coefficients in reviewed 2020 USD; limited class/powertrain coverage requires mapped proxies."
+    database_precedence: [cost_variable]
+    # dq_time: 2022 model coefficients are a recent proxy; empirical data from Burnham et al. (2021). Comprehensive Total Cost of Ownership Quantification for Vehicles with Different Size Classes and Powertrains. ANL/ESD-21/4.
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 3, dq_time: 2}
+    validation_rule: "When manually supplied, the expected macro-enabled workbook must exist, be non-empty, and be readable before the rules.yaml extraction contract is applied."
+    refresh_notes: >
+      Download the complete public Box folder manually into
+      inputs/0_external_models/anl_autonomie_2022/. Preserve the original filenames;
+      do not use browser automation, credentials, or expiring Box download tokens in
+      this adapter.
+    adapter:
+      access:
+        method: manual_box_folder
+        folder_url: "https://anl.app.box.com/s/an4nx0v2xpudxtpsnkhd5peimzu4j1hk/folder/242640145714"
+        reason: "Box shared links do not provide an anonymous stable complete-folder download; API ZIP/traversal requires credentials."
+      external_subdir: "anl_autonomie_2022"
+      expected_workbook: "ANL - ESD-2206 Report - BEAN Tool - MD HD Vehicle Techno-Economic Analysis.xlsm"
+    components:
+      mhdv_maintenance_coefficients:
+        label: "BEAN MHDV maintenance-and-repair coefficients"
+        short_name: bean_mhdv_maintenance_repair_coefficients
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2020
+          cost_metadata_status: reviewed
+          cost_metadata_note: "Verified in Islam et al. (2022). A Comprehensive Simulation Study to Evaluate Future Vehicle Energy and Cost Reduction Potential. ANL/ESD-22/6."
+        inputs: [maintenance_slope, maintenance_intercept, powertrain_multiplier]
+        applies_to: [medium_trucks, heavy_trucks, transit_buses, school_buses, inter_city_buses]
+        produces: [vehicle_variable_costs]
+        parameter_modules: [road_capex_opex]
+        required: false
+        units: "Source-labelled maintenance-and-repair coefficients."
+        validation_rule: "The rules.yaml extraction mapping must yield non-empty numeric long-form coefficients with source labels and cell coordinates."
+
+  transport_canada_izev:
+    source_id: T40
+    title: "Transport Canada Incentives for Zero-Emission Vehicles (iZEV)"
+    status: active
+    source_type: upstream_download
+    file_type: csv
+    version: "November 2025 English snapshots; published 2025-12-19"
+    citation: "Transport Canada. iZEV program incentive requests. Government of Canada Open Government Portal. https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1"
+    units: "Incentivized purchase/lease records; one vehicle per record."
+    database_note: "Purchase/lease acquisition records proxy PEV composition. Own-year MY2020–2024 counts apply within that window; their pooled composition proxies older cohorts using each target year's Ratings consumption, classes and ranges. Geography is chosen for the whole source-period/broad-powertrain pool before matching. Eligibility and demonstrator exceptions limit market representation; public records lack VIN/transaction IDs, so identical rows are retained without claiming unique vehicles. Request year differs from model year. Unresolved matches use distinct-model catalogue medians; incentive composition does not measure historical sales or in-use consumption."
+    data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
+    validation_rule: "Pinned MD5/bytes, 18 native columns, Purchase/Lease categories, exact model-year/province/propulsion coverage and actual request dates; retain repeated transactions and audit blank physical rows."
+    refresh_notes: "Use the explicit source updater for the three registered resource IDs. Review eligibility and model-year coverage changes before adoption; never overwrite pinned caches. The FY2024-25 file contains an FY2025-26 processing tail through August 2025."
+    update:
+      strategy: tc_izev
+      metadata_url: https://open.canada.ca/data/api/3/action/resource_show
+      download_hosts: [opencanada.blob.core.windows.net]
+    adapter:
+      package_id: "42986a95-be23-436e-af15-7c6bf292a2e1"
+      dictionary_url: "https://open.canada.ca/data/dataset/42986a95-be23-436e-af15-7c6bf292a2e1/resource/12a8a111-d790-49ce-af7c-ec388345e147/download/izev-data-dictionary-bilingual_-ivze-dictionnaire-de-donnees-bilingue-nov-2025.pdf"
+      expected_provinces: ["AB","BC","MB","NB","NL","NS","NT","NU","ON","PE","QC","SK","YT"]
+      expected_powertrains: [bev, phev, fcev]
+      required_columns:
+        - "Incentive Request Date"
+        - "Month and Year"
+        - "Government of Canada Fiscal Year (FY)"
+        - "Calendar Year"
+        - "Dealership Province/Territory"
+        - "Dealership Postal Code"
+        - "Purchase or Lease"
+        - "Vehicle Year"
+        - "Vehicle Make"
+        - "Vehicle Model"
+        - "Vehicle Make and Model"
+        - "Battery, Plug-in Hybrid, or Fuel Cell EV (BEV, PHEV or FCEV)"
+        - "BEV/PHEV/FCEV - Battery ≥ 15kWh or electric range ≥ 50km"
+        - "Battery/Electric Range Criteria Pre/Since 2022-04-25"
+        - "Eligible Incentive Amount (in dollars)"
+        - "Individual or Organization (Recipient)"
+        - "Recipient Province/Territory"
+        - "Country"
+    components:
+      fy2019_2022:
+        label: "iZEV fy2019_2022 incentive records (November 2025 snapshot)"
+        short_name: "tc_izev_fy2019_2022"
+        version: "2025-12-19"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, recipient_province, propulsion, incentive_request_date]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [rating_composition, road_efficiencies]
+        units: incentivized vehicles
+        adapter:
+          resource_id: "bba4c959-53ca-4d23-9cde-da3ce771bba2"
+          url: "https://open.canada.ca/data/dataset/42986a95-be23-436e-af15-7c6bf292a2e1/resource/bba4c959-53ca-4d23-9cde-da3ce771bba2/download/izev-webstats_fy-2019-20-to-fy-2022-23_en_updated-november-2025.csv"
+          cache_path: "transport_canada_izev/2025-12-19_fy2019_2022.csv"
+          expected_md5: "a51bde3db9a6f217739b885e765e3a1d"
+          expected_bytes: 38538045
+          expected_model_years: [2017,2018,2019,2020,2021,2022,2023]
+          expected_request_date_from: "2019-05-15"
+          expected_request_date_to: "2023-03-31"
+      fy2023:
+        label: "iZEV fy2023 incentive records (November 2025 snapshot)"
+        short_name: "tc_izev_fy2023"
+        version: "2025-12-19"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, recipient_province, propulsion, incentive_request_date]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [rating_composition, road_efficiencies]
+        units: incentivized vehicles
+        adapter:
+          resource_id: "33f35447-fd93-45bc-866c-866aba4b2f4e"
+          url: "https://open.canada.ca/data/dataset/42986a95-be23-436e-af15-7c6bf292a2e1/resource/33f35447-fd93-45bc-866c-866aba4b2f4e/download/izev-webstats_fy-2023-24_en_updated-november-2025.csv"
+          cache_path: "transport_canada_izev/2025-12-19_fy2023.csv"
+          expected_md5: "9dbab46e9b95c56552baa0293e5b3947"
+          expected_bytes: 25304118
+          expected_model_years: [2019,2020,2021,2022,2023,2024]
+          expected_request_date_from: "2023-04-01"
+          expected_request_date_to: "2024-03-31"
+      fy2024:
+        label: "iZEV fy2024 incentive records (November 2025 snapshot)"
+        short_name: "tc_izev_fy2024"
+        version: "2025-12-19"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, recipient_province, propulsion, incentive_request_date]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [rating_composition, road_efficiencies]
+        units: incentivized vehicles
+        adapter:
+          resource_id: "167cec08-777a-4b29-a3a7-eda79f799bae"
+          url: "https://open.canada.ca/data/dataset/42986a95-be23-436e-af15-7c6bf292a2e1/resource/167cec08-777a-4b29-a3a7-eda79f799bae/download/izev-webstats_fy-2024-25_en_updated-november-2025.csv"
+          cache_path: "transport_canada_izev/2025-12-19_fy2024.csv"
+          expected_md5: "b9398d9229d5e0ffe770b902a4fa8851"
+          expected_bytes: 29288062
+          expected_model_years: [2018,2020,2021,2022,2023,2024,2025]
+          expected_request_date_from: "2024-04-01"
+          expected_request_date_to: "2025-08-25"
+
+  nrcan_fuel_consumption_ratings:
+    update:
+      strategy: nrcan_ratings
+      metadata_url: https://open.canada.ca/data/api/3/action/resource_show
+      download_hosts: [opencanada.blob.core.windows.net]
+    source_id: T08
+    title: "NRCan Fuel Consumption Ratings"
+    status: active
+    source_type: upstream_download
+    file_type: csv
+    version: "2026 English resource snapshots"
+    units: "Source-labelled L/100 km, kWh/100 km, Le/100 km, mpg, km, kW, hours, and g CO2/km."
+    citation: "Natural Resources Canada. Fuel consumption ratings. Government of Canada Open Government Portal. https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64"
+    database_note: "Canadian vehicle-model test ratings and electric ranges; fleet aggregation and historical indexing are applied separately, and rated consumption does not measure in-use fleet performance."
+    database_precedence:
+      - table: efficiency
+        categories: [cars, passenger_light_trucks, freight_light_trucks]
+        technology_suffixes: [_EX]
+    # dq_time: Native model years 1995-2026 are selected by vehicle year; snapshot date is not data year.
+    data_quality: {dq_cred: 1, dq_geog: 2, dq_struc: 2, dq_tech: 2, dq_time: 1}
+    validation_rule: "Every pinned English CSV must match its configured MD5 and byte count, expose the required source columns and nonblank vehicle classes, and cover exactly the configured model years."
+    refresh_notes: >
+      Resource URLs are mutable even when their UUIDs remain stable. Refresh by reviewing
+      the official English resource title, update date, size, hash, physical columns, and
+      model-year coverage together; never silently replace a pinned cached snapshot.
+    adapter:
+      access:
+        method: direct_open_government_resources
+        package_id: "98f1a129-f628-4ce4-b24d-6f16bf24dd64"
+        language: en
+    components:
+      battery_electric_2012_2026:
+        label: "Battery-electric vehicles 2012-2026 (2026-09-29)"
+        short_name: nrcan_battery_electric_vehicle_ratings
+        version: "2026-09-29"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, combined_electricity_consumption, motor_power, all_electric_range]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing, all_electric_range]
+        parameter_modules: [road_aggregation, road_efficiencies]
+        units: "kWh/100 km, kW, km"
+        adapter:
+          resource_id: "026e45b4-eb63-451f-b34f-d9308ea3a3d9"
+          url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/026e45b4-eb63-451f-b34f-d9308ea3a3d9/download/my2012-2026-battery-electric-vehicles.csv"
+          cache_path: "nrcan_fuel_consumption_ratings/2026-09-29_battery_electric_2012_2026.csv"
+          expected_md5: "aed9e4b209985d925d5c35c729ddd632"
+          expected_bytes: 138739
+          expected_model_years: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+          required_columns: ["Model year", "Make", "Model", "Vehicle class", "Motor (kW)", "Transmission", "Fuel type", "City (kWh/100 km)", "Highway (kWh/100 km)", "Combined (kWh/100 km)", "City (Le/100 km)", "Highway (Le/100 km)", "Combined (Le/100 km)", "Range (km)", "CO2 emissions (g/km)", "CO2 rating", "Smog rating", "Recharge time (h)"]
+          required_non_null_columns: ["Model year", "Make", "Model", "Vehicle class", "Combined (kWh/100 km)"]
+      plug_in_hybrid_2012_2026:
+        database_note: "Canadian PHEV ratings with charge-sustaining fuel consumption, electric range and charge-depleting rating fields; their distinct energy and operating-mode meanings are retained."
+        label: "Plug-in hybrid electric vehicles 2012-2026 (2026-09-29)"
+        short_name: nrcan_plug_in_hybrid_vehicle_ratings
+        version: "2026-09-29"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, combined_charge_depleting_energy_consumption, combined_charge_sustaining_fuel_consumption, motor_power, engine_size, all_electric_range]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing, all_electric_range]
+        parameter_modules: [road_aggregation, road_efficiencies]
+        units: "Le/100 km, kW, L, km"
+        adapter:
+          resource_id: "8812228b-a6aa-4303-b3d0-66489225120d"
+          url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/8812228b-a6aa-4303-b3d0-66489225120d/download/my2012-2026-plug-in-hybrid-electric-vehicles.csv"
+          cache_path: "nrcan_fuel_consumption_ratings/2026-09-29_plug_in_hybrid_2012_2026.csv"
+          expected_md5: "13e96c9373ec42288fa16a160b3762e5"
+          expected_bytes: 53663
+          expected_model_years: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+          required_columns: ["Model year", "Make", "Model", "Vehicle class", "Motor (kW)", "Engine size (L)", "Cylinders", "Transmission", "Fuel type 1", "Combined Le/100 km", "Range 1 (km)", "Recharge time (h)", "Fuel type 2", "City (L/100 km)", "Highway (L/100 km)", "Combined (L/100 km)", "Range 2 (km)", "CO2 emissions (g/km)", "CO2 rating", "Smog rating"]
+          required_non_null_columns: ["Model year", "Make", "Model", "Vehicle class", "Combined Le/100 km", "Combined (L/100 km)"]
+      fuel_consumption_1995_2014:
+        label: "1995-2014 Fuel Consumption Ratings (2025-03-03)"
+        short_name: nrcan_combustion_vehicle_ratings_1995_2014
+        version: "2025-03-03"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [road_aggregation, road_efficiencies]
+        units: "L, L/100 km"
+        adapter:
+          resource_id: "42495676-28b7-40f3-b0e0-3d7fe005ca56"
+          url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/42495676-28b7-40f3-b0e0-3d7fe005ca56/download/my1995-2014-fuel-consumption-ratings-5-cycle.csv"
+          cache_path: "nrcan_fuel_consumption_ratings/2025-03-03_fuel_consumption_1995_2014.csv"
+          expected_md5: "6aabfb074aaf1a5fc1febfccf96910ce"
+          expected_bytes: 1432995
+          expected_model_years: [1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014]
+          required_columns: &fuel_consumption_rating_columns ["Model year", "Make", "Model", "Vehicle class", "Engine size (L)", "Cylinders", "Transmission", "Fuel type", "City (L/100 km)", "Highway (L/100 km)", "Combined (L/100 km)", "Combined (mpg)", "CO2 emissions (g/km)", "CO2 rating", "Smog rating"]
+          required_non_null_columns: &fuel_consumption_rating_non_null ["Model year", "Make", "Model", "Vehicle class", "Combined (L/100 km)"]
+      fuel_consumption_2015_2024:
+        label: "2015-2024 Fuel Consumption Ratings (2026-09-23)"
+        short_name: nrcan_combustion_hybrid_vehicle_ratings_2015_2024
+        version: "2026-09-23"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [road_aggregation, road_efficiencies]
+        units: "L, Le/100 km"
+        adapter:
+          resource_id: "c98b9dc8-b23f-4cd8-8b19-e892da1e4688"
+          url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/c98b9dc8-b23f-4cd8-8b19-e892da1e4688/download/my2015-2024-fuel-consumption-ratings.csv"
+          cache_path: "nrcan_fuel_consumption_ratings/2026-09-23_fuel_consumption_2015_2024.csv"
+          expected_md5: "dfa99fce2a857e2de17df70d40bcf210"
+          expected_bytes: 827253
+          expected_model_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+          required_columns: *fuel_consumption_rating_columns
+          required_non_null_columns: *fuel_consumption_rating_non_null
+      fuel_consumption_2025:
+        label: "2025 Fuel Consumption Ratings (2026-10-16)"
+        short_name: nrcan_combustion_hybrid_vehicle_ratings_2025
+        version: "2026-10-16"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [road_aggregation, road_efficiencies]
+        units: "L, L/100 km"
+        adapter:
+          resource_id: "d589f2bc-9a85-4f65-be2f-20f17debfcb1"
+          url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/d589f2bc-9a85-4f65-be2f-20f17debfcb1/download/my2025-fuel-consumption-ratings.csv"
+          cache_path: "nrcan_fuel_consumption_ratings/2026-10-16_fuel_consumption_2025.csv"
+          expected_md5: "cd8f4c0010ce151d1352b26f2a92bf8d"
+          expected_bytes: 60700
+          expected_model_years: [2025]
+          required_columns: *fuel_consumption_rating_columns
+          required_non_null_columns: *fuel_consumption_rating_non_null
+      fuel_consumption_2026:
+        label: "2026 Fuel Consumption Ratings (2026-10-16)"
+        short_name: nrcan_combustion_hybrid_vehicle_ratings_2026
+        version: "2026-10-16"
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, engine_size, fuel_type, combined_fuel_consumption]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [vehicle_efficiency_existing]
+        parameter_modules: [road_aggregation, road_efficiencies]
+        units: "L, Le/100 km"
+        adapter:
+          resource_id: "9df1b18d-d036-4783-a61c-99f1f75b3ac5"
+          url: "https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64/resource/9df1b18d-d036-4783-a61c-99f1f75b3ac5/download/my2026-fuel-consumption-ratings.csv"
+          cache_path: "nrcan_fuel_consumption_ratings/2026-10-16_fuel_consumption_2026.csv"
+          expected_md5: "e8f8b26255d9534b7989b00f8a0f8650"
+          expected_bytes: 53702
+          expected_model_years: [2026]
+          required_columns: *fuel_consumption_rating_columns
+          required_non_null_columns: *fuel_consumption_rating_non_null
+
+  nhtsa_cafe_ldv_survival:
+    source_id: T09
+    title: "NHTSA CAFE 2024 Final Rule Central Analysis vehicle-age inputs"
+    status: active
+    source_type: upstream_download
+    file_type: zip
+    version: "2024-FRM-LD-2b3-2027-2035 Central Analysis"
+    units: "Dimensionless source survival rates by vehicle age."
+    citation: "National Highway Traffic Safety Administration. 2024 CAFE Final Rule Central Analysis Inputs. https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/"
+    database_note: "U.S. CAFE cumulative vehicle-survival schedules by age and broad vehicle class; used as Canadian lifetime proxies across powertrains."
+    database_precedence: [lifetime_tech, lifetime_survival_curve]
+    # dq_time: 2024 analysis schedule for 2027-2035 is a recent proxy; NHTSA uses proprietary vehicle registration data from IHS-Polk (2018), the National Vehicle Population Profile (NVPP).
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 2, dq_tech: 3, dq_time: 2}
+    validation_rule: "The pinned ZIP snapshot must be integral and contain the configured parameters_ref.xlsx member, worksheet, range, source classes, complete ages, and numeric survival rates."
+    refresh_notes: >
+      Review the official Central Analysis directory and update the ZIP checksum,
+      byte count, workbook layout, labels, and focused fixtures together. Cached
+      snapshots are reused during offline execution.
+    adapter:
+      access:
+        method: direct_zip
+        url: "https://static.nhtsa.gov/nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/Central_Analysis_Inputs.zip"
+      cache_path: "assorted_sources/nhtsa_cafe_2024_central_analysis_inputs.zip"
+      expected_sha256: "1c695e1e966bf2f26f9c0cf887c9c1b836e1d18568c5f2fafd63cd6af508a449"
+      expected_bytes: 9218140
+    components:
+      ldv_survival_rates:
+        label: "Vehicle Age Data survival rates"
+        short_name: nhtsa_cafe_ldv_survival_rates
+        inputs: [vehicle_age, vehicle_class, survival_rate]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks]
+        produces: [survival_rates, median_equivalent_lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: "dimensionless survival rate"
+        validation_rule: "Vehicle Age Data!A3:E45 must retain the configured headers, four source vehicle classes, ages 0-39, numeric bounded values, and unique class-age keys."
+
+  eia_nems_hd_truck_scrappage:
+    source_id: T10
+    title: "EIA National Energy Modeling System transportation model inputs"
+    status: active
+    source_type: upstream_download
+    file_type: xlsx
+    version: "Git commit 1bfbb2af4c3eb6e884227630ae67eb0e0e3c72ba"
+    units: "Annual scrappage-rate fractions by source truck class and age."
+    citation: "U.S. Energy Information Administration. National Energy Modeling System repository, trnhdvx.xlsx. https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx"
+    database_note: "U.S. truck annual scrappage fractions from 2018-2020 registrations by weight class; the national schedule is marked unused upstream and proxies Canadian survival."
+    database_precedence: [lifetime_tech, lifetime_survival_curve]
+    # dq_time: Consumed national schedule cites 2018-2020 Polk registrations (trnhdv!B83).
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 3, dq_time: 3}
+    validation_rule: "The immutable workbook must contain trnhdv!A86:D120 with the configured source headers, ages 1-34, bounded numeric annual scrappage rates, and unique class-age keys."
+    refresh_notes: >
+      Update only after reviewing a newer immutable Git commit and the workbook
+      layout. The GitHub blob URL is discovery evidence; acquisition uses the
+      commit-pinned Git LFS media URL and cached checksum.
+      The selected national table trnhdv!A86:D120 is marked NOT USED See regional
+      below in this workbook; it remains the backend's registered proxy, not the
+      active upstream regional/vintage schedule. Adopting SURV_D/SURV_ND requires
+      reviewed class, region and fuel mappings. These annual rates apply to
+      surviving stock; cumulative survival is product(1 - annual rate).
+    adapter:
+      access:
+        method: immutable_git_lfs_media
+        discovery_url: "https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx"
+        url: "https://media.githubusercontent.com/media/EIAgov/NEMS/1bfbb2af4c3eb6e884227630ae67eb0e0e3c72ba/input/tdm/trnhdvx.xlsx"
+      cache_path: "assorted_sources/eia_nems_1bfbb2af_trnhdvx.xlsx"
+      expected_sha256: "87f1766476ba1916c7b8599a2feb0673aa766af12cfb2fbc655bf9fd574ae5aa"
+      expected_bytes: 737310
+    components:
+      truck_scrappage_rates:
+        label: "NEMS truck annual scrappage rates"
+        short_name: eia_nems_truck_scrappage_rates
+        inputs: [vehicle_age, weight_class, annual_scrappage_rate]
+        applies_to: [medium_trucks, heavy_trucks]
+        produces: [survival_rates, median_equivalent_lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: "annual scrappage-rate fraction"
+        validation_rule: "Retain the source Cls 3, Cls 4-6, and Cls 7-8 labels and annual scrappage rates without conversion to survival."
+
+  epa_moves_heavy_truck_survival:
+    source_id: T39
+    title: Population and Activity of Onroad Vehicles in MOVES6
+    status: active
+    source_type: upstream_download
+    file_type: pdf
+    required: false
+    version: EPA-420-R-26-010, August 2026
+    units: Annual conditional survival-rate fractions by vehicle age.
+    citation: "U.S. Environmental Protection Agency. (2026). Population and Activity of Onroad Vehicles in MOVES6 (EPA-420-R-26-010), Appendix C, Table C-1, p. 187. https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf"
+    database_note: "MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained."
+    database_precedence: [lifetime_tech, lifetime_survival_curve]
+    # dq_time: Historical NHTSA 1977-2002 evidence and MY1980 heavy-truck proxy, independent of the 2026 publication year.
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 3, dq_time: 4}
+    validation_rule: Preserve the registered PDF identity and all Table C-1 car, light-truck and heavy-vehicle annual survival values for ages 0-40, with native class, table and page evidence.
+    refresh_notes: >
+      Table C-1 is printed page 187, PDF page 189. Appendix C describes these as
+      conditional year-to-year survival rates, not cumulative survival. The
+      heavy-duty schedule is TEDB40 Table 3.16 model-year-1980 evidence, extended
+      beyond age 30 to 40 and shared by buses, single-unit and combination trucks.
+      MOVES6 retains it for age-distribution development rather than runtime
+      scrappage. The selected MOVES profile applies its car/light-truck schedules
+      directly and shares the heavy-vehicle schedule with medium trucks.
+      Car/light-truck schedules derive from NHTSA registration evidence from
+      1977-2002. Temporal DQ reflects historical input evidence rather than publication.
+      The reviewed 2026 release changes car age-27 annual survival from 0.567 to
+      0.753; the other 163 Table C-1 annual values match the prior 2024 report.
+      This change affects cumulative car survival from age 28 onward. Retain the
+      native annual value and verify the pinned bytes and table before normalization.
+    adapter:
+      access:
+        method: checksum_pinned_https
+        url: https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf
+        headers: {User-Agent: Mozilla/5.0}
+      cache_path: assorted_sources/epa_moves6_420r26010.pdf
+      expected_sha256: 2a216e3794368bb33145e6411b5129b3c8f3ad92dc6433ec4baa801cbe435138
+      expected_bytes: 5713495
+    components:
+      heavy_truck_survival_rates:
+        label: MOVES6 Table C-1 heavy-duty annual survival rates
+        short_name: moves6_heavy_truck_survival
+        required: false
+        inputs: [vehicle_age, vehicle_class, annual_survival_rate]
+        applies_to: [medium_trucks, heavy_trucks]
+        produces: [survival_rates, median_equivalent_lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: annual survival-rate fraction
+        validation_rule: Retain all 41 age rows and annual heavy-duty values without converting them to cumulative survival during normalization.
+
+      car_survival_rates:
+        label: MOVES6 Table C-1 Passenger Cars annual survival rates
+        short_name: moves6_car_survival_rates
+        required: false
+        inputs: [vehicle_age, vehicle_class, annual_survival_rate]
+        applies_to: [cars]
+        produces: [survival_rates, median_equivalent_lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: annual survival-rate fraction
+        validation_rule: Retain all 41 age rows and annual Passenger Cars values without converting them to cumulative survival during normalization.
+
+      light_truck_survival_rates:
+        label: MOVES6 Table C-1 Light-duty Trucks (Passenger and Light Commercial) annual survival rates
+        short_name: moves6_light_truck_survival_rates
+        required: false
+        inputs: [vehicle_age, vehicle_class, annual_survival_rate]
+        applies_to: [passenger_light_trucks, freight_light_trucks]
+        produces: [survival_rates, median_equivalent_lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: annual survival-rate fraction
+        validation_rule: Retain all 41 age rows and annual Light-duty Trucks (Passenger and Light Commercial) values without converting them to cumulative survival during normalization.
+
+  jgcri_gcam_motorcycle_inputs:
+    source_id: T11
+    title: "JGCRI GCAM core UCD transportation data"
+    status: active
+    source_type: upstream_download
+    file_type: csv
+    version: "Git commit 11e128fb7ce3e14e9c4daf3903ba73123046a7aa"
+    units: "MJ/vkm, 2005$/veh, and 2005$/veh/yr."
+    citation: "Calvin et al. (2019). GCAM v5.1: Representing the linkages between energy, water, land, climate, and economic systems. Geoscientific Model Development, 12(2), 677–698. https://doi.org/10.5194/gmd-12-677-2019"
+    database_precedence: [efficiency, cost_invest, cost_variable]
+    database_note: "Canadian motorcycle model inputs for liquid fuels and BEVs in the >250 cc class."
+    # dq_time: Value-year trajectory spans 2005-2100; 2005 dollars do not imply 2005-only evidence.
+    data_quality: {dq_cred: 3, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 1}
+    validation_rule: "The immutable CSV must retain the configured schema and exact Canadian Passenger LDV_2W Motorcycle (>250cc) variable, technology, unit, and 2005-2100 year coverage."
+    refresh_notes: >
+      Pin a reviewed Git commit before changing the cached CSV. Preserve every
+      available source year and native unit; do not use the moving master raw URL.
+    adapter:
+      access:
+        method: immutable_raw_git
+        discovery_url: "https://github.com/JGCRI/gcam-core/blob/master/input/gcamdata/inst/extdata/energy/UCD_trn_data_CORE.csv"
+        url: "https://raw.githubusercontent.com/JGCRI/gcam-core/11e128fb7ce3e14e9c4daf3903ba73123046a7aa/input/gcamdata/inst/extdata/energy/UCD_trn_data_CORE.csv"
+      cache_path: "assorted_sources/jgcri_gcam_11e128fb_UCD_trn_data_CORE.csv"
+      expected_sha256: "0e0c006e7c7ef6209b2ff1b8aa991a0524ad2219a157739d033e94f9d7849ee0"
+      expected_bytes: 1052797
+    components:
+      canada_motorcycle_inputs:
+        label: "Canadian passenger motorcycle cost and intensity inputs"
+        short_name: gcam_canada_motorcycle_inputs
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2005
+          cost_metadata_status: reviewed
+          cost_metadata_note: "GCAM labels costs as 2005$ without a currency code; USD is confirmed from material provided by co-author Kyle Page."
+        inputs: [powertrain, fuel_type, energy_intensity, vehicle_cost, maintenance_cost]
+        applies_to: [motorcycles]
+        produces: [vehicle_efficiency, vehicle_cost, vehicle_variable_costs]
+        parameter_modules: [road_efficiencies, road_capex_opex]
+        units: "MJ/vkm, 2005$/veh, and 2005$/veh/yr."
+        validation_rule: "Select only intensity, Capital costs (purchase), and Operating costs (maintenance) for Liquids and BEV, preserving all 20 source years."
+
+  epri_us_regen_transportation:
+    source_id: T12
+    title: "EPRI US-REGEN v2025 transportation assumptions"
+    status: active
+    source_type: upstream_download
+    file_type: html_javascript
+    version: "v2025 page snapshot updated 2025-05-20"
+    units: "Source-labelled dollars per vehicle, mpg-e, and dimensionless relative capital-cost multipliers."
+    citation: "EPRI. (2025). U.S. Regional Economy, Greenhouse Gas, and Energy (US-REGEN)—V2025 Model Documentation. Electric Power Research Institute. https://us-regen-docs.epri.com/v2025/"
+    database_precedence:
+      - table: efficiency
+        categories: [inter_city_buses]
+        sub_categories: [gasoline, diesel, bev, fcev]
+        components: [intercity_bus_charts]
+      - table: efficiency
+        categories: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
+        components: [nonroad_efficiency_multipliers]
+      - table: cost_invest
+        categories: [inter_city_buses]
+        components: [intercity_bus_charts]
+    database_note: "U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component."
+    # dq_time: Year-labelled model trajectories cover their projection years; dollar year is separate.
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 2, dq_time: 1}
+    validation_rule: "The HTML must identify its transportation data module, whose structured JavaScript must retain Charts 3 and 4 and the requested non-road Tables 4 and 6; downloaded chart data and the reviewed manual multiplier CSV must retain their configured rows, labels, years, units, and numeric values."
+    refresh_notes: >
+      Cache both the HTML shell and the content-hashed VuePress transportation
+      module discovered from it. Review chart metadata, payload variables,
+      technology coverage, units, and checksums together on refresh.
+    adapter:
+      access:
+        method: vuepress_page_and_module
+        url: "https://us-regen-docs.epri.com/v2025/assumptions/transportation.html"
+        asset_base_url: "https://us-regen-docs.epri.com"
+      cache_path: "assorted_sources/epri_us_regen_v2025_transportation.html"
+      expected_sha256: "fddf94acbf52401acf7dc2e429a0e758c763959dcb6ac60a999c61bd61c438ad"
+      expected_bytes: 2099
+      payload_cache_path: "assorted_sources/epri_us_regen_v2025_transportation_payload.js"
+      expected_payload_sha256: "c8527351b8777769a15f67f682d63fbc70e866bfd8b0485f8d8388fe723ce9e9"
+      expected_payload_bytes: 85536
+    components:
+      intercity_bus_charts:
+        database_note: "Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis."
+        data_quality: {dq_struc: 2}
+        label: ["Chart 3: Medium-Duty and Heavy-Duty Vehicle Purchase Cost Assumptions", "Chart 4: Medium-Duty and Heavy-Duty Vehicle Efficiency Assumptions"]
+        short_name: regen_intercity_bus_purchase_cost_efficiency
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2023
+          cost_metadata_status: reviewed
+          cost_metadata_note: "Electricity generation - New Generation Capacity section discloses dollar year 2023."
+        inputs: [powertrain, vehicle_cost, vehicle_efficiency]
+        applies_to: [inter_city_buses]
+        produces: [vehicle_cost, vehicle_efficiency]
+        parameter_modules: [road_efficiencies, road_capex_opex]
+        units: "Source-labelled $/vehicle and mpg-e."
+        validation_rule: "Retain only Intercity Bus rows and fail on chart, measure, technology, year, unit, unexpected null, or payload-structure drift; exact configured all-null exclusions must remain present, entirely null, and warning-audited."
+      nonroad_cost_invest_multipliers:
+        database_note: "Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping."
+        data_quality: {dq_tech: 3, dq_time: 1}
+        label: ["Table 4: Maritime technology capital costs relative to petroleum incumbent in 2035 and 2050", "Table 6: Rail technology capital costs relative to petroleum incumbent in 2035 and 2050"]
+        short_name: regen_nonroad_cost_invest_multipliers
+        inputs: [category, sub_category, parameter, period, value]
+        applies_to: [passenger_rail, freight_rail, freight_marine]
+        produces: [cost_invest_multiplier]
+        parameter_modules: [offroad_capex_opex]
+        units: "dimensionless capital-cost ratio relative to the petroleum incumbent"
+        notes: "EPRI rows in a mixed-source, version-controlled manual parameter table transcribed from the rendered non-road section; source blank cells are not inferred."
+        validation_rule: "Select exactly the twelve cited Passenger rail, Freight rail, and Domestic Freight maritime rows from Tables 4 and 6, preserving 2035 and 2050 values and excluding other sources and the internal HFO assumption."
+        adapter:
+          manual_parameter_path: "cost_invest_multipliers.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "EPRI. (2025). U.S. Regional Economy, Greenhouse Gas, and Energy (US-REGEN)—V2025 Model Documentation. Electric Power Research Institute. https://us-regen-docs.epri.com/v2025/"
+          expected_rows: 12
+      nonroad_efficiency_multipliers:
+        database_note: "Aviation improvement rates and rail/marine relative-efficiency assumptions; rail consumption ratios are inverted in the manual inputs, with source CNG represented as LNG."
+        data_quality: {dq_tech: 3, dq_time: 1}
+        label: "Non-road and aviation technology efficiency assumptions"
+        short_name: regen_nonroad_efficiency_multipliers
+        inputs: [category, sub_category, parameter, period, value]
+        applies_to: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
+        produces: [efficiency_multiplier]
+        parameter_modules: [offroad_efficiencies]
+        units: "dimensionless relative energy intensity or annual improvement rate"
+        notes: "EPRI rows selected from the mixed-source efficiency multiplier table."
+        validation_rule: "Select exactly the seventeen rows carrying the EPRI v2025 citation and preserve their technology, powertrain, parameter, and value fields."
+        adapter:
+          manual_parameter_path: "efficiency_multipliers.csv"
+          expected_columns: [category, sub_category, parameter, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "EPRI. (2025). U.S. Regional Economy, Greenhouse Gas, and Energy (US-REGEN)—V2025 Model Documentation. Electric Power Research Institute. https://us-regen-docs.epri.com/v2025/"
+          expected_rows: 17
+
+  faa_economic_values:
+    source_id: T13
+    title: "FAA Economic Values for Investment and Regulatory Decisions"
+    status: active
+    source_type: upstream_download
+    file_type: pdf
+    version: "2024 report; YE June 2023 air-carrier data"
+    units: "Seats, source-labelled tons, percent, miles per hour, and source-labelled USD per block hour."
+    citation: "Federal Aviation Administration. Economic Values for Investment and Regulatory Decisions. https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost"
+    database_note: "U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft."
+    database_precedence: [cost_variable]
+    # dq_time: Carrier observations end June 2023 and are reused across model vintages.
+    data_quality: {dq_cred: 1, dq_geog: 3, dq_struc: 2, dq_tech: 2, dq_time: 2}
+    validation_rule: "Each cached PDF must have a usable text layer and the configured document/table titles; requested All Aircraft metrics and paired Section 3/4 category labels must reconcile."
+    refresh_notes: >
+      Refresh both report sections together. Review PDF hashes, byte counts,
+      semantic table titles, data period, aircraft-category compatibility, and
+      unresolved dollar-year metadata before replacing cached snapshots.
+    components:
+      section_3_capacity:
+        database_note: "Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service."
+        data_quality: {dq_time: 2}
+        label: "Section 3 — Aircraft Capacity and Utilization Factors"
+        short_name: faa_aircraft_capacity_utilization
+        version: "2024 report; YE June 2023"
+        inputs: [passenger_capacity, cargo_capacity, passenger_load_factor, cargo_load_factor, average_block_speed_mph, average_daily_utilization]
+        applies_to: [passenger_air, freight_air]
+        produces: [mode_variable_costs, mode_capital_costs]
+        parameter_modules: [offroad_capex_opex]
+        units: "Seats, source-labelled tons, percent, miles per hour, and block hours per aircraft-day."
+        validation_rule: "Tables 3-6, 3-7, 3-9, and 3-10 must retain their exact titles and All Aircraft rows."
+        adapter:
+          url: "https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost/econ-value-section-3-capacity.pdf"
+          cache_path: "assorted_sources/faa_economic_values_2024_section_3_capacity.pdf"
+          expected_sha256: "e59e78ac10a8cf44db15274e8ed7aedd74e87d8c2812f2c26351e7fe4bcf8b96"
+          expected_bytes: 759483
+      section_4_operating_costs:
+        database_note: "Passenger and freight All Aircraft maintenance expense per block hour in reviewed 2023 USD; underlying carrier data end in June 2023."
+        label: "Section 4 — Aircraft Operating Costs"
+        short_name: faa_aircraft_operating_costs
+        version: "2024 report; YE June 2023"
+        inputs: [maintenance_cost_per_block_hour]
+        applies_to: [passenger_air, freight_air]
+        produces: [mode_variable_costs]
+        parameter_modules: [offroad_capex_opex]
+        units: "Source-labelled USD per block hour."
+        validation_rule: "Tables 4-7 and 4-8 must retain their exact titles and All Aircraft maintenance-cost rows."
+        adapter:
+          native_cost_currency: USD
+          native_cost_dollar_year: 2023
+          cost_metadata_status: reviewed
+          cost_metadata_note: "Section 2 discloses dollar year 2023."
+          url: "https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost/econ-value-section-4-op-costs.pdf"
+          cache_path: "assorted_sources/faa_economic_values_2024_section_4_operating_costs.pdf"
+          expected_sha256: "c0157057f0105535b764889f4a6a1bd571bfcf7a47034d24a9dfd8f13dbbe8d8"
+          expected_bytes: 757761
+
+  wards_intelligence_sales_shares:
+    source_id: T14
+    title: "Canada Car, Light truck, and Truck Sales by Line and GVWR in 2021 and 2020—Aggregated sales shares by line and GVWR"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2022 publication; aggregate LDV years 2018/2021 and MHDV year 2020"
+    units: "dimensionless sales share within the corresponding NRCan CEUD vehicle class"
+    citation: "Wards Intelligence. (2022). Canada Car, Light truck, and Truck Sales by Line and GVWR in 2021 and 2020—Aggregated sales shares by line and GVWR [Dataset]."
+    database_note: "Reviewed Canadian sales-share aggregates by vehicle class: LDV snapshots for 2018/2021 and GVWR shares for 2020; sales mix provides a proxy for fleet composition where selected."
+    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 3}
+    validation_rule: "The version-controlled CSV must contain 26 reviewed LDV class shares for 2018/2021 and six GVWR shares for 2020; shares must be numeric, bounded by zero and one, scope-aware, and sum to one within each CEUD class and year."
+    refresh_notes: >
+      Update only from a reviewed aggregate supplied by the source owner. Do not
+      commit, disclose, reconstruct, or register proprietary line- or GVWR-level
+      vehicle sales. Review both complete snapshot years, every class mapping, and
+      every group sum together.
+    adapter:
+      access:
+        method: version_controlled_manual_parameter
+    components:
+      vehicle_class_market_shares:
+        label: "Complete aggregate Wards vehicle-class market shares"
+        short_name: wards_vehicle_class_market_shares
+        inputs: [wards_size_class, vehicle_scope, nrcan_vehicle_class, nlr_atb_class, nrcan_ceud_class, year, market_share]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
+        produces: [vehicle_class_aggregation_weights]
+        parameter_modules: [road_aggregation, road_efficiencies, road_capex_opex, road_utilization]
+        units: "dimensionless sales share"
+        notes: "Shared regional policy uses these GVWR shares for medium-truck efficiency, cost and VMT aggregation outside Ontario. LDV shares remain opt-in comparison evidence. No proprietary line-level records are exposed."
+        validation_rule: "LDV source classes retain the NRCan Ratings and NLR hierarchy; GVWR Classes 3-7 map to Medium Trucks and Class 8 maps to Heavy Trucks; each CEUD-class/year must sum to one."
+        adapter:
+          manual_parameter_path: "vehicle_class_market_shares.csv"
+          expected_columns: [wards_size_class, vehicle_scope, nrcan_vehicle_class, nlr_atb_class, nrcan_ceud_class, year, market_share, notes, "source -> data_source", "data_year -> dq_time"]
+          unique_key: [vehicle_scope, wards_size_class, nrcan_ceud_class, year]
+          source_selector: "Wards Intelligence. (2022). Canada Car, Light truck, and Truck Sales by Line and GVWR in 2021 and 2020—Aggregated sales shares by line and GVWR [Dataset]."
+          expected_rows: 32
+
+  emrg_sfu_cims_model:
+    source_id: T15
+    title: "CIMS Model—Canadian Integrated Modelling System"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "reviewed 2025 and 2026 model assumptions"
+    units: "Source-labelled service output, 2015 CAD capital cost, and years."
+    citation: "Jaccard, M., Rivers, N., & Bataille, C. CIMS Model—Canadian Integrated Modelling System. Simon Fraser University - Energy and Materials Research Group (EMRG). EMRG-SFU. https://github.com/EMRG-SFU/cims/tree/main"
+    database_note: "Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes."
+    database_precedence:
+      - table: cost_invest
+        categories: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
+      - lifetime_tech
+    data_quality: {dq_cred: 3, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 2}
+    validation_rule: "Select only rows carrying the configured CIMS citation from each mixed-source manual table; keys, values, notes, data years, and reviewed DQ fields must remain complete."
+    refresh_notes: >
+      Review the cited CIMS sector assumptions and both manual files together.
+      Preserve the citation-year distinction recorded by the reviewed inputs.
+    adapter:
+      access:
+        method: version_controlled_manual_parameter
+        url: "https://github.com/EMRG-SFU/cims/tree/main"
+    components:
+      transport_service_output_and_capex:
+        database_note: "Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages."
+        label: "Transport service-output and service-unit capital-cost assumptions"
+        short_name: cims_transport_service_output_capex
+        version: "2025 review"
+        citation: "Jaccard, M., Rivers, N., & Bataille, C. (2025). CIMS Model—Canadian Integrated Modelling System. Simon Fraser University - Energy and Materials Research Group (EMRG). EMRG-SFU. https://github.com/EMRG-SFU/cims/tree/main"
+        inputs: [category, sub_category, parameter, unit, currency_year, period, value]
+        applies_to: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
+        produces: [cost_invest]
+        parameter_modules: [offroad_capex_opex]
+        units: "thousand passenger-km, thousand tonne-km, or 2015 CAD per service unit"
+        validation_rule: "Select exactly the eight rows carrying the 2025 CIMS citation."
+        adapter:
+          manual_parameter_path: "cost_invest_multipliers.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "Jaccard, M., Rivers, N., & Bataille, C. (2025). CIMS Model—Canadian Integrated Modelling System. Simon Fraser University - Energy and Materials Research Group (EMRG). EMRG-SFU. https://github.com/EMRG-SFU/cims/tree/main"
+          expected_rows: 8
+      transport_process_lifetimes:
+        database_note: "Fixed process-lifetime assumptions for aircraft, rail and marine technologies, applied by transport category."
+        label: "Transport process lifetime assumptions"
+        short_name: cims_transport_process_lifetimes
+        version: "2026 review of 2025 inputs"
+        citation: "Jaccard, M., Rivers, N., & Bataille, C. (2026). CIMS Model—Canadian Integrated Modelling System. Simon Fraser University - Energy and Materials Research Group (EMRG). EMRG-SFU. https://github.com/EMRG-SFU/cims/tree/main"
+        inputs: [technology_class, lifetime]
+        applies_to: [passenger_air, freight_air, passenger_rail, freight_rail, freight_marine]
+        produces: [lifetime]
+        parameter_modules: [offroad_lifetimes]
+        units: "years"
+        data_quality: {dq_cred: 3, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 1}
+        validation_rule: "Select the five compact category rows carrying the 2026 CIMS citation and resolve each technology_class through technology.category."
+        adapter:
+          manual_parameter_path: "lifetime_process.csv"
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
+          source_selector: "Jaccard, M., Rivers, N., & Bataille, C. (2026). CIMS Model—Canadian Integrated Modelling System. Simon Fraser University - Energy and Materials Research Group (EMRG). EMRG-SFU. https://github.com/EMRG-SFU/cims/tree/main"
+          expected_rows: 5
+
+  open_energy_outlook:
+    source_id: T16
+    title: "Open Energy Outlook"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2022 database assumptions"
+    units: "Dimensionless cost ratios, years, and hydrogen-station M USD2018 per PJ/year."
+    citation: "DeCarolis, J. F., et al. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
+    database_note: "U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs."
+    database_precedence:
+      - lifetime_tech
+      - table: cost_variable
+        categories: [passenger_rail, freight_rail, freight_marine]
+      - table: cost_fixed
+        components: [charger_fixed_cost_ratio, hydrogen_refueling_costs]
+      - table: cost_invest
+        categories: [h2_refuel]
+        components: [hydrogen_refueling_costs]
+    data_quality: {dq_cred: 3, dq_geog: 3, dq_struc: 3, dq_tech: 2, dq_time: 3}
+    validation_rule: "Select only rows carrying each component's exact reviewed Open Energy Outlook citation; validate complete manual-table coverage."
+    refresh_notes: >
+      Review the OEO database documentation and cited publication before changing
+      the version-controlled values, years, or DQ evidence.
+    adapter:
+      access:
+        method: version_controlled_manual_parameter
+        url: "https://github.com/TemoaProject/oeo/tree/master/database_documentation"
+    components:
+      transport_variable_cost_multipliers:
+        database_note: "Operating-cost-to-capital-cost ratios for passenger rail, freight rail and marine freight; each mode uses one ratio across its represented powertrains."
+        data_quality: {dq_tech: 3}
+        label: "Transport variable-cost multipliers"
+        short_name: oeo_transport_variable_cost_multipliers
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [passenger_rail, freight_rail, freight_marine]
+        produces: [cost_variable_multiplier]
+        parameter_modules: [offroad_capex_opex]
+        units: "dimensionless operating cost relative to capital cost"
+        validation_rule: "Select exactly three OEO variable-cost rows."
+        adapter:
+          manual_parameter_path: "cost_variable_multipliers.csv"
+          expected_columns: [category, sub_category, parameter, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter]
+          source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akin-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
+          expected_rows: 3
+      transport_process_lifetimes:
+        database_note: "Charging-infrastructure process-lifetime assumption applied across the represented charger classes."
+        label: "Charging-infrastructure process lifetimes"
+        short_name: oeo_transport_process_lifetimes
+        inputs: [technology_class, lifetime]
+        applies_to: [charger]
+        produces: [lifetime]
+        parameter_modules: [offroad_lifetimes]
+        units: "years"
+        data_quality: {dq_cred: 3, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 1}
+        validation_rule: "Select the compact charger category row and resolve it through technology.category."
+        adapter:
+          manual_parameter_path: "lifetime_process.csv"
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
+          source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akin-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
+          expected_rows: 1
+      charger_fixed_cost_ratio:
+        database_note: "Annual charger fixed operating cost assumed proportional to investment cost; the reviewed ratio is common to charger classes."
+        data_quality: {dq_tech: 3}
+        label: "Annual charger fixed cost to investment ratio"
+        short_name: oeo_charger_fixed_cost_ratio
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [charger]
+        produces: [cost_fixed]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Select the one reviewed charger fixed-to-capital-cost ratio."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akin-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
+          expected_rows: 1
+
+      hydrogen_refueling_costs:
+        database_note: "Separate LDV/MHDV hydrogen-station investment and annual fixed costs from OEO's IEA-derived assumptions; annual hydrogen throughput is the capacity basis."
+        label: "Hydrogen refueling investment and fixed costs"
+        short_name: oeo_hydrogen_refueling_costs
+        inputs: [category, sub_category, parameter, unit, currency_year, period, value]
+        applies_to: [h2_refuel]
+        produces: [cost_invest, cost_fixed]
+        parameter_modules: [ev_chargers]
+        units: "Investment: M USD2018 per PJ/year; fixed: M USD2018 per PJ/year annually."
+        validation_rule: "Select four reviewed H2 rows: independent LDV/MHDV investment and fixed annual cost rates."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "DeCarolis, J. F., Jaramillo, P., Johnson, J. X., McCollum, D. L., Trutnevyte, E., Daniels, D. C., Akın-Olçum, G., Bergerson, J., Cho, S., Choi, J.-H., Craig, M. T., de Queiroz, A. R., Eshraghi, H., Galik, C. S., Gutowski, T. G., Haapala, K. R., Hodge, B.-M., Hoque, S., Jenkins, J. D., … Zhou, Y. (2020). Open Energy Outlook—Leveraging Open-Source Tools for Collaborative Macro-energy System Modeling Efforts. Joule, 4(12), 2523–2526. https://doi.org/10.1016/j.joule.2020.11.002"
+          expected_rows: 4
+
+  argonne_rd_greet:
+    source_id: T17
+    title: "R&D GREET 2025 Rev.1 Excel"
+    status: active
+    source_type: external_model
+    file_type: xlsm
+    version: "2025 Rev.1, published 2026"
+    units: "Component-specific: marine intensity ratio, fuel HHV, and vehicle-cycle lifetime gas totals."
+    citation: "Wang, M., Cai, H., Ou, L., et al. (2026). R&D Greenhouse gases, Regulated Emissions, and Energy use in Technologies Model (2025 Rev.1 Excel) [Computer software]. Argonne National Laboratory. https://doi.org/10.11578/GREET-EXCEL-2025REV1/DC.20260610.1"
+    database_note: "Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results."
+    database_precedence: [emission_embodied]
+    # dq_time: Recent model evidence; component scores distinguish physical properties and fixed cohorts.
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 2, dq_tech: 2, dq_time: 2}
+    validation_rule: "Validate each component's registered workbook or reviewed manual evidence independently."
+    refresh_notes: >
+      Keep marine and HHV evidence independent of vehicle-cycle refreshes. For a
+      GREET release change, review filenames, native controls/functions, extraction
+      labels/anchors, years and source-formula audit, then explicitly regenerate
+      the vehicle-cycle result bank. Offline preparation rejects stale evidence.
+    adapter:
+      access:
+        method: registered_external_model
+        url: "https://greet.anl.gov/greet/versions.html"
+    components:
+      marine_hfo_energy_intensity:
+        database_note: "HFO-to-MDO combustion energy-intensity ratio from the GREET Marine Trip model, reflecting its predefined trip characteristics."
+        data_quality: {dq_struc: 3, dq_time: 2}
+        label: "Marine HFO energy intensity relative to MDO"
+        short_name: greet_marine_hfo_energy_intensity
+        inputs: [category, sub_category, parameter, period, value]
+        applies_to: [freight_marine]
+        produces: [efficiency_multiplier]
+        parameter_modules: [offroad_efficiencies]
+        units: "dimensionless energy-intensity ratio"
+        validation_rule: "Select exactly one GREET row."
+        adapter:
+          manual_parameter_path: "efficiency_multipliers.csv"
+          expected_columns: [category, sub_category, parameter, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "Wang, M., Cai, H., Ou, L., Benvenutti, L., Elgowainy, A., Englander, J., Masum, F., Gan, Y., Hernandez, J., Kim, T., Kelly, J., Kwon, H., Leonhardt, B., Liu, X., Lu, Z., Martinez, S., Sykora, T., & Vyawahare, P. (2026). R&D Greenhouse gases, Regulated Emissions, and Energy use in Technologies Model ® (2025 Rev.1 Excel) [Computer software]. Argonne National Laboratory (ANL), Argonne, IL (United States). https://doi.org/10.11578/GREET-EXCEL-2025REV1/DC.20260610.1"
+          expected_rows: 1
+
+      fuel_heating_values:
+        database_note: "Gasoline and diesel higher heating values referenced by configured conversion constants; native units are Btu per U.S. gallon."
+        data_quality: {dq_cred: 1, dq_geog: 1, dq_struc: 1, dq_tech: 1, dq_time: 1}
+        label: Gasoline and diesel higher heating values
+        short_name: greet_gasoline_diesel_hhv
+        inputs: [gasoline_hhv, diesel_hhv]
+        applies_to: [road]
+        produces: [energy_conversion]
+        parameter_modules: [road_efficiencies]
+        units: Btu_IT/US gallon
+        notes: >
+          Reference registration for fuel_hhv in config/parameters/conversion.yaml:
+          R&D GREET2025_Rev1/R&D GREET1_2025_Rev1.xlsm, Fuel_Specs,
+          gasoline D16 and diesel D23. These anchors document the conversion reference,
+          not an artifact acquired or read by the heating-value calculation.
+        validation_rule: "Review the cited GREET cells when updating the conversion constants; ordinary builds use conversion.yaml without workbook acquisition or cell comparison."
+
+      road_vehicle_cycle_emissions:
+        database_note_variants:
+          phev_hev_proxy: "HEV vehicle-cycle totals proxy PHEVs where the registered MHDV case lacks a separate PHEV simulation."
+        database_note: "Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate."
+        # dq_time: Saved 2025 simulation includes LDV cohort 2020 and is reused across vintages.
+        data_quality: {dq_struc: 3, dq_tech: 3, dq_time: 3}
+        label: GREET road vehicle-cycle lifetime gas totals
+        short_name: greet_road_vehicle_cycle_emissions
+        notes: >
+          The 2025-target Excel probe reproduces a source-formula mismatch in
+          GREET2 Car/SUV/PUT!J4: lightweight BEV AER 150/200/300/400 selects glider
+          columns labeled EV400/EV150/EV200/EV300 respectively. The corresponding
+          W4/Y4/AA4/AC4 inputs are identical within each worksheet in this release,
+          so the mismatch has no numerical effect. Preserve the native formula and
+          results. Recheck saved inputs on every refresh; correct the downstream
+          selector before using a future release with unequal range assumptions.
+        required: false  # Required by preparation only when embodied_emissions is enabled.
+        inputs: [registered_vehicle_cycle_workbooks, validated_vehicle_cycle_result_bank]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
+        produces: [emission_embodied]
+        parameter_modules: [road_embodied_emissions]
+        units: g/vehicle-lifetime
+        validation_rule: >
+          Validate complete class/range/gas coverage, native controls, units, finite
+          converged results and source/result-bank hashes. Replay must reproduce the
+          retained ATB digest after restoring only its source-family identity and
+          default-trajectory marker. Accept the native lightweight selector mismatch
+          only while affected range inputs are identical; exclude combined CO2.
+        adapter:
+          directory: R&D GREET2025_Rev1
+          greet1_file: R&D GREET1_2025_Rev1.xlsm
+          greet2_file: R&D GREET2_2025_Rev1.xlsm
+          # One explicit simulation target; changing it requires regeneration and
+          # review of the corresponding imported LDV cohort, not an automatic sweep.
+          solved_simulation_year: 2025
+          ldv_vehicle_cohort_year: 2020
+          manifest_file: manifest.json
+          automation:
+            timeout_seconds: 1800
+            max_calculation_passes: 4
+            relative_tolerance: 1.0e-10
+            absolute_tolerance: 1.0e-8
+            macro: Calculation.Calc
+            macro_arguments: [true]
+            names:
+              simulation_year: {name: Year, cell: E9}
+              ldv_selector: {name: Veh_Type_Option, cell: E16}
+              phev_range_miles: {name: Grid_AER, cell: F993}
+              bev_range_miles: {name: BEV_AER, cell: F994}
+            range_dropdown_names: {phev: Grid_VMT_AER, bev: BEV_VMT_AER}
+            range_labels: {E993: PHEVs, E994: BEVs}
+            range_unit: {cell: C992, label: '12.3.a) Rated All Electric Range (RAER) [miles]'}
+            imported_controls: {ldv_selector: B4, phev_range_miles: D12, bev_range_miles: G12}
+            preserved_ldv_selectors: [B8, B11, B14]
+            function_checks:
+              - {workbook: greet1, name: GREET_Version, arguments: [], expected: R&D GREET1 2025_Rev1}
+              - {workbook: greet2, name: Battery, arguments: [1], expected: 'Batteries: Pb_Acid'}
+            lightweight_glider:
+              worksheets: [Car, SUV, PUT]
+              formula_cell: J4
+              header_row: 3
+              columns: [W, Y, AA, AC]
+              range_reference: GREET1_Import_Export!$G$12
+              header_pattern: 'EV([0-9]+): Lightweight Material'
+            files:
+              results: vehicle_cycle_gases.csv
+              exclusions: excluded_combined_co2.csv
+              cases: cases.csv
+              report: run_report.json
+
+  canada_energy_policy_simulator:
+    source_id: T19
+    title: "Canada Energy Policy Simulator"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "v3.4.7, retrieved 2023-05-29"
+    units: "Years."
+    citation: "Energy Innovation & Pembina Institute. (2023). Canada Energy Policy Simulator v3.4.7. Retrieved May 29, 2023, from https://docs.energypolicy.solutions/models/canada"
+    database_note: "Motorcycle process-lifetime assumption from Canada EPS v3.4.7; the underlying input is dated 2009 and applies across represented motorcycle powertrains."
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 4}
+    validation_rule: "Select the compact motorcycles lifetime row, preserve its source data year and reviewed DQ fields, and audit its expansion through technology.category."
+    refresh_notes: >
+      Preserve the cited model version and retrieval date unless the manual
+      assumptions are explicitly reviewed against a newer release.
+    adapter:
+      access:
+        method: version_controlled_manual_parameter
+        url: "https://docs.energypolicy.solutions/models/canada"
+    components:
+      motorcycle_lifetimes:
+        label: "Motorcycle process lifetimes"
+        short_name: canada_eps_motorcycle_lifetimes
+        inputs: [technology_class, lifetime]
+        applies_to: [motorcycles]
+        produces: [lifetime]
+        parameter_modules: [road_lifetimes_survival]
+        units: "years"
+        data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 4}
+        validation_rule: "Select the compact motorcycles category row and resolve it through technology.category."
+        adapter:
+          manual_parameter_path: "lifetime_process.csv"
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
+          source_selector: "Energy Innovation & Pembina Institute. (2023). Canada Energy Policy Simulator v3.4.7. Retrieved May 29, 2023, from https://docs.energypolicy.solutions/models/canada"
+          expected_rows: 1
+
+  argonne_hdsam:
+    source_id: T20
+    title: "Hydrogen Delivery Scenario Analysis Model"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "v4.5, 2022"
+    units: "Years."
+    citation: "Argonne National Laboratory, Amgad Elgowainy, & Krishna Reddi. (2022). Hydrogen Delivery Scenario Analysis Model (HDSAM) v4.5. Hydrogen Delivery Infrastructure Analysis. https://hdsam.es.anl.gov/index.php"
+    database_note: "Gaseous-hydrogen refueling dispenser lifetime from HDSAM v4.5 economic assumptions, applied to the hydrogen-refueling technology category."
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 1}
+    validation_rule: "Select the compact h2_refuel lifetime row, preserve its reviewed source year and DQ fields, and audit its expansion through technology.category."
+    refresh_notes: >
+      Review light- and heavy-duty refueling-station assumptions together before
+      changing dispenser lifetimes or the cited HDSAM version.
+    adapter:
+      access:
+        method: version_controlled_manual_parameter
+        url: "https://hdsam.es.anl.gov/index.php"
+    components:
+      hydrogen_dispenser_lifetimes:
+        label: "Hydrogen refueling dispenser process lifetimes"
+        short_name: hdsam_hydrogen_dispenser_lifetimes
+        inputs: [technology_class, lifetime]
+        applies_to: [h2_refuel]
+        produces: [lifetime]
+        parameter_modules: [offroad_lifetimes]
+        units: "years"
+        data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 1, dq_tech: 1, dq_time: 1}
+        validation_rule: "Select the compact h2_refuel category row and resolve it through technology.category."
+        adapter:
+          manual_parameter_path: "lifetime_process.csv"
+          expected_columns: [category, sub_category, lifetime, notes, "source -> data_source", "data_year -> dq_time", dq_cred, dq_struc, dq_time, dq_geog, dq_tech]
+          unique_key: [category, sub_category]
+          source_selector: "Argonne National Laboratory, Amgad Elgowainy, & Krishna Reddi. (2022). Hydrogen Delivery Scenario Analysis Model (HDSAM) v4.5. Hydrogen Delivery Infrastructure Analysis. https://hdsam.es.anl.gov/index.php"
+          expected_rows: 1
+
+  fueleconomy_gov_vehicle_data:
+    update: {strategy: fueleconomy}
+    source_id: T21
+    title: "FuelEconomy.gov Find a Car vehicle data"
+    status: active
+    source_type: upstream_download
+    file_type: zip
+    version: "2026-09-29 vehicle snapshot"
+    units: "Source vehicle classification records by model year, make, and model."
+    citation: "U.S. Department of Energy and U.S. Environmental Protection Agency. FuelEconomy.gov Find a Car vehicle data. https://www.fueleconomy.gov/feg/ws/index.shtml"
+    database_note: "U.S. model-year make/model and vehicle-class records used to corroborate Canadian vehicle classification; model names and classes require harmonization."
+    # dq_time: Catalogue model years 1984-2027 support matching-year classification, not snapshot-year scoring.
+    data_quality: {dq_cred: 1, dq_geog: 2, dq_struc: 2, dq_tech: 2, dq_time: 1}
+    validation_rule: "Validate the pinned ZIP hash, byte count, vehicles.csv member, exact four selected columns, non-null values, and model-year bounds before VClass normalization."
+    refresh_notes: >
+      The public download is a moving file. Review its Last-Modified header, byte count,
+      SHA-256, archive member, selected columns, model-year bounds, and complete VClass
+      vocabulary together before replacing the pinned cache. Only year, make, model,
+      and VClass are the classification contract. The separately registered range
+      component authorizes additional fields from the same frozen cache; never refresh
+      or widen classification implicitly.
+    components:
+      vehicles:
+        label: "FuelEconomy.gov vehicles.csv (2026-09-29)"
+        short_name: fueleconomy_vehicle_class_evidence
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [normalized_vehicle_class_evidence]
+        parameter_modules: [road_aggregation]
+        units: "Categorical vehicle records."
+        validation_rule: "Select only year, make, model, and VClass and retain unresolved class normalizations explicitly."
+        adapter:
+          url: "https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip"
+          cache_path: "fueleconomy_vehicles/2026-09-29_vehicles.csv.zip"
+          archive_member: vehicles.csv
+          expected_sha256: "33d32caa0343cdb11c47be631e8a80b7ed7c351ee8503646a4e96485bd67b22f"
+          expected_bytes: 2212193
+          expected_model_year_from: 1984
+          expected_model_year_to: 2027
+          required_columns: [year, make, model, VClass]
+          required_non_null_columns: [year, make, model, VClass]
+
+      range_evidence:
+        database_note: "U.S. MY2024 BEV range and PHEV charge-depleting range keyed by model type; the range records carry no production weights."
+        data_quality: {dq_time: 2}
+        label: "FuelEconomy.gov MY2024 BEV/PHEV range and EPA model-type keys (2026-09-29)"
+        short_name: fueleconomy_cd_range_evidence
+        inputs: [vehicle_id, model_year, manufacturer_code, model_type_index, powertrain, range, secondary_fuel_range]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [charge_depleting_range_evidence]
+        units: "Miles; range for BEV, rangeA for PHEV with fuelType2=Electricity (CD mode, including blended operation)."
+        validation_rule: "Validate the existing pinned vehicles ZIP; retain native ranges, fuel labels and phevBlended; reject nonpositive/unparseable range evidence rather than use PHEV total range."
+        notes: "EPA model-type key join requires independent production accounting. Range rows alone never supply production weights."
+        adapter:
+          cache_component: vehicles
+          required_columns: [year, make, model, VClass, id, mfrCode, engId, atvType, fuelType1, fuelType2, range, rangeA, phevBlended]
+          required_non_null_columns: [year, make, model, VClass, id, engId]
+
+  nhtsa_vpic_vehicle_models:
+    source_id: T23
+    title: "NHTSA Vehicle Product Information Catalog"
+    status: active
+    source_type: upstream_download
+    file_type: json
+    version: "Request-scoped cached API responses"
+    required: false
+    units: "Source model and vehicle-type records by make and model year."
+    citation: "National Highway Traffic Safety Administration. Vehicle Product Information Catalog (vPIC) API. https://vpic.nhtsa.dot.gov/api/"
+    database_note: "U.S. make/model-year and vehicle-type records used to corroborate Canadian vehicle mappings; missing responses do not establish vehicle nonexistence."
+    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 2}
+    validation_rule: "Issue only bootstrap-gated make/year requests, validate response envelopes and records strictly, and retain every response in the registered cache."
+    refresh_notes: >
+      Refresh only after regenerating the positive-stock, promotion-approved,
+      classless request artifact. Ordinary parameterization is offline.
+    adapter:
+      access:
+        method: official_api
+        url: "https://vpic.nhtsa.dot.gov/api/"
+    components:
+      model_vehicle_types:
+        database_note: "Manufacturer-reported model and vehicle-type records used to corroborate truck or incomplete-vehicle scope; broad vehicle types do not resolve detailed GVWR classes."
+        data_quality: {dq_tech: 3}
+        label: "vPIC models for make and model year"
+        short_name: vpic_model_vehicle_types
+        inputs: [make_name, model_name, vehicle_type_name]
+        applies_to: [medium_trucks, heavy_trucks]
+        produces: [non_ldv_vehicle_scope_evidence]
+        parameter_modules: [road_aggregation]
+        units: "Categorical vehicle-type evidence."
+        validation_rule: "Match only the promoted family; Truck and Incomplete Vehicle are the configured conclusive MHDV types."
+        adapter:
+          api_base_url: "https://vpic.nhtsa.dot.gov/api/vehicles"
+          cache_subdir: "vpic_vehicle_models"
+      model_year_validation:
+        database_note: "Make/model-year existence evidence for reviewed mapping candidates; absence from a response remains inconclusive."
+        label: "vPIC make-model-year existence evidence"
+        short_name: vpic_model_year_validation
+        inputs: [make_name, model_name, model_year]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
+        produces: [vehicle_mapping_temporal_evidence]
+        parameter_modules: [road_aggregation]
+        units: "Categorical make-model-year corroboration evidence."
+        validation_rule: "Validate only bootstrap-produced make/year requests; absence is diagnostic and is not treated as proof of nonexistence."
+        adapter:
+          api_base_url: "https://vpic.nhtsa.dot.gov/api/vehicles"
+          cache_subdir: "vpic_vehicle_models"
+
+  dunsky_ev_charging_infrastructure:
+    source_id: T24
+    title: "Electric Vehicle Charging Infrastructure for Canada"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2024 updated forecast; reviewed manual extraction"
+    units: "Reviewed dimensionless utilization and port-count shares, kW port ratings, and 2022 CAD capital costs per port."
+    citation: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
+    database_note: "Canadian LD/MHD charging projections with reviewed port-count mixes, rated-power trajectories and CAD2022 equipment/installation costs per port. Convert total port expenditure divided by total rated power to model costs. Common 0.20 utilization is a user-reviewed consistency override for vintage-indexed limits, not a direct source observation; final cost/power values beyond 2040 retain the reviewed endpoint."
+    database_precedence:
+      - table: existing_capacity
+        categories: [charger]
+      - table: limit_annual_capacity_factor
+        categories: [charger]
+      - table: cost_invest
+        categories: [charger]
+    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 2}
+    validation_rule: "Select 37 cited charger rows from the compact charger table with unique category/subcategory/parameter/period keys."
+    refresh_notes: >
+      Review the source report tables and all charger utilization/share/cost rows together
+      before changing the version-controlled values or derivation notes.
+    adapter:
+      access:
+        method: version_controlled_manual_parameter
+        url: "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
+    components:
+      charger_shares_and_utilization:
+        label: "EV charger utilization, shares, and capital costs"
+        short_name: dunsky_charger_shares_utilization
+        inputs: [category, sub_category, parameter, unit, currency_year, period, value]
+        applies_to: [charger]
+        produces: [charger_utilization, charger_type_share, charger_cost_invest]
+        parameter_modules: [ev_chargers]
+        units: "Dimensionless utilization rate or port-count share; kW port rating; 2022 CAD per port."
+        validation_rule: "Require all 37 cited rows, matched cost/power source years, and reviewed derivation/override notes."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
+          expected_rows: 37
+
+  transport_canada_ev_dashboard:
+    # No API: permit HTML republishing only when every parsed observation is unchanged.
+    update: {strategy: tc_dashboard_same_values}
+    source_id: T25
+    title: "Transport Canada electric vehicle dashboard"
+    status: active
+    source_type: upstream_download
+    file_type: html
+    version: "2026 Q1; page updated August 2026"
+    units: "Medium/heavy EV market-share percentages and public light-duty charging port counts."
+    citation: "Transport Canada. (2026). Canada's electric vehicle dashboard. https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
+    database_note: "Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component."
+    data_quality: {dq_cred: 1, dq_geog: 1, dq_struc: 2, dq_tech: 2, dq_time: 2}
+    validation_rule: "Pinned HTML must contain the configured market-share and public-charger sections; validate regional coverage, charger types, counts, and national totals."
+    refresh_notes: >
+      Re-pin the HTML hash and byte count and review the table headers, reporting
+      period, and regional coverage before changing the selected edition.
+    adapter:
+      access:
+        method: https
+        url: "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
+      cache_path: assorted_sources/transport_canada_ev_dashboard_2026_q1.html
+      expected_sha256: 4ffdbdda087b6a361decfb21b49557d058ef571ced34a4f45d731546a3544091
+      expected_bytes: 91590
+    components:
+      medium_heavy_ev_market_share:
+        database_note: "Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet."
+        data_quality: {dq_struc: 3, dq_time: 3}
+        label: "2026 year-to-date medium/heavy EV market share by province"
+        short_name: medium_heavy_ev_market_share
+        inputs: [province, quarter_share, year_to_date_share]
+        applies_to: [medium_trucks, heavy_trucks]
+        produces: [existing_capacity]
+        parameter_modules: [road_stocks_and_demands]
+        units: fraction
+        validation_rule: "Require all CEUD regional share proxies to resolve to a numeric bounded provincial 2026 year-to-date value."
+      public_light_duty_chargers:
+        database_note: "Public light-duty charging-port counts by province as of March 2026, with national L2/DCFC shares; provincial counts exclude private chargers."
+        data_quality: {dq_tech: 1}
+        label: "March 2026 public light-duty charging ports by province and type"
+        short_name: public_light_duty_chargers
+        inputs: [province, level_2_ports, level_3_ports, national_total]
+        applies_to: [charger]
+        produces: [existing_capacity]
+        parameter_modules: [ev_chargers]
+        units: ports
+        validation_rule: "Require all 13 provincial/territorial counts and L2/DCFC types; both sums equal the dashboard national total."
+
+  pollution_probe_ev_charging_survey:
+    source_id: T26
+    title: "2024 Canadian EV Charging Experience Survey"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2024 survey; reviewed manual extraction"
+    units: "Dimensionless private L1/L2 charger shares."
+    citation: "Pollution Probe & Mobility Futures Lab. (2025). 2024 Canadian EV Charging Experience Survey. https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"
+    database_note: "Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split."
+    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 2}
+    validation_rule: "Select both reviewed private L1/L2 share rows from charger_parameters.csv."
+    refresh_notes: "Review the survey and both private charger shares together before editing the manual table."
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"}
+    components:
+      private_charger_shares:
+        label: "Private light-duty L1/L2 charging shares"
+        short_name: pollution_probe_private_charger_shares
+        inputs: [category, sub_category, parameter, period, value]
+        applies_to: [charger]
+        produces: [existing_capacity]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Require both private shares and a unit sum."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "Pollution Probe & Mobility Futures Lab. (2025). 2024 Canadian EV Charging Experience Survey. https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"
+          expected_rows: 2
+
+  nlr_alternative_fueling_infrastructure:
+    source_id: T27
+    title: "Assessment of Alternative Fueling Infrastructure in the United States"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2024 report; reviewed residential L1 installation cost"
+    units: "USD per residential L1 port; reviewed 2021 dollar-year basis."
+    citation: "Lommele, S., Desai, R., Johnson, C., Snelling, A., Brown, A., Singer, M., Bennett, J., Cappellucci, J., Levene, J., & Hoehne, C. (2024). Assessment of Alternative Fueling Infrastructure in the United States (NREL/TP-5400-88513). NREL. https://doi.org/10.2172/2447838"
+    database_note: "U.S. residential L1 installation cost midpoint of 550 USD per port from the 100–1000 USD range; equipment cost is zero. The 2021 dollar year is a reviewed manual basis, not explicitly stated in the source table. Normalize to rated power only after currency conversion and port-count aggregation."
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 2, dq_time: 2}
+    validation_rule: "Select the reviewed residential L1 cost row from charger_parameters.csv."
+    refresh_notes: "Review the report and L1 installation-cost treatment before editing the manual row."
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://doi.org/10.2172/2447838"}
+    components:
+      residential_l1_cost:
+        label: "Residential L1 installation cost"
+        short_name: nlr_residential_l1_cost
+        inputs: [category, sub_category, parameter, unit, currency_year, period, value]
+        applies_to: [charger]
+        produces: [cost_invest]
+        parameter_modules: [ev_chargers]
+        units: "USD per port, with reviewed 2021 dollar year"
+        validation_rule: "Require one reviewed cost and its native currency/year."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "Lommele, S., Desai, R., Johnson, C., Snelling, A., Brown, A., Singer, M., Bennett, J., Cappellucci, J., Levene, J., & Hoehne, C. (2024). Assessment of Alternative Fueling Infrastructure in the United States (NREL/TP-5400-88513). NREL. https://doi.org/10.2172/2447838"
+          expected_rows: 1
+
+  icct_ev_charge:
+    source_id: T28
+    title: "EV CHARGE v1.2 documentation"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "v1.2; reviewed charger efficiency"
+    units: "Dimensionless LD charger efficiency."
+    citation: "ICCT. (2024). EV CHARGE v1.2 Documentation. EV CHARGE Model Documentation. https://theicct.github.io/EVCHARGE-doc/versions/v1.2/"
+    database_note: "EV CHARGE v1.2 L2 charging-efficiency assumption retained as reviewed evidence; not applied as an additional loss to charging-inclusive vehicle electricity consumption."
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 3, dq_time: 2}
+    validation_rule: "Select the reviewed LD charger efficiency row."
+    refresh_notes: "Review the ICCT model assumption and manual efficiency together before editing."
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://theicct.github.io/EVCHARGE-doc/versions/v1.2/"}
+    components:
+      ld_charger_efficiency:
+        label: "LD charger efficiency"
+        short_name: icct_ld_charger_efficiency
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [charger]
+        produces: [reviewed_charger_efficiency_evidence]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Require one bounded LD charger efficiency."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "ICCT. (2024). EV CHARGE v1.2 Documentation. EV CHARGE Model Documentation. https://theicct.github.io/EVCHARGE-doc/versions/v1.2/"
+          expected_rows: 1
+
+  icct_hdv_charge:
+    source_id: T29
+    title: "HDV CHARGE v1.2 documentation"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "v1.2; reviewed charger efficiency"
+    units: "Dimensionless MHD charger efficiency."
+    citation: "ICCT. (2024). HDV CHARGE v1.2 Documentation. HDV CHARGE Model Documentation. https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/"
+    database_note: "HDV CHARGE v1.2 global efficiency includes equipment, onboard charging where applicable and battery losses. Retained as reviewed evidence; not applied as an additional loss to charging-inclusive vehicle electricity consumption."
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 3, dq_time: 2}
+    validation_rule: "Select the reviewed MHD charger efficiency row."
+    refresh_notes: "Review the ICCT model assumption and manual efficiency together before editing."
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/"}
+    components:
+      mhd_charger_efficiency:
+        label: "MHD charger efficiency"
+        short_name: icct_mhd_charger_efficiency
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [charger]
+        produces: [reviewed_charger_efficiency_evidence]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Require one bounded MHD charger efficiency."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "ICCT. (2024). HDV CHARGE v1.2 Documentation. HDV CHARGE Model Documentation. https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/"
+          expected_rows: 1
+
+  iea_future_of_hydrogen:
+    source_id: T30
+    title: "The Future of Hydrogen"
+    status: active
+    source_type: manual_parameter
+    file_type: csv
+    version: "2019 report; reviewed manual refueling efficiency"
+    units: "Dimensionless hydrogen refueling efficiency."
+    citation: "IEA. (2019). The Future of Hydrogen. https://www.iea.org/reports/the-future-of-hydrogen"
+    database_note: "Hydrogen-refueling efficiency assumption from the report's Distribution annex, representing a generic station-level loss factor."
+    data_quality: {dq_cred: 2, dq_geog: 4, dq_struc: 3, dq_tech: 2, dq_time: 3}
+    validation_rule: "Select the one existing hydrogen efficiency row in the compact manual table."
+    refresh_notes: "Review the station loss assumption together with its OEO costs and HDSAM lifetime; the shared infrastructure parameterization owns its expansion."
+    adapter:
+      access: {method: version_controlled_manual_parameter, url: "https://www.iea.org/reports/the-future-of-hydrogen"}
+    components:
+      hydrogen_refueling_efficiency:
+        label: "Hydrogen refueling efficiency"
+        short_name: iea_hydrogen_refueling_efficiency
+        inputs: [category, sub_category, parameter, value]
+        applies_to: [h2_refuel]
+        produces: [efficiency]
+        parameter_modules: [ev_chargers]
+        units: fraction
+        validation_rule: "Require the one cited hydrogen efficiency row."
+        adapter:
+          manual_parameter_path: "charger_parameters.csv"
+          expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
+          unique_key: [category, sub_category, parameter, period]
+          source_selector: "IEA. (2019). The Future of Hydrogen. https://www.iea.org/reports/the-future-of-hydrogen"
+          expected_rows: 1
+
+  legacy_charging_profiles:
+    source_id: T31
+    title: "Legacy Ontario RAMP-mobility LDV charging profiles — legacy, pending update"
+    status: active
+    source_type: external_model
+    file_type: csv
+    version: "Frozen Ontario 2018 v5 chargers AER-shares"
+    citation: "Legacy CANOE Ontario RAMP-mobility simulations with NHTS 2022 or TTS 2016 travel inputs, Ontario 2018 weather and inherited fleet/range composition; https://github.com/RAMP-project/RAMP-mobility"
+    units: "Aggregate charging power (kW), minute samples; hourly mean kW / annual hourly peak kW gives a dimensionless factor."
+    database_note: "Frozen Ontario RAMP-mobility charging simulations using 2018 weather and embedded fleet, range and charger composition; normalized load shapes, not measured charger utilization."
+    database_precedence: [capacity_factor_tech]
+    # dq_time: Frozen NHTS 2022 or TTS 2016 travel with 2018 weather proxies later vintages.
+    data_quality: {dq_cred: 3, dq_geog: 2, dq_struc: 3, dq_tech: 3, dq_time: 3}
+    validation_rule: "Verify immutable hashes/bytes, UTC minute index, nonnegative finite complete Toronto-year samples and hourly energy/peak conservation."
+    refresh_notes: "Legacy, pending update. Do not rerun simulations or rewrite registered files. Range composition is already embedded; never multiply by new range shares. Upstream post_process.py (blob 6669c3d6633f5938b50a463d8b0f7f385491cf8a) plots charging output in kW and resamples by hourly mean; the local plotting notebook's kWh label is inconsistent with power samples. Native integrals use kW*hours; no absolute fleet rescaling."
+    components:
+      nhts:
+        database_note: "Ontario charging simulation with NHTS 2022 travel inputs and 2018 weather; inherited BEV fleet and charger mix also proxy other regions and shared LDV charging."
+        label: "Ontario NHTS 2022 travel / 2018 weather charging shape"
+        short_name: legacy_ldv_charging_nhts
+        inputs: [timestamp_utc, aggregate_charging_demand]
+        applies_to: [ldv_charging]
+        produces: [capacity_factor_tech]
+        parameter_modules: [ldv_charging_profiles]
+        notes: "BEV fleet shape; AER shares and charger mix embedded. Ontario shape proxies every selected region and both shared LDV chargers, including PHEV/motorcycle charging."
+        adapter:
+          registered_path: "legacy_backend/charging_profiles[deprecated]/ramp_mobility/results/ON-2022NHTS_2018_v5_chargers_AER-shares.csv"
+          expected_sha256: a5e4f924d72c409f38e29c0b84d20390b5b1a180ae63956bf4f902a59a78aac1
+          expected_bytes: 23771774
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+      tts:
+        database_note: "Ontario charging simulation with TTS 2016 weekday travel and 2018 weather; no weekend reconstruction, and fleet and charger composition remain embedded."
+        data_quality: {dq_struc: 4}
+        label: "Ontario TTS 2016 weekday travel / 2018 weather charging shape"
+        short_name: legacy_ldv_charging_tts
+        inputs: [timestamp_utc, aggregate_charging_demand]
+        applies_to: [ldv_charging]
+        produces: [capacity_factor_tech]
+        parameter_modules: [ldv_charging_profiles]
+        notes: "Weekday-only TTS simulation; inherited AER shares and charger mix. No weekend reconstruction or new-market reweighting."
+        adapter:
+          registered_path: "legacy_backend/charging_profiles[deprecated]/ramp_mobility/results/ON-2016TTS_no-we_2018_v5_chargers_AER-shares.csv"
+          expected_sha256: 649175f04bc52af0c9920a08adc03934edc42aa6d876867d884dbd0575e3b32a
+          expected_bytes: 23829116
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+
+  epa_omega_baseline:
+    source_id: T33
+    title: "EPA OMEGA v2.5 LDV central baseline plug-in range/sales extract — legacy notebook market"
+    status: active
+    source_type: external_model
+    file_type: csv
+    version: "OMEGA v2.5.0 / LDV central / _Final aggregated_vehicles / 2024-02-27 snapshot"
+    citation: "US EPA OMEGA model v2.5.0, LDV central MY2022 baseline used by LDV_AER_market_shares.ipynb; https://github.com/USEPA/EPA_OMEGA_Model; https://omega2.readthedocs.io/en/latest/"
+    units: "Model-year 2022 sales counts; on-road charge-depleting miles; battery kWh. Model evidence is not final MY2024 actual production."
+    database_note: "U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages."
+    # dq_time: Fixed MY2022 sales/ranges proxy all modeled vintages; the snapshot is not a forecast.
+    data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 2, dq_time: 3}
+    validation_rule: "Verify pinned compact bytes/rows, unique original source-row IDs, complete class/powertrain coverage, nonnegative integer sales and on-road CD range; prove exact parent/notebook identity independently; conserve all sales in within-group buckets. Registry DQ defaults apply where unreviewed."
+    refresh_notes: "Accepted legacy market snapshot; no refresh or OMEGA rerun. Routine ETL reads only the compact extract. Optional identity validation reads the exact notebook and 510 KB parent, not the full archive. No Trends/FuelEconomy fallback."
+    components:
+      baseline_sales_ranges:
+        database_note_variants:
+          range_share_floor: "Range shares constrain new within-class/powertrain capacity; they do not specify adoption or historical stock."
+          energy_blend: "Vintage consumption-weighted range-mixture energy shares are averaged over the configured horizon."
+          historical_stock: "Sales-weighted representative new vehicles leave historical stock on its existing technologies."
+        label: "Compact 2022 BEV/PHEV baseline sales and on-road CD ranges"
+        short_name: omega_ldv_baseline_sales_ranges
+        inputs: [source_row_id, model_year, powertrain_type, onroad_charge_depleting_range_mi, sales]
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [range_sales_evidence]
+        notes: "Legacy OMEGA MY2022 baseline sales and on-road charge-depleting ranges. US car/light-truck shares proxy Canadian LDV categories, held constant across model vintages. Charging profiles retain their inherited fleet/range composition."
+        parameter_modules: [ldv_ev_ranges]
+        adapter:
+          extract_path: "inputs/0_external_models/epa_omega_ldv_range_extract/ldv_central_2022_plug_in.csv"
+          model_year: 2022
+          expected_sales_by_powertrain: {BEV: 669951, PHEV: 185606}
+          parent_path: "legacy_backend/model_constraints[deprecated]/bev_phev_aer_market_shares/EPA_OMEGA_v2.5/2024_02_27_16_06_31_LDV_central_to2055_20240227/_Final/out/aggregated_vehicles.csv"
+          parent_sha256: f8a384161e199f5921bfc57dae60831264ab5c0ec55e6110369ef0df5324272f
+          parent_bytes: 510055
+          notebook_path: "legacy_backend/model_constraints[deprecated]/bev_phev_aer_market_shares/LDV_AER_market_shares.ipynb"
+          notebook_sha256: 43417923a0e20c1a0a1dd4036f6f5bc91b386953f873567601f7a7270881a2db
+          expected_sha256: fb9b3ef747ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98
+          expected_bytes: 13977
+          expected_rows: 78
+
+  # Opt-in research; append order preserves prior source IDs.
+  hatch_original_growth_evidence:
+    source_id: T34
+    title: Original HATCH observations and metadata
+    status: inactive
+    required: false
+    source_type: research_evidence
+    file_type: mixed
+    version: Zenodo 10231865 / record-specific release
+    citation: https://zenodo.org/records/10231865
+    units: Source-native quantities; growth estimates require quantity-specific interpretation.
+    database_note: "Historical technology-adoption observations with source-specific quantities and coverage; research evidence, not accepted transport growth constraints."
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    validation_rule: Pinned bytes/SHA256 and physical/native schema; preserve raw rows, zero and missing observations.
+      Research only.
+    refresh_notes: Opt-in diagnostic only; no production readiness or parameter_modules. Acquire missing caches explicitly.
+      Changed releases require review and newly pinned snapshots.
+    components:
+      research:
+        label: Original HATCH observations and metadata
+        short_name: hatch_original_growth_evidence
+        required: false
+        inputs:
+        - raw_observations
+        - source_metadata
+        produces:
+        - growth_diagnostic_evidence
+    adapter:
+      assets:
+      - key: 10231865:HATCH_1.0.csv
+        cache_path: 10231865/HATCH_1.0.csv
+        sha256: cb690dbecb4aca6100ab8974884a1c4d0c707d20b51f4dbe1bc888401952e37e
+        bytes: 103054
+        format: csv
+        url: https://zenodo.org/api/records/10231865/files/HATCH_1.0.csv/content
+      - key: 10231865:HATCH_v1.5_Clean.csv
+        cache_path: 10231865/HATCH_v1.5_Clean.csv
+        sha256: fad68762b73cbdfe46c23e5303bfec152885cff7ea0243f7ef9b48475ad5d5bf
+        bytes: 4659711
+        format: csv
+        url: https://zenodo.org/api/records/10231865/files/HATCH_v1.5_Clean.csv/content
+      - key: 10231865:HATCH_v1.5_DataSources.csv
+        encoding: cp1252
+        cache_path: 10231865/HATCH_v1.5_DataSources.csv
+        sha256: 1a84a7f4fe46059cb35bd6e5fea0f6d07d9cfd1bf8b5d64694c92181b49f6c40
+        bytes: 78338
+        format: csv
+        url: https://zenodo.org/api/records/10231865/files/HATCH_v1.5_DataSources.csv/content
+      - key: 10231865:Tech_Growth_V1.5_variabledescriptions_Clean.yaml
+        cache_path: 10231865/Tech_Growth_V1.5_variabledescriptions_Clean.yaml
+        sha256: 8ff1b51e7f03d3a89001ccd2d8a4ec6700c32b23a9c454adb12d79f361bc8344
+        bytes: 37139
+        format: yaml
+        url: https://zenodo.org/api/records/10231865/files/Tech_Growth_V1.5_variabledescriptions_Clean.yaml/content
+      - key: original_growth_estimates
+        cache_path: 10056128/AllGrowthRates.csv
+        sha256: e7f4df9caf102822f17ebe4af22ecd4811277a0d842f4bbdbc4c8c7e6d3e941d
+        bytes: 10062
+        format: csv
+        url: https://zenodo.org/records/10056128/files/AllGrowthRates.csv?download=1
+  hatch_extended_growth_evidence:
+    source_id: T35
+    title: Extended HATCH national observations and growth characteristics
+    status: inactive
+    required: false
+    source_type: research_evidence
+    file_type: mixed
+    version: Zenodo 19579793 / record-specific release
+    citation: https://zenodo.org/records/19579793
+    units: Source-native quantities; growth estimates require quantity-specific interpretation.
+    database_note: "National technology-adoption histories and growth characteristics across unlike technologies; research analogues require quantity and market interpretation."
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    validation_rule: Pinned bytes/SHA256 and physical/native schema; preserve raw rows, zero and missing observations.
+      Research only.
+    refresh_notes: Opt-in diagnostic only; no production readiness or parameter_modules. Acquire missing caches explicitly.
+      Changed releases require review and newly pinned snapshots.
+    components:
+      research:
+        label: Extended HATCH national observations and growth characteristics
+        short_name: hatch_extended_growth_evidence
+        required: false
+        inputs:
+        - raw_observations
+        - source_metadata
+        produces:
+        - growth_diagnostic_evidence
+    adapter:
+      assets:
+      - key: 19579793:Complexity.xlsx
+        cache_path: 19579793/Complexity.xlsx
+        sha256: a461f38be5868b422d1be1a1c61d93975cd4cc7f03637a2a52d24f14a84a8090
+        bytes: 13471
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Complexity.xlsx/content
+      - key: 19579793:Feedstock.xlsx
+        cache_path: 19579793/Feedstock.xlsx
+        sha256: 06dc2951e6263f3e377465691265d1fe3ee4413a75d10f079372f6db326df6b5
+        bytes: 18503
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Feedstock.xlsx/content
+      - key: 19579793:Granularity.xlsx
+        cache_path: 19579793/Granularity.xlsx
+        sha256: b9d8c7a3579494454b6ff2561e03f3a7fa5cd598888792c53727b810372429d0
+        bytes: 51705
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Granularity.xlsx/content
+      - key: 19579793:HATCH_growth_characteristics.csv
+        cache_path: 19579793/HATCH_growth_characteristics.csv
+        sha256: 9d91a695bd9d3d54fac58e43447bbb00fd7d17d9e3d7b64d7f0a2a72c19a4fa7
+        bytes: 2458166
+        format: csv
+        url: https://zenodo.org/api/records/19579793/files/HATCH_growth_characteristics.csv/content
+      - key: 19579793:HATCH_national_1.5.csv
+        cache_path: 19579793/HATCH_national_1.5.csv
+        sha256: 75e06e0280bc5120c35644b6b560eb2e5f2927921c53ef5fda8f5510985d1688
+        bytes: 4455497
+        format: csv
+        url: https://zenodo.org/api/records/19579793/files/HATCH_national_1.5.csv/content
+      - key: 19579793:HATCH_variable_descriptions.xlsx
+        cache_path: 19579793/HATCH_variable_descriptions.xlsx
+        sha256: c58f33ffb11ce630c116d98a5afe723026fa3ba87c4bf45ec5774540f6d86797
+        bytes: 15501
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/HATCH_variable_descriptions.xlsx/content
+      - key: 19579793:MaterialUse.xlsx
+        cache_path: 19579793/MaterialUse.xlsx
+        sha256: 6f41856d8f2f975dec97c4cde6152087f3c813fd4a25153f7a87e38c015067db
+        bytes: 77248
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/MaterialUse.xlsx/content
+      - key: 19579793:Need_For_Customization.xlsx
+        cache_path: 19579793/Need_For_Customization.xlsx
+        sha256: 3c53ca5be2aec8af74cea66bb9f34a5c51aa941c7ee134627a4a940fa7dda75b
+        bytes: 13456
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Need_For_Customization.xlsx/content
+      - key: 19579793:Tech_Lifetime.xlsx
+        cache_path: 19579793/Tech_Lifetime.xlsx
+        sha256: 17eb1861073e61498cc2a04e8fa1456b2278500f973958a0c70deda5aa304b6c
+        bytes: 33770
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Tech_Lifetime.xlsx/content
+      - key: 19579793:Tech_Replacement.xlsx
+        cache_path: 19579793/Tech_Replacement.xlsx
+        sha256: c23ceb0f100f33c205c57f6d1d6e2bdd6c79fd33b869544caf630b0a64635f1a
+        bytes: 17974
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Tech_Replacement.xlsx/content
+      - key: 19579793:Technology Categories.xlsx
+        cache_path: 19579793/Technology Categories.xlsx
+        sha256: dc8a487635db0c197795416ff4cca38522ceee483acd49fc47b0990526ddcccc
+        bytes: 15322
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Technology%20Categories.xlsx/content
+      - key: 19579793:Type_Of_Adopter.xlsx
+        cache_path: 19579793/Type_Of_Adopter.xlsx
+        sha256: 9a721f339682962966b9522e97ee421e5ba88ddab48692dd9f040fa12d93278b
+        bytes: 13434
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Type_Of_Adopter.xlsx/content
+      - key: 19579793:Year_First_Commercialization.xlsx
+        cache_path: 19579793/Year_First_Commercialization.xlsx
+        sha256: da8406bf227775d2b7e52d04f4ac9cfaf94cde12c5b53835a8635a1f19fdc280
+        bytes: 44851
+        format: xlsx
+        url: https://zenodo.org/api/records/19579793/files/Year_First_Commercialization.xlsx/content
+
+  eafo_norway_growth_evidence:
+    source_id: T36
+    title: EAFO Norway fleet, registrations and shares (M1/N1/N2-N3)
+    status: inactive
+    required: false
+    source_type: research_evidence
+    file_type: mixed
+    version: 2026-10-07; fleet Q2 2026 / registrations July 2026; full annual data through 2025
+    citation: https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet
+    units: Source-native quantities; growth estimates require quantity-specific interpretation.
+    database_note: "Norwegian alternative-fuel vehicle stocks and registrations by vehicle class; fleet shares and new-registration shares represent different denominators. Research only."
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    validation_rule: Pinned bytes/SHA256 and physical/native schema; preserve raw rows, zero and missing observations.
+      Research only.
+    refresh_notes: Opt-in diagnostic only; no production readiness or parameter_modules. Acquire missing caches explicitly.
+      Changed releases require review and newly pinned snapshots.
+    components:
+      research:
+        label: EAFO Norway fleet, registrations and shares (M1/N1/N2-N3)
+        short_name: eafo_norway_growth_evidence
+        required: false
+        inputs:
+        - raw_observations
+        - source_metadata
+        produces:
+        - growth_diagnostic_evidence
+    adapter:
+      assets:
+      - key: eafo_page
+        cache_path: eafo_norway_2026-10-07.html
+        sha256: f08f9f60cd1985280a57c3f580dc96caa272d16ead8a034fa1c70b3777f9d7f5
+        bytes: 109119
+        format: html
+        url: https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet
+      - key: eafo:af_percentage_total_fleet_m1
+        cache_path: eafo_2026-10-07/af_percentage_total_fleet_m1.csv
+        sha256: 4192409ec8ec49c8a36d87b6a6a727e9e4a123af2e799909b9e70f4e2c01f6a1
+        bytes: 479
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/af_percentage_total_fleet_m1.csv
+      - key: eafo:af_percentage_total_fleet_n1
+        cache_path: eafo_2026-10-07/af_percentage_total_fleet_n1.csv
+        sha256: 97a00600e4c3e17dd9b011c609c07a260c37f7345f3771001f7d711b5304b05f
+        bytes: 358
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/af_percentage_total_fleet_n1.csv
+      - key: eafo:af_percentage_total_fleet_n2_n3
+        cache_path: eafo_2026-10-07/af_percentage_total_fleet_n2_n3.csv
+        sha256: 8dd6318344c0fbbedcaaad8aa803e0c0af0d164ee5aefc0744c436764ac1e6eb
+        bytes: 342
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/af_percentage_total_fleet_n2_n3.csv
+      - key: eafo:fleet_m1_total_number
+        cache_path: eafo_2026-10-07/fleet_m1_total_number.csv
+        sha256: 40f657ff0724ae6b1bba0e213731fe3180f0b8f1390cb3b3207339e8dd7d3694
+        bytes: 532
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/fleet_m1_total_number.csv
+      - key: eafo:fleet_n1_total_number
+        cache_path: eafo_2026-10-07/fleet_n1_total_number.csv
+        sha256: c5e0e390584431fe2a741ddf6eb52f12b31e862dac383cf11e574f8501fd98c6
+        bytes: 371
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/fleet_n1_total_number.csv
+      - key: eafo:fleet_n2_n3_total_number
+        cache_path: eafo_2026-10-07/fleet_n2_n3_total_number.csv
+        sha256: 87e5ebcff48a795f1fefb6356e3bdb2da0bb2223ffa860c8224cb9ddd9c042c9
+        bytes: 329
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/fleet_n2_n3_total_number.csv
+      - key: eafo:market_share_new_registrations_m1
+        cache_path: eafo_2026-10-07/market_share_new_registrations_m1.csv
+        sha256: 274f9fbfc631f4c1b4b33be867934cbb6fcd0983f5b4104ed7adcc35700c7b6e
+        bytes: 447
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/market_share_new_registrations_m1.csv
+      - key: eafo:market_share_new_registrations_n1
+        cache_path: eafo_2026-10-07/market_share_new_registrations_n1.csv
+        sha256: 09415fe62d0111a24ea6244f376e37dbc3a3d2b4b18a296d86cbbe9269aa81ce
+        bytes: 332
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/market_share_new_registrations_n1.csv
+      - key: eafo:market_share_new_registrations_n2_n3
+        cache_path: eafo_2026-10-07/market_share_new_registrations_n2_n3.csv
+        sha256: fb5b40e65e805a65d9e88cd025346899596d21f803418de95d48248aaca45c8d
+        bytes: 321
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/market_share_new_registrations_n2_n3.csv
+      - key: eafo:new_registrations_m1
+        cache_path: eafo_2026-10-07/new_registrations_m1.csv
+        sha256: dc3bba72171ee8bf593066b47354f81e9f01009ba27842e14f74f495cf3db7b2
+        bytes: 432
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/new_registrations_m1.csv
+      - key: eafo:new_registrations_n1
+        cache_path: eafo_2026-10-07/new_registrations_n1.csv
+        sha256: de116b63ea6cfafdab707c92bf29f4d54a4b781062228623817848c89c2f4036
+        bytes: 314
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/new_registrations_n1.csv
+      - key: eafo:new_registrations_n2_n3
+        cache_path: eafo_2026-10-07/new_registrations_n2_n3.csv
+        sha256: 672949f6ebef2af949ae9effcdcea5992f2bbb3cdfc0444bb3933ac938224583
+        bytes: 287
+        format: csv
+        url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/new_registrations_n2_n3.csv

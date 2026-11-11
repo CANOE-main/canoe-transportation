@@ -1,0 +1,2415 @@
+"""Derive apparent cohort retention and source-based road-vehicle lifetimes."""
+
+import argparse
+import hashlib
+import logging
+from collections.abc import Mapping
+from math import isfinite
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+from canoe_schema.v4_0 import LifetimeProcess, LifetimeSurvivalCurve, LifetimeTech
+
+from fetching.vehicle_population import load_history_manifest
+from parameterization.road_aggregation import (
+    apply_vehicle_mapping,
+)
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
+from parameterization.road_fleet_weights import aggregation_component, load_ldv_aggregation_weights
+from parameterization.road_cohort_survival import (
+    ReconciledSurvival,
+    TEMOA_MIN_INTERIOR_SURVIVAL,
+    build_composite_cohorts,
+    reconcile_survival_schedules,
+)
+from utils import (
+    ConfigBundle,
+    load_config_bundle,
+    load_harmonization_rules,
+    resolve_artifact_path,
+    resolve_input_path,
+    write_dataframe_atomic,
+)
+from validation.insertion import validate_parameter_rows
+from validation.provenance import (
+    ResolvedProvenance,
+    resolve_composite_provenance,
+    resolve_provenance,
+    source_id_mapping,
+)
+
+
+ONTARIO_RULE_KEY = "ontario_vehicle_population"
+ROAD_RULE_KEY = "road_aggregation"
+RATINGS_RULE_KEY = "nrcan_fuel_consumption_ratings"
+LIFETIME_RULE_KEY = "road_lifetimes_survival"
+ASSORTED_RULE_KEY = "assorted_sources"
+
+
+def module_rules(bundle: ConfigBundle) -> dict[str, Any]:
+    """Load cohort and lifetime rules."""
+    return load_harmonization_rules(bundle, LIFETIME_RULE_KEY)
+
+
+def resolved_road_lifetime_rules(bundle: ConfigBundle) -> dict[str, Any]:
+    """Resolve the selected road survival profile for every lifetime consumer."""
+    rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]
+    profile = bundle.scenario.lifetimes.road_lifetime_survival_source
+    profiles = rules["survival_source_profiles"]
+    if profile not in profiles:
+        raise ValueError(f"No road lifetime rules for selected profile {profile}")
+    selectors = {**rules["fixed_lifetime_sources"], **profiles[profile]}
+    return {**rules, "fixed_lifetime_sources": selectors,
+            "survival_hard_zero_age": bundle.scenario.lifetimes.survival_curve_max_age}
+
+
+def require_tail_derivation(bundle: ConfigBundle) -> dict[str, Any]:
+    """Validate the approved tail settings before source or artifact I/O."""
+    method = bundle.scenario.lifetimes.tail_derivation
+    threshold = float(bundle.scenario.lifetimes.tail_survival_threshold)
+    cap = bundle.scenario.lifetimes.survival_curve_max_age
+    if method != "constant_retirement":
+        raise ValueError("Road survival tail_derivation must be constant_retirement")
+    if not isfinite(threshold) or not TEMOA_MIN_INTERIOR_SURVIVAL <= threshold < 1:
+        raise ValueError("Survival tail threshold must be finite and supported by Temoa")
+    if cap is not None and (isinstance(cap, bool) or int(cap) != cap or cap <= 0):
+        raise ValueError("The survival hard zero age must be a positive integer or null")
+    return {"tail_derivation": method, "threshold": threshold, "hard_zero_age": cap}
+
+
+def selected_road_survival_schedules(bundle: ConfigBundle, transformed: pd.DataFrame) -> pd.DataFrame:
+    """Select full source-supported schedules, preserving their native precision."""
+    rules = resolved_road_lifetime_rules(bundle)
+    selected_frames = []
+    for road_class in rules["survival_curve_classes"]:
+        selector = rules["fixed_lifetime_sources"][road_class]
+        source_id = ("ontario_report_a_weighted_nhtsa_cafe" if selector["kind"] == "ceud_median"
+                     else str(selector["source_id"]))
+        source_class = str(selector.get("target_class", selector.get("curve_source_class", "")))
+        selected = transformed.loc[transformed.source_id.eq(source_id) & transformed.source_class.eq(source_class)].copy()
+        if selected.empty or selected.age.duplicated().any():
+            raise ValueError(f"Missing or duplicate accepted annual survival schedule for {road_class}")
+        selected["road_class"] = road_class
+        selected["native_max_age"] = int(selected.age.max()) - (
+            1 if selected.source_measure.eq("annual_survival_rate").all() else 0)
+        selected_frames.append(selected)
+    return pd.concat(selected_frames, ignore_index=True)
+
+
+def harmonized_road_survival_schedules(bundle: ConfigBundle, transformed: pd.DataFrame) -> ReconciledSurvival:
+    """Resolve one harmonized age schedule for calibration and future retirement."""
+    settings = require_tail_derivation(bundle)
+    return reconcile_survival_schedules(selected_road_survival_schedules(bundle, transformed), **settings)
+
+
+def resolved_survival_max_age(bundle: ConfigBundle, schedules: pd.DataFrame | None = None) -> int:
+    """Resolve the shared requested age ceiling without truncating class tails."""
+    settings = require_tail_derivation(bundle)
+    if settings["hard_zero_age"] is not None:
+        return int(settings["hard_zero_age"])
+    if schedules is None or schedules.empty or not {"road_class", "age", "survival_probability"} <= set(schedules):
+        raise ValueError("Harmonized survival schedules are required to resolve the age ceiling")
+    endings = schedules.sort_values("age").groupby("road_class").tail(1)
+    if endings.survival_probability.ne(0).any():
+        raise ValueError("Harmonized survival schedules must end at zero")
+    return int(endings.age.max())
+
+
+def aggregate_report_a_snapshots(
+    normalized_frames: list[pd.DataFrame],
+    mapping: pd.DataFrame,
+    *,
+    accepted_statuses: set[str],
+    status_columns: list[str],
+    status_buckets: dict[str, list[str]] | None = None,
+    passenger_class: str = "PASSENGER",
+    commercial_class: str = "COMMERCIAL",
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Aggregate mapped passenger and commercial NLR-class snapshots."""
+    snapshots: dict[str, list[pd.DataFrame]] = {
+        passenger_class: [],
+        commercial_class: [],
+    }
+    for normalized in normalized_frames:
+        for vehicle_class in [passenger_class, commercial_class]:
+            selected = normalized.loc[
+                normalized["VEHICLE_CLASS"].eq(vehicle_class)
+            ].copy()
+            mapped = apply_vehicle_mapping(
+                selected,
+                mapping,
+                accepted_statuses=accepted_statuses,
+            )
+            accepted = mapped.loc[mapped["mapping_accepted"]].copy()
+            if accepted.empty:
+                continue
+            id_vars = ["report_year", "MODEL_YEAR", "nlr_atb_class"]
+            if status_buckets is None:
+                status_long = accepted.melt(
+                    id_vars=id_vars,
+                    value_vars=status_columns,
+                    var_name="stock_status",
+                    value_name="cohort_count",
+                )
+            else:
+                bucket_frames: list[pd.DataFrame] = []
+                for bucket, columns in status_buckets.items():
+                    missing = sorted(set(columns) - set(status_columns))
+                    if missing:
+                        raise ValueError(
+                            f"Status bucket {bucket!r} uses unknown Report A "
+                            f"statuses: {', '.join(missing)}"
+                        )
+                    bucket_frame = accepted.loc[:, id_vars].copy()
+                    bucket_frame["stock_status"] = str(bucket)
+                    bucket_frame["cohort_count"] = accepted[columns].sum(
+                        axis=1,
+                        min_count=1,
+                    )
+                    bucket_frames.append(bucket_frame)
+                status_long = pd.concat(bucket_frames, ignore_index=True)
+            snapshot = (
+                status_long.groupby(
+                    [
+                        "report_year",
+                        "MODEL_YEAR",
+                        "nlr_atb_class",
+                        "stock_status",
+                    ],
+                    dropna=False,
+                    as_index=False,
+                )["cohort_count"]
+                .sum(min_count=1)
+                .rename(
+                    columns={
+                        "MODEL_YEAR": "model_year",
+                        "nlr_atb_class": "cohort_class",
+                    }
+                )
+            )
+            snapshot.insert(
+                0,
+                "population_group",
+                f"mapped_{vehicle_class.lower()}",
+            )
+            snapshots[vehicle_class].append(snapshot)
+
+    columns = [
+        "population_group",
+        "report_year",
+        "model_year",
+        "cohort_class",
+        "stock_status",
+        "cohort_count",
+    ]
+    passenger_frame = (
+        pd.concat(snapshots[passenger_class], ignore_index=True)
+        if snapshots[passenger_class]
+        else pd.DataFrame(columns=columns)
+    )
+    commercial_frame = (
+        pd.concat(snapshots[commercial_class], ignore_index=True)
+        if snapshots[commercial_class]
+        else pd.DataFrame(columns=columns)
+    )
+    sort_columns = [
+        "population_group",
+        "report_year",
+        "model_year",
+        "cohort_class",
+        "stock_status",
+    ]
+    return (
+        passenger_frame.sort_values(sort_columns, kind="stable").reset_index(
+            drop=True
+        ),
+        commercial_frame.sort_values(sort_columns, kind="stable").reset_index(
+            drop=True
+        ),
+    )
+
+
+def raw_mto_key_snapshots(
+    normalized_frames: list[pd.DataFrame],
+    *,
+    passenger_class: str,
+    commercial_class: str,
+    minimum_model_year: int | None,
+    suppressed_code_patterns: list[str],
+    unknown_code_labels: list[str],
+) -> pd.DataFrame:
+    """Build fit-active make-model-vintage snapshots before class mapping.
+
+    A null model-year floor retains every source-reported vintage.  This is the
+    survival-evidence interface and is intentionally independent of the 2000
+    existing-fleet aggregation floor.
+    """
+    frames: list[pd.DataFrame] = []
+    unknown = {str(label).strip().upper() for label in unknown_code_labels}
+    for normalized in normalized_frames:
+        selected = normalized.loc[
+            normalized["VEHICLE_CLASS"].isin(
+                [passenger_class, commercial_class]
+            )
+        ].copy()
+        selected["MODEL_YEAR"] = pd.to_numeric(
+            selected["MODEL_YEAR"], errors="coerce"
+        )
+        selected["FIT_ACTIVE"] = pd.to_numeric(
+            selected["FIT_ACTIVE"], errors="coerce"
+        )
+        eligible = selected["MODEL_YEAR"].notna() & selected["FIT_ACTIVE"].gt(0)
+        if minimum_model_year is not None:
+            eligible &= selected["MODEL_YEAR"].ge(minimum_model_year)
+        selected = selected.loc[eligible].copy()
+        for column in ["MAKE", "MODEL"]:
+            values = selected[column].astype("string").str.strip()
+            suppressed = values.isna() | values.eq("") | values.str.upper().isin(
+                unknown
+            )
+            for pattern in suppressed_code_patterns:
+                suppressed |= values.str.fullmatch(
+                    str(pattern), na=False
+                )
+            selected = selected.loc[~suppressed].copy()
+        if selected.empty:
+            continue
+        snapshot = (
+            selected.groupby(
+                [
+                    "VEHICLE_CLASS",
+                    "report_year",
+                    "MAKE",
+                    "MODEL",
+                    "MODEL_YEAR",
+                ],
+                as_index=False,
+                dropna=False,
+            )["FIT_ACTIVE"]
+            .sum(min_count=1)
+            .rename(
+                columns={
+                    "VEHICLE_CLASS": "vehicle_class",
+                    "MAKE": "mto_make_code",
+                    "MODEL": "mto_model_code",
+                    "MODEL_YEAR": "model_year",
+                    "FIT_ACTIVE": "cohort_count",
+                }
+            )
+        )
+        snapshot.insert(
+            0,
+            "population_group",
+            "raw_" + snapshot["vehicle_class"].str.lower(),
+        )
+        snapshot["stock_status"] = "FIT_ACTIVE"
+        frames.append(snapshot)
+    columns = [
+        "population_group",
+        "vehicle_class",
+        "report_year",
+        "mto_make_code",
+        "mto_model_code",
+        "model_year",
+        "stock_status",
+        "cohort_count",
+    ]
+    if not frames:
+        return pd.DataFrame(columns=columns)
+    return pd.concat(frames, ignore_index=True).loc[:, columns].sort_values(
+        [
+            "population_group",
+            "mto_make_code",
+            "mto_model_code",
+            "model_year",
+            "report_year",
+        ],
+        kind="stable",
+    ).reset_index(drop=True)
+
+
+def mto_key_transition_observations(
+    snapshots: pd.DataFrame,
+    *,
+    implausible_change_ratio: float | None = None,
+    ignored_missing_years: set[int] | None = None,
+    maximum_transition_age: int | None = None,
+) -> tuple[pd.DataFrame, list[int]]:
+    """Estimate eligible FIT_ACTIVE make-model-vintage annual transitions.
+
+    Both endpoints must exist in consecutive editions.  The estimator never
+    manufactures zero endpoints and never clips growth (negative retirement).
+    An optional age ceiling applies to the starting age of the transition, not
+    to the source model year, so older vintages can still contribute evidence.
+    """
+    key = [
+        "population_group",
+        "vehicle_class",
+        "mto_make_code",
+        "mto_model_code",
+        "model_year",
+        "stock_status",
+    ]
+    columns = [
+        *key,
+        "report_year",
+        "next_report_year",
+        "age",
+        "cohort_count_t",
+        "cohort_count_t1",
+        "apparent_retirements",
+        "annual_survival_factor",
+        "annual_retirement_rate",
+        "apparent_retention",
+        "apparent_retirement",
+        "absolute_change",
+        "zero_denominator",
+        "retention_above_one",
+        "negative_age",
+        "newest_model_year_cohort",
+        "implausible_change",
+    ]
+    if snapshots.empty:
+        return pd.DataFrame(columns=columns), []
+    proxy_count = int(
+        snapshots["stock_status"].astype(str).eq("NON_FIT_ACTIVE_PROXY").sum()
+    )
+    if proxy_count:
+        raise AssertionError(
+            "MTO survival estimator input contains NON_FIT_ACTIVE_PROXY rows: "
+            f"{proxy_count}"
+        )
+    if not snapshots["stock_status"].astype(str).eq("FIT_ACTIVE").all():
+        unexpected = sorted(set(map(str, snapshots["stock_status"])))
+        raise AssertionError(
+            "MTO survival estimator requires strictly FIT_ACTIVE observations; "
+            f"found {unexpected}"
+        )
+    years = sorted(pd.to_numeric(snapshots["report_year"]).astype(int).unique())
+    ignored = ignored_missing_years or set()
+    missing_years = [
+        year
+        for year in range(min(years), max(years) + 1)
+        if year not in years and year not in ignored
+    ]
+    available = set(years)
+    observations: list[pd.DataFrame] = []
+    for report_year in years:
+        next_report_year = report_year + 1
+        if next_report_year not in available:
+            continue
+        left = snapshots.loc[
+            snapshots["report_year"].eq(report_year), [*key, "cohort_count"]
+        ].rename(columns={"cohort_count": "cohort_count_t"})
+        right = snapshots.loc[
+            snapshots["report_year"].eq(next_report_year),
+            [*key, "cohort_count"],
+        ].rename(columns={"cohort_count": "cohort_count_t1"})
+        paired = left.merge(right, on=key, how="inner", validate="one_to_one")
+        paired["report_year"] = report_year
+        paired["next_report_year"] = next_report_year
+        paired["age"] = report_year - paired["model_year"]
+        eligible = paired["cohort_count_t"].gt(0) & paired["age"].ge(0)
+        if maximum_transition_age is not None:
+            eligible &= paired["age"].le(maximum_transition_age)
+        paired = paired.loc[eligible].copy()
+        if paired.empty:
+            continue
+        paired["zero_denominator"] = False
+        paired["apparent_retirements"] = (
+            paired["cohort_count_t"] - paired["cohort_count_t1"]
+        )
+        paired["annual_survival_factor"] = (
+            paired["cohort_count_t1"] / paired["cohort_count_t"]
+        )
+        paired["annual_retirement_rate"] = (
+            paired["apparent_retirements"] / paired["cohort_count_t"]
+        )
+        paired["apparent_retention"] = paired["annual_survival_factor"]
+        paired["apparent_retirement"] = paired["annual_retirement_rate"]
+        paired["absolute_change"] = (
+            paired["cohort_count_t1"] - paired["cohort_count_t"]
+        )
+        paired["retention_above_one"] = paired["apparent_retention"].gt(1)
+        paired["negative_age"] = False
+        paired["newest_model_year_cohort"] = False
+        paired["implausible_change"] = (
+            pd.NA
+            if implausible_change_ratio is None
+            else (
+                paired["apparent_retention"].gt(implausible_change_ratio)
+                | paired["apparent_retention"].lt(
+                    1 / implausible_change_ratio
+                )
+            )
+        )
+        observations.append(paired.loc[:, columns])
+    if not observations:
+        return pd.DataFrame(columns=columns), missing_years
+    return pd.concat(observations, ignore_index=True).sort_values(
+        [
+            "population_group",
+            "mto_make_code",
+            "mto_model_code",
+            "model_year",
+            "report_year",
+        ],
+        kind="stable",
+    ).reset_index(drop=True), missing_years
+
+
+def map_mto_key_transitions(
+    observations: pd.DataFrame,
+    mapping: pd.DataFrame,
+    *,
+    accepted_statuses: set[str],
+) -> pd.DataFrame:
+    """Attach accepted classes only after raw key transitions are estimated."""
+    if observations.empty:
+        return observations.copy()
+    stock = observations.rename(
+        columns={
+            "mto_make_code": "MAKE",
+            "mto_model_code": "MODEL",
+            "model_year": "MODEL_YEAR",
+        }
+    ).copy()
+    stock["FIT_ACTIVE"] = stock["cohort_count_t"]
+    mapped = apply_vehicle_mapping(
+        stock,
+        mapping,
+        accepted_statuses=accepted_statuses,
+    )
+    result = mapped.rename(
+        columns={
+            "MAKE": "mto_make_code",
+            "MODEL": "mto_model_code",
+            "MODEL_YEAR": "model_year",
+        }
+    ).drop(columns="FIT_ACTIVE")
+    result = result.loc[:, ~result.columns.duplicated(keep="first")]
+    duplicate_columns = [
+        column for column in ["mto_make_code.1", "mto_model_code.1"]
+        if column in result.columns
+    ]
+    return result.drop(columns=duplicate_columns).reset_index(drop=True)
+
+
+def annotate_latest_snapshot_presence(
+    mapped_observations: pd.DataFrame,
+    raw_snapshots: pd.DataFrame,
+) -> pd.DataFrame:
+    """Mark whether each make-model-vintage series exists in the latest snapshot."""
+    output = mapped_observations.copy()
+    if output.empty:
+        output["present_in_latest_snapshot"] = pd.Series(dtype=bool)
+        output["latest_snapshot_year"] = pd.Series(dtype="Int64")
+        return output
+    latest_snapshot_year = int(
+        pd.to_numeric(raw_snapshots["report_year"], errors="raise").max()
+    )
+    series_key = [
+        "vehicle_class",
+        "mto_make_code",
+        "mto_model_code",
+        "model_year",
+    ]
+    latest_series = (
+        raw_snapshots.loc[
+            pd.to_numeric(raw_snapshots["report_year"], errors="raise").eq(
+                latest_snapshot_year
+            ),
+            series_key,
+        ]
+        .drop_duplicates()
+        .assign(present_in_latest_snapshot=True)
+    )
+    output = output.merge(
+        latest_series,
+        on=series_key,
+        how="left",
+        validate="many_to_one",
+    )
+    output["present_in_latest_snapshot"] = (
+        output["present_in_latest_snapshot"].fillna(False).astype(bool)
+    )
+    output["latest_snapshot_year"] = latest_snapshot_year
+    return output
+
+
+def _pooled_retention(
+    frame: pd.DataFrame,
+    group_columns: list[str],
+) -> pd.DataFrame:
+    usable = frame.copy()
+    if "mapping_accepted" in usable:
+        usable = usable.loc[usable["mapping_accepted"].fillna(False)].copy()
+    if "zero_denominator" in usable:
+        usable = usable.loc[~usable["zero_denominator"]].copy()
+    if usable.empty:
+        return pd.DataFrame(
+            columns=[
+                *group_columns,
+                "cohort_count_t_sum",
+                "cohort_count_t1_sum",
+                "observation_count",
+                "apparent_retention_pooled",
+                "apparent_retirement_pooled",
+            ]
+        )
+    pooled = usable.groupby(
+        group_columns, as_index=False, dropna=False
+    ).agg(
+        cohort_count_t_sum=("cohort_count_t", "sum"),
+        cohort_count_t1_sum=("cohort_count_t1", "sum"),
+        apparent_retirements=("apparent_retirements", "sum"),
+        observation_count=("cohort_count_t", "size"),
+    )
+    pooled["apparent_retention_pooled"] = (
+        pooled["cohort_count_t1_sum"] / pooled["cohort_count_t_sum"]
+    )
+    pooled["apparent_retirement_pooled"] = (
+        1 - pooled["apparent_retention_pooled"]
+    )
+    pooled["retention_above_one"] = pooled[
+        "apparent_retention_pooled"
+    ].gt(1)
+    return pooled
+
+
+def aggregate_mto_survival_stages(
+    mapped_observations: pd.DataFrame,
+    *,
+    ceud_classes: list[str],
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Pool raw transitions through NLR and CEUD exposure-weighted stages."""
+    nlr_vintage = _pooled_retention(
+        mapped_observations,
+        [
+            "nlr_atb_class",
+            "nrcan_ceud_class",
+            "model_year",
+            "age",
+        ],
+    )
+    nlr_class = _pooled_retention(
+        mapped_observations,
+        [
+            "nlr_atb_class",
+            "nrcan_ceud_class",
+            "age",
+        ],
+    )
+    ceud_vintage = _pooled_retention(
+        nlr_vintage.rename(
+            columns={
+                "cohort_count_t_sum": "cohort_count_t",
+                "cohort_count_t1_sum": "cohort_count_t1",
+            }
+        ).assign(zero_denominator=False),
+        [
+            "nrcan_ceud_class",
+            "model_year",
+            "age",
+        ],
+    )
+    usable = mapped_observations.copy()
+    if "mapping_accepted" in usable:
+        usable = usable.loc[usable["mapping_accepted"].fillna(False)].copy()
+    usable = usable.loc[
+        usable["nrcan_ceud_class"].isin(ceud_classes)
+    ].copy()
+    ceud_class = (
+        usable.groupby(["nrcan_ceud_class", "age"], as_index=False)
+        .agg(
+            fit_active_exposure=("cohort_count_t", "sum"),
+            apparent_retirements=("apparent_retirements", "sum"),
+            number_of_vintages=("model_year", "nunique"),
+            number_of_transitions=("cohort_count_t", "size"),
+        )
+        .rename(columns={"nrcan_ceud_class": "vehicle_class"})
+    )
+    ceud_class["annual_retirement_rate"] = (
+        ceud_class["apparent_retirements"]
+        / ceud_class["fit_active_exposure"]
+    )
+    ceud_class["annual_survival_factor"] = (
+        1 - ceud_class["annual_retirement_rate"]
+    )
+    curve_rows: list[pd.DataFrame] = []
+    for vehicle_class, rows in ceud_class.groupby("vehicle_class", sort=False):
+        observed = rows.set_index("age").sort_index()
+        first_observed_age = int(observed.index.min())
+        ages = pd.Index(
+            range(0, int(observed.index.max()) + 2), name="age"
+        )
+        curve = observed.reindex(ages).reset_index()
+        curve["vehicle_class"] = vehicle_class
+        curve["cumulative_survival"] = pd.NA
+        survival = 1.0
+        continuous = True
+        for index, row in curve.iterrows():
+            curve.loc[index, "cumulative_survival"] = (
+                survival if continuous else pd.NA
+            )
+            if int(row["age"]) < first_observed_age:
+                continue
+            rate = row["annual_retirement_rate"]
+            if pd.isna(rate):
+                continuous = False
+            elif continuous:
+                survival *= 1 - float(rate)
+        curve["cumulative_survival"] = pd.to_numeric(
+            curve["cumulative_survival"], errors="coerce"
+        )
+        curve["cumulative_scrappage"] = 1 - curve["cumulative_survival"]
+        curve_rows.append(curve)
+    if curve_rows:
+        ceud_class = pd.concat(curve_rows, ignore_index=True)
+    final_columns = [
+        "vehicle_class",
+        "age",
+        "annual_retirement_rate",
+        "annual_survival_factor",
+        "cumulative_survival",
+        "cumulative_scrappage",
+        "fit_active_exposure",
+        "number_of_vintages",
+        "number_of_transitions",
+    ]
+    ceud_class = ceud_class.loc[:, final_columns]
+    return nlr_vintage, nlr_class, ceud_vintage, ceud_class
+
+
+def mto_survival_scope_comparison(
+    mapped_observations: pd.DataFrame,
+    *,
+    ceud_classes: list[str],
+    sensitivity_minimum_model_year: int,
+) -> pd.DataFrame:
+    """Compare production latest survivors with a configured vintage sensitivity."""
+    if "present_in_latest_snapshot" not in mapped_observations.columns:
+        raise ValueError(
+            "Mapped transitions require present_in_latest_snapshot annotation"
+        )
+    scope_frames: list[pd.DataFrame] = []
+    latest = mapped_observations.loc[
+        mapped_observations["present_in_latest_snapshot"].fillna(False).astype(bool)
+    ].copy()
+    maximum_age = int(pd.to_numeric(latest["age"], errors="raise").max())
+    earliest_report_year = int(
+        pd.to_numeric(latest["report_year"], errors="raise").min()
+    )
+    dynamic_floor = earliest_report_year - maximum_age
+    scopes = [
+        (
+            "latest_snapshot_survivors_dynamic_floor",
+            latest.loc[
+                pd.to_numeric(latest["model_year"], errors="coerce").ge(
+                    dynamic_floor
+                )
+            ],
+        ),
+        (
+            f"latest_snapshot_survivors_{sensitivity_minimum_model_year}_plus",
+            latest.loc[
+                pd.to_numeric(latest["model_year"], errors="coerce").ge(
+                    sensitivity_minimum_model_year
+                )
+            ],
+        ),
+    ]
+    for aggregation_scope, scope_observations in scopes:
+        *_, curves = aggregate_mto_survival_stages(
+            scope_observations,
+            ceud_classes=ceud_classes,
+        )
+        curves.insert(0, "aggregation_scope", aggregation_scope)
+        scope_frames.append(curves)
+    return pd.concat(scope_frames, ignore_index=True, sort=False)
+
+
+def transition_mapping_coverage(
+    mapped_observations: pd.DataFrame,
+    *,
+    ceud_classes: list[str],
+) -> pd.DataFrame:
+    """Measure historical starting exposure mapped to relevant CEUD classes."""
+    frame = mapped_observations.copy()
+    frame["cohort_count_t"] = pd.to_numeric(
+        frame["cohort_count_t"], errors="coerce"
+    ).fillna(0)
+    relevant = frame["nrcan_ceud_class"].isin(ceud_classes)
+    accepted = frame.get(
+        "mapping_accepted", pd.Series(True, index=frame.index)
+    ).fillna(False) & relevant
+    outcomes = frame.get(
+        "mapping_outcome", pd.Series("mapped_ldv", index=frame.index)
+    )
+    non_ldv = outcomes.eq("mapped_non_ldv")
+    unresolved = outcomes.eq("unmapped")
+    out_of_scope = outcomes.eq("out_of_scope")
+    rows: list[dict[str, object]] = []
+    for source_category, group in frame.groupby("vehicle_class", sort=True):
+        group_accepted = accepted.loc[group.index]
+        exposure = float(group["cohort_count_t"].sum())
+        mapped_exposure = float(
+            group.loc[group_accepted, "cohort_count_t"].sum()
+        )
+        non_ldv_exposure = float(
+            group.loc[non_ldv.loc[group.index], "cohort_count_t"].sum()
+        )
+        unmapped_exposure = float(
+            group.loc[unresolved.loc[group.index], "cohort_count_t"].sum()
+        )
+        out_of_scope_exposure = float(
+            group.loc[out_of_scope.loc[group.index], "cohort_count_t"].sum()
+        )
+        rows.append(
+            {
+                "source_category": str(source_category),
+                "fit_active_exposure": exposure,
+                "mapped_fit_active_exposure": mapped_exposure,
+                "mapped_non_ldv_fit_active_exposure": non_ldv_exposure,
+                "unmapped_fit_active_exposure": unmapped_exposure,
+                "out_of_scope_fit_active_exposure": out_of_scope_exposure,
+                "mapped_exposure_share": (
+                    mapped_exposure / exposure if exposure else pd.NA
+                ),
+                "mapped_non_ldv_exposure_share": (
+                    non_ldv_exposure / exposure if exposure else pd.NA
+                ),
+                "unmapped_exposure_share": (
+                    unmapped_exposure / exposure if exposure else pd.NA
+                ),
+                "out_of_scope_exposure_share": (
+                    out_of_scope_exposure / exposure if exposure else pd.NA
+                ),
+                "number_of_transitions": len(group),
+                "mapped_transitions": int(group_accepted.sum()),
+                "mapped_non_ldv_transitions": int(non_ldv.loc[group.index].sum()),
+                "unmapped_transitions": int(unresolved.loc[group.index].sum()),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def evaluate_mto_survival_decision(
+    curves: pd.DataFrame,
+    coverage: pd.DataFrame,
+    legacy_curves: pd.DataFrame,
+    *,
+    criteria: dict[str, float | int],
+    source_class_by_ceud: dict[str, str],
+) -> pd.DataFrame:
+    """Evaluate transparent class-specific usability gates without clipping."""
+    rows: list[dict[str, object]] = []
+    tolerance = float(criteria["monotonic_tolerance"])
+    for vehicle_class, source_category in source_class_by_ceud.items():
+        class_rows = curves.loc[
+            curves["vehicle_class"].eq(vehicle_class)
+        ].sort_values("age")
+        observed = class_rows.loc[
+            class_rows["annual_retirement_rate"].notna()
+        ].copy()
+        coverage_rows = coverage.loc[
+            coverage["source_category"].eq(source_category),
+            "mapped_exposure_share",
+        ]
+        mapped_share = (
+            float(coverage_rows.iloc[0]) if not coverage_rows.empty else 0.0
+        )
+        bounded = observed["annual_retirement_rate"].between(0, 1)
+        bounded_share = float(bounded.mean()) if len(observed) else 0.0
+        ages = sorted(map(int, observed["age"]))
+        internal_gaps = (
+            len(set(range(min(ages), max(ages) + 1)) - set(ages))
+            if ages
+            else 0
+        )
+        cumulative = class_rows["cumulative_survival"].dropna()
+        monotone = bool(
+            cumulative.diff().dropna().le(tolerance).all()
+        ) if len(cumulative) else False
+        min_vintages = int(observed["number_of_vintages"].min()) if len(observed) else 0
+        min_transitions = (
+            int(observed["number_of_transitions"].min()) if len(observed) else 0
+        )
+        legacy_ages = set(
+            pd.to_numeric(
+                legacy_curves.loc[
+                    legacy_curves["source_class"].eq(vehicle_class), "age"
+                ],
+                errors="coerce",
+            ).dropna().astype(int)
+        )
+        overlap_ages = len(set(ages) & legacy_ages)
+        gates = {
+            "mapped_exposure_gate": mapped_share
+            >= float(criteria["minimum_mapped_exposure_share"]),
+            "bounded_rate_gate": bounded_share
+            >= float(criteria["minimum_in_bounds_rate_share"]),
+            "continuous_age_gate": internal_gaps
+            <= int(criteria["maximum_internal_age_gaps"]),
+            "monotone_survival_gate": monotone,
+            "vintage_support_gate": min_vintages
+            >= int(criteria["minimum_vintages_per_age"]),
+            "transition_support_gate": min_transitions
+            >= int(criteria["minimum_transitions_per_age"]),
+            "legacy_comparison_gate": overlap_ages
+            >= int(criteria["minimum_legacy_overlap_ages"]),
+        }
+        rows.append(
+            {
+                "vehicle_class": vehicle_class,
+                "mapped_fit_active_exposure_share": mapped_share,
+                "observed_class_age_rates": len(observed),
+                "in_bounds_rate_share": bounded_share,
+                "internal_age_gaps": internal_gaps,
+                "minimum_vintages_per_age": min_vintages,
+                "minimum_transitions_per_age": min_transitions,
+                "legacy_overlap_ages": overlap_ages,
+                **gates,
+                "all_gates_pass": all(gates.values()),
+            }
+        )
+    decision = pd.DataFrame(rows)
+    usable = bool(decision["all_gates_pass"].all())
+    outcome = (
+        "usable MTO survival curves"
+        if usable
+        else "diagnostic MTO evidence with NHTSA survival retained"
+    )
+    decision["decision_outcome"] = outcome
+    decision["parameterization_schedule"] = (
+        "MTO cohort-transition curves" if usable else "legacy NHTSA schedules"
+    )
+    return decision
+
+
+def cohort_transition_observations(
+    snapshots: pd.DataFrame,
+    *,
+    implausible_change_ratio: float | None = None,
+    ignored_missing_years: set[int] | None = None,
+) -> tuple[pd.DataFrame, list[int]]:
+    """Pair consecutive annual snapshots and retain raw apparent retention."""
+    if snapshots.empty:
+        columns = [
+            "population_group",
+            "cohort_class",
+            "stock_status",
+            "report_year",
+            "next_report_year",
+            "model_year",
+            "age",
+            "cohort_count_t",
+            "cohort_count_t1",
+            "apparent_retention",
+            "apparent_retirement",
+            "absolute_change",
+            "zero_denominator",
+            "retention_above_one",
+            "negative_age",
+            "newest_model_year_cohort",
+            "implausible_change",
+        ]
+        return pd.DataFrame(columns=columns), []
+
+    years = sorted(pd.to_numeric(snapshots["report_year"]).astype(int).unique())
+    ignored = ignored_missing_years or set()
+    missing_years = [
+        year
+        for year in range(min(years), max(years) + 1)
+        if year not in years and year not in ignored
+    ]
+    available = set(years)
+    pairs = [
+        (year, year + 1)
+        for year in years
+        if year + 1 in available
+    ]
+    observations: list[pd.DataFrame] = []
+    key = ["population_group", "cohort_class", "stock_status", "model_year"]
+    for report_year, next_year in pairs:
+        left = snapshots.loc[
+            snapshots["report_year"].eq(report_year),
+            [*key, "cohort_count"],
+        ].rename(columns={"cohort_count": "cohort_count_t"})
+        right = snapshots.loc[
+            snapshots["report_year"].eq(next_year),
+            [*key, "cohort_count"],
+        ].rename(columns={"cohort_count": "cohort_count_t1"})
+        paired = left.merge(
+            right,
+            on=key,
+            how="outer",
+            validate="one_to_one",
+        )
+        paired["cohort_count_t"] = paired["cohort_count_t"].fillna(0)
+        paired["cohort_count_t1"] = paired["cohort_count_t1"].fillna(0)
+        paired.insert(3, "report_year", report_year)
+        paired.insert(4, "next_report_year", next_year)
+        paired["age"] = report_year - paired["model_year"]
+        paired["zero_denominator"] = paired["cohort_count_t"].eq(0)
+        paired["apparent_retention"] = (
+            paired["cohort_count_t1"] / paired["cohort_count_t"]
+        ).where(~paired["zero_denominator"])
+        paired["apparent_retirement"] = 1 - paired["apparent_retention"]
+        paired["absolute_change"] = (
+            paired["cohort_count_t1"] - paired["cohort_count_t"]
+        )
+        paired["retention_above_one"] = paired["apparent_retention"].gt(1)
+        paired["negative_age"] = paired["age"].lt(0)
+        paired["newest_model_year_cohort"] = paired["model_year"].ge(report_year)
+        if implausible_change_ratio is None:
+            paired["implausible_change"] = pd.NA
+        else:
+            paired["implausible_change"] = (
+                paired["apparent_retention"].gt(implausible_change_ratio)
+                | paired["apparent_retention"].lt(
+                    1 / implausible_change_ratio
+                )
+            )
+        observations.append(paired)
+    if not observations:
+        return cohort_transition_observations(
+            snapshots.iloc[0:0],
+            implausible_change_ratio=implausible_change_ratio,
+            ignored_missing_years=ignored,
+        )[0], missing_years
+    combined = pd.concat(observations, ignore_index=True)
+    return (
+        combined.sort_values(
+            [
+                "population_group",
+                "cohort_class",
+                "stock_status",
+                "report_year",
+                "model_year",
+            ],
+            kind="stable",
+        ).reset_index(drop=True),
+        missing_years,
+    )
+
+
+def pool_cohort_retention(observations: pd.DataFrame) -> pd.DataFrame:
+    """Pool cohort counts by class and age; never average percentages."""
+    usable = observations.loc[~observations["zero_denominator"]].copy()
+    if usable.empty:
+        return pd.DataFrame(
+            columns=[
+                "population_group",
+                "cohort_class",
+                "stock_status",
+                "age",
+                "cohort_count_t_sum",
+                "cohort_count_t1_sum",
+                "observation_count",
+                "apparent_retention_pooled",
+                "apparent_retirement_pooled",
+                "retention_above_one",
+            ]
+        )
+    pooled = (
+        usable.groupby(
+            ["population_group", "cohort_class", "stock_status", "age"],
+            as_index=False,
+        )
+        .agg(
+            cohort_count_t_sum=("cohort_count_t", "sum"),
+            cohort_count_t1_sum=("cohort_count_t1", "sum"),
+            observation_count=("cohort_count_t", "size"),
+        )
+    )
+    pooled["apparent_retention_pooled"] = (
+        pooled["cohort_count_t1_sum"] / pooled["cohort_count_t_sum"]
+    )
+    pooled["apparent_retirement_pooled"] = (
+        1 - pooled["apparent_retention_pooled"]
+    )
+    pooled["retention_above_one"] = pooled["apparent_retention_pooled"].gt(1)
+    return pooled.sort_values(
+        ["population_group", "cohort_class", "stock_status", "age"],
+        kind="stable",
+    ).reset_index(drop=True)
+
+
+def transition_findings(
+    observations: pd.DataFrame,
+    *,
+    missing_years: list[int],
+    implausible_threshold: float | None,
+    tail_review_start_age: int,
+) -> pd.DataFrame:
+    """Summarize data-quality flags without changing observations."""
+    rows: list[dict[str, Any]] = []
+    flags = {
+        "zero_cohort_denominator": "zero_denominator",
+        "cohort_retention_above_one": "retention_above_one",
+        "negative_cohort_age": "negative_age",
+        "newest_model_year_cohort": "newest_model_year_cohort",
+    }
+    for issue_type, column in flags.items():
+        selected = observations.loc[observations[column].fillna(False)]
+        rows.append(
+            {
+                "issue_type": issue_type,
+                "observation_count": len(selected),
+                "cohort_count_t": selected["cohort_count_t"].sum(),
+                "cohort_count_t1": selected["cohort_count_t1"].sum(),
+                "detail": "Raw observations retained.",
+            }
+        )
+    tail = observations.loc[
+        observations["age"].gt(tail_review_start_age)
+    ]
+    rows.append(
+        {
+            "issue_type": f"vintage_tail_over_age_{tail_review_start_age}",
+            "observation_count": len(tail),
+            "cohort_count_t": tail["cohort_count_t"].sum(),
+            "cohort_count_t1": tail["cohort_count_t1"].sum(),
+            "detail": "Counts quantify the untrimmed vintage tail; no low-count threshold applied.",
+        }
+    )
+    rows.append(
+        {
+            "issue_type": "missing_annual_snapshot",
+            "observation_count": len(missing_years),
+            "cohort_count_t": pd.NA,
+            "cohort_count_t1": pd.NA,
+            "detail": "|".join(map(str, missing_years)),
+        }
+    )
+    rows.append(
+        {
+            "issue_type": "implausibly_large_change",
+            "observation_count": (
+                int(observations["implausible_change"].fillna(False).sum())
+                if implausible_threshold is not None
+                else pd.NA
+            ),
+            "cohort_count_t": pd.NA,
+            "cohort_count_t1": pd.NA,
+            "detail": (
+                f"Configured retention-ratio threshold: {implausible_threshold}"
+                if implausible_threshold is not None
+                else "Threshold intentionally unconfigured; raw changes and ratios are published."
+            ),
+        }
+    )
+    return pd.DataFrame(rows)
+
+
+def transform_source_survival_curves(
+    nhtsa: pd.DataFrame,
+    eia: pd.DataFrame,
+    moves5: pd.DataFrame | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Preserve native values and compound conditional scrappage or survival rates."""
+    nhtsa_source = nhtsa.rename(
+        columns={
+            "source_vehicle_class_label": "source_class",
+            "vehicle_age": "age",
+            "survival_rate": "source_value",
+        }
+    ).copy()
+    nhtsa_source["source_measure"] = "survival_probability"
+    nhtsa_source["source_unit"] = nhtsa_source["unit"]
+    nhtsa_source = nhtsa_source[
+        [
+            "source_id",
+            "source_class",
+            "age",
+            "source_measure",
+            "source_value",
+            "source_unit",
+        ]
+    ]
+    eia_source = eia.rename(
+        columns={
+            "source_vehicle_class_label": "source_class",
+            "vehicle_age": "age",
+            "annual_scrappage_rate": "source_value",
+        }
+    ).copy()
+    eia_source["source_measure"] = "annual_scrappage_rate"
+    eia_source["source_unit"] = eia_source["unit"]
+    eia_source = eia_source[
+        [
+            "source_id",
+            "source_class",
+            "age",
+            "source_measure",
+            "source_value",
+            "source_unit",
+        ]
+    ]
+    native_frames = [nhtsa_source, eia_source]
+    if moves5 is not None:
+        moves_source = moves5.rename(columns={
+            "source_vehicle_class_label": "source_class",
+            "vehicle_age": "age",
+            "annual_survival_rate": "source_value",
+        }).copy()
+        moves_source["source_measure"] = "annual_survival_rate"
+        moves_source["source_unit"] = moves_source["unit"]
+        moves_source = moves_source[[
+            "source_id", "source_class", "age", "source_measure",
+            "source_value", "source_unit",
+        ]]
+        native_frames.append(moves_source)
+    source_curves = pd.concat(
+        native_frames,
+        ignore_index=True,
+    ).sort_values(["source_id", "source_class", "age"], kind="stable")
+
+    transformed_nhtsa = nhtsa_source.rename(
+        columns={"source_value": "survival_probability"}
+    ).copy()
+    transformed_nhtsa["transformation"] = "source_survival_probability"
+    transformed_frames = [transformed_nhtsa]
+    for source_class, rows in eia_source.groupby("source_class"):
+        ordered = rows.sort_values("age").copy()
+        age_zero = pd.DataFrame(
+            [
+                {
+                    "source_id": ordered["source_id"].iloc[0],
+                    "source_class": source_class,
+                    "age": 0,
+                    "source_measure": "annual_scrappage_rate",
+                    "survival_probability": 1.0,
+                    "source_unit": "dimensionless",
+                    "transformation": "age0_equals_1",
+                }
+            ]
+        )
+        ordered["survival_probability"] = (
+            1 - pd.to_numeric(ordered["source_value"], errors="raise")
+        ).cumprod()
+        ordered["transformation"] = (
+            "cumulative_product_of_one_minus_annual_scrappage_rate"
+        )
+        ordered["source_unit"] = "dimensionless"
+        transformed_frames.extend(
+            [
+                age_zero,
+                ordered[
+                    [
+                        "source_id",
+                        "source_class",
+                        "age",
+                        "source_measure",
+                        "survival_probability",
+                        "source_unit",
+                        "transformation",
+                    ]
+                ],
+            ]
+        )
+    if moves5 is not None:
+        for _, rows in moves_source.groupby("source_class"):
+            ordered = rows.sort_values("age").copy()
+            # Annual rate at native age a applies during the following year.
+            # Cohort survival therefore starts at one and uses rates 0..a-1.
+            ordered["survival_probability"] = pd.to_numeric(
+                ordered["source_value"], errors="raise"
+            ).cumprod().shift(1, fill_value=1.0)
+            ordered["source_unit"] = "dimensionless"
+            ordered["transformation"] = "age_zero_one_then_prefix_product_of_annual_survival"
+            # Native rate a describes survival from age a to a+1. Retain the
+            # final supported transition as well as the age-zero prefix.
+            endpoint = ordered.iloc[-1].to_dict()
+            endpoint["age"] = int(endpoint["age"]) + 1
+            endpoint["survival_probability"] = float(pd.to_numeric(
+                ordered["source_value"], errors="raise").prod())
+            ordered = pd.concat([ordered, pd.DataFrame([endpoint])], ignore_index=True)
+            transformed_frames.append(ordered[[
+                "source_id", "source_class", "age", "source_measure",
+                "survival_probability", "source_unit", "transformation",
+            ]])
+    transformed = pd.concat(transformed_frames, ignore_index=True)
+    return (
+        source_curves.reset_index(drop=True),
+        transformed.sort_values(
+            ["source_id", "source_class", "age"],
+            kind="stable",
+        ).reset_index(drop=True),
+    )
+
+
+def validate_accepted_survival_inputs(
+    nhtsa: pd.DataFrame,
+    eia: pd.DataFrame,
+    *,
+    assorted_rules: dict[str, Any],
+    moves5: pd.DataFrame | None = None,
+) -> None:
+    """Check normalized accepted schedules before lifetime harmonization."""
+    specifications = (
+        (nhtsa, assorted_rules["nhtsa_cafe"], "survival_rate"),
+        (eia, assorted_rules["eia_nems"], "annual_scrappage_rate"),
+    )
+    if moves5 is not None:
+        move_rules = assorted_rules["epa_moves5"]
+        specifications += ((moves5, move_rules, "annual_survival_rate"),)
+    for frame, rule, value_column in specifications:
+        source_id = str(rule["source_id"])
+        classes = set(map(str, rule["class_columns"].values()))
+        ages = list(range(
+            int(rule["expected_ages"]["start"]),
+            int(rule["expected_ages"]["end"]) + 1,
+        ))
+        required = {"source_id", "source_vehicle_class_label", "vehicle_age", value_column, "unit"}
+        if not required.issubset(frame):
+            raise ValueError(f"{source_id} lacks normalized survival fields: {sorted(required - set(frame))}")
+        if frame[list(required)].isna().any().any():
+            raise ValueError(f"{source_id} has null survival fields")
+        if set(frame["source_id"]) != {source_id} or set(frame["unit"]) != {str(rule["unit"])}:
+            raise ValueError(f"{source_id} source identity or units differ from the registered schedule")
+        if set(frame["source_vehicle_class_label"]) != classes:
+            raise ValueError(f"{source_id} source-class coverage differs from the registered schedule")
+        numeric_ages = pd.to_numeric(frame["vehicle_age"], errors="raise")
+        values = pd.to_numeric(frame[value_column], errors="raise")
+        if any(not isfinite(value) or not 0 <= value <= 1 for value in values):
+            raise ValueError(f"{source_id} survival values must be finite fractions")
+        for source_class, group in frame.assign(_age=numeric_ages, _value=values).groupby(
+            "source_vehicle_class_label"
+        ):
+            ordered = group.sort_values("_age")
+            if ordered["_age"].tolist() != ages:
+                raise ValueError(f"{source_id} {source_class} has missing or duplicate ages")
+            if value_column == "survival_rate":
+                if ordered["_value"].iloc[0] != 1 or (ordered["_value"].diff().dropna() > 0).any():
+                    raise ValueError(f"{source_id} {source_class} is not a cumulative survival curve")
+
+
+def retention_source_comparison(
+    pooled: pd.DataFrame,
+    source_curves: pd.DataFrame,
+    *,
+    eia_classes: list[str],
+) -> pd.DataFrame:
+    """Compare mapped NLR retention with NHTSA and NEMS source retention."""
+    observed = pooled.loc[
+        pooled["population_group"].isin(
+            [
+                "mapped_passenger",
+                "mapped_commercial",
+                "raw_passenger",
+                "raw_commercial",
+            ]
+        )
+        & pooled["stock_status"].eq("FIT_ACTIVE")
+        & pooled["age"].ge(0)
+    ].copy()
+    observed = (
+        observed.groupby(["cohort_class", "age"], as_index=False)
+        .agg(
+            cohort_count_t_sum=("cohort_count_t_sum", "sum"),
+            cohort_count_t1_sum=("cohort_count_t1_sum", "sum"),
+            observation_count=("observation_count", "sum"),
+        )
+    )
+    observed_frame = pd.DataFrame(
+        {
+            "series_family": "ontario_report_a",
+            "series_class": observed["cohort_class"],
+            "age": observed["age"],
+            "one_year_retention": (
+                observed["cohort_count_t1_sum"]
+                / observed["cohort_count_t_sum"]
+            ),
+            "exposed_stock": observed["cohort_count_t_sum"],
+            "observation_count": observed["observation_count"],
+            "interpretation": (
+                "apparent fit-active registration retention; includes migration "
+                "and registration-status changes"
+            ),
+        }
+    )
+    nhtsa = source_curves.loc[
+        source_curves["source_id"].eq("nhtsa_cafe_ldv_survival")
+        & source_curves["source_class"].isin(["Cars", "Vans/SUVs", "Pickups"])
+        & source_curves["source_measure"].eq("survival_probability")
+    ].copy()
+    nhtsa["source_value"] = pd.to_numeric(nhtsa["source_value"], errors="raise")
+    nhtsa = nhtsa.sort_values(["source_class", "age"], kind="stable")
+    nhtsa["next_survival"] = nhtsa.groupby("source_class")["source_value"].shift(-1)
+    nhtsa["one_year_retention"] = nhtsa["next_survival"] / nhtsa["source_value"]
+    nhtsa_frame = pd.DataFrame(
+        {
+            "series_family": "nhtsa_cafe_ldv_survival",
+            "series_class": nhtsa["source_class"],
+            "age": nhtsa["age"],
+            "one_year_retention": nhtsa["one_year_retention"],
+            "exposed_stock": pd.NA,
+            "observation_count": pd.NA,
+            "interpretation": "next-age survival divided by current-age survival",
+        }
+    ).dropna(subset=["one_year_retention"])
+    eia = source_curves.loc[
+        source_curves["source_id"].eq("eia_nems_hd_truck_scrappage")
+        & source_curves["source_class"].isin(eia_classes)
+        & source_curves["source_measure"].eq("annual_scrappage_rate")
+    ].copy()
+    eia_frame = pd.DataFrame(
+        {
+            "series_family": "eia_nems_hd_truck_scrappage",
+            "series_class": eia["source_class"],
+            "age": eia["age"],
+            "one_year_retention": 1
+            - pd.to_numeric(eia["source_value"], errors="raise"),
+            "exposed_stock": pd.NA,
+            "observation_count": pd.NA,
+            "interpretation": "one minus sourced annual scrappage rate",
+        }
+    )
+    comparison = pd.concat(
+        [observed_frame, nhtsa_frame, eia_frame],
+        ignore_index=True,
+    )
+    return comparison.sort_values(
+        ["series_family", "series_class", "age"],
+        kind="stable",
+    ).reset_index(drop=True)
+
+
+def legacy_wards_survival_curves(
+    transformed: pd.DataFrame,
+    wards: pd.DataFrame,
+    *,
+    rules: dict[str, Any],
+) -> pd.DataFrame:
+    """Aggregate legacy Car/Light Truck curves with reviewed Wards shares."""
+    legacy_rules = rules["legacy_survival"]
+    if "vehicle_scope" in wards:
+        wards = wards.loc[wards["vehicle_scope"].eq("ldv")].copy()
+    nhtsa = transformed.loc[
+        transformed["source_id"].eq("nhtsa_cafe_ldv_survival")
+    ].copy()
+    car = nhtsa.loc[
+        nhtsa["source_class"].eq(str(legacy_rules["car_source_class"]))
+    ].copy()
+    car["source_id"] = "wards_weighted_nhtsa_legacy"
+    car["source_class"] = "Car"
+    car["included_weight"] = 1.0
+    car["weight_year"] = pd.NA
+    car["transformation"] = "NHTSA Cars used directly for legacy Car"
+
+    year_selection = legacy_rules["wards_weight_year"]
+    weight_year = (
+        int(pd.to_numeric(wards["year"], errors="raise").max())
+        if year_selection == "latest" else int(year_selection)
+    )
+    latest = wards.loc[pd.to_numeric(wards["year"]).eq(weight_year)].copy()
+    expected_nlr = {
+        str(nlr_class)
+        for nlr_classes in legacy_rules["light_truck_source_classes"].values()
+        for nlr_class in nlr_classes
+    }
+    light_shares = (
+        latest.loc[latest["nrcan_ceud_class"].eq("Light Truck")]
+        if "nrcan_ceud_class" in latest else latest
+    )
+    shares = pd.to_numeric(light_shares["market_share"], errors="raise")
+    if (
+        set(light_shares["nlr_atb_class"]) != expected_nlr
+        or any(not isfinite(share) or share < 0 for share in shares)
+        or abs(float(shares.sum()) - 1.0) > 1e-9
+    ):
+        raise ValueError("Latest reviewed Wards light-truck shares lack complete unit weight")
+    source_weights: list[dict[str, Any]] = []
+    for source_class, nlr_classes in legacy_rules[
+        "light_truck_source_classes"
+    ].items():
+        weight = latest.loc[
+            latest["nlr_atb_class"].isin(nlr_classes),
+            "market_share",
+        ].sum()
+        source_weights.append(
+            {"source_class": str(source_class), "source_weight": float(weight)}
+        )
+    weights = pd.DataFrame(source_weights)
+    weights["source_weight"] = weights["source_weight"] / weights[
+        "source_weight"
+    ].sum()
+    light = nhtsa.merge(weights, on="source_class", how="inner", validate="many_to_one")
+    light["weighted_survival"] = light["survival_probability"] * light["source_weight"]
+    light = (
+        light.groupby("age", as_index=False)
+        .agg(
+            survival_probability=("weighted_survival", "sum"),
+            included_weight=("source_weight", "sum"),
+        )
+    )
+    light["source_id"] = "wards_weighted_nhtsa_legacy"
+    light["source_class"] = "Light Truck"
+    light["source_measure"] = "survival_probability"
+    light["source_unit"] = "dimensionless"
+    light["weight_year"] = weight_year
+    light["transformation"] = (
+        "Latest complete Wards class shares aggregate NHTSA Vans/SUVs and Pickups"
+    )
+    columns = [
+        "source_id", "source_class", "age", "source_measure",
+        "survival_probability", "source_unit", "transformation",
+        "included_weight", "weight_year",
+    ]
+    return pd.concat([car.loc[:, columns], light.loc[:, columns]], ignore_index=True)
+
+
+def nlr_source_survival_curves(
+    transformed: pd.DataFrame,
+    mappings: pd.DataFrame,
+) -> pd.DataFrame:
+    """Publish the five NLR LDV source anchors for the new MTO approach."""
+    source_map = mappings.loc[
+        mappings["target_system"].eq("NLR ATB"),
+        ["source_class", "target_class", "nrcan_ceud_class"],
+    ]
+    nhtsa = transformed.loc[
+        transformed["source_id"].eq("nhtsa_cafe_ldv_survival")
+    ].copy()
+    anchored = source_map.merge(nhtsa, on="source_class", how="inner", validate="many_to_many")
+    anchored["source_id"] = "nlr_atb_source_anchor"
+    anchored["source_class"] = anchored["target_class"]
+    anchored["transformation"] = (
+        "NHTSA source class retained at NLR ATB LDV class grain for MTO calibration"
+    )
+    return anchored[
+        [
+            "source_id", "source_class", "age", "source_measure",
+            "survival_probability", "source_unit", "transformation",
+            "nrcan_ceud_class",
+        ]
+    ]
+
+
+def survival_class_mappings(rules: dict[str, Any]) -> pd.DataFrame:
+    """Publish explicit source-to-target class mappings and comparison scope."""
+    rows: list[dict[str, Any]] = []
+    legacy_rules = rules["legacy_survival"]
+    car_source_class = str(legacy_rules["car_source_class"])
+    light_truck_source_classes = set(
+        map(str, legacy_rules["light_truck_source_classes"])
+    )
+    ceud_labels = rules["ceud_labels"]
+    for source_class, nlr_classes in rules["nhtsa_class_to_nlr"].items():
+        if str(source_class) == car_source_class:
+            ceud_class = str(ceud_labels["Car"])
+        elif str(source_class) in light_truck_source_classes:
+            ceud_class = str(ceud_labels["Light Truck"])
+        else:
+            raise ValueError(
+                f"NHTSA class {source_class!r} has no configured CEUD mapping"
+            )
+        for nlr_class in nlr_classes:
+            rows.append(
+                {
+                    "source_family": "nhtsa_cafe_ldv_survival",
+                    "source_class": source_class,
+                    "target_system": "NLR ATB",
+                    "target_class": nlr_class,
+                    "nrcan_ceud_class": ceud_class,
+                    "mapping_scope": "Ontario LDV weighted aggregation",
+                }
+            )
+    for source_class in rules["nhtsa_comparison_classes"]:
+        rows.append(
+            {
+                "source_family": "nhtsa_cafe_ldv_survival",
+                "source_class": source_class,
+                "target_system": "comparison",
+                "target_class": "medium-duty comparison",
+                "nrcan_ceud_class": pd.NA,
+                "mapping_scope": "comparison only",
+            }
+        )
+    for source_class in rules["eia_source_classes"]:
+        rows.append(
+            {
+                "source_family": "eia_nems_hd_truck_scrappage",
+                "source_class": source_class,
+                "target_system": "comparison",
+                "target_class": source_class,
+                "nrcan_ceud_class": pd.NA,
+                "mapping_scope": "source class only; no fabricated Wards MHDV weighting",
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def aggregate_ceud_survival_curves(
+    transformed: pd.DataFrame,
+    nlr_weights: pd.DataFrame,
+    mappings: pd.DataFrame,
+) -> pd.DataFrame:
+    """Weight NHTSA LDV curves using latest Ontario NLR class weights."""
+    weights = nlr_weights.copy()
+    if weights.weight_basis.nunique() != 1 or weights.report_year.nunique() != 1:
+        raise ValueError("Accepted LDV survival requires one Report A weight basis and year")
+    source_map = mappings.loc[
+        mappings["target_system"].eq("NLR ATB"),
+        ["source_class", "target_class", "nrcan_ceud_class"],
+    ].rename(columns={"target_class": "nlr_atb_class"})
+    weights = weights.merge(
+        source_map,
+        on=["nlr_atb_class", "nrcan_ceud_class"],
+        how="left",
+        validate="many_to_one",
+    )
+    if weights.source_class.isna().any():
+        raise ValueError("Report A LDV weights lack NHTSA survival-class coverage")
+    nhtsa = transformed.loc[
+        transformed["source_id"].eq("nhtsa_cafe_ldv_survival")
+    ].copy()
+    weighted = weights.merge(
+        nhtsa[["source_class", "age", "survival_probability"]],
+        on="source_class",
+        how="inner",
+        validate="many_to_many",
+    )
+    weighted["weighted_survival"] = (
+        weighted["aggregation_weight"] * weighted["survival_probability"]
+    )
+    aggregated = (
+        weighted.groupby(
+            ["report_year", "nrcan_ceud_class", "age"],
+            as_index=False,
+        )
+        .agg(
+            survival_probability=("weighted_survival", "sum"),
+            included_weight=("aggregation_weight", "sum"),
+        )
+    )
+    aggregated["survival_probability"] = (
+        aggregated["survival_probability"] / aggregated["included_weight"]
+    )
+    aggregated["source_id"] = "ontario_report_a_weighted_nhtsa_cafe"
+    aggregated["source_class"] = aggregated["nrcan_ceud_class"]
+    aggregated["source_measure"] = "survival_probability"
+    aggregated["source_unit"] = "dimensionless"
+    aggregated["transformation"] = (
+        "Ontario latest fit-active NLR weights applied to NHTSA source curves"
+    )
+    return aggregated[
+        [
+            "source_id",
+            "source_class",
+            "age",
+            "source_measure",
+            "survival_probability",
+            "source_unit",
+            "transformation",
+            "report_year",
+            "included_weight",
+        ]
+    ]
+
+
+def median_equivalent_lifetimes(
+    curves: pd.DataFrame,
+    *,
+    interpolation: str = "none",
+) -> pd.DataFrame:
+    """Return first age at or below 0.5, with optional linear interpolation."""
+    if interpolation not in {"none", "linear"}:
+        raise ValueError(f"Unsupported median interpolation: {interpolation}")
+    rows: list[dict[str, Any]] = []
+    for (source_id, source_class), group in curves.groupby(
+        ["source_id", "source_class"]
+    ):
+        ordered = group.sort_values("age")
+        at_or_below = ordered.loc[ordered["survival_probability"].le(0.5)]
+        if at_or_below.empty:
+            median_age = pd.NA
+            lower_age = pd.NA
+            upper_age = pd.NA
+        else:
+            upper = at_or_below.iloc[0]
+            upper_age = float(upper["age"])
+            prior = ordered.loc[ordered["age"].lt(upper["age"])].tail(1)
+            lower_age = (
+                float(prior["age"].iloc[0])
+                if not prior.empty
+                else upper_age
+            )
+            median_age = upper_age
+            if interpolation == "linear" and not prior.empty:
+                lower_survival = float(prior["survival_probability"].iloc[0])
+                upper_survival = float(upper["survival_probability"])
+                if lower_survival != upper_survival:
+                    fraction = (
+                        (lower_survival - 0.5)
+                        / (lower_survival - upper_survival)
+                    )
+                    median_age = lower_age + fraction * (upper_age - lower_age)
+        if source_id in {"wards_weighted_nhtsa_legacy", "ontario_report_a_weighted_nhtsa_cafe"}:
+            target_system = "nrcan_ceud"
+        elif source_id == "nlr_atb_source_anchor":
+            target_system = "nlr_atb"
+        else:
+            target_system = "source_class"
+        rows.append(
+            {
+                "source_id": source_id,
+                "target_system": target_system,
+                "target_class": source_class,
+                "median_equivalent_age": median_age,
+                "first_age_at_or_below_0_5": upper_age,
+                "previous_age_above_0_5": lower_age,
+                "interpolation_method": interpolation,
+            }
+        )
+    return pd.DataFrame(rows).sort_values(
+        ["target_system", "target_class", "source_id"],
+        kind="stable",
+    )
+
+
+def survival_source_component(
+    assorted_rules: dict[str, Any], source_key: str, source_class: str | None = None,
+) -> tuple[str, str]:
+    """Resolve a selected native survival source to its configured component."""
+    requests = [
+        assorted_rules[adapter]
+        for adapter in ("nhtsa_cafe", "eia_nems", "epa_moves5")
+        if assorted_rules[adapter]["source_id"] == source_key
+    ]
+    if len(requests) != 1:
+        raise ValueError(f"No unique survival adapter for source {source_key}")
+    request = requests[0]
+    if source_class is not None and "component_ids" in request:
+        classes = request["class_columns"]
+        keys = [key for key, label in classes.items() if label == source_class]
+        if len(keys) != 1:
+            raise ValueError(f"No unique survival component for {source_key}/{source_class}")
+        return source_key, str(request["component_ids"][keys[0]])
+    return source_key, str(request["component_id"])
+
+
+def fixed_existing_lifetimes(
+    medians: pd.DataFrame,
+    manual: pd.DataFrame,
+    rules: Mapping[str, Any],
+) -> dict[str, float]:
+    """Resolve reviewed median and manual lifetimes for CEUD road classes."""
+    sources = rules["fixed_lifetime_sources"]
+    if set(sources) != set(rules["ceud_stock_series"]):
+        raise ValueError("Fixed lifetime sources do not cover every road class")
+    lifetimes: dict[str, float] = {}
+    for road_class, selector in sources.items():
+        kind = selector["kind"]
+        if kind == "ceud_median":
+            selected = medians.loc[
+                medians["target_system"].eq("nrcan_ceud")
+                & medians["target_class"].eq(selector["target_class"])
+            ]
+        elif kind == "source_median_equal":
+            selected = medians.loc[
+                medians["source_id"].eq(selector["source_id"])
+                & medians["target_system"].eq("source_class")
+                & medians["target_class"].isin(selector["source_classes"])
+            ]
+            if set(selected["target_class"]) != set(selector["source_classes"]):
+                raise ValueError(f"Incomplete source median classes for {road_class}")
+        elif kind == "manual":
+            selected = manual.loc[
+                manual["category"].eq(selector["category"])
+                & manual["sub_category"].eq("all")
+            ].rename(columns={"lifetime": "median_equivalent_age"})
+        else:
+            raise ValueError(f"Unknown fixed lifetime source for {road_class}: {kind}")
+        values = pd.to_numeric(selected["median_equivalent_age"], errors="raise")
+        if (
+            selected.empty
+            or (kind != "source_median_equal" and len(selected) != 1)
+            or values.nunique() != 1
+        ):
+            raise ValueError(f"Ambiguous fixed lifetime for {road_class}")
+        lifetime = float(values.iloc[0])
+        if not isfinite(lifetime) or lifetime <= 0:
+            raise ValueError(f"Invalid fixed lifetime for {road_class}")
+        cap = rules.get("survival_hard_zero_age")
+        if cap is not None and kind in {"ceud_median", "source_median_equal"}:
+            # Selected sources reach their median before the derived tail.
+            # An earlier explicit zero therefore makes that cap the median.
+            lifetime = min(lifetime, float(cap))
+        lifetimes[road_class] = lifetime
+    return lifetimes
+
+
+def prepare_fixed_road_lifetimes(
+    bundle: ConfigBundle,
+    *,
+    medians: pd.DataFrame,
+    manual: pd.DataFrame,
+    technology: pd.DataFrame,
+) -> tuple[list[LifetimeTech], list[ResolvedProvenance]]:
+    """Expand selected source median lifetimes to template technologies."""
+    stock_rules = resolved_road_lifetime_rules(bundle)
+    selectors = stock_rules["fixed_lifetime_sources"]
+    ldv_medians = medians.loc[medians.target_system.eq("nrcan_ceud")]
+    if (any(selector["kind"] == "ceud_median" for selector in selectors.values())
+            and set(ldv_medians.source_id) != {"ontario_report_a_weighted_nhtsa_cafe"}):
+        raise ValueError("Accepted LDV medians must use the selected Report A weights")
+    selected_classes = {
+        road_class for road_class, selector in selectors.items()
+        if selector["kind"] in {"ceud_median", "source_median_equal"}
+    }
+    values = fixed_existing_lifetimes(medians, manual, stock_rules)
+    if not {"tech", "category"}.issubset(technology):
+        raise ValueError("Technology template lacks fixed road lifetime owner fields")
+    if technology["tech"].duplicated().any():
+        raise ValueError("Technology template has duplicate owner IDs")
+    source_ids = source_id_mapping(bundle.sources)
+    assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
+    nhtsa_source = assorted["nhtsa_cafe"]["source_id"]
+    output_map = stock_rules["region_output_map"]
+    rows: list[LifetimeTech] = []
+    contexts: list[ResolvedProvenance] = []
+    for road_class in sorted(selected_classes):
+        selector = selectors[road_class]
+        owners = technology.loc[technology["category"].eq(road_class), "tech"]
+        if owners.empty:
+            raise ValueError(f"No technology owner for fixed road lifetime {road_class}")
+        if selector["kind"] == "ceud_median":
+            source_key = nhtsa_source
+        else:
+            source_key = str(selector["source_id"])
+        _, component_key = survival_source_component(
+            assorted, source_key, selector.get("curve_source_class"),
+        )
+        source_context = resolve_provenance(
+            bundle.sources,
+            source_key=source_key,
+            component_key=component_key,
+            transformation="accepted_road_median_input",
+            transformation_version="1",
+        )
+        inputs = [source_context]
+        if selector["kind"] == "ceud_median":
+            weight_source, weight_component = aggregation_component(
+                bundle, "ldv", bundle.scenario.geography.regions[0],
+            )
+            inputs.append(resolve_provenance(
+                bundle.sources,
+                source_key=weight_source,
+                component_key=weight_component,
+                transformation="accepted_road_median_weight_input",
+                transformation_version="1",
+            ))
+        context = resolve_composite_provenance(
+            inputs=inputs,
+            dataset_key=f"lifetime_tech.road.{road_class}",
+            transformation="First harmonized cumulative-survival age at or below one half, respecting an explicit hard zero age",
+            transformation_version="2",
+            governing_source_id=source_ids[source_key],
+            data_quality=source_context.data_quality,
+            value_variant={
+                "road_class": road_class,
+                "selector": selector,
+                "median_years": values[road_class],
+                "tail_derivation": require_tail_derivation(bundle),
+                "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
+                "population_year": bundle.scenario.existing_capacity.vehicle_population_year,
+            },
+        )
+        records = [
+            {
+                "region": region,
+                "tech": str(tech),
+                "lifetime": values[road_class],
+                "units": "years",
+            }
+            for region in sorted({output_map.get(region, region) for region in bundle.scenario.geography.regions})
+            for tech in sorted(owners)
+        ]
+        rows.extend(validate_parameter_rows(LifetimeTech, records, context, bundle=bundle))
+        contexts.append(context)
+    native_keys = {(row.region, row.tech) for row in rows}
+    expected_keys = {
+        (region, str(tech))
+        for region in {output_map.get(region, region) for region in bundle.scenario.geography.regions}
+        for tech in technology.loc[technology["category"].isin(selected_classes), "tech"]
+    }
+    if len(rows) != len(native_keys) or native_keys != expected_keys:
+        raise ValueError("Fixed road lifetime owner coverage is incomplete or conflicting")
+    rows.sort(key=lambda row: (row.region, row.tech))
+    return rows, contexts
+
+
+def prepare_road_survival_curve_rows(
+    bundle: ConfigBundle,
+    *,
+    transformed: pd.DataFrame,
+    technology: pd.DataFrame,
+    annual_acquisitions: pd.DataFrame | None = None,
+    cohort_provenance_contexts: list[ResolvedProvenance] | None = None,
+) -> tuple[list[LifetimeSurvivalCurve], list[LifetimeProcess], list[ResolvedProvenance], dict[str, Any]]:
+    """Prepare annual absolute curves and matching endpoints from one schedule.
+
+    Existing cohorts use acquisition-weighted annual source survival. Future
+    investments use the reconciled age curve directly. Neither is period averaged.
+    """
+    settings = require_tail_derivation(bundle)
+    if not bundle.scenario.lifetimes.survival_curves:
+        raise ValueError("Annual road curve preparation requires survival_curves enabled")
+    if annual_acquisitions is None:
+        raise ValueError("Existing annual acquisitions are required for grouped survival curves")
+    if technology["tech"].duplicated().any():
+        raise ValueError("Technology template has duplicate owner IDs")
+    stock_rules = resolved_road_lifetime_rules(bundle)
+    reconciled = harmonized_road_survival_schedules(bundle, transformed)
+    if not reconciled.audit.temoa_compatible.all():
+        raise ValueError("Harmonized source survival does not satisfy current Temoa annual curve validation")
+    composites = build_composite_cohorts(
+        annual_acquisitions, reconciled.annual,
+        reference_year=bundle.scenario.periods.base_year,
+        first_model_period=bundle.scenario.periods.model[0],
+    )
+    if not composites.audit.empty and not composites.audit.temoa_compatible.all():
+        bad = composites.audit.loc[~composites.audit.temoa_compatible, ["region", "tech", "vintage", "minimum_interior_fraction"]]
+        raise ValueError("Final grouped survival has values below Temoa's supported minimum: "
+                         + str(bad.to_dict("records")))
+    assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
+    source_ids = source_id_mapping(bundle.sources)
+    curve_rows, process_rows, contexts = [], [], []
+    regions = sorted({stock_rules["region_output_map"].get(region, region)
+                      for region in bundle.scenario.geography.regions})
+    for road_class in sorted(stock_rules["survival_curve_classes"]):
+        selector = stock_rules["fixed_lifetime_sources"][road_class]
+        source_class = str(selector.get("target_class", selector.get("curve_source_class", "")))
+        source_key = (str(assorted["nhtsa_cafe"]["source_id"]) if selector["kind"] == "ceud_median"
+                      else str(selector["source_id"]))
+        schedule = reconciled.annual.loc[reconciled.annual.road_class.eq(road_class)].sort_values("age")
+        terminal = int(schedule.age.max())
+        _, component_key = survival_source_component(assorted, source_key, source_class)
+        source_context = resolve_provenance(bundle.sources, source_key=source_key, component_key=component_key,
+                                            transformation="accepted_annual_survival_input", transformation_version="1")
+        inputs = [source_context]
+        if selector["kind"] == "ceud_median":
+            weight_source, weight_component = aggregation_component(bundle, "ldv", bundle.scenario.geography.regions[0])
+            inputs.append(resolve_provenance(bundle.sources, source_key=weight_source, component_key=weight_component,
+                                             transformation="reviewed_ldv_weight_input", transformation_version="1"))
+        annual_class = annual_acquisitions.loc[annual_acquisitions.road_class.eq(road_class)]
+        context = resolve_composite_provenance(
+            inputs=inputs, dataset_key=f"lifetime_survival_curve.road.{road_class}",
+            transformation="Annual absolute survival and explicit endpoint lifetimes for new investments",
+            transformation_version="2", governing_source_id=source_ids[source_key],
+            data_quality=source_context.data_quality,
+            value_variant={"road_class": road_class, "source_class": source_class,
+                           "annual_sha256": hashlib.sha256(schedule.to_csv(index=False).encode()).hexdigest(),
+                           "tail_derivation": settings, "periods": bundle.scenario.periods.model_dump()},
+        )
+        owners = set(technology.loc[technology.category.eq(road_class), "tech"])
+        if not owners:
+            raise ValueError(f"Accepted curve class has no technology owners: {road_class}")
+        if set(annual_class.tech) - owners:
+            raise ValueError(f"Annual acquisitions have inconsistent technology/class ownership: {road_class}")
+        existing_records = composites.curves.loc[composites.curves.tech.isin(owners)].to_dict("records")
+        existing_endpoints = composites.lifetimes.loc[composites.lifetimes.tech.isin(owners)].to_dict("records")
+        if existing_records:
+            if "data_id" not in annual_class or annual_class.data_id.isna().any():
+                raise ValueError("Grouped survival acquisitions require their source provenance data_id")
+            cohort_contexts = {item.data_id: item for item in cohort_provenance_contexts or []}
+            missing = set(annual_class.data_id) - set(cohort_contexts)
+            if missing:
+                raise ValueError(f"Grouped survival acquisition provenance is unresolved: {sorted(missing)}")
+            composite_context = resolve_composite_provenance(
+                inputs=[*inputs, *(cohort_contexts[key] for key in sorted(set(annual_class.data_id)))],
+                dataset_key=f"lifetime_survival_curve.existing_road.{road_class}",
+                transformation="Acquisition-weighted annual absolute survival and matched historical cohort endpoints",
+                transformation_version="2", governing_source_id=source_ids[source_key],
+                data_quality=source_context.data_quality,
+                value_variant={"road_class": road_class, "source_class": source_class,
+                               "annual_sha256": hashlib.sha256(schedule.to_csv(index=False).encode()).hexdigest(),
+                               "acquisitions_sha256": hashlib.sha256(annual_class.sort_values(
+                                   ["region", "tech", "vintage", "vintage_year"]).to_csv(index=False).encode()).hexdigest(),
+                               "tail_derivation": settings, "periods": bundle.scenario.periods.model_dump()},
+            )
+            curve_rows.extend(validate_parameter_rows(LifetimeSurvivalCurve, existing_records, composite_context, bundle=bundle))
+            process_rows.extend(validate_parameter_rows(LifetimeProcess,
+                [{**record, "units": "years"} for record in existing_endpoints], composite_context, bundle=bundle))
+            contexts.append(composite_context)
+        records: list[dict[str, Any]] = []
+        endpoints: list[dict[str, Any]] = []
+        for tech in sorted(owners):
+            if tech.endswith("_EX"):
+                continue
+            if not tech.endswith("_N"):
+                raise ValueError(f"Lifetime owner has no existing/future convention: {tech}")
+            for region in regions:
+                for vintage in bundle.scenario.periods.model:
+                    endpoints.append({"region": region, "tech": tech, "vintage": vintage, "lifetime": terminal})
+                    records.extend({"region": region, "tech": tech, "vintage": vintage,
+                                    "period": vintage + int(row.age), "fraction": float(row.survival_probability)}
+                                   for row in schedule.itertuples(index=False))
+        curve_rows.extend(validate_parameter_rows(LifetimeSurvivalCurve, records, context, bundle=bundle))
+        process_rows.extend(validate_parameter_rows(LifetimeProcess,
+            [{**record, "units": "years"} for record in endpoints], context, bundle=bundle))
+        contexts.append(context)
+    if len(curve_rows) != len({(row.region, row.tech, row.vintage, row.period) for row in curve_rows}):
+        raise ValueError("Annual road survival rows have conflicting keys")
+    if len(process_rows) != len({(row.region, row.tech, row.vintage) for row in process_rows}):
+        raise ValueError("Road endpoint lifetimes have conflicting keys")
+    curve_rows.sort(key=lambda row: (row.region, row.tech, row.vintage, row.period))
+    process_rows.sort(key=lambda row: (row.region, row.tech, row.vintage))
+    audit = {"terminal_schedules": reconciled.audit.to_dict("records"),
+             "grouped_cohorts": composites.audit.rename(columns={"minimum_interior_fraction": "minimum_positive_survival"}).to_dict("records"),
+             "grouped_tail_retirements": composites.tail_losses.to_dict("records")}
+    return curve_rows, process_rows, contexts, audit
+
+
+def _load_normalized_frames(
+    output_dir: Path,
+    manifest: pd.DataFrame,
+    *,
+    status_columns: list[str],
+) -> list[pd.DataFrame]:
+    usecols = [
+        "report_year",
+        "VEHICLE_CLASS",
+        "MAKE",
+        "MODEL",
+        "MODEL_YEAR",
+        *status_columns,
+    ]
+    frames: list[pd.DataFrame] = []
+    for row in manifest.sort_values("year").itertuples(index=False):
+        if hasattr(row, "cohort_snapshot_usable") and str(
+            row.cohort_snapshot_usable
+        ).strip().lower() not in {"true", "1", "yes"}:
+            continue
+        path = output_dir / str(row.normalized_report_a_output)
+        frames.append(pd.read_csv(path, usecols=usecols, low_memory=False))
+    return frames
+
+
+def accepted_lifetime_frames(
+    nhtsa: pd.DataFrame,
+    eia: pd.DataFrame,
+    report_a_weights: pd.DataFrame | None,
+    *,
+    rules: dict[str, Any],
+    moves5: pd.DataFrame | None = None,
+) -> dict[str, pd.DataFrame]:
+    """Derive Report A-weighted LDV and selected heavy-truck source products."""
+    source_curves, transformed = transform_source_survival_curves(nhtsa, eia, moves5)
+    class_mappings = survival_class_mappings(rules)
+    ceud_curves = (
+        aggregate_ceud_survival_curves(transformed, report_a_weights, class_mappings)
+        if report_a_weights is not None else transformed.iloc[:0].copy()
+    )
+    nlr_curves = nlr_source_survival_curves(transformed, class_mappings)
+    transformed_with_aggregates = pd.concat(
+        [transformed, ceud_curves, nlr_curves],
+        ignore_index=True,
+        sort=False,
+    )
+    medians = median_equivalent_lifetimes(
+        transformed_with_aggregates,
+        interpolation=str(rules["interpolation"]),
+    )
+    return {
+        "ceud_curves": ceud_curves,
+        "nlr_curves": nlr_curves,
+        "source_curves": source_curves,
+        "transformed_curves": transformed_with_aggregates,
+        "class_mappings": class_mappings,
+        "medians": medians,
+    }
+
+
+def _load_survival_inputs(
+    bundle: ConfigBundle,
+    assorted_rules: dict[str, Any],
+    *,
+    include_moves5: bool,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame | None]:
+    """Load only requested normalized schedules and validate their native meaning."""
+    assorted_dir = resolve_input_path(bundle, "interim", assorted_rules["interim_subdir"])
+    nhtsa = pd.read_csv(assorted_dir / assorted_rules["nhtsa_cafe"]["output_file"])
+    eia = pd.read_csv(assorted_dir / assorted_rules["eia_nems"]["output_file"])
+    moves5 = None
+    if include_moves5:
+        path = assorted_dir / assorted_rules["epa_moves5"]["output_file"]
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"MOVES survival evidence is missing: {path}. Prepare it with "
+                "python -m fetching.assorted_sources --moves-survival "
+                f"--scenario {bundle.scenario_path} --no-download"
+            )
+        moves5 = pd.read_csv(path)
+    validate_accepted_survival_inputs(
+        nhtsa, eia, assorted_rules=assorted_rules, moves5=moves5,
+    )
+    return nhtsa, eia, moves5
+
+
+def load_heavy_truck_survival_comparison(bundle: ConfigBundle) -> pd.DataFrame:
+    """Read both registered heavy-truck schedules for diagnostics without writing."""
+    assorted = load_harmonization_rules(bundle, ASSORTED_RULE_KEY)
+    nhtsa, eia, moves5 = _load_survival_inputs(bundle, assorted, include_moves5=True)
+    _, transformed = transform_source_survival_curves(nhtsa, eia, moves5)
+    profiles = load_harmonization_rules(bundle, "road_stocks_and_demands")[
+        "existing_capacity"
+    ]["survival_source_profiles"]
+    pairs = {(profile["heavy_trucks"]["source_id"],
+              profile["heavy_trucks"]["curve_source_class"])
+             for profile in profiles.values()}
+    selected = transformed.loc[
+        pd.MultiIndex.from_frame(transformed[["source_id", "source_class"]]).isin(pairs)
+    ].copy()
+    if set(zip(selected.source_id, selected.source_class, strict=True)) != pairs:
+        raise ValueError("Heavy-truck survival comparison lacks a registered source schedule")
+    return selected.reset_index(drop=True)
+
+
+def derive_accepted_lifetime_frames(
+    bundle: ConfigBundle,
+    *,
+    rules: dict[str, Any],
+    road_rules: dict[str, Any],
+    assorted_rules: dict[str, Any],
+) -> dict[str, pd.DataFrame]:
+    """Load validated accepted evidence for road publication and transport assembly.
+
+    Report A class weights are accepted evidence; MTO retention history is diagnostic.
+    This shared preparation interface does not write artifacts.
+    """
+    # Resolving the selector before source I/O also rejects unsupported rule mappings.
+    resolved_road_lifetime_rules(bundle)
+    nhtsa, eia, moves5 = _load_survival_inputs(
+        bundle, assorted_rules,
+        include_moves5=bundle.scenario.lifetimes.road_lifetime_survival_source == "moves",
+    )
+    weights = None
+    if bundle.scenario.lifetimes.road_lifetime_survival_source == "nhtsa_nems":
+        weights, _ = load_ldv_aggregation_weights(bundle, rules=road_rules)
+    return accepted_lifetime_frames(nhtsa, eia, weights, rules=rules, moves5=moves5)
+
+
+def _accepted_output_files(
+    frames: dict[str, pd.DataFrame],
+    rules: dict[str, Any],
+) -> dict[str, pd.DataFrame]:
+    return {
+        str(rules["nlr_survival_curves_file"]): frames["nlr_curves"],
+        str(rules["source_curves_file"]): frames["source_curves"],
+        str(rules["transformed_curves_file"]): frames["transformed_curves"],
+        str(rules["class_mapping_file"]): frames["class_mappings"],
+        str(rules["median_lifetimes_file"]): frames["medians"],
+    }
+
+
+def _derive_mto_diagnostic_outputs(
+    bundle: ConfigBundle,
+    *,
+    rules: dict[str, Any],
+    accepted_frames: dict[str, pd.DataFrame],
+) -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame]]:
+    ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
+    road_rules = load_harmonization_rules(bundle, ROAD_RULE_KEY)
+    rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
+    legacy_curves = legacy_wards_survival_curves(
+        accepted_frames["transformed_curves"],
+        pd.read_csv(resolve_artifact_path(bundle, "road_aggregation") / road_rules["wards_comparison_file"]),
+        rules=rules,
+    )
+    source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
+    manifest = load_history_manifest(bundle)
+    report_rules = ontario_rules["reports"]["A"]
+    status_columns = [str(value) for value in report_rules["status_columns"]]
+    normalized_frames = _load_normalized_frames(
+        source_dir,
+        manifest,
+        status_columns=status_columns,
+    )
+
+    mapping = reference_mto_mapping(
+        load_vehicle_reference(bundle), road_rules, rating_rules["vehicle_class_harmonization"],
+    )
+    accepted_statuses = {
+        str(status) for status in road_rules["accepted_mapping_statuses"]
+    }
+    threshold = rules["implausible_change_ratio"]
+    raw_snapshots = raw_mto_key_snapshots(
+        normalized_frames,
+        passenger_class=str(report_rules["passenger_class"]),
+        commercial_class=str(report_rules["commercial_class"]),
+        minimum_model_year=(
+            int(rules["minimum_transition_model_year"])
+            if rules["minimum_transition_model_year"] is not None
+            else None
+        ),
+        suppressed_code_patterns=[
+            str(pattern)
+            for pattern in report_rules["suppressed_code_patterns"]
+        ],
+        unknown_code_labels=[
+            str(label) for label in report_rules["unknown_code_labels"]
+        ],
+    )
+    raw_key_observations, raw_missing_years = mto_key_transition_observations(
+        raw_snapshots,
+        implausible_change_ratio=(
+            float(threshold) if threshold is not None else None
+        ),
+        ignored_missing_years={
+            int(year) for year in report_rules["excluded_years"]
+        },
+        maximum_transition_age=(
+            int(rules["maximum_transition_age"])
+            if rules["maximum_transition_age"] is not None
+            else None
+        ),
+    )
+    mapped_key_observations = map_mto_key_transitions(
+        raw_key_observations,
+        mapping,
+        accepted_statuses=accepted_statuses,
+    )
+    mapped_key_observations = annotate_latest_snapshot_presence(
+        mapped_key_observations,
+        raw_snapshots,
+    )
+    ceud_classes = [str(value) for value in rules["ceud_labels"].values()]
+    transition_coverage = transition_mapping_coverage(
+        mapped_key_observations,
+        ceud_classes=ceud_classes,
+    )
+    latest_survivor_observations = mapped_key_observations.loc[
+        mapped_key_observations["present_in_latest_snapshot"]
+        .fillna(False)
+        .astype(bool)
+    ].copy()
+    (
+        nlr_vintage_retention,
+        nlr_class_retention,
+        ceud_vintage_retention,
+        ceud_class_retention,
+    ) = aggregate_mto_survival_stages(
+        latest_survivor_observations,
+        ceud_classes=ceud_classes,
+    )
+    survival_scope_comparison = mto_survival_scope_comparison(
+        mapped_key_observations,
+        ceud_classes=ceud_classes,
+        sensitivity_minimum_model_year=int(
+            rules["scope_sensitivity_minimum_model_year"]
+        ),
+    )
+    mapped_snapshot, commercial_snapshot = aggregate_report_a_snapshots(
+        normalized_frames,
+        mapping,
+        accepted_statuses=accepted_statuses,
+        status_columns=status_columns,
+        status_buckets={
+            str(bucket): [str(status) for status in statuses]
+            for bucket, statuses in rules["status_buckets"].items()
+        },
+        passenger_class=str(report_rules["passenger_class"]),
+        commercial_class=str(report_rules["commercial_class"]),
+    )
+    all_snapshots = pd.concat(
+        [mapped_snapshot, commercial_snapshot],
+        ignore_index=True,
+    )
+    observations, _missing_years = cohort_transition_observations(
+        all_snapshots,
+        implausible_change_ratio=(
+            float(threshold) if threshold is not None else None
+        ),
+        ignored_missing_years={
+            int(year) for year in report_rules["excluded_years"]
+        },
+    )
+    pooled = nlr_class_retention.rename(
+        columns={"nlr_atb_class": "cohort_class"}
+    ).assign(population_group="all_mapped", stock_status="FIT_ACTIVE")
+    findings = transition_findings(
+        raw_key_observations,
+        missing_years=raw_missing_years,
+        implausible_threshold=(
+            float(threshold) if threshold is not None else None
+        ),
+        tail_review_start_age=int(rules["tail_review_start_age"]),
+    )
+    retention_comparison = retention_source_comparison(
+        pooled,
+        accepted_frames["source_curves"],
+        eia_classes=[
+            str(value)
+            for value in rules["eia_retention_comparison_classes"]
+        ],
+    )
+    mto_survival_decision = evaluate_mto_survival_decision(
+        ceud_class_retention,
+        transition_coverage,
+        legacy_curves,
+        criteria={
+            str(key): value
+            for key, value in rules["mto_survival_decision_criteria"].items()
+        },
+        source_class_by_ceud={
+            str(rules["ceud_labels"]["Car"]): str(report_rules["passenger_class"]),
+            str(rules["ceud_labels"]["Light Truck"]): str(
+                report_rules["commercial_class"]
+            ),
+        },
+    )
+
+    interim_outputs = {
+        str(rules["raw_key_snapshot_file"]): raw_snapshots,
+        str(rules["raw_key_transition_file"]): raw_key_observations,
+        str(rules["mapped_key_transition_file"]): mapped_key_observations,
+        str(rules["cohort_snapshot_file"]): mapped_snapshot,
+        str(rules["commercial_snapshot_file"]): commercial_snapshot,
+        str(rules["transition_observations_file"]): observations,
+        str(rules["pooled_estimates_file"]): pooled,
+    }
+    validation_outputs = {
+        str(rules["legacy_survival_curves_file"]): legacy_curves,
+        str(rules["nlr_class_vintage_retention_file"]): nlr_vintage_retention,
+        str(rules["nlr_class_retention_file"]): nlr_class_retention,
+        str(rules["ceud_class_vintage_retention_file"]): ceud_vintage_retention,
+        str(rules["ceud_class_retention_file"]): ceud_class_retention,
+        str(rules["ceud_scope_comparison_file"]): survival_scope_comparison,
+        str(rules["transition_mapping_coverage_file"]): transition_coverage,
+        str(rules["mto_survival_decision_file"]): mto_survival_decision,
+        str(rules["transition_findings_file"]): findings,
+        str(rules["retention_comparison_file"]): retention_comparison,
+    }
+    return interim_outputs, validation_outputs
+
+
+def _publish_outputs(
+    directory: Path,
+    outputs: dict[str, pd.DataFrame],
+) -> None:
+    for filename, frame in outputs.items():
+        write_dataframe_atomic(frame, directory / filename)
+
+
+def _lifetime_context(
+    scenario_path: str | Path,
+) -> tuple[ConfigBundle, dict[str, Any], dict[str, Any], dict[str, Any]]:
+    bundle = load_config_bundle(scenario_path)
+    return (
+        bundle,
+        module_rules(bundle),
+        load_harmonization_rules(bundle, ROAD_RULE_KEY),
+        load_harmonization_rules(bundle, ASSORTED_RULE_KEY),
+    )
+
+
+def build_accepted_lifetime_artifacts(scenario_path: str | Path) -> Path:
+    """Publish accepted source-derived lifetime products without MTO diagnostics."""
+    bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
+    frames = derive_accepted_lifetime_frames(
+        bundle,
+        rules=rules,
+        road_rules=road_rules,
+        assorted_rules=assorted_rules,
+    )
+    output_dir = resolve_artifact_path(bundle, "road_lifetimes_survival")
+    _publish_outputs(output_dir, _accepted_output_files(frames, rules))
+    return output_dir
+
+
+def build_mto_survival_diagnostic_artifacts(scenario_path: str | Path) -> Path:
+    """Publish historical MTO apparent-retention and decision evidence."""
+    bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
+    accepted_frames = derive_accepted_lifetime_frames(
+        bundle,
+        rules=rules,
+        road_rules=road_rules,
+        assorted_rules=assorted_rules,
+    )
+    interim_outputs, validation_outputs = _derive_mto_diagnostic_outputs(
+        bundle,
+        rules=rules,
+        accepted_frames=accepted_frames,
+    )
+    _publish_outputs(
+        resolve_artifact_path(bundle, "vehicle_survival_interim"),
+        interim_outputs,
+    )
+    validation_dir = resolve_artifact_path(bundle, "lifetime_validation")
+    _publish_outputs(validation_dir, validation_outputs)
+    return validation_dir
+
+
+def build_lifetime_artifacts(scenario_path: str | Path) -> Path:
+    """Publish accepted products and explicit MTO diagnostics together."""
+    bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
+    accepted_frames = derive_accepted_lifetime_frames(
+        bundle,
+        rules=rules,
+        road_rules=road_rules,
+        assorted_rules=assorted_rules,
+    )
+    output_dir = resolve_artifact_path(bundle, "road_lifetimes_survival")
+    _publish_outputs(
+        output_dir,
+        _accepted_output_files(accepted_frames, rules),
+    )
+    interim_outputs, validation_outputs = _derive_mto_diagnostic_outputs(
+        bundle,
+        rules=rules,
+        accepted_frames=accepted_frames,
+    )
+    _publish_outputs(
+        resolve_artifact_path(bundle, "vehicle_survival_interim"),
+        interim_outputs,
+    )
+    _publish_outputs(
+        resolve_artifact_path(bundle, "lifetime_validation"),
+        validation_outputs,
+    )
+    return output_dir
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--scenario",
+        default="config/scenarios/default.yaml",
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--mto-diagnostics",
+        action="store_true",
+        help="Publish historical MTO apparent-retention and review evidence only.",
+    )
+    mode.add_argument(
+        "--all",
+        action="store_true",
+        help="Publish accepted lifetime products and MTO diagnostic evidence.",
+    )
+    return parser.parse_args(argv)
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(message)s")
+    args = parse_args()
+    if args.mto_diagnostics:
+        output_dir = build_mto_survival_diagnostic_artifacts(args.scenario)
+        logging.info("Wrote MTO survival diagnostic artifacts to %s", output_dir)
+    elif args.all:
+        output_dir = build_lifetime_artifacts(args.scenario)
+        logging.info("Wrote accepted and diagnostic lifetime artifacts to %s", output_dir)
+    else:
+        output_dir = build_accepted_lifetime_artifacts(args.scenario)
+        logging.info("Wrote accepted lifetime artifacts to %s", output_dir)
+
+
+if __name__ == "__main__":
+    main()

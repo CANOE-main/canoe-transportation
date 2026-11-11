@@ -1,0 +1,71 @@
+:root { --md-text-font: Arial, sans-serif; --md-code-font: Consolas, monospace;
+  --md-primary-fg-color: #0f3460; --md-primary-fg-color--light: #e8eef6;
+  --md-accent-fg-color: #0969da; --md-default-fg-color: #1a1a2e; }
+.md-grid { max-width: 80rem; }
+.md-typeset { font-size: .79rem; line-height: 1.6; }
+.md-typeset h1 { color: #0f3460; font-weight: 650; border-bottom: 2px solid #0f3460; padding-bottom: .4rem; }
+.md-typeset h2 { color: #0f3460; border-bottom: 1px solid #d0d7de; padding-bottom: .3rem; }
+.md-typeset table:not([class]) { font-size: .72rem; }
+.md-typeset table:not([class]) th { background: #f0f3f6; }
+.md-typeset table:not([class]) tr:nth-child(even) td { background: #f8f9fb; }
+.md-typeset figure { margin: 1.5rem 0; }
+.md-typeset figcaption { color: #48545a; font-size: .72rem; text-align: left; max-width: none; margin: .5rem 0 1rem; }
+.md-typeset .admonition, .md-typeset details { font-size: inherit; line-height: inherit; box-shadow: none; }
+.md-typeset .admonition-title, .md-typeset summary { font-weight: 650; }
+.canoe-mermaid { background: white !important; overflow: auto; padding: 1rem 0; }
+.canoe-mermaid svg { height: auto; min-width: 680px; }
+.md-typeset .arithmatex { overflow-x: auto; overflow-y: hidden; }
+.report-cover { padding-top: 25mm; }
+.report-cover .subtitle { font-size: 1.35rem; color: #52666a; }
+.report-identity { margin-top: 2rem; font-size: .7rem; overflow-wrap: anywhere; }
+
+@media print {
+  @page { size: A4; margin: 16mm 15mm 18mm;
+    @bottom-center { content: none; }
+    @bottom-right { content: none; }
+  }
+  @page diagram { size: 594mm 420mm; margin: 15mm; }
+  @page wide-figure { size: 420mm 297mm; margin: 15mm; }
+  @page portrait-figure { size: 297mm 420mm; margin: 15mm; }
+  html { font-size: 12pt !important; }
+  body, .md-typeset { color: #14252a !important; font-size: 9.2pt !important; line-height: 1.45; }
+  .md-header, .md-tabs, .md-sidebar, .md-footer, .md-content__button, .md-top, .headerlink { display: none !important; }
+  .md-main, .md-main__inner, .md-content, .md-content__inner, .md-grid { display: block !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  .md-typeset h1 { font-size: 23pt; margin: 0 0 7mm; }
+  .md-typeset h2 { font-size: 15pt; margin-top: 6mm; }
+  .md-typeset h3 { font-size: 11pt; }
+  .md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4 { break-after: avoid-page; }
+  #print-site-page p, #print-site-page pre, #print-site-page blockquote { page-break-inside: auto; }
+  .md-typeset p { orphans: 3; widows: 3; }
+  .md-typeset .admonition, .md-typeset details { font-size: 9.2pt !important; line-height: 1.45; break-inside: auto; }
+  .md-typeset .admonition-title, .md-typeset summary { break-after: avoid-page; }
+  .md-typeset table:not([class]) { font-size: 7.4pt; line-height: 1.35; width: 100%; display: table; }
+  .md-typeset table:not([class]) th, .md-typeset table:not([class]) td { min-width: 0; padding: 1.7mm 2mm; overflow-wrap: anywhere; }
+  .md-typeset table:not([class]) th { overflow-wrap: normal; }
+  .md-typeset thead { display: table-header-group; }
+  .md-typeset tr { break-inside: avoid; }
+  .md-typeset__scrollwrap, .md-typeset__table { overflow: visible !important; display: block; margin: 0 !important; padding: 0 !important; }
+  .md-typeset pre, .md-typeset code { white-space: pre-wrap !important; overflow-wrap: anywhere; }
+  .md-typeset code { font-size: 8pt; }
+  .md-typeset img { max-width: 100%; max-height: 220mm; object-fit: contain; }
+  .md-typeset figure { break-inside: avoid; }
+  .keep-together { break-inside: avoid; }
+  .md-typeset figcaption { font-size: 8pt; }
+  .wide-figure { page: wide-figure; width: 390mm; break-before: page; break-after: page; }
+  .portrait-figure { page: portrait-figure; width: 267mm; break-before: page; break-after: page; }
+  .md-typeset .wide-figure img { width: 100%; max-height: 230mm; }
+  .md-typeset .portrait-figure img { width: 100%; max-height: 350mm; }
+  #print-site-page section.md-section { page-break-before: auto; }
+  #print-site-page section.md-section > h1 { display: none; }
+  .md-typeset .arithmatex { overflow: visible; }
+  .canoe-diagram-page { page: diagram; break-before: page; break-after: page; break-inside: avoid; width: 564mm; }
+  .canoe-mermaid { width: 100%; padding: 0; overflow: visible; }
+  .canoe-mermaid svg { display: block; min-width: 0; max-width: 100% !important; max-height: 355mm; width: 100%; height: auto; }
+  .compact-diagram { page: auto; width: 180mm; break-before: auto; break-after: auto; }
+  .compact-diagram svg { max-height: 220mm; }
+  .md-typeset h2 code, .md-typeset h3 code { font-size: inherit; }
+  details > * { display: block !important; }
+  #print-site-cover-page { break-after: page; }
+  #print-page-toc { font-size: 9pt; break-after: page; }
+  #print-page-toc ul { margin-top: 1mm; margin-bottom: 1mm; }
+}

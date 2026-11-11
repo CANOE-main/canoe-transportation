@@ -1,0 +1,170 @@
+{
+  "created_utc": "2026-10-29T15:15:01.963970+00:00",
+  "purpose": "Input and acceptance handoff for Temoa vintage-plus-period annual capacity factor PR",
+  "upstream_review_commit": "dcea8e80926651cbf6be49e7b1d3fbb86a8b26ae",
+  "transport_head": "06a1b79b9ae81a1708de5d4d07ad3c49e5cc3b11",
+  "transport_worktree": "Built from the current working tree, including pre-existing user changes; not from a clean commit.",
+  "build_command": "uv run --offline python src/build_transport.py --scenario config/scenarios/period_index_test.yaml",
+  "scenario_source": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\period_index_test.yaml",
+  "original_database": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\sqlite\\canoe_transport_period_index_test.sqlite",
+  "build_report": "build_validation.json",
+  "base_sqlite_status": {
+    "integrity_check": "ok",
+    "foreign_key_violations": 0,
+    "annual_factor_columns": [
+      "region",
+      "tech_or_group",
+      "vintage",
+      "output_comm",
+      "operator",
+      "factor",
+      "notes",
+      "data_source",
+      "dq_cred",
+      "dq_geog",
+      "dq_struc",
+      "dq_tech",
+      "dq_time",
+      "data_id"
+    ],
+    "inserted_supported_factor_rows": 71,
+    "period_enabled": false,
+    "age_rows_inserted": false,
+    "period_enabled_solver_tested": false
+  },
+  "prepared_age_factors": {
+    "file": "limit_annual_capacity_factor_vintage_period.csv",
+    "rows": 271,
+    "key": [
+      "region",
+      "tech_or_group",
+      "vintage",
+      "period",
+      "output_comm",
+      "operator"
+    ],
+    "regions": [
+      "ON"
+    ],
+    "periods": [
+      2025,
+      2030
+    ],
+    "road_classes": [
+      "cars",
+      "freight_light_trucks",
+      "heavy_trucks",
+      "medium_trucks",
+      "passenger_light_trucks"
+    ],
+    "operator": [
+      "e"
+    ],
+    "provenance_contexts": 5,
+    "age_profile_rows": 104,
+    "same_vintage_example": [
+      {
+        "region": "ON",
+        "tech_or_group": "T_LDV_C_GSL_N",
+        "vintage": 2025,
+        "period": 2025,
+        "factor": 0.018777672915663075,
+        "age_first_year": 1,
+        "age_last_year": 5
+      },
+      {
+        "region": "ON",
+        "tech_or_group": "T_LDV_C_GSL_N",
+        "vintage": 2025,
+        "period": 2030,
+        "factor": 0.01606553648404465,
+        "age_first_year": 6,
+        "age_last_year": 10
+      }
+    ],
+    "example_relative_decline": 0.1444341076660326,
+    "example_capacity_to_activity": 1.2,
+    "viability": "Prepared candidate rows; select native active processes and positive existing cohorts using the implemented Temoa feature. Do not insert every candidate blindly.",
+    "age_profile_audit": {
+      "age_factor_rows": 271,
+      "age_profile_rows": 104,
+      "age_ceiling": 25,
+      "sqlite_insertion": "blocked_upstream_vintage_plus_period_schema_gap",
+      "age_input_digest": "9ae7393047d862c598d97e3e5399c0328a5268bd8c4b4cca3c4c291f778a81e2",
+      "aggregation_sources": {
+        "stock_age": {
+          "ON": "ontario_ministry_transport_vehicle_population",
+          "other": "ontario_ministry_transport_vehicle_population"
+        },
+        "ldv": {
+          "ON": "ontario_ministry_transport_vehicle_population",
+          "other": "ontario_ministry_transport_vehicle_population"
+        },
+        "medium_trucks": {
+          "ON": "ontario_ministry_transport_vehicle_population",
+          "other": "wards_intelligence_sales_shares"
+        },
+        "heavy_truck_haul": {
+          "ON": "statcan_transport_tables",
+          "other": "statcan_transport_tables"
+        }
+      }
+    }
+  },
+  "charger_scope": "Current reviewed vintage/technology-kind factors are unchanged. Period-varying charger factors belong in an explicitly synthetic upstream test unless separately reviewed.",
+  "downstream_followup": "CANOE is independent of Temoa. A separate CANOE schema PR may follow acceptance of the Temoa feature; it is outside this task and must not appear in the Temoa PR rationale or evidence.",
+  "sources": {
+    "nrcan_ceud_transport_provincial": "Natural Resources Canada. (2025). Transportation Sector \u2013 Ontario. Government of Canada, Natural Resources Canada. https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive/trends_tran_on.cfm",
+    "ontario_ministry_transport_vehicle_population": "Ontario Ministry of Transportation. (2025). Vehicle population data\u2014Ontario Data Catalogue [Dataset]. https://data.ontario.ca/dataset/vehicle-population-data",
+    "nlr_atb_transportation": "National Renewable Energy Laboratory. 2024 Transportation Annual Technology Baseline Data. https://atb.nlr.gov/transportation/2024/data",
+    "statcan_transport_tables": "Statistics Canada. Table 23-10-0142-01. https://doi.org/10.25318/2310014201-eng"
+  },
+  "regeneration": "The scenario build regenerates the database, road CSV/profiles and gap report through existing owners. Provenance metadata comes from the same build_age_factor_artifact contexts and registry_rows; input_content_digest is recorded in build_validation.json.",
+  "files": {
+    "base_transport.sqlite": {
+      "sha256": "9ff282436c30ab4c073657facf7a604bcff988b5b5148039ad90401ab006bf30",
+      "bytes": 2904064
+    },
+    "build.log": {
+      "sha256": "a8e328289ec935625318b2bbd44e1b41317e7d2dea7caae426b6475d77a0b7e2",
+      "bytes": 11210
+    },
+    "build_validation.json": {
+      "sha256": "7b40f45d7b0c1444f7cd10e9e620b6956b6dc37063d5a2e94e2e70b82021a92e",
+      "bytes": 130871
+    },
+    "codex_prompt.txt": {
+      "sha256": "9392f60b17515aa631eaf264aa4f2e127b8969fac73b99841d91f8fb84043519",
+      "bytes": 11573
+    },
+    "limit_annual_capacity_factor_vintage_period.csv": {
+      "sha256": "2e222310672f8982c6f5cf29befc5b54e46c282301d78bd395fef570d92602d3",
+      "bytes": 56655
+    },
+    "road_age_provenance.json": {
+      "sha256": "01ec0a671d5bcd580ec04ec8fbe12d4b54ed6ffd430515a195036d9c1c724e02",
+      "bytes": 81908
+    },
+    "road_annual_utilization.csv": {
+      "sha256": "01a98ff8c78faa02d847fb9da2346957334da29e242d40cb1cc9ee9dedcc2b28",
+      "bytes": 4006
+    },
+    "road_baseline_utilization.csv": {
+      "sha256": "997fcf5ec29cc180b0accd49d707fb27be22ac33f93c28745731fc0f385413fe",
+      "bytes": 514
+    },
+    "road_normalized_age_profiles.csv": {
+      "sha256": "88daa52b92e4829fbe803dc3d996cbed956a82e21437d20cf3cb0fc18283c958",
+      "bytes": 9940
+    },
+    "scenario.yaml": {
+      "sha256": "8d43856ec5b1555fc15d59f151334e934cf0160f6befff95ec6ae4a90c684f22",
+      "bytes": 2522
+    },
+    "vintage_period_schema_gap.json": {
+      "sha256": "f496bee863a2081cbc3d3e67daf4be48ad91043fb242dde3a51f82c4e8812af9",
+      "bytes": 639
+    }
+  },
+  "public_pr_scope": "Temoa input contract, model behavior and Temoa validation only; no claims about CANOE schema capabilities or limitations."
+}

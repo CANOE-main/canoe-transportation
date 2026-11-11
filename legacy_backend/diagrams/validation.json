@@ -1,0 +1,70 @@
+{
+  "topology": {
+    "status": "pass",
+    "selected_vehicle_and_offroad_technologies": 115,
+    "mode_rows": 13,
+    "demand_commodities": 15,
+    "positive_unique_efficiency_links": 176,
+    "unresolved_vehicle_inputs": 0,
+    "unresolved_vehicle_outputs": 0
+  },
+  "figures": {
+    "canoe-legacy-transport": {
+      "status": "pass",
+      "native_text_elements": 95,
+      "raster_elements": 0,
+      "foreign_objects": 0,
+      "external_resources": 0,
+      "unique_ids": 188,
+      "physical_width_mm": 180,
+      "minimum_type_pt": 7.175,
+      "minimum_text_contrast": 4.577,
+      "svg_sha256": "299218fc1218e6fce1533f8b2c152eef4468999561630c950fe15bf071187f28",
+      "model_membership": {
+        "drawn_technology_ids": 162,
+        "folded_annual_bridges": [
+          "T_dummy_pkm_ldv_c",
+          "T_dummy_pkm_ldv_m",
+          "T_dummy_pkm_ldv_t",
+          "T_dummy_tkm_ldv_t"
+        ],
+        "represented_demand_ids": 15
+      },
+      "text_bounds": {
+        "status": "pass",
+        "measured_labels": 95,
+        "overflows": 0
+      },
+      "pdf": {
+        "status": "pass",
+        "pages": 1,
+        "width_mm": 180.0,
+        "height_mm": 101.25,
+        "raster_images": 0,
+        "fonts": [
+          {
+            "name": "/AMULCE+Arial-BoldMT",
+            "embedded": true
+          },
+          {
+            "name": "/NHMHRQ+ArialMT",
+            "embedded": true
+          },
+          {
+            "name": "/CXLVMG+Verdana-Bold",
+            "embedded": true
+          },
+          {
+            "name": "/GKISAU+Verdana",
+            "embedded": true
+          }
+        ],
+        "extracted_text_characters": 1274
+      },
+      "png_dpi": 600
+    }
+  },
+  "source_hashes_unchanged": true,
+  "installed_python_dependencies": [],
+  "network_access": false
+}

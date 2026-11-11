@@ -1,0 +1,74 @@
+"""Smoke validation for the YAML configuration control layer."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+from utils import (
+    active_source_keys,
+    create_configured_directories,
+    load_config_bundle,
+    resolve_repo_path,
+)
+from validation.schema_contract import schema_evidence
+
+
+def run_smoke_validation(
+    scenario_path: str | Path,
+    *,
+    timestamp: datetime | None = None,
+) -> dict[str, Any]:
+    """Load configs, validate required keys, create directories, and return status."""
+    bundle = load_config_bundle(scenario_path)
+    now = timestamp or datetime.now(UTC)
+
+    created_directories = create_configured_directories(bundle)
+    reference_value = bundle.scenario.comparison.reference_sqlite
+    reference_sqlite = (
+        resolve_repo_path(bundle.repo_root, reference_value)
+        if reference_value is not None
+        else None
+    )
+    active_sources = sorted(active_source_keys(bundle))
+
+    return {
+        "ok": True,
+        "timestamp_utc": now.isoformat(),
+        "scenario": bundle.scenario.scenario.name,
+        "periods": bundle.scenario.periods.model_dump(mode="json"),
+        "period_mapping": bundle.scenario.periods.audit(),
+        "economics": bundle.scenario.economics.model_dump(mode="json"),
+        "comparison": bundle.scenario.comparison.model_dump(mode="json"),
+        "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(mode="json"),
+        "scenario_path": str(bundle.scenario_path),
+        "paths_path": str(bundle.paths_path),
+        "sources_path": str(bundle.sources_path),
+        "created_directories": [str(path) for path in created_directories],
+        "packaged_schema": schema_evidence(),
+        "reference_sqlite_exists": (
+            reference_sqlite.exists() if reference_sqlite is not None else None
+        ),
+        "reference_sqlite": (
+            str(reference_sqlite) if reference_sqlite is not None else None
+        ),
+        "active_sources": active_sources,
+        "placeholder_sources": [
+            key for key, source in bundle.sources.sources.items()
+            if source.data_quality.missing_fields()
+        ],
+        "data_quality_fallback": bundle.sources.defaults.data_quality.row_fields(),
+        "parameter_options": {
+            "emission_embodied": {
+                "embodied_emissions": bundle.scenario.embodied_emissions,
+                "embodied_materials": bundle.scenario.embodied_materials,
+            },
+            **{
+                key: getattr(bundle.scenario, key).model_dump(mode="json")
+                for key in ("existing_capacity", "demand", "lifetimes", "road_utilization",
+                            "efficiencies", "costs", "ev_chargers", "charging_profiles",
+                            "BEV_PHEV_range_representation")
+            },
+        },
+    }

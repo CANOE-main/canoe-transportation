@@ -1,0 +1,1326 @@
+"""Road stock cohorts and allocation, with shared utilization calculations."""
+
+import logging
+from math import isclose, isfinite
+from typing import Any
+from collections.abc import Mapping, Sequence
+
+import pandas as pd
+
+from validation.config_models import ScenarioPeriods
+
+
+
+def reconcile_road_capacity_to_activity(
+    manual: pd.DataFrame,
+    technology: pd.DataFrame,
+    *,
+    road_classes: set[str],
+    activity_units: Mapping[str, str],
+) -> pd.DataFrame:
+    """Expand reviewed road category values through template-owned technologies."""
+    required_manual = {"category", "sub_category", "units", "c2a", "notes"}
+    required_technology = {"tech", "category"}
+    if required_manual - set(manual) or required_technology - set(technology):
+        raise ValueError("Capacity-to-activity input or technology template lacks columns")
+    selected = manual.loc[
+        manual["category"].isin(road_classes), ["category", "sub_category", "units", "c2a", "notes"],
+    ].copy()
+    if (
+        set(selected["category"]) != road_classes
+        or selected.duplicated("category").any()
+        or not selected["sub_category"].eq("all").all()
+        or selected[["category", "units", "notes"]].isna().any().any()
+        or selected[["category", "units", "notes"]].astype(str).map(
+            lambda value: not value.strip()
+        ).any().any()
+    ):
+        raise ValueError("Road capacity-to-activity categories are incomplete or ambiguous")
+    selected["c2a"] = pd.to_numeric(selected["c2a"], errors="raise")
+    if selected["c2a"].map(lambda value: not isfinite(value) or value <= 0).any():
+        raise ValueError("Road capacity-to-activity values must be finite and positive")
+    for row in selected.itertuples(index=False):
+        expected_unit = str(activity_units[row.category]) + "/k units"
+        if row.units != expected_unit:
+            raise ValueError(f"Capacity-to-activity unit mismatch for {row.category}")
+    owners = technology.loc[technology["category"].isin(road_classes), ["tech", "category"]]
+    if (
+        owners["tech"].isna().any()
+        or owners["tech"].duplicated().any()
+        or set(owners["category"]) != road_classes
+    ):
+        raise ValueError("Technology template does not uniquely cover road classes")
+    expanded = owners.merge(selected, on="category", validate="many_to_one")
+    return expanded.sort_values("tech", kind="stable").reset_index(drop=True)
+
+
+def derive_road_annual_utilization(
+    provincial: pd.DataFrame,
+    *,
+    regions: list[str],
+    years: list[int],
+    activity_series: Mapping[str, Mapping[str, Any]],
+    stock_series: Mapping[str, Mapping[str, Any]],
+    capacity_by_class: Mapping[str, float],
+    region_output_map: Mapping[str, str],
+    activity_to_billion_factor: float,
+) -> pd.DataFrame:
+    """Calculate CEUD annual activity/stock/capacity ratios at road-class grain."""
+    if (
+        not years
+        or len(set(years)) != len(years)
+        or set(activity_series) != set(stock_series)
+        or set(activity_series) != set(capacity_by_class)
+        or not isfinite(activity_to_billion_factor)
+        or activity_to_billion_factor <= 0
+    ):
+        raise ValueError("Invalid CEUD road utilization selectors or years")
+    required = {"region", "year", "table_id", "raw_series", "unit", "value"}
+    if required - set(provincial):
+        raise ValueError("CEUD road utilization input lacks columns")
+    records: list[dict[str, Any]] = []
+    local_evidence: dict[tuple[str, int], pd.DataFrame] = {}
+    for region in regions:
+        for road_class, activity_selector in activity_series.items():
+            stock_selector = stock_series[road_class]
+            c2a = float(capacity_by_class[road_class])
+            if not isfinite(c2a) or c2a <= 0:
+                raise ValueError(f"Invalid capacity-to-activity for {road_class}")
+            for year in years:
+                key = region, year
+                if key not in local_evidence:
+                    local_evidence[key] = provincial.loc[
+                        provincial["region"].eq(region) & provincial["year"].eq(year),
+                        ["table_id", "raw_series", "unit", "value"],
+                    ]
+                local = local_evidence[key]
+                activity = local.loc[
+                    local["table_id"].eq(int(activity_selector["table_id"]))
+                    & local["raw_series"].eq(activity_selector["raw_series"])
+                ]
+                stock = local.loc[
+                    local["table_id"].eq(int(stock_selector["table_id"]))
+                    & local["raw_series"].eq(stock_selector["raw_series"])
+                ]
+                if len(activity) != 1 or len(stock) != 1:
+                    raise ValueError(f"Missing or duplicate CEUD activity/stock: {(region, road_class, year)}")
+                if activity.iloc[0]["unit"] != "millions" or stock.iloc[0]["unit"] != "thousands":
+                    raise ValueError(f"Unexpected CEUD activity/stock unit: {(region, road_class, year)}")
+                activity_bn = float(activity.iloc[0]["value"]) * activity_to_billion_factor
+                stock_k = float(stock.iloc[0]["value"])
+                if not isfinite(activity_bn) or activity_bn < 0 or not isfinite(stock_k) or stock_k <= 0:
+                    raise ValueError(f"Invalid CEUD activity/stock: {(region, road_class, year)}")
+                records.append({
+                    "ceud_region": region,
+                    "region": region_output_map.get(region, region),
+                    "road_class": road_class,
+                    "year": year,
+                    "activity_bn": activity_bn,
+                    "stock_k_vehicles": stock_k,
+                    "c2a": c2a,
+                    "utilization": activity_bn / (stock_k * c2a),
+                    "unit": "dimensionless",
+                })
+    return pd.DataFrame(records).sort_values(
+        ["region", "road_class", "year"], kind="stable"
+    ).reset_index(drop=True)
+
+
+def aggregate_normalized_mileage_profiles(
+    mileage: pd.DataFrame,
+    weights: pd.DataFrame,
+    *,
+    mile_to_km: float,
+) -> pd.DataFrame:
+    """Apply an explicitly selected road weight slice to complete ATB age profiles."""
+    mileage_columns = {"vehicle_class", "year_index", "vmt_mi", "unit"}
+    weight_columns = {"nrcan_ceud_class", "nlr_atb_class", "aggregation_weight"}
+    if mileage_columns - set(mileage) or weight_columns - set(weights):
+        raise ValueError("Mileage or road aggregation input lacks columns")
+    if not isfinite(mile_to_km) or mile_to_km <= 0:
+        raise ValueError("Invalid configured mile-to-kilometre conversion")
+    if weights.empty or weights.duplicated(["nrcan_ceud_class", "nlr_atb_class"]).any():
+        raise ValueError("Road aggregation weights are missing or duplicated")
+    selected = mileage.loc[mileage["vehicle_class"].isin(weights["nlr_atb_class"])].copy()
+    if (
+        set(selected["vehicle_class"]) != set(weights["nlr_atb_class"])
+        or selected.duplicated(["vehicle_class", "year_index"]).any()
+        or set(selected["unit"]) != {"mi/vehicle-year"}
+    ):
+        raise ValueError("ATB mileage profiles do not uniquely cover weighted classes")
+    numeric_ages = pd.to_numeric(selected["year_index"], errors="raise")
+    if numeric_ages.isna().any() or numeric_ages.mod(1).ne(0).any():
+        raise ValueError("ATB mileage ages must be integers")
+    selected["year_index"] = numeric_ages.astype(int)
+    selected["vmt_mi"] = pd.to_numeric(selected["vmt_mi"], errors="raise")
+    if (selected["year_index"] < 0).any() or selected["vmt_mi"].map(
+        lambda value: not isfinite(value) or value < 0
+    ).any():
+        raise ValueError("ATB mileage ages or values are invalid")
+    age_sets = [set(group["year_index"]) for _, group in selected.groupby("vehicle_class")]
+    if any(ages != age_sets[0] for ages in age_sets[1:]):
+        raise ValueError("ATB classes have unequal age coverage; a reviewed treatment is required")
+    expected_ages = set(range(max(age_sets[0]) + 1))
+    if age_sets[0] != expected_ages:
+        raise ValueError("ATB mileage profile ages are not contiguous from zero")
+    weighted = weights.copy()
+    weighted["aggregation_weight"] = pd.to_numeric(
+        weighted["aggregation_weight"], errors="raise"
+    )
+    if weighted["aggregation_weight"].map(
+        lambda value: not isfinite(value) or value <= 0
+    ).any():
+        raise ValueError("Road aggregation weights must be finite and positive")
+    sums = weighted.groupby("nrcan_ceud_class")["aggregation_weight"].sum()
+    if not sums.map(lambda value: abs(value - 1.0) < 1e-8).all():
+        raise ValueError("Road aggregation weights do not sum to one by CEUD class")
+    joined = weighted.merge(
+        selected, left_on="nlr_atb_class", right_on="vehicle_class", validate="one_to_many"
+    )
+    joined["weighted_vmt_km"] = (
+        joined["aggregation_weight"] * joined["vmt_mi"] * mile_to_km
+    )
+    result = joined.groupby(
+        ["nrcan_ceud_class", "year_index"], as_index=False
+    )["weighted_vmt_km"].sum()
+    maxima = result.groupby("nrcan_ceud_class")["weighted_vmt_km"].transform("max")
+    if maxima.le(0).any():
+        raise ValueError("ATB mileage profile has no positive maximum")
+    result["normalized_utilization"] = result["weighted_vmt_km"] / maxima
+    if not result.groupby("nrcan_ceud_class")["normalized_utilization"].max().eq(1.0).all():
+        raise ValueError("Normalized ATB mileage profile does not peak at one")
+    return result.rename(columns={"year_index": "age"}).sort_values(
+        ["nrcan_ceud_class", "age"], kind="stable"
+    ).reset_index(drop=True)
+
+
+def flat_road_capacity_factor_records(
+    baseline: pd.DataFrame,
+    technology: pd.DataFrame,
+    *,
+    vintages_by_region_tech: Mapping[tuple[str, str], Sequence[int]],
+    commodity_by_class: Mapping[str, str],
+) -> list[dict[str, Any]]:
+    """Apply each constant class baseline to its technology's declared vintages."""
+    if {"region", "road_class", "utilization"} - set(baseline):
+        raise ValueError("Flat utilization baseline lacks columns")
+    if {"tech", "category"} - set(technology):
+        raise ValueError("Flat utilization technology owners lack columns")
+    if baseline.empty or baseline.duplicated(["region", "road_class"]).any():
+        raise ValueError("Flat utilization baseline is empty or duplicated")
+    if set(baseline["road_class"]) != set(commodity_by_class):
+        raise ValueError("Flat utilization classes differ from demand commodities")
+    if any(
+        set(group["road_class"]) != set(commodity_by_class)
+        for _, group in baseline.groupby("region")
+    ):
+        raise ValueError("Flat utilization class coverage differs by region")
+    if set(technology["category"]) != set(commodity_by_class) or technology["tech"].duplicated().any():
+        raise ValueError("Flat utilization technology ownership is incomplete")
+    if set(vintages_by_region_tech) != {
+        (region, tech) for region in baseline.region.unique() for tech in technology.tech
+    }:
+        raise ValueError("Flat utilization vintage ownership must cover every region/technology exactly")
+    if any(len(vintages) != len(set(vintages)) for vintages in vintages_by_region_tech.values()):
+        raise ValueError("Flat utilization vintages must be unique for each region/technology")
+    if baseline["utilization"].map(
+        lambda value: not isfinite(value) or value < 0 or value > 1
+    ).any():
+        raise ValueError("Flat utilization exceeds the schema's unit interval")
+    expanded = baseline.merge(
+        technology[["tech", "category"]], left_on="road_class", right_on="category",
+        validate="many_to_many",
+    )
+    return [
+        {
+            "region": row.region,
+            "tech_or_group": row.tech,
+            "vintage": vintage,
+            "output_comm": commodity_by_class[row.road_class],
+            "operator": "e",
+            "factor": float(row.utilization),
+        }
+        for row in expanded.sort_values(
+            ["region", "road_class", "tech"], kind="stable"
+        ).itertuples(index=False)
+        for vintage in sorted(vintages_by_region_tech[row.region, row.tech])
+    ]
+
+
+def mean_age_utilization_for_period(
+    profile: pd.DataFrame,
+    *,
+    baseline_utilization: float,
+    vintage: int,
+    period: int,
+    step: int,
+) -> float:
+    """Average each annual age-scaled value across a start-labeled model period."""
+    if (
+        step <= 0
+        or vintage > period
+        or not isfinite(baseline_utilization)
+        or not 0 <= baseline_utilization <= 1
+    ):
+        raise ValueError("Invalid vintage, period, or baseline utilization")
+    if {"age", "normalized_utilization"} - set(profile):
+        raise ValueError("Normalized age profile lacks columns")
+    if profile["age"].duplicated().any():
+        raise ValueError("Normalized age profile has duplicate ages")
+    ages = list(range(period + 1 - vintage, period + step + 1 - vintage))
+    selected = profile.set_index("age").reindex(ages)
+    if selected["normalized_utilization"].isna().any():
+        raise ValueError(
+            f"Age profile does not cover vintage {vintage}, period {period}, ages {ages}"
+        )
+    values = pd.to_numeric(selected["normalized_utilization"], errors="raise")
+    if values.map(lambda value: not isfinite(value) or not 0 <= value <= 1).any():
+        raise ValueError("Normalized age profile contains invalid utilization")
+    return float(baseline_utilization * values.mean())
+
+
+def accepted_curve_ages(
+    curves: pd.DataFrame, rules: Mapping[str, Any]
+) -> dict[str, set[int]]:
+    """Return supported ages from the accepted CEUD road survival curves."""
+    result: dict[str, set[int]] = {}
+    for road_class in rules["survival_curve_classes"]:
+        selector = rules["fixed_lifetime_sources"][road_class]
+        target_class = selector.get("target_class", selector.get("curve_source_class"))
+        source_id = (
+            "ontario_report_a_weighted_nhtsa_cafe" if selector["kind"] == "ceud_median"
+            else selector["source_id"]
+        )
+        selected = curves.loc[
+            curves["source_class"].eq(target_class) & curves["source_id"].eq(source_id)
+        ]
+        if "road_class" in selected:
+            selected = selected.loc[selected.road_class.eq(road_class)]
+        if selected.empty or selected["age"].duplicated().any():
+            raise ValueError(f"Missing or duplicate accepted curve for {road_class}")
+        result[road_class] = set(
+            selected.loc[
+                pd.to_numeric(selected["survival_probability"], errors="raise").gt(0),
+                "age",
+            ].astype(int)
+        )
+    return result
+
+
+def derive_sales_survival_cohorts(
+    provincial: pd.DataFrame, transformed_curves: pd.DataFrame, *,
+    regions: list[str], base_year: int, history_start: int, rules: dict[str, Any],
+) -> pd.DataFrame:
+    """Calibrate the sales-survival shape to reported base-year class stock.
+
+    Cohort age is base year minus sale year; cumulative survival includes age zero.
+    Registered history is a bounded reconstruction, not evidence of zero older stock.
+    Raw sales and survivors remain unchanged in the audit; the explicit multiplier
+    scales only modelled cohort sizes to the independently reported CEUD stock.
+    Fuel allocation is performed separately using the existing registration proxies.
+    """
+    records = []
+    for road_class, sales_selector in rules["ceud_sales_series"].items():
+        selector = rules["fixed_lifetime_sources"][road_class]
+        source_id = ("ontario_report_a_weighted_nhtsa_cafe"
+                     if selector["kind"] == "ceud_median" else selector["source_id"])
+        source_class = selector.get("target_class", selector.get("curve_source_class"))
+        selected = transformed_curves.loc[
+            transformed_curves.source_id.eq(source_id)
+            & transformed_curves.source_class.eq(source_class)
+        ]
+        if "road_class" in selected:
+            selected = selected.loc[selected.road_class.eq(road_class)]
+        if selected.empty or selected.age.duplicated().any():
+            raise ValueError(f"Missing or duplicate sales survival schedule: {road_class}")
+        survival = selected.set_index("age").survival_probability.sort_index()
+        if (not isfinite(float(survival.get(0, float("nan"))))
+                or abs(float(survival.loc[0]) - 1) > 1e-10
+                or survival.map(lambda x: not isfinite(x) or not 0 <= x <= 1).any()
+                or survival.diff().dropna().gt(1e-10).any()):
+            raise ValueError(f"Invalid cumulative sales survival schedule: {road_class}")
+        stock_selector = rules["ceud_stock_series"][road_class]
+        for region in regions:
+            sales = provincial.loc[
+                provincial.region.eq(region)
+                & provincial.table_id.eq(sales_selector["table_id"])
+                & provincial.raw_series.eq(sales_selector["raw_series"])
+                & provincial.year.le(base_year)
+            ].sort_values("year")
+            stock = provincial.loc[
+                provincial.region.eq(region) & provincial.year.eq(base_year)
+                & provincial.table_id.eq(stock_selector["table_id"])
+                & provincial.raw_series.eq(stock_selector["raw_series"])
+            ]
+            if (sales.empty or sales.year.duplicated().any()
+                    or set(sales.unit) != {"thousands"} or len(stock) != 1
+                    or stock.iloc[0].unit != "thousands"):
+                raise ValueError(f"Missing, duplicate or wrong-unit CEUD sales/stock: {(region, road_class)}")
+            source_start = int(sales.year.min())
+            start = max(source_start, history_start)
+            sales = sales.loc[sales.year.ge(start)]
+            if sales.year.tolist() != list(range(start, base_year + 1)):
+                raise ValueError(f"Incomplete CEUD annual sales history: {(region, road_class)}")
+            if sales.value.map(lambda x: not isfinite(x) or x < 0).any():
+                raise ValueError(f"Invalid CEUD sales: {(region, road_class)}")
+            observed_stock = float(stock.iloc[0].value)
+            if not isfinite(observed_stock) or observed_stock < 0:
+                raise ValueError(f"Invalid CEUD comparison stock: {(region, road_class)}")
+            ages = base_year - sales.year
+            missing_ages = set(ages) - set(survival.index)
+            terminal_age = int(survival.index[-1]) if survival.iloc[-1] == 0 else None
+            if missing_ages and (terminal_age is None or any(age <= terminal_age for age in missing_ages)):
+                raise ValueError(f"Sales history exceeds accepted survival coverage: {(region, road_class)}")
+            fractions = ages.map(survival).fillna(0.0)
+            raw_survivors = float((sales.value * fractions).sum())
+            if not isfinite(raw_survivors) or raw_survivors <= 0:
+                raise ValueError(f"No positive surviving sales for CEUD stock calibration: {(region, road_class)}")
+            multiplier = observed_stock / raw_survivors
+            if not isfinite(multiplier):
+                raise ValueError(f"Invalid sales stock calibration multiplier: {(region, road_class)}")
+            logging.info(
+                "Sales-survival stock calibration %s/%s at %s: raw survivors %.9g k vehicles; "
+                "CEUD target %.9g k vehicles; multiplier %.9g",
+                region, road_class, base_year, raw_survivors, observed_stock, multiplier,
+            )
+            for row in sales.itertuples(index=False):
+                age = base_year - int(row.year)
+                fraction = float(survival.get(age, 0.0))
+                records.append({
+                    "ceud_region": region, "road_class": road_class,
+                    "vintage_year": int(row.year), "age": age,
+                    "sales_k_vehicles": float(row.value),
+                    "calibrated_acquisitions_k_vehicles": float(row.value) * multiplier,
+                    "survival_probability": fraction,
+                    "surviving_k_vehicles": float(row.value) * fraction,
+                    "stock_calibration_multiplier": multiplier,
+                    "calibrated_surviving_k_vehicles": float(row.value) * fraction * multiplier,
+                    "stock_calibration_basis": "base_year_ceud_stock",
+                    "ceud_stock_k_vehicles": observed_stock,
+                    "stock_observed_year": int(stock.iloc[0].get("ceud_observed_year", base_year)),
+                    "stock_observation_status": str(stock.iloc[0].get("ceud_value_status", "observed")),
+                    "source_history_start": source_start,
+                    "included_history_start": start,
+                    "older_history_status": "not_reconstructed",
+                    "survival_source_id": source_id, "survival_source_class": source_class,
+                    "observation_status": getattr(row, "ceud_value_status", "observed"),
+                })
+    return pd.DataFrame(records)
+
+
+def distribute_existing_road_capacity(
+    *,
+    provincial: pd.DataFrame,
+    report5_age: pd.DataFrame,
+    ldv_registrations: pd.DataFrame,
+    truck_registrations: pd.DataFrame,
+    dashboard: pd.DataFrame,
+    regions: list[str],
+    period_config: ScenarioPeriods,
+    vehicle_population_year: int,
+    survival_curves: bool,
+    survival_curve_max_age: int | None,
+    fixed_lifetimes_by_class: Mapping[str, float],
+    curve_ages_by_class: Mapping[str, set[int]],
+    rules: dict[str, Any],
+    sales_cohorts: pd.DataFrame | None = None,
+    annual_survival: pd.DataFrame | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Allocate annual sales cohorts and the motorcycle Report 5 age distribution.
+
+    The production caller always uses sales_survival for the five sales-supported
+    road classes. Motorcycles retain Report 5 stock ages.
+    The returned annual shares also carry exact grouped-curve retirement summaries
+    and annual losses in their attrs for the caller's published audit.
+    """
+    base_year = period_config.base_year
+    sales_keys = set() if sales_cohorts is None or sales_cohorts.empty else set(
+        zip(sales_cohorts.ceud_region, sales_cohorts.road_class, strict=True)
+    )
+    expected_sales = {(region, name) for region in regions for name in rules["ceud_sales_series"]}
+    if sales_keys != expected_sales:
+        raise ValueError("Production road cohorts require complete regional car/truck sales coverage")
+    age_classes = {name for name in rules["ceud_stock_series"]
+                   if any((region, name) not in sales_keys for region in regions)}
+    periods = period_config.existing
+    first_model_period = period_config.model[0]
+    if (
+        rules["first_model_period_rule"] != "positive_surviving_capacity"
+        or rules["ineligible_cohort_redistribution"]
+        != "proportional_to_eligible_capacity"
+        or first_model_period < base_year
+    ):
+        raise ValueError("Unsupported road first-model-period eligibility rule")
+    if set(fixed_lifetimes_by_class) != set(rules["ceud_stock_series"]):
+        raise ValueError("Missing fixed lifetime for one or more road classes")
+    curve_classes = set(rules["survival_curve_classes"])
+    if survival_curves and set(curve_ages_by_class) != curve_classes:
+        raise ValueError("Accepted curves do not cover configured road classes")
+    composite_mode = survival_curves
+    if composite_mode and annual_survival is None:
+        raise ValueError("Sales capacity with survival curves requires the shared annual survival schedules")
+    historical_fuels = set(rules["historical_fuel_types"])
+    if historical_fuels != {"Gasoline", "Diesel"}:
+        raise ValueError("Historical fuel rule must select gasoline and diesel")
+    age_map: dict[str, pd.DataFrame] = {}
+    for name, source_class in rules["report5_age_classes"].items():
+        if name not in age_classes:
+            continue
+        selected = report5_age.loc[
+            report5_age["VEHICLE_CLASS"].eq(source_class)
+            & report5_age["year"].eq(vehicle_population_year)
+        ]
+        if selected.empty or selected["AGE"].duplicated().any():
+            raise ValueError(f"Missing or duplicate Report 5 age rows for {name}")
+        by_age = (
+            selected[["AGE", "AGE_DIST"]]
+            .rename(columns={"AGE": "age", "AGE_DIST": "age_share"})
+            .copy()
+        )
+        by_age["age"] = pd.to_numeric(by_age["age"], errors="raise").astype(int)
+        age_map[name] = by_age
+    for name, ages in age_map.items():
+        if (
+            (ages["age"] < 0).any()
+            or ages["age"].duplicated().any()
+            or not abs(float(ages["age_share"].sum()) - 1) < 1e-8
+        ):
+            raise ValueError(f"Invalid MTO age distribution for {name}")
+
+    stock_rows: list[dict[str, Any]] = []
+    for region in regions:
+        local = provincial.loc[
+            provincial["region"].eq(region) & provincial["year"].eq(base_year)
+        ]
+        for name, selector in rules["ceud_stock_series"].items():
+            source = local.loc[
+                local["table_id"].eq(int(selector["table_id"]))
+                & local["raw_series"].eq(selector["raw_series"])
+            ]
+            if len(source) != 1 or source.iloc[0]["unit"] != "thousands":
+                raise ValueError(
+                    f"Missing or wrong-unit CEUD road stock: {(region, name)}"
+                )
+            stock = float(source.iloc[0]["value"])
+            if not isfinite(stock) or stock < 0:
+                raise ValueError(f"Invalid CEUD road stock: {(region, name)}")
+            is_sales = (region, name) in sales_keys
+            observed_stock = stock
+            sales_raw_by_age = {}
+            acquisitions_by_age = {}
+            calibrated_acquisitions_by_age = {}
+            calibration_multiplier = None
+            if is_sales:
+                selected_sales = sales_cohorts.loc[
+                    sales_cohorts.ceud_region.eq(region) & sales_cohorts.road_class.eq(name)
+                ]
+                raw_stock = float(selected_sales.surviving_k_vehicles.sum())
+                calibrated_stock = float(selected_sales.calibrated_surviving_k_vehicles.sum())
+                if not isfinite(raw_stock) or raw_stock <= 0:
+                    raise ValueError(f"No surviving sales for {(region, name)}")
+                if (selected_sales.age.duplicated().any()
+                        or not selected_sales.stock_calibration_basis.eq("base_year_ceud_stock").all()
+                        or selected_sales.stock_calibration_multiplier.nunique() != 1
+                        or selected_sales[["surviving_k_vehicles", "calibrated_surviving_k_vehicles"]].map(
+                            lambda value: not isfinite(value) or value < 0
+                        ).any().any()
+                        or not all(isclose(row.calibrated_surviving_k_vehicles,
+                                           row.surviving_k_vehicles * row.stock_calibration_multiplier,
+                                           abs_tol=1e-9, rel_tol=1e-12)
+                                   for row in selected_sales.itertuples())
+                        or not isclose(calibrated_stock, observed_stock, abs_tol=1e-9, rel_tol=1e-12)):
+                    raise ValueError(f"Sales cohorts do not preserve their CEUD stock calibration: {(region, name)}")
+                calibration_multiplier = float(selected_sales.stock_calibration_multiplier.iloc[0])
+                sales_raw_by_age = selected_sales.set_index("age").surviving_k_vehicles.to_dict()
+                acquisitions_by_age = selected_sales.set_index("age").sales_k_vehicles.to_dict()
+                calibrated_acquisitions_by_age = (
+                    selected_sales.set_index("age").sales_k_vehicles * calibration_multiplier
+                ).to_dict()
+                ages = selected_sales.assign(
+                    age_share=(selected_sales.calibrated_surviving_k_vehicles / stock
+                               if stock > 0 else selected_sales.surviving_k_vehicles / raw_stock),
+                )
+            else:
+                ages = age_map[name]
+            uses_curves = survival_curves and name in curve_classes
+            eligibility_basis = ("annual_sales_survival" if uses_curves and is_sales else
+                                 "accepted_survival_curve_support" if uses_curves else "fixed_lifetime")
+            eligible_age_rows: list[tuple[int, int, float, bool, bool]] = []
+            for age_row in ages.itertuples(index=False):
+                actual_year = base_year - int(age_row.age)
+                year = max(periods[0], actual_year)
+                within_history = actual_year >= periods[0]
+                if uses_curves:
+                    first_period_age = first_model_period - actual_year
+                    model_age = first_model_period - period_config.existing_vintage(year)
+                    age_limit = survival_curve_max_age if survival_curve_max_age is not None else max(curve_ages_by_class[name])
+                    eligible = within_history if is_sales else (
+                        within_history
+                        and first_period_age <= age_limit
+                        and first_period_age in curve_ages_by_class[name]
+                        and model_age + period_config.step - 1 <= age_limit
+                        and model_age in curve_ages_by_class[name]
+                    )
+                else:
+                    eligible = (
+                        within_history
+                        and actual_year + float(fixed_lifetimes_by_class[name])
+                        > first_model_period
+                        and period_config.existing_vintage(year)
+                        + float(fixed_lifetimes_by_class[name]) > first_model_period
+                    )
+                eligible_age_rows.append(
+                    (
+                        int(age_row.age), year, float(age_row.age_share),
+                        within_history, eligible,
+                    )
+                )
+            history_share = sum(
+                share for _, _, share, within_history, _ in eligible_age_rows
+                if within_history
+            )
+            if history_share <= 0:
+                raise ValueError(f"No MTO age evidence in historical coverage for {(region, name)}")
+            for age, year, age_share, within_history, eligible in eligible_age_rows:
+                vintage = period_config.existing_vintage(year)
+                stock_rows.append(
+                    {
+                        "ceud_region": region,
+                        "region": rules["region_output_map"].get(region, region),
+                        "road_class": name,
+                        "age": age,
+                        "vintage_year": year,
+                        "vintage": vintage,
+                        "age_share": age_share,
+                        "within_historical_coverage": within_history,
+                        "eligible_first_model_period": eligible,
+                        "eligibility_basis": eligibility_basis,
+                        "fixed_lifetime_years": None if uses_curves else float(fixed_lifetimes_by_class[name]),
+                        "first_model_period": first_model_period,
+                        "stock_k_vehicles": stock,
+                        "ceud_stock_k_vehicles": observed_stock,
+                        "stock_method": "sales_survival" if is_sales else "stock_age",
+                        "stock_calibration_multiplier": calibration_multiplier,
+                        "uncalibrated_surviving_k_vehicles": sales_raw_by_age.get(age),
+                        "raw_acquisitions_k_vehicles": acquisitions_by_age.get(age),
+                        "calibrated_acquisitions_k_vehicles": calibrated_acquisitions_by_age.get(age),
+                        "raw_cohort_k_vehicles": stock * age_share,
+                        "reference_cohort_k_vehicles": stock * age_share / history_share
+                        if within_history
+                        else 0.0,
+                        "age_source": "CEUD sales times cumulative survival" if is_sales else "MTO Report A mapped"
+                        if name in rules["statcan_ldv_source_types"]
+                        else "MTO Report 5",
+                    }
+                )
+    cohorts = pd.DataFrame(stock_rows)
+    reference_cohorts = cohorts.loc[cohorts["within_historical_coverage"]]
+    share_rows: list[dict[str, Any]] = []
+    excluded_rows: list[dict[str, Any]] = []
+    fuel_technologies = rules["fuel_technology"]
+    share_proxy = rules["share_region_proxy"]
+    dashboard_by_region = dashboard.set_index("source_region")["ytd_market_share"]
+
+    for (region, name, vintage_year, vintage), group in reference_cohorts.groupby(
+        ["ceud_region", "road_class", "vintage_year", "vintage"], sort=True
+    ):
+        if name in rules["statcan_ldv_source_types"]:
+            source_region = share_proxy.get(region, region)
+        elif name in {"medium_trucks", "heavy_trucks"}:
+            source_region = "BC" if region == "BCT" else region
+        else:
+            source_region = region
+        source_year: int | None = None
+        historical_backfill = False
+        counts: dict[str, float]
+        if name in rules["statcan_ldv_source_types"]:
+            selected = ldv_registrations.loc[
+                ldv_registrations["scenario_region"].eq(source_region)
+                & ldv_registrations["vehicle_type"].isin(
+                    rules["statcan_ldv_source_types"][name]
+                )
+            ]
+        elif name == "medium_trucks":
+            selected = truck_registrations.loc[
+                truck_registrations["scenario_region"].eq(source_region)
+                & truck_registrations["vehicle_type"].isin(
+                    rules["statcan_medium_source_types"]
+                )
+            ].copy()
+            selected["reference_year"] = selected["reference_period"].astype(int)
+        elif name == "heavy_trucks":
+            selected = truck_registrations.loc[
+                truck_registrations["scenario_region"].eq(source_region)
+                & truck_registrations["vehicle_type"].eq(
+                    rules["statcan_heavy_source_type"]
+                )
+            ].copy()
+            selected["reference_year"] = selected["reference_period"].astype(int)
+        else:
+            selected = pd.DataFrame()
+        if name == "motorcycles":
+            counts = {next(iter(fuel_technologies[name])): 1.0}
+            source_table_ids = ""
+        else:
+            selected = selected.loc[selected["scaled_value"].notna()].copy()
+            available = sorted(
+                int(year)
+                for year in selected["reference_year"].unique()
+                if int(year) <= base_year
+            )
+            if not available:
+                raise ValueError(
+                    f"No fuel registrations for {(region, name)} via {source_region}"
+                )
+            historical_backfill = vintage_year < available[0]
+            source_year = max(
+                (year for year in available if year <= vintage_year),
+                default=available[0],
+            )
+            selected = selected.loc[selected["reference_year"].eq(source_year)]
+            source_table_ids = (
+                "|".join(sorted(set(selected["source_table_id"])))
+                if "source_table_id" in selected
+                else "23-10-0308-01"
+            )
+            counts = selected.groupby("fuel_type")["scaled_value"].sum().to_dict()
+            if not counts or any(
+                not isfinite(float(value)) or float(value) < 0
+                for value in counts.values()
+            ):
+                raise ValueError(
+                    f"Invalid fuel registrations for {(region, name, source_year)}"
+                )
+        total = sum(counts.values())
+        supported = fuel_technologies[name]
+        eligible_fuels = set(supported)
+        vintage_excluded_fuels = (
+            set(rules.get("latest_vintage_only_fuels", {}).get(name, []))
+            if vintage != period_config.latest_observed_vintage else set()
+        )
+        eligible_fuels -= vintage_excluded_fuels
+        if historical_backfill:
+            eligible_fuels &= historical_fuels
+        selected_total = sum(
+            value for fuel, value in counts.items() if fuel in eligible_fuels
+        )
+        if total <= 0 or selected_total <= 0:
+            raise ValueError(
+                f"No supported fuel registrations for {(region, name, source_year)}"
+            )
+        for fuel, value in counts.items():
+            if fuel not in eligible_fuels and value > 0:
+                excluded_rows.append(
+                    {
+                        "ceud_region": region,
+                        "road_class": name,
+                        "vintage_year": vintage_year,
+                        "source_region": source_region,
+                        "source_year": source_year,
+                        "fuel_type": fuel,
+                        "excluded_source_share": value / total,
+                        "exclusion_reason": (
+                            "configured_latest_vintage_only_fuel"
+                            if fuel in vintage_excluded_fuels else
+                            "pre_evidence_non_combustion"
+                            if historical_backfill and fuel in supported else
+                            "unsupported_existing_technology"
+                        ),
+                    }
+                )
+        shares = {
+            fuel: value / selected_total
+            for fuel, value in counts.items()
+            if fuel in eligible_fuels
+        }
+        if name == "medium_trucks" and vintage == period_config.latest_observed_vintage:
+            dashboard_label = (
+                "British Columbia"
+                if region == "BCT"
+                else (
+                    "Newfoundland and Labrador"
+                    if region == "NL"
+                    else ("Prince Edward Island" if region == "PE" else None)
+                )
+            )
+            if dashboard_label is None:
+                dashboard_label = {
+                    "AB": "Alberta",
+                    "MB": "Manitoba",
+                    "NB": "New Brunswick",
+                    "NS": "Nova Scotia",
+                    "ON": "Ontario",
+                    "QC": "Quebec",
+                    "SK": "Saskatchewan",
+                }[region]
+            if dashboard_label not in dashboard_by_region or pd.isna(
+                dashboard_by_region[dashboard_label]
+            ):
+                raise ValueError(f"No dashboard share for {region}")
+            bev_share = float(dashboard_by_region[dashboard_label])
+            combustion = sum(shares.get(fuel, 0.0) for fuel in ("Gasoline", "Diesel"))
+            if combustion <= 0:
+                raise ValueError(f"No combustion mix for dashboard override: {region}")
+            shares = {
+                fuel: (1 - bev_share) * shares.get(fuel, 0.0) / combustion
+                for fuel in ("Gasoline", "Diesel")
+            }
+            shares["Battery electric"] = bev_share
+        if not abs(sum(shares.values()) - 1) < 1e-9:
+            raise ValueError(
+                f"Fuel shares do not sum to one for {(region, name, vintage_year)}"
+            )
+        for fuel, share in shares.items():
+            share_rows.append(
+                {
+                    "ceud_region": region,
+                    "region": rules["region_output_map"].get(region, region),
+                    "road_class": name,
+                    "vintage_year": vintage_year,
+                    "vintage": vintage,
+                    "fuel_type": fuel,
+                    "tech": supported[fuel],
+                    "fuel_share": share,
+                    "source_region": source_region,
+                    "source_year": source_year,
+                    "source_table_ids": source_table_ids,
+                    "proxy_geography": source_region != region,
+                    "dashboard_override": name == "medium_trucks"
+                    and vintage == period_config.latest_observed_vintage,
+                    "historical_combustion_backfill": historical_backfill,
+                    "eligible_first_model_period": bool(
+                        group["eligible_first_model_period"].iloc[0]
+                    ),
+                    "reference_cohort_k_vehicles": group[
+                        "reference_cohort_k_vehicles"
+                    ].sum(),
+                    "raw_capacity": group["reference_cohort_k_vehicles"].sum() * share,
+                    "raw_acquisitions_k_vehicles": (
+                        group["raw_acquisitions_k_vehicles"].sum(min_count=1) * share
+                    ),
+                    "calibrated_acquisitions_k_vehicles": (
+                        group["calibrated_acquisitions_k_vehicles"].sum(min_count=1) * share
+                    ),
+                }
+            )
+    shares_frame = pd.DataFrame(share_rows)
+    # Estimate the technology mix before retirement. Lifetime choices may move
+    # stock between its supported vintages, but cannot change its powertrain.
+    technology_keys = ["region", "road_class", "tech"]
+    target = shares_frame.groupby(technology_keys)["raw_capacity"].transform("sum")
+    eligible = shares_frame["raw_capacity"].where(
+        shares_frame["eligible_first_model_period"], 0.0
+    )
+    supported = eligible.groupby(
+        [shares_frame[column] for column in technology_keys]
+    ).transform("sum")
+    unsupported = target.gt(0) & supported.le(0)
+    if unsupported.any():
+        examples = shares_frame.loc[unsupported, technology_keys].drop_duplicates()
+        raise ValueError(
+            "Positive road technology stock has no eligible same-technology cohort: "
+            + str(examples.to_dict("records"))
+        )
+    shares_frame["target_technology_stock_k_vehicles"] = target
+    shares_frame["eligible_technology_stock_k_vehicles"] = supported
+    shares_frame["redistribution_factor"] = target.div(
+        supported.where(supported.gt(0), 1.0)
+    ).where(shares_frame["eligible_first_model_period"], 0.0)
+    shares_frame["capacity"] = eligible * shares_frame["redistribution_factor"]
+    cohort_keys = ["region", "road_class", "vintage_year", "vintage"]
+    allocated_cohorts = shares_frame.groupby(cohort_keys)["capacity"].sum()
+    cohorts["cohort_k_vehicles"] = pd.MultiIndex.from_frame(
+        cohorts[cohort_keys]
+    ).map(allocated_cohorts).fillna(0.0)
+    cohorts["cohort_k_vehicles"] = cohorts["cohort_k_vehicles"].where(
+        cohorts["eligible_first_model_period"], 0.0
+    )
+    cohorts["redistribution_factor"] = cohorts["cohort_k_vehicles"].div(
+        cohorts["reference_cohort_k_vehicles"].where(
+            cohorts["reference_cohort_k_vehicles"].gt(0), 1.0
+        )
+    )
+    shares_frame["cohort_k_vehicles"] = pd.MultiIndex.from_frame(
+        shares_frame[cohort_keys]
+    ).map(allocated_cohorts)
+    shares_frame["allocated_fuel_share"] = shares_frame["capacity"].div(
+        shares_frame["cohort_k_vehicles"].where(
+            shares_frame["cohort_k_vehicles"].gt(0), 1.0
+        )
+    )
+    allocated_totals = shares_frame.groupby(technology_keys)["capacity"].transform("sum")
+    if not (allocated_totals - target).abs().le(1e-7).all():
+        raise ValueError("Road allocation does not conserve each technology's stock")
+    class_keys = ["region", "road_class"]
+    class_targets = cohorts.groupby(class_keys).ceud_stock_k_vehicles.first()
+    class_allocated = shares_frame.groupby(class_keys).capacity.sum().reindex(class_targets.index)
+    if class_allocated.isna().any() or not all(
+        isclose(actual, expected, abs_tol=1e-7, rel_tol=1e-12)
+        for actual, expected in zip(class_allocated, class_targets, strict=True)
+    ):
+        raise ValueError("Road allocation does not preserve each region/class CEUD stock target")
+    shares_frame["solver_capacity_k_vehicles"] = shares_frame.capacity
+    shares_frame["capacity_basis"] = "reference_year_surviving_stock"
+    shares_frame["solver_reference_stock_k_vehicles"] = shares_frame.capacity
+    shares_frame["grouped_tail_reference_loss_k_vehicles"] = 0.0
+    capacity = shares_frame.groupby(
+        ["region", "road_class", "tech", "vintage"], as_index=False
+    )["capacity"].sum()
+    if composite_mode:
+        from parameterization.road_cohort_survival import build_composite_cohorts
+
+        acquisitions = shares_frame.loc[shares_frame.road_class.isin(curve_classes), [
+            "region", "road_class", "tech", "vintage_year", "vintage", "calibrated_acquisitions_k_vehicles",
+        ]]
+        composite = build_composite_cohorts(
+            acquisitions, annual_survival, reference_year=base_year,
+            first_model_period=first_model_period,
+        )
+        annual_keys = ["region", "tech", "vintage", "vintage_year"]
+        native = composite.physical_stock.set_index(annual_keys)
+        curve_rows = shares_frame.road_class.isin(curve_classes)
+        curve_index = pd.MultiIndex.from_frame(shares_frame.loc[curve_rows, annual_keys])
+        reconstructed = native.physical_stock_k_vehicles.reindex(curve_index).fillna(0.0).to_numpy()
+        if not all(isclose(left, right, abs_tol=1e-8, rel_tol=1e-12)
+                   for left, right in zip(reconstructed, shares_frame.loc[curve_rows, "capacity"], strict=True)):
+            raise ValueError("Survival curves do not reproduce calibrated annual physical stock")
+        shares_frame.loc[curve_rows, "solver_capacity_k_vehicles"] = (
+            native.installed_equivalent_k_vehicles.reindex(curve_index).fillna(0.0).to_numpy()
+        )
+        for field in ("solver_reference_stock_k_vehicles", "grouped_tail_reference_loss_k_vehicles"):
+            shares_frame.loc[curve_rows, field] = native[field].reindex(curve_index).fillna(0.0).to_numpy()
+        if not (
+            shares_frame.loc[curve_rows, "solver_reference_stock_k_vehicles"]
+            + shares_frame.loc[curve_rows, "grouped_tail_reference_loss_k_vehicles"]
+            - shares_frame.loc[curve_rows, "capacity"]
+        ).abs().le(1e-8).all():
+            raise ValueError("Survival-curve stock and recorded early retirements do not match reference-year vehicles")
+        shares_frame.attrs["vintage_curve_audit"] = composite.audit.to_dict("records")
+        shares_frame.attrs["curve_tail_retirements"] = composite.tail_losses.to_dict("records")
+        active_keys = pd.MultiIndex.from_frame(composite.capacity[["region", "tech", "vintage"]])
+        represented = pd.MultiIndex.from_frame(shares_frame[["region", "tech", "vintage"]]).isin(active_keys)
+        shares_frame.loc[curve_rows & ~represented, "solver_capacity_k_vehicles"] = 0.0
+        shares_frame.loc[curve_rows, "capacity_basis"] = "installed_capacity_before_survival"
+        capacity = pd.concat([
+            capacity.loc[~capacity.road_class.isin(curve_classes)], composite.capacity,
+        ], ignore_index=True)
+    capacity = capacity.loc[capacity["capacity"].gt(0)].reset_index(drop=True)
+    capacity["units"] = "k vehicles"
+    return cohorts, shares_frame, pd.DataFrame(excluded_rows), capacity
+
+
+def distribute_existing_bus_capacity(
+    *,
+    provincial: pd.DataFrame,
+    report5_age: pd.DataFrame,
+    annual_efficiency: pd.DataFrame,
+    lifetimes: Mapping[tuple[str, str], float],
+    regions: list[str],
+    period_config: ScenarioPeriods,
+    vehicle_population_year: int,
+    road_rules: Mapping[str, Any],
+    rules: Mapping[str, Any],
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Allocate CEUD bus stocks with annual fuel activity and MTO age shares."""
+    supported = {
+        "activity_share_method": "annual_energy_times_efficiency",
+        "pre_ceud_year_rule": "oldest_available_activity_share",
+        "first_model_period_rule": "positive_surviving_capacity",
+        "ineligible_cohort_redistribution": "proportional_to_eligible_capacity",
+        "unallocatable_technology_rule": "redistribute_within_class_proportionally",
+    }
+    if any(rules[key] != value for key, value in supported.items()):
+        raise ValueError("Unsupported bus capacity allocation policy")
+    base_year = period_config.base_year
+    periods = period_config.existing
+    first_model_period = period_config.model[0]
+    age = report5_age.loc[report5_age["VEHICLE_CLASS"].eq(rules["age_class"])].copy()
+    if (
+        age.empty
+        or set(age["year"]) != {vehicle_population_year}
+        or age["AGE"].duplicated().any()
+        or age["AGE_DIST"].isna().any()
+        or (age["AGE_DIST"] < 0).any()
+        or abs(float(age["AGE_DIST"].sum()) - 1) > 1e-8
+    ):
+        raise ValueError("Invalid selected MTO Report 5 BUS age distribution")
+    if first_model_period < base_year:
+        raise ValueError("The first model period cannot precede bus base-year stock")
+    source_to_powertrain = {
+        member: powertrain
+        for powertrain, members in rules["fuel_source_members"].items()
+        for member in members
+    }
+    if len(source_to_powertrain) != sum(
+        len(members) for members in rules["fuel_source_members"].values()
+    ):
+        raise ValueError("Bus CEUD fuel members map to multiple powertrains")
+    excluded_members = set(rules["excluded_fuel_members"])
+    if excluded_members & set(source_to_powertrain):
+        raise ValueError("Bus fuel cannot be both included and excluded")
+    required_members = set(rules["required_fuel_members"])
+    if not required_members.issubset(source_to_powertrain):
+        raise ValueError("Required bus fuel members lack powertrain mappings")
+    first_year = periods[0]
+    years = set(range(first_year, base_year + 1))
+    stock_records = []
+    fuel_records = []
+    excluded_records = []
+    expected_owners = set()
+    for road_class, spec in rules["classes"].items():
+        prefix = spec["energy_prefix"]
+        owners = spec["fuel_technology"]
+        expected_owners.update(owners.values())
+        allowed_members = {
+            member
+            for powertrain in owners
+            for member in rules["fuel_source_members"][powertrain]
+        }
+        required_for_class = {
+            member for member in allowed_members if member in required_members
+        }
+        for region in regions:
+            local = provincial.loc[provincial["region"].eq(region)]
+            selected_stock = local.loc[
+                local["year"].eq(base_year)
+                & local["table_id"].eq(int(spec["stock"]["table_id"]))
+                & local["raw_series"].eq(spec["stock"]["raw_series"])
+            ]
+            if len(selected_stock) != 1 or selected_stock.iloc[0]["unit"] != "thousands":
+                raise ValueError(f"Missing CEUD bus stock for {(region, road_class)}")
+            stock = float(selected_stock.iloc[0]["value"])
+            if not isfinite(stock) or stock < 0:
+                raise ValueError(f"Invalid CEUD bus stock for {(region, road_class)}")
+            stock_records.append(
+                {
+                    "ceud_region": region,
+                    "region": road_rules["region_output_map"].get(region, region),
+                    "road_class": road_class,
+                    "stock_k_vehicles": stock,
+                }
+            )
+            source = local.loc[
+                local["table_id"].eq(int(spec["energy_table"]))
+                & local["raw_series"].str.startswith(prefix)
+                & local["year"].isin(years)
+            ].copy()
+            source["fuel_member"] = source["raw_series"].str.removeprefix(prefix)
+            if source.duplicated(["year", "fuel_member"]).any():
+                raise ValueError(f"Duplicate CEUD bus fuel cells: {(region, road_class)}")
+            if set(source["unit"]) != {"PJ"}:
+                raise ValueError(f"Bus fuel units must be PJ: {(region, road_class)}")
+            if source["value"].map(lambda value: not isfinite(value) or value < 0).any():
+                raise ValueError(f"Invalid CEUD bus fuel use: {(region, road_class)}")
+            for member in required_for_class:
+                if set(source.loc[source["fuel_member"].eq(member), "year"]) != years:
+                    raise ValueError(
+                        f"Incomplete CEUD bus fuel history: {(region, road_class, member)}"
+                    )
+            unknown = source.loc[
+                ~source["fuel_member"].isin(allowed_members | excluded_members)
+                & source["value"].gt(0)
+            ]
+            if not unknown.empty:
+                raise ValueError(
+                    f"Unmapped positive CEUD bus fuel: {(region, road_class, sorted(unknown['fuel_member'].unique()))}"
+                )
+            total_energy = source.groupby("year")["value"].sum()
+            for record in source.itertuples(index=False):
+                member = record.fuel_member
+                if member in allowed_members:
+                    fuel_records.append(
+                        {
+                            "ceud_region": region,
+                            "road_class": road_class,
+                            "year": int(record.year),
+                            "powertrain": source_to_powertrain[member],
+                            "fuel_member": member,
+                            "energy_pj": float(record.value),
+                        }
+                    )
+                elif member in excluded_members and record.value > 0:
+                    excluded_records.append(
+                        {
+                            "ceud_region": region,
+                            "road_class": road_class,
+                            "year": int(record.year),
+                            "fuel_member": member,
+                            "excluded_energy_pj": float(record.value),
+                            "excluded_energy_share": float(record.value)
+                            / float(total_energy.loc[record.year]),
+                        }
+                    )
+    stocks = pd.DataFrame(stock_records)
+    fuel = pd.DataFrame(fuel_records)
+    fuel["is_blend"] = fuel["fuel_member"].isin(
+        {member for members in rules["fuel_source_members"].values() for member in members[1:]}
+    )
+    fuel["blend_energy_pj"] = fuel["energy_pj"].where(fuel["is_blend"], 0.0)
+    energy = fuel.groupby(
+        ["ceud_region", "road_class", "year", "powertrain"], as_index=False
+    )[["energy_pj", "blend_energy_pj"]].sum()
+    efficiency = annual_efficiency.loc[
+        annual_efficiency["road_class"].isin(rules["classes"])
+    ].copy()
+    if (
+        set(efficiency["tech"]) != expected_owners
+        or efficiency.duplicated(["ceud_region", "tech", "year"]).any()
+        or set(efficiency["units"]) != {"bn passenger-km/PJ"}
+    ):
+        raise ValueError("Bus annual efficiency owner, key, or unit mismatch")
+    expected_keys = {
+        (region, tech, year)
+        for region in regions
+        for tech in expected_owners
+        for year in years
+    }
+    if {
+        (r.ceud_region, r.tech, r.year) for r in efficiency.itertuples(index=False)
+    } != expected_keys:
+        raise ValueError("Bus annual efficiency lacks regional or year coverage")
+    shares = efficiency.merge(
+        energy,
+        on=["ceud_region", "road_class", "year", "powertrain"],
+        how="left",
+        validate="one_to_one",
+    )
+    shares[["energy_pj", "blend_energy_pj"]] = shares[
+        ["energy_pj", "blend_energy_pj"]
+    ].fillna(0.0)
+    shares["activity_bn_passenger_km"] = shares["energy_pj"] * shares["efficiency"]
+    group_keys = ["ceud_region", "road_class", "year"]
+    totals = shares.groupby(group_keys)["activity_bn_passenger_km"].transform("sum")
+    if totals.le(0).any():
+        raise ValueError("Bus fuel activity has no supported powertrain in a CEUD year")
+    shares["activity_share"] = shares["activity_bn_passenger_km"] / totals
+    age = age[["AGE", "AGE_DIST"]].rename(
+        columns={"AGE": "age", "AGE_DIST": "age_share"}
+    )
+    cohorts = stocks.merge(age, how="cross")
+    cohorts["vintage_year"] = base_year - cohorts["age"].astype(int)
+    cohorts["source_year"] = cohorts["vintage_year"].clip(lower=first_year)
+    cohorts["vintage"] = cohorts["source_year"].map(period_config.existing_vintage)
+    cohorts = cohorts.merge(
+        shares.rename(columns={"year": "source_year"}).drop(columns="region"),
+        on=["ceud_region", "road_class", "source_year"],
+        how="left",
+        validate="many_to_many",
+    )
+    if cohorts["tech"].isna().any():
+        raise ValueError("MTO bus cohort lacks a CEUD/efficiency activity share")
+    life = pd.DataFrame(
+        [
+            {"region": region, "tech": tech, "lifetime_years": value}
+            for (region, tech), value in lifetimes.items()
+            if tech in expected_owners
+        ]
+    )
+    if (
+        life.duplicated(["region", "tech"]).any()
+        or {(r.region, r.tech) for r in life.itertuples(index=False)}
+        != {(road_rules["region_output_map"].get(region, region), tech)
+            for region in regions for tech in expected_owners}
+        or life["lifetime_years"].map(lambda x: not isfinite(x) or x <= 0).any()
+    ):
+        raise ValueError("StatCan bus lifetimes lack complete native owner coverage")
+    cohorts = cohorts.merge(life, on=["region", "tech"], validate="many_to_one")
+    cohorts["raw_cohort_k_vehicles"] = (
+        cohorts["stock_k_vehicles"] * cohorts["age_share"] * cohorts["activity_share"]
+    )
+    cohorts["annual_cohort_eligible"] = (
+        cohorts["vintage_year"] + cohorts["lifetime_years"] > first_model_period
+    )
+    cohorts["model_vintage_eligible"] = (
+        cohorts["vintage"] + cohorts["lifetime_years"] > first_model_period
+    )
+    cohorts["eligible_first_model_period"] = (
+        cohorts["annual_cohort_eligible"] & cohorts["model_vintage_eligible"]
+    )
+    key = ["region", "road_class", "tech"]
+    original = cohorts.groupby(key)["raw_cohort_k_vehicles"].transform("sum")
+    eligible = cohorts["raw_cohort_k_vehicles"].where(
+        cohorts["eligible_first_model_period"], 0.0
+    )
+    surviving = eligible.groupby([cohorts[column] for column in key]).transform("sum")
+    cohorts["redistribution_factor"] = original.div(surviving.where(surviving.gt(0), 1.0))
+    cohorts["capacity"] = eligible * cohorts["redistribution_factor"]
+    summary = cohorts.assign(eligible_stock=eligible).groupby(key, as_index=False).agg(
+        original_stock=("raw_cohort_k_vehicles", "sum"),
+        eligible_stock=("eligible_stock", "sum"),
+    )
+    transfers = []
+    for (region, road_class), group in summary.groupby(["region", "road_class"]):
+        orphaned = group.loc[group.original_stock.gt(0) & group.eligible_stock.le(0)]
+        if orphaned.empty:
+            continue
+        recipients = group.loc[group.eligible_stock.gt(0)]
+        recipient_total = float(recipients.original_stock.sum())
+        if recipient_total <= 0:
+            raise ValueError(
+                f"No eligible bus technology can receive stock: {(region, road_class)}"
+            )
+        orphan_total = float(orphaned.original_stock.sum())
+        for donor in orphaned.itertuples(index=False):
+            for recipient in recipients.itertuples(index=False):
+                transfers.append(
+                    {
+                        "region": region,
+                        "road_class": road_class,
+                        "from_tech": donor.tech,
+                        "to_tech": recipient.tech,
+                        "capacity_k_vehicles": (
+                            float(donor.original_stock)
+                            * float(recipient.original_stock)
+                            / recipient_total
+                        ),
+                        "reason": "no_first_period_eligible_cohort",
+                    }
+                )
+        selected = cohorts.region.eq(region) & cohorts.road_class.eq(road_class)
+        cohorts.loc[selected, "capacity"] *= 1 + orphan_total / recipient_total
+    actual = cohorts.groupby(["ceud_region", "road_class"])["capacity"].sum()
+    expected = stocks.set_index(["ceud_region", "road_class"])["stock_k_vehicles"]
+    if not (actual - expected).abs().le(1e-7).all():
+        raise ValueError("Bus vintage/powertrain allocation does not conserve CEUD stock")
+    capacity = cohorts.groupby(
+        ["region", "road_class", "tech", "vintage"], as_index=False
+    )["capacity"].sum()
+    capacity["units"] = road_rules["output_units"]
+    return (
+        cohorts,
+        shares,
+        pd.DataFrame(
+            excluded_records,
+            columns=[
+                "ceud_region", "road_class", "year", "fuel_member",
+                "excluded_energy_pj", "excluded_energy_share",
+            ],
+        ),
+        pd.DataFrame(
+            transfers,
+            columns=[
+                "region", "road_class", "from_tech", "to_tech",
+                "capacity_k_vehicles", "reason",
+            ],
+        ),
+        capacity,
+    )
+
+
+def derive_road_baseline_demand(
+    provincial: pd.DataFrame, *, regions: list[str], base_year: int,
+    rules: dict[str, Any],
+) -> pd.DataFrame:
+    """Select CEUD provincial road activity and convert millions to billions."""
+    factor = float(rules["activity_to_billion_factor"])
+    if not isfinite(factor) or factor <= 0:
+        raise ValueError("Road activity conversion factor must be positive and finite")
+    rows: list[dict[str, Any]] = []
+    for service, selector in rules["activity_series"].items():
+        for region in regions:
+            selected = provincial.loc[
+                provincial["region"].eq(region)
+                & provincial["year"].eq(base_year)
+                & provincial["table_id"].eq(int(selector["table_id"]))
+                & provincial["raw_series"].eq(selector["raw_series"])
+            ]
+            if len(selected) != 1 or selected.iloc[0]["unit"] != "millions":
+                raise ValueError(f"Missing or duplicate CEUD road activity for {(region, service, base_year)}")
+            value = float(selected.iloc[0]["value"])
+            if not isfinite(value) or value < 0:
+                raise ValueError(f"Invalid CEUD road activity for {(region, service)}")
+            rows.append({
+                "ceud_region": region,
+                "region": rules["region_output_map"].get(region, region),
+                "service": service,
+                "commodity": selector["commodity"],
+                "units": selector["units"],
+                "baseline_demand": value * factor,
+            })
+    return pd.DataFrame(rows)
+
+
+def extrapolate_passenger_ldv_demand(
+    provincial: pd.DataFrame,
+    baseline: pd.DataFrame,
+    *,
+    regions: list[str],
+    base_year: int,
+    periods: list[int],
+    step: int,
+    gdp_indices: Mapping[int, float],
+    rules: Mapping[str, Any],
+) -> tuple[dict[tuple[str, int, str], float], list[dict[str, Any]]]:
+    """Apply provincial car CAGR and assign the GDP-indexed LDV residual to trucks."""
+    fit_rules = rules["car_extrapolation"]
+    if fit_rules["method"] != "observed_nonpandemic_cagr":
+        raise ValueError("Unsupported car extrapolation method")
+    start_year = int(fit_rules["history_start_year"])
+    if start_year >= base_year:
+        raise ValueError("Car CAGR history must start before the base year")
+    car_selector = rules["activity_series"]["cars"]
+    factor = float(rules["activity_to_billion_factor"])
+    projected: dict[tuple[str, int, str], float] = {}
+    audit: list[dict[str, Any]] = []
+    for ceud_region in regions:
+        history = provincial.loc[
+            provincial["region"].eq(ceud_region)
+            & provincial["table_id"].eq(int(car_selector["table_id"]))
+            & provincial["raw_series"].eq(car_selector["raw_series"])
+            & provincial["year"].between(start_year, base_year)
+        ].sort_values("year")
+        if history.empty or history.year.duplicated().any():
+            raise ValueError(f"Missing or duplicate CEUD car CAGR history for {ceud_region}")
+        if set(history["unit"]) != {"millions"}:
+            raise ValueError(f"CEUD car history unit changed for {ceud_region}")
+        activity = (pd.to_numeric(history["value"], errors="raise") * factor).tolist()
+        if any(not isfinite(value) or value <= 0 for value in activity):
+            raise ValueError(f"CEUD car CAGR endpoints must be finite and positive for {ceud_region}")
+        from parameterization.ceud_inputs import historical_cagr
+
+        annual_cagr, growth_intervals = historical_cagr(
+            history, history_start_year=start_year,
+            excluded_years=fit_rules["excluded_years"],
+        )
+        native_region = rules["region_output_map"].get(ceud_region, ceud_region)
+        car_rows = baseline.loc[
+            baseline["region"].eq(native_region) & baseline["service"].eq("cars")
+        ]
+        truck_rows = baseline.loc[
+            baseline["region"].eq(native_region)
+            & baseline["service"].eq("passenger_light_trucks")
+        ]
+        if len(car_rows) != 1 or len(truck_rows) != 1:
+            raise ValueError(f"Missing passenger LDV baseline for {ceud_region}")
+        car_base = float(car_rows.iloc[0]["baseline_demand"])
+        truck_base = float(truck_rows.iloc[0]["baseline_demand"])
+        if abs(car_base - activity[-1]) > 1e-9:
+            raise ValueError(f"CEUD car history does not match baseline for {ceud_region}")
+        for period in periods:
+            end_year = period + step
+            total = (car_base + truck_base) * float(gdp_indices[period])
+            car = car_base * (1.0 + annual_cagr) ** (end_year - base_year)
+            if not isfinite(total) or total <= 0 or not isfinite(car) or car <= 0:
+                raise ValueError(
+                    f"Invalid passenger LDV projection for {(ceud_region, period)}"
+                )
+            if car > total:
+                raise ValueError(
+                    f"Car projection exceeds GDP-indexed passenger LDV total for {(ceud_region, period)}"
+                )
+            truck = total - car
+            projected[native_region, period, "cars"] = car
+            projected[native_region, period, "passenger_light_trucks"] = truck
+            audit.append({
+                "ceud_region": ceud_region,
+                "region": native_region,
+                "period": period,
+                "projection_year": end_year,
+                "history_start_year": start_year,
+                "annual_car_cagr": annual_cagr,
+                "growth_intervals": "|".join(map(str, growth_intervals)),
+                "car_demand": car,
+                "passenger_light_truck_demand": truck,
+                "combined_gdp_indexed_demand": total,
+            })
+    return projected, audit

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codebase Improver"
+  short_description: "Improve CANOE ETL with evidence and preserved contracts"
+  default_prompt: "Use $codebase-improver to diagnose the affected CANOE execution path and recommend the smallest justified improvement."

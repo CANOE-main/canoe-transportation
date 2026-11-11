@@ -1,2 +1,44 @@
+.obsidian/
+.pandoc/
+.venv/
+.uv-cache/
 __pycache__/
-canoe_on_365d*
+.pytest_cache/
+.pytest-basetemp*/
+.pytest-cache-runtime*/
+.pytest-runtime*/
+.pytest-tmp*/
+.ruff_cache/
+/.tmp_*/
+dist/
+inputs/0_cache/*
+inputs/1_interim/*
+# inputs/2_processed/
+inputs/validation/*
+inputs/playground/
+# outputs/
+# Local rebuilds and notebook state; maintain their producers, not build snapshots.
+/outputs/sqlite/
+/outputs/logs/
+/outputs/validation/*.json
+/outputs/validation/charging_cost_comparison/
+/outputs/validation/transportation_research/
+/outputs/validation/technology_growth/
+/outputs/validation/transport_comparison/*.csv
+/outputs/validation/transport_comparison/*.json
+/outputs/validation/transport_comparison/*.html
+/outputs/validation/source_updates/
+/outputs/validation/notebook_evidence/
+/outputs/validation/ldv_efficiency_diagnostic/
+/outputs/validation/vehicle_cost_diagnostic/
+/outputs/validation/documentation_evidence/
+/outputs/validation/documentation/
+/outputs/documentation/
+**/__marimo__/
+/debug.log
+.agents/skills/*
+!.agents/skills/codebase-improver/
+.agents/plans/*
+tmp/
+# Wards workbooks are local-only licensed source files.
+/config/parameters/CanSa08*.xls*

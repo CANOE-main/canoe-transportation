@@ -1,0 +1,606 @@
+version: 1
+
+root: "."
+
+config:
+  parameters: config/parameters
+
+inputs:
+  root: inputs
+  cache: inputs/0_cache
+  external: inputs/0_external_models
+  manual: inputs/0_manual_params
+  interim: inputs/1_interim
+  processed: inputs/2_processed
+  validation: inputs/validation
+  template: inputs/0_canoe_template
+
+outputs:
+  root: outputs
+  documentation: outputs/documentation
+  sqlite: outputs/sqlite
+  validation: outputs/validation
+  logs: outputs/logs
+  build_log: "outputs/logs/{scenario_name}_{scenario_yaml}_{timestamp}.log"
+
+legacy:
+  root: legacy_backend
+
+# Stable artifact-family routes for ownership and change-impact retrieval. These are
+# intentionally coarser than module imports or individual files.
+artifacts:
+  documentation_site:
+    path: outputs/documentation/site
+    layer: publication
+    owner: scripts.build_docs
+    producers: [scripts.build_docs]
+    consumers: [readers, github_pages]
+    validation_surfaces: [mkdocs.commands.build.build]
+  documentation_report:
+    path: outputs/documentation/canoe_transportation_report.pdf
+    layer: publication
+    owner: scripts.build_docs
+    producers: [scripts.build_docs]
+    consumers: [readers]
+    validation_surfaces: [scripts.build_docs]
+  documentation_render_validation:
+    path: outputs/validation/documentation
+    layer: output_validation
+    owner: scripts.build_docs
+    producers: [scripts.build_docs]
+    consumers: [reviewers]
+    validation_surfaces: [scripts.build_docs]
+  documentation_vendor:
+    path: outputs/documentation/vendor
+    layer: publication
+    owner: scripts.build_docs
+    producers: [scripts.build_docs]
+    consumers: [scripts.build_docs]
+    validation_surfaces: [scripts.build_docs]
+  documentation_assets:
+    path: docs/assets/figures
+    layer: documentation
+    owner: scripts.export_documentation_figures
+    producers: [scripts.export_documentation_figures]
+    consumers: [readers, scripts.build_docs]
+    validation_surfaces: [scripts.export_documentation_figures, scripts.build_docs]
+  documentation_evidence:
+    path: outputs/validation/documentation_evidence
+    layer: output_validation
+    owner: validation.documentation_support
+    producers: [validation.documentation_support]
+    consumers: [docs.insights.documentation_support, reviewers]
+    validation_surfaces: [validation.documentation_support]
+  documentation_support_notebook:
+    path: docs/insights/documentation_support.py
+    layer: documentation
+    owner: validation.documentation_support
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  charging_profile_notebook:
+    path: docs/insights/charging_profile_diagnosis.py
+    layer: documentation
+    owner: validation.charging_profile_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers, publication]
+    validation_surfaces: [marimo.check, validation.charging_profile_diagnostic.load_diagnostic]
+  vehicle_cost_notebook:
+    path: docs/insights/vehicle_cost_diagnosis.py
+    layer: documentation
+    owner: validation.vehicle_cost_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  vehicle_cost_diagnostic:
+    path: outputs/validation/vehicle_cost_diagnostic
+    layer: output_validation
+    owner: validation.vehicle_cost_diagnostic
+    producers: [validation.vehicle_cost_diagnostic]
+    consumers: [docs.insights.vehicle_cost_diagnosis, reviewers]
+    validation_surfaces: [validation.vehicle_cost_diagnostic.load_diagnostic]
+  ceud_calibration_notebook:
+    path: docs/insights/ceud_calibration_diagnosis.py
+    layer: documentation
+    owner: validation.ceud_calibration_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers, publication]
+    validation_surfaces: [marimo.check]
+  ceud_calibration_report:
+    path: outputs/validation/ceud_calibration_comparison.json
+    layer: output_validation
+    owner: validation.ceud_calibration_diagnostic
+    producers: [validation.ceud_calibration_diagnostic.compare_calibration_databases]
+    consumers: [reviewers, publication]
+    validation_surfaces: [validation.ceud_calibration_diagnostic]
+  ceud_parameter_inputs:
+    path: inputs/1_interim/ceud_parameter_inputs
+    layer: interim
+    owner: parameterization.ceud_inputs
+    producers: [parameterization.ceud_inputs.prepare_ceud_inputs]
+    consumers: [parameterization.build_existing_capacity, parameterization.build_demand, parameterization.build_efficiencies, parameterization.build_costs, parameterization.road_utilization]
+    validation_surfaces: [parameterization.ceud_inputs.extend_ceud_to_base_year]
+  transportation_validation_researcher_inputs:
+    path: legacy_backend/legacy_variant_sales_cohorts
+    layer: legacy
+    owner: validation.transportation_research
+    producers: [researcher]
+    consumers: [validation.transportation_research]
+    validation_surfaces: [validation.transportation_research]
+  transportation_validation_charging_inputs:
+    path: legacy_backend/legacy_variant_lih_wei_branch
+    layer: legacy
+    owner: validation.charging_cost_comparison
+    producers: [researcher]
+    consumers: [validation.charging_cost_comparison]
+    validation_surfaces: [validation.charging_cost_comparison.read_reference_costs]
+  transportation_research_report:
+    path: outputs/validation/transportation_research
+    layer: output_validation
+    owner: validation.transportation_research
+    producers: [validation.transportation_research]
+    consumers: [reviewers, docs.insights.transportation_validation_diagnosis]
+    validation_surfaces: [validation.transportation_research]
+  charging_cost_comparison_report:
+    path: outputs/validation/charging_cost_comparison
+    layer: output_validation
+    owner: validation.charging_cost_comparison
+    producers: [validation.charging_cost_comparison]
+    consumers: [reviewers, docs.insights.transportation_validation_diagnosis]
+    validation_surfaces: [validation.charging_cost_comparison]
+  source_update_audits:
+    path: outputs/validation/source_updates
+    layer: output_validation
+    owner: fetching.source_updater
+    producers: [fetching.source_updater.run_update]
+    consumers: [reviewers]
+    validation_surfaces: [fetching.source_updater.run_update]
+  source_update_logs:
+    path: outputs/logs/source_updates
+    layer: logs
+    owner: fetching.source_updater
+    producers: [fetching.source_updater.run_update]
+    consumers: [reviewers]
+    validation_surfaces: [fetching.source_updater.run_update]
+  assorted_sources_interim:
+    path: inputs/1_interim/fetched_assorted_sources
+    layer: interim
+    owner: fetching.assorted_sources
+    producers:
+      - fetching.assorted_sources.fetch_and_normalize
+      - fetching.assorted_sources.fetch_and_normalize_moves5_survival
+    consumers: [parameterization.road_lifetimes_survival, docs.insights.vehicle_population_diagnosis]
+    validation_surfaces:
+      - fetching.assorted_sources.validate_cached_identity
+      - fetching.assorted_sources.normalize_moves5_survival
+      - parameterization.road_lifetimes_survival.validate_accepted_survival_inputs
+  # Opt-in database review; no production prerequisite consumes these products.
+  stock_cohort_notebook:
+    path: docs/insights/stock_cohort_diagnosis.py
+    layer: documentation
+    owner: validation.stock_cohort_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [validation.stock_cohort_diagnostic.load_stock_cohort_diagnosis, marimo.check]
+  transport_comparison_notebook:
+    path: docs/insights/legacy_comparison_diagnosis.py
+    layer: documentation
+    owner: validation.transport_comparison
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  transport_comparison_report:
+    path: outputs/validation/transport_comparison
+    layer: output_validation
+    owner: validation.transport_comparison
+    producers: [validation.transport_comparison, marimo.export]
+    consumers: [docs.insights.legacy_comparison_diagnosis, reviewers]
+    validation_surfaces: [validation.transport_comparison.load_diagnostic]
+  transport_comparison_database:
+    path: outputs/sqlite/legacy_reproduction.sqlite
+    layer: database
+    owner: build_transport
+    producers: [build_transport.build_from_scenario]
+    consumers: [validation.transport_comparison]
+    validation_surfaces: [validation.transport_comparison.load_diagnostic]
+  ldv_efficiency_notebook:
+    path: docs/insights/ldv_efficiency_diagnosis.py
+    layer: documentation
+    owner: validation.ldv_efficiency_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  ldv_efficiency_report:
+    path: outputs/validation/ldv_efficiency_diagnostic
+    layer: output_validation
+    owner: validation.ldv_efficiency_diagnostic
+    producers: [validation.ldv_efficiency_diagnostic, marimo.export]
+    consumers: [reviewers]
+    validation_surfaces: [validation.ldv_efficiency_diagnostic.load_diagnostic]
+  statcan_ldv_composition:
+    path: inputs/1_interim/fetched_statcan_transport
+    layer: interim
+    owner: fetching.statcan_tables
+    producers: [fetching.statcan_tables.prepare_ldv_stock_benchmark]
+    consumers: [validation.ldv_composition_benchmark, validation.notebook_evidence]
+    validation_surfaces: [fetching.statcan_tables.validate_snapshot_identity, fetching.statcan_tables.validate_metadata_contract]
+  # Local reproducible notebook handoff; excludes temporary development conclusions.
+  notebook_evidence:
+    path: outputs/validation/notebook_evidence
+    layer: output_validation
+    owner: validation.notebook_evidence
+    producers: [build_transport.build_from_scenario]
+    consumers: [validation.vehicle_stock_diagnostic, validation.ldv_efficiency_diagnostic, reviewers]
+    validation_surfaces: [validation.notebook_evidence.load_notebook_evidence]
+  vehicle_stock_notebook:
+    path: docs/insights/vehicle_population_diagnosis.py
+    layer: documentation
+    owner: validation.vehicle_stock_diagnostic
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  rating_stock_benchmark:
+    path: inputs/validation/rating_stock_benchmark
+    layer: input_validation
+    owner: validation.rating_stock_benchmark
+    producers: [validation.rating_stock_benchmark.build_rating_stock_benchmark]
+    consumers: [reviewers]
+    validation_surfaces: [validation.rating_stock_benchmark.aggregate_stock_weighted_ratings]
+  # Opt-in growth research: these are evidence/review products, not production inputs.
+  technology_growth_cache:
+    path: inputs/0_cache/technology_growth
+    layer: cache
+    owner: fetching.technology_growth_evidence
+    producers: [fetching.technology_growth_evidence.acquire_evidence]
+    consumers: [parameterization.road_adoption_constraints, reviewers]
+    validation_surfaces: [fetching.technology_growth_evidence.validate_asset]
+  technology_growth_interim:
+    path: inputs/1_interim/technology_growth
+    layer: interim
+    owner: fetching.technology_growth_evidence
+    producers: [fetching.technology_growth_evidence.normalize_hatch, fetching.technology_growth_evidence.normalize_eafo, parameterization.road_adoption_constraints.build_diagnostic]
+    consumers: [parameterization.road_adoption_constraints, reviewers]
+    validation_surfaces: [parameterization.road_adoption_constraints.audit_series]
+  technology_growth_validation:
+    path: inputs/validation/technology_growth
+    layer: input_validation
+    owner: parameterization.road_adoption_constraints
+    producers: [parameterization.road_adoption_constraints.build_diagnostic]
+    consumers: [docs.insights.growth_constraint_diagnosis, reviewers]
+    validation_surfaces: [parameterization.road_adoption_constraints.validate_diagnostic]
+  technology_growth_notebook:
+    path: docs/insights/growth_constraint_diagnosis.py
+    layer: documentation
+    owner: parameterization.road_adoption_constraints
+    producers: [reviewers]
+    consumers: [reviewers]
+    validation_surfaces: [marimo.check]
+  technology_growth_report:
+    path: outputs/validation/technology_growth
+    layer: output_validation
+    owner: parameterization.road_adoption_constraints
+    producers: [parameterization.road_adoption_constraints.build_diagnostic, marimo.export]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.road_adoption_constraints.validate_diagnostic, marimo.check]
+  # User-owned legacy publication figure; no production ETL or workflow consumer.
+  legacy_transport_diagram:
+    path: legacy_backend/diagrams
+    layer: legacy
+    owner: scripts.experiments.legacy_transport_diagram.build
+    producers: [scripts.experiments.legacy_transport_diagram.build.main]
+    consumers: [publication_reviewers]
+    validation_surfaces:
+      - scripts.experiments.legacy_transport_diagram.build.validate_topology
+      - scripts.experiments.legacy_transport_diagram.build.validate_svg
+  charging_profiles_interim:
+    path: inputs/1_interim/legacy_charging_profiles
+    layer: interim
+    owner: fetching.legacy_charging_profiles
+    producers: [fetching.legacy_charging_profiles.normalize_profile]
+    consumers: [parameterization.ldv_charging_profiles, reviewers]
+    validation_surfaces: [fetching.legacy_charging_profiles.transform_hourly]
+  charging_profiles_processed:
+    path: inputs/2_processed/ldv_charging_profiles
+    layer: processed
+    owner: parameterization.ldv_charging_profiles
+    producers: [parameterization.ldv_charging_profiles.prepare_charging_profile_rows]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.ldv_charging_profiles.validate_charging_rows, parameterization.ldv_charging_profiles.validate_charging_preparation, parameterization.ldv_charging_profiles.scale_projected_profile]
+  charging_profiles_validation:
+    path: inputs/validation/ldv_charging_profiles
+    layer: input_validation
+    owner: parameterization.ldv_charging_profiles
+    producers: [parameterization.ldv_charging_profiles.prepare_charging_profile_rows]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.ldv_charging_profiles.validate_charging_rows]
+  ldv_range_interim:
+    path: inputs/1_interim/ldv_range_evidence
+    layer: interim
+    owner: fetching.epa_omega_baseline
+    producers: [fetching.epa_omega_baseline.fetch_baseline]
+    consumers: [parameterization.ldv_ev_ranges, reviewers]
+    validation_surfaces: [fetching.epa_omega_baseline.normalize_baseline]
+  omega_ldv_range_source:
+    path: inputs/0_external_models/epa_omega_ldv_range_extract
+    layer: external
+    owner: fetching.epa_omega_baseline
+    producers: [fetching.epa_omega_baseline.prepare_baseline_extract]
+    consumers: [fetching.epa_omega_baseline, parameterization.ldv_ev_ranges, reviewers]
+    validation_surfaces: [fetching.epa_omega_baseline.validate_extract]
+  omega_baseline_validation:
+    path: inputs/validation/epa_omega_baseline
+    layer: input_validation
+    owner: fetching.epa_omega_baseline
+    producers: [fetching.epa_omega_baseline.prepare_baseline_extract]
+    consumers: [reviewers]
+    validation_surfaces: [fetching.epa_omega_baseline.prepare_baseline_extract]
+  ldv_range_processed:
+    path: inputs/2_processed/ldv_range_representation
+    layer: processed
+    owner: parameterization.ldv_ev_ranges
+    producers: [parameterization.ldv_ev_ranges.prepare_range_rows, parameterization.ldv_ev_ranges.prepare_representative_parameters]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.ldv_ev_ranges.validate_share_evidence, parameterization.ldv_ev_ranges.validate_representative_preparation]
+  ldv_range_validation:
+    path: inputs/validation/ldv_range_representation
+    layer: input_validation
+    owner: parameterization.ldv_ev_ranges
+    producers: [parameterization.ldv_ev_ranges.build_range_evidence, parameterization.ldv_ev_ranges.prepare_representative_parameters]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.ldv_ev_ranges.validate_share_evidence]
+  greet_vehicle_cycle_results:
+    path: inputs/0_external_models/greet_vehicle_cycle_results
+    layer: external
+    owner: fetching.greet_automation
+    producers: [fetching.greet_automation.generate_vehicle_cycle_results]
+    consumers: [fetching.greet_vehicle_cycle, reviewers]
+    validation_surfaces: [fetching.greet_vehicle_cycle.normalize_generated_results]
+  greet_automation_validation:
+    path: inputs/validation/greet_automation
+    layer: input_validation
+    owner: fetching.greet_automation
+    producers: [fetching.greet_automation.generate_vehicle_cycle_results]
+    consumers: [reviewers]
+    validation_surfaces: [fetching.greet_automation.validate_probe_results]
+  greet_vehicle_cycle_interim:
+    path: inputs/1_interim/greet_vehicle_cycle
+    layer: interim
+    owner: fetching.greet_vehicle_cycle
+    producers: [fetching.greet_vehicle_cycle.normalize_generated_results]
+    consumers: [parameterization.road_embodied_emissions, reviewers]
+    validation_surfaces: [fetching.greet_vehicle_cycle.normalize_generated_results]
+  emission_embodied_processed:
+    path: inputs/2_processed/emission_embodied
+    layer: processed
+    owner: parameterization.road_embodied_emissions
+    producers: [parameterization.road_embodied_emissions.prepare_emission_embodied_rows]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.road_embodied_emissions.validate_embodied_outputs]
+  emission_embodied_validation:
+    path: inputs/validation/emission_embodied
+    layer: input_validation
+    owner: parameterization.road_embodied_emissions
+    producers: [parameterization.road_embodied_emissions.prepare_emission_embodied_rows]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.road_embodied_emissions.validate_embodied_outputs]
+  ontario_vehicle_population:
+    path: inputs/1_interim/fetched_ontario_vehicle_population
+    layer: interim
+    owner: fetching.vehicle_population
+    producers: [fetching.vehicle_population.fetch_and_normalize]
+    consumers:
+      - parameterization.road_aggregation
+      - parameterization.road_fleet_weights
+      - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.vehicle_mapping_bootstrap
+      - validation.vehicle_stock_diagnostic
+    validation_surfaces: [fetching.vehicle_population.registered_requests, fetching.vehicle_population.validate_source, fetching.vehicle_population.load_history_manifest]
+  transport_canada_izev:
+    path: inputs/1_interim/fetched_transport_canada_izev
+    layer: interim
+    owner: fetching.transport_canada_izev
+    producers: [fetching.transport_canada_izev.fetch_izev]
+    consumers: [parameterization.rating_composition, parameterization.build_efficiencies]
+    validation_surfaces: [fetching.transport_canada_izev.build_requests, fetching.transport_canada_izev.validate_cache, fetching.transport_canada_izev.parse_csv]
+  vehicle_survival_interim:
+    path: inputs/1_interim/vehicle_survival
+    layer: interim
+    owner: parameterization.road_lifetimes_survival
+    producers:
+      - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.road_lifetimes_survival.build_lifetime_artifacts
+    consumers: [validation.vehicle_stock_diagnostic, reviewers]
+    validation_surfaces: [parameterization.road_lifetimes_survival.transition_findings]
+  road_aggregation:
+    path: inputs/2_processed/road_aggregation
+    layer: processed
+    owner: parameterization.road_aggregation
+    producers: [parameterization.road_aggregation.build_road_aggregation_artifacts]
+    consumers:
+      - parameterization.road_lifetimes_survival.build_accepted_lifetime_artifacts
+      - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.build_lifetime_parameters.prepare_lifetime_rows
+      - parameterization.road_stocks_and_demands
+      - parameterization.road_utilization
+      - parameterization.road_fleet_weights
+      - parameterization.build_efficiencies
+      - parameterization.build_costs
+      - parameterization.road_embodied_emissions
+      - validation.ldv_efficiency_diagnostic
+      - validation.vehicle_stock_diagnostic
+      - validation.rating_stock_benchmark
+    validation_surfaces:
+      - parameterization.road_aggregation.validate_vehicle_mapping
+      - parameterization.road_aggregation.mapping_coverage
+      - parameterization.road_fleet_weights.load_ldv_aggregation_weights
+  road_lifetimes_survival:
+    path: inputs/2_processed/road_lifetimes_survival
+    layer: processed
+    owner: parameterization.road_lifetimes_survival
+    producers:
+      - parameterization.road_lifetimes_survival.build_accepted_lifetime_artifacts
+      - parameterization.road_lifetimes_survival.build_lifetime_artifacts
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.road_lifetimes_survival.median_equivalent_lifetimes, parameterization.road_cohort_survival.reconcile_survival_schedules, parameterization.road_cohort_survival.build_composite_cohorts]
+  lifetime_parameters:
+    path: inputs/2_processed/lifetime_parameters
+    layer: processed
+    owner: parameterization.build_lifetime_parameters
+    producers: [parameterization.build_lifetime_parameters.build_lifetime_parameter_artifacts]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.build_lifetime_parameters.prepare_lifetime_rows]
+  tc_ev_dashboard_interim:
+    path: inputs/1_interim/fetched_transport_canada_ev_dashboard
+    layer: interim
+    owner: fetching.assorted_sources
+    producers: [fetching.assorted_sources.fetch_and_normalize_tc_dashboard]
+    consumers: [parameterization.build_existing_capacity, parameterization.road_stocks_and_demands, parameterization.ev_chargers]
+    validation_surfaces: [fetching.assorted_sources.normalize_tc_ev_dashboard_table, fetching.assorted_sources.normalize_tc_public_chargers]
+  existing_capacity_interim:
+    path: inputs/1_interim/existing_capacity
+    layer: interim
+    owner: parameterization.build_existing_capacity
+    producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
+    consumers: [parameterization.build_existing_capacity, parameterization.build_efficiencies, validation.ldv_efficiency_diagnostic, reviewers]
+    validation_surfaces: [parameterization.build_existing_capacity.validate_capacity_inputs, parameterization.build_efficiencies.historical_stock_evidence]
+  existing_capacity_processed:
+    path: inputs/2_processed/existing_capacity
+    layer: processed
+    owner: parameterization.build_existing_capacity
+    producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.build_existing_capacity.prepare_existing_capacity_rows]
+  existing_capacity_validation:
+    path: inputs/validation/existing_capacity
+    layer: input_validation
+    owner: parameterization.build_existing_capacity
+    producers: [parameterization.build_existing_capacity.build_existing_capacity_artifacts]
+    consumers: [parameterization.build_efficiencies, reviewers]
+    validation_surfaces: [parameterization.build_existing_capacity.validate_capacity_outputs, parameterization.build_existing_capacity.validate_capacity_handoff]
+  ev_chargers_processed:
+    path: inputs/2_processed/ev_chargers
+    layer: processed
+    owner: parameterization.ev_chargers
+    producers: [parameterization.ev_chargers.prepare_ev_charger_rows]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.ev_chargers.prepare_ev_charger_rows, parameterization.ev_chargers.prepare_charger_capacity_to_activity]
+  ev_chargers_validation:
+    path: inputs/validation/ev_chargers
+    layer: input_validation
+    owner: parameterization.ev_chargers
+    producers: [parameterization.ev_chargers.prepare_ev_charger_rows]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.ev_chargers.prepare_ev_charger_rows]
+  demand_processed:
+    path: inputs/2_processed/demand
+    layer: processed
+    owner: parameterization.build_demand
+    producers: [parameterization.build_demand.prepare_demand_rows]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.build_demand.validate_demand_outputs]
+  efficiencies_interim:
+    path: inputs/1_interim/efficiencies
+    layer: interim
+    owner: parameterization.build_efficiencies
+    producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
+    consumers: [parameterization.build_efficiencies, validation.ldv_efficiency_diagnostic, reviewers]
+    validation_surfaces: [parameterization.build_efficiencies.aggregate_consumption_period, parameterization.build_efficiencies.validate_efficiency_outputs, parameterization.rating_composition.aggregate_empirical_ratings]
+  efficiencies_processed:
+    path: inputs/2_processed/efficiencies
+    layer: processed
+    owner: parameterization.build_efficiencies
+    producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
+    consumers: [build_transport, validation.ldv_efficiency_diagnostic, reviewers]
+    validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
+  efficiencies_validation:
+    path: inputs/validation/efficiencies
+    layer: input_validation
+    owner: parameterization.build_efficiencies
+    producers: [parameterization.build_efficiencies.prepare_efficiency_rows]
+    consumers: [validation.ldv_efficiency_diagnostic, reviewers]
+    validation_surfaces: [parameterization.build_efficiencies.validate_efficiency_outputs]
+  costs_interim:
+    path: inputs/1_interim/transport_costs
+    layer: interim
+    owner: parameterization.build_costs
+    producers: [parameterization.build_costs.prepare_cost_rows]
+    consumers: [parameterization.build_costs, reviewers]
+    validation_surfaces: [parameterization.build_costs.validate_cost_outputs]
+  costs_processed:
+    path: inputs/2_processed/transport_costs
+    layer: processed
+    owner: parameterization.build_costs
+    producers: [parameterization.build_costs.prepare_cost_rows]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.build_costs.validate_cost_outputs]
+  costs_validation:
+    path: inputs/validation/transport_costs
+    layer: input_validation
+    owner: parameterization.build_costs
+    producers: [parameterization.build_costs.prepare_cost_rows]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.build_costs.validate_cost_outputs]
+  road_utilization_processed:
+    path: inputs/2_processed/road_utilization
+    layer: processed
+    owner: parameterization.road_utilization
+    producers: [parameterization.road_utilization.prepare_road_utilization]
+    consumers: [build_transport, reviewers]
+    validation_surfaces: [parameterization.road_utilization.validate_road_utilization]
+  road_utilization_validation:
+    path: inputs/validation/road_utilization
+    layer: input_validation
+    owner: parameterization.road_utilization
+    producers: [parameterization.road_utilization.prepare_road_utilization]
+    consumers: [reviewers]
+    validation_surfaces: [parameterization.road_utilization.validate_road_utilization]
+  vehicle_mapping_review:
+    path: inputs/validation/vehicle_mapping
+    layer: input_validation
+    owner: parameterization.vehicle_mapping_bootstrap
+    producers:
+      - parameterization.road_aggregation.build_mapping_diagnostic_artifacts
+      - parameterization.vehicle_mapping_bootstrap.main
+    consumers: [fetching.vpic_vehicle_types, fetching.vpic_model_years, validation.vehicle_stock_diagnostic, reviewers]
+    validation_surfaces:
+      - parameterization.road_aggregation.mapping_coverage
+      - parameterization.vehicle_mapping_bootstrap.bootstrap_coverage
+  lifetime_validation:
+    path: inputs/validation/lifetimes_survival
+    layer: input_validation
+    owner: parameterization.road_lifetimes_survival
+    producers:
+      - parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts
+      - parameterization.road_lifetimes_survival.build_lifetime_artifacts
+    consumers: [validation.vehicle_stock_diagnostic, reviewers]
+    validation_surfaces:
+      - parameterization.road_lifetimes_survival.evaluate_mto_survival_decision
+      - parameterization.road_lifetimes_survival.transition_findings
+  database:
+    path: outputs/sqlite
+    layer: database
+    owner: build_transport
+    producers: [build_transport.build_from_scenario]
+    consumers: [temoa, validation.legacy_compare, validation.sqlite_compare]
+    validation_surfaces:
+      - validation.schema_contract.create_v4_schema
+      - validation.insertion.insert_models
+      - validation.database_bootstrap.validate_database
+      - validation.insertion.validate_transport_parameter_support
+  database_validation:
+    path: outputs/validation
+    layer: output_validation
+    owner: build_transport
+    producers: [build_transport.build_from_scenario]
+    consumers: [reviewers]
+    validation_surfaces:
+      - validation.database_bootstrap.validate_database
+      - validation.legacy_compare.compare_legacy_tables
+      - validation.sqlite_compare.compare_scenario_databases
+  scenario_build_logs:
+    path: outputs/logs
+    layer: logs
+    owner: build_transport
+    producers: [build_transport.build_from_scenario]
+    consumers: [reviewers]
+    validation_surfaces: [utils.build_logging.scenario_build_log]

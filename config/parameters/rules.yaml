@@ -1,0 +1,2670 @@
+# Extraction and harmonization rules, organized by their executable owners.
+#
+# Review order: fetching (source layout/normalization), then parameterization
+# (manual selector contracts, reviewed aggregation, stock/demand, utilization,
+# lifetimes, efficiency, costs, chargers). Module names match load_harmonization_rules.
+# Source access/citations/DQ belong in sources.yaml; run choices belong in scenario
+# YAML; reusable numeric unit conversions belong in conversion.yaml.
+# Policy strings select supported algorithms and are checked by their consumers;
+# Fixed implementation behavior is explained in comments.
+
+version: 2
+
+# SOURCE NORMALIZATION: source-native selectors, labels, and audit outputs.
+fetching:
+  legacy_charging_profiles:
+    value_column: Charging Profile
+    hourly_operation: mean
+    normalization: annual_hourly_peak
+    label_basis: elapsed_hours_from_local_year_start
+    precision: 10
+    hourly_file: "{profile}_hourly.csv"
+    manifest_file: "{profile}_manifest.json"
+  epa_omega_baseline:
+    # Exact baseline source read by LDV_AER_market_shares.ipynb; no model rerun.
+    model_year: 2022
+    powertrains: [BEV, PHEV]
+    columns: ["Unnamed: 0", manufacturer_id, vehicle_name, model_year, context_size_class, reg_class_id, powertrain_type, onroad_charge_depleting_range_mi, battery_kwh, sales]
+    rename: {"Unnamed: 0": source_row_id}
+    regulatory_class_map: {car: car, truck: light_truck}
+    normalized_file: omega_baseline_plug_in.csv
+    manifest_file: omega_baseline_manifest.json
+    identity_file: legacy_notebook_identity.json
+  greet_vehicle_cycle:
+    files:
+      normalized: greet_vehicle_cycle_gases.csv
+      excluded: greet_vehicle_cycle_exclusions.csv
+      models: greet_solved_model_evidence.csv
+    inputs_sheet: Inputs
+    imports_sheet: GREET1_Import_Export
+    simulation_year: {label_cell: B8, label: '1.1) Target Year for Simulation'}
+    cohort_year: {label_cell: A20, label: Vehicle Model Year, cells: [B20, C20, D20]}
+    ldv_selectors: {Car: 1, SUV: 2, Pickup: 3}
+    mhdv_selectors: {Class 6 PnD Trucks: 1, Class 8 Day-Cab Trucks: 2, Class 8 Sleeper-Cab Trucks: 3}
+    block_interval: 31
+    source_unit_label: mmBtu or grams per vehicle lifetime
+    source_units: g/vehicle-lifetime
+    gas_rows: [CO2, 'CO2 (VOC, CO, CO2)', CH4, N2O]
+    excluded_gas: CO2 (VOC, CO, CO2)
+    summary_layout:
+      scope_cell: A1
+      label_column: A
+      unit_column: B
+      block_label_offset: -9
+      unit_offset: -8
+      total_offset: -7
+      total_label: Total (No Credits)
+    ldv:
+      worksheet: Vehi_Sum
+      identity_sheet: Vehi_Inputs
+      identity_header_cell: A2
+      selector_cell: B3
+      identity_label_cells: {Car: C3, SUV: C4, Pickup: C5}
+      identity_header: 1. Selection of Vehicle Types for Simulation
+      identity_labels: {Car: '1 -- Passenger Cars', SUV: '2 -- Sport Utility Vehicles', Pickup: '3 -- Pick-Up Trucks'}
+      scope_label: Energy Use and Emissions of Vehicle Cycle
+      column: F
+      blocks:
+        - {first_row: 13, label: '1.1) ICEV: Conventional Material', powertrain: icev, materials: conventional}
+        - {first_row: 44, label: '1.2) ICEV: Lightweight Material', powertrain: icev, materials: lightweight}
+        - {first_row: 75, label: '1.3) HEV: Conventional Material', powertrain: hev, materials: conventional}
+        - {first_row: 106, label: '1.4) HEV: Lightweight Material', powertrain: hev, materials: lightweight}
+        - {first_row: 137, label: '1.5) PHEV: Conventional Material', powertrain: phev, materials: conventional}
+        - {first_row: 168, label: '1.6) PHEV: Lightweight Material', powertrain: phev, materials: lightweight}
+        - {first_row: 199, label: '1.7) EV: Conventional Material', powertrain: bev, materials: conventional}
+        - {first_row: 230, label: '1.8) EV: Lightweight Material', powertrain: bev, materials: lightweight}
+        - {first_row: 261, label: '1.9) FCV: Conventional Material', powertrain: fcev, materials: conventional}
+        - {first_row: 292, label: '1.10) FCV: Lightweight Material', powertrain: fcev, materials: lightweight}
+    mhdv:
+      worksheet: MHDV_Sum
+      identity_sheet: MHDV_Inputs
+      identity_header_cell: A2
+      selector_cell: B3
+      identity_label_cells: {Class 6 PnD Trucks: C3, Class 8 Day-Cab Trucks: C4, Class 8 Sleeper-Cab Trucks: C5}
+      identity_header: 1. Selection of Truck Types for Simulation
+      identity_labels: {Class 6 PnD Trucks: '1 -- Class 6 PnD Trucks', Class 8 Day-Cab Trucks: '2 -- Class 8 Day-Cab Trucks', Class 8 Sleeper-Cab Trucks: '3 -- Class 8 Sleeper-Cab Trucks'}
+      scope_label: 'Energy Use and Emissions of Vehicle Cycle: Trucks'
+      column: G
+      blocks:
+        - {first_row: 13, label: '1.1) ICEV', powertrain: icev}
+        - {first_row: 44, label: '1.2) HEV', powertrain: hev}
+        - {first_row: 75, label: '1.3) EV', powertrain: bev}
+        - {first_row: 106, label: '1.4) FCV', powertrain: fcev}
+  nrcan_ceud:
+    interim_subdir: fetched_nrcan_ceud_inputs
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    empty_output_file: nrcan_ceud_transport_empty.csv
+    region_output_template: nrcan_ceud_transport_{region}.csv
+    raw_excel_skiprows: 10
+    label_column_fallback_index: 1
+    drop_columns_if_present: ["Unnamed: 0"]
+    null_labels: ["nan", "n.a.", "na"]
+    remove_label_characters: "Â¹Â²Â³¹²³"
+    allowed_label_characters: "- /()|%"
+    drop_raw_series_pattern: "Shares|GHG"
+    group_header_value_rows:
+      7: ["Total Energy Use (PJ)"]
+    table_label_prefix_markers:
+      - Activity
+      - Energy Intensity
+      - Energy Use by Energy Source
+
+  transport_canada_izev:
+    interim_subdir: fetched_transport_canada_izev
+    output_file: izev_incentive_records.csv
+    manifest_file: izev_normalization_manifest.json
+    encoding: utf-8-sig
+    province_map:
+      "Alberta": AB
+      "British Columbia": BC
+      "Manitoba": MB
+      "New Brunswick": NB
+      "Newfoundland and Labrador": NL
+      "Nova Scotia": NS
+      "Northwest Territories": NT
+      "Nunavut": NU
+      "Ontario": 'ON'
+      "Prince Edward Island": PE
+      "Quebec": QC
+      "Saskatchewan": SK
+      "Yukon": YT
+
+  nrcan_fuel_consumption_ratings:
+    interim_subdir: fetched_nrcan_fuel_consumption_ratings
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    encoding_candidates: [utf-8-sig, cp1252]
+    outputs:
+      battery_electric_2012_2026: nrcan_battery_electric_vehicles_2012_2026.csv
+      plug_in_hybrid_2012_2026: nrcan_plug_in_hybrid_electric_vehicles_2012_2026.csv
+      fuel_consumption_1995_2014: nrcan_fuel_consumption_ratings_1995_2014.csv
+      fuel_consumption_2015_2024: nrcan_fuel_consumption_ratings_2015_2024.csv
+      fuel_consumption_2025: nrcan_fuel_consumption_ratings_2025.csv
+      fuel_consumption_2026: nrcan_fuel_consumption_ratings_2026.csv
+    vehicle_class_harmonization:
+      target_to_nrcan:
+        Compact: [Minicompact, Subcompact, Compact]
+        Midsize: [Mid-size, Full-size, Two-seater, "Station wagon: Small", "Station wagon: Mid-size"]
+        Small SUV: ["Sport utility vehicle: Small"]
+        Midsize SUV: ["Sport utility vehicle: Standard", Minivan]
+        Pickup: ["Pickup truck: Small", "Pickup truck: Standard", "Van: Cargo", "Van: Passenger"]
+      unresolved_nrcan_classes: [Special purpose vehicle, "Sport utility vehicle"]
+      unmapped_policy: error
+      target_to_ceud:
+        Compact: Car
+        Midsize: Car
+        Small SUV: Light Truck
+        Midsize SUV: Light Truck
+        Pickup: Light Truck
+      # The 1995-2014 ratings use the unsplit Sport utility vehicle label and retain
+      # Van: Cargo. The generic SUV label does not distinguish the established Small
+      # versus Midsize SUV targets, so retain it only in source-normalized efficiency
+      # evidence and exclude it from NLR mapping inference. Treat cargo/passenger vans
+      # with pickups while retaining the source-native NRCan label in normalized evidence.
+
+  fueleconomy_vehicle_data:
+    interim_subdir: fetched_fueleconomy_vehicle_data
+    output_file: fueleconomy_vehicle_class_evidence.csv
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    range_output_file: fueleconomy_my2024_range_evidence.csv
+    range_manifest_file: range_manifest.csv
+    range_model_year: 2024
+    range_powertrain_map: {EV: BEV, Plug-in Hybrid: PHEV}
+    bev_range_column: range
+    phev_range_column: rangeA
+    electricity_label: Electricity
+    selected_columns: [year, make, model, VClass]
+    output_columns:
+      year: Model year
+      make: Make
+      model: Model
+      VClass: Source vehicle class
+    vclass_to_nrcan:
+      Compact Cars: Compact
+      Large Cars: Full-size
+      Midsize Cars: Mid-size
+      Minicompact Cars: Minicompact
+      Subcompact Cars: Subcompact
+      Two Seaters: Two-seater
+      Small Station Wagons: "Station wagon: Small"
+      Midsize Station Wagons: "Station wagon: Mid-size"
+      Midsize-Large Station Wagons: "Station wagon: Mid-size"
+      Minivan - 2WD: Minivan
+      Minivan - 4WD: Minivan
+      Small Pickup Trucks: "Pickup truck: Small"
+      Small Pickup Trucks 2WD: "Pickup truck: Small"
+      Small Pickup Trucks 4WD: "Pickup truck: Small"
+      Standard Pickup Trucks: "Pickup truck: Standard"
+      Standard Pickup Trucks 2WD: "Pickup truck: Standard"
+      Standard Pickup Trucks 4WD: "Pickup truck: Standard"
+      Standard Pickup Trucks/2wd: "Pickup truck: Standard"
+      Small Sport Utility Vehicle 2WD: "Sport utility vehicle: Small"
+      Small Sport Utility Vehicle 4WD: "Sport utility vehicle: Small"
+      Standard Sport Utility Vehicle 2WD: "Sport utility vehicle: Standard"
+      Standard Sport Utility Vehicle 4WD: "Sport utility vehicle: Standard"
+      Sport Utility Vehicle - 2WD: "Sport utility vehicle"
+      Sport Utility Vehicle - 4WD: "Sport utility vehicle"
+      Special Purpose Vehicle: "Special purpose vehicle"
+      Special Purpose Vehicle 2WD: "Special purpose vehicle"
+      Special Purpose Vehicle 4WD: "Special purpose vehicle"
+      Special Purpose Vehicles: "Special purpose vehicle"
+      Special Purpose Vehicles/2wd: "Special purpose vehicle"
+      Special Purpose Vehicles/4wd: "Special purpose vehicle"
+      Vans Passenger: "Van: Passenger"
+      "Vans, Cargo Type": "Van: Cargo"
+      "Vans, Passenger Type": "Van: Passenger"
+    unresolved_vclasses:
+      Vans: "Historical EPA class does not distinguish cargo from passenger vans and ends before the modeled 2000 vintage floor."
+
+  ontario_vehicle_population:
+    interim_subdir: fetched_ontario_vehicle_population
+    manifest_file: manifest.csv
+    # Single-year production replay must not replace all-edition diagnostic evidence.
+    edition_audit_subdir_template: "editions/{year}"
+    warnings_file: warnings.log
+    long_status_file: ontario_vehicle_population_report_a_status_long.csv
+    reconciliation_file: ontario_vehicle_population_report_a_reconciliation.csv
+    findings_file: ontario_vehicle_population_report_a_data_quality_findings.csv
+    current_stock_file: ontario_vehicle_population_report_a_current_fit_active.csv
+    all_edition_make_model_keys_file: ontario_vehicle_population_all_edition_make_model_keys.csv
+    reports:
+      A:
+        report_label: "Report A"
+        excluded_years: [2015]
+        kept_vehicle_classes: [PASSENGER, COMMERCIAL]
+        normalized_output_template: ontario_vehicle_population_report_a_normalized_{year}.csv
+        required_columns:
+          - VEHICLE_CLASS
+          - MAKE
+          - MODEL
+          - MODEL_YEAR
+          - FIT_ACTIVE
+          - FIT_INACTIVE
+          - UNFIT
+          - WRECKED
+          - OUT_OF_PROV
+          - SOLD
+          - SUSPENDED
+          - TEMPORARY
+          - TOTAL
+        header_aliases:
+          VEHICLE-CLASS: VEHICLE_CLASS
+          VEHICLE_CLASS: VEHICLE_CLASS
+          MODEL-YEAR: MODEL_YEAR
+          MODEL_YEAR: MODEL_YEAR
+          FIT-ACTIVE: FIT_ACTIVE
+          FIT-INACTIVE: FIT_INACTIVE
+          OUT-OF-PROV: OUT_OF_PROV
+        vehicle_class_column: VEHICLE_CLASS
+        make_column: MAKE
+        model_column: MODEL
+        model_year_column: MODEL_YEAR
+        status_columns:
+          - FIT_ACTIVE
+          - FIT_INACTIVE
+          - UNFIT
+          - WRECKED
+          - OUT_OF_PROV
+          - SOLD
+          - SUSPENDED
+          - TEMPORARY
+        total_column: TOTAL
+        passenger_class: PASSENGER
+        commercial_class: COMMERCIAL
+        suppressed_code_patterns: ['^\*+$']
+        unknown_code_labels: [UNKNOWN, UNK, N/A]
+      4:
+        report_label: "Report 4"
+        cleaned_output_template: ontario_vehicle_population_report4_cleaned_{year}.csv
+        distribution_output_template: ontario_vehicle_population_report4_epa_gvwr_distribution_{year}.csv
+        required_columns: [WEIGHT_CLASS, KG_FROM, KG_TO, FIT-ACTIVE]
+        weight_class_column: WEIGHT_CLASS
+        kept_weight_class: COMMERCIAL
+        kg_from_column: KG_FROM
+        kg_to_column: KG_TO
+        count_column: FIT-ACTIVE
+        output_count_column: NATIVE_COUNT
+        epa_gvwr_column: EPA_GVWR
+        share_column: SHARE
+        epa_gvwr_labels: [LDT1-2, LDT3-4, MDV2b, MDV3, MDV4, MDV5, MDV6, MDV7, MDV8]
+        epa_gvwr_bin_edges_lb: [-.inf, 6000, 8500, 10000, 14000, 16000, 19500, 26000, 33000, .inf]
+      5:
+        report_label: "Report 5"
+        cleaned_output_template: ontario_vehicle_population_report5_cleaned_{year}.csv
+        distribution_output_template: ontario_vehicle_population_report5_age_distribution_{year}.csv
+        required_columns: [VEHICLE_CLASS, DESCRIPTOR, VALUE, FIT-ACTIVE]
+        vehicle_class_column: VEHICLE_CLASS
+        descriptor_column: DESCRIPTOR
+        kept_descriptor: YEAR
+        kept_vehicle_classes: [PASSENGER, COMMERCIAL, MOTORCYCLE, BUS]
+        model_year_column: VALUE
+        count_column: FIT-ACTIVE
+        output_count_column: NATIVE_COUNT
+        age_column: AGE
+        age_distribution_column: AGE_DIST
+        max_age: 35
+
+  statcan_tables:
+    interim_subdir: fetched_statcan_transport
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    read_chunksize: 100000
+    provenance_columns:
+      - REF_DATE
+      - GEO
+      - DGUID
+      - UOM
+      - UOM_ID
+      - SCALAR_FACTOR
+      - SCALAR_ID
+      - VECTOR
+      - COORDINATE
+      - VALUE
+      - STATUS
+      - SYMBOL
+      - TERMINATED
+      - DECIMALS
+    geography:
+      Canada: {label: Canada, freight_contains: [Canada]}
+      AB: {label: Alberta, freight_contains: [Alberta]}
+      BC: {label: British Columbia, freight_contains: [British Columbia]}
+      BCT:
+        label: British Columbia and the Territories
+        freight_contains:
+        - British Columbia
+        - Yukon
+        - Northwest Territories
+        - Nunavut
+      MB: {label: Manitoba, freight_contains: [Manitoba]}
+      NB: {label: New Brunswick, freight_contains: [New Brunswick]}
+      NL: {label: Newfoundland and Labrador, freight_contains: [Newfoundland and Labrador]}
+      NLLAB: {label: Newfoundland and Labrador, freight_contains: [Newfoundland and Labrador]}
+      NS: {label: Nova Scotia, freight_contains: [Nova Scotia]}
+      NT: {label: Northwest Territories, freight_contains: [Northwest Territories]}
+      NU: {label: Nunavut, freight_contains: [Nunavut]}
+      "ON": {label: Ontario, freight_contains: [Ontario]}
+      PE: {label: Prince Edward Island, freight_contains: [Prince Edward Island]}
+      PEI: {label: Prince Edward Island, freight_contains: [Prince Edward Island]}
+      QC: {label: Quebec, freight_contains: [Quebec, Québec]}
+      SK: {label: Saskatchewan, freight_contains: [Saskatchewan]}
+      YT: {label: Yukon, freight_contains: [Yukon]}
+    tables:
+      "20-10-0021-01":
+        normalizer: ldv_archived
+        include_bc_for_bct: true
+        output_file: statcan_20100021_ldv_registrations_archived.csv
+        metadata_dimensions: [Geography, Fuel type, Vehicle type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Fuel type, Vehicle type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Fuel type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Vehicle type: [Passenger cars, Pickup trucks, Multi-purpose vehicles, Vans]
+          Statistics: [Number of vehicles]
+      "20-10-0025-01":
+        normalizer: ldv_current
+        include_bc_for_bct: true
+        output_file: statcan_20100025_ldv_registrations_quarterly.csv
+        metadata_dimensions: [Geography, Fuel type, Vehicle type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Fuel type, Vehicle type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Fuel type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Vehicle type: [Passenger cars, Pickup trucks, Multi-purpose vehicles, Vans]
+          Statistics: [Number of vehicles]
+      "23-10-0308-01":
+        normalizer: medium_truck_fuels
+        ldv_benchmark_output_file: statcan_23100308_ldv_stock.csv
+        ldv_benchmark_selectors:
+          Vehicle Type: ['Passenger cars, weighing 4,536 kilograms or less', 'Pickup trucks, weighing 4,536 kilograms or less', 'Multi-purpose vehicles, weighing 4,536 kilograms or less', 'Vans, weighing 4,536 kilograms or less']
+          Fuel Type: [All fuel types, Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Statistics: [Number of vehicles]
+        include_bc_for_bct: true
+        output_file: statcan_23100308_medium_truck_fuels.csv
+        metadata_dimensions: [Geography, Vehicle Type, Fuel Type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Vehicle Type, Fuel Type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Vehicle Type: ["Total, vehicles weighing 4,536 to 11,793 kilograms", "Class 7 vehicles, weighing 11,794 to 14,969 kilograms", "Class 8 vehicles, weighing 14,969 kilograms or more"]
+          Fuel Type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Statistics: [Number of vehicles]
+      "34-10-0254-01":
+        include_bc_for_bct: true
+        normalizer: bus_lifetimes
+        include_canada: true
+        output_file: statcan_34100254_bus_expected_life.csv
+        metadata_dimensions: [Geography, "Public transit assets, average expected useful life"]
+        required_columns: [REF_DATE, GEO, DGUID, "Public transit assets, average expected useful life", UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Public transit assets, average expected useful life:
+            - Diesel buses, average expected useful life
+            - Bio-diesel buses, average expected useful life
+            - Electric buses, average expected useful life
+            - Natural gas buses, average expected useful life
+            - Hybrid buses (includes diesel, biodiesel and natural gas), average expected useful life
+            - Other buses, average expected useful life
+      "23-10-0142-01":
+        normalizer: freight
+        include_bc_for_bct: true
+        output_file: statcan_23100142_freight_selected_long.csv
+        metadata_dimensions: ["Geography, origin of shipments", "Geography, destination of shipments", "Mode of transportation", "Commodity group", Characteristics]
+        required_columns: [REF_DATE, GEO, "Geography, destination of shipments", "Mode of transportation", "Commodity group", Characteristics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Mode of transportation: [Truck (for-hire)]
+          Characteristics: [Shipments, Weight, Distance, Tonne-kilometres]
+    ldv_history:
+      canada_proxy_regions: [AB, NL]
+      archived_table: "20-10-0021-01"
+      current_table: "20-10-0025-01"
+      output_file: statcan_ldv_registrations_historical.csv
+      overlap_file: statcan_ldv_registrations_overlap.csv
+      policy: current_preferred_archived_precoverage_only
+      current_period_aggregation: sum_quarters
+      complete_periods_per_year: 4
+      incomplete_year_policy: exclude_and_warn
+      overlap_absolute_tolerance: 0.0
+    freight:
+      output_file: statcan_23100142_freight_heavy_truck_candidates.csv
+      shipments_characteristic: Shipments
+      weight_characteristic: Weight
+      distance_characteristic: Distance
+      tonne_km_characteristic: Tonne-kilometres
+      haul_distribution:
+        category_column: haul_class
+        weight_column: tonne_kilometres
+        aggregation: sum
+        normalization: share_of_total_tonne_kilometres
+      regional_long_haul_threshold_miles: 350.0                           # middle point of the regional (250-mile) and long-haul (500-mile) driving ranges from Autonomie TEA (Islam et al. 2023)
+      exact_boundary_assignment: regional
+      assumed_truck_curb_weight_kg: 13000.0                               # average curb weight of class 8 trucks, except refuse and urban transit, from Autonomie TEA (Islam et al. 2023)
+      class8_gross_vehicle_weight_threshold_kg: 14970.0
+      gross_weight_boundary: greater_than_or_equal
+
+  cer_enerfuture:
+    interim_subdir_template: "fetched_cer_energy_future/{edition}"
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    geography:
+      AB: Alberta
+      BC: British Columbia
+      BCT: [British Columbia, Yukon, Northwest Territories, Nunavut]
+      MB: Manitoba
+      NB: New Brunswick
+      NL: Newfoundland and Labrador
+      NLLAB: Newfoundland and Labrador
+      NS: Nova Scotia
+      NT: Northwest Territories
+      NU: Nunavut
+      "ON": Ontario
+      PE: Prince Edward Island
+      PEI: Prince Edward Island
+      QC: Quebec
+      SK: Saskatchewan
+      YT: Yukon
+    components:
+      macro-indicators:
+        output_file: cer_macro_indicators.csv
+        required_columns: [Scenario, Region, Variable, Year, Value]
+        region: Canada
+        variables:
+          real_gdp: "Real Gross Domestic Product ("
+          gdp_deflator: "Gross Domestic Product Deflator ("
+          cad_per_usd: "Canada-US Exchange Rate (C$/US$)"
+      end-use-demand:
+        output_file: cer_transport_end_use_demand.csv
+        required_columns: [Scenario, Region, Variable, Year, Value, Sector]
+        sector: Transportation
+        include_canada_total: true
+        unit: PJ
+      end-use-prices:
+        output_file: cer_transport_end_use_prices.csv
+        required_columns: [Scenario, Region, Variable, Year, Value, Sector]
+        sector: Transportation
+        variables: [Gasoline, Diesel]
+        unit: 2022 CAD/GJ
+
+  nlr_atb_autonomie:
+    interim_subdir: fetched_nlr_atb_autonomie
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    components:
+      vehicles:
+        output_file: atb_vehicles.csv
+        phev_powertrain: Plug-in Hybrid
+        phev_reconciliation_metrics:
+          gge: "Fuel Economy (mi/gge)"
+          dge: "Fuel Economy (mi/dge)"
+        metric_keys:
+          "Fuel Economy (mi/dge)": fuel_economy_mi_per_dge
+          "Fuel Economy (mi/gge)": fuel_economy_mi_per_gge
+          "Modeled Vehicle Price (2022$)": modeled_vehicle_price
+          "Range (mi)": range_mi
+          "Useable Energy (kWh)": usable_battery_capacity_kwh
+        metric_units:
+          "Fuel Economy (mi/dge)": mi/dge
+          "Fuel Economy (mi/gge)": mi/gge
+          "Modeled Vehicle Price (2022$)": 2022 USD/vehicle
+          "Range (mi)": mi
+          "Useable Energy (kWh)": kWh
+      phev_efficiency:
+        output_file: atb_phev_utility_weighted_efficiency.csv
+        source_powertrain: Plug-in Hybrid
+        light_duty_weight_category: Light Duty
+        medium_heavy_weight_category: Medium/Heavy Duty
+        source_fields:
+          year: year
+          source_scenario: scenario
+          primary_fuel: fuel_category
+          secondary_fuel: fuel2_category
+          vehicle_weight_category: vehicle_weight_category
+          vehicle_class: vehicle_class
+          vehicle_powertrain: vehicle_powertrain
+          vehicle_detail: vehicle_detail
+          electric_range_mi: "range(mi)"
+          source_combined_cs_fuel_economy_mi_per_gge: "CS(mi/gge)"
+          source_combined_cd_electricity_consumption_wh_per_mi: "CD(Wh/mi)"
+          vehicle_input_reference: reference
+        source_key_fields: [year, scenario, fuel_category, fuel2_category, vehicle_weight_category, vehicle_class, vehicle_powertrain, vehicle_detail]
+        fuel_equivalent_basis:
+          Gasoline: gge
+          Diesel: dge
+        cycle_aggregation:
+          cycles:
+            ARB:
+              contribution: ARB_contribution
+              cs_fuel_economy: "ARB_CS(mpgde)"
+              cd_electricity_consumption: "ARB_CD(Wh/mi)"
+            EPA55:
+              contribution: EPA55_contribution
+              cs_fuel_economy: "EPA55_CS(mpgde)"
+              cd_electricity_consumption: "EPA55_CD(Wh/mi)"
+            EPA65:
+              contribution: EPA65_contribution
+              cs_fuel_economy: "EPA65_CS(mpgde)"
+              cd_electricity_consumption: "EPA65_CD(Wh/mi)"
+        utility_factor_matching:
+          utility_factor_column: phev_uf
+          reference_column: reference
+          notes_column: notes
+          ldv:
+            source_family: phev_uf_ldv
+            exact_key_fields: [vehicle_weight_category, "range(mi)"]
+            interpolation_dimension: "range(mi)"
+            interpolation_method: linear
+            allow_extrapolation: false
+          mdhd:
+            source_family: phev_uf_mdhd
+            exact_key_fields: [vehicle_weight_category, vehicle_class]
+        reconciliation:
+          output_key_fields: [year, scenario, fuel_category, fuel2_category, vehicle_weight_category, vehicle_class, vehicle_powertrain, vehicle_detail]
+          derived_to_output_key_fields:
+            year: year
+            scenario: trajectory
+            fuel_category: primary_fuel
+            fuel2_category: secondary_fuel
+            vehicle_weight_category: vehicle_weight_category
+            vehicle_class: vehicle_class
+            vehicle_powertrain: vehicle_powertrain
+            vehicle_detail: vehicle_detail
+          scenario_aliases:
+            Constant: Conservative
+          metric_by_basis:
+            gge: "Fuel Economy (mi/gge)"
+            dge: "Fuel Economy (mi/dge)"
+          absolute_tolerance_mi_per_gallon_equivalent: 1.0e-9
+          relative_tolerance: 1.0e-6
+          policy: report_only
+        tolerances:
+          cycle_contribution_sum: 1.0e-9
+          utility_factor_bounds: 1.0e-12
+          input_share_sum: 1.0e-12
+        conversion_keys:
+          mile_to_km: [length, mile_to_km]
+          us_gallon_to_litre: [volume, us_gallon_to_litre]
+          wh_to_kwh: [energy, wh_to_kwh]
+          wh_per_gge: [energy, wh_per_gge]
+          wh_per_dge: [energy, wh_per_dge]
+          gal_equivalent_per_mile_to_litre_equivalent_per_100_km: [derived, us_gallon_equivalent_per_mile_to_litre_equivalent_per_100_km]
+          wh_per_mile_to_kwh_per_100_km: [derived, wh_per_mile_to_kwh_per_100_km]
+        units:
+          combined_cs:
+            gge: mi/gge
+            dge: mi/dge
+          utility_weighted_fuel_source:
+            gge: gge/mi
+            dge: dge/mi
+          utility_weighted_fuel_canadian:
+            gge: Lge/100 km
+            dge: Lde/100 km
+          utility_weighted_electricity_source: Wh/mi
+          utility_weighted_electricity_canadian: kWh/100 km
+        future_nrcan_phev_contract:
+          combined_cd_raw_column: "Combined Le/100 km"
+          combined_cd_output_raw_field: combined_cd_consumption_Le_100_km_raw
+          combined_cd_output_numeric_field: combined_cd_consumption_Le_100_km
+          combined_cd_parse: leading_and_explicit_components
+          combined_cd_leading_numeric_pattern: '^\s*([0-9]+(?:\.[0-9]+)?)'
+          combined_cd_components_pattern: '\s*[0-9]+(?:\.[0-9]+)?\s*\((?P<cd_bracket>\[)?(?P<cd_electricity_kwh_per_100km>[0-9]+(?:\.[0-9]+)?)\s+kWh(?(cd_bracket)\s*\+\s*(?P<cd_fuel_l_per_100km>[0-9]+(?:\.[0-9]+)?)\s+L\])\s*/100\s+km\)\s*'
+          combined_cs_output_numeric_field: combined_cs_consumption_L_100_km
+          # Preserve the displayed CD equivalent, explicit CD components and CS fuel separately.
+      maintenance_ldv:
+        outputs:
+          class_multipliers: atb_maintenance_ldv_class_multipliers.csv
+          powertrain_multipliers: atb_maintenance_ldv_powertrain_multipliers.csv
+          baseline_repair_cost: atb_maintenance_ldv_baseline_repair_cost.csv
+          maintenance_cost: atb_maintenance_ldv_maintenance_cost.csv
+      vmt:
+        output_file: atb_age_vmt.csv
+        value_column: vmt_mi
+        unit: mi/vehicle-year
+      anl_bean:
+        output_file: anl_bean_mhdv_maintenance_coefficients.csv
+        workbook_sheet: "TCO Assumpt."
+        workbook_range: "A33:H54"
+        expected_columns: [A, B, C, D, E, F, G, H]
+        table_layout:
+          header_row: 33
+          label_column: A
+          powertrain_column: B
+          vehicle_class_columns:
+            C: "LonghaulSleeper 8"
+            D: "BoxMedium 6"
+            E: "BoxMedium 4"
+            F: "DrayageDayCab 8"
+            G: "RegionalDayCab 8"
+            H: "TransitHeavy 8"
+          expected_powertrains: [Conv, SeriesPHEV, BEV, ParHEV, FCHEV, ISG, FCEV]
+          blocks:
+            maintenance_powertrain_multiplier:
+              rows: [34, 40]
+              source_label: "Maintenance Powertain Multplier"
+            coefficient_a:
+              rows: [41, 47]
+              source_label: "Coef A"
+            coefficient_b:
+              rows: [48, 54]
+              source_label: "Coef B"
+
+  assorted_sources:
+    interim_subdir: fetched_assorted_sources
+    manifest_file: manifest.csv
+    warnings_file: warnings.jsonl
+    tc_ev_dashboard:
+      source_id: transport_canada_ev_dashboard
+      component_id: medium_heavy_ev_market_share
+      output_file: transport_canada_medium_heavy_ev_market_share_2026.csv
+      heading_id: medium-heavy-duty-zev-market-share
+      table_id: tbl-mhzev
+      quarter_header: "Market share (Q1 2026)"
+      ytd_header: "2026 year-to-date"
+      public_chargers:
+        component_id: public_light_duty_chargers
+        heading_id: public-electric-vehicle-chargers
+        chart_table_id: figure-6
+        province_table_id: tbl-portratio2
+        as_of: March 2026
+        province_output_file: transport_canada_public_ld_chargers_by_province_2026.csv
+        type_output_file: transport_canada_public_ld_chargers_by_type_2026.csv
+        source_regions: [Newfoundland and Labrador, Prince Edward Island, Nova Scotia, New Brunswick, Quebec, Ontario, Manitoba, Saskatchewan, Alberta, British Columbia, Yukon, Northwest Territories, Nunavut]
+    nhtsa_cafe:
+      source_id: nhtsa_cafe_ldv_survival
+      component_id: ldv_survival_rates
+      output_file: nhtsa_cafe_ldv_survival_rates.csv
+      workbook_member: parameters_ref.xlsx
+      worksheet: "Vehicle Age Data"
+      source_range: "A3:E45"
+      title_headers:
+        A3: "Vehicle Age"
+        B3: "Survival Rates"
+      class_header_row: 4
+      spacer_row: 5
+      data_start_row: 6
+      age_column: A
+      class_columns:
+        B: Cars
+        C: Vans/SUVs
+        D: Pickups
+        E: "2b/3 Trucks"
+      expected_ages: {start: 0, end: 39}
+      value_bounds: {minimum: 0.0, maximum: 1.0}
+      unit: dimensionless
+    eia_nems:
+      source_id: eia_nems_hd_truck_scrappage
+      component_id: truck_scrappage_rates
+      output_file: eia_nems_truck_scrappage_rates.csv
+      workbook: trnhdvx.xlsx
+      worksheet: trnhdv
+      # Historical national conditional rates; this table is marked unused upstream.
+      source_range: "A86:D120"
+      age_header: "SCRAP(IAGE,ICLS)"
+      class_columns:
+        B: "Cls 3"
+        C: "Cls 4-6"
+        D: "Cls 7-8"
+      expected_ages: {start: 1, end: 34}
+      value_bounds: {minimum: 0.0, maximum: 1.0}
+      unit: annual scrappage-rate fraction
+    epa_moves5:
+      # Internal adapter key retained for existing callers; the pinned release is MOVES6.
+      source_id: epa_moves_heavy_truck_survival
+      component_id: heavy_truck_survival_rates
+      output_file: epa_moves6_survival_rates.csv
+      document_title: Population and Activity of Onroad Vehicles in MOVES6
+      document_id: EPA-420-R-26-010
+      pdf_page: 189
+      source_page: 187
+      source_table: Table C-1
+      table_title: Table C-1 Vehicle survival rate by age
+      source_vehicle_class_label: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+      class_header_fragments: [Heavy-duty Vehicles, '(Buses, Single Unit Trucks', 'and Combination Trucks)']
+      expected_rate_columns: 4
+      selected_rate_column: 4
+      class_columns:
+        cars: Passenger Cars
+        light_trucks: Light-duty Trucks (Passenger and Light Commercial)
+        heavy_trucks: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+      selected_rate_columns:
+        cars: 2
+        light_trucks: 3
+        heavy_trucks: 4
+      component_ids:
+        cars: car_survival_rates
+        light_trucks: light_truck_survival_rates
+        heavy_trucks: heavy_truck_survival_rates
+      expected_ages: {start: 0, end: 40}
+      value_bounds: {minimum: 0.0, maximum: 1.0}
+      unit: annual survival-rate fraction
+    jgcri_gcam:
+      source_id: jgcri_gcam_motorcycle_inputs
+      component_id: canada_motorcycle_inputs
+      output_file: jgcri_gcam_canada_motorcycle_inputs.csv
+      comment_prefix: "#"
+      required_columns: [UCD_region, UCD_sector, mode, size.class, UCD_technology, UCD_fuel, variable, unit]
+      filters:
+        UCD_region: Canada
+        UCD_sector: Passenger
+        mode: LDV_2W
+        size.class: "Motorcycle (>250cc)"
+      variables: [intensity, "Capital costs (purchase)", "Operating costs (maintenance)"]
+      expected_technologies: [BEV, Liquids]
+      variable_units:
+        intensity: MJ/vkm
+        "Capital costs (purchase)": "2005$/veh"
+        "Operating costs (maintenance)": "2005$/veh/yr"
+      expected_years: [2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070, 2075, 2080, 2085, 2090, 2095, 2100]
+      duplicate_key: [UCD_technology, UCD_fuel, variable, source_year]
+    epri_us_regen:
+      source_id: epri_us_regen_transportation
+      component_id: intercity_bus_charts
+      page_title: "Transportation | US-REGEN Documentation"
+      payload_asset:
+        rel: modulepreload
+        href: "/assets/transportation.html-YK_JCUYx.js"
+      output_file: epri_us_regen_v2025_intercity_bus.csv
+      measure_title: "Intercity Bus"
+      dimension_field: tech
+      category_field: vintage
+      charts:
+        "3":
+          element_id: chart3
+          title: "Chart 3: Medium-Duty and Heavy-Duty Vehicle Purchase Cost Assumptions"
+          measure_key: bus_int
+          expected_technologies:
+            icev: ICEV
+            cngv: CNGV
+            bev: BEV
+            hfcv: HFCV
+          expected_years: [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+          expected_unit: "$"
+          metric: purchase_cost
+          currency: null
+          currency_year: null
+        "4":
+          element_id: chart4
+          title: "Chart 4: Medium-Duty and Heavy-Duty Vehicle Efficiency Assumptions"
+          measure_key: bus_int
+          expected_technologies:
+            icev-mgs: "ICEV (mgs)"
+            icev-dsl: "ICEV (dsl)"
+            cngv: CNGV
+            bev: BEV
+            hfcv: HFCV
+          excluded_empty_series:
+            icev-mgs:
+              source_label: "ICEV (mgs)"
+              reason: "The pinned US-REGEN v2025 payload contains this Intercity Bus series at every expected year, but all values are null."
+          expected_years: [1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050]
+          expected_unit: mpg-e
+          metric: efficiency
+          currency: null
+          currency_year: null
+    faa:
+      source_id: faa_economic_values
+      minimum_extracted_text_characters: 1000
+      capacity_component_id: section_3_capacity
+      costs_component_id: section_4_operating_costs
+      capacity_output_file: faa_aircraft_capacity_load_speed.csv
+      maintenance_output_file: faa_aircraft_maintenance_costs.csv
+      data_period: "YE June 2023"
+      currency: USD
+      currency_year: null
+      documents:
+        section_3_capacity:
+          document_title: "SECTION 3: AIRCRAFT CAPACITY AND UTILIZATION FACTORS"
+        section_4_operating_costs:
+          document_title: "SECTION 4: AIRCRAFT OPERATING COSTS"
+      tables:
+        "3-6":
+          operating_group: passenger
+          aircraft_category: "All Aircraft"
+          title: "Table 3-6: Part 121 Passenger Air Carriers Capacity and Utilization Factors"
+          required_header_labels: ["Aircraft Category", Passenger, Capacity, Load, Factor, Average, Block, Speed, "(MPH)"]
+          ordered_columns: [block_hours, departures, passenger_capacity, passenger_load_factor, cargo_capacity, cargo_load_factor, crew_size, average_block_speed]
+          selected_metrics:
+            passenger_capacity: {metric: passenger_capacity, unit: seats, parse: numeric}
+            passenger_load_factor: {metric: passenger_load_factor, unit: percent, parse: percent}
+            average_block_speed: {metric: average_block_speed, unit: miles per hour, parse: numeric}
+        "3-7":
+          operating_group: passenger
+          aircraft_category: "All Aircraft"
+          title: "Table 3-7: Part 121 Passenger Air Carriers Fleet Size and Daily Utilization"
+          required_header_labels: ["Aircraft Category", "Block Hours", "Number of", Aircraft, Daily, Utilization, "(hours)"]
+          ordered_columns: [block_hours_for_number, number_of_aircraft, block_hours_for_daily_utilization, average_daily_utilization]
+          selected_metrics:
+            average_daily_utilization:
+              metric: average_daily_utilization
+              unit: block hours per aircraft-day
+              parse: numeric
+        "3-9":
+          operating_group: cargo
+          aircraft_category: "All Aircraft"
+          title: "Table 3-9: Part 121 All-Cargo Air Carriers Capacity and Utilization Factors"
+          required_header_labels: ["Aircraft Category", Cargo, Capacity, Load, Factor, Average, Block, Speed, "(MPH)"]
+          ordered_columns: [block_hours, departures, cargo_capacity, cargo_load_factor, crew_size, average_block_speed]
+          selected_metrics:
+            cargo_capacity: {metric: cargo_capacity, unit: source-labelled tons, parse: numeric}
+            cargo_load_factor: {metric: cargo_load_factor, unit: percent, parse: percent}
+            average_block_speed: {metric: average_block_speed, unit: miles per hour, parse: numeric}
+        "3-10":
+          operating_group: cargo
+          aircraft_category: "All Aircraft"
+          title: "Table 3-10: Part 121 All-Cargo Air Carriers Fleet Size and Daily Utilization"
+          required_header_labels: ["Aircraft Category", "Block Hours", "Number of", Aircraft, Daily, Utilization, "(hours)"]
+          ordered_columns: [block_hours_for_number, number_of_aircraft, block_hours_for_daily_utilization, average_daily_utilization]
+          selected_metrics:
+            average_daily_utilization:
+              metric: average_daily_utilization
+              unit: block hours per aircraft-day
+              parse: numeric
+        "4-7":
+          operating_group: passenger
+          aircraft_category: "All Aircraft"
+          title: "Table 4-7: YE June 2023 Part 121 Passenger Air Carriers Direct Operating and Fixed Costs per Block Hour"
+          required_header_labels: ["Aircraft Category", "Cost per Block Hour", Maintenance, Total, Variable, Block, Hours]
+          ordered_columns: [fuel_and_oil, maintenance, crew, total_variable, depreciation, rentals, insurance, other, total_fixed, total, block_hours]
+          selected_metrics:
+            maintenance: {metric: maintenance_cost_per_block_hour, unit: USD per block hour, parse: currency}
+        "4-8":
+          operating_group: cargo
+          aircraft_category: "All Aircraft"
+          title: "Table 4-8: YE June 2023 Part 121 All-Cargo Air Carriers Direct Operating and Fixed Costs per Block Hour"
+          required_header_labels: ["Aircraft Category", "Cost per Block Hour", Maintenance, Total, Variable, Block, Hours]
+          ordered_columns: [fuel_and_oil, maintenance, crew, total_variable, depreciation, rentals, insurance, other, total_fixed, total, block_hours]
+          selected_metrics:
+            maintenance: {metric: maintenance_cost_per_block_hour, unit: USD per block hour, parse: currency}
+
+  vpic_vehicle_types:
+    eligible_request_file: ontario_vehicle_population_vpic_eligible_requests.csv
+    interim_subdir: fetched_vpic_vehicle_types
+    output_file: vpic_vehicle_type_evidence.csv
+    manifest_file: manifest.csv
+    warnings_file: warnings.csv
+    truck_vehicle_types: [Truck, Incomplete Vehicle]
+    vehicle_types_to_probe:
+      - Bus
+      - Incomplete Vehicle
+      - Low Speed Vehicle (LSV)
+      - Motorcycle
+      - Multipurpose Passenger Vehicle (MPV)
+      - Off Road Vehicle
+      - Passenger Car
+      - Trailer
+      - Truck
+    request_timeout_seconds: 60
+    request_delay_seconds: 0.25
+    maximum_requests: 1000
+
+  vpic_model_years:
+    eligible_request_file: ontario_vehicle_population_vpic_temporal_requests.csv
+    interim_subdir: fetched_vpic_model_years
+    output_file: vpic_model_year_evidence.csv
+    manifest_file: manifest.csv
+    warnings_file: warnings.csv
+    models_endpoint_minimum_year: 1996
+    canadian_specifications_minimum_year: 1990
+    request_timeout_seconds: 60
+    request_delay_seconds: 0.25
+    maximum_requests: 2500
+
+# MODEL PARAMETERS: harmonization, allocation, mappings, and parameter artifacts.
+parameterization:
+  ceud_inputs:
+    cagr: {history_start_year: 2013, excluded_years: [2020, 2021], zero_endpoint: constant}
+    audit_file: ceud_extension_audit.csv
+    manifest_file: ceud_parameter_inputs_manifest.json
+
+  # Opt-in researcher comparisons; these references never parameterize production.
+  charging_cost_comparison:
+    reference_route: transportation_validation_charging_inputs
+    legacy_baseline: legacy_backend/canoe_on_12d_baseline.sqlite
+    report_route: charging_cost_comparison_report
+    files: {cost_invest: CostInvest.csv, cost_fixed: CostFixed.csv, cost_variable: CostVariable_ALL.csv}
+    groups:
+      ldv:
+        reference_technologies: [T_LDV_BEV_CHRG, T_LDV_PHEV_CHRG]
+        existing: T_LDV_CHRG_EX
+        new: T_LDV_CHRG_N
+      mhdv:
+        reference_technologies: [T_MDV_CHRG, T_HDV_CHRG]
+        existing: T_MHDV_CHRG_EX
+        new: T_MHDV_CHRG_N
+    reference_basis:
+      name: user_confirmed_2020_CAD_per_PJ_year
+      currency: CAD
+      dollar_year: 2020
+      denominator: PJ/year_capacity
+      evidence: >-
+        User confirmation 2026-10-29: million 2020 CAD and PJ/year of charging
+        throughput. Embedded utilization and loss conventions were not supplied.
+    conditional_bases:
+      - name: effective_output_at_backend_utilization
+        currency: CAD
+        dollar_year: 2020
+        denominator: PJ/year_at_backend_utilization
+        evidence: >-
+          Sensitivity only: normalize backend rated capacity using its configured
+          utilization target; do not infer embedded utilization in the reference.
+
+  transportation_research:
+    reference_route: transportation_validation_researcher_inputs
+    report_route: transportation_research_report
+    # Select a captured report, independently of whether its scenario YAML survives.
+    notebook_scenario: config/scenarios/validation_baseline.yaml
+    comparison_significance_percent: 5.0
+    reference_sqlite: canoe_ON_16d.sqlite
+    reference_notebook: Update data_20260618_fixed lifetime (1).ipynb
+    # Original notebook Input data/canoe_ALL_cm.sqlite is unavailable. Explicit
+    # inherited-parameter substitution; disputed capacity/demand are not authority.
+    inherited_sqlite: legacy_backend/legacy_variant_sales_cohorts/canoe_ON_16d.sqlite
+    legacy_baseline: legacy_backend/canoe_on_12d_baseline.sqlite
+    energy_series:
+      cars: {table_id: 20, raw_series: Car Energy Use (PJ)}
+      passenger_light_trucks: {table_id: 34, raw_series: Passenger Light Truck Energy Use (PJ)}
+      freight_light_trucks: {table_id: 35, raw_series: Freight Light Truck Energy Use (PJ)}
+      medium_trucks: {table_id: 36, raw_series: Medium Truck Energy Use (PJ)}
+      heavy_trucks: {table_id: 36, raw_series: Heavy Truck Energy Use1 (PJ)}
+
+  road_embodied_emissions:
+    transformation_version: '3'
+    vintage_treatment: constant_solved_year
+    constant_through_year: 2050
+    # Reviewed native selector defect is harmless only while range inputs match.
+    lightweight_bev_range_mismatch: allow_equal_glider_inputs
+    # Range keys belong to the current technology/ATB archetype contract, not Python.
+    ldv_range_miles: {phev_35_miles: 35, phev_50_miles: 50, bev_150_miles: 150, bev_200_miles: 200, bev_300_miles: 300, bev_400_miles: 400}
+    source_units: g/vehicle-lifetime
+    capacity_units: k vehicles
+    gas_commodities: {CO2: co2, CH4: ch4, N2O: n2o}
+    # CH4/N2O use tonnes to increase numerical coefficients without changing mass.
+    gas_scaling:
+      CO2: {commodity_units: kt, output_units: kt/k vehicles, conversion_key: grams_per_vehicle_to_kt_per_thousand_vehicles}
+      CH4: {commodity_units: t, output_units: t/k vehicles, conversion_key: grams_per_vehicle_to_tonnes_per_thousand_vehicles}
+      N2O: {commodity_units: t, output_units: t/k vehicles, conversion_key: grams_per_vehicle_to_tonnes_per_thousand_vehicles}
+    files:
+      aggregation: emission_embodied_aggregation.csv
+      parameters: emission_embodied.csv
+      coverage: coverage.csv
+      integrity: integrity.json
+    road_classes:
+      cars: {family: ldv, aggregation: direct, source_class: Car}
+      passenger_light_trucks: {family: ldv, aggregation: pickup_suv}
+      freight_light_trucks: {family: ldv, aggregation: pickup_suv}
+      medium_trucks: {family: mhdv, aggregation: medium_gvwr}
+      heavy_trucks: {family: mhdv, aggregation: heavy_haul}
+    # Keep only the existing pickup/SUV groups and renormalize their observed weights.
+    light_truck_classes: {Pickup: Pickup, Small SUV: SUV, Midsize SUV: SUV}
+    heavy_class_map:
+      Class 8 Beverage DayCab: Class 8 Day-Cab Trucks
+      Class 8 Drayage DayCab: Class 8 Day-Cab Trucks
+      Class 8 Regional DayCab: Class 8 Day-Cab Trucks
+      Class 8 Longhaul Sleeper: Class 8 Sleeper-Cab Trucks
+    powertrain_map:
+      ldv:
+        gasoline: icev
+        diesel: icev
+        cng: icev
+        hev: hev
+        phev_35_miles: phev
+        phev_50_miles: phev
+        bev_150_miles: bev
+        bev_200_miles: bev
+        bev_300_miles: bev
+        bev_400_miles: bev
+        fcev: fcev
+      mhdv: {gasoline: icev, diesel: icev, cng: icev, hev: hev, phev: hev, bev: bev, fcev: fcev, fchev: fcev}
+    weight_tolerance: 1.0e-9
+    new_technology_suffix: _N
+    # User-approved Class 6 representation retains each region's GVWR shares.
+    medium_class_map: {2: Class 6 PnD Trucks, 3: Class 6 PnD Trucks, 4: Class 6 PnD Trucks, 5: Class 6 PnD Trucks, 6: Class 6 PnD Trucks, 7: Class 6 PnD Trucks}
+  manual_parameters:
+    # Manual CSVs remain review-owned. This section controls only validation,
+    # selector expansion, and auditable interim publication.
+    interim_subdir: resolved_manual_parameters
+    technology_template_file: technology.csv
+    source_column: "source -> data_source"
+    notes_column: notes
+    technology_id_column: tech
+    technology_class_column: technology_class
+    input_column_aliases:
+      lifetime_process.csv: {category: technology_class}
+    technology_category_column: category
+    technology_sub_category_column: sub_category
+    powertrain_column: powertrain
+    parameter_column: parameter
+    wildcard_selector: all
+    remainder_selector: remainder
+    projection_year_pattern: '^(?P<base>.+)_(?P<year>(?:19|20)\d{2})$'
+    unmatched_policy: report
+    behavior_specific_files: [charger_parameters.csv, capacity_to_activity.csv, efficiency_multipliers.csv, cost_invest_multipliers.csv, cost_variable_multipliers.csv]
+    internal_assumption_files:
+      capacity_to_activity.csv:
+        expected_columns: [category, sub_category, units, c2a, notes]
+        ignored_columns: [speed, load, hours]  # Explanatory only; consume the reviewed c2a value.
+        unique_key: [category, sub_category]
+        expected_rows: 10
+    powertrain_aliases:
+      jet_fuel: [jet_fuel, "jet fuel"]
+      mdo: [mdo, "marine diesel oil"]
+      hfo: [hfo, "heavy fuel oil"]
+      electric: [electric, bev]
+    registry_file: manual_parameter_registry.csv
+    resolution_file: manual_parameter_technology_resolution.csv
+    reconciliation_file: manual_parameter_reconciliation.csv
+    findings_file: manual_parameter_findings.csv
+
+  road_aggregation:
+    # Source precedence is selected once by the scenario's aggregation_sources.
+    ldv_weight_basis: all_vintages
+    medium_trucks:
+      # Report 4 Class 2b uses ATB Class 2 consumption, price and VMT schedules.
+      report4_gvwr: {MDV2b: 2, MDV3: 3, MDV4: 4, MDV5: 5, MDV6: 6, MDV7: 7}
+      wards_year: 2020
+      wards_classes: [3, 4, 5, 6, 7]
+      wards_class_pattern: '^Class ([3-7])$'
+      atb_class_pattern: '^Class (\d+)\b'
+      excluded_vocations: [School, Transit, Refuse]
+      within_gvwr_aggregation: equal_available_freight_vocations
+    heavy_trucks:
+      freight_source_region_map: {BCT: BC}
+      vocations:
+        regional: [Class 8 Beverage DayCab, Class 8 Drayage DayCab, Class 8 Regional DayCab]
+        long_haul: [Class 8 Longhaul Sleeper]
+    # Canonical/source-link authorities are read-only; bootstrap emits proposals only.
+    accepted_mapping_statuses: [reviewed]
+    mapping_bootstrap:
+      reviewed_crosswalk_policy: rebuild
+      accept_reviewed_strong_candidates: true
+      accepted_candidate_model_similarity: 0.7
+      candidate_rows_per_key: 5
+      candidate_similarity_scores:
+        exact_normalized: 1.0
+        normalized_prefix: 0.95
+        normalized_substring: 0.9
+      stable_family_hierarchy_dominance_share: 0.95
+      high_stock_reaudit_quantile: 0.5
+      temporal_validation_minimum_model_year: 1990
+      accepted_model_match_methods:
+        reviewed_canonical_label: 0
+        exact_normalized_model: 0
+        mto_prefix_plus_canonical_model: 1
+        canonical_model_plus_mto_suffix: 1
+        normalized_model_prefix: 2
+        anchored_consonant_abbreviation: 3
+      minimum_make_prefix_length: 3
+      minimum_model_prefix_length: 3
+      manual_minimum_model_prefix_length: 2
+      # Matching uses exact MTO year, then nearest source year; the candidate
+      # evidence window follows the configured cohort-transition window.
+      minimum_model_year: 2000
+      exclude_future_model_years: false
+      evidence_source_priority:
+        - nrcan_fuel_consumption_ratings
+        - fueleconomy_gov_vehicle_data
+      manual_make_aliases:
+        AMER: American Motors
+        ASTO: Aston Martin
+        AUST: Austin
+        AUT0: Autocar
+        BENT: Bentley
+        BMW: BMW
+        FCCC: Freightliner Custom Chassis
+        FERR: Ferrari
+        FIAT: Fiat
+        FRHT: Freightliner
+        GENS: Genesis
+        GMC: GMC
+        HINO: Hino
+        INTE: International
+        INTL: International
+        ISU: Isuzu
+        KW: Kenworth
+        LAMO: Lamborghini
+        LNDR: Land Rover
+        MACK: Mack
+        MERC: Mercury
+        MG: MG
+        PLSR: Polaris
+        PTRB: Peterbilt
+        SMRT: smart
+        SPAR: Spartan
+        STRN: Saturn
+        STRG: Sterling
+        SUZI: Suzuki
+        TRIU: Triumph
+        VNFS: VinFast
+        VOLV: Volvo
+        WEST: Western Star
+        WRKH: Workhorse
+        WSTR: Western Star
+    # Compact reviewed authority; constant generator metadata stays in evidence outputs.
+    mapping_columns:
+      - entry_type
+      - mto_make_code
+      - mto_model_code
+      - model_year_from
+      - model_year_to
+      - canonical_make
+      - canonical_model
+      - vehicle_scope
+      - nrcan_vehicle_class
+      - nlr_atb_class
+      - nrcan_ceud_class
+      - match_method
+      - mapping_status
+      - evidence_source
+      - supporting_rating_rows
+      - review_notes
+    candidate_file: ontario_vehicle_population_mapping_candidates.csv
+    bootstrap_evidence_file: vehicle_size_class_map_bootstrap.csv
+    manual_reconciliation_file: ontario_vehicle_population_manual_mapping_reconciliation.csv
+    vpic_eligible_request_file: ontario_vehicle_population_vpic_eligible_requests.csv
+    vpic_temporal_request_file: ontario_vehicle_population_vpic_temporal_requests.csv
+    coverage_file: ontario_vehicle_population_mapping_coverage.csv
+    unresolved_file: ontario_vehicle_population_highest_stock_unresolved.csv
+    unresolved_reason_detail_file: ontario_vehicle_population_unresolved_mapping_reasons.csv
+    unresolved_reason_summary_file: ontario_vehicle_population_unresolved_mapping_reason_summary.csv
+    latest_unresolved_worklist_file: ontario_vehicle_population_latest_unresolved_key_worklist.csv
+    mapped_current_stock_file: ontario_vehicle_population_current_stock_mapped.csv
+    vehicle_class_evidence_file: ontario_vehicle_model_class_evidence.csv
+    nrcan_weights_file: ontario_vehicle_population_nrcan_class_weights.csv
+    nlr_weights_file: ontario_vehicle_population_nlr_atb_class_weights.csv
+    fleet_composition_weights_file: ontario_vehicle_population_fleet_composition_weights.csv
+    wards_comparison_file: ontario_vehicle_population_wards_legacy_comparison.csv
+    top_observations_file: ontario_vehicle_population_top_mapped_observations.csv
+    highest_stock_unresolved_limit: 100
+    top_observations_per_ceud_class: 15
+    vintage_bin_years: 5
+    vintage_alignment: ceiling
+    nrcan_rating_files:
+      - nrcan_battery_electric_vehicles_2012_2026.csv
+      - nrcan_plug_in_hybrid_electric_vehicles_2012_2026.csv
+      - nrcan_fuel_consumption_ratings_1995_2014.csv
+      - nrcan_fuel_consumption_ratings_2015_2024.csv
+      - nrcan_fuel_consumption_ratings_2025.csv
+      - nrcan_fuel_consumption_ratings_2026.csv
+    fueleconomy_interim_subdir: fetched_fueleconomy_vehicle_data
+    fueleconomy_evidence_file: fueleconomy_vehicle_class_evidence.csv
+    canonical_aliases:
+      TOYT: Toyota
+      HOND: Honda
+      FORD: Ford
+      DODG: Dodge
+      HYUN: Hyundai
+      NISS: Nissan
+      MAZD: Mazda
+      VOLK: Volkswagen
+      TESL: Tesla
+      KIA: Kia
+      LEXS: Lexus
+      MERZ: Mercedes-Benz
+      MNNI: Mini
+
+  road_stocks_and_demands:
+    demand:
+      activity_to_billion_factor: 0.001
+      region_output_map: {NL: NLLAB, PE: PEI}
+      car_extrapolation:
+        method: observed_nonpandemic_cagr  # Shared estimation controls: ceud_inputs.cagr.
+      activity_series:
+        cars:
+          table_id: 20
+          raw_series: Cars|Activity|Passenger-kilometres (millions)
+          commodity: T_D_pkm_ldv_c
+          units: bn passenger-km
+        passenger_light_trucks:
+          table_id: 34
+          raw_series: Passenger Light Trucks|Activity|Passenger-kilometres (millions)
+          commodity: T_D_pkm_ldv_t
+          units: bn passenger-km
+        freight_light_trucks:
+          table_id: 35
+          raw_series: Freight Light Trucks|Activity|Tonne-kilometres (millions)
+          commodity: T_D_tkm_ldv_t
+          units: bn tonne-km
+        medium_trucks:
+          table_id: 36
+          raw_series: Medium Trucks|Activity|Tonne-kilometres (millions)
+          commodity: T_D_tkm_mdv_t
+          units: bn tonne-km
+        heavy_trucks:
+          table_id: 36
+          raw_series: Heavy Trucks|Activity|Tonne-kilometres (millions)
+          commodity: T_D_tkm_hdv_t
+          units: bn tonne-km
+        motorcycles:
+          table_id: 32
+          raw_series: Motorcycle|Activity|Passenger-kilometres (millions)
+          commodity: T_D_pkm_ldv_m
+          units: bn passenger-km
+        school_buses:
+          table_id: 28
+          raw_series: School Buses|Activity|Passenger-kilometres (millions)
+          commodity: T_D_pkm_hdv_bs
+          units: bn passenger-km
+        urban_transit:
+          table_id: 29
+          raw_series: Urban Transit|Activity|Passenger-kilometres (millions)
+          commodity: T_D_pkm_hdv_bt
+          units: bn passenger-km
+        inter_city_buses:
+          table_id: 30
+          raw_series: Inter-City Buses|Activity|Passenger-kilometres (millions)
+          commodity: T_D_pkm_hdv_bic
+          units: bn passenger-km
+    existing_capacity:
+      output_units: k vehicles
+      historical_fuel_types: [Gasoline, Diesel]
+      latest_vintage_only_fuels: {medium_trucks: [Battery electric]}
+      first_model_period_rule: positive_surviving_capacity
+      ineligible_cohort_redistribution: proportional_to_eligible_capacity
+      survival_curve_classes: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
+      fixed_lifetime_sources:
+        motorcycles:
+          kind: manual
+          category: motorcycles
+      survival_source_profiles:
+        nhtsa_nems:
+          cars:
+            kind: ceud_median
+            target_class: Car
+          passenger_light_trucks:
+            kind: ceud_median
+            target_class: Light Truck
+          freight_light_trucks:
+            kind: ceud_median
+            target_class: Light Truck
+          medium_trucks:
+            kind: source_median_equal
+            source_id: nhtsa_cafe_ldv_survival
+            source_classes:
+            - 2b/3 Trucks
+            curve_source_class: 2b/3 Trucks
+          heavy_trucks:
+            kind: source_median_equal
+            source_id: eia_nems_hd_truck_scrappage
+            source_classes:
+            - Cls 7-8
+            curve_source_class: Cls 7-8
+        moves:
+          cars:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Passenger Cars
+            curve_source_class: Passenger Cars
+          passenger_light_trucks:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Light-duty Trucks (Passenger and Light Commercial)
+            curve_source_class: Light-duty Trucks (Passenger and Light Commercial)
+          freight_light_trucks:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Light-duty Trucks (Passenger and Light Commercial)
+            curve_source_class: Light-duty Trucks (Passenger and Light Commercial)
+          medium_trucks:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+            curve_source_class: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+          heavy_trucks:
+            kind: source_median_equal
+            source_id: epa_moves_heavy_truck_survival
+            source_classes:
+            - Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+            curve_source_class: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+      region_output_map: {NL: NLLAB, PE: PEI}
+      share_region_proxy: {BCT: BC, AB: Canada, NL: Canada}
+      report5_age_classes: {medium_trucks: COMMERCIAL, heavy_trucks: COMMERCIAL, motorcycles: MOTORCYCLE}
+      ceud_stock_series:
+        cars: {table_id: 21, raw_series: "Stock (thousands)|Cars"}
+        passenger_light_trucks: {table_id: 37, raw_series: "Stock (thousands)|Passenger Light Trucks"}
+        freight_light_trucks: {table_id: 37, raw_series: "Stock (thousands)|Freight Light Trucks"}
+        medium_trucks: {table_id: 37, raw_series: "Stock (thousands)|Medium Trucks"}
+        heavy_trucks: {table_id: 37, raw_series: "Stock (thousands)|Heavy Trucks"}
+        motorcycles: {table_id: 32, raw_series: "Motorcycle Explanatory Variables|Stock (thousands)"}
+      # Optional sales reconstruction uses the same registered cumulative survival
+      # as lifetime preparation. These classes have explicit CEUD annual sales.
+      ceud_sales_series:
+        cars: {table_id: 21, raw_series: "Sales (thousands)|Cars"}
+        passenger_light_trucks: {table_id: 37, raw_series: "Sales (thousands)|Passenger Light Trucks"}
+        freight_light_trucks: {table_id: 37, raw_series: "Sales (thousands)|Freight Light Trucks"}
+        medium_trucks: {table_id: 37, raw_series: "Sales (thousands)|Medium Trucks"}
+        heavy_trucks: {table_id: 37, raw_series: "Sales (thousands)|Heavy Trucks"}
+      sales_cohorts_file: road_sales_survival_cohorts.csv
+      statcan_ldv_source_types:
+        cars: [Passenger cars]
+        passenger_light_trucks: [Pickup trucks, Multi-purpose vehicles, Vans]
+        freight_light_trucks: [Pickup trucks, Multi-purpose vehicles, Vans]
+      statcan_medium_source_types:
+        - "Total, vehicles weighing 4,536 to 11,793 kilograms"
+        - "Class 7 vehicles, weighing 11,794 to 14,969 kilograms"
+      statcan_heavy_source_type: "Class 8 vehicles, weighing 14,969 kilograms or more"
+      fuel_technology:
+        cars:
+          Gasoline: T_LDV_C_GSL_EX
+          Diesel: T_LDV_C_DSL_EX
+          Battery electric: T_LDV_C_BEV_EX
+          Hybrid electric: T_LDV_C_GSL_HEV_EX
+          Plug-in hybrid electric: T_LDV_C_GSL_PHEV_EX
+        passenger_light_trucks:
+          Gasoline: T_LDV_LTP_GSL_EX
+          Diesel: T_LDV_LTP_DSL_EX
+          Battery electric: T_LDV_LTP_BEV_EX
+          Hybrid electric: T_LDV_LTP_GSL_HEV_EX
+          Plug-in hybrid electric: T_LDV_LTP_GSL_PHEV_EX
+        freight_light_trucks:
+          Gasoline: T_LDV_LTF_GSL_EX
+          Diesel: T_LDV_LTF_DSL_EX
+          Battery electric: T_LDV_LTF_BEV_EX
+          Hybrid electric: T_LDV_LTF_GSL_HEV_EX
+          Plug-in hybrid electric: T_LDV_LTF_GSL_PHEV_EX
+        medium_trucks: {Gasoline: T_MDV_T_GSL_EX, Diesel: T_MDV_T_DSL_EX, Battery electric: T_MDV_T_BEV_EX}
+        heavy_trucks: {Diesel: T_HDV_T_DSL_EX}
+        motorcycles: {Gasoline: T_LDV_M_GSL_EX}
+      age_cohorts_file: road_existing_capacity_age_cohorts.csv
+      fuel_shares_file: road_existing_capacity_fuel_shares.csv
+      exclusions_file: road_existing_capacity_excluded_fuel_shares.csv
+      capacity_file: road_existing_capacity.csv
+    bus_existing_capacity:
+      age_class: BUS
+      activity_share_method: annual_energy_times_efficiency
+      pre_ceud_year_rule: oldest_available_activity_share
+      first_model_period_rule: positive_surviving_capacity
+      ineligible_cohort_redistribution: proportional_to_eligible_capacity
+      unallocatable_technology_rule: redistribute_within_class_proportionally
+      fuel_source_members:
+        gasoline: [Motor Gasoline, Ethanol]
+        diesel: [Diesel Fuel Oil, Biodiesel Fuel]
+        cng: [Natural Gas]
+        bev: [Electricity]
+      required_fuel_members: [Motor Gasoline, Diesel Fuel Oil, Natural Gas, Electricity]
+      excluded_fuel_members: [Propane]
+      classes:
+        school_buses:
+          stock: {table_id: 31, raw_series: "Stock (thousands)|School Buses"}
+          energy_table: 28
+          energy_prefix: "School Buses|Energy Use by Energy Source (PJ)|"
+          fuel_technology: {gasoline: T_HDV_BS_GSL_EX, diesel: T_HDV_BS_DSL_EX, cng: T_HDV_BS_CNG_EX}
+        urban_transit:
+          stock: {table_id: 31, raw_series: "Stock (thousands)|Urban Transit"}
+          energy_table: 29
+          energy_prefix: "Urban Transit|Energy Use by Energy Source (PJ)|"
+          fuel_technology:
+            gasoline: T_HDV_BT_GSL_EX
+            diesel: T_HDV_BT_DSL_EX
+            cng: T_HDV_BT_CNG_EX
+            bev: T_HDV_BT_BEV_EX
+        inter_city_buses:
+          stock: {table_id: 31, raw_series: "Stock (thousands)|Inter-City Buses"}
+          energy_table: 30
+          energy_prefix: "Inter-City Buses|Energy Use by Energy Source (PJ)|"
+          fuel_technology: {gasoline: T_HDV_BIC_GSL_EX, diesel: T_HDV_BIC_DSL_EX}
+      age_cohorts_file: bus_existing_capacity_age_cohorts.csv
+      activity_shares_file: bus_existing_capacity_activity_shares.csv
+      exclusions_file: bus_existing_capacity_excluded_fuel_energy.csv
+      transfers_file: bus_existing_capacity_technology_transfers.csv
+      capacity_file: bus_existing_capacity.csv
+
+  offroad_stocks_and_demands:
+    demand:
+      region_output_map: {NL: NLLAB, PE: PEI}
+      energy_only_series:
+        off_road:
+          provincial_table: 7
+          energy_series: Energy Use by Transportation Mode (PJ)|Off-Road1
+          commodity: T_D_pj_off
+          units: PJ
+      energy_intensity_series:
+        passenger_air:
+          provincial_table: 14
+          energy_series: Passenger Air Transportation Energy Use (PJ)
+          national_table: 20
+          intensity_series: Passenger Air|Energy Intensity1 (MJ/Pkm)
+          commodity: T_D_pkm_hdv_aj
+          units: bn passenger-km
+        freight_air:
+          provincial_table: 15
+          energy_series: Freight Air Transportation Energy Use (PJ)
+          national_table: 21
+          intensity_series: Freight Air|Energy Intensity (MJ/Tkm)
+          commodity: T_D_tkm_hdv_aj
+          units: bn tonne-km
+        passenger_rail:
+          provincial_table: 17
+          energy_series: Passenger Rail Transportation Energy Use1 (PJ)
+          national_table: 26
+          intensity_series: Passenger Rail|Energy Intensity (MJ/Pkm)
+          commodity: T_D_pkm_hdv_r
+          units: bn passenger-km
+        freight_rail:
+          provincial_table: 18
+          energy_series: Freight Rail Transportation Energy Use1 (PJ)
+          national_table: 27
+          intensity_series: Freight Rail|Energy Intensity (MJ/Tkm)
+          commodity: T_D_tkm_hdv_r
+          units: bn tonne-km
+        freight_marine:
+          provincial_table: 19
+          energy_series: Marine1 Transportation Energy Use (PJ)
+          national_table: 28
+          intensity_series: Marine Freight|Energy Intensity (MJ/Tkm)
+          commodity: T_D_tkm_hdv_wt
+          units: bn tonne-km
+    existing_capacity:
+      region_output_map: {NL: NLLAB, PE: PEI}
+      retirement_rule: linear_cohort_annual_reconciliation
+      first_model_period_rule: positive_surviving_capacity
+      ineligible_cohort_redistribution: proportional_to_eligible_capacity
+      marine_turnover_pool: freight_marine
+      marine_powertrain_split: base_year_energy
+      capacity_series:
+        passenger_air:
+          provincial_table: 14
+          national_table: 20
+          energy_series: Passenger Air|Energy Use by Energy Source (PJ)|Aviation Turbo Fuel
+          excluded_energy_series: Passenger Air|Energy Use by Energy Source (PJ)|Aviation Gasoline
+          intensity_series: Passenger Air|Energy Intensity1 (MJ/Pkm)
+          tech: T_HDV_AJP_JFL_EX
+          units: bn passenger-km
+        freight_air:
+          provincial_table: 15
+          national_table: 21
+          energy_series: Freight Air|Energy Use by Energy Source (PJ)|Aviation Turbo Fuel
+          excluded_energy_series: Freight Air|Energy Use by Energy Source (PJ)|Aviation Gasoline
+          intensity_series: Freight Air|Energy Intensity (MJ/Tkm)
+          tech: T_HDV_AJF_JFL_EX
+          units: bn tonne-km
+        passenger_rail:
+          provincial_table: 17
+          national_table: 26
+          energy_series: Passenger Rail Transportation Energy Use1 (PJ)
+          intensity_series: Passenger Rail|Energy Intensity (MJ/Pkm)
+          tech: T_HDV_RICP_DSL_EX
+          units: bn passenger-km
+        freight_rail:
+          provincial_table: 18
+          national_table: 27
+          energy_series: Freight Rail Transportation Energy Use1 (PJ)
+          intensity_series: Freight Rail|Energy Intensity (MJ/Tkm)
+          tech: T_HDV_RF_DSL_EX
+          units: bn tonne-km
+        freight_marine_mdo:
+          mode: freight_marine
+          provincial_table: 19
+          national_table: 28
+          energy_series: Marine Freight|Energy Use by Energy Source (PJ)|Diesel Fuel Oil
+          intensity_series: Marine Freight|Energy Intensity (MJ/Tkm)
+          tech: T_HDV_WTF_MDO_EX
+          units: bn tonne-km
+        freight_marine_hfo:
+          mode: freight_marine
+          provincial_table: 19
+          national_table: 28
+          energy_series: Marine Freight|Energy Use by Energy Source (PJ)|Heavy Fuel Oil
+          intensity_series: Marine Freight|Energy Intensity (MJ/Tkm)
+          tech: T_HDV_WTF_HFO_EX
+          units: bn tonne-km
+      annual_capacity_file: offroad_existing_capacity_annual.csv
+      cohort_additions_file: offroad_existing_capacity_cohort_additions.csv
+      capacity_file: offroad_existing_capacity.csv
+
+  road_utilization:
+    sales_calibration_file: sales_activity_calibration.csv
+    baseline_observations: 5
+    excluded_years: [2020, 2021]
+    additional_stock_series:
+      school_buses: {table_id: 31, raw_series: "Stock (thousands)|School Buses"}
+      urban_transit: {table_id: 31, raw_series: "Stock (thousands)|Urban Transit"}
+      inter_city_buses: {table_id: 31, raw_series: "Stock (thousands)|Inter-City Buses"}
+    age_profile_classes:
+      cars: Car
+      passenger_light_trucks: Light Truck
+      freight_light_trucks: Light Truck
+      medium_trucks: Medium Trucks
+      heavy_trucks: Heavy Trucks
+    flat_only_classes: [motorcycles, school_buses, urban_transit, inter_city_buses]
+    manual_file: capacity_to_activity.csv
+    annual_audit_file: road_annual_utilization.csv
+    baseline_file: road_baseline_utilization.csv
+    c2a_file: capacity_to_activity.csv
+    flat_file: limit_annual_capacity_factor_flat.csv
+    age_profile_file: road_normalized_age_profiles.csv
+    age_factor_file: limit_annual_capacity_factor_vintage_period.csv
+    insertion_gap_file: vintage_period_schema_gap.json
+
+  road_lifetimes_survival:
+    # Scenario lifetimes own the tail method, survival threshold and optional zero cap.
+    # Preserve the native source schedule as evidence.
+    bus_lifetimes:
+      statcan_table_id: "34-10-0254-01"
+      region_source_proxy: {BCT: BC}
+      canada_fallback_year: 2020
+      powertrain_source_member:
+        diesel: "Diesel buses, average expected useful life"
+        gasoline: "Diesel buses, average expected useful life"
+        cng: "Natural gas buses, average expected useful life"
+        bev: "Electric buses, average expected useful life"
+        hev: "Hybrid buses (includes diesel, biodiesel and natural gas), average expected useful life"
+        phev: "Electric buses, average expected useful life"
+        fcev: "Electric buses, average expected useful life"
+        fchev: "Electric buses, average expected useful life"
+    raw_key_snapshot_file: ontario_vehicle_population_mto_key_snapshots.csv
+    raw_key_transition_file: ontario_vehicle_population_mto_key_transitions.csv
+    mapped_key_transition_file: ontario_vehicle_population_mapped_key_transitions.csv
+    nlr_class_vintage_retention_file: ontario_vehicle_population_nlr_class_vintage_retention.csv
+    nlr_class_retention_file: ontario_vehicle_population_nlr_class_retention.csv
+    ceud_class_vintage_retention_file: ontario_vehicle_population_ceud_class_vintage_retention.csv
+    ceud_class_retention_file: ontario_vehicle_population_ceud_class_retention.csv
+    ceud_scope_comparison_file: ontario_vehicle_population_ceud_survival_scope_comparison.csv
+    transition_mapping_coverage_file: ontario_vehicle_population_transition_mapping_coverage.csv
+    mto_survival_decision_file: ontario_vehicle_population_mto_survival_decision.csv
+    cohort_snapshot_file: ontario_vehicle_population_mapped_cohort_snapshots.csv
+    commercial_snapshot_file: ontario_vehicle_population_commercial_cohort_snapshots.csv
+    transition_observations_file: ontario_vehicle_population_cohort_transition_observations.csv
+    pooled_estimates_file: ontario_vehicle_population_cohort_retention_pooled.csv
+    transition_findings_file: ontario_vehicle_population_cohort_transition_findings.csv
+    retention_comparison_file: ontario_vehicle_population_nlr_retention_source_comparison.csv
+    legacy_survival_curves_file: road_vehicle_legacy_wards_survival_curves.csv
+    nlr_survival_curves_file: road_vehicle_nlr_source_survival_curves.csv
+    source_curves_file: road_vehicle_source_survival_curves.csv
+    transformed_curves_file: road_vehicle_transformed_survival_curves.csv
+    class_mapping_file: road_vehicle_survival_class_mappings.csv
+    median_lifetimes_file: source_derived_median_lifetimes.csv
+    interpolation: none
+    implausible_change_ratio: null
+    minimum_transition_model_year: null
+    maximum_transition_age: 35
+    tail_review_start_age: 30
+    scope_sensitivity_minimum_model_year: 1990
+    mto_survival_decision_criteria:
+      minimum_mapped_exposure_share: 0.5
+      minimum_in_bounds_rate_share: 0.8
+      maximum_internal_age_gaps: 0
+      minimum_vintages_per_age: 3
+      minimum_transitions_per_age: 10
+      minimum_legacy_overlap_ages: 10
+      monotonic_tolerance: 1.0e-12
+    status_buckets:
+      FIT_ACTIVE: [FIT_ACTIVE]
+      NON_FIT_ACTIVE_PROXY:
+        [FIT_INACTIVE, UNFIT, WRECKED, OUT_OF_PROV, SOLD, SUSPENDED, TEMPORARY]
+    nhtsa_class_to_nlr:
+      Cars: [Compact, Midsize]
+      Vans/SUVs: [Small SUV, Midsize SUV]
+      Pickups: [Pickup]
+    nhtsa_comparison_classes: []
+    eia_retention_comparison_classes: ["Cls 3"]
+    eia_source_classes: ["Cls 3", "Cls 4-6", "Cls 7-8"]
+    legacy_survival:
+      wards_weight_year: latest
+      car_source_class: Cars
+      light_truck_source_classes:
+        Vans/SUVs: [Small SUV, Midsize SUV]
+        Pickups: [Pickup]
+    ceud_labels:
+      Car: Car
+      Light Truck: Light Truck
+
+  notebook_diagnostics:
+    prepare_scenario: config/scenarios/notebook_diagnostics.yaml
+    prepare_scenarios:
+      ceud_calibration: config/scenarios/validation_energy_calibration.yaml
+    latest_file: latest.json
+  ceud_energy_calibration:
+    method: class_liquid_energy_ratio
+    transfer: uniform_all_powertrains_and_years
+    phev_split: preserve_emitted_horizon_mean
+    electricity_target: unobserved
+    energy_boundary: vehicle_input_without_additional_charger_losses
+    liquid_powertrains: [gasoline, diesel, hev]
+    tolerances: {absolute: 1.0e-8, relative: 1.0e-9}
+    # Cached CEUD energy cells are rounded to six decimal PJ. Allow half a
+    # reported unit per summed component plus total, independently of fit closure.
+    reported_energy_resolution_pj: 1.0e-6
+    files:
+      summary: ceud_energy_calibration_summary.csv
+      cohorts: ceud_energy_calibration_cohorts.csv
+      trajectories: ceud_energy_calibration_trajectories.csv
+    # CEUD totals include fuels absent from the represented fleet. Fit only reported
+    # gasoline + diesel; retain the other amounts and the unobserved electricity boundary.
+    # One class scalar preserves all relative trajectories and shared PHEV fractions.
+    # Transfer to electric/hydrogen technologies is an explicit unvalidated assumption.
+    classes:
+      cars:
+        status: calibrate
+        table_id: 20
+        total_series: Car Energy Use (PJ)
+        liquid_series: ["Cars|Energy Use by Energy Source (PJ)|Motor Gasoline", "Cars|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
+        excluded_series: ["Cars|Energy Use by Energy Source (PJ)|Natural Gas", "Cars|Energy Use by Energy Source (PJ)|Propane"]
+      passenger_light_trucks:
+        status: calibrate
+        table_id: 34
+        total_series: Passenger Light Truck Energy Use (PJ)
+        liquid_series: ["Passenger Light Trucks|Energy Use by Energy Source (PJ)|Motor Gasoline", "Passenger Light Trucks|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
+        excluded_series: ["Passenger Light Trucks|Energy Use by Energy Source (PJ)|Natural Gas", "Passenger Light Trucks|Energy Use by Energy Source (PJ)|Propane"]
+      freight_light_trucks:
+        status: calibrate
+        table_id: 35
+        total_series: Freight Light Truck Energy Use (PJ)
+        liquid_series: ["Freight Light Trucks|Energy Use by Energy Source (PJ)|Motor Gasoline", "Freight Light Trucks|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
+        excluded_series: ["Freight Light Trucks|Energy Use by Energy Source (PJ)|Natural Gas", "Freight Light Trucks|Energy Use by Energy Source (PJ)|Propane"]
+      medium_trucks:
+        status: calibrate
+        table_id: 36
+        total_series: Medium Truck Energy Use (PJ)
+        liquid_series: ["Medium Trucks|Energy Use by Energy Source (PJ)|Motor Gasoline", "Medium Trucks|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
+        excluded_series: []
+      heavy_trucks:
+        status: unsupported_fuel_boundary
+        table_id: 36
+        total_series: Heavy Truck Energy Use1 (PJ)
+        liquid_series: []
+        excluded_series: []
+  rating_stock_benchmark:
+    files:
+      matches: rating_stock_match_audit.csv
+      allocations: stock_weighted_rating_evidence.csv
+      weighted: stock_weighted_rating_consumption.csv
+    stock_weighting:
+      method: resolved_mto_model_year_stock
+      unresolved_stock: exclude_and_report
+      uncovered_cohort: distinct_model_class_weighted
+      variant_allocation: equal_distinct_variants
+      weight_sum_tolerance: 1.0e-9
+      rating_variant_identity_columns:
+        - Model
+        - Engine size (L)
+        - Cylinders
+        - Transmission
+        - Motor (kW)
+        - Fuel type
+        - Fuel type 1
+        - Fuel type 2
+        - native_consumption
+        - native_unit
+        - range_km
+        - combined_cd_consumption_Le_100_km
+        - combined_cs_consumption_L_100_km
+  ldv_efficiency_diagnostic:
+    region: 'ON'
+    epa_assessment_regions: ['ON', 'BCT', 'PE']  # Opt-in review only; no production supplementation.
+    minimum_model_year: 2005
+    bridge_years: [2010, 2040]
+    native_year_start: 2000
+    distribution_year_end: 2025
+    distribution_year_step: 2
+    composition_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+    composition_top_size_classes: null  # Show every observed size/body class.
+    grid_plot_width: 1200  # Combined distribution/composition panels and gaps.
+    line_plot_width: 900  # Existing-to-future bridge trajectories.
+    heatmap_plot_width: 800  # Existing-to-future class-consumption heatmaps.
+    # Nominal size within body families; unlike body types have no common volume scale.
+    size_class_order:
+      Cars: [Minicompact, Subcompact, Compact, Mid-size, Full-size, Two-seater, "Station wagon: Small", "Station wagon: Mid-size"]
+      Light trucks: ["Sport utility vehicle", "Sport utility vehicle: Small", "Sport utility vehicle: Standard", Minivan, "Pickup truck: Small", "Pickup truck: Standard", "Van: Passenger", "Van: Cargo"]
+    # Retained capture metadata; notebook axes now follow each powertrain's data.
+    distribution_consumption_domains:
+      Cars: [4, 24]
+      Light trucks: [4, 24]
+    files:
+      raw_sources: raw_source_trajectories.csv
+      production_sources: production_source_trajectories.csv
+      rating_distribution: rating_distribution.csv
+      rating_summary: rating_aggregation_summary.csv
+      bridge: efficiency_bridge.csv
+      projection_anchors: projection_anchors.csv
+      omega_shares: omega_range_shares.csv
+      composition_observations: composition_observations.csv
+      composition_variants: composition_variants.csv
+      composition_matches: composition_matches.csv
+      composition_coverage: composition_coverage.csv
+      composition_comparison: composition_comparison.csv
+      composition_models: composition_models.csv
+      composition_families: composition_families.csv
+      composition_benchmark: composition_benchmark.csv
+      composition_benchmark_coverage: composition_benchmark_coverage.csv
+      composition_benchmark_timing: composition_benchmark_timing.csv
+      composition_benchmark_observations: composition_benchmark_observations.csv
+      catalogue_bridge: catalogue_bridge.csv
+      summary: summary.json
+  ldv_composition_benchmark:
+    comparison_calendar_years: [2020, 2021, 2022, 2023, 2024]
+    new_registrations_file: statcan_ldv_registrations_historical.csv
+    stock_file: statcan_23100308_ldv_stock.csv
+    mto_passenger_file: ontario_vehicle_population_mapped_cohort_snapshots.csv
+    mto_commercial_file: ontario_vehicle_population_commercial_cohort_snapshots.csv
+    mto_mapped_file: ontario_vehicle_population_current_stock_mapped.csv
+    izev_file: izev_incentive_records.csv
+    incentive_transaction_types: [Purchase, Lease]
+    fuel_map: {All fuel types: all, Gasoline: gasoline, Diesel: diesel, Battery electric: bev, Hybrid electric: hev, Plug-in hybrid electric: phev, Other fuel types: other}
+    body_map: {Passenger cars: Cars, Pickup trucks: Light trucks, Multi-purpose vehicles: Light trucks, Vans: Light trucks}
+  vehicle_reference:
+    canonical_file: vehicle_reference.csv
+    source_links_file: vehicle_source_links.csv
+  efficiencies:
+    projection_reference_year: 2023
+    projection_interpolation: linear_consumption
+    transformation_version: '18'
+    pev_projection_anchors:
+      bev: bev_300_miles
+      phev: phev_35_miles
+    ldv_projection_baseline: latest_observed_cohort
+    ldv_projection_reference: aligned_observation_year
+    ldv_future_load_factor: anchor_cohort
+    projection_missing_stock: configured_analogue
+    files:
+      efficiency: efficiency.csv
+      splits: limit_tech_input_split_annual.csv
+      annual: annual_efficiency_evidence.csv
+      periods: period_consumption_evidence.csv
+      loads: road_load_factors.csv
+      ratings: classified_rating_evidence.csv
+      atb: aggregated_atb_consumption.csv
+      rating_weights: aggregated_rating_consumption.csv
+      composition_observations: empirical_rating_observations.csv
+      composition_variants: empirical_rating_variants.csv
+      composition_matches: empirical_rating_matches.csv
+      composition_coverage: empirical_rating_coverage.csv
+      catalogue_rating_weights: comparison_catalogue_median_consumption.csv
+      split_evidence: phev_blend_energy_share_evidence.csv
+      relationships: technology_commodity_relationships.csv
+      findings: findings.csv
+      integrity: integrity.json
+    future_year_rule: interval_end
+    historical_aggregation: age_distribution_stock_weighted_consumption
+    historical_stock_weighted_modes: [cars, passenger_light_trucks, freight_light_trucks, medium_trucks, heavy_trucks]
+    historical_first_bin: available_source_years_only
+    historical_single_year_technologies: {}
+    historical_classes_without_capacity: []
+    future_load_factor: base_year
+    missing_rating_classes: renormalize_observed
+    missing_annual_rating: observed_years_with_explicit_period_fallback
+    source_point_selection: previous_observation_clamped
+    historical_rating_observations: through_projection_reference_year
+    historical_rating_baseline: latest_own_observation_indexed_to_reference_year
+    unknown_powertrain: error
+    region_output_map: {NL: NLLAB, PE: PEI}
+    existing_suffix: _EX
+    excluded_categories: [charger, h2_refuel]
+    excluded_technology_patterns: ['^T_dummy_', '^T_BLND_(ETH|RDSL|JTF|SPK)']
+    unit_efficiencies: {T_OFF: {input: T_dsl, output: T_D_pj_off, units: PJ/PJ}}
+    service_units: {passenger: bn passenger-km/PJ, freight: bn tonne-km/PJ}
+    tolerances: {weight_sum: 1.0e-9, split_sum: 1.0e-12}
+    historical_suv:
+      source_label: Sport utility vehicle
+      combined_weight_classes: ['Sport utility vehicle: Small', 'Sport utility vehicle: Standard']
+    ratings:
+      composition:
+        method: observed_family_counts
+        family_statistic: median
+        incumbent_powertrains: [gasoline]
+        mto_selection:
+          method: identity_supported_coverage
+          minimum_resolved_count_share: 0.3
+          eligible_fuel_codes: [X, Z]
+          direct_methods:
+            - automatic_exact_normalized_make_exact_normalized_model
+            - automatic_configured_make_alias_exact_normalized_model
+            - automatic_approved_current_candidate_approved_similarity_exact_normalized
+          external_methods: [reviewed_external_model_vin_family_association]
+        # MY2019 includes pre-launch acquisitions; MY2025 was truncated by suspension.
+        # Eligible incentives are a composition proxy, not complete market counts.
+        izev_model_year_min: 2020
+        izev_model_year_max: 2024
+        # Pre-window cohorts reuse all supported model-year counts as a proxy;
+        # consumption, class and range still come from each target Ratings year.
+        izev_historical_composition:
+          method: pooled_supported_model_year_window
+        izev_transactions:
+          column: Purchase or Lease
+          accepted_values: [Purchase, Lease]
+        izev_matching:
+          trim_priority: explicit_configuration_then_family_median
+          range_assignment: family_median
+        izev_pool_selection:
+          method: provincial_observation_count
+          # Whole recipient-region/model-year/BEV-or-PHEV pool, before matching.
+          # Below this count, choose national data; never exclude a fine class/range.
+          # This is a geography rule, not market coverage or sampling confidence.
+          minimum_observations: 100
+          national_provinces: [AB, BC, MB, NB, NL, NS, NT, NU, 'ON', PE, QC, SK, YT]
+        empirical_subclasses: median_fill_original_weights
+        # CEUD's existing BCT region combines BC and the three territories.
+        province_map: {BCT: [BC, NT, NU, YT]}
+        unmatched: exclude_and_report
+        ambiguous: exclude_and_report
+        uncovered_cohort: distinct_model_median
+        variant_allocation: family_median
+        family_matching:
+          minimum_similarity: 0.90
+          minimum_family_margin: 0.08
+          # Same-year distinct configurations, never observed market shares.
+          # Only minor differences inside one body group may use a predominant
+          # class; reviewed MTO class and explicit body evidence must agree.
+          class_resolution:
+            minimum_predominant_share: 0.8
+            compatible_class_groups:
+              - ['Sport utility vehicle: Small', 'Sport utility vehicle: Standard']
+              - ['Pickup truck: Small', 'Pickup truck: Standard']
+              - [Minicompact, Subcompact, Compact, Mid-size, Full-size]
+              - ['Station wagon: Small', 'Station wagon: Mid-size']
+          # Central 80% consumption spread relative to the median. This is a
+          # permissive representativeness screen, not sampling uncertainty.
+          consumption_dispersion:
+            maximum_relative_p90_p10_span: 0.5
+          # Generate candidate families; explicit year/class/fuel/config conflicts
+          # cannot be overruled by a text score. Numeric model identities stay intact.
+          trim_suffix_patterns:
+            - '(?i)\s+(?:\(FFV\)|FFV)$'
+            - '(?i)\s+\((?:ISG|ISS|i-ELOOP|Cylinder\s+Deactivation|SIDI(?:\s+with\s+(?:Start[- /]?Stop|Stop[- /]?Start)(?:\s+System)?)?|GDI|MPI|(?:(?:No|Without)\s+)?(?:AFM|DFM|DMS)|(?:Fuel\s*Saver\s*)?MDS|(?:LE2|LUV)\s+Engine|EcoBoost|Supercharged|Turbo(?:\s+Plus)?|ULEV)\)$'
+            - '(?i)\s+\((?:(?:(?:No|Without)\s+)?(?:Start[- /]?Stop|Stop[- /]?Start)(?:\s+System)?|SIL|Autostick|With\s+Sport\s+Mode|Part-Time\s+4WD|High\s+(?:Output|Performance|Power)|Low\s+Power|Import|modified|Refresh|LFP|Range\s+Setup|pre-\d{1,2}/\d{1,2}(?:/\d{2})?)\)$'
+            - '(?i)\s+\((?:\d+(?:\.\d+)?(?:/\d+(?:\.\d+)?)?\s*(?:Ah|kWh)(?:\s+pre-\d{1,2}/\d{1,2}(?:/\d{2})?)?|\d+(?:\.\d+)?\s*kW(?:\s+Charger)?|20M\s+Battery|\d+[- ]?mode|Performance\s+Battery(?:\s+Plus)?(?:,\s*\d+"\s+AS\s+Tire)?)\)$'
+            - '(?i)\s+\((?:\d+"(?:\s+(?:and|or)\s+\d+")?\s+(?:(?:Aero\s+Design|All-Season|Nexen|Goodyear)\s+)?(?:Wheels|Tire)(?:\s+(?:AT|UHP))?|(?:All-Terrain|Falken|Pirelli|Performance)\s+Tire|LT\s+Tire\s+Pkg|Payload\s+Pkg|Performance(?:\s+(?:Pack|Pkg))?|(?:Long|Extended|Standard)\s+Range)\)$'
+            - '(?i)\s+(?:LE|SE|XLE|XSE|Limited|Premium|Platinum|SR|SV|SL|Sport|S|GT|LX|EX)(?:/(?:LE|SE|XLE|XSE|Limited|Premium|Platinum|SR|SV|SL|Sport|S|GT|LX|EX))+$'
+            - '(?i)\s+(?:AWD|FWD|RWD|4WD|4X4|2WD|QUATTRO|4MATIC|XDRIVE|ALL4)$'
+            - '(?i)\s+(?:Standard Range(?: Plus)?|Long Range|Extended Range|Short Range|Performance|High Power|Low Power)$'
+            - '(?i)\s+(?:Turbo|Supercharged|Limited|Platinum|Ultimate|Preferred|Touring|Denali|Premier|Premium)$'
+            - '(?i)\s+\d+(?:\.\d+)?\s*L(?:\s+Turbo)?$'
+            - '(?i)\s+(?:A[- ]?SPEC|SH[- ]?AWD|Elite|Technology|Tech|Advance|Base|Sport|LX|EX|EX-L|LE|SE|XLE|XSE|XSE Premium|TRD|SR|SV|SL|S|GT|GT-Line|GT-Line Package [12]|Wind|Land|Light|Wave|Venture\+|Evolve\+|Engage\+|Platinum\+|Empower\+|Evolve|Engage|Platinum|e-4ORCE|e-4ORCE [A-Z]+|V6)$'
+        variant_identity_columns: [Model, Engine size (L), Cylinders, Transmission, Motor (kW), Fuel type, Fuel type 1, Fuel type 2, native_consumption, consumption_mj_per_vkm, native_unit, range_km]
+      fields:
+        year: Model year
+        make: Make
+        model: Model
+        class: Vehicle class
+        fuel: Fuel type
+        consumption: Combined (L/100 km)
+        electricity: Combined (kWh/100 km)
+        bev_range: Range (km)
+        phev_range: Range 1 (km)
+        phev_fuel: Fuel type 2
+      fuel_codes: {X: gasoline, Z: gasoline, D: diesel, E: ethanol, N: cng}
+      excluded_fuels: [ethanol]
+      hybrid_pattern: '(?i)\b(?:hybrid|MHEV|eTorque)\b'
+      evidence_source: fueleconomy_gov_vehicle_data
+      evidence_columns: [year, make, model, atvType, displ, cylinders, drive, fuelType1, trany]
+      hybrid_evidence_label: Hybrid
+      evidence_join: compatible_year_family_configuration
+      hybrid_configuration_evidence:
+        # Candidate comparison for auxiliary propulsion evidence only; canonical IDs
+        # and accepted source identities come from the two authoritative CSVs.
+        family_normalization:
+          aliases:
+          - make: Mazda
+            canonical_model: Mazda3
+            models:
+            - '3'
+            - Mazda3
+          - make: Mazda
+            canonical_model: Mazda2
+            models:
+            - '2'
+            - Mazda2
+          - make: Mazda
+            canonical_model: Mazda6
+            models:
+            - '6'
+            - Mazda6
+          family_matching:
+            trim_suffix_patterns:
+            - (?i)\s+(?:\(FFV\)|FFV)$
+            - (?i)\s+\((?:ISG|ISS|i-ELOOP|Cylinder\s+Deactivation|SIDI(?:\s+with\s+(?:Start[- /]?Stop|Stop[- /]?Start)(?:\s+System)?)?|GDI|MPI|(?:(?:No|Without)\s+)?(?:AFM|DFM|DMS)|(?:Fuel\s*Saver\s*)?MDS|(?:LE2|LUV)\s+Engine|EcoBoost|Supercharged|Turbo(?:\s+Plus)?|ULEV)\)$
+            - (?i)\s+\((?:(?:(?:No|Without)\s+)?(?:Start[- /]?Stop|Stop[- /]?Start)(?:\s+System)?|SIL|Autostick|With\s+Sport\s+Mode|Part-Time\s+4WD|High\s+(?:Output|Performance|Power)|Low\s+Power|Import|modified|Refresh|LFP|Range\s+Setup|pre-\d{1,2}/\d{1,2}(?:/\d{2})?)\)$
+            - (?i)\s+\((?:\d+(?:\.\d+)?(?:/\d+(?:\.\d+)?)?\s*(?:Ah|kWh)(?:\s+pre-\d{1,2}/\d{1,2}(?:/\d{2})?)?|\d+(?:\.\d+)?\s*kW(?:\s+Charger)?|20M\s+Battery|\d+[-
+              ]?mode|Performance\s+Battery(?:\s+Plus)?(?:,\s*\d+"\s+AS\s+Tire)?)\)$
+            - (?i)\s+\((?:\d+"(?:\s+(?:and|or)\s+\d+")?\s+(?:(?:Aero\s+Design|All-Season|Nexen|Goodyear)\s+)?(?:Wheels|Tire)(?:\s+(?:AT|UHP))?|(?:All-Terrain|Falken|Pirelli|Performance)\s+Tire|LT\s+Tire\s+Pkg|Payload\s+Pkg|Performance(?:\s+(?:Pack|Pkg))?|(?:Long|Extended|Standard)\s+Range)\)$
+            - (?i)\s+(?:LE|SE|XLE|XSE|Limited|Premium|Platinum|SR|SV|SL|Sport|S|GT|LX|EX)(?:/(?:LE|SE|XLE|XSE|Limited|Premium|Platinum|SR|SV|SL|Sport|S|GT|LX|EX))+$
+            - (?i)\s+(?:AWD|FWD|RWD|4WD|4X4|2WD|QUATTRO|4MATIC|XDRIVE|ALL4)$
+            - '(?i)\s+(?:Standard Range(?: Plus)?|Long Range|Extended Range|Short Range|Performance|High Power|Low
+              Power)$'
+            - (?i)\s+(?:Turbo|Supercharged|Limited|Platinum|Ultimate|Preferred|Touring|Denali|Premier|Premium)$
+            - (?i)\s+\d+(?:\.\d+)?\s*L(?:\s+Turbo)?$
+            - (?i)\s+(?:A[- ]?SPEC|SH[- ]?AWD|Elite|Technology|Tech|Advance|Base|Sport|LX|EX|EX-L|LE|SE|XLE|XSE|XSE
+              Premium|TRD|SR|SV|SL|S|GT|GT-Line|GT-Line Package [12]|Wind|Land|Light|Wave|Venture\+|Evolve\+|Engage\+|Platinum\+|Empower\+|Evolve|Engage|Platinum|e-4ORCE|e-4ORCE
+              [A-Z]+|V6)$
+            family_patterns:
+            - make: Subaru
+              pattern: (?i)^Outback\s+Sport\b.*$
+              canonical_model: Outback Sport
+            - make: Mitsubishi
+              pattern: (?i)^Outlander\s+Sport\b.*$
+              canonical_model: Outlander Sport
+            - make: Nissan
+              pattern: (?i)^Rogue\s+Sport\b.*$
+              canonical_model: Rogue Sport
+            - make: Ford
+              pattern: (?i)^Bronco\s+Sport\b.*$
+              canonical_model: Bronco Sport
+            - make: Land Rover
+              pattern: (?i)^Range\s+Rover\s+Sport\b.*$
+              canonical_model: Range Rover Sport
+            - make: Jaguar
+              pattern: (?i)^F[- ]?PACE(?:\s+(?:P\d{3}e?|20d|25t|30t|35t|S|SVR))*$
+              canonical_model: F-PACE
+            - make: Land Rover
+              pattern: (?i)^Range\s+Rover\s+Velar(?:\s+(?:[PD]\d{3}|SVAutobiography|Dynamic))*$
+              canonical_model: Range Rover Velar
+            - make: Land Rover
+              pattern: (?i)^New\s+Range\s+Rover(?:\s+P\d{3})?\s+LWB$
+              canonical_model: New Range Rover LWB
+            - make: Land Rover
+              pattern: (?i)^New\s+Range\s+Rover(?:\s+P\d{3})?$
+              canonical_model: New Range Rover
+            - make: Land Rover
+              pattern: (?i)^Range\s+Rover(?:\s+(?:P\d{3}(?:/P\d{3})?|SV))*\s+LWB$
+              canonical_model: Range Rover LWB
+            - make: Land Rover
+              pattern: (?i)^Range\s+Rover(?:\s+(?:P\d{3}(?:/P\d{3})?|SV))*$
+              canonical_model: Range Rover
+            - make: Land Rover
+              pattern: (?i)^Defender\s+90(?:\s+(?:P\d{3}|V8|5\.0L))*$
+              canonical_model: Defender 90
+            - make: Land Rover
+              pattern: (?i)^Defender\s+110(?:\s+(?:P\d{3}(?:/P\d{3})?|V8|5\.0L|OCTA))*$
+              canonical_model: Defender 110
+            - make: Land Rover
+              pattern: (?i)^Defender\s+130(?:\s+(?:P\d{3}|V8|Outbound))*$
+              canonical_model: Defender 130
+            - make: Hyundai
+              pattern: (?i)^Santa\s+Fe\s+Sport\b.*$
+              canonical_model: Santa Fe Sport
+            - make: Hyundai
+              pattern: (?i)^Elantra\s+Touring\b.*$
+              canonical_model: Elantra Touring
+            - make: Hyundai
+              pattern: (?i)^Elantra\s+GT\b.*$
+              canonical_model: Elantra GT
+            - make: Hyundai
+              pattern: (?i)^Elantra$
+              canonical_model: Elantra
+            - make: Ford
+              pattern: (?i)^F[- ]?150\s+Lightning\b.*$
+              canonical_model: F-150 Lightning
+            - make: Ford
+              pattern: (?i)^F[- ]?150\b(?!.*Lightning).*$
+              canonical_model: F-150
+            - make: Dodge
+              pattern: (?i)^Ram\s+1500\b.*$
+              canonical_model: Ram 1500
+            - make: Acura
+              pattern: (?i)^RDX\b.*$
+              canonical_model: RDX
+            - make: Acura
+              pattern: (?i)^MDX\b.*$
+              canonical_model: MDX
+            - make: Toyota
+              pattern: (?i)^Camry\b(?!.*Hybrid).*$
+              canonical_model: Camry
+            - make: Toyota
+              pattern: (?i)^RAV4\b(?!.*(?:Hybrid|Prime|PHEV|Plug[- ]?in|\bEV\b)).*$
+              canonical_model: RAV4
+            - make: Nissan
+              pattern: (?i)^Altima\b(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$
+              canonical_model: Altima
+            - make: Nissan
+              pattern: (?i)^Sentra\b(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$
+              canonical_model: Sentra
+            - make: Nissan
+              pattern: (?i)^Rogue\b(?!\s+Sport\b)(?!.*(?:Hybrid|PHEV|Plug[- ]?in|\bEV\b)).*$
+              canonical_model: Rogue
+            - make: Nissan
+              pattern: (?i)^LEAF\b.*$
+              canonical_model: LEAF
+            - make: Nissan
+              pattern: (?i)^ARIYA\b.*$
+              canonical_model: ARIYA
+            - make: Kia
+              pattern: (?i)^EV6\b.*$
+              canonical_model: EV6
+            - make: Kia
+              pattern: (?i)^EV9\b.*$
+              canonical_model: EV9
+            - make: Mazda
+              pattern: (?i)^(?:Mazda\s*)?3\b.*$
+              canonical_model: Mazda3
+            - make: Volkswagen
+              pattern: (?i)^Atlas\s+Cross\s+Sport\b.*$
+              canonical_model: Atlas Cross Sport
+            - make: Volkswagen
+              pattern: (?i)^Atlas\b(?!.*Cross\s+Sport).*$
+              canonical_model: Atlas
+            - make: Volkswagen
+              pattern: (?i)^Tiguan\b.*$
+              canonical_model: Tiguan
+            - make: Audi
+              pattern: (?i)^Q3\b.*$
+              canonical_model: Q3
+            - make: Audi
+              pattern: (?i)^Q8\b(?!.*e[- ]?tron).*$
+              canonical_model: Q8
+            - make: Toyota
+              pattern: (?i)^Corolla\s+Hatchback\b.*$
+              canonical_model: Corolla Hatchback
+            - make: Toyota
+              pattern: (?i)^Corolla\s+Cross\b(?!.*Hybrid).*$
+              canonical_model: Corolla Cross
+            - make: Toyota
+              pattern: (?i)^Corolla\b(?!.*(?:Cross|Hatchback|Hybrid)).*$
+              canonical_model: Corolla
+            - make: Ram
+              pattern: (?i)^1500\b.*$
+              canonical_model: '1500'
+            - make: Tesla
+              pattern: (?i)^Model\s*3\b.*$
+              canonical_model: Model 3
+            - make: Tesla
+              pattern: (?i)^Model\s*Y\b.*$
+              canonical_model: Model Y
+            - make: Tesla
+              pattern: (?i)^Model\s*S\b.*$
+              canonical_model: Model S
+            - make: Tesla
+              pattern: (?i)^Model\s*X\b.*$
+              canonical_model: Model X
+            - make: BMW
+              pattern: (?i)^330e\b.*$
+              canonical_model: 330e
+            - make: BMW
+              pattern: (?i)^i4\b.*$
+              canonical_model: i4
+            - make: BMW
+              pattern: (?i)^i3\b.*$
+              canonical_model: i3
+            - make: BMW
+              pattern: (?i)^X3\b.*$
+              canonical_model: X3
+            - make: BMW
+              pattern: (?i)^X5(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive|\d\.\d(?:si|is|i)?))*$
+              canonical_model: X5
+            - make: BMW
+              pattern: (?i)^X6(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive))*$
+              canonical_model: X6
+            - make: BMW
+              pattern: (?i)^X7(?:\s+(?:[xs]Drive\s*\d{2}[ide]|M\d{2}i|M|Competition|xDrive))*$
+              canonical_model: X7
+            - make: BMW
+              pattern: (?i)^Z4(?:\s+(?:sDrive\d{2}i|M\d{2}i))*$
+              canonical_model: Z4
+            - make: Polestar
+              pattern: (?i)^2\b.*$
+              canonical_model: '2'
+            - make: VinFast
+              pattern: (?i)^VF\s*8\b.*$
+              canonical_model: VF8
+            - make: Fisker
+              pattern: (?i)^Ocean\b.*$
+              canonical_model: Ocean
+            - make: Mercedes-Benz
+              pattern: (?i)^EQB\b.*$
+              canonical_model: EQB
+            - make: Mercedes-Benz
+              pattern: (?i)^CLE(?:\s+\d{3})?(?:\s+4MATIC)?\s+Coupe$
+              canonical_model: CLE Coupe
+            - make: Mercedes-Benz
+              pattern: (?i)^CLE(?:\s+\d{3})?(?:\s+4MATIC)?\s+Cabriolet$
+              canonical_model: CLE Cabriolet
+            - make: Mercedes-Benz
+              pattern: (?i)^(?:AMG\s+)?GLC(?:\s+(?:\d{2,3}e?|S|4MATIC\+?|E|PERFORMANCE))*\s+Coupe$
+              canonical_model: GLC Coupe
+            - make: Mercedes-Benz
+              pattern: (?i)^(?:AMG\s+)?GLC(?:\s+(?:\d{2,3}e?|S|4MATIC\+?|E|PERFORMANCE))*(?:\s+SUV)?$
+              canonical_model: GLC
+            - make: Mercedes-Benz
+              pattern: (?i)^GLS(?:\s+(?:\d{3}|4MATIC|SUV))*$
+              canonical_model: GLS
+            - make: Volvo
+              pattern: (?i)^V60(?:\s+(?:T8|AWD|Recharge|Plug[ -]?in Hybrid|PHEV|Polestar Engineered))*$
+              canonical_model: V60
+            - make: Volvo
+              pattern: (?i)^S60(?:\s+(?:T8|AWD|Recharge|Plug[ -]?in Hybrid|PHEV|Polestar Engineered))*$
+              canonical_model: S60
+            - make: Volvo
+              pattern: (?i)^XC60\b.*$
+              canonical_model: XC60
+            - make: Volvo
+              pattern: (?i)^XC90\b.*$
+              canonical_model: XC90
+            - make: Kia
+              pattern: (?i)^Soul\s+(?:EV|Electric)\b.*$
+              canonical_model: Soul EV
+            - make: Audi
+              pattern: (?i)^Q4\s+(?:\d+\s+)?(?:Sportback\s+e[- ]?tron|e[- ]?tron\s+Sportback)\b.*$
+              canonical_model: Q4 Sportback e-tron
+            - make: Audi
+              pattern: (?i)^Q4\s+(?:\d+\s+)?e[- ]?tron\b(?!.*Sportback).*$
+              canonical_model: Q4 e-tron
+            - make: Audi
+              pattern: (?i)^(?:RS\s+)?e[- ]?tron\s+GT\b.*$
+              canonical_model: e-tron GT
+            - make: Ford
+              pattern: (?i)^(?:Mustang\s+)?Mach[- ]?E\b.*$
+              canonical_model: Mustang Mach-E
+            - make: Dodge
+              pattern: (?i)^(?:Grand\s+)?Caravan\b.*$
+              canonical_model: Caravan
+            - make: Dodge
+              pattern: (?i)^Charger\s+Daytona\b.*$
+              canonical_model: Charger Daytona
+            - make: Hyundai
+              pattern: (?i)^Kona\s+(?:EV|Electric)\b.*$
+              canonical_model: Kona Electric
+            - make: Hyundai
+              pattern: (?i)^Tucson\s+(?:PHEV|Plug[- ]?in Hybrid)\b.*$
+              canonical_model: Tucson Plug-in Hybrid
+            - make: Hyundai
+              pattern: (?i)^Santa Fe\s+(?:PHEV|Plug[- ]?in Hybrid)\b.*$
+              canonical_model: Santa Fe Plug-in Hybrid
+            - make: Hyundai
+              pattern: (?i)^IONIQ\s*5\b.*$
+              canonical_model: IONIQ 5
+            - make: Hyundai
+              pattern: (?i)^IONIQ\s*6\b.*$
+              canonical_model: IONIQ 6
+            - make: Toyota
+              pattern: (?i)^RAV4\s+(?:Prime|PHEV|Plug[- ]?in Hybrid)\b.*$
+              canonical_model: RAV4 Prime
+            - make: Toyota
+              pattern: (?i)^Prius\s+(?:Prime|PHEV|Plug[- ]?in Hybrid)\b.*$
+              canonical_model: Prius Prime
+            - make: Honda
+              pattern: (?i)^CR[- ]?V\b.*$
+              canonical_model: CR-V
+            - make: Honda
+              pattern: (?i)^Civic\s+(?:Hatchback|5\s*(?:Dr|Door))\b.*$
+              canonical_model: Civic Hatchback
+            - make: Honda
+              pattern: (?i)^Civic\s+Sedan\b.*$
+              canonical_model: Civic Sedan
+            - make: Mazda
+              pattern: (?i)^CX[- ]?5\b.*$
+              canonical_model: CX-5
+            - make: Mazda
+              pattern: (?i)^CX[- ]?9\b.*$
+              canonical_model: CX-9
+            - make: Chevrolet
+              pattern: (?i)^Silverado\s+1500\b.*$
+              canonical_model: Silverado 1500
+            - make: Chevrolet
+              pattern: (?i)^Silverado\s+2500\b.*$
+              canonical_model: Silverado 2500
+            - make: Chevrolet
+              pattern: (?i)^Silverado\s+3500\b.*$
+              canonical_model: Silverado 3500
+            - make: Chevrolet
+              pattern: (?i)^Silverado\b(?!\s+(?:1500|2500|3500)\b).*$
+              canonical_model: Silverado
+            - make: Volkswagen
+              pattern: (?i)^(?:Golf\s+)?GTI\b.*$
+              canonical_model: Golf GTI
+            - make: Volkswagen
+              pattern: (?i)^ID[ .-]?4\b.*$
+              canonical_model: ID.4
+            - make: Porsche
+              pattern: (?i)^Taycan\b.*\bCross\s+Turismo\b.*$
+              canonical_model: Taycan Cross Turismo
+            - make: Porsche
+              pattern: (?i)^Taycan\b.*\bSport\s+Turismo\b.*$
+              canonical_model: Taycan Sport Turismo
+            - make: Porsche
+              pattern: (?i)^Taycan\b(?!.*(?:Cross|Sport)\s+Turismo).*$
+              canonical_model: Taycan
+            - make: Porsche
+              pattern: (?i)^(?:718\s+)?Boxster\b.*$
+              canonical_model: Boxster
+            - make: Porsche
+              pattern: (?i)^(?:718\s+)?Cayman\b.*$
+              canonical_model: Cayman
+        numeric_fields: {'Engine size (L)': displ, Cylinders: cylinders}
+        displacement_tolerance_l: 0.05
+        # The conventional NRCan resource covers combustion and non-plug-in
+        # hybrids; PEVs have separate resources. Preserve mixed HEV/ICE evidence.
+        excluded_epa_technologies: [EV, Plug-in Hybrid]
+        identity_signal_pattern: '(?i)\b(?:hybrid|MHEV|eTorque|FFV)\b'
+        model_aliases:
+          # Propulsion evidence only: regional names, with same-year physical
+          # configuration checks. No EPA consumption or MTO identity transfer.
+          # Mitsubishi groups ASX/OUTLANDER SPORT/RVR: https://www.mitsubishi-motors.com/en/products/
+          - {make: Mitsubishi, pattern: '(?i)^(?:RVR|Outlander Sport)$', canonical_model: Outlander Sport, model_year_from: 2011}
+          # Canadian MY2021 launch and paired US Voyager specifications:
+          # https://media.stellantisnorthamerica.com/newsrelease.do?id=21857&mid=193
+          # https://media.stellantisnorthamerica.com/newsrelease.do?id=22923
+          - {make: Chrysler, pattern: '(?i)^(?:Grand Caravan|Voyager)$', canonical_model: Voyager, model_year_from: 2021}
+          # Nissan explicitly pairs US Rogue Sport / Canadian Qashqai:
+          # https://usa.nissannews.com/en-US/releases/nissan-to-expand-propilot-technology-to-additional-models
+          - {make: Nissan, pattern: '(?i)^(?:Qashqai|Rogue Sport)$', canonical_model: Rogue Sport, model_year_from: 2017, model_year_to: 2022}
+          - {make: Ford, pattern: '(?i)^F[- ]?150(?:\s+Pickup)?$', canonical_model: F-150}
+          - {make: Dodge, pattern: '(?i)^(?:Grand\s+)?Caravan(?:/Grand Caravan)?$', canonical_model: Grand Caravan}
+          - {make: Honda, pattern: '(?i)^Civic\s+(?:Sedan|4[- ]?(?:Dr|Door))$', canonical_model: Civic}
+          - {make: GMC, pattern: '(?i)^Sierra\s+(?:1500|C15|K15)(?:\s+Pickup)?$', canonical_model: Sierra 1500}
+          - {make: Chevrolet, pattern: '(?i)^Silverado\s+1500(?:\s+Pickup)?$', canonical_model: Silverado 1500}
+          # MINI USA calls the same 3-door body Hardtop 2 Door. Keep S/JCW/SE
+          # and 5-door/Clubman/Countryman bodies distinct (official 2022 release):
+          # https://www.press.bmwgroup.com/usa/article/detail/T0324990EN_US/
+          - {make: MINI, pattern: '(?i)^Cooper\s+(?:3 Door|Hardtop 2 door)$', canonical_model: Cooper Hardtop, model_year_from: 2015}
+          - {make: MINI, pattern: '(?i)^Cooper S\s+(?:3 Door|Hardtop 2 door)$', canonical_model: Cooper S Hardtop, model_year_from: 2015}
+          - {make: MINI, pattern: '(?i)^John Cooper Works\s+(?:3 Door|Hardtop(?: 2 door)?)$', canonical_model: John Cooper Works Hardtop, model_year_from: 2017}
+        transmission:
+          nrcan_cvt_pattern: '(?i)^AV'
+          epa_cvt_pattern: '(?i)variable|\b(?:AV|CVT)\b'
+          nrcan_manual_pattern: '(?i)^M'
+          epa_manual_pattern: '(?i)^Manual'
+        # For propulsion evidence, AWD/4WD labels both identify driven wheels
+        # on both axles; this does not equate their consumption configurations.
+        # Do not infer driven wheels when omitted.
+        drive_patterns:
+          Front-Wheel Drive: '(?i)\bFWD\b'
+          Rear-Wheel Drive: '(?i)\bRWD\b'
+          Two-Wheel Drive: '(?i)\b2WD\b'
+          All-Wheel Drive: '(?i)\b(?:AWD|quattro|4matic|xDrive|SH-AWD)\b'
+          4-Wheel Drive: '(?i)\b(?:4WD|4x4)\b'
+        compatible_drive_labels:
+          Front-Wheel Drive: [Front-Wheel Drive, 2-Wheel Drive]
+          Rear-Wheel Drive: [Rear-Wheel Drive, 2-Wheel Drive]
+          Two-Wheel Drive: [Front-Wheel Drive, Rear-Wheel Drive, 2-Wheel Drive]
+          All-Wheel Drive: [All-Wheel Drive, 4-Wheel Drive, Part-time 4-Wheel Drive, 4-Wheel or All-Wheel Drive]
+          4-Wheel Drive: [All-Wheel Drive, 4-Wheel Drive, Part-time 4-Wheel Drive, 4-Wheel or All-Wheel Drive]
+        gasoline_fuels: [Regular Gasoline, Premium Gasoline, Midgrade Gasoline]
+        unresolved: exclude_and_report
+      normalization_pattern: '[^a-z0-9]'
+      range_mapping: omega_bucket_boundaries
+      # Retained only as legacy audit labels, separate from the production buckets.
+      bev_range_edges_km: [0, 250, 500, 900]
+      bev_range_labels: [bev_150_miles, bev_300_miles, bev_long_range]
+      phev_range_edges_km: [0, 55, 210]
+      phev_range_labels: [phev_35_miles, phev_50_miles]
+      phev_baseline: nrcan_cd_cs_atb_bucket_uf
+      ignored_classes: [Special purpose vehicle]
+    existing_phev_blends:
+      cars: {tech: T_BLND_GSL_ELC_PHEV_C_EX, output: T_gsl_elc_phev_c_ex}
+      passenger_light_trucks: {tech: T_BLND_GSL_ELC_PHEV_LTP_EX, output: T_gsl_elc_phev_ltp_ex}
+      freight_light_trucks: {tech: T_BLND_GSL_ELC_PHEV_LTF_EX, output: T_gsl_elc_phev_ltf_ex}
+    ldv_archetypes:
+      gasoline: {detail: 'Gasoline ICE Vehicle (spark ignition)', analogue: gasoline}
+      diesel: {detail: Diesel Conventional Compression Ignition Vehicle, analogue: gasoline}
+      cng: {detail: Compressed Natural Gas Conventional Vehicle, analogue: gasoline}
+      hev: {detail: Gasoline Power Split Hybrid Electric Vehicle, analogue: bev_150_miles}
+      phev_35_miles: {range_mi: 35, analogue: hev}
+      phev_50_miles: {range_mi: 50, analogue: hev}
+      bev_150_miles: {detail: 'Battery Electric Vehicle (150-mile range)', analogue: gasoline}
+      bev_200_miles: {detail: 'Battery Electric Vehicle (200-mile range)', analogue: bev_150_miles}
+      bev_300_miles: {detail: 'Battery Electric Vehicle (300-mile range)', analogue: bev_150_miles}
+      bev_400_miles: {detail: 'Battery Electric Vehicle (400-mile range)', analogue: bev_300_miles}
+      # Legacy Efficiency AC46/AC58/AC70 index FCEVs to the gasoline incumbent.
+      fcev: {detail: Hydrogen Fuel Cell Electric Vehicle, analogue: gasoline}
+    mhdv_archetypes:
+      diesel: {detail: Diesel ICE Vehicle}
+      gasoline: {detail: Diesel ICE Vehicle, proxy: diesel}
+      cng: {detail: Diesel ICE Vehicle, proxy: diesel}
+      hev: {detail: Diesel Parallel Hybrid Electric Vehicle}
+      phev: {detail: Diesel Series Plug-in Hybrid Electric Vehicle}
+      bev: {detail: Battery Electric Vehicle}
+      fcev: {detail: Hydrogen Fuel Cell Electric Vehicle}
+      fchev: {detail: Hydrogen Fuel Cell Hybrid Electric Vehicle}
+    # ATB 2024 lacks SI/CNG MHDV rows; user-approved incumbent proxy is explicit.
+    missing_powertrain_proxy: diesel
+    ldv_incumbent_fallback: gasoline
+    atb:
+      weight_categories: {ldv: Light Duty, mhdv: Medium/Heavy Duty}
+      metric_basis: {fuel_economy_mi_per_gge: gge, fuel_economy_mi_per_dge: dge}
+      class_pattern: '^Class ([2-8]) '
+      source_energy_basis: {gge: wh_per_gge, dge: wh_per_dge}
+      fuel_equivalent_hhv_powertrains: [gasoline, diesel, hev, cng, fcev, fchev]
+      equivalent_gallon_hhv_fuel: {gge: gasoline, dge: diesel}
+      # Retain source-native PHEV energy; final fuel-equivalent energy uses GREET HHV.
+      phev_energy_basis: greet_hhv_fuel_plus_electricity
+      interpolation: exact_source_points
+      extrapolation: error
+    mhdv_fleet_baseline:
+      observed_fuels:
+        medium_trucks: [gasoline, diesel]
+        heavy_trucks: [diesel]
+      reference_fuel: diesel
+      emerging_ratio_year: aligned_observation_year
+      future_baseline: latest_observed_cohort
+      future_load_factor: anchor_cohort
+      missing_stock: reference_fuel_cohort
+      projection_index_powertrains: {gasoline: diesel}
+    phev_blend_by_category: {medium_trucks: mdv, heavy_trucks: hdv, school_buses: hdv, urban_transit: hdv}
+    road_classes:
+      cars:
+        pathway: ldv
+        weights: Car
+        service: passenger
+        stock_table: 21
+        stock: Stock (thousands)|Cars
+        distance: Average Distance Travelled per Year (km)|Cars
+      passenger_light_trucks:
+        pathway: ldv
+        weights: Light Truck
+        service: passenger
+        stock_table: 37
+        stock: Stock (thousands)|Passenger Light Trucks
+        distance: Average Distance Travelled per Year (km)|Passenger Light Trucks
+      freight_light_trucks:
+        pathway: ldv
+        weights: Light Truck
+        service: freight
+        stock_table: 37
+        stock: Stock (thousands)|Freight Light Trucks
+        distance: Average Distance Travelled per Year (km)|Freight Light Trucks
+      medium_trucks:
+        pathway: mhdv
+        service: freight
+        stock_table: 37
+        stock: Stock (thousands)|Medium Trucks
+        distance: Average Distance Travelled per Year (km)|Medium Trucks
+        cs_prefix: Medium Truck On-Road Average Fuel Consumption (L/100 km)
+      heavy_trucks:
+        pathway: mhdv
+        service: freight
+        stock_table: 37
+        stock: Stock (thousands)|Heavy Trucks
+        distance: Average Distance Travelled per Year (km)|Heavy Trucks
+        cs_prefix: Heavy Truck On-Road Average Fuel Consumption (L/100 km)
+      school_buses:
+        pathway: bus
+        service: passenger
+        stock_table: 31
+        stock: Stock (thousands)|School Buses
+        distance: Average Distance Travelled per Year (km)|School Buses
+        intensity_table: 28
+        intensity: School Buses|Energy Intensity (MJ/Pkm)
+        atb_classes:
+        - Class 3 Medium School
+        - Class 7 Medium School
+      urban_transit:
+        pathway: bus
+        service: passenger
+        stock_table: 31
+        stock: Stock (thousands)|Urban Transit
+        distance: Average Distance Travelled per Year (km)|Urban Transit
+        intensity_table: 29
+        intensity: Urban Transit|Energy Intensity (MJ/Pkm)
+        atb_classes:
+        - Class 8 Transit Heavy
+      inter_city_buses:
+        pathway: intercity
+        service: passenger
+        stock_table: 31
+        stock: Stock (thousands)|Inter-City Buses
+        distance: Average Distance Travelled per Year (km)|Inter-City Buses
+        intensity_table: 30
+        intensity: Inter-City Buses|Energy Intensity (MJ/Pkm)
+        atb_classes:
+        - Class 8 Transit Heavy
+      motorcycles:
+        pathway: motorcycle
+        service: passenger
+        stock_table: 32
+        stock: Motorcycle Explanatory Variables|Stock (thousands)
+        distance: Motorcycle Explanatory Variables|Average Distance Travelled per Year (km)
+        intensity_table: 32
+        intensity: Motorcycle|Energy Intensity (MJ/Pkm)
+    fuel_series: {gasoline: Motor Gasoline, diesel: Diesel Fuel Oil}
+    input_commodities:
+      gasoline: T_gsl
+      diesel: T_dsl
+      hev: T_gsl
+      cng: T_cng
+      jet_fuel: T_jtf
+      spk: T_spk
+      mdo: T_mdo
+      hfo: T_hfo
+      lng: T_lng
+      h2: T_h2_mhdv
+    subcategory_aliases: {jet fuel: jet_fuel, marine diesel oil: mdo, heavy fuel oil: hfo}
+    electric_inputs:
+      ldv: T_elc_ldv_chrg
+      motorcycle: T_elc_ldv_chrg
+      mhdv: T_elc_mhdv_chrg
+      bus: T_elc_mhdv_chrg
+      intercity: T_elc_mhdv_chrg
+    hydrogen_inputs: {ldv: T_h2_ldv, mhdv: T_h2_mhdv, bus: T_h2_mhdv, intercity: T_h2_mhdv}
+    phev_blends:
+      ldv35:
+        aggregation_role: ldv
+        tech: T_BLND_GSL_ELC_PHEV35
+        output: T_gsl_elc_phev35
+        fuel: T_gsl
+        electricity: T_elc_ldv_chrg
+        archetype: phev_35_miles
+      ldv50:
+        aggregation_role: ldv
+        tech: T_BLND_GSL_ELC_PHEV50
+        output: T_gsl_elc_phev50
+        fuel: T_gsl
+        electricity: T_elc_ldv_chrg
+        archetype: phev_50_miles
+      mdv:
+        aggregation_role: medium_trucks
+        tech: T_BLND_DSL_ELC_MDV
+        output: T_dsl_elc_mdv
+        fuel: T_dsl
+        electricity: T_elc_mhdv_chrg
+        archetype: phev
+        gvwr:
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+      hdv:
+        aggregation_role: heavy_truck_haul
+        tech: T_BLND_DSL_ELC_HDV
+        output: T_dsl_elc_hdv
+        fuel: T_dsl
+        electricity: T_elc_mhdv_chrg
+        archetype: phev
+        gvwr:
+        - 8
+    phev_split_method: regional_consumption_weighted_classes_mean_horizon_endpoints
+    phev_split_operator: e
+    phev_split_target: limit_tech_input_split_annual
+    intercity:
+      baseline_class: urban_transit
+      multiplier_basis: regen_intercity_powertrain_over_diesel_fuel_economy
+      source_keys: {diesel: icev-dsl, gasoline: icev-dsl, cng: cngv, bev: bev, fcev: hfcv}
+      hev_ratio: atb_transit_hev_over_diesel
+    motorcycle: {gasoline: Liquids, bev: BEV, gasoline_fuel: gasoline}
+    offroad:
+      manual_file: efficiency_multipliers.csv
+      period_upper_year: {through_2035: 2035, through_2050: 2050}
+      period_method: previous_endpoint_clamped
+      annual_improvement: efficiency_compound_growth
+      # Rail rows already invert REGEN Table 7 consumption ratios (0.24, 0.65/0.6).
+      ratio_interpretation:
+        passenger_rail: {diesel_relative_energy_intensity: efficiency_ratio}
+        freight_rail: {diesel_relative_energy_intensity: efficiency_ratio}
+        freight_marine: {mdo_relative_energy_intensity: consumption_ratio}
+      incumbent:
+        passenger_air: jet_fuel
+        freight_air: jet_fuel
+        passenger_rail: diesel
+        freight_rail: diesel
+        freight_marine: mdo
+      equal_incumbent_powertrains: [spk]
+
+  costs:
+    transformation_version: '3'
+    # ATB 2024 definitions: MSRP / RPE estimates manufacturing cost by family.
+    # Conservative uses AEO MSRP; this reversal retains an estimated price basis.
+    nlr_road_retail_price_equivalent_markup: {ldv: 1.5, mhdv: 1.2}
+    aircraft_operating_days_per_year: 365
+    ldv_repair_price_exponent_per_usd: 0.00002
+    ldv_repair_max_age: 14
+    historical_msrp_proxy: earliest_selected_atb_price
+    missing_mhdv_purchase_powertrain_proxy: {gasoline: diesel, cng: diesel}
+    spk_aircraft_cost_proxy: jet_fuel
+    intercity_purchase_source_keys: {diesel: icev, gasoline: icev, cng: cngv, hev: icev, bev: bev, fcev: hfcv}
+    ldv_powertrain_evidence:
+      gasoline: Gasoline
+      diesel: Diesel
+      cng: Natural Gas
+      hev: Gasoline Hybrid
+      phev_35_miles: Plug-in Hybrid
+      phev_50_miles: Plug-in Hybrid
+      bev_150_miles: Battery Electric
+      bev_200_miles: Battery Electric
+      bev_300_miles: Battery Electric
+      bev_400_miles: Battery Electric
+      fcev: Hydrogen Fuel Cell
+    bean_powertrain_evidence:
+      gasoline: Conv
+      diesel: Conv
+      cng: Conv
+      hev: ParHEV
+      phev: SeriesPHEV
+      bev: BEV
+      fcev: FCEV
+      fchev: FCHEV
+    bean_gvwr_proxy:
+      2: BoxMedium 4
+      3: BoxMedium 4
+      4: BoxMedium 4
+      5: BoxMedium 4
+      6: BoxMedium 6
+      7: BoxMedium 6
+    bean_class_alias:
+      Class 8 Beverage DayCab: RegionalDayCab 8
+      Class 8 Drayage DayCab: DrayageDayCab 8
+      Class 8 Regional DayCab: RegionalDayCab 8
+      Class 8 Longhaul Sleeper: LonghaulSleeper 8
+      Class 8 Transit Heavy: TransitHeavy 8
+      Class 3 Medium School: TransitHeavy 8
+      Class 7 Medium School: TransitHeavy 8
+    offroad_multiplier_period_year: {through_2035: 2035, through_2050: 2050}
+    files:
+      road_invest: road_cost_invest.csv
+      road_variable: road_cost_variable.csv
+      offroad_invest: offroad_cost_invest.csv
+      offroad_variable: offroad_cost_variable.csv
+      currency_audit: currency_harmonization.csv
+      integrity: cost_integrity.json
+
+  ldv_charging_profiles:
+    transformation_version: "3"
+    factor_units: fraction
+    applicability: "Ontario BEV charging shape scaled to reviewed annual utilization on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted."
+    technology_category: charger
+    technology_sub_category: ldv
+    target_technologies: [T_LDV_CHRG_EX, T_LDV_CHRG_N]
+    factor_file: capacity_factor_tech.csv
+    time_season_file: time_season.csv
+    time_of_day_file: time_of_day.csv
+    mapping_file: hourly_mapping.csv
+    validation_file: integrity.json
+    conservation_tolerance: 1.0e-8
+  ldv_ev_ranges:
+    range_units: miles
+    share_units: fraction
+    # Recovered from LDV_AER_market_shares.ipynb; also used for NRCan ratings.
+    buckets:
+      BEV:
+        - {sub_category: bev_150_miles, upper: 150, upper_inclusive: true}
+        - {sub_category: bev_200_miles, upper: 250, upper_inclusive: true}
+        - {sub_category: bev_300_miles, upper: 350, upper_inclusive: true}
+        - {sub_category: bev_400_miles, upper: null, upper_inclusive: true}
+      PHEV:
+        - {sub_category: phev_35_miles, upper: 35, upper_inclusive: false}
+        - {sub_category: phev_50_miles, upper: null, upper_inclusive: false}
+    category_to_market: {cars: car, passenger_light_trucks: light_truck, freight_light_trucks: light_truck}
+    existing:
+      weight_applicability: constant_historical_vintages_and_regions
+      ratings_range_mapping: omega_bucket_boundaries
+      phev_baseline: observed_nrcan_cd_cs_atb_bucket_utility
+      families:
+        cars: {BEV: T_LDV_C_BEV_EX, PHEV: T_LDV_C_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_C_EX, phev_commodity: T_gsl_elc_phev_c_ex}
+        passenger_light_trucks: {BEV: T_LDV_LTP_BEV_EX, PHEV: T_LDV_LTP_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_LTP_EX, phev_commodity: T_gsl_elc_phev_ltp_ex}
+        freight_light_trucks: {BEV: T_LDV_LTF_BEV_EX, PHEV: T_LDV_LTF_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_LTF_EX, phev_commodity: T_gsl_elc_phev_ltf_ex}
+    new_suffix: _N
+    constraint_operator: ge  # MinNewCapacityShare!C23:F40; never silently use equality.
+    group_prefix: canoe_transport_range
+    share_sum_tolerance: 1.0e-12
+    representative:
+      families:
+        cars: {BEV: T_LDV_C_BEV_REP_N, PHEV: T_LDV_C_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_C_REP, phev_commodity: T_gsl_elc_phev_c_rep}
+        passenger_light_trucks: {BEV: T_LDV_LTP_BEV_REP_N, PHEV: T_LDV_LTP_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_LTP_REP, phev_commodity: T_gsl_elc_phev_ltp_rep}
+        freight_light_trucks: {BEV: T_LDV_LTF_BEV_REP_N, PHEV: T_LDV_LTF_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_LTF_REP, phev_commodity: T_gsl_elc_phev_ltf_rep}
+      efficiency: sales_weighted_consumption  # Harmonic efficiency; conserves PJ per service.
+      costs: sales_weighted_same_capacity_and_service_units
+      capacity_to_activity: require_identical
+      utilization: require_identical
+      fixed_lifetime: require_identical
+      survival: sales_weighted_surviving_fraction
+      survival_composition: require_identical_range_curves
+      embodied: sales_weighted_lifetime_mass
+      # User accepted a horizon mean, matching the existing NLR endpoint averaging.
+      # Component fuel use by vintage is approximate; total PJ/service is conserved.
+      phev_split: mean_vintage_consumption_weighted_energy_share
+      equality_tolerance: 1.0e-12
+      fuel_commodity: T_gsl
+      electricity_commodity: T_elc_ldv_chrg
+      parameter_file: representative_parameters.json
+      audit_file: representative_conservation.json
+    files:
+      records: sales_range_records.csv
+      unresolved: unresolved_sales.csv
+      buckets: sales_bucket_totals.csv
+      integrity: integrity.json
+      constraints: limit_new_capacity_share.csv
+      groups: tech_group.csv
+      members: tech_group_member.csv
+      decisions: representative_decisions.json
+  ev_chargers:
+    transformation_version: "6"
+    electricity_accounting:
+      # NRCan LDV ratings use the interpreted EPA recharge-energy basis; see assumptions.md
+      # for corroboration and PHEV limits. ATB consumption also includes charging losses.
+      vehicle_energy_basis: grid_electricity_including_charging_losses
+      charger_transfer_efficiency: 1.0  # Vehicle consumption owns charging losses; this edge preserves infrastructure capacity and costs.
+    utilization_time_basis: technology_kind
+    utilization:
+      ldv:
+        source_period: {existing: all, new: all}  # Reviewed uniform utilization: 0.20 for every vintage.
+        operator: ge
+        floor_multiplier: 0.98  # Annual floor slack; profile mean retains the full utilization target.
+        without_profile: {operator: e, floor_multiplier: 1.0}  # No hourly ceiling: set exact annual utilization.
+      mhdv:
+        source_period: {existing: all, new: all}  # Reviewed uniform utilization: 0.20, without an hourly profile.
+        operator: e
+        floor_multiplier: 1.0  # Equality uses the full reviewed utilization.
+    manual_file: charger_parameters.csv
+    capacity_to_activity_file: capacity_to_activity.csv
+    capacity_to_activity_units: PJ/GW
+    capacity_to_activity_output_file: charger_capacity_to_activity.csv
+    capacity_output_file: charger_existing_capacity.csv
+    port_audit_file: charger_port_reconciliation.csv
+    invest_output_file: charger_cost_invest.csv
+    fixed_output_file: charger_cost_fixed.csv
+    utilization_output_file: charger_limit_annual_capacity_factor.csv
+    efficiency_output_file: charger_efficiency.csv
+    validation_file: integrity.json
+    technology:
+      ldv: {existing: T_LDV_CHRG_EX, new: T_LDV_CHRG_N, output: T_elc_ldv_chrg}
+      mhdv: {existing: T_MHDV_CHRG_EX, new: T_MHDV_CHRG_N, output: T_elc_mhdv_chrg}
+    input_commodity: T_elc
+    hydrogen_refueling:
+      input_commodity: T_h2_700
+      capacity_units: PJ/year
+      cost_units: "$M 2020CAD / (PJ/year)"
+      fixed_cost_units: "$M 2020CAD / (PJ/year) / year"
+      technology:
+        ldv: {tech: T_H2_LDV_REFUEL, output: T_h2_ldv}
+        mhdv: {tech: T_H2_MHDV_REFUEL, output: T_h2_mhdv}
+    stock_classes:
+      ldv: [cars, passenger_light_trucks, freight_light_trucks, motorcycles]
+      mhdv: [medium_trucks, heavy_trucks]
+    public_charger_region_map:
+      NLLAB: [Newfoundland and Labrador]
+      PEI: [Prince Edward Island]
+      NS: [Nova Scotia]
+      NB: [New Brunswick]
+      QC: [Quebec]
+      "ON": [Ontario]
+      MB: [Manitoba]
+      SK: [Saskatchewan]
+      AB: [Alberta]
+      BCT: [British Columbia, Yukon, Northwest Territories, Nunavut]
