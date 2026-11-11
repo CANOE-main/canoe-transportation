@@ -164,8 +164,9 @@ loss; do not hide it by changing the [*NRCan CEUD*](https://oee.nrcan.gc.ca/corp
     region/classes, one effective consumption multiplier fits reported gasoline and
     diesel energy using the same reference-year physical fleet and calibrated activity.
     Reported propane/natural gas and unresolved fuel residuals remain separate; missing
-    electricity is not zero. Heavy trucks retain factor one where the selected table
-    does not disaggregate fuels. The common factor transfers across powertrains, ranges
+    electricity is not zero. The reviewed CEUD heavy-truck PJ total is entirely diesel.
+    Use that aggregate once as the heavy-truck diesel target;
+    it is not an additional component to sum with fuel subtotals. The common factor transfers across powertrains, ranges
     and future years, including electricity without independent electric evidence; it
     does not identify individual technology errors. Preserve the emitted PHEV blend,
     unadjusted consumption and all source-native evidence. The [method and governing

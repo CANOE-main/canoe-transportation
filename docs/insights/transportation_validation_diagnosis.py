@@ -515,7 +515,8 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, calibrati
     the blue square is **v2.0 w/o efficiency calibration** and the green cross is
     **v2.0 after energy calibration**, computed from final emitted efficiency evidence at
     unchanged stock, c2a and UF. The green result closes at zero; electricity and other fuels
-    are outside that fitted target. Heavy trucks remain pending until their boundary is resolved.
+    are outside that fitted target. Heavy trucks use the confirmed diesel-only CEUD class total,
+    so their fitted liquid boundary also covers their reported total energy.
     Legacy liquid-energy splits are unestablished, so legacy appears only in the upper view.
 
     A common UF change with fixed composition/efficiency scales **both** totals. Collinearity of backend cases

@@ -47,8 +47,8 @@ shown. The upper view preserves the total-energy comparison; the lower view uses
 the supported gasoline/diesel boundary and adds actual production energy
 calibration. Blue squares are `v2.0 w/o efficiency calibration`; green crosses are
 `v2.0 after energy calibration` and close at zero on the fitted boundary. Legacy
-liquid splits and the heavy-truck calibration boundary remain unresolved, so no
-liquid-closure result is fabricated for them. Legacy recipe reconstruction does
+liquid splits remain unresolved, so legacy results appear only in the total-energy
+view. Heavy trucks use the confirmed all-diesel CEUD aggregate. Legacy recipe reconstruction does
 not establish which SQLite a historical execution produced.*
 
 !!! warning "Interpretation limit: total-energy residuals depend on the boundary"

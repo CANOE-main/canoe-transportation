@@ -159,6 +159,146 @@ def test_unsupported_class_stays_unadjusted_with_visible_missing_target(calibrat
     assert np.allclose(result.periods.efficiency, calibration_inputs["periods"].efficiency)
 
 
+@pytest.fixture
+def heavy_calibration_inputs(calibration_inputs):
+    inputs = calibration_inputs
+    bundle = load_config_bundle("config/scenarios/validation_energy_calibration.yaml")
+    heavy = deepcopy(load_harmonization_rules(bundle, "ceud_energy_calibration")["classes"]["heavy_trucks"])
+    inputs["calibration_rules"]["classes"] = {"heavy_trucks": heavy}
+    existing = inputs["stock_rules"]["fuel_technology"]["heavy_trucks"]["Diesel"]
+    activity = inputs["demand_rules"]["activity_series"]["heavy_trucks"]
+    output = activity["commodity"]
+    original = inputs["periods"].iloc[0].to_dict()
+    rows = pd.DataFrame([
+        {**original, "mode": "heavy_trucks", "tech": tech, "vintage": vintage,
+         "powertrain": powertrain, "input_comm": fuel, "output_comm": output,
+         "units": "bn tonne-km/PJ", "native_intensity": consumption, "efficiency": 1 / consumption}
+        for tech, vintage, powertrain, fuel, consumption in [
+            (existing, 2020, "diesel", "T_dsl", 5.),
+            ("T_HDV_T_DSL_N", 2030, "diesel", "T_dsl", 3.),
+            ("T_HDV_T_BEV_N", 2030, "bev", "T_elc_mhdv", 2.),
+        ]
+    ])
+    inputs.update(
+        annual=rows.copy(), periods=rows, payloads=rows.to_dict("records"),
+        physical_stock=pd.DataFrame([{"region": "ON", "tech": existing, "vintage": 2020,
+                                      "surviving_k_vehicles": 10., "base_year": 2025, "units": "k vehicles"}]),
+        c2a=pd.DataFrame([{"region": "ON", "tech": existing, "c2a": .1}]),
+        factors=pd.DataFrame([{"region": "ON", "tech_or_group": existing, "vintage": 2020,
+                               "output_comm": output, "operator": "e", "factor": .5}]),
+        activity_targets=pd.DataFrame([{"region": "ON", "road_class": "heavy_trucks",
+                                        "base_year": 2025, "target_activity_bn": .5}]),
+        relationships=rows[["tech", "powertrain"]],
+    )
+    stock = inputs["stock_rules"]["ceud_stock_series"]["heavy_trucks"]
+    selectors = [(stock["table_id"], stock["raw_series"], "thousands", 10.),
+                 (activity["table_id"], activity["raw_series"], "millions", 500.),
+                 (heavy["table_id"], heavy["total_series"], "PJ", 3.6)]
+    inputs["ceud"] = pd.DataFrame([
+        {"region": "ON", "year": 2025, "table_id": table, "raw_series": series, "unit": unit,
+         "value": value, "source_id": "nrcan_ceud_transport_provincial",
+         "ceud_observed_year": 2023, "ceud_value_status": "constant"}
+        for table, series, unit, value in selectors
+    ])
+    return inputs
+
+
+@pytest.mark.parametrize("native_region,output_region", [("ON", "ON"), ("BCT", "BCT"), ("PE", "PEI")])
+def test_heavy_truck_fits_reviewed_diesel_total_once_and_preserves_activity(
+    heavy_calibration_inputs, native_region, output_region,
+):
+    inputs = heavy_calibration_inputs
+    inputs["regions"] = [native_region]
+    inputs["ceud"]["region"] = native_region
+    for key in ("annual", "periods", "physical_stock", "c2a", "factors", "activity_targets"):
+        inputs[key]["region"] = output_region
+    inputs["payloads"] = inputs["periods"].to_dict("records")
+    result = calibrate_consumption(**inputs)
+    summary = result.summary.iloc[0]
+    assert summary.ceud_region == native_region
+    assert summary.region == output_region
+    assert summary.status == "calibrate"
+    assert summary.liquid_target_basis == "reported_diesel_total"
+    assert summary.ceud_liquid_target_pj == pytest.approx(3.6)
+    assert summary.ceud_liquid_target_pj == summary.ceud_total_energy_pj
+    assert summary.unadjusted_liquid_energy_pj == pytest.approx(2.5)
+    assert summary.consumption_multiplier == pytest.approx(1.44)
+    assert summary.calibrated_liquid_energy_pj == pytest.approx(3.6)
+    assert summary.reported_energy_balance_residual_pj == 0
+    assert summary.source_rounding_allowance_pj == 0
+    assert summary.other_or_unresolved_energy_pj == 0
+    assert summary.excluded_reported_energy_pj == 0
+    assert summary.full_class_residual_pj == pytest.approx(0)
+    assert summary.electricity_target_status == "zero_within_confirmed_diesel_total_not_fitted"
+    assert summary.activity_bn == pytest.approx(.5)
+    assert summary.activity_residual_bn == pytest.approx(0)
+    assert np.allclose(result.annual.native_intensity / result.annual.unadjusted_native_intensity, 1.44)
+    assert np.allclose(result.trajectories.efficiency / result.trajectories.unadjusted_efficiency, 1 / 1.44)
+    future = result.trajectories.loc[result.trajectories.vintage.eq(2030)]
+    assert set(future.powertrain) == {"diesel", "bev"}
+
+
+@pytest.mark.parametrize("defect", ["missing", "duplicate", "unit", "zero", "wrong_year", "mixed", "repeated", "excluded", "unconfirmed"])
+def test_heavy_diesel_total_boundary_rejects_invalid_or_overlapping_targets(heavy_calibration_inputs, defect):
+    inputs = heavy_calibration_inputs
+    rules = inputs["calibration_rules"]["classes"]["heavy_trucks"]
+    if defect == "missing":
+        inputs["ceud"] = inputs["ceud"].iloc[:2]
+    elif defect == "duplicate":
+        inputs["ceud"] = pd.concat([inputs["ceud"], inputs["ceud"].iloc[[2]]], ignore_index=True)
+    elif defect == "unit":
+        inputs["ceud"].loc[2, "unit"] = "TJ"
+    elif defect == "zero":
+        inputs["ceud"].loc[2, "value"] = 0
+    elif defect == "wrong_year":
+        inputs["ceud"].loc[2, "ceud_observed_year"] = 2022
+    elif defect == "mixed":
+        rules["liquid_series"].append("separate diesel component")
+    elif defect == "repeated":
+        rules["liquid_series"] *= 2
+    elif defect == "excluded":
+        rules["excluded_series"] = ["another fuel"]
+    else:
+        del rules["liquid_target_basis"]
+    with pytest.raises(ValueError):
+        calibrate_consumption(**inputs)
+
+
+@pytest.mark.parametrize("powertrain,fuel", [("gasoline", "T_gsl"), ("hev", "T_gsl"), ("bev", "T_elc_mhdv")])
+def test_confirmed_diesel_total_rejects_non_diesel_existing_inputs(heavy_calibration_inputs, powertrain, fuel):
+    inputs = heavy_calibration_inputs
+    existing = inputs["physical_stock"].tech.iloc[0]
+    inputs["relationships"].loc[inputs["relationships"].tech.eq(existing), "powertrain"] = powertrain
+    inputs["payloads"][0]["input_comm"] = fuel
+    with pytest.raises(ValueError, match="diesel-only existing energy inputs"):
+        calibrate_consumption(**inputs)
+
+
+def test_confirmed_diesel_total_accepts_diesel_hybrid_energy_inputs(heavy_calibration_inputs):
+    inputs = heavy_calibration_inputs
+    existing = inputs["physical_stock"].tech.iloc[0]
+    inputs["relationships"].loc[inputs["relationships"].tech.eq(existing), "powertrain"] = "hev"
+    result = calibrate_consumption(**inputs)
+    assert result.summary.calibrated_liquid_energy_pj.iloc[0] == pytest.approx(3.6)
+
+
+def test_emitted_heavy_calibration_closes_the_reported_total(heavy_calibration_inputs):
+    from parameterization.ceud_energy_calibration import validate_emitted_calibration
+
+    result = calibrate_consumption(**heavy_calibration_inputs)
+    frames = {"summary": result.summary, "cohorts": result.cohorts,
+              "efficiency": pd.DataFrame(result.payloads),
+              "splits": pd.DataFrame(columns=["region", "period", "tech", "input_comm", "proportion"])}
+    audit = validate_emitted_calibration(frames, c2a=heavy_calibration_inputs["c2a"],
+                                         factors=heavy_calibration_inputs["factors"])
+    assert audit["fitted_region_classes"] == 1
+    assert audit["activity_unchanged"]
+    assert audit["maximum_liquid_residual_pj"] == pytest.approx(0)
+    frames["summary"].loc[:, "ceud_total_energy_pj"] = 5.
+    with pytest.raises(ValueError, match="diesel-total boundary"):
+        validate_emitted_calibration(frames)
+
+
 def test_scenario_opt_in_requires_flat_emitted_activity():
     scenario = load_config_bundle("config/scenarios/validation_energy_calibration.yaml").scenario.model_dump()
     scenario["road_utilization"]["vkt_schedules"] = True

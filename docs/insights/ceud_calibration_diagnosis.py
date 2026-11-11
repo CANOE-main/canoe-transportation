@@ -32,10 +32,10 @@ def _(diagnosis, mo):
     # [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration: keep activity fixed, examine energy
 
     This optional evaluation fits reported gasoline and diesel energy for cars,
-    passenger/freight light trucks and medium trucks. Heavy-truck diesel L/100 km
-    evidence supports consumption estimates; its aggregate PJ series has no
-    fuel-resolved PJ components establishing the same calibration boundary.
-    That target remains pending and its parameters stay unchanged.
+    passenger/freight light trucks and medium trucks. Heavy trucks use their
+    aggregate CEUD PJ total as the diesel-energy target: the reviewed source
+    boundary confirms that diesel supplies the entire heavy-truck total.
+    The aggregate cell is selected once, without adding a separate fuel component.
     The ordinary scenarios keep energy calibration **off**.
     This evaluated option requires fixed lifetimes and flat emitted utilization.
     Curve-mode reference-only cohorts can lack emitted activity/efficiency rows;
@@ -135,12 +135,12 @@ def _(charts, mo):
         mo.ui.altair_chart(charts["ceud-cal-1"], chart_selection=False, legend_selection=False),
         mo.md("**Figure ceud-cal-1.** Gasoline/diesel closure uses the unchanged physical fleet and emitted annual utilization. Excluded fuel energy and electricity are not fitted targets."),
         mo.ui.altair_chart(charts["ceud-cal-2"], chart_selection=False, legend_selection=False),
-        mo.md("**Figure ceud-cal-2.** A multiplier above one increases consumption and reduces service efficiency. Heavy trucks retain one because their fuel boundary is unsupported."),
+        mo.md("**Figure ceud-cal-2.** A multiplier above one increases consumption and reduces service efficiency. Heavy trucks are fitted to their confirmed diesel-only class total using the same class-level method."),
         mo.ui.altair_chart(charts["ceud-cal-3"], chart_selection=False, legend_selection=False),
-        mo.md("**Figure ceud-cal-3.** These additive parts reconstruct the reported total within source rounding. [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) reports energy to 0.000001 PJ; the complete audit retains the signed component-total residual and its rounding allowance. Fitted closure uses a separate tighter tolerance. Missing electricity evidence is not a zero electricity measurement; full class-total closure is not claimed."),
+        mo.md("**Figure ceud-cal-3.** These additive parts reconstruct the reported total within source rounding. [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) reports energy to 0.000001 PJ; the complete audit retains the signed component-total residual and its rounding allowance. Heavy-truck diesel uses the total cell itself, so there is no separately rounded component sum. Fitted closure uses a separate tighter tolerance. Electricity is not an independent fitted target."),
         mo.ui.altair_chart(charts["ceud-cal-4"], chart_selection=False, legend_selection=False),
         mo.md("**Figure ceud-cal-4.** Historical cohort means and future model vintages retain their relative consumption changes. Model vintage labels are not observation years; source-year selections remain in captured annual/period evidence."),
-        mo.md("## Regional base-year anchors\nEach cell shows the prepared range-anchor service-efficiency change for the model vintage equal to `periods.base_year`, before representative aggregation. Tooltips retain those anchor values and units. The common class multiplier gives final representatives the same percentage adjustment, separately checked at the SQL boundary. Truck rows retain passenger light trucks, freight light trucks, medium trucks and heavy trucks separately. Pending cells have no supported calibration target."),
+        mo.md("## Regional base-year anchors\nEach cell shows the prepared range-anchor service-efficiency change for the model vintage equal to `periods.base_year`, before representative aggregation. Tooltips retain those anchor values and units. The common class multiplier gives final representatives the same percentage adjustment, separately checked at the SQL boundary. Truck rows retain passenger light trucks, freight light trucks, medium trucks and heavy trucks separately. All five road classes have reviewed liquid-energy targets; heavy trucks use their diesel-only aggregate."),
         *[mo.ui.altair_chart(charts[identity], chart_selection=False, legend_selection=False)
           for identity in ("ceud-cal-5-cars", "ceud-cal-5-trucks") if identity in charts],
     ])
@@ -153,7 +153,7 @@ def _(diagnosis, mo, region):
     activity_view = summary[["road_class", "base_year", "observed_year", "observation_status",
                              "physical_stock_k_vehicles", "ceud_activity_bn", "target_activity_bn",
                              "activity_bn", "activity_residual_bn"]]
-    energy_view = summary[["road_class", "status", "ceud_liquid_target_pj", "unadjusted_liquid_energy_pj",
+    energy_view = summary[["road_class", "status", "liquid_target_basis", "ceud_liquid_target_pj", "unadjusted_liquid_energy_pj",
                            "consumption_multiplier", "calibrated_liquid_energy_pj", "liquid_residual_pj",
                            "calibrated_electric_energy_pj", "electricity_target_status"]]
     mo.vstack([

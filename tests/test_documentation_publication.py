@@ -57,16 +57,17 @@ def test_canonical_scenario_links_resolve_to_published_pages(tmp_path, monkeypat
     monkeypatch.setattr(docs_hooks, "ROOT", tmp_path)
     monkeypatch.setattr(docs_hooks, "_PAGES", {"assumptions.md", "scenario_configuration.md"})
     monkeypatch.setattr(docs_hooks, "_CANONICAL", {"scenario_configuration.md": "config/scenarios/README.md"})
-    config = SimpleNamespace(docs_dir=str(tmp_path / "docs"), repo_url="https://example.com/repository", extra={"repository_branch": "v2.0"})
+    config = SimpleNamespace(docs_dir=str(tmp_path / "docs"), repo_url="https://example.com/repository", extra={"repository_branch": "main"})
     assert docs_hooks.rewrite_target("../../docs/assumptions.md#demand", "scenario_configuration.md", config) == "assumptions.md#demand"
 
 
-def test_repository_links_use_configured_branch_and_preserve_fragments(tmp_path, monkeypatch):
+@pytest.mark.parametrize("branch", ["main", "review-branch"])
+def test_repository_links_use_configured_branch_and_preserve_fragments(tmp_path, monkeypatch, branch):
     (tmp_path / "docs/model").mkdir(parents=True)
     (tmp_path / "config").mkdir()
     (tmp_path / "config/rules.yaml").write_text("version: 1")
     monkeypatch.setattr(docs_hooks, "ROOT", tmp_path)
     monkeypatch.setattr(docs_hooks, "_PAGES", {"model/energy.md"})
     monkeypatch.setattr(docs_hooks, "_CANONICAL", {})
-    config = SimpleNamespace(docs_dir=str(tmp_path / "docs"), repo_url="https://example.com/repository", extra={"repository_branch": "v2.0"})
-    assert docs_hooks.rewrite_target("../../config/rules.yaml#L1", "model/energy.md", config) == "https://example.com/repository/blob/v2.0/config/rules.yaml#L1"
+    config = SimpleNamespace(docs_dir=str(tmp_path / "docs"), repo_url="https://example.com/repository", extra={"repository_branch": branch})
+    assert docs_hooks.rewrite_target("../../config/rules.yaml#L1", "model/energy.md", config) == f"https://example.com/repository/blob/{branch}/config/rules.yaml#L1"

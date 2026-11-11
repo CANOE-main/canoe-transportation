@@ -1657,10 +1657,12 @@ parameterization:
         liquid_series: ["Medium Trucks|Energy Use by Energy Source (PJ)|Motor Gasoline", "Medium Trucks|Energy Use by Energy Source (PJ)|Diesel Fuel Oil"]
         excluded_series: []
       heavy_trucks:
-        status: unsupported_fuel_boundary
+        status: calibrate
         table_id: 36
         total_series: Heavy Truck Energy Use1 (PJ)
-        liquid_series: []
+        # Reviewed boundary: the aggregate CEUD heavy-truck PJ total is entirely diesel.
+        liquid_target_basis: reported_diesel_total
+        liquid_series: [Heavy Truck Energy Use1 (PJ)]
         excluded_series: []
   rating_stock_benchmark:
     files:
