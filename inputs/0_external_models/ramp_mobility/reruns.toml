@@ -1,0 +1,19 @@
+# Selections for the legacy Ontario case. This is not CANOE configuration.
+case_directory = "CA-ON_v2_charger_AER-shares"
+year = 2018
+seed = 42
+logistic = true
+infrastructure_probability = "piecewise"
+charger_powers_kw = [1.6, 7.2, 125.0]
+charger_probabilities = [0.1279, 0.8639, 0.0082]
+# Disk-backed float64 profiles preserve the fleet and random draws without fleet-sized RAM copies.
+profile_storage = "disk"
+
+[surveys]
+NHTS2022 = "NHTS2022_database/database"
+TTS2016 = "TTS2016_no-we_database/database"
+
+[strategies]
+uncontrolled = "Uncontrolled"
+night = "Night Charge"
+day = "Day Charge"

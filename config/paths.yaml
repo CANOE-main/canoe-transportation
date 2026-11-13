@@ -299,6 +299,20 @@ artifacts:
     producers: [fetching.legacy_charging_profiles.normalize_profile]
     consumers: [parameterization.ldv_charging_profiles, reviewers]
     validation_surfaces: [fetching.legacy_charging_profiles.transform_hourly]
+  ramp_mobility_external:
+    path: inputs/0_external_models/ramp_mobility
+    layer: external
+    owner: fetching.legacy_charging_profiles
+    producers: [external.RAMP_mobility]
+    consumers: [fetching.legacy_charging_profiles, reviewers]
+    validation_surfaces: [fetching.legacy_charging_profiles.normalize_profile]
+  processed_transport_tables:
+    path: inputs/2_processed/scenario_tables
+    layer: processed
+    owner: build_transport
+    producers: [build_transport.export_processed_tables]
+    consumers: [modelers, reviewers]
+    validation_surfaces: [build_transport.prepare_transport_contribution]
   charging_profiles_processed:
     path: inputs/2_processed/ldv_charging_profiles
     layer: processed

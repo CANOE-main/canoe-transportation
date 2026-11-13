@@ -92,6 +92,10 @@ def replace_owned_ldv_rows(
                         "ldv-charging-profiles-%",
                         "Legacy charging shape scaled by native full-year hourly mean and projected to CANOE time slices v3",
                     ),
+                    (
+                        "ldv-charging-profiles-%",
+                        "Registered RAMP charging shape scaled by native full-year hourly mean and projected to CANOE time slices v4",
+                    ),
                 ),
             )
         )

@@ -213,9 +213,109 @@ def test_statcan_metadata_period_expansion_requires_review(bundle):
     session = FakeSession()
     configure_statcan(bundle, session)
     session.metadata[20100025][0]["object"]["cubeEndDate"] = "2026-01-01"
+    request = next(item for item in statcan.build_requests(bundle) if item.product_id == 20100025)
+    url = session.resolved[request.download_api_url]
+    with ZipFile(io.BytesIO(session.downloads[url])) as archive:
+        member = f"{request.product_id}.csv"
+        content = archive.read(member)
+    content = content + content.splitlines(keepends=True)[-1].replace(b"2025,", b"2026,", 1)
+    session.downloads[url] = archive_bytes({member: content})
     original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
     result = updater.run_update(bundle, sources={statcan.SOURCE_ID}, session=session, apply=True)
-    assert not result.applied and any("cubeEndDate changed" in error for error in result.errors)
+    assert not result.applied and any("review-report" in error for error in result.errors)
+    assert_preserved(bundle, original, caches)
+    review = updater.run_update(bundle, sources={statcan.SOURCE_ID}, session=session)
+    assert not review.errors
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    candidate = next(row for row in report["candidates"] if row["component"] == request.table_id)
+    assert candidate["review_required"] == ["StatCan reference-period coverage expanded"]
+    assert candidate["evidence"]["reference_periods"]["after"]["cubeEndDate"] == "2026-01-01"
+    applied = updater.run_update(bundle, sources={statcan.SOURCE_ID}, session=session,
+                                 apply=True, review_report=review.report_path)
+    assert applied.applied and not applied.errors
+    adopted = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    for updated in statcan.build_requests(adopted):
+        assert statcan.ensure_cached_artifacts(updated, download=False) == ("cached", "cached", "")
+    assert adopted.scenario.sources == bundle.scenario.sources
+
+
+def test_statcan_lost_interior_period_rejects_after_registered_adoption(bundle):
+    session = FakeSession()
+    configure_statcan(bundle, session)
+    request = next(item for item in statcan.build_requests(bundle) if item.product_id == 20100025)
+    url = session.resolved[request.download_api_url]
+    member = f"{request.product_id}.csv"
+    with ZipFile(io.BytesIO(session.downloads[url])) as archive:
+        content = archive.read(member)
+    session.downloads[url] = archive_bytes({member: content + content.splitlines(keepends=True)[-1].replace(b"2025,", b"2023,", 1)})
+    first = updater.run_update(bundle, sources={statcan.SOURCE_ID}, session=session, apply=True)
+    assert first.applied and not first.errors
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    original, caches = current.sources_path.read_bytes(), cache_bytes(current)
+    session.downloads[url] = archive_bytes({member: content})
+    rejected = updater.run_update(current, sources={statcan.SOURCE_ID}, session=session)
+    assert any("lost registered reference periods" in error for error in rejected.errors)
+    assert_preserved(current, original, caches)
+
+
+@pytest.mark.parametrize("damaged", ["missing_metadata", "corrupt_metadata", "corrupt_archive"])
+def test_statcan_unavailable_registered_pair_can_be_repaired_after_review(bundle, damaged):
+    session = FakeSession()
+    configure_statcan(bundle, session)
+    first = updater.run_update(bundle, sources={statcan.SOURCE_ID}, session=session, apply=True)
+    assert first.applied and not first.errors
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    request = next(item for item in statcan.build_requests(current) if item.product_id == 20100025)
+    if damaged == "missing_metadata":
+        request.metadata_cache_path.unlink()
+    elif damaged == "corrupt_metadata":
+        request.metadata_cache_path.write_bytes(b"invalid historical metadata")
+    else:
+        request.archive_cache_path.write_bytes(b"invalid historical archive")
+    original, caches = current.sources_path.read_bytes(), cache_bytes(current)
+
+    # An unavailable old pair never exempts a downloaded candidate from validation.
+    url = session.resolved[request.download_api_url]
+    correct_download = session.downloads[url]
+    session.downloads[url] = b"invalid new archive"
+    invalid = updater.run_update(current, sources={statcan.SOURCE_ID}, session=session)
+    assert invalid.errors and not invalid.applied
+    assert_preserved(current, original, caches)
+    session.downloads[url] = correct_download
+
+    rejected = updater.run_update(current, sources={statcan.SOURCE_ID}, session=session, apply=True)
+    assert not rejected.applied and any("review-report" in error for error in rejected.errors)
+    assert_preserved(current, original, caches)
+    review = updater.run_update(current, sources={statcan.SOURCE_ID}, session=session)
+    assert not review.errors
+    candidate = next(row for row in json.loads(review.report_path.read_text(encoding="utf-8"))["candidates"]
+                     if row["component"] == request.table_id)
+    assert candidate["review_required"]
+    assert candidate["evidence"]["registered_baseline"]["status"] == "unavailable"
+    assert candidate["evidence"]["archive_periods"]["before"] is None
+    assert_preserved(current, original, caches)
+    session.calls.clear()
+    repaired = updater.run_update(current, sources={statcan.SOURCE_ID}, session=session,
+                                 apply=True, review_report=review.report_path)
+    assert repaired.applied and not repaired.errors and not session.calls
+    adopted = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    for updated in statcan.build_requests(adopted):
+        assert statcan.ensure_cached_artifacts(updated, download=False) == ("cached", "cached", "")
+    for path, content in caches.items():
+        assert (resolve_input_path(current, "cache") / path).read_bytes() == content
+
+
+@pytest.mark.parametrize("changed", ["cubeStartDate", "cubeEndDate", "frequencyCode"])
+def test_statcan_shrinking_periods_and_frequency_changes_remain_blocked(bundle, changed):
+    session = FakeSession()
+    configure_statcan(bundle, session)
+    session.metadata[20100025][0]["object"][changed] = {
+        "cubeStartDate": "2021-01-01", "cubeEndDate": "2024-01-01", "frequencyCode": 6,
+    }[changed]
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    result = updater.run_update(bundle, sources={statcan.SOURCE_ID}, session=session)
+    assert result.errors and not result.applied
+    assert any("coverage shrank" in error or "frequencyCode changed" in error for error in result.errors)
     assert_preserved(bundle, original, caches)
 
 

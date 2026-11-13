@@ -100,6 +100,7 @@ ev_chargers:
 
 charging_profiles:
   travel_behavior_source: nhts  # none | nhts: US travel survey | tts: Ontario GGH travel survey
+  charging_strategy: uncontrolled  # uncontrolled | night | day; Toronto local clock
   time_mapping: null  # null: hourly slices; otherwise: hour-to-slice CSV path.
 
 BEV_PHEV_range_representation:

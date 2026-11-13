@@ -177,8 +177,8 @@ explanations:
     evidence_paths:
       - src/parameterization/ldv_charging_profiles.py
       - config/parameters/rules.yaml
-      - inputs/validation/ldv_charging_profiles/integrity.json
-      - inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv
+      - inputs/validation/ldv_charging_profiles/nhts/uncontrolled/integrity.json
+      - inputs/2_processed/ldv_charging_profiles/nhts/uncontrolled/hourly_mapping.csv
     drivers:
       - scope: Shared existing and new LDV chargers
         legacy_basis: >-
@@ -198,7 +198,7 @@ explanations:
         evidence_paths:
           - config/scenarios/legacy_comparison.yaml
           - src/parameterization/ldv_charging_profiles.py
-          - inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv
+          - inputs/2_processed/ldv_charging_profiles/nhts/uncontrolled/hourly_mapping.csv
       - scope: Legacy hourly normalization and coverage
         legacy_basis: >-
           Legacy row notes describe a mean capacity factor of 0.20, while the
@@ -216,8 +216,8 @@ explanations:
           - '`capacity_factor_tech` for LDV charging profiles'
         evidence_paths:
           - legacy_backend/canoe_transport_baseline.sqlite
-          - inputs/validation/ldv_charging_profiles/integrity.json
-          - inputs/2_processed/ldv_charging_profiles/hourly_mapping.csv
+          - inputs/validation/ldv_charging_profiles/nhts/uncontrolled/integrity.json
+          - inputs/2_processed/ldv_charging_profiles/nhts/uncontrolled/hourly_mapping.csv
 
   capacity_to_activity:
     summary: >-

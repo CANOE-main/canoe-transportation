@@ -1,0 +1,159 @@
+{
+  "status": "complete",
+  "started_utc": "2026-11-13T05:45:14.603099+00:00",
+  "preflight": {
+    "survey": "NHTS2022",
+    "mode": "Night Charge",
+    "year": 2018,
+    "seed": 42,
+    "database": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\NHTS2022_database\\database",
+    "output": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\reruns\\NHTS2022\\night\\2018\\seed-42-paper-overnight",
+    "nominal_users": 2500,
+    "constructed_users": 2499,
+    "user_classes": 9,
+    "daily_distance_km": {
+      "weekday": 47.39,
+      "saturday": 56.13,
+      "sunday": 56.13
+    },
+    "dummy_days_each_side": 5,
+    "calendar_days_with_buffers": 375,
+    "ordinary_charging_minutes_per_day": 540,
+    "temperature_minutes_loaded": 1576800,
+    "temperature_nulls_outside_simulation": 0,
+    "model_revision": "ontario-2018-corrected-soc-weather-v1",
+    "profile_storage": "disk-backed float64",
+    "scratch_gib": 10.054,
+    "required_free_disk_gib": 12.054,
+    "warnings": [
+      "Raw UTC export retains legacy padding; downstream checks select the full Toronto calendar."
+    ],
+    "evidence_notes": [
+      "SOC/grid efficiency and UTC weather lookups corrected; logistic plug-in behavior retained.",
+      "NHTS legacy sample remains unweighted; midpoint hours intentionally represent trip occurrence."
+    ]
+  },
+  "model_revision": "ontario-2018-corrected-soc-weather-v1",
+  "settings": {
+    "case_directory": "CA-ON_v2_charger_AER-shares",
+    "year": 2018,
+    "seed": 42,
+    "logistic": true,
+    "infrastructure_probability": "piecewise",
+    "charger_powers_kw": [
+      1.6,
+      7.2,
+      125.0
+    ],
+    "charger_probabilities": [
+      0.1279,
+      0.8639,
+      0.0082
+    ],
+    "profile_storage": "disk",
+    "surveys": {
+      "NHTS2022": "NHTS2022_database/database",
+      "TTS2016": "TTS2016_no-we_database/database"
+    },
+    "strategies": {
+      "uncontrolled": "Uncontrolled",
+      "night": "Night Charge",
+      "day": "Day Charge"
+    }
+  },
+  "input_sha256": {
+    "NHTS2022_database\\database\\d_min.csv": "ffd101985e2bbca1aefcfc2aca1e31471e6287c14f3d9afa404fc93d1de17c73",
+    "NHTS2022_database\\database\\d_tot.csv": "0afc85e6a687030898bfebdd65faf2ff8f615720885111903da24382df85751f",
+    "NHTS2022_database\\database\\pop_share.csv": "a08eb0de6d5c44d4cdacfbf8e880a9c19cb0068f7bf324bc4c599fd5374bded0",
+    "NHTS2022_database\\database\\t_func.csv": "09b11afcefcf73d6a19e6dfba1417d77b388d3240b01a053a3f374c364c56841",
+    "NHTS2022_database\\database\\temp_ninja_pop_1980-2022.csv": "9c67ac965bf017eec41b6522bc78e7d0a97f67b7078b0dd7652d2ee1e4a89368",
+    "NHTS2022_database\\database\\trips_by_time_saturday.csv": "8f50e95cef72f2368744d1704760292c825b19fe6ae18af19de97ec92220bac9",
+    "NHTS2022_database\\database\\trips_by_time_sunday.csv": "951e12d9a38ef567574cc3786d782b6993a5a816f78443598706fe755868e076",
+    "NHTS2022_database\\database\\trips_by_time_weekday.csv": "82acaeac9b3d3c4048c7b31d8a8f8fd1536e48ab13b99a67aa4f1b6894070a5f",
+    "NHTS2022_database\\database\\vehicle_share.csv": "e73364c4df53269898e39fd40378354f7f82b290a6734b5fb185ad9b648302bd",
+    "NHTS2022_database\\database\\windows.csv": "cf0c3c416bcf05195c1cde2bb134210cf97cabd2a47fb0a9cca2e292c9b3d70f"
+  },
+  "code_sha256": {
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\__init__.py": "dbf4bb5baceddd9686a62b01f394a411f8bab1a1b55d624e41902b3fca3c44bb",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\core_model\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\core_model\\charging_process.py": "8506eacca0d3bdaeb24a00b21cf070dc206ce89e7cc137a075ef46912dc0c372",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\core_model\\core.py": "da71aa7b97d08ecb5edcf571f714ea2dd62c602b8d32720bfeda25a117cebd63",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\core_model\\initialise.py": "bbdae0c8b26fdf6a9b3392fa67837ebb3d1dd8a4e09793139453ad24683cceae",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\core_model\\profile_store.py": "2001a940ea4f524655e8df9139960a1ef42c4554931d2729fb54f8e33cda72ad",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\core_model\\stochastic_process_mobility.py": "c164c8f13fdb26d2ae84964ff09e1b12dcef84cfcbbacd0e593564cd703eb2ed",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\AT.py": "6b3bc7fb2d123cb45280dc49a6e58a27a8802feb79ca770ba0ea9f2ec1a327c8",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\BE.py": "75e5395cfe6e43477dfe9e0198a5b5c8eef334190a80332ae01553b9c1ecedf9",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\BG.py": "f73abc23a7bcb0c7ca612c534fba130fc36ec8d101f6098824ad49ece0efc3a0",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\CH.py": "0b43bca320f56a832998498c47d411cc04346fcc041295d7b34b76aed2bc7d39",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\CZ.py": "7bb331aab566411843a0b08511122e3875e249987a089530a95049f1859a0b22",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\DE.py": "e460cc9ac587a8c38130808b712134cd25e116a910433e632373e74a5b0abd5d",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\DK.py": "d4addc3768d2a857eb28cddbe1f90a70eb87a4f62ae8651d215fdbcb12f806b5",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\EE.py": "2fa4acccb77d9ddeb418b335820f41634a7e1a62fb04a2f0f8c4d7b7b0507560",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\EL.py": "dce372582ab00d766bfdc89106ddc7766b9261b4322d225c9c7ae5be186db085",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\ES.py": "f9787efb3f1689d8bc013ceef5ea3e8baa3461c577d7f6421fc3fcb65249cf3a",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\FI.py": "4a02f539f1cd6280900a08cf2296304dbefc9d6962aa0f1273b2f9c84e813c1d",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\FR.py": "f088cac6a8a6b916c1d034203891dd1d56ca7d02aec6c2df822caea77af22976",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\HR.py": "4fb4c21e6bcff6f5ac7be6db812036b2be74ffe23d41741ed01b8067d5f3ccc4",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\HU.py": "95e975d97b2b0ad5708cd74a87a54190a5ee16fa96c366c93f795fbf077a85b7",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\IE.py": "ac5ff7b217c8df7ad66903bf4ecaf7d861ee5620587c7087f3a91707326cb1b9",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\IT.py": "c01fae5ab0636c88aad064e4a4b867a6a078f0e110ff5c45ba4e9b9ec5c835de",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\LT.py": "7801ab1fb7d703ecce40fc2adf17e58e5e8216decd45d6d742af2273d711704d",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\LU.py": "2a899d5b9f19ce7103f9da2f86761ac5d9cb87a603127803e1329c4203f46891",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\LV.py": "3a0facf5b3834d308cfbc660feb4b234567ba64513242e57a6967a2ea8cf544b",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\NL.py": "920895c667ac0d2d30d3601226f25177261fa8e9a023943282766a2c426bf86a",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\NO.py": "b55d6fdb803c4d0beaad4dce618bbaea7328577f33b787107d19e7318970030c",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\PL.py": "d294b9565ddde141a15e4dcf242cfda74ab54012b75f9574dad45c95ebc8f4fc",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\PT.py": "2e06242339f3eba7f90c520a15c665c0ef1eb817859a38ead2b2bce4e3e47d76",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\RO.py": "df0d9518a988c09b0c1d6427cdac9e8344d8fa5202c4cb49ee4c6adb70e30a6c",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\SE.py": "eb34fc463fac2a975d242ecf4ada9596a05175611892313537059957651f0cd0",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\SI.py": "a1c26b3175ab61060e80fdef4859f90694173f13958dbb0d535bedff14844852",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\SK.py": "92916392d08bfd1b47769660010ac96be8fc3a832c222faf67eae2fe8e64bd89",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\Europe\\UK.py": "5948a6efb402eb1529e2e29786dc4292e5e9d7d08909d714ccc1df25e057e196",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\country_input_files\\North America\\CA.py": "c5f24e5a4074c4217fe8ada1967576eaca3c99fccf64bed0900c5c4b5b6e8acb",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\post_process\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\post_process\\post_process.py": "501631e520c29f99a9eec447308c7f132453a06be512495525e5eb6103997fb4",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\ramp_run.py": "d18cdee70a589ab83c6a99218d79f70297e477cd3b3d5fe109ea96e858c07a16",
+    "CA-ON_v2_charger_AER-shares\\ramp_mobility\\utils.py": "10ff3fc0a87f22afc92e7225f972d63aa46539e00050e97d91db5562d24c19e9"
+  },
+  "control_sha256": {
+    "run_simulation.py": "56c71fa354075e03809a4e3f5b9dbc60828a95e42c8c8f44ebb5355920abae48",
+    "reruns.toml": "2acda5be26e75a04f3a72a2830684625d332086a175896b7ab894e303a7a0a49",
+    "uv.lock": "5bc82f8007986bc1ca490d51daa8e841ee4ade4a85bdda93d7d5ab8381054717"
+  },
+  "python": "3.11.14 (main, Oct 31 2025, 22:57:10) [MSC v.1944 64 bit (AMD64)]",
+  "packages": {
+    "numpy": "1.24.4",
+    "pandas": "1.5.3",
+    "matplotlib": "3.7.5",
+    "holidays": "0.10.5.2",
+    "pytz": "2024.2"
+  },
+  "diagnostics": {
+    "negative_soc_users": 0,
+    "soc_diagnostics": {
+      "Working - Large car": [],
+      "Working - Medium car": [],
+      "Working - Small car": [],
+      "Student - Large car": [],
+      "Student - Medium car": [],
+      "Student - Small car": [],
+      "Inactive - Large car": [],
+      "Inactive - Medium car": [],
+      "Inactive - Small car": []
+    }
+  },
+  "output_validation": {
+    "calendar_timezone": "America/Toronto",
+    "calendar_year": 2018,
+    "minute_samples": 525600,
+    "aggregate_grid_energy_kwh": 5431605.743667949,
+    "peak_kw": 2669.1122382671406,
+    "mean_kw": 620.0463177703139
+  },
+  "charging_profile_sha256": "dacb80807cf4b4b3ccf3c0b67f2010b0c7d0779486b828fb6e953e495f64d262",
+  "quality_status": "passed",
+  "scratch_cleaned": true,
+  "finished_utc": "2026-11-13T06:28:47.472443+00:00"
+}

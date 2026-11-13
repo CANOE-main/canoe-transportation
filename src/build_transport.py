@@ -23,6 +23,9 @@ from canoe_schema.v4_0 import (
     Commodity,
     CommodityLabel,
     DataSet,
+    DataSource,
+    DataSourceLabel,
+    MetadataReal,
     Region,
     TechnologyLabel,
     TimePeriod,
@@ -57,10 +60,12 @@ from utils import (
     load_harmonization_rules,
     log_duration,
     resolve_configured_path,
+    resolve_artifact_path,
     resolve_input_path,
     resolve_parameter_path,
     resolve_repo_path,
     write_text_atomic,
+    write_dataframe_atomic,
 )
 from validation.database_bootstrap import validate_database
 from validation.insertion import ConflictPolicy, insert_models, validate_transport_parameter_support
@@ -847,24 +852,187 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
     return audit
 
 
-@log_duration(LOGGER, "SQLite transport insertion")
-def insert_transport_contribution(
-    connection: sqlite3.Connection,
-    contribution: TransportContribution,
-    *,
-    conflict: ConflictPolicy = "error",
-) -> dict[str, list[CanoeBaseModel]]:
-    """Insert a prepared contribution into a transaction owned by the caller."""
-    # Recheck mutable batches before any SQLite writes, including caller insertions.
+def _publication_batches(contribution: TransportContribution) -> dict[str, list[CanoeBaseModel]]:
+    """One table mapping shared by readable-ID publication and CSV export."""
+    charging, ranges = contribution.charging_profiles, contribution.range_representation
+    return {
+        **_representative_batches(contribution),
+        "demand": contribution.demand_rows,
+        "capacity_factor_tech": charging.rows if charging else [],
+        "limit_new_capacity_share": ranges.share_rows if ranges else [],
+        "tech_group": ranges.group_rows if ranges else [],
+        "tech_group_member": ranges.member_rows if ranges else [],
+    }
+
+
+def _internal_datasets(contribution: TransportContribution) -> list[DataSet]:
+    ranges = contribution.range_representation
+    return [dataset for dataset in (
+        contribution.dataset, contribution.road_assumption_dataset,
+        contribution.charger_assumption_dataset, contribution.efficiency_assumption_dataset,
+        ranges.structural_dataset if ranges else None,
+    ) if dataset is not None]
+
+
+def _publication_identifiers(connection, contribution, batches):
+    _, datasets, _ = registry_rows(contribution.provenance_contexts)
+    columns = [column[1] for column in connection.execute("PRAGMA table_info(data_set)")]
+    existing = [DataSet.model_validate(dict(zip(columns, row, strict=True)))
+                for row in connection.execute("SELECT * FROM data_set")]
+    return readable_data_id_mapping(
+        datasets=[*_internal_datasets(contribution), *datasets],
+        contexts=contribution.provenance_contexts, batches=batches,
+        scenario_name=contribution.scenario_name, existing_datasets=existing,
+    )
+
+
+def _prepare_base_table(connection, specification, template_dir, bundle, data_id):
+    rows, _, result = prepare_template_table(
+        connection, specification=specification,
+        template_path=template_dir / specification.filename, data_id=data_id,
+    )
+    if specification.table == "time_period" and bundle.scenario.periods.period_mode == "prospective":
+        periods = bundle.scenario.periods
+        rows = [TimePeriod(period=year, flag="e", sequence=None) for year in periods.existing]
+        rows.extend(TimePeriod(period=year, flag="f", sequence=index)
+                    for index, year in enumerate([*periods.model, periods.end_of_horizon]))
+        result = replace(result, inserted_rows=len(rows), primary_keys=_expected_keys(rows))
+    return rows, result
+
+
+EXPORT_MODELS = {model.table_name(): model for model in (
+    TransportationTechnology, Commodity, TechnologyLabel, CommodityLabel,
+    DataSet, DataSourceLabel, DataSource, Region, TimePeriod, MetadataReal,
+    ExistingCapacity, Demand, CapacityToActivity, LimitAnnualCapacityFactor,
+    LifetimeTech, LifetimeProcess, LifetimeSurvivalCurve, Efficiency,
+    LimitTechInputSplitAnnual, CostInvest, CostFixed, CostVariable, EmissionEmbodied,
+    CapacityFactorTech, TimeSeason, TimeOfDay, LimitNewCapacityShare,
+    TechGroup, TechGroupMember, TechGroupLabel,
+)}
+
+
+def export_processed_tables(
+    connection: sqlite3.Connection, contribution: TransportContribution, *, bundle: ConfigBundle,
+    template_dir: Path,
+) -> dict[str, Any]:
+    """Publish model-ready CSVs from the insertion handoff, without inserting rows.
+
+    Preparation identities/fingerprints stay immutable. CSVs receive the same
+    readable data IDs and compact notes as standalone insertion. SQLite FK and
+    integrity checks are not claimed by this pre-insertion export.
+    """
+    import pandas as pd
+    from validation.insertion import compact_parameter_notes
+
     contribution.support_audit.clear()
     contribution.support_audit.update(_require_transport_parameter_support(contribution))
-    embodied_rows = [EmissionEmbodied.model_validate(row.model_dump()) for row in contribution.emission_embodied_rows]
-    from validation.insertion import replace_owned_ldv_rows, replace_owned_ldv_representation
+    axes = _validate_selected_preparations(connection, contribution)
+    batches = _publication_batches(contribution)
+    identifiers = _publication_identifiers(connection, contribution, batches)
+    labels, datasets, sources = registry_rows(contribution.provenance_contexts)
+    batches = {**batches, **contribution.labels_by_table,
+               "data_set": [*_internal_datasets(contribution), *datasets],
+               "data_source_label": labels, "data_source": sources,
+               "time_season": list(axes[0]) if axes else [],
+               "time_of_day": list(axes[1]) if axes else [],
+               "tech_group_label": [TechGroupLabel(group_name=row.group_name)
+                                    for row in batches["tech_group"]]}
+    for specification in STANDALONE_BASE_TABLES:
+        batches[specification.table], _ = _prepare_base_table(
+            connection, specification, template_dir, bundle, contribution.dataset.data_id,
+        )
+    rates = bundle.scenario.economics
+    rate_names = ("global_discount_rate", "default_loan_rate")
+    rate_columns = _table_columns(connection, "metadata_real")
+    batches["metadata_real"] = [MetadataReal.model_validate({
+        **dict(zip(rate_columns, row, strict=True)),
+        "value": getattr(rates, row[0]) if row[0] in rate_names else row[1],
+    }) for row in connection.execute("SELECT * FROM metadata_real")]
+    note_keys = next((context.database_note_keys for context in contribution.provenance_contexts), {})
+    parameter_tables = set(_representative_batches(contribution)) - set(contribution.rows_by_table)
+    # Capacity-to-activity is published directly by insertion, without note compaction.
+    parameter_tables.discard("capacity_to_activity")
+    parameter_tables.update(("demand", "capacity_factor_tech", "limit_new_capacity_share"))
+    prepared = {}
+    for table, model in EXPORT_MODELS.items():
+        rows = [model.model_validate(row.model_dump()) for row in batches.get(table, [])]
+        if table in parameter_tables or table == "capacity_to_activity":
+            keys = Counter(_primary_key(row) for row in rows)
+            duplicates = [key for key, count in keys.items() if count > 1]
+            if duplicates:
+                raise TemplateLoadError(f"Duplicate processed {table} primary key: {duplicates[:8]}")
+        if table in parameter_tables:
+            rows = compact_parameter_notes(rows, note_keys.get(table, ()))
+        prepared[table] = _deduplicate_models(publish_data_ids(
+            rows, identifiers, scenario_name=contribution.scenario_name,
+        ))
+    unknown = set(batches) - set(EXPORT_MODELS)
+    if unknown:
+        raise ValueError(f"Processed export has unregistered model tables: {sorted(unknown)}")
+    dataset_ids = {row.data_id for row in prepared["data_set"]}
+    source_ids = {row.source_id for row in prepared["data_source_label"]}
+    source_pairs = {(row.source_id, row.data_id) for row in prepared["data_source"]}
+    for rows in prepared.values():
+        for row in rows:
+            if getattr(row, "data_id", None) is not None and row.data_id not in dataset_ids:
+                raise ValueError(f"Unregistered processed data_id: {row.data_id}")
+            if getattr(row, "data_source", None) is not None and row.data_source not in source_ids:
+                raise ValueError(f"Unregistered processed source: {row.data_source}")
+            if (getattr(row, "data_source", None) is not None
+                    and (row.data_source, row.data_id) not in source_pairs):
+                raise ValueError(f"Unregistered processed source/dataset pair: {(row.data_source, row.data_id)}")
+    base = resolve_artifact_path(bundle, "processed_transport_tables").resolve()
+    processed_root = resolve_input_path(bundle, "processed").resolve()
+    if not base.is_relative_to(processed_root):
+        raise ValueError("Processed table export must remain within the configured processed layer")
+    name = contribution.scenario_name
+    if not name or name in {".", ".."} or any(character in name for character in "/\\"):
+        raise ValueError("Processed export requires a scenario name without path separators")
+    destination = base / name
+    base.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=f".{name}.", dir=base) as directory:
+        stage_root = Path(directory)
+        stage = stage_root / "prepared"
+        stage.mkdir()
+        tables = {}
+        for table, rows in prepared.items():
+            model = EXPORT_MODELS[table]
+            columns = _table_columns(connection, table)
+            if set(model.model_fields) - set(columns):
+                raise ValueError(f"Processed {table} row model differs from the packaged schema")
+            path = stage / f"{table}.csv"
+            write_dataframe_atomic(pd.DataFrame([row.model_dump(mode="json") for row in rows], columns=columns), path)
+            tables[table] = {"rows": len(rows), "columns": columns, "sha256": file_sha256(path),
+                             "primary_key": list(model.__primary_key__)}
+        report = {
+            "ok": True, "mode": "processed_only", "scenario": name,
+            "directory": str(destination), "schema": schema_evidence(), "tables": tables,
+            "validation": {"row_models": True, "primary_keys": True, "provenance": True,
+                           "parameter_support": contribution.support_audit,
+                           "sqlite_insertion": False, "sqlite_integrity": "not_run"},
+            "config": {"scenario": {"path": str(bundle.scenario_path), "sha256": file_sha256(bundle.scenario_path)},
+                       "paths_sha256": file_sha256(bundle.paths_path), "sources_sha256": file_sha256(bundle.sources_path)},
+            "charging_profiles": contribution.charging_profiles.audit if contribution.charging_profiles else {"enabled": False},
+        }
+        write_text_atomic(json.dumps(report, indent=2, sort_keys=True) + "\n", stage / "manifest.json")
+        # Both directories are verified children of the configured processed root.
+        backup = stage_root / "previous"
+        if destination.exists():
+            os.replace(destination, backup)
+        try:
+            os.replace(stage, destination)
+        except BaseException:
+            if backup.exists():
+                os.replace(backup, destination)
+            raise
+    LOGGER.info("Published %s model-ready CSV tables to %s; SQLite insertion skipped for this export",
+                len(tables), destination)
+    return report
 
-    charging = contribution.charging_profiles
-    ranges = contribution.range_representation
-    profile_rows = [CapacityFactorTech.model_validate(row.model_dump()) for row in charging.rows] if charging else []
-    share_rows = [LimitNewCapacityShare.model_validate(row.model_dump()) for row in ranges.share_rows] if ranges else []
+
+def _validate_selected_preparations(connection: sqlite3.Connection, contribution: TransportContribution):
+    """Protect the shared prepared-row boundary before either CSV export or insertion."""
+    charging, ranges = contribution.charging_profiles, contribution.range_representation
     profile_axes = []
     if charging is not None:
         from parameterization.ldv_charging_profiles import validate_charging_preparation
@@ -891,32 +1059,33 @@ def insert_transport_contribution(
             contexts = {c.data_id: c for c in contribution.provenance_contexts}
             if any(contexts.get(c.data_id) != c for c in ranges.representative.provenance_contexts):
                 raise ValueError("Contribution lost representative provenance/DQ lineage")
+    return profile_axes
+
+
+@log_duration(LOGGER, "SQLite transport insertion")
+def insert_transport_contribution(
+    connection: sqlite3.Connection,
+    contribution: TransportContribution,
+    *,
+    conflict: ConflictPolicy = "error",
+) -> dict[str, list[CanoeBaseModel]]:
+    """Insert a prepared contribution into a transaction owned by the caller."""
+    # Recheck mutable batches before any SQLite writes, including caller insertions.
+    contribution.support_audit.clear()
+    contribution.support_audit.update(_require_transport_parameter_support(contribution))
+    embodied_rows = [EmissionEmbodied.model_validate(row.model_dump()) for row in contribution.emission_embodied_rows]
+    from validation.insertion import replace_owned_ldv_rows, replace_owned_ldv_representation
+
+    charging = contribution.charging_profiles
+    ranges = contribution.range_representation
+    profile_rows = [CapacityFactorTech.model_validate(row.model_dump()) for row in charging.rows] if charging else []
+    share_rows = [LimitNewCapacityShare.model_validate(row.model_dump()) for row in ranges.share_rows] if ranges else []
+    profile_axes = _validate_selected_preparations(connection, contribution)
     # The immutable preparation IDs above remain part of validation fingerprints.
     # Publish readable aliases only now, across every FK-linked contribution batch.
     labels, datasets, sources = registry_rows(contribution.provenance_contexts)
-    internal_datasets = [dataset for dataset in (
-        contribution.dataset, contribution.road_assumption_dataset,
-        contribution.charger_assumption_dataset,
-        contribution.efficiency_assumption_dataset, ranges.structural_dataset if ranges else None,
-    ) if dataset is not None]
-    publication_batches = {
-        **_representative_batches(contribution),
-        "demand": contribution.demand_rows,
-        "capacity_factor_tech": profile_rows,
-        "limit_new_capacity_share": share_rows,
-        "tech_group": ranges.group_rows if ranges else [],
-        "tech_group_member": ranges.member_rows if ranges else [],
-    }
-    columns = [column[1] for column in connection.execute("PRAGMA table_info(data_set)")]
-    existing_datasets = [
-        DataSet.model_validate(dict(zip(columns, row, strict=True)))
-        for row in connection.execute("SELECT * FROM data_set")
-    ]
-    published_ids = readable_data_id_mapping(
-        datasets=[*internal_datasets, *datasets], contexts=contribution.provenance_contexts,
-        batches=publication_batches, scenario_name=contribution.scenario_name,
-        existing_datasets=existing_datasets,
-    )
+    publication_batches = _publication_batches(contribution)
+    published_ids = _publication_identifiers(connection, contribution, publication_batches)
 
     def insert_published(rows, *, policy=conflict):
         published = publish_data_ids(rows, published_ids, scenario_name=contribution.scenario_name)
@@ -1027,6 +1196,7 @@ def bootstrap_database(
     database_path: Path,
     overwrite: bool = False,
     comparison_reference: Path | None = None,
+    export_processed: bool = False,
 ) -> dict[str, Any]:
     """Build, audit, and atomically publish one package-DDL v4 database."""
     if database_path.exists() and not overwrite:
@@ -1063,23 +1233,15 @@ def bootstrap_database(
             bundle=bundle,
             template_dir=template_dir,
         )
+        processed_report = export_processed_tables(
+            connection, contribution, bundle=bundle, template_dir=template_dir,
+        ) if export_processed else None
         base_load_results: list[TableLoadResult] = []
         inserted: dict[str, list[CanoeBaseModel]] = {}
         for specification in STANDALONE_BASE_TABLES:
-            base_rows, _, result = prepare_template_table(
-                connection,
-                specification=specification,
-                template_path=template_dir / specification.filename,
-                data_id=contribution.dataset.data_id,
+            base_rows, result = _prepare_base_table(
+                connection, specification, template_dir, bundle, contribution.dataset.data_id,
             )
-            if specification.table == "time_period" and bundle.scenario.periods.period_mode == "prospective":
-                periods = bundle.scenario.periods
-                base_rows = [TimePeriod(period=year, flag="e", sequence=None) for year in periods.existing]
-                base_rows.extend(
-                    TimePeriod(period=year, flag="f", sequence=index)
-                    for index, year in enumerate([*periods.model, periods.end_of_horizon])
-                )
-                result = replace(result, inserted_rows=len(base_rows), primary_keys=_expected_keys(base_rows))
             insert_models(connection, base_rows)
             inserted[specification.table] = base_rows
             base_load_results.append(result)
@@ -1119,6 +1281,7 @@ def bootstrap_database(
 
     return {
         "ok": True,
+        **({"processed_tables": processed_report} if processed_report else {}),
         "database": str(database_path),
         "schema": schema_evidence(),
         "source_id_mapping": source_id_mapping(bundle.sources),
@@ -1330,6 +1493,8 @@ def build_from_scenario(
     overwrite: bool = False,
     download_sources: bool = False,
     debug: bool = False,
+    processed_only: bool = False,
+    export_processed: bool = False,
 ) -> tuple[dict[str, Any], Path]:
     """Prepare sources, assemble validated rows and publish one complete scenario."""
     from utils.build_logging import scenario_build_log
@@ -1343,12 +1508,14 @@ def build_from_scenario(
             return _build_scenario(
                 bundle, overwrite=overwrite, download_sources=download_sources,
                 log_path=log_path, debug=debug,
+                processed_only=processed_only, export_processed=export_processed,
             )
 
 
 def _build_scenario(
     bundle: ConfigBundle, *, overwrite: bool, download_sources: bool,
     log_path: Path, debug: bool,
+    processed_only: bool = False, export_processed: bool = False,
 ) -> tuple[dict[str, Any], Path]:
     scenario = bundle.scenario
     periods = scenario.periods
@@ -1383,6 +1550,29 @@ def _build_scenario(
         scenario.costs.atb_trajectory, scenario.economics.cost_reference_year,
         scenario.economics.cost_reference_currency,
     )
+    if processed_only:
+        with log_duration(LOGGER, "Scenario prerequisites"):
+            prepare_scenario_inputs(bundle, download=download_sources)
+        connection = sqlite3.connect(":memory:")
+        try:
+            # The pinned DDL supplies structure/defaults for preparation reads.
+            # No transport parameters or base rows are inserted into this connection.
+            create_v4_schema(connection)
+            template_dir = resolve_input_path(bundle, "template")
+            contribution = prepare_transport_contribution(
+                connection, bundle=bundle, template_dir=template_dir,
+            )
+            report = export_processed_tables(
+                connection, contribution, bundle=bundle, template_dir=template_dir,
+            )
+        finally:
+            connection.close()
+        report.update(orchestration={"prerequisites": "replayed", "download_sources": download_sources},
+                      logging={"path": str(log_path), "verbosity": "DEBUG" if debug else "INFO"})
+        manifest = Path(report["directory"]) / "manifest.json"
+        write_validation_report(report, manifest)
+        LOGGER.info("Processed-only scenario completed: %s; SQLite output untouched", manifest)
+        return report, manifest
     database_path = resolve_configured_path(
         bundle,
         "outputs",
@@ -1419,6 +1609,7 @@ def _build_scenario(
             template_dir=resolve_input_path(bundle, "template"),
             database_path=candidate,
             comparison_reference=reference,
+            export_processed=export_processed,
         )
         report.update(
             {
@@ -1507,6 +1698,14 @@ def parse_args() -> argparse.Namespace:
         "--debug", action="store_true",
         help="Include configuration mappings, detailed audits and routine start events.",
     )
+    parser.add_argument(
+        "--processed-only", action="store_true",
+        help="Replay prerequisites and export all model-ready parameter CSVs without inserting/publishing SQLite.",
+    )
+    parser.add_argument(
+        "--export-processed", action="store_true",
+        help="Also export the prepared model-ready CSV tables during a normal SQLite build.",
+    )
     return parser.parse_args()
 
 
@@ -1522,6 +1721,8 @@ def main() -> None:
             overwrite=args.overwrite,
             download_sources=args.download_sources,
             debug=args.debug,
+            processed_only=args.processed_only,
+            export_processed=args.export_processed,
         )
     except (
         OSError,

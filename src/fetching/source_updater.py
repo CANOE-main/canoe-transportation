@@ -88,6 +88,92 @@ def _sha(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
 
+_REVIEW_KEYS = (
+    "review_schema_version", "registry_sha256_before", "scenario_sha256",
+    "rules_sha256", "selected_sources", "candidates", "cache_snapshots",
+    "acquisitions",
+)
+
+
+def _review_fingerprint(report):
+    return _sha(json.dumps(
+        {key: report.get(key) for key in _REVIEW_KEYS},
+        sort_keys=True, ensure_ascii=False,
+    ).encode("utf-8"))
+
+
+class _AcquisitionSession:
+    """Retain official responses for exact, network-free reviewed revalidation."""
+
+    def __init__(self, client, folder, *, acquisitions=None):
+        self.client = client
+        self.folder = folder
+        self.replaying = acquisitions is not None
+        self.acquisitions = [] if acquisitions is None else acquisitions
+        self.position = 0
+
+    @staticmethod
+    def _request(method, url, kwargs):
+        return {"method": method, "url": url,
+                "params": kwargs.get("params"), "payload": kwargs.get("json")}
+
+    def _send(self, method, url, kwargs):
+        if not self.replaying:
+            return getattr(self.client, method)(url, **kwargs)
+        request = self._request(method, url, kwargs)
+        if self.position >= len(self.acquisitions):
+            raise UpdateError("Reviewed acquisition is missing; run report-only review again")
+        entry = self.acquisitions[self.position]
+        if entry["request"] != request:
+            raise UpdateError("Reviewed acquisition request changed; run report-only review again")
+        self.position += 1
+        relative = Path(entry["file"])
+        path = (self.folder / relative).resolve()
+        if (relative.is_absolute() or not path.is_relative_to(
+            (self.folder / "downloads").resolve()
+        )):
+            raise UpdateError("Reviewed acquisition path is outside its downloads directory")
+        if (not path.is_file() or path.stat().st_size != entry["bytes"]
+            or file_sha256(path) != entry["sha256"]):
+            raise UpdateError("Reviewed acquisition is missing or changed; run report-only review again")
+        response = requests.Response()
+        response.status_code = 200
+        response.url = entry["url"]
+        response.headers.update(entry["headers"])
+        response._content = path.read_bytes()
+        response._content_consumed = True
+        return response
+
+    def get(self, url, **kwargs):
+        return self._send("get", url, kwargs)
+
+    def post(self, url, **kwargs):
+        return self._send("post", url, kwargs)
+
+    def record(self, url, response, *, payload, params):
+        if self.replaying:
+            return
+        content = response.content
+        sha = _sha(content)
+        relative = Path("downloads") / f"{sha}.bin"
+        path = self.folder / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists():
+            if file_sha256(path) != sha:
+                raise UpdateError(f"Conflicting review download: {path}")
+        else:
+            with path.open("xb") as handle:
+                handle.write(content)
+        self.acquisitions.append({
+            "request": {"method": "post" if payload is not None else "get",
+                        "url": url, "params": params, "payload": payload},
+            "file": relative.as_posix(), "sha256": sha, "bytes": len(content),
+            "url": str(getattr(response, "url", "") or url),
+            "headers": {key: value for key, value in response.headers.items()
+                        if key.lower() in {"last-modified", "content-type", "etag"}},
+        })
+
+
 def _cache_identity(path, expected, *, algorithm="sha256", expected_bytes=None):
     if not path.is_file():
         return {"path": str(path), "status": "missing"}
@@ -146,6 +232,8 @@ def _response(
             parts.append(chunk)
         response._content = b"".join(parts)
         response._content_consumed = True
+        if isinstance(client, _AcquisitionSession):
+            client.record(url, response, payload=payload, params=params)
     finally:
         response.close()
     return response
@@ -221,8 +309,14 @@ def _snapshot_path(bundle, original: Path, content: bytes) -> Path:
         raise UpdateError(f"Source snapshot is outside configured cache: {original}")
     suffix = "".join(original.suffixes)
     stem = original.name[: -len(suffix)] if suffix else original.name
-    stem = re.sub(r"-[0-9a-f]{16}$", "", stem)
-    return original.with_name(f"{stem}-{_sha(content)[:16]}{suffix}")
+    stem = re.sub(r"-[0-9a-f]{16}(?:-recovered-\d+)?$", "", stem)
+    digest = _sha(content)
+    target = original.with_name(f"{stem}-{digest[:16]}{suffix}")
+    recovery = 0
+    while target.exists() and (not target.is_file() or file_sha256(target) != digest):
+        recovery += 1
+        target = original.with_name(f"{stem}-{digest[:16]}-recovered-{recovery}{suffix}")
+    return target
 
 
 def _relative(bundle, path: Path) -> str:
@@ -367,7 +461,20 @@ def _nrcan(bundle, client, settings, folder) -> list[Candidate]:
             candidate_request,
             encoding_candidates=adapter.ratings_rules(bundle)["encoding_candidates"],
         )
-        rows = len(adapter.normalize_rating_dataframe(raw, candidate_request))
+        normalized = adapter.normalize_rating_dataframe(
+            raw, candidate_request, enforce_coverage=False
+        )
+        years = sorted(normalized["Model year"].unique().tolist())
+        if missing := set(request.expected_model_years) - set(years):
+            raise UpdateError(
+                f"NRCan {request.component_key} lost registered model years: {sorted(missing)}"
+            )
+        expanded = years != list(request.expected_model_years)
+        if expanded:
+            adapter.FuelConsumptionRatingRequest.model_validate(
+                candidate_request.model_dump() | {"expected_model_years": years}
+            )
+        rows = len(normalized)
         if _resource(client, endpoint, request.resource_id, settings) != resource:
             raise UpdateError(
                 f"NRCan metadata changed during download: {request.component_key}"
@@ -382,6 +489,8 @@ def _nrcan(bundle, client, settings, folder) -> list[Candidate]:
             (base + ("version",), version),
             (base + ("adapter", "url"), resource.url),
         ]
+        if expanded:
+            edits.append((base + ("adapter", "expected_model_years"), years))
         if (
             isinstance(request.component_meta.label, str)
             and request.component_meta.version
@@ -424,8 +533,12 @@ def _nrcan(bundle, client, settings, folder) -> list[Candidate]:
                     "sha256": _sha(content),
                     "bytes_changed": changed,
                     "registered_cache": local,
-                    "validation": "publisher MD5/size, required columns, exact model-year coverage",
+                    "model_years": {
+                        "before": list(request.expected_model_years), "after": years,
+                    },
+                    "validation": "publisher MD5/size, required columns, nonshrinking model-year coverage",
                 },
+                ["NRCan model-year coverage expanded"] if expanded else [],
             )
         )
     return candidates
@@ -499,6 +612,38 @@ def _tc_izev(bundle, client, settings, folder) -> list[Candidate]:
     return candidates
 
 
+def _fuel_record_changes(before, after):
+    """Compare consumed FuelEconomy rows as multisets, retaining duplicate counts."""
+    from collections import Counter
+
+    def records(frame):
+        values = frame.astype(object).where(frame.notna(), None).to_dict("records")
+        return Counter(json.dumps(row, sort_keys=True, ensure_ascii=False, allow_nan=False)
+                       for row in values)
+
+    current = records(after)
+    previous = records(before) if before is not None else None
+
+    def fingerprint(rows):
+        return _sha("\n".join(sorted(rows.elements())).encode("utf-8"))
+
+    evidence = {
+        "before_rows": len(before) if before is not None else None,
+        "after_rows": len(after),
+        "before_sha256": fingerprint(previous) if previous is not None else None,
+        "after_sha256": fingerprint(current),
+        "changed": previous != current if previous is not None else None,
+    }
+    if previous is not None:
+        for name, difference in (("added", current - previous), ("removed", previous - current)):
+            evidence[f"{name}_rows"] = difference.total()
+            evidence[f"{name}_sample"] = [
+                {"record": json.loads(row), "count": difference[row]}
+                for row in sorted(difference)[:10]
+            ]
+    return evidence
+
+
 def _fueleconomy(bundle, client, settings, folder) -> list[Candidate]:
     from fetching import fueleconomy_vehicles as adapter
 
@@ -512,9 +657,17 @@ def _fueleconomy(bundle, client, settings, folder) -> list[Candidate]:
     sha = _sha(content)
     changed = sha != request.expected_sha256 or len(content) != request.expected_bytes
     staged = _staged(folder, request.cache_path, content)
-    counts = {}
+    local = _cache_identity(
+        request.cache_path,
+        request.expected_sha256,
+        expected_bytes=request.expected_bytes,
+    )
+    counts, observations, coverage = {}, {}, {}
+    reasons, coverage_edits = [], []
+    rules = adapter.module_rules(bundle)
     for component in source.components:
-        component_request = adapter.build_request(bundle, component).model_copy(
+        original_request = adapter.build_request(bundle, component)
+        component_request = original_request.model_copy(
             update={
                 "cache_path": staged,
                 "expected_sha256": sha,
@@ -522,26 +675,65 @@ def _fueleconomy(bundle, client, settings, folder) -> list[Candidate]:
             }
         )
         adapter.validate_cache(component_request)
-        frame = adapter.read_selected_vehicle_columns(component_request)
+        frame = adapter.read_selected_vehicle_columns(component_request, enforce_coverage=False)
+        years = sorted(frame.year.unique().tolist())
+        previous = None
+        if local["status"] == "valid":
+            previous = adapter.read_selected_vehicle_columns(original_request)
+            old_years = sorted(previous.year.unique().tolist())
+        else:
+            old_years = [original_request.expected_model_year_from,
+                         original_request.expected_model_year_to]
+        if missing := set(old_years) - set(years):
+            raise UpdateError(f"FuelEconomy {component} lost registered model years: {sorted(missing)}")
+        expected_bounds = (original_request.expected_model_year_from, original_request.expected_model_year_to)
+        bounds = (years[0], years[-1])
+        if bounds[0] > expected_bounds[0] or bounds[1] < expected_bounds[1]:
+            raise UpdateError(f"FuelEconomy {component} model-year coverage shrank")
+        if bounds != expected_bounds:
+            reasons.append(f"FuelEconomy {component} model-year coverage expanded")
+            for key, value in zip(("expected_model_year_from", "expected_model_year_to"), bounds, strict=True):
+                owner = component if key in source.component(component).adapter else "vehicles"
+                coverage_edits.append((("sources", source_key, "components", owner, "adapter", key), value))
+        coverage[component] = {
+            "before": old_years if local["status"] == "valid" else None,
+            "registered_bounds": list(expected_bounds), "after": years,
+        }
         if component == "range_evidence":
-            frame = adapter.normalize_range_evidence(
-                frame, rules=adapter.module_rules(bundle)
-            )
+            frame = adapter.normalize_range_evidence(frame, rules=rules)
+            if previous is not None:
+                previous = adapter.normalize_range_evidence(previous, rules=rules)
+        else:
+            adapter.normalize_vehicle_classes(frame, rules=rules)
+        observations[component] = _fuel_record_changes(previous, frame)
+        if changed and observations[component]["changed"]:
+            reasons.append(f"FuelEconomy {component} selected records changed")
         counts[component] = len(frame)
-    base = ("sources", source_key)
-    edits, files = [], {}
-    modified = response.headers.get("Last-Modified", "")
-    local = _cache_identity(
-        request.cache_path,
-        request.expected_sha256,
-        expected_bytes=request.expected_bytes,
+    if changed and local["status"] != "valid":
+        reasons.append("Exact registered cache unavailable; previous FuelEconomy records cannot be compared")
+    with ZipFile(staged) as archive:
+        member_sha = _sha(archive.read(request.archive_member))
+    previous_member_sha = None
+    if local["status"] == "valid":
+        with ZipFile(request.cache_path) as archive:
+            previous_member_sha = _sha(archive.read(request.archive_member))
+    selected_changed = any(row["changed"] for row in observations.values())
+    change_kind = (
+        "unchanged" if not changed else
+        "unverified_baseline" if local["status"] != "valid" else
+        "selected_records" if selected_changed else
+        "zip_packaging_only" if previous_member_sha == member_sha else
+        "unconsumed_fields_or_csv_formatting"
     )
+    base = ("sources", source_key)
+    edits, files = list(dict(coverage_edits).items()), {}
+    modified = response.headers.get("Last-Modified", "")
     if changed or local["status"] != "valid":
-        if not modified:
-            raise UpdateError(
-                "FuelEconomy release has no Last-Modified header; review manually"
-            )
-        version = parsedate_to_datetime(modified).date().isoformat()
+        try:
+            version = parsedate_to_datetime(modified).date().isoformat()
+        except (TypeError, ValueError, OverflowError):
+            version = f"sha256-{sha[:12]}"
+            reasons.append("FuelEconomy publisher Last-Modified missing or invalid; review content-addressed snapshot")
         target = _snapshot_path(bundle, request.cache_path, content)
         adapter_base = base + ("components", "vehicles", "adapter")
         edits.extend(
@@ -558,7 +750,7 @@ def _fueleconomy(bundle, client, settings, folder) -> list[Candidate]:
                 edits.append(
                     (
                         base + ("components", component, "label"),
-                        re.sub(r"\d{4}-\d{2}-\d{2}", version, label),
+                        re.sub(r"\d{4}-\d{2}-\d{2}|sha256-[0-9a-f]{12}", version, label),
                     )
                 )
         files[target] = content
@@ -577,8 +769,13 @@ def _fueleconomy(bundle, client, settings, folder) -> list[Candidate]:
                 "bytes_changed": changed,
                 "registered_cache": local,
                 "rows": counts,
-                "validation": "ZIP CRC, both component columns/nulls/year bounds and range semantics",
+                "change_kind": change_kind,
+                "archive_member_sha256": {"before": previous_member_sha, "after": member_sha},
+                "model_years": coverage,
+                "selected_records": observations,
+                "validation": "ZIP CRC, both component columns/nulls, nonshrinking years, VClass vocabulary and range semantics",
             },
+            list(dict.fromkeys(reasons)),
         )
     ]
 
@@ -685,10 +882,14 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
         client, url, settings, allowed_hosts=source.update.download_hosts
     ).content
     sha = _sha(content)
-    changed = (
+    raw_changed = (
         sha != source.adapter["expected_sha256"]
         or len(content) != source.adapter["expected_bytes"]
     )
+    content_sha = adapter.tc_dashboard_content_sha256(content)
+    registered_content_sha = source.adapter.get("expected_content_sha256")
+    asset_rotation_only = raw_changed and content_sha == registered_content_sha
+    changed = raw_changed and not asset_rotation_only
     component = source.component("public_light_duty_chargers")
     registered_date = component.adapter.get("reporting_date", adapter.module_rules(
         bundle
@@ -716,6 +917,15 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
         source.adapter["expected_sha256"],
         expected_bytes=source.adapter["expected_bytes"],
     )
+    if local["status"] != "missing" and registered_content_sha is not None:
+        try:
+            local_content_sha = adapter.tc_dashboard_content_sha256(old.read_bytes())
+        except (OSError, ValueError) as exc:
+            local.update(status="mismatch", validation_error=str(exc))
+        else:
+            local.update(content_sha256=local_content_sha,
+                         expected_content_sha256=registered_content_sha)
+            local["status"] = "valid" if local_content_sha == registered_content_sha else "mismatch"
     previous, reasons = None, []
     if local["status"] == "valid":
         previous = _dashboard_frames(bundle, old.read_bytes())
@@ -747,6 +957,7 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
                 (base + ("cache_path",), _relative(bundle, target)),
                 (base + ("expected_sha256",), sha),
                 (base + ("expected_bytes",), len(content)),
+                (base + ("expected_content_sha256",), content_sha),
             ]
         )
         if reasons:
@@ -782,7 +993,9 @@ def _tc_dashboard(bundle, client, settings, folder) -> list[Candidate]:
             {
                 "url": url,
                 "sha256": sha,
-                "bytes_changed": changed,
+                "bytes_changed": raw_changed,
+                "content_sha256": content_sha,
+                "presentation_tokens_only": asset_rotation_only,
                 "registered_cache": local,
                 "validation": "unique market-share table, bounded same-year quarters, regional coverage and configured charger-total precedence with aggregate discrepancies retained",
                 "rows": [len(frame) for frame in frames],
@@ -956,10 +1169,12 @@ def _statcan_periods(request, metadata, chunksize):
         raise UpdateError(
             f"StatCan {request.table_id} archive periods do not match its cube metadata"
         )
+    return periods
 
 
 def _statcan(bundle, client, settings, folder) -> list[Candidate]:
     from fetching import statcan_tables as adapter
+    from zipfile import BadZipFile
 
     candidates = []
     rules = adapter.module_rules(bundle)
@@ -974,13 +1189,39 @@ def _statcan(bundle, client, settings, folder) -> list[Candidate]:
         adapter.validate_metadata_contract(metadata, request)
         release = str(metadata.get("releaseTime") or "")
         _version(release)
-        if request.metadata_cache_path.is_file():
-            previous = adapter.read_cached_metadata(request)
-            for key in ("cubeStartDate", "cubeEndDate", "frequencyCode"):
-                if previous.get(key) != metadata.get(key):
-                    raise UpdateError(
-                        f"StatCan {request.table_id} {key} changed; review periods/frequency"
-                    )
+        previous, previous_periods, registered_periods, review = None, None, None, []
+        baseline = {"status": "unregistered"}
+        periods = {key: _version(metadata.get(key)) for key in ("cubeStartDate", "cubeEndDate")}
+        if periods["cubeStartDate"] > periods["cubeEndDate"]:
+            raise UpdateError(f"StatCan {request.table_id} has reversed reference dates")
+        if request.snapshot is not None or request.metadata_cache_path.exists():
+            # Only errors in the historical cache become an unknown baseline.
+            # Downloaded candidates retain all validation below, outside this block.
+            try:
+                previous = adapter.read_cached_metadata(request)
+                adapter.validate_metadata_contract(previous, request)
+                previous_periods = {key: _version(previous.get(key)) for key in periods}
+                if previous_periods["cubeStartDate"] > previous_periods["cubeEndDate"]:
+                    raise UpdateError("Historical StatCan reference dates are reversed")
+                if request.snapshot is not None:
+                    adapter.validate_source(request)
+                    with ZipFile(request.archive_cache_path) as zipped:
+                        if zipped.testzip() is not None:
+                            raise UpdateError("Historical StatCan ZIP failed CRC")
+                    registered_periods = _statcan_periods(request, previous, int(rules["read_chunksize"]))
+                baseline = {"status": "authenticated" if request.snapshot is not None else "legacy_metadata"}
+            except (OSError, ValueError, TypeError, BadZipFile) as exc:
+                previous, previous_periods, registered_periods = None, None, None
+                baseline = {"status": "unavailable", "reason": str(exc)}
+                review.append("Registered StatCan baseline unavailable or invalid; historical coverage cannot be compared")
+        if previous is not None:
+            if previous.get("frequencyCode") != metadata.get("frequencyCode"):
+                raise UpdateError(f"StatCan {request.table_id} frequencyCode changed; review frequency")
+            if (periods["cubeStartDate"] > previous_periods["cubeStartDate"]
+                or periods["cubeEndDate"] < previous_periods["cubeEndDate"]):
+                raise UpdateError(f"StatCan {request.table_id} registered reference coverage shrank")
+            if previous_periods != periods:
+                review.append("StatCan reference-period coverage expanded")
         resolved = _json(client, request.download_api_url, settings)
         if (
             not isinstance(resolved, dict)
@@ -1011,7 +1252,10 @@ def _statcan(bundle, client, settings, folder) -> list[Candidate]:
         with ZipFile(staged_request.archive_cache_path) as zipped:
             if zipped.testzip() is not None:
                 raise UpdateError(f"StatCan {request.table_id} ZIP failed CRC")
-        _statcan_periods(staged_request, metadata, int(rules["read_chunksize"]))
+        actual_periods = _statcan_periods(staged_request, metadata, int(rules["read_chunksize"]))
+        if registered_periods is not None:
+            if missing := registered_periods - actual_periods:
+                raise UpdateError(f"StatCan {request.table_id} lost registered reference periods: {sorted(missing)}")
         selected, _, rows = adapter.read_selected_table(
             staged_request,
             regions=list(bundle.scenario.geography.regions),
@@ -1065,8 +1309,14 @@ def _statcan(bundle, client, settings, folder) -> list[Candidate]:
                     "metadata_sha256": _sha(metadata_bytes),
                     "rows": rows,
                     "selected_rows": len(selected),
+                    "registered_baseline": baseline,
+                    "reference_periods": {"before": previous_periods, "after": periods},
+                    "archive_periods": {"before": sorted(registered_periods) if registered_periods is not None else None,
+                                        "after": sorted(actual_periods)},
+                    "frequency_code": metadata.get("frequencyCode"),
                     "validation": "coherent release, PID/title/dimensions/members, ZIP CRC and selected CSV coverage",
                 },
+                review,
             )
         )
     return candidates
@@ -1215,7 +1465,8 @@ def _publish(
             raise UpdateError(
                 "Source registry changed before publication; rerun the updater"
             )
-        write_text_atomic(updated, bundle.sources_path, newline="")
+        if updated.encode("utf-8") != original:
+            write_text_atomic(updated, bundle.sources_path, newline="")
         committed = True
     except BaseException:
         for path in reversed(created):
@@ -1260,7 +1511,7 @@ def run_update(
     text = original.decode("utf-8")
     registry = yaml.load(text, Loader=UniqueKeyLoader)
     report = {
-        "review_schema_version": 1,
+        "review_schema_version": 2,
         "mode": "apply" if apply else "report",
         "status": "checking",
         "started_utc": timestamp,
@@ -1272,15 +1523,33 @@ def run_update(
         "selected_sources": sorted(sources) if sources is not None else None,
         "sources": [],
         "candidates": [],
+        "acquisitions": [],
         "errors": [],
     }
     errors = report["errors"]
     applied = False
     owned_client = session is None
-    client = session or requests.Session()
+    network_client = session or requests.Session()
+    client = _AcquisitionSession(network_client, audit)
     try:
         if review_report is not None and not apply:
             raise UpdateError("--review-report requires --apply")
+        if review_report is not None:
+            reviewed = json.loads(Path(review_report).read_text(encoding="utf-8"))
+            if (reviewed.get("review_schema_version") != 2
+                or reviewed.get("status") != "report_only" or reviewed.get("errors")
+                or reviewed.get("review_fingerprint") != _review_fingerprint(reviewed)
+                or any(reviewed.get(key) != report[key] for key in (
+                    "registry_sha256_before", "scenario_sha256", "rules_sha256",
+                    "selected_sources",
+                ))):
+                raise UpdateError("Reviewed report no longer matches this registry, scenario, rules or source selection, or its evidence changed; run report-only review again")
+            client = _AcquisitionSession(
+                None, Path(review_report).resolve().parent,
+                acquisitions=reviewed["acquisitions"],
+            )
+            logger.info("REPLAYING exact reviewed downloads without network: %s", review_report)
+        report["acquisitions"] = client.acquisitions
         settings = bundle.sources.updater
         if settings is None:
             raise UpdateError(
@@ -1358,13 +1627,13 @@ def run_update(
                     for path, value in candidate.edits
                     if _value_at(registry, path) != value
                 ]
-                status = "changed" if effective else "current"
+                missing_files = any(not path.exists() for path in candidate.files)
+                status = "changed" if effective else "cache_recovery" if missing_files else "current"
                 edits.extend(effective)
-                if effective:
-                    for path, content in candidate.files.items():
-                        if path in files and files[path] != content:
-                            raise UpdateError(f"Conflicting candidate cache: {path}")
-                        files[path] = content
+                for path, content in candidate.files.items():
+                    if path in files and files[path] != content:
+                        raise UpdateError(f"Conflicting candidate cache: {path}")
+                    files[path] = content
                 row = {
                     "source": candidate.source,
                     "component": candidate.component,
@@ -1412,28 +1681,20 @@ def run_update(
                     str(path): _sha(content) for path, content in files.items()
                 },
             )
-            review_payload = {
-                key: report[key] for key in (
-                    "review_schema_version", "registry_sha256_before", "scenario_sha256",
-                    "rules_sha256", "selected_sources", "candidates", "cache_snapshots",
-                )
-            }
-            report["review_fingerprint"] = _sha(json.dumps(
-                review_payload, sort_keys=True, ensure_ascii=False
-            ).encode("utf-8"))
+            report["review_fingerprint"] = _review_fingerprint(report)
             needs_review = any(candidate.review_required for candidate in candidates)
             if review_report is not None:
-                reviewed = json.loads(Path(review_report).read_text(encoding="utf-8"))
-                reviewed_payload = {key: reviewed.get(key) for key in review_payload}
-                reviewed_fingerprint = _sha(json.dumps(
-                    reviewed_payload, sort_keys=True, ensure_ascii=False
-                ).encode("utf-8"))
-                if (reviewed.get("status") != "report_only" or reviewed.get("errors")
-                    or reviewed.get("review_fingerprint") != reviewed_fingerprint
-                    or reviewed_fingerprint != report["review_fingerprint"]):
-                    errors.append("Reviewed report no longer matches this registry, scenario, rules, source selection or downloaded candidate; run report-only review again")
+                if (client.position != len(client.acquisitions)
+                    or reviewed["review_fingerprint"] != report["review_fingerprint"]):
+                    errors.append("Reviewed report no longer matches revalidated candidates or registered caches; run report-only review again")
                 else:
                     report["reviewed_report"] = str(Path(review_report).resolve())
+                    # Preserve a self-contained apply audit too.
+                    for entry in client.acquisitions:
+                        target = audit / entry["file"]
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        if not target.exists():
+                            target.write_bytes((client.folder / entry["file"]).read_bytes())
             elif apply and needs_review:
                 errors.append("Changed observations or publication identity require --review-report <report.json> from a matching report-only run")
             # Durable evidence precedes any adoption, including full source replacement diffs.
@@ -1444,7 +1705,7 @@ def run_update(
             )
             logger.info("REGISTRY DIFF\n%s", diff or "(no changes)")
             handler.flush()
-            if apply and not errors and edits:
+            if apply and not errors and (edits or any(not path.exists() for path in files)):
                 for path, expected in (
                     (bundle.scenario_path, report["scenario_sha256"]),
                     (resolve_parameter_path(bundle, "rules.yaml"), report["rules_sha256"]),
@@ -1457,7 +1718,7 @@ def run_update(
                 for warning in warnings:
                     logger.warning("%s", warning)
                 for candidate in report["candidates"]:
-                    if candidate["status"] == "changed":
+                    if candidate["status"] in {"changed", "cache_recovery"}:
                         candidate["status"] = "applied"
                 logger.info(
                     "APPLIED validated batch; rebuild and review model outputs before committing"
@@ -1490,7 +1751,7 @@ def run_update(
         logger.removeHandler(handler)
         handler.close()
         if owned_client:
-            client.close()
+            network_client.close()
     return UpdateRun(report_path, log_path, diff_path, applied, tuple(errors))
 
 
@@ -1499,7 +1760,7 @@ def main() -> None:
     parser.add_argument(
         "--review-report",
         type=Path,
-        help="with --apply, acknowledge an exact report-only proposal containing observation/publication changes",
+        help="with --apply, revalidate and adopt an exact captured report-only proposal without downloading again",
     )
     parser.add_argument(
         "--scenario",

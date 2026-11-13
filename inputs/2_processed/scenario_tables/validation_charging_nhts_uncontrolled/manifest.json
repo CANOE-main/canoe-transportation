@@ -1,0 +1,821 @@
+{
+  "ok": true,
+  "mode": "processed_only",
+  "scenario": "validation_charging_nhts_uncontrolled",
+  "directory": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\2_processed\\scenario_tables\\validation_charging_nhts_uncontrolled",
+  "schema": {
+    "package": "canoe-schema",
+    "package_version": "4.0.0",
+    "package_repository": "https://github.com/CANOE-main/canoe-schema.git",
+    "package_vcs": "git",
+    "package_requested_revision": "main",
+    "package_commit": "1e68c377d5a7499c78b009d7c472ffd5a6b44901",
+    "schema_version": "4.0",
+    "ddl_sha256": "cc949df14e654c0b2e549ea02ae165fe646974ddd5454c3f4ebf5a08838fb996",
+    "technology_notes_extension_sha256": "93ec356bddc6a9b7544c5ca67a7a30b238bdc133537fd33191bc2de3be044c83"
+  },
+  "tables": {
+    "technology": {
+      "rows": 134,
+      "columns": [
+        "tech",
+        "flag",
+        "sector",
+        "category",
+        "sub_category",
+        "unlim_cap",
+        "annual",
+        "reserve",
+        "curtail",
+        "retire",
+        "flex",
+        "exchange",
+        "seas_stor",
+        "description",
+        "data_id",
+        "notes"
+      ],
+      "sha256": "431311f5b91670bb4f09bf3cac47df005e94f98e064833ba312d5fb5f4a6dcd2",
+      "primary_key": [
+        "tech",
+        "data_id"
+      ]
+    },
+    "commodity": {
+      "rows": 41,
+      "columns": [
+        "name",
+        "flag",
+        "description",
+        "units",
+        "data_id"
+      ],
+      "sha256": "c3934ded804b213a0fffb33c0b675140fbd99ab245a994993280c9d2acf99418",
+      "primary_key": [
+        "name",
+        "data_id"
+      ]
+    },
+    "technology_label": {
+      "rows": 134,
+      "columns": [
+        "tech",
+        "notes"
+      ],
+      "sha256": "e9277e859f88614b440aa1b9352f90d0fbaf2875299f6fbd607cc9b8b4d865da",
+      "primary_key": [
+        "tech"
+      ]
+    },
+    "commodity_label": {
+      "rows": 41,
+      "columns": [
+        "commodity",
+        "notes"
+      ],
+      "sha256": "a27233de886d76728e52f7c00baf2e756b68036a90a2c30ccd429830dbd0885d",
+      "primary_key": [
+        "commodity"
+      ]
+    },
+    "data_set": {
+      "rows": 220,
+      "columns": [
+        "data_id",
+        "label",
+        "version",
+        "description",
+        "status",
+        "author",
+        "date",
+        "parent_id",
+        "changelog",
+        "notes"
+      ],
+      "sha256": "2765d4d13ac26ac1364b2c651d2b14c5105435a6cb68d68a140c553877e2debb",
+      "primary_key": [
+        "data_id"
+      ]
+    },
+    "data_source_label": {
+      "rows": 26,
+      "columns": [
+        "source_id",
+        "notes"
+      ],
+      "sha256": "b4b7021ae432990ab22acb975696a385ad2295ea9586059dc60a2b7950b90f38",
+      "primary_key": [
+        "source_id"
+      ]
+    },
+    "data_source": {
+      "rows": 854,
+      "columns": [
+        "source_id",
+        "source",
+        "notes",
+        "data_id"
+      ],
+      "sha256": "90a32c8945eafcc9f421b42027f7c99e6cf9503811cb5be7c162310d4b769b9a",
+      "primary_key": [
+        "source_id",
+        "data_id"
+      ]
+    },
+    "region": {
+      "rows": 10,
+      "columns": [
+        "region",
+        "notes"
+      ],
+      "sha256": "61d9497f7b301e6d988be127e6cf98e8cc468f527b0d2271217cfe6b41cc64b4",
+      "primary_key": [
+        "region"
+      ]
+    },
+    "time_period": {
+      "rows": 11,
+      "columns": [
+        "sequence",
+        "period",
+        "flag"
+      ],
+      "sha256": "5de94575d6a5291265e0ca49de1a0200f80b24097af01e5b14fd2c9b0eeb994c",
+      "primary_key": [
+        "period"
+      ]
+    },
+    "metadata_real": {
+      "rows": 2,
+      "columns": [
+        "element",
+        "value",
+        "notes"
+      ],
+      "sha256": "4a65fbb09447b92be6334e8b84a5410b58a08c6a8542eb2d3efa523a43b2d498",
+      "primary_key": [
+        "element"
+      ]
+    },
+    "existing_capacity": {
+      "rows": 122,
+      "columns": [
+        "region",
+        "tech",
+        "vintage",
+        "capacity",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "8ee315d39818c1360bee3305b2dc89ad0217869dad7d0cb0f218285ad516076d",
+      "primary_key": [
+        "region",
+        "tech",
+        "vintage",
+        "data_id"
+      ]
+    },
+    "demand": {
+      "rows": 75,
+      "columns": [
+        "region",
+        "period",
+        "commodity",
+        "demand",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "9ca3652865344daebb9bcea4691d1e73aedc05b3176a64f2973d8fd8e3456c37",
+      "primary_key": [
+        "region",
+        "period",
+        "commodity",
+        "data_id"
+      ]
+    },
+    "capacity_to_activity": {
+      "rows": 102,
+      "columns": [
+        "region",
+        "tech",
+        "c2a",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "3a560f3a3cb587b3127034af0ebdd91fc94adf45c4aa19947e847b1911444bc3",
+      "primary_key": [
+        "region",
+        "tech",
+        "data_id"
+      ]
+    },
+    "limit_annual_capacity_factor": {
+      "rows": 449,
+      "columns": [
+        "region",
+        "tech_or_group",
+        "vintage",
+        "output_comm",
+        "operator",
+        "factor",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "a74f1abceed06f29bd272a1c5e57704fd52071244039f82f1fec878ebf9dfa09",
+      "primary_key": [
+        "region",
+        "tech_or_group",
+        "vintage",
+        "output_comm",
+        "operator",
+        "data_id"
+      ]
+    },
+    "lifetime_tech": {
+      "rows": 57,
+      "columns": [
+        "region",
+        "tech",
+        "lifetime",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "f0cfa8bb18f221cfaec93623ca2091f7e0f779061f903a614081e57d75f126a4",
+      "primary_key": [
+        "region",
+        "tech",
+        "data_id"
+      ]
+    },
+    "lifetime_process": {
+      "rows": 303,
+      "columns": [
+        "region",
+        "tech",
+        "vintage",
+        "lifetime",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "f94d6a8f4a6251e190dbc7d38c732b59193aec34063c055f8a37c04b1c5da054",
+      "primary_key": [
+        "region",
+        "tech",
+        "vintage",
+        "data_id"
+      ]
+    },
+    "lifetime_survival_curve": {
+      "rows": 15759,
+      "columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "fraction",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "f24d1c7cea4720d4a69cccf98dce4f50356d3c6f51992c191eb399492d4f063f",
+      "primary_key": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "data_id"
+      ]
+    },
+    "efficiency": {
+      "rows": 622,
+      "columns": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "efficiency",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "6f16ab6a0a940bdb0554770d6f157ab13b70a6d5c916608f38fea8d73ed780b7",
+      "primary_key": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "data_id"
+      ]
+    },
+    "limit_tech_input_split_annual": {
+      "rows": 70,
+      "columns": [
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "operator",
+        "proportion",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "0ceffb2dd013c2f06cbe7eb5f35b03f01762c4e073698796c04b408871f91680",
+      "primary_key": [
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "operator",
+        "data_id"
+      ]
+    },
+    "cost_invest": {
+      "rows": 425,
+      "columns": [
+        "region",
+        "tech",
+        "vintage",
+        "cost",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "80b201769b59b7495a2baf9b0f239f256d69681287fb5d252f2aac1472461c50",
+      "primary_key": [
+        "region",
+        "tech",
+        "vintage",
+        "data_id"
+      ]
+    },
+    "cost_fixed": {
+      "rows": 46,
+      "columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "cost",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "0f414547172422766a24a5b07cc4d9ad905498388798079352136fa8c9a229d2",
+      "primary_key": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "data_id"
+      ]
+    },
+    "cost_variable": {
+      "rows": 1618,
+      "columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "cost",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "eac81faebd6450453764f6ac801548bd7b5f6a071cd979cf7187892bb6db4644",
+      "primary_key": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "data_id"
+      ]
+    },
+    "emission_embodied": {
+      "rows": 690,
+      "columns": [
+        "region",
+        "emis_comm",
+        "tech",
+        "vintage",
+        "value",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "669c733f421f0389dde0710ff89eac6368185f2bb2efaa3dbc99869ca96b08e1",
+      "primary_key": [
+        "region",
+        "emis_comm",
+        "tech",
+        "vintage",
+        "data_id"
+      ]
+    },
+    "capacity_factor_tech": {
+      "rows": 17520,
+      "columns": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "factor",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "9fbc561eabbffa12c79323eeb14ff5035ad3db27bb732e6d254cc88852f8bcf9",
+      "primary_key": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "data_id"
+      ]
+    },
+    "time_season": {
+      "rows": 365,
+      "columns": [
+        "sequence",
+        "season",
+        "segment_fraction",
+        "notes"
+      ],
+      "sha256": "e3269272ba0ab669093f3516cc2e1fcedc565ebec9b7af0b794d3a48891009d8",
+      "primary_key": [
+        "season"
+      ]
+    },
+    "time_of_day": {
+      "rows": 24,
+      "columns": [
+        "sequence",
+        "tod",
+        "hours",
+        "notes"
+      ],
+      "sha256": "d34f0d56e8bb1bb412db8328ce04d0a0396b509c158f841bb6eb392f1d9a2b97",
+      "primary_key": [
+        "tod"
+      ]
+    },
+    "limit_new_capacity_share": {
+      "rows": 90,
+      "columns": [
+        "region",
+        "sub_group",
+        "super_group",
+        "vintage",
+        "operator",
+        "share",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "sha256": "a552b81f1abe14138d31d7ae48eb11660d641bd2db4d56b1dbb8f97b9e68f213",
+      "primary_key": [
+        "region",
+        "sub_group",
+        "super_group",
+        "vintage",
+        "operator",
+        "data_id"
+      ]
+    },
+    "tech_group": {
+      "rows": 24,
+      "columns": [
+        "group_name",
+        "notes",
+        "data_id"
+      ],
+      "sha256": "9b249d0f91975a87c114367a010bf3ee545bec20f49cbcb8bd504699268751fb",
+      "primary_key": [
+        "group_name",
+        "data_id"
+      ]
+    },
+    "tech_group_member": {
+      "rows": 36,
+      "columns": [
+        "group_name",
+        "tech",
+        "data_id"
+      ],
+      "sha256": "0faee9bea3d3c8980a276d03306e945c2c0696d9d9ed30f7be8ee9691350bb81",
+      "primary_key": [
+        "group_name",
+        "tech",
+        "data_id"
+      ]
+    },
+    "tech_group_label": {
+      "rows": 24,
+      "columns": [
+        "group_name",
+        "notes"
+      ],
+      "sha256": "3e975335277e0d6cf413fac7c16bcdf5be219b1129ac28860a9bacb397a9942b",
+      "primary_key": [
+        "group_name"
+      ]
+    }
+  },
+  "validation": {
+    "row_models": true,
+    "primary_keys": true,
+    "provenance": true,
+    "parameter_support": {
+      "ok": true,
+      "errors": [],
+      "checks": {
+        "survival_curve_lifetime_contract": {
+          "checked_keys": 303,
+          "invalid_keys": 0,
+          "examples": []
+        },
+        "active_process_lifetime_coverage": {
+          "checked_keys": 547,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "prepared_survival_curve_coverage": {
+          "checked_keys": 303,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "capacity_to_activity_coverage": {
+          "checked_keys": 102,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "capacity_to_activity_values": {
+          "checked_rows": 102,
+          "invalid_rows": 0,
+          "duplicate_keys": 0,
+          "examples": []
+        },
+        "existing_capacity_positive": {
+          "checked_rows": 122,
+          "invalid_rows": 0,
+          "examples": []
+        },
+        "efficiency_historical_capacity": {
+          "checked_keys": 122,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "cost_invest_historical_capacity": {
+          "checked_keys": 0,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "cost_fixed_historical_capacity": {
+          "checked_keys": 2,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "cost_variable_historical_capacity": {
+          "checked_keys": 120,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "emission_embodied_historical_capacity": {
+          "checked_keys": 0,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "existing_capacity_efficiency": {
+          "checked_keys": 122,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "cost_invest_efficiency": {
+          "checked_keys": 425,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "cost_fixed_efficiency": {
+          "checked_keys": 22,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "cost_variable_efficiency": {
+          "checked_keys": 525,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "emission_embodied_efficiency": {
+          "checked_keys": 230,
+          "unsupported_keys": 0,
+          "examples": []
+        },
+        "new_capacity_factor_efficiency": {
+          "checked_keys": 355,
+          "unsupported_keys": 0,
+          "examples": []
+        }
+      },
+      "prepared_tables": [
+        "capacity_to_activity",
+        "cost_fixed",
+        "cost_invest",
+        "cost_variable",
+        "efficiency",
+        "emission_embodied",
+        "existing_capacity",
+        "lifetime_process",
+        "lifetime_survival_curve",
+        "lifetime_tech",
+        "limit_annual_capacity_factor"
+      ]
+    },
+    "sqlite_insertion": false,
+    "sqlite_integrity": "not_run"
+  },
+  "config": {
+    "scenario": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_charging_nhts_uncontrolled.yaml",
+      "sha256": "82439234c8d236984eb22b0441dc682d0e7a590e56eb2d48590213030860eaa6"
+    },
+    "paths_sha256": "45cf31926cab5360a489e81a88aaeed1511959822b79c1e5630f7940c316fbc9",
+    "sources_sha256": "96c362a1d7af344e723be096026bf1ce8b0da42ea3e16411e05b8d703234f98d"
+  },
+  "charging_profiles": {
+    "native_interval_seconds": 60,
+    "native_rows": 527040,
+    "excluded_outside_local_year": 1440,
+    "excluded_nulls_outside_local_year": 300,
+    "calendar_year": 2018,
+    "calendar_timezone": "America/Toronto",
+    "hourly_rows": 8760,
+    "hourly_operation": "mean",
+    "rolling_filter": false,
+    "native_integral_in_hour_units": 5430342.01180491,
+    "hourly_integral": 5430342.011804911,
+    "annual_hourly_peak": 1247.206201420266,
+    "normalized_integral": 4354.004979785401,
+    "precision": 10,
+    "label_basis": "elapsed_hours_from_local_year_start",
+    "repeated_wall_time_keys": 1,
+    "embedded_range_shares": true,
+    "market_share_reweighting": false,
+    "clustered_legacy_parity": "not_comparable_without_the_existing_cluster_mapping",
+    "limitations": [
+      "Frozen run range/fleet/charger composition; no new-market reweighting",
+      "Survey-specific assumptions are retained in the registered run metadata"
+    ],
+    "profile": "nhts",
+    "charging_strategy": "uncontrolled",
+    "source_component": "nhts_uncontrolled",
+    "sha256": "eb2042927963de09f9b46237d73a566e798472da503563eaa26ddf716340167f",
+    "metadata_sha256": "5e113328dacdb042113e3852bcd2337d80e1f5a0147264536c28c43ea353779e",
+    "model_revision": "ontario-2018-corrected-soc-weather-v1",
+    "simulation_seed": 42,
+    "source_units": "Aggregate charging power (kW), minute samples; CANOE takes hourly means, peak-normalizes and rescales the full-year mean to reviewed charger utilization.",
+    "ok": true,
+    "rows": 17520,
+    "keys": 17520,
+    "enabled": true,
+    "regions": [
+      "ON"
+    ],
+    "target_technologies": [
+      "T_LDV_CHRG_EX",
+      "T_LDV_CHRG_N"
+    ],
+    "travel_behavior_source": "nhts",
+    "applicability": "Ontario BEV charging shape scaled to reviewed annual utilization on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted.",
+    "projection_sha256": "b385386e23b995192d23aad78f749b6092f9059018eb0d2ad1be81a077dd73a3",
+    "conservation_tolerance": 1e-08,
+    "new_time_structures": true,
+    "inherited_time_structures_preserved": false,
+    "utilization_scaling": [
+      {
+        "region": "ON",
+        "tech": "T_LDV_CHRG_EX",
+        "mean_basis": "native_full_year_hourly_arithmetic_mean",
+        "normalized_profile_mean": 0.4970325319389727,
+        "target_utilization": 0.2,
+        "scale_factor": 0.40238814795438116,
+        "scaled_profile_mean": 0.2,
+        "scaled_minimum": 0.04744438314330581,
+        "scaled_maximum": 0.40238814795438116
+      },
+      {
+        "region": "ON",
+        "tech": "T_LDV_CHRG_N",
+        "mean_basis": "native_full_year_hourly_arithmetic_mean",
+        "normalized_profile_mean": 0.4970325319389727,
+        "target_utilization": 0.2,
+        "scale_factor": 0.40238814795438116,
+        "scaled_profile_mean": 0.2,
+        "scaled_minimum": 0.04744438314330581,
+        "scaled_maximum": 0.40238814795438116
+      }
+    ],
+    "utilization_provenance": "ev-chargers-utilization:composite:6:4a82af2da6d67233",
+    "native_normalized_hourly_evidence_preserved": true
+  },
+  "orchestration": {
+    "prerequisites": "replayed",
+    "download_sources": false
+  },
+  "logging": {
+    "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\outputs\\logs\\validation_charging_nhts_uncontrolled_validation_charging_nhts_uncontrolled_2026-11-13_16-32-49-809087Z.log",
+    "verbosity": "INFO"
+  }
+}

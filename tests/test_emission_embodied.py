@@ -1,6 +1,7 @@
 """Saved GREET extraction, road aggregation and shared insertion contracts."""
 
 from dataclasses import replace
+import hashlib
 from pathlib import Path
 import shutil
 import json
@@ -26,6 +27,7 @@ from validation.config_models import ScenarioConfig
 from validation.database_bootstrap import validate_database
 from validation.insertion import insert_models, validate_transport_parameter_support
 from validation.schema_contract import create_v4_schema
+from greet_fixtures import isolated_greet_config
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -125,6 +127,21 @@ def bundle(tmp_path):
     return config
 
 
+@pytest.fixture
+def greet_bundle(tmp_path):
+    """A complete model handoff without unrelated fleet/production prerequisites."""
+    isolated_greet_config(tmp_path)
+    scenario = tmp_path / SCENARIO
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["embodied_emissions"] = True
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    config = load_config_bundle(SCENARIO, repo_root=tmp_path)
+    registration, _ = registered_workbooks(config)
+    make_workbooks(tmp_path / config.paths.inputs.external / registration.directory, "Car", "Class 6 PnD Trucks")
+    write_fixture_bank(config)
+    return config
+
+
 def summary_cells(family, code, phev=0, bev=0):
     # Independent worksheet fixtures retain literal native anchors and labels.
     labels = LDV_BLOCKS if family == "ldv" else ["1.1) ICEV", "1.2) HEV", "1.3) EV", "1.4) FCV"]
@@ -195,6 +212,53 @@ def test_extraction_retains_exact_individual_gases_and_all_blocks(bundle):
     assert (selected.worksheet, selected.cell, selected.source_value) == ("Vehi_Sum", "F13", 1e6)
     last = result.rows.query("vehicle_class=='Car' and powertrain=='fcev' and materials=='lightweight' and gas_label=='N2O'").iloc[0]
     assert last.cell == "F295"
+
+
+@pytest.mark.parametrize("retained_newline", [b"\n", b"\r\n"])
+@pytest.mark.parametrize("checkout_newline", [b"\n", b"\r\n"])
+def test_complete_bank_checkout_line_endings_preserve_values_and_registered_evidence(
+    greet_bundle, retained_newline, checkout_newline,
+):
+    bank = result_bank_paths(greet_bundle)
+    baseline = normalize_generated_results(greet_bundle, write_interim=False)
+    manifest = json.loads(bank["manifest"].read_text(encoding="utf-8"))
+    for key, path in bank.items():
+        if key == "manifest":
+            continue
+        content = path.read_bytes().replace(b"\r\n", b"\n")
+        retained = content.replace(b"\n", retained_newline)
+        manifest["files"][path.name] = hashlib.sha256(retained).hexdigest()
+        path.write_bytes(content.replace(b"\n", checkout_newline))
+    bank["manifest"].write_bytes(json.dumps(manifest).encode("utf-8"))
+    protected = {path: path.read_bytes() for path in baseline.paths}
+    translated = normalize_generated_results(greet_bundle, write_interim=False)
+    for field in ("rows", "raw_rows", "exclusions", "models"):
+        pd.testing.assert_frame_equal(getattr(translated, field), getattr(baseline, field))
+    assert all(path.read_bytes() == content for path, content in protected.items())
+    by_name = {path.name: path for path in bank.values()}
+    for name, entry in translated.audit["result_bank_replay"].items():
+        assert entry["current_sha256"] == file_sha256(by_name[name])
+        assert entry["retained_sha256"] == manifest["files"][name]
+        assert entry["line_endings_only"] == (entry["current_sha256"] != entry["retained_sha256"])
+
+
+def test_validate_only_preserves_sources_and_does_not_create_or_replace_interim(greet_bundle, monkeypatch):
+    paths = (*registered_workbooks(greet_bundle)[1], *result_bank_paths(greet_bundle).values())
+    protected = {path: path.read_bytes() for path in paths}
+    interim = resolve_artifact_path(greet_bundle, "greet_vehicle_cycle_interim")
+    assert not interim.exists()
+    monkeypatch.setattr("fetching.greet_vehicle_cycle.write_dataframe_atomic", lambda *_: pytest.fail("validation wrote an interim file"))
+    first = normalize_generated_results(greet_bundle, write_interim=False)
+    assert len(first.rows) == 198
+    assert not interim.exists()
+    interim.mkdir(parents=True)
+    sentinel = interim / "existing_evidence.csv"
+    sentinel.write_bytes(b"preserve existing evidence\n")
+    second = normalize_generated_results(greet_bundle, write_interim=False)
+    pd.testing.assert_frame_equal(first.rows, second.rows)
+    assert sentinel.read_bytes() == b"preserve existing evidence\n"
+    assert list(interim.iterdir()) == [sentinel]
+    assert all(path.read_bytes() == content for path, content in protected.items())
 
 
 @pytest.mark.parametrize(("family", "cell", "value"), [

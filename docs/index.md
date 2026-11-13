@@ -29,7 +29,7 @@ They incorporate road vehicles, air, rail, and marine modes, including direct en
 - **Time and capacity definitions matter.** Retirement with fixed, integer lifetimes represent ``existing_capacity`` as surviving stock; retirement with survival curves use installed-equivalent vehicle sales. Observation years,
   model vintages, period endpoints and currency years are kept distinct.
 - **Infrastructure costs depend on the denominator.** Charger costs are aggregated
-  as expenditure divided by rated power. Hourly charging ceilings and annual
+  as expenditure divided by rated power. Hourly charging capacity factors and annual
   utilization constrain the same capacity and must remain consistent.
 !!! note "Opt-in energy calibration"
     See [*NRCan CEUD* energy calibration](model/energy.md#optional-ceud-energy-calibration) for details; it is an explicit comparison with an uncalibrated reference. This scenario option is **not active by default** and does not establish scientific acceptance.

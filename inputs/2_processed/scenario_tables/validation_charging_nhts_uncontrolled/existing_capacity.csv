@@ -1,0 +1,341 @@
+region,tech,vintage,capacity,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
+ON,T_LDV_C_DSL_EX,2000,57.188439129730654,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-cars-2000-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_EX,2000,2071.983155329463,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-cars-2000-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_EX,2005,41.999029044190394,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2005-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_EX,2005,1521.6586086979853,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2005-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV_EX,2010,3.449286159168577,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-cars-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_EX,2010,41.09248522125545,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_EX,2010,1381.7378421380508,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_HEV_EX,2010,31.067266640626507,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-cars-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV_EX,2010,2.6318739665195654,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-cars-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV_EX,2015,23.94610634816147,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_EX,2015,2.834663501762297,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_EX,2015,1143.2917864996805,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_HEV_EX,2015,31.12331272383169,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV_EX,2015,15.94608941725598,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV_EX,2020,49.234813655559755,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_EX,2020,0.0012978590832352502,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_EX,2020,524.5695667912714,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_HEV_EX,2020,69.67988724346522,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV_EX,2020,7.730327226938501,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-cars-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_EX,2000,8.701755062594634,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2000-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_EX,2000,274.16249324203875,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2000-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_EX,2005,7.272492111061246,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2005-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_EX,2005,229.13131373030131,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2005-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV_EX,2010,0.01651818417709159,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_EX,2010,12.548231670198655,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_EX,2010,284.8537463672425,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_HEV_EX,2010,0.7331812296088394,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV_EX,2010,0.018872800196766248,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV_EX,2015,1.1623327997378121,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_EX,2015,15.23880906698482,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_EX,2015,411.9910906953057,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_HEV_EX,2015,4.791775549621612,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV_EX,2015,1.1445528892499985,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV_EX,2020,19.172642675306573,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_EX,2020,18.224751867797206,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_EX,2020,366.05581156717227,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_HEV_EX,2020,40.97191455777771,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV_EX,2020,7.597684039805453,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-freight-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_EX,2000,41.896750863631745,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0308-01: Registered vehicle stock by province, weight class and fuel; stock composition is used as a fuel-mix proxy rather than new-vehicle sales.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-heavy-trucks-2000-on:T_HDV_T_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_EX,2005,27.175936416394322,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-heavy-trucks-2005-on:T_HDV_T_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_EX,2010,32.59957526713928,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-heavy-trucks-2010-on:T_HDV_T_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_EX,2015,40.85739193558024,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-heavy-trucks-2015-on:T_HDV_T_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_EX,2020,45.74691578163206,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-heavy-trucks-2020-on:T_HDV_T_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_EX,2000,57.38882262456609,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0308-01: Registered vehicle stock by province, weight class and fuel; stock composition is used as a fuel-mix proxy rather than new-vehicle sales.
+transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2000-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_EX,2000,26.959341866318912,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0308-01: Registered vehicle stock by province, weight class and fuel; stock composition is used as a fuel-mix proxy rather than new-vehicle sales.
+transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2000-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_EX,2005,53.30559246975908,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2005-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_EX,2005,25.041177446350787,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2005-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_EX,2010,60.55831707617698,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_EX,2010,28.448263934355936,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_EX,2015,87.05918878862644,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_EX,2015,42.636415017245056,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_BEV_EX,2020,2.9501780852954353,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0308-01: Registered vehicle stock by province, weight class and fuel; stock composition is used as a fuel-mix proxy rather than new-vehicle sales.
+transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_EX,2020,93.35687973936555,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_EX,2020,51.20184644011078,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-medium-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_GSL_EX,2010,69.29241878524543,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 32: Provincial motorcycle stock, distance travelled and passenger activity.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+canada_energy_policy_simulator: Motorcycle process-lifetime assumption from Canada EPS v3.4.7; the underlying input is dated 2009 and applies across represented motorcycle powertrains.",T01,2,1,2,2,1,existing-capacity-road-motorcycles-2010-on:T_LDV_M_GSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_GSL_EX,2015,71.05350843579552,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-motorcycles-2015-on:T_LDV_M_GSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_GSL_EX,2020,71.90707277895903,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-motorcycles-2020-on:T_LDV_M_GSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_EX,2000,30.996626003683232,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2000-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_EX,2000,976.5975031624129,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2000-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_EX,2005,26.106344524334368,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2005-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_EX,2005,822.5214859234402,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2005-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV_EX,2010,0.059110792640570155,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_EX,2010,44.91712143918376,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_EX,2010,1019.9214682183444,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_HEV_EX,2010,2.625644431516397,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV_EX,2010,0.06748385563978967,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2010-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV_EX,2015,4.173624651003724,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_EX,2015,54.67030534826699,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_EX,2015,1478.1375624263155,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_HEV_EX,2015,17.203964228444654,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV_EX,2015,4.107658893161224,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2015-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV_EX,2020,68.65976089029347,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_EX,2020,65.26067429808549,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_EX,2020,1310.7004877425582,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_HEV_EX,2020,146.70508569476314,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV_EX,2020,27.204864299516448,k vehicles,,T01,2,1,2,2,1,existing-capacity-road-passenger-light-trucks-2020-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_EX,2015,0.6123810800795668,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 30: Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_EX,2020,0.42741945497833705,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_GSL_EX,2015,0.09489423114093545,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 30: Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_GSL_EX,2020,0.09230523380115918,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-inter-city-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_CNG_EX,2020,1.3616369083908801,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_EX,2015,5.873714454201214,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_EX,2020,3.4904734887102205,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_GSL_EX,2015,0.6777661705532452,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-school-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_GSL_EX,2020,0.6154089781444239,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-school-buses-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_BEV_EX,2015,1.0691191568386276,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_BEV_EX,2020,1.0147254782188766,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_CNG_EX,2020,0.11324912732401493,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_EX,2015,2.6999529886299003,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_EX,2020,1.7804375407134398,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_GSL_EX,2015,0.03854911151106329,k vehicles,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+  - 31: Provincial school, transit and inter-city bus stock and distance travelled; fuel-specific fleet counts are not reported.
+ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 5: Fit-active Ontario ages for pooled commercial, motorcycle and bus registrations; broad registration classes proxy the corresponding model classes.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 34-10-0254-01: Reported expected useful lives of new publicly owned transit assets; broad bus and powertrain categories proxy technologies beyond the surveyed assets.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_GSL_EX,2020,0.03796659676406741,k vehicles,,T01,2,1,2,2,1,existing-capacity-bus-urban-transit-on:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_EX,2000,0.08022984439263815,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 15: Provincial freight-air energy use by fuel; aircraft counts and provincial freight activity are not reported.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_process_lifetimes: Fixed process-lifetime assumptions for aircraft, rail and marine technologies, applied by transport category.",T02,2,2,3,2,1,existing-capacity-offroad-freight-air:ON:T_HDV_AJF_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_EX,2005,0.057508671792208046,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-air:ON:T_HDV_AJF_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_EX,2010,0.08546132801258356,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-air:ON:T_HDV_AJF_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_EX,2015,0.2150114111328766,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-air:ON:T_HDV_AJF_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_EX,2020,0.4566725816928071,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-air:ON:T_HDV_AJF_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_EX,2000,1.0067241100186124,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 19: Provincial marine-freight energy use by fuel; vessel capacity and freight activity require separate intensity evidence.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_process_lifetimes: Fixed process-lifetime assumptions for aircraft, rail and marine technologies, applied by transport category.",T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_EX,2005,0.7210910871789499,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_EX,2010,1.8333929932871373,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_EX,2015,1.5822361429225489,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_EX,2020,1.4435733659814685,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_EX,2000,0.18065367441126895,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 19: Provincial marine-freight energy use by fuel; vessel capacity and freight activity require separate intensity evidence.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_process_lifetimes: Fixed process-lifetime assumptions for aircraft, rail and marine technologies, applied by transport category.",T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_EX,2005,0.12939767031275887,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_EX,2010,0.32899696906143727,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_EX,2015,0.28392761250149023,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_EX,2020,0.2590449858620893,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_EX,2005,7.571996751481487,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 18: Provincial freight-rail energy use; fleet capacity and freight activity require separate intensity evidence.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_process_lifetimes: Fixed process-lifetime assumptions for aircraft, rail and marine technologies, applied by transport category.",T02,2,2,3,2,1,existing-capacity-offroad-freight-rail:ON:T_HDV_RF_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_EX,2010,21.35050635080232,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-rail:ON:T_HDV_RF_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_EX,2015,27.287395717457137,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-rail:ON:T_HDV_RF_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_EX,2020,33.144902734941866,bn tonne-km,,T02,2,2,3,2,1,existing-capacity-offroad-freight-rail:ON:T_HDV_RF_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_EX,2000,2.540191548233906,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 14: Provincial passenger-air energy use by fuel; aircraft counts and provincial passenger activity are not reported.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_process_lifetimes: Fixed process-lifetime assumptions for aircraft, rail and marine technologies, applied by transport category.",T02,2,2,3,2,1,existing-capacity-offroad-passenger-air:ON:T_HDV_AJP_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_EX,2005,2.046304106632091,bn passenger-km,,T02,2,2,3,2,1,existing-capacity-offroad-passenger-air:ON:T_HDV_AJP_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_EX,2010,3.947755876094267,bn passenger-km,,T02,2,2,3,2,1,existing-capacity-offroad-passenger-air:ON:T_HDV_AJP_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_EX,2015,6.75575743173761,bn passenger-km,,T02,2,2,3,2,1,existing-capacity-offroad-passenger-air:ON:T_HDV_AJP_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_EX,2020,58.8104563846958,bn passenger-km,,T02,2,2,3,2,1,existing-capacity-offroad-passenger-air:ON:T_HDV_AJP_JFL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_EX,2005,0.003446449870315646,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 17: Provincial passenger-rail energy use; fleet capacity and passenger activity require separate intensity evidence.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_process_lifetimes: Fixed process-lifetime assumptions for aircraft, rail and marine technologies, applied by transport category.",T02,2,2,3,2,1,existing-capacity-offroad-passenger-rail:ON:T_HDV_RICP_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_EX,2010,0.008037164925668625,bn passenger-km,,T02,2,2,3,2,1,existing-capacity-offroad-passenger-rail:ON:T_HDV_RICP_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_EX,2015,0.01727339460874104,bn passenger-km,,T02,2,2,3,2,1,existing-capacity-offroad-passenger-rail:ON:T_HDV_RICP_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_EX,2020,0.27605412013983227,bn passenger-km,,T02,2,2,3,2,1,existing-capacity-offroad-passenger-rail:ON:T_HDV_RICP_DSL_EX:T01:validation_charging_nhts_uncontrolled
+ON,T_LDV_CHRG_EX,2020,1.419271737169158,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 21: Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 20-10-0021-01: Archived annual new-LDV registrations by province, vehicle type and fuel; supplies history before current-table coverage, not the age distribution of surviving stock.
+  - 20-10-0025-01: Quarterly new-LDV registrations by geographic level, vehicle type and fuel; complete years are aggregated for historical fuel shares.
+dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port-count mixes, rated-power trajectories and CAD2022 equipment/installation costs per port. Convert total port expenditure divided by total rated power to model costs. Common 0.20 utilization is a user-reviewed consistency override for vintage-indexed limits, not a direct source observation; final cost/power values beyond 2040 retain the reviewed endpoint.
+transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
+  - public_light_duty_chargers: Public light-duty charging-port counts by province as of June 2026, with national L2/DCFC shares; provincial counts exclude private chargers. Provincial counts take precedence over national aggregates; published type counts determine the normalized L2/DCFC mix, with aggregate discrepancies retained in update notes. TC public chargers June 2026: provincial total 40,164 takes precedence; chart total 40,119; printed national totals [40119]; provincial-minus-chart difference +45. Published L2/DCFC counts retain their chart-normalized type mix.
+pollution_probe_ev_charging_survey: Canadian EV-owner survey evidence for private L1/L2 charging, represented by the reviewed private-charger share split.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-ldv:T_LDV_CHRG_EX:T25:validation_charging_nhts_uncontrolled
+ON,T_MHDV_CHRG_EX,2020,0.2163463929216653,GW,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 37: Provincial passenger-light-truck, freight-light-truck and medium/heavy-truck fleet statistics; source classes pool vehicle sizes and powertrains.
+statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0308-01: Registered vehicle stock by province, weight class and fuel; stock composition is used as a fuel-mix proxy rather than new-vehicle sales.
+dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port-count mixes, rated-power trajectories and CAD2022 equipment/installation costs per port. Convert total port expenditure divided by total rated power to model costs. Common 0.20 utilization is a user-reviewed consistency override for vintage-indexed limits, not a direct source observation; final cost/power values beyond 2040 retain the reviewed endpoint.
+transport_canada_ev_dashboard: Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component.
+  - medium_heavy_ev_market_share: Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet.
+epa_moves_heavy_truck_survival: MOVES conditional annual car, light-truck and heavy-vehicle schedules proxy Canadian survival. Heavy rates also represent medium trucks; native source ages and underlying evidence vintages are retained.",T24,2,2,3,2,2,ev-chargers-existing-capacity-on-mhdv:T_MHDV_CHRG_EX:T24:validation_charging_nhts_uncontrolled

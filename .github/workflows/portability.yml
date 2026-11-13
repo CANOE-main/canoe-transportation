@@ -1,0 +1,60 @@
+name: Source and GREET portability
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/portability.yml"
+      - ".gitattributes"
+      - "config/**"
+      - "src/fetching/**"
+      - "src/utils/**"
+      - "src/validation/config_models.py"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+  push:
+    paths:
+      - ".github/workflows/portability.yml"
+      - ".gitattributes"
+      - "config/**"
+      - "src/fetching/**"
+      - "src/utils/**"
+      - "src/validation/config_models.py"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable-contracts:
+    name: Portable contracts (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: "3.13"
+      - name: Install the locked environment
+        run: uv sync --locked
+      - name: Verify source maintenance, replay and GREET handoff without Excel
+        run: >-
+          uv run --locked --offline pytest
+          tests/test_source_updater.py
+          tests/test_source_updater_families.py
+          tests/test_source_updater_coverage.py
+          tests/test_source_update_replay.py
+          tests/test_tc_dashboard_identity.py
+          tests/test_greet_automation.py
+          tests/test_greet_atb_replay.py
+          tests/test_emission_embodied.py::test_complete_bank_checkout_line_endings_preserve_values_and_registered_evidence
+          tests/test_emission_embodied.py::test_validate_only_preserves_sources_and_does_not_create_or_replace_interim
+          tests/test_gitattributes.py

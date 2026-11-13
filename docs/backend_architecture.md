@@ -240,8 +240,12 @@ For TC observation, reporting-date or table-identity changes, first run
 `uv run python src/fetching/source_updater.py --scenario config/scenarios/default.yaml --source transport_canada_ev_dashboard`.
 Inspect the JSON report's selection evidence, full observations, changes and registry
 diff, then repeat with `--apply --review-report <report.json>` to acknowledge that exact
-proposal. Adoption rechecks downloaded bytes, registry, scenario, rules and source
-selection. An unavailable old cache is explicitly reported as an unknown comparison;
+proposal. Each report retains its official responses under the configured audit
+directory, with request identities, response metadata, sizes and raw SHA-256 values.
+Reviewed apply replays those exact responses through the source validators without
+network access, and rechecks registry, scenario, rules and source selection. Keep the
+complete report directory until adoption; reports from the previous schema require
+a new report-only run. An unavailable old cache is explicitly reported as an unknown comparison;
 it never establishes unchanged values. Invalid coverage, ambiguous tables and changed
 years block adoption even with a review report. The configured TC charger policy gives
 provincial counts precedence over national aggregates. National inconsistencies remain
@@ -250,6 +254,24 @@ L2/DCFC counts supply a normalized type mix for the authoritative provincial cou
 Manual assumptions, reviewed mapping promotion and external-model generation remain separate
 review operations. **#to-review**
 
+The TC adapter also registers an exact HTML content checksum that omits only terminal
+bare six-character alphanumeric query tokens on actual JavaScript `src` and stylesheet
+`href` attributes, plus the generated 64-hexadecimal DOM fingerprint on the identified
+navigation-button `div`. Other HTML bytes, including counts, publication labels and dates,
+remain protected. These presentation-token rotations need no registry refresh. Cached/downloaded
+HTML stays untouched; its actual checksum and byte count remain in provenance alongside
+the preferred raw pin and the declared content identity. Other publisher changes still
+go through explicit source review. **#to-review**
+
+NRCan and FuelEconomy model-year additions and StatCan reference-date extensions can
+produce reviewed proposals while scenario selections stay unchanged. Schema/frequency
+changes and loss of registered coverage remain errors. FuelEconomy reports distinguish
+ZIP packaging changes from consumed-record changes, retaining multiset hashes, counts
+and bounded added/removed examples. Missing optional publication headers use a stable
+content identity with explicit review. A validated registered StatCan archive also
+protects its interior reference periods; absent historical archives are not evidence
+of complete period preservation. **#to-review**
+
 All selected candidates are validated before adoption. Revision-specific cache paths
 retain old files; one atomic registry replacement activates the validated selection.
 Ontario, StatCan and CER request contracts replay adopted snapshots with their registered
@@ -257,10 +279,34 @@ hashes. Each run persists a log, JSON audit and exact registry diff through the
 `source_update_logs` and `source_update_audits` routes, including skipped sources and
 failures. These reports are review evidence, not ETL readiness inputs.
 
+Captured response files live inside the existing source-update audit route. Their
+hashes and relative locations are bound to the report fingerprint; missing, altered or
+outside-directory files block apply. The apply audit retains its own copies before
+immutable cache/atomic registry publication. **#to-review**
+
 `.gitattributes` establishes portable text/script line endings and binary preservation,
 with specific exceptions for checksum-registered legacy inputs. It does not normalize
 registered artifacts during source refresh or make Windows/Excel-only generation
 available on other platforms.
+
+GREET keeps one calculation authority: the explicit Windows desktop Excel producer,
+which drives the registered workbook pair through Windows COM and native VBA. For
+occasional workbook, extraction-control or ATB-archetype changes, run
+`uv run python -m fetching.greet_automation --scenario config/scenarios/default.yaml`
+on a maintained Windows Excel workstation. Review the retained calculation evidence
+and distribute the complete registered result bank with its manifest and matching
+registered inputs. Ordinary builds on Windows, macOS and Linux consume that handoff
+without Excel; a remote calculation service is unnecessary for this workflow.
+**#to-review**
+
+Use `uv run python -m fetching.greet_automation --scenario config/scenarios/default.yaml --validate-only`
+to verify the bank without recalculation or file writes. Historical bank hashes accept
+only authenticated uniform LF/CRLF representations, preserving the original manifest
+and reporting actual versus retained digests. New explicit publications use LF bytes.
+ATB replay supports both CSV record terminators while preserving quoted field content.
+Changed values, stale workbook/profile evidence and invalid bank contents still fail.
+The portability CI exercises fixture-based checks on Windows, Ubuntu and macOS; it does
+not recalculate GREET or establish scientific model equivalence. **#to-review**
 
 ## Diagnostic and research evidence
 

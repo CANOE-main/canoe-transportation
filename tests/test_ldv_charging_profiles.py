@@ -1,4 +1,5 @@
 from dataclasses import replace
+import json
 import sqlite3
 
 from canoe_schema.v4_0 import (
@@ -20,6 +21,9 @@ from build_transport import (
 from fetching.legacy_charging_profiles import (
     ProfileEvidence,
     build_request,
+    normalize_profile,
+    required_inputs,
+    validate_run_metadata,
     transform_hourly,
 )
 from parameterization.ldv_charging_profiles import (
@@ -28,8 +32,9 @@ from parameterization.ldv_charging_profiles import (
     scale_projected_profile,
     select_profile_utilization_targets,
     validate_charging_preparation,
+    publish_charging,
 )
-from utils import load_config_bundle, resolve_artifact_path, resolve_input_path
+from utils import file_sha256, load_config_bundle, resolve_artifact_path, resolve_input_path
 from validation.config_models import ScenarioConfig
 from validation.insertion import insert_models
 from validation.schema_contract import create_v4_schema
@@ -44,7 +49,7 @@ def bundle(tmp_path, monkeypatch):
     # This fixture supplies charging evidence/axes, not range-share model periods.
     payload["BEV_PHEV_range_representation"]["mode"] = "none"
     payload["charging_profiles"]["travel_behavior_source"] = "nhts"
-    isolated = {"charging_profiles_processed", "charging_profiles_validation",
+    isolated = {"charging_profiles_processed", "charging_profiles_validation", "charging_profiles_interim",
                 "ldv_range_processed", "ldv_range_validation"}
 
     def artifact_path(config, family, *parts):
@@ -54,34 +59,38 @@ def bundle(tmp_path, monkeypatch):
 
     for owner in ("ldv_charging_profiles", "ldv_ev_ranges"):
         monkeypatch.setattr(f"parameterization.{owner}.resolve_artifact_path", artifact_path)
+    monkeypatch.setattr("fetching.legacy_charging_profiles.resolve_artifact_path", artifact_path)
     return replace(b, scenario=ScenarioConfig.model_validate(payload))
 
 
 @pytest.fixture
 def evidence(bundle):
     number = np.arange(8760)
+    timestamps = pd.date_range("2018-01-01", periods=8760, freq="h", tz="America/Toronto")
     hourly = pd.DataFrame(
         dict(
             hour_index=number,
+            timestamp_utc=timestamps.tz_convert("UTC").astype(str),
+            timestamp_local=timestamps.astype(str),
             season=[f"D{i // 24 + 1:03d}" for i in number],
             tod=[f"H{i % 24 + 1:02d}" for i in number],
             factor=(1 + number % 24) / 24,
         )
     )
     return ProfileEvidence(
-        hourly, {"profile": "nhts"}, build_request(bundle, "nhts").expected_sha256
+        hourly, {"profile": "nhts", "charging_strategy": "uncontrolled"}, build_request(bundle, "nhts").expected_sha256
     )
 
 
 @pytest.mark.parametrize(
-    "profile,peak,total",
+    "profile,total",
     [
-        ("nhts", 1161.9009046687445, 4911640.616091287),
-        ("tts", 1029.305808138049, 4051710.331486839),
+        ("nhts", 5430342.011804913),
+        ("tts", 4515859.705165718),
     ],
 )
 def test_native_hourly_equivalence_peak_energy_dst_and_embedded_composition(
-    bundle, profile, peak, total
+    bundle, profile, total
 ):
     request = build_request(bundle, profile)
     raw = pd.read_csv(request.registered_path, index_col=0)
@@ -98,7 +107,7 @@ def test_native_hourly_equivalence_peak_energy_dst_and_embedded_composition(
     expected = (legacy.iloc[:, 0] / legacy.iloc[:, 0].max()).round(10)
     np.testing.assert_array_equal(result.hourly.factor, expected)
     assert len(result.hourly) == 8760
-    assert result.audit["annual_hourly_peak"] == peak
+    assert result.audit["annual_hourly_peak"] == pytest.approx(float(legacy.iloc[:, 0].max()))
     assert result.audit["hourly_integral"] == pytest.approx(total, abs=1e-8)
     assert result.audit["excluded_nulls_outside_local_year"] == 300
     assert result.audit["repeated_wall_time_keys"] == 1
@@ -177,7 +186,7 @@ def test_preparation_can_reuse_evidence_and_has_complete_dq_and_labels(
     assert len(result.seasons) == 365 and len(result.times_of_day) == 24
     assert all(r.tech in {"T_LDV_CHRG_EX", "T_LDV_CHRG_N"} for r in result.rows)
     expected_dq = bundle.sources.resolved_data_quality(
-        "legacy_charging_profiles", "nhts",
+        "legacy_charging_profiles", "nhts_uncontrolled",
     ).row_fields()
     assert all(r.data_source == "T31" for r in result.rows)
     assert all(
@@ -251,7 +260,7 @@ def test_caller_insertion_preserves_shared_axes_other_rows_repeats_switches_and_
     )
     tts_evidence = ProfileEvidence(
         evidence.hourly.assign(factor=evidence.hourly.factor * 0.5),
-        {"profile": "tts"},
+        {"profile": "tts", "charging_strategy": "uncontrolled"},
         build_request(bundle, "tts").expected_sha256,
     )
     changed_profile = prepare_charging_profile_rows(
@@ -327,6 +336,7 @@ def test_all_regions_use_shared_chargers_without_application_selectors(
     assert {r.tech for r in result.rows} == {"T_LDV_CHRG_EX", "T_LDV_CHRG_N"}
     assert set(b.scenario.charging_profiles.model_dump()) == {
         "travel_behavior_source",
+        "charging_strategy",
         "time_mapping",
     }
 
@@ -335,6 +345,7 @@ def test_all_regions_use_shared_chargers_without_application_selectors(
     "key,value",
     [
         ("profile", "nhts"),
+        ("charging_strategy", "unsupported"),
         ("regional_application", "ontario_only"),
         ("technology_application", "bev_only"),
         ("time_mapping", ""),
@@ -501,3 +512,94 @@ def test_disabled_profiles_do_not_read_utilization_or_modify_hourly_evidence(bun
     monkeypatch.setattr("parameterization.ldv_charging_profiles.prepare_charger_utilization_targets", fail)
     result = prepare_charging_profile_rows(disabled, publish=False)
     assert not result.rows and not result.utilization_targets
+    assert required_inputs(disabled) == []
+
+
+@pytest.mark.parametrize("profile", ["nhts", "tts"])
+@pytest.mark.parametrize("strategy", ["uncontrolled", "night", "day"])
+def test_catalogued_survey_strategy_identity_and_metadata(bundle, profile, strategy):
+    selection = bundle.scenario.charging_profiles.model_copy(update={"charging_strategy": strategy})
+    selected = replace(bundle, scenario=bundle.scenario.model_copy(update={"charging_profiles": selection}))
+    request = build_request(selected, profile)
+    assert request.registered_path.parent.name == strategy
+    assert request.registered_path.parent.parent.name == {"nhts": "NHTS2022", "tts": "TTS2016"}[profile]
+    metadata = validate_run_metadata(request)
+    assert metadata["charging_profile_sha256"] == request.expected_sha256
+    evidence = normalize_profile(selected, profile)
+    assert evidence.audit["charging_strategy"] == strategy
+    assert evidence.audit["source_component"] == f"{profile}_{strategy}"
+    assert evidence.audit["metadata_sha256"] == request.metadata_sha256
+    assert len(evidence.hourly) == 8760
+    assert evidence.audit["hourly_integral"] == pytest.approx(metadata["output_validation"]["aggregate_grid_energy_kwh"])
+
+
+@pytest.mark.parametrize("problem", ["status", "quality", "soc", "digest", "revision", "survey", "strategy", "calendar"])
+def test_metadata_cannot_misidentify_or_promote_an_unreviewed_run(bundle, tmp_path, problem):
+    request = build_request(bundle, "nhts")
+    metadata = json.loads(request.metadata_path.read_text(encoding="utf-8"))
+    if problem == "status":
+        metadata["status"] = "failed"
+    elif problem == "quality":
+        metadata["quality_status"] = "review_required"
+    elif problem == "soc":
+        metadata["diagnostics"]["negative_soc_users"] = 1
+    elif problem == "digest":
+        metadata["charging_profile_sha256"] = "0" * 64
+    elif problem == "revision":
+        metadata["model_revision"] = "unregistered"
+    elif problem == "survey":
+        metadata["preflight"]["survey"] = "TTS2016"
+    elif problem == "strategy":
+        metadata["preflight"]["mode"] = "Night Charge"
+    else:
+        metadata["output_validation"]["calendar_timezone"] = "UTC"
+    path = tmp_path / "run_metadata.json"
+    path.write_text(json.dumps(metadata), encoding="utf-8")
+    changed = request.model_copy(update={"metadata_path": path, "metadata_sha256": file_sha256(path)})
+    with pytest.raises(ValueError, match="selected reviewed profile"):
+        validate_run_metadata(changed)
+
+
+def test_missing_or_modified_metadata_is_rejected(bundle, tmp_path):
+    request = build_request(bundle, "nhts")
+    with pytest.raises(FileNotFoundError):
+        validate_run_metadata(request.model_copy(update={"metadata_path": tmp_path / "missing.json"}))
+    with pytest.raises(ValueError, match="frozen snapshot"):
+        validate_run_metadata(request.model_copy(update={"metadata_sha256": "0" * 64}))
+
+
+def test_supplied_hourly_evidence_must_match_selected_strategy(bundle, evidence):
+    selection = bundle.scenario.charging_profiles.model_copy(update={"charging_strategy": "day"})
+    selected = replace(bundle, scenario=bundle.scenario.model_copy(update={"charging_profiles": selection}))
+    wrong = replace(evidence, source_digest=build_request(selected, "nhts").expected_sha256)
+    with pytest.raises(ValueError, match="survey/strategy"):
+        prepare_charging_profile_rows(selected, evidence=wrong, publish=False)
+
+
+def test_csv_publication_has_schema_rows_and_matching_provenance(bundle, evidence, tmp_path):
+    prepared = prepare_charging_profile_rows(bundle, evidence=evidence, publish=False)
+    original_ids = {row.data_id for row in prepared.rows}
+    publish_charging(bundle, prepared)
+    directory = tmp_path / "charging_profiles_processed/nhts/uncontrolled"
+    factors = pd.read_csv(directory / "capacity_factor_tech.csv")
+    datasets = pd.read_csv(directory / "data_set.csv")
+    sources = pd.read_csv(directory / "data_source.csv")
+    assert len(factors) == 17520
+    assert set(factors.columns) == set(CapacityFactorTech.model_fields)
+    assert set(factors.data_id) == set(datasets.data_id)
+    assert set(sources.data_id) == set(datasets.data_id)
+    assert factors.data_id.str.startswith("ldv-charging-profiles-nhts-uncontrolled:").all()
+    assert {row.data_id for row in prepared.rows} == original_ids
+    assert set(factors.data_id).isdisjoint(original_ids)
+    assert (directory / "time_season.csv").is_file()
+    assert (directory / "time_of_day.csv").is_file()
+    calendar = pd.read_csv(directory / "hourly_calendar.csv")
+    calendar_columns = ["hour_index", "timestamp_utc", "timestamp_local", "season", "tod"]
+    assert calendar.columns.tolist() == calendar_columns
+    assert len(calendar) == 8760 and calendar.hour_index.is_unique
+    pd.testing.assert_frame_equal(calendar, prepared.hourly[calendar_columns])
+    # Hxx labels are elapsed-hour labels; the timestamp lookup retains actual DST offsets.
+    assert calendar.iloc[0].timestamp_utc == "2018-01-01 05:00:00+00:00"
+    assert calendar.timestamp_local.str.endswith("-04:00").any()
+    assert calendar.timestamp_local.str.endswith("-05:00").any()
+    assert (tmp_path / "charging_profiles_validation/nhts/uncontrolled/integrity.json").is_file()

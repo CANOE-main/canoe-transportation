@@ -1,0 +1,788 @@
+region,tech,vintage,cost,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
+ON,T_HDV_AJF_JFL_N,2025,6132.623678803439,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+faa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.
+  - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_N,2030,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_N,2035,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_N,2040,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_JFL_N,2045,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_SPK_N,2025,6132.623678803439,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+faa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.
+  - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_SPK_N,2030,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_SPK_N,2035,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_SPK_N,2040,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJF_SPK_N,2045,6132.623678803439,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_N,2025,1032.1218289023984,$M 2020CAD / bn passenger-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+faa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.
+  - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_N,2030,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_N,2035,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_N,2040,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_JFL_N,2045,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_SPK_N,2025,1032.1218289023984,$M 2020CAD / bn passenger-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+faa_economic_values: U.S. air-carrier capacity, utilization and maintenance evidence for the year ending June 2023, aggregated separately for passenger and freight aircraft.
+  - section_3_capacity: Passenger and freight All Aircraft capacity, load, speed and utilization averages used to normalize aircraft costs to transport service.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_SPK_N,2030,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_SPK_N,2035,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_SPK_N,2040,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_AJP_SPK_N,2045,1032.1218289023984,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-air-4dd435bd:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_BEV_N,2025,697.1805032926829,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_BEV_N,2030,659.0864546341463,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_BEV_N,2035,646.8203930487805,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_BEV_N,2040,634.5543314634145,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_BEV_N,2045,622.2882698780488,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_HEV_N,2025,640.1200889985322,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-a7d32c2e:ON:T_HDV_BIC_DSL_HEV_N:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_HEV_N,2030,648.28069579721,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-a7d32c2e:ON:T_HDV_BIC_DSL_HEV_N:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_HEV_N,2035,647.6387598249814,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-a7d32c2e:ON:T_HDV_BIC_DSL_HEV_N:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_HEV_N,2040,646.997896937827,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-a7d32c2e:ON:T_HDV_BIC_DSL_HEV_N:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_HEV_N,2045,646.3581044472763,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-a7d32c2e:ON:T_HDV_BIC_DSL_HEV_N:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_N,2025,600.8298168292682,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_N,2030,615.0557008536587,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_N,2035,615.0557008536587,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_N,2040,615.0557008536587,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_DSL_N,2045,615.0557008536587,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_FCEV_N,2025,712.3084551219513,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_FCEV_N,2030,687.5256303658538,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_FCEV_N,2035,669.9078340243904,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_FCEV_N,2040,652.2888929268294,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_FCEV_N,2045,634.6699518292684,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_GSL_N,2025,600.8298168292682,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - intercity_bus_charts: Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis.",T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_GSL_N,2030,615.0557008536587,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_GSL_N,2035,615.0557008536587,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_GSL_N,2040,615.0557008536587,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BIC_GSL_N,2045,615.0557008536587,$M 2020CAD / k vehicles,,T12,2,3,2,2,1,transport-cost-invest-inter-city-buses-e9a1c61f:ON:T12:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_BEV_N,2025,87.6420684951249,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_BEV_N,2030,78.26648762792938,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_BEV_N,2035,74.03470334832858,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_BEV_N,2040,69.80291906872782,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_BEV_N,2045,65.57113478912703,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_CNG_N,2025,66.83191404729288,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_CNG_N,2030,66.71428259072603,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_CNG_N,2035,66.79712579697987,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_CNG_N,2040,66.87996900323373,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_CNG_N,2045,66.9628122094876,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_HEV_N,2025,72.26286110781021,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_HEV_N,2030,71.86751328010055,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_HEV_N,2035,71.75725221554916,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_HEV_N,2040,71.64699115099775,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_HEV_N,2045,71.53673008644635,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_N,2025,66.83191404729288,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_N,2030,66.71428259072603,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_N,2035,66.79712579697987,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_N,2040,66.87996900323373,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_N,2045,66.9628122094876,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_PHEV_N,2025,94.40278168307287,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_PHEV_N,2030,85.9089945166079,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_PHEV_N,2035,82.28349868419944,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_PHEV_N,2040,78.65800285179101,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_DSL_PHEV_N,2045,75.03250701938258,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCEV_N,2025,82.9372524559714,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCEV_N,2030,76.19776599702797,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCEV_N,2035,74.83896052505642,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCEV_N,2040,73.48015505308481,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCEV_N,2045,72.12134958111325,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCHEV_N,2025,76.5904604836121,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCHEV_N,2030,71.3434784078008,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCHEV_N,2035,69.48938259238983,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCHEV_N,2040,67.63528677697883,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_FCHEV_N,2045,65.78119096156784,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_GSL_N,2025,66.83191404729288,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_GSL_N,2030,66.71428259072603,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_GSL_N,2035,66.79712579697987,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_GSL_N,2040,66.87996900323373,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BS_GSL_N,2045,66.9628122094876,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-school-buses-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_BEV_N,2025,298.68130382297005,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_BEV_N,2030,279.321642523782,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_BEV_N,2035,267.3990015838812,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_BEV_N,2040,255.47636064398046,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_BEV_N,2045,243.55371970407978,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_CNG_N,2025,210.78761014443708,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_CNG_N,2030,210.93000611817592,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_CNG_N,2035,211.1066007108666,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_CNG_N,2040,211.28319530355705,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_CNG_N,2045,211.4597898962477,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_HEV_N,2025,224.57171729176432,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_HEV_N,2030,222.324337358408,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_HEV_N,2035,222.29013873945615,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_HEV_N,2040,222.25594012050445,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_HEV_N,2045,222.22174150155266,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_N,2025,210.78761014443708,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_N,2030,210.93000611817592,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_N,2035,211.1066007108666,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_N,2040,211.28319530355705,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_N,2045,211.4597898962477,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_PHEV_N,2025,289.2743250857886,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_PHEV_N,2030,269.36188438544053,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_PHEV_N,2035,259.9490093346468,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_PHEV_N,2040,250.53613428385296,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_DSL_PHEV_N,2045,241.12325923305923,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCEV_N,2025,239.36144072568186,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCEV_N,2030,230.9627316162164,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCEV_N,2035,229.1260299259619,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCEV_N,2040,227.28932823570744,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCEV_N,2045,225.45262654545297,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCHEV_N,2025,229.74838582774802,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCHEV_N,2030,222.39243978063087,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCHEV_N,2035,219.95284002351116,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCHEV_N,2040,217.51324026639145,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_FCHEV_N,2045,215.07364050927168,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_GSL_N,2025,210.78761014443708,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_GSL_N,2030,210.93000611817592,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_GSL_N,2035,211.1066007108666,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_GSL_N,2040,211.28319530355705,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_BT_GSL_N,2045,211.4597898962477,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-urban-transit-43665d6d:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_N,2025,39.10602039451965,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:ON:T_HDV_RF_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_N,2030,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:ON:T_HDV_RF_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_N,2035,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:ON:T_HDV_RF_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_N,2040,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:ON:T_HDV_RF_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_DSL_N,2045,39.10602039451965,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-7153c4b0:ON:T_HDV_RF_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_H2_N,2025,74.69249895353255,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_cost_invest_multipliers: Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_H2_N,2030,74.69249895353255,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_H2_N,2035,68.4355356904094,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_H2_N,2040,62.178572427286255,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_H2_N,2045,55.9216091641631,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_LNG_N,2025,61.39645201939587,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_cost_invest_multipliers: Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_LNG_N,2030,61.39645201939587,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_LNG_N,2035,61.13574521676574,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_LNG_N,2040,60.87503841413561,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RF_LNG_N,2045,60.61433161150547,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-rail-5084eaa5:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_N,2025,1885.6878005906885,$M 2020CAD / bn passenger-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:ON:T_HDV_RICP_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_N,2030,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:ON:T_HDV_RICP_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_N,2035,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:ON:T_HDV_RICP_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_N,2040,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:ON:T_HDV_RICP_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_DSL_N,2045,1885.6878005906885,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-7153c4b0:ON:T_HDV_RICP_DSL_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_H2_N,2025,2168.5409706792916,$M 2020CAD / bn passenger-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_cost_invest_multipliers: Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:ON:T_HDV_RICP_H2_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_H2_N,2030,2168.5409706792916,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:ON:T_HDV_RICP_H2_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_H2_N,2035,2080.5422066517262,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:ON:T_HDV_RICP_H2_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_H2_N,2040,1992.5434426241607,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:ON:T_HDV_RICP_H2_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_RICP_H2_N,2045,1904.5446785965953,$M 2020CAD / bn passenger-km,,T15,3,2,3,2,2,transport-cost-invest-passenger-rail-5084eaa5:ON:T_HDV_RICP_H2_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_BEV_N,2025,316.80169027645826,$M 2020CAD / k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_BEV_N,2030,259.79219594953975,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_BEV_N,2035,234.26445674568072,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_BEV_N,2040,208.73671754182175,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_BEV_N,2045,183.20897833796286,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_HEV_N,2025,151.06773427634715,$M 2020CAD / k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_HEV_N,2030,150.2730867571893,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_HEV_N,2035,150.79316773179875,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_HEV_N,2040,151.31324870640822,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_HEV_N,2045,151.8333296810177,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_N,2025,139.5060938107983,$M 2020CAD / k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_N,2030,139.89626378635,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_N,2035,140.62017290607665,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_N,2040,141.34408202580337,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_N,2045,142.06799114553004,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_PHEV_N,2025,307.93086968075414,$M 2020CAD / k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_PHEV_N,2030,255.3170107940319,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_PHEV_N,2035,233.2933650358753,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_PHEV_N,2040,211.26971927771865,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_DSL_PHEV_N,2045,189.246073519562,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCEV_N,2025,182.3175673665523,$M 2020CAD / k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCEV_N,2030,164.66310102623504,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCEV_N,2035,160.9286606418334,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCEV_N,2040,157.19422025743185,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCEV_N,2045,153.45977987303024,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCHEV_N,2025,164.1611973489728,$M 2020CAD / k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCHEV_N,2030,148.54668118802368,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCHEV_N,2035,143.41949898545846,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCHEV_N,2040,138.2923167828932,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_T_FCHEV_N,2045,133.165134580328,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-heavy-trucks-da224324:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_N,2025,159.71497923605244,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_N,2030,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_N,2035,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_N,2040,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_HFO_N,2045,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_LNG_N,2025,167.70072819785508,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+epri_us_regen_transportation: U.S. modeled transport technology cost and efficiency assumptions; relative changes and technology coverage are specific to the registered component.
+  - nonroad_cost_invest_multipliers: Rail and domestic-marine capital-cost ratios to petroleum incumbents for 2035 and 2050; the source rail CNG category is represented as LNG in the reviewed mapping.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:ON:T_HDV_WTF_LNG_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_LNG_N,2030,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:ON:T_HDV_WTF_LNG_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_LNG_N,2035,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:ON:T_HDV_WTF_LNG_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_LNG_N,2040,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:ON:T_HDV_WTF_LNG_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_LNG_N,2045,167.70072819785508,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-5084eaa5:ON:T_HDV_WTF_LNG_N:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_N,2025,159.71497923605244,$M 2020CAD / bn tonne-km,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+emrg_sfu_cims_model: Canadian model assumptions for representative aircraft, rail and marine service units, capital costs and process lifetimes.
+  - transport_service_output_and_capex: Representative aircraft, rail and marine capital costs in 2015 CAD, with rail/marine service output per unit; these are model assumptions rather than fleet transaction averages.",T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_N,2030,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_N,2035,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_N,2040,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_HDV_WTF_MDO_N,2045,159.71497923605244,$M 2020CAD / bn tonne-km,,T15,3,2,3,2,2,transport-cost-invest-freight-marine-7153c4b0:ON:T15:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV150_N,2025,16.029661605623982,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV150_N,2030,14.99230761427323,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV150_N,2035,14.615608257485771,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV150_N,2040,14.238908900698314,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV150_N,2045,13.862209543910856,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV200_N,2025,17.246823565975518,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV200_N,2030,16.224978492434758,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV200_N,2035,15.727923034447471,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV200_N,2040,15.23086757646018,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV200_N,2045,14.733812118472901,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV300_N,2025,20.29295967710642,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV300_N,2030,18.68967926087346,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV300_N,2035,17.978125963565866,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV300_N,2040,17.266572666258266,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV300_N,2045,16.555019368950667,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV400_N,2025,24.16571230506294,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV400_N,2030,21.712467258809028,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV400_N,2035,20.8369270480149,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV400_N,2040,19.961386837220775,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_BEV400_N,2045,19.085846626426648,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_CNG_N,2025,23.64109013007824,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_CNG_N,2030,23.69305458627258,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_CNG_N,2035,23.66210835978282,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_CNG_N,2040,23.63116213329308,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_CNG_N,2045,23.600215906803324,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_N,2025,21.805694104758683,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_N,2030,21.838554504848926,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_N,2035,21.807504028709197,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_N,2040,21.776453552569468,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_DSL_N,2045,21.74540307642974,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_FCEV400_N,2025,22.66904978815525,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_FCEV400_N,2030,21.216778984239347,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_FCEV400_N,2035,20.748272564309197,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_FCEV400_N,2040,20.279766144379046,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_FCEV400_N,2045,19.811259724448888,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_HEV_N,2025,19.686258611059298,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_HEV_N,2030,19.31929159810392,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_HEV_N,2035,19.063522636704477,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_HEV_N,2040,18.807753675305026,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_HEV_N,2045,18.551984713905583,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_N,2025,18.751253925521908,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_N,2030,19.747096026814965,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_N,2035,19.716254049975195,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_N,2040,19.685412073135428,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_N,2045,19.654570096295657,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV35_N,2025,20.404439373696306,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV35_N,2030,19.66809629609287,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV35_N,2035,19.274650855129348,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV35_N,2040,18.88120541416582,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV35_N,2045,18.48775997320229,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV50_N,2025,21.280519643826384,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV50_N,2030,20.383709612904614,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV50_N,2035,19.932700661099844,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV50_N,2040,19.48169170929507,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_C_GSL_PHEV50_N,2045,19.0306827574903,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-cars-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV150_N,2025,20.894062571544623,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV150_N,2030,19.942995656722026,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV150_N,2035,19.413820561520883,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV150_N,2040,18.884645466319746,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV150_N,2045,18.355470371118617,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV200_N,2025,22.824276180601814,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV200_N,2030,21.46228357680145,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV200_N,2035,20.80561037434958,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV200_N,2040,20.148937171897714,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV200_N,2045,19.49226396944585,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV300_N,2025,26.37845997622511,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV300_N,2030,24.311417003901933,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV300_N,2035,23.48119729396356,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV300_N,2040,22.650977584025174,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV300_N,2045,21.8207578740868,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV400_N,2025,31.677286639644745,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV400_N,2030,28.78006443025239,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV400_N,2035,27.497494362340117,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV400_N,2040,26.214924294427835,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_BEV400_N,2045,24.932354226515553,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_CNG_N,2025,27.78984797762211,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_CNG_N,2030,27.83627596582512,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_CNG_N,2035,27.80340379689441,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_CNG_N,2040,27.770531627963706,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_CNG_N,2045,27.737659459032994,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_N,2025,25.706738840452978,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_N,2030,25.73524631891473,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_N,2035,25.701775300488368,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_N,2040,25.668304282062003,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_DSL_N,2045,25.63483326363564,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_FCEV400_N,2025,28.52417618142967,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_FCEV400_N,2030,26.77173938992652,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_FCEV400_N,2035,26.1800902540436,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_FCEV400_N,2040,25.588441118160667,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_FCEV400_N,2045,24.996791982277745,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_HEV_N,2025,24.358579086221667,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_HEV_N,2030,23.99283918008198,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_HEV_N,2035,23.694165832964178,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_HEV_N,2040,23.395492485846372,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_HEV_N,2045,23.09681913872857,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_N,2025,22.9602567135249,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_N,2030,24.107168390701023,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_N,2035,24.07422063875869,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_N,2040,24.041272886816355,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_N,2045,24.008325134874028,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV35_N,2025,25.16105091479912,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV35_N,2030,24.253328296719662,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV35_N,2035,23.78405070290496,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV35_N,2040,23.314773109090257,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV35_N,2045,22.84549551527555,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV50_N,2025,26.287730625492607,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV50_N,2030,25.16571992470708,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV50_N,2035,24.621654194603956,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV50_N,2040,24.07758846450082,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTF_GSL_PHEV50_N,2045,23.533522734397703,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-freight-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV150_N,2025,20.894062571544623,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV150_N,2030,19.942995656722026,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV150_N,2035,19.413820561520883,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV150_N,2040,18.884645466319746,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV150_N,2045,18.355470371118617,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV200_N,2025,22.824276180601814,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV200_N,2030,21.46228357680145,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV200_N,2035,20.80561037434958,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV200_N,2040,20.148937171897714,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV200_N,2045,19.49226396944585,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV300_N,2025,26.37845997622511,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV300_N,2030,24.311417003901933,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV300_N,2035,23.48119729396356,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV300_N,2040,22.650977584025174,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV300_N,2045,21.8207578740868,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV400_N,2025,31.677286639644745,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV400_N,2030,28.78006443025239,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV400_N,2035,27.497494362340117,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV400_N,2040,26.214924294427835,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_BEV400_N,2045,24.932354226515553,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_CNG_N,2025,27.78984797762211,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_CNG_N,2030,27.83627596582512,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_CNG_N,2035,27.80340379689441,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_CNG_N,2040,27.770531627963706,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_CNG_N,2045,27.737659459032994,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_N,2025,25.706738840452978,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_N,2030,25.73524631891473,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_N,2035,25.701775300488368,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_N,2040,25.668304282062003,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_DSL_N,2045,25.63483326363564,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_FCEV400_N,2025,28.52417618142967,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_FCEV400_N,2030,26.77173938992652,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_FCEV400_N,2035,26.1800902540436,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_FCEV400_N,2040,25.588441118160667,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_FCEV400_N,2045,24.996791982277745,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_HEV_N,2025,24.358579086221667,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_HEV_N,2030,23.99283918008198,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_HEV_N,2035,23.694165832964178,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_HEV_N,2040,23.395492485846372,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_HEV_N,2045,23.09681913872857,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_N,2025,22.9602567135249,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_N,2030,24.107168390701023,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_N,2035,24.07422063875869,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_N,2040,24.041272886816355,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_N,2045,24.008325134874028,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV35_N,2025,25.16105091479912,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV35_N,2030,24.253328296719662,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV35_N,2035,23.78405070290496,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV35_N,2040,23.314773109090257,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV35_N,2045,22.84549551527555,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV50_N,2025,26.287730625492607,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV50_N,2030,25.16571992470708,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV50_N,2035,24.621654194603956,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV50_N,2040,24.07758846450082,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_LTP_GSL_PHEV50_N,2045,23.533522734397703,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-passenger-light-trucks-8cba6ef7:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_BEV_N,2025,12.923352577093377,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+jgcri_gcam_motorcycle_inputs: Canadian motorcycle model inputs for liquid fuels and BEVs in the >250 cc class.",T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_BEV_N,2030,12.80969752432432,$M 2020CAD / k vehicles,,T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_BEV_N,2035,12.711200268918915,$M 2020CAD / k vehicles,,T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_BEV_N,2040,12.612703013513512,$M 2020CAD / k vehicles,,T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_BEV_N,2045,12.514205758108105,$M 2020CAD / k vehicles,,T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_GSL_N,2025,13.891632432432433,$M 2020CAD / k vehicles,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+jgcri_gcam_motorcycle_inputs: Canadian motorcycle model inputs for liquid fuels and BEVs in the >250 cc class.",T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_GSL_N,2030,13.891632432432433,$M 2020CAD / k vehicles,,T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_GSL_N,2035,13.891632432432433,$M 2020CAD / k vehicles,,T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_GSL_N,2040,13.891632432432433,$M 2020CAD / k vehicles,,T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_LDV_M_GSL_N,2045,13.891632432432433,$M 2020CAD / k vehicles,,T11,3,2,3,2,1,transport-cost-invest-motorcycles-804abac7:ON:T11:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_BEV_N,2025,66.604360955466,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_BEV_N,2030,58.25581549632891,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_BEV_N,2035,54.66746054093526,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_BEV_N,2040,51.07910558554161,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_BEV_N,2045,47.49075063014798,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_HEV_N,2025,56.30881869139002,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_HEV_N,2030,55.8503537869669,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_HEV_N,2035,55.760584238598426,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_HEV_N,2040,55.67081469022995,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_HEV_N,2045,55.58104514186147,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_N,2025,51.76754583735083,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_N,2030,51.46959098268856,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_N,2035,51.466088641644966,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_N,2040,51.46258630060137,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_N,2045,51.45908395955778,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_PHEV_N,2025,75.70833771865476,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_PHEV_N,2030,67.77673176743215,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_PHEV_N,2035,64.57320339936747,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_PHEV_N,2040,61.36967503130283,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_DSL_PHEV_N,2045,58.166146663238166,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCEV_N,2025,62.34399642604025,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCEV_N,2030,56.730463338316824,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCEV_N,2035,55.5702943009764,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCEV_N,2040,54.41012526363599,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCEV_N,2045,53.24995622629556,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCHEV_N,2025,58.39386708875245,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCHEV_N,2030,53.2404474108142,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCHEV_N,2035,51.78942578526355,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCHEV_N,2040,50.33840415971291,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_FCHEV_N,2045,48.88738253416228,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_N,2025,51.76754583735083,$M 2020CAD / k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+nlr_atb_transportation: U.S. road-vehicle technology trajectories and operating assumptions by class and powertrain; Canadian fleet weighting and service conversion are applied separately.
+  - vehicles: U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately.",T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_N,2030,51.46959098268856,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_N,2035,51.466088641644966,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_N,2040,51.46258630060137,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_MDV_T_GSL_N,2045,51.45908395955778,$M 2020CAD / k vehicles,,T06,2,3,2,2,1,transport-cost-invest-medium-trucks-06aec2d1:ON:T06:validation_charging_nhts_uncontrolled
+ON,T_LDV_CHRG_N,2025,905.0648646147348,$M 2020CAD / GW,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port-count mixes, rated-power trajectories and CAD2022 equipment/installation costs per port. Convert total port expenditure divided by total rated power to model costs. Common 0.20 utilization is a user-reviewed consistency override for vintage-indexed limits, not a direct source observation; final cost/power values beyond 2040 retain the reviewed endpoint.
+nlr_alternative_fueling_infrastructure: U.S. residential L1 installation cost midpoint of 550 USD per port from the 100–1000 USD range; equipment cost is zero. The 2021 dollar year is a reviewed manual basis, not explicitly stated in the source table. Normalize to rated power only after currency conversion and port-count aggregation.",T24,2,2,3,2,2,ev-chargers-ldv-cost-invest:ON:T_LDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_LDV_CHRG_N,2030,733.2956944248956,$M 2020CAD / GW,,T24,2,2,3,2,2,ev-chargers-ldv-cost-invest:ON:T_LDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_LDV_CHRG_N,2035,706.3758818542314,$M 2020CAD / GW,,T24,2,2,3,2,2,ev-chargers-ldv-cost-invest:ON:T_LDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_LDV_CHRG_N,2040,706.3758818542314,$M 2020CAD / GW,,T24,2,2,3,2,2,ev-chargers-ldv-cost-invest:ON:T_LDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_LDV_CHRG_N,2045,706.3758818542314,$M 2020CAD / GW,,T24,2,2,3,2,2,ev-chargers-ldv-cost-invest:ON:T_LDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_MHDV_CHRG_N,2025,689.2885556110506,$M 2020CAD / GW,"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+dunsky_ev_charging_infrastructure: Canadian LD/MHD charging projections with reviewed port-count mixes, rated-power trajectories and CAD2022 equipment/installation costs per port. Convert total port expenditure divided by total rated power to model costs. Common 0.20 utilization is a user-reviewed consistency override for vintage-indexed limits, not a direct source observation; final cost/power values beyond 2040 retain the reviewed endpoint.",T24,2,2,3,2,2,ev-chargers-mhdv-cost-invest:ON:T_MHDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_MHDV_CHRG_N,2030,664.574411996558,$M 2020CAD / GW,,T24,2,2,3,2,2,ev-chargers-mhdv-cost-invest:ON:T_MHDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_MHDV_CHRG_N,2035,646.4329238601284,$M 2020CAD / GW,,T24,2,2,3,2,2,ev-chargers-mhdv-cost-invest:ON:T_MHDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_MHDV_CHRG_N,2040,646.4329238601284,$M 2020CAD / GW,,T24,2,2,3,2,2,ev-chargers-mhdv-cost-invest:ON:T_MHDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_MHDV_CHRG_N,2045,646.4329238601284,$M 2020CAD / GW,,T24,2,2,3,2,2,ev-chargers-mhdv-cost-invest:ON:T_MHDV_CHRG_N:T24:validation_charging_nhts_uncontrolled
+ON,T_H2_LDV_REFUEL,2025,54.7959587020649,$M 2020CAD / (PJ/year),"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
+  - hydrogen_refueling_costs: Separate LDV/MHDV hydrogen-station investment and annual fixed costs from OEO's IEA-derived assumptions; annual hydrogen throughput is the capacity basis.",T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_LDV_REFUEL,2030,54.7959587020649,$M 2020CAD / (PJ/year),,T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_LDV_REFUEL,2035,54.7959587020649,$M 2020CAD / (PJ/year),,T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_LDV_REFUEL,2040,54.7959587020649,$M 2020CAD / (PJ/year),,T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_LDV_REFUEL,2045,54.7959587020649,$M 2020CAD / (PJ/year),,T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_MHDV_REFUEL,2025,49.169706981317596,$M 2020CAD / (PJ/year),"cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.
+open_energy_outlook: U.S. model assumptions for rail/marine operating-cost ratios, charger fixed costs/lifetimes and hydrogen-refueling investment/fixed costs.
+  - hydrogen_refueling_costs: Separate LDV/MHDV hydrogen-station investment and annual fixed costs from OEO's IEA-derived assumptions; annual hydrogen throughput is the capacity basis.",T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_MHDV_REFUEL,2030,49.169706981317596,$M 2020CAD / (PJ/year),,T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_MHDV_REFUEL,2035,49.169706981317596,$M 2020CAD / (PJ/year),,T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_MHDV_REFUEL,2040,49.169706981317596,$M 2020CAD / (PJ/year),,T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled
+ON,T_H2_MHDV_REFUEL,2045,49.169706981317596,$M 2020CAD / (PJ/year),,T16,3,3,3,2,3,ev-chargers-hydrogen-refueling-cost-invest:ON:T16:validation_charging_nhts_uncontrolled

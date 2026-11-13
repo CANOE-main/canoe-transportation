@@ -168,11 +168,12 @@ def required_inputs(bundle: ConfigBundle) -> list[Path]:
 
 
 def _atb_replay_digest(path: Path, expected: str | None, trajectories: list[str]) -> str:
-    """Match retained bytes after the exact source rename and run-selection marker.
+    """Match retained CSV after the source rename, selection marker and record EOL.
 
     All physical vehicle values, labels, rows and formatting must reproduce the
-    registered digest exactly. Neither metadata field changes GREET inputs.
-    No source or external-model file is rewritten.
+    registered digest exactly, allowing LF/CRLF record separators. Newlines inside
+    quoted fields remain part of their values. Neither metadata field changes GREET
+    inputs. No source or external-model file is rewritten.
     """
     raw = path.read_bytes()
     actual = hashlib.sha256(raw).hexdigest()
@@ -196,19 +197,44 @@ def _atb_replay_digest(path: Path, expected: str | None, trajectories: list[str]
         source_keys.append(_RETAINED_ATB_SOURCE_KEY)
     for selection in trajectories:
         for source_key in source_keys:
-            restored = io.StringIO(newline="")
-            writer = csv.writer(restored, lineterminator="\r\n" if b"\r\n" in raw else "\n")
-            writer.writerow(header)
-            for row in records:
-                fields = row.copy()
-                fields[marker] = str(row[trajectory] == selection)
-                if source_key is not None:
-                    fields[source_column] = source_key
-                writer.writerow(fields)
-            if hashlib.sha256(restored.getvalue().encode("utf-8")).hexdigest() == expected:
-                LOGGER.debug("GREET ATB replay matches retained SHA-256 after restoring source identity and the %s default-trajectory marker", selection)
-                return expected
-    raise ValueError("Stale GREET ATB evidence: differences exceed the source rename/default-trajectory marker; explicitly regenerate")
+            for newline in ("\n", "\r\n"):
+                restored = io.StringIO(newline="")
+                writer = csv.writer(restored, lineterminator=newline)
+                writer.writerow(header)
+                for row in records:
+                    fields = row.copy()
+                    fields[marker] = str(row[trajectory] == selection)
+                    if source_key is not None:
+                        fields[source_column] = source_key
+                    writer.writerow(fields)
+                if hashlib.sha256(restored.getvalue().encode("utf-8")).hexdigest() == expected:
+                    LOGGER.debug("GREET ATB replay matches retained SHA-256 after restoring source identity, the %s default-trajectory marker and %r record separators", selection, newline)
+                    return expected
+    raise ValueError("Stale GREET ATB evidence: differences exceed the source rename/default-trajectory marker or LF/CRLF record separators; explicitly regenerate")
+
+
+def _result_bank_digest(path: Path, expected: str) -> str:
+    """Authenticate exact bytes or a uniform LF/CRLF text representation only.
+
+    Historical manifests retain the original producer's SHA-256. Git checkouts and
+    archives can translate text line endings, so try only those two representations;
+    do not trim whitespace, reorder records, parse values or rewrite evidence.
+    """
+    raw = path.read_bytes()
+    actual = hashlib.sha256(raw).hexdigest()
+    if actual == expected:
+        return actual
+    lf = raw.replace(b"\r\n", b"\n")
+    uniform = b"\r" not in lf and not (
+        b"\r\n" in raw and b"\n" in raw.replace(b"\r\n", b"")
+    )
+    if uniform and expected in {
+        hashlib.sha256(lf).hexdigest(),
+        hashlib.sha256(lf.replace(b"\n", b"\r\n")).hexdigest(),
+    }:
+        LOGGER.info("Authenticated GREET result-bank %s after LF/CRLF translation; current SHA-256=%s, retained SHA-256=%s", path.name, actual, expected)
+        return expected
+    raise ValueError(f"Stale or altered GREET result-bank hash: {path.name}; explicitly regenerate")
 
 
 def _canonical_source_key(value: str | None) -> str | None:
@@ -352,8 +378,12 @@ def validate_generation_evidence(bundle, raw, exclusions, cases, report) -> dict
     return validation
 
 
-def normalize_generated_results(bundle: ConfigBundle) -> GreetEvidence:
-    """Read the registered complete result bank; no Excel, mutation or network."""
+def normalize_generated_results(bundle: ConfigBundle, *, write_interim: bool = True) -> GreetEvidence:
+    """Validate the registered bank and optionally publish normalized evidence.
+
+    Registered sources and bank files remain untouched; no Excel or network is used.
+    ``write_interim=False`` provides a read-only validation path on every platform.
+    """
     registration, workbooks = registered_workbooks(bundle)
     bank = result_bank_paths(bundle)
     for path in (*workbooks, *bank.values()):
@@ -361,9 +391,18 @@ def normalize_generated_results(bundle: ConfigBundle) -> GreetEvidence:
             raise FileNotFoundError(f"Missing GREET evidence {path}; run uv run python -m fetching.greet_automation --scenario {bundle.scenario_path}")
     manifest = ResultManifest.model_validate_json(bank["manifest"].read_text(encoding="utf-8"))
     hashes = {p.relative_to(bundle.repo_root).as_posix(): file_sha256(p) for p in workbooks}
-    if manifest.source_hashes != hashes or manifest.files != {p.name: file_sha256(p) for k, p in bank.items() if k != "manifest"}:
+    bank_hashes = {p.name: file_sha256(p) for k, p in bank.items() if k != "manifest"}
+    if manifest.source_hashes != hashes or set(manifest.files) != set(bank_hashes):
         raise ValueError("Stale or altered GREET result-bank/source hashes; explicitly regenerate")
+    for key, path in bank.items():
+        if key != "manifest":
+            _result_bank_digest(path, manifest.files[path.name])
     report = json.loads(bank["report"].read_text(encoding="utf-8"))
+    report["result_bank_replay"] = {
+        name: {"current_sha256": digest, "retained_sha256": manifest.files[name],
+               "line_endings_only": digest != manifest.files[name]}
+        for name, digest in bank_hashes.items()
+    }
     # Authenticate the retained report before using its ATB evidence digest.
     profile = generation_profile(bundle, atb_reference_sha256=report.get("atb_evidence", {}).get("sha256"))
     if (_canonical_source_key(manifest.source_id), manifest.component, manifest.profile_sha256) != (SOURCE, COMPONENT, profile):
@@ -383,7 +422,7 @@ def normalize_generated_results(bundle: ConfigBundle) -> GreetEvidence:
     report["atb_replay"] = {
         "current_sha256": current_atb_sha256,
         "retained_sha256": retained_atb_sha256,
-        "source_identity_or_trajectory_marker_only": current_atb_sha256 != retained_atb_sha256,
+        "source_identity_trajectory_marker_or_record_line_endings_only": current_atb_sha256 != retained_atb_sha256,
         "all_other_bytes_match": True,
     }
     from fetching.greet_automation import inspect_lightweight_glider_formulas
@@ -410,8 +449,9 @@ def normalize_generated_results(bundle: ConfigBundle) -> GreetEvidence:
     normalized["evidence_case_ids"] = evidence_cases
     normalized = normalized.reset_index().sort_values(keys).reset_index(drop=True)
     rules = load_harmonization_rules(bundle, "greet_vehicle_cycle")
-    interim = resolve_artifact_path(bundle, "greet_vehicle_cycle_interim")
-    for key, frame in (("normalized", normalized), ("excluded", exclusions), ("models", cases)):
-        write_dataframe_atomic(frame, interim / rules["files"][key])
+    if write_interim:
+        interim = resolve_artifact_path(bundle, "greet_vehicle_cycle_interim")
+        for key, frame in (("normalized", normalized), ("excluded", exclusions), ("models", cases)):
+            write_dataframe_atomic(frame, interim / rules["files"][key])
     LOGGER.info("Normalized %s GREET range-specific gas rows; retained %s cases and %s exclusions", len(normalized), len(cases), len(exclusions))
     return GreetEvidence(normalized, exclusions, cases, (*workbooks, *bank.values()), raw, report)

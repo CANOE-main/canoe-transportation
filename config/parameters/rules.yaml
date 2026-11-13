@@ -18,8 +18,8 @@ fetching:
     normalization: annual_hourly_peak
     label_basis: elapsed_hours_from_local_year_start
     precision: 10
-    hourly_file: "{profile}_hourly.csv"
-    manifest_file: "{profile}_manifest.json"
+    hourly_file: "{profile}_{strategy}_hourly.csv"
+    manifest_file: "{profile}_{strategy}_manifest.json"
   epa_omega_baseline:
     # Exact baseline source read by LDV_AER_market_shares.ipynb; no model rerun.
     model_year: 2022
@@ -2552,17 +2552,21 @@ parameterization:
       integrity: cost_integrity.json
 
   ldv_charging_profiles:
-    transformation_version: "3"
+    transformation_version: "4"
     factor_units: fraction
     applicability: "Ontario BEV charging shape scaled to reviewed annual utilization on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted."
     technology_category: charger
     technology_sub_category: ldv
     target_technologies: [T_LDV_CHRG_EX, T_LDV_CHRG_N]
-    factor_file: capacity_factor_tech.csv
-    time_season_file: time_season.csv
-    time_of_day_file: time_of_day.csv
-    mapping_file: hourly_mapping.csv
-    validation_file: integrity.json
+    factor_file: "{profile}/{strategy}/capacity_factor_tech.csv"
+    time_season_file: "{profile}/{strategy}/time_season.csv"
+    time_of_day_file: "{profile}/{strategy}/time_of_day.csv"
+    mapping_file: "{profile}/{strategy}/hourly_mapping.csv"
+    calendar_file: "{profile}/{strategy}/hourly_calendar.csv"
+    dataset_file: "{profile}/{strategy}/data_set.csv"
+    source_file: "{profile}/{strategy}/data_source.csv"
+    source_label_file: "{profile}/{strategy}/data_source_label.csv"
+    validation_file: "{profile}/{strategy}/integrity.json"
     conservation_tolerance: 1.0e-8
   ldv_ev_ranges:
     range_units: miles

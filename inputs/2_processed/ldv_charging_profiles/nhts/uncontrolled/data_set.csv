@@ -1,0 +1,2 @@
+data_id,label,version,description,status,author,date,parent_id,changelog,notes
+ldv-charging-profiles-nhts-uncontrolled:ON:T31:validation_charging_nhts_uncontrolled,ldv_charging_profiles.nhts_uncontrolled,composite,Registered RAMP charging shape scaled by native full-year hourly mean and projected to CANOE time slices v4,,,,,,"{""content_identity"":""ldv-charging-profiles-nhts-uncontrolled:composite:4:35adf37fd44ff74a"",""kind"":""transport-data-id-v1"",""notes"":null,""scenario"":""validation_charging_nhts_uncontrolled""}"

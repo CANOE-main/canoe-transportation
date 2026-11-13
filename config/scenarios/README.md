@@ -22,6 +22,7 @@ Keep one YAML per demonstrated, repeatable workflow. The current supported set i
 | `validation_energy_calibration.yaml` | Matched Ontario calibration-on comparison: same fleet/activity/source/representation as validation_baseline, optional [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) reported-liquid-energy adjustment enabled and its diagnostic evidence captured. Scientific acceptance remains separate. |
 | `validation_energy_calibration_regions.yaml` | Prospective-2025 calibration anchor evidence for all ten model regions, including the existing BC-plus-territories `BCT` region. Uses the Ontario calibration pair's methods and source selections with broader geography and no Ontario-only legacy comparison. It does not replace the matched Ontario OFF/ON audit. |
 | `notebook_diagnostics.yaml` | Shared stock/efficiency notebook prerequisite: Ontario observed-2023, [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) curves, explicit future ranges, both captured diagnostics, no charging profile or embodied emissions. |
+| `validation_charging_{nhts,tts}_{uncontrolled,night,day}.yaml` | Six matched Ontario charging cases using the production settings with survey/strategy selections, distinct output names and comparison disabled. Suitable for charging-only CSV preparation or complete scenario builds. |
 
 Retain these names and selections. For a new supported comparison, use a concise
 `validation_<question>.yaml` name; add another diagnostic
@@ -149,7 +150,8 @@ current [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) values. [*NRCa
 | `costs.atb_trajectory` | The same [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) choices, independently selectable from efficiencies. |
 | `ev_chargers.ld_evs_per_port` | Positive LDV electric vehicles per charger port. |
 | `ev_chargers.mhd_evs_per_port` | Positive medium/heavy-duty electric vehicles per charger port. |
-| `charging_profiles.travel_behavior_source` | `none`, `nhts`, or `tts` household travel-survey source for the frozen Ontario simulation. The selected shape applies unchanged to shared LDV chargers in every configured region. |
+| `charging_profiles.travel_behavior_source` | `none`, `nhts`, or `tts` travel evidence for the registered corrected Ontario RAMP simulation. Production uses NHTS uncontrolled by default. The shape proxies shared LDV charging in every selected region. |
+| `charging_profiles.charging_strategy` | `uncontrolled` (default), `night`, or `day`. Ordinary charging occurs at arrival, preferentially 22:00–07:00, or preferentially 07:00–18:00 Toronto time, respectively. Controlled cases spread energy over eligible parked minutes; low SOC/next-trip emergencies can charge outside those windows. |
 | `charging_profiles.time_mapping` | Null uses elapsed-hour D001-D365/H01-H24 labels after Toronto-calendar hourly means. A complete `hour_index,season,tod` CSV projects the 8760 physical hours onto inherited CANOE slices; slice durations must agree with season fractions and TOD hours. This selects temporal aggregation/labels, not a time zone. Python callers can supply the same mapping as a DataFrame with their season/TOD rows. |
 | `BEV_PHEV_range_representation.mode` | `none` preserves new variants and adds no range rules. `new_capacity_shares` prepares minimum (`ge`) shares of new class/powertrain capacity from the registered [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) baseline sales/CD-range evidence. `representative_archetype` replaces new LDV range variants with one BEV/PHEV per category and emits no range constraints. Existing BEVs/PHEVs always use representatives with [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) weights, independently of this selection. |
 | `embodied_emissions` | Enables the road vehicle-cycle layer. When false, preparation requires no embodied [*ANL GREET*](https://greet.anl.gov/greet/versions.html) workbooks or result bank and inserts no embodied rows. |
@@ -161,13 +163,18 @@ current [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) values. [*NRCa
     artifacts; only supported flat classes enter that table. Charger utilization uses
     supported vintage-indexed rows and does not require that extra period dimension.
 
-!!! warning "Charging profiles carry frozen travel assumptions"
-    The frozen charging shapes already contain inherited fleet/range/charger composition.
+!!! warning "Charging profiles carry explicit inherited travel assumptions"
+    The six corrected, hash-registered profiles and metadata live under
+    `inputs/0_external_models/ramp_mobility/`, alongside aggregate survey input databases
+    and the pinned simulation source. Frozen legacy v5 profiles are comparison evidence,
+    not production inputs. New profiles correct charging-loss/SOC and UTC weather alignment
+    and already contain inherited fleet/range/charger composition.
     They are peak-normalized hourly power shapes; no new market shares are multiplied into
     them. Elapsed-hour labels preserve all 8760 physical hours, including Toronto DST, and
     do not identify summer wall-clock hours. The selected Ontario/shared-charger proxies
     apply the BEV shape to LDV BEV/PHEV/motorcycle charging in all regions. [*Ontario TTS*](https://dmg.utoronto.ca/transportation-tomorrow-survey/) remains a
-    weekday-only simulation. Hourly factors are not directly comparable with the legacy
+    weekday-derived simulation with weekday evidence repeated on weekends. NHTS uses
+    unweighted filtered trip-takers and midpoint trip occurrences. Hourly factors are not directly comparable with the legacy
     clustered/rescaled profiles. Select `charging_profiles.travel_behavior_source: none` to retain the
     annual charger utilization without hourly profile factors.
 
@@ -404,3 +411,34 @@ offline by default. `--download-sources` permits acquisition of missing caches; 
 refresh existing caches. Paths and all model/source selections stay in YAML. Run scenarios
 serially while derived artifact paths are shared. Manual review, optional diagnostics and
 external-model generation remain explicit operations.
+
+To stop at all model-ready parameter tables without inserting transport parameters or
+publishing SQLite, use the same entrypoint:
+
+```powershell
+uv run python src/build_transport.py --scenario config/scenarios/default.yaml --processed-only
+```
+
+This replays the same production prerequisites and contribution preparation, then writes
+30 schema-column CSVs (including headers for empty tables), support axes, source/dataset
+lookups and a manifest beneath `inputs/2_processed/scenario_tables/<scenario.name>/`.
+The in-memory packaged schema supplies preparation contracts only; configured SQLite and
+normal database reports remain untouched. Row-model, key, provenance and parameter-support
+checks run; SQLite foreign-key/integrity checks are not claimed. For the same CSV export
+as a byproduct of a normal database build, add `--export-processed` instead.
+
+For fast charging-only iteration, the existing parameter owner needs no database build:
+
+```powershell
+uv run python -m parameterization.ldv_charging_profiles --scenario config/scenarios/validation_charging_nhts_day.yaml
+```
+
+Run each of the six charging presets serially. Their outputs are retained separately
+under `inputs/2_processed/ldv_charging_profiles/{nhts,tts}/{uncontrolled,night,day}/`.
+Each contains `capacity_factor_tech.csv`, season/TOD tables, dataset/source lookups,
+`hourly_mapping.csv` and `hourly_calendar.csv`. The latter maps elapsed-hour keys to local
+and UTC timestamps; H01–H24 are not summer wall-clock labels. With the current reviewed
+LDV utilization, all six Ontario factor tables have mean 0.20 for each charger technology.
+Use the supplied full-hour axes, or configure an explicit complete `time_mapping` before
+preparing factors for a representative-day model. Do not paste full-hour factors into
+different time slices or reinterpret raw RAMP kW as capacity factors.

@@ -291,11 +291,32 @@ def test_existing_conflicting_snapshot_is_never_overwritten(isolated_bundle):
     content = session.downloads[request.url][0]
     target = updater._snapshot_path(bundle, request.cache_path, content)
     target.write_bytes(b"different existing file")
-    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    caches = cache_bytes(bundle)
     result = updater.run_update(bundle, sources={NRCAN}, apply=True, session=session)
-    assert result.errors and not result.applied
-    assert "conflicting cache" in result.errors[0]
-    assert_preserved(bundle, original, caches)
+    assert not result.errors and result.applied
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    replacement = nrcan_ceud.iter_rating_requests(current)[0].cache_path
+    assert replacement != target and replacement.read_bytes() == content
+    assert target.read_bytes() == b"different existing file"
+    for path, previous in caches.items():
+        assert (resolve_input_path(bundle, "cache") / path).read_bytes() == previous
+
+
+def test_adopted_missing_snapshot_is_restored_without_registry_repin(isolated_bundle):
+    bundle = isolated_bundle
+    session = rating_session(bundle)
+    first = updater.run_update(bundle, sources={NRCAN}, apply=True, session=session)
+    assert first.applied and not first.errors
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    request = nrcan_ceud.iter_rating_requests(current)[0]
+    content = request.cache_path.read_bytes()
+    request.cache_path.unlink()
+    registry = current.sources_path.read_bytes()
+    result = updater.run_update(current, sources={NRCAN}, apply=True, session=session)
+    assert result.applied and not result.errors
+    assert current.sources_path.read_bytes() == registry
+    assert request.cache_path.read_bytes() == content
+    assert result.diff_path.read_text(encoding="utf-8") == ""
 
 
 def test_catalogue_change_during_download_blocks_adoption(isolated_bundle):
@@ -443,6 +464,11 @@ def test_fueleconomy_validates_shared_class_and_range_contracts(isolated_bundle,
         assert result.errors and not result.applied
         assert_preserved(bundle, original, caches)
         return
+    assert result.errors and not result.applied  # No old comparison cache: review is explicit.
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
+    assert not review.errors
+    result = updater.run_update(bundle, sources={FUEL}, apply=True, session=session,
+                                review_report=review.report_path)
     assert result.applied and not result.errors
     current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root).sources.sources[FUEL]
     assert "2099-01-15" in current.version
@@ -482,6 +508,8 @@ def dashboard_html(bundle, *, share="1%", ytd_share=None, columns=("Q1", "YTD"),
 
 def pin_dashboard(bundle):
     """Register fixture bytes without touching the repository's accepted snapshot."""
+    from fetching.assorted_sources import tc_dashboard_content_sha256
+
     registry = yaml.safe_load(bundle.sources_path.read_text(encoding="utf-8"))
     registered = registry["sources"][TC]
     source = registered["adapter"]
@@ -499,7 +527,8 @@ def pin_dashboard(bundle):
     target = resolve_input_path(bundle, "cache", source["cache_path"])
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(old)
-    source.update(expected_sha256=digest(old), expected_bytes=len(old))
+    source.update(expected_sha256=digest(old), expected_bytes=len(old),
+                  expected_content_sha256=tc_dashboard_content_sha256(old))
     return save_registry(bundle, registry), target, old
 
 
@@ -514,6 +543,52 @@ def dashboard_session(bundle, content):
     session = FakeSession()
     session.downloads[bundle.sources.sources[TC].adapter["access"]["url"]] = (content, {})
     return session
+
+
+@pytest.mark.parametrize("rotate_cache", [False, True])
+def test_tc_asset_token_rotation_does_not_repin_publication(isolated_bundle, rotate_cache):
+    from fetching.assorted_sources import tc_dashboard_content_sha256
+
+    bundle, path, old = pin_dashboard(isolated_bundle)
+    old = b'<link rel="stylesheet" href="/theme.css?aaaaaa"><script src="/app.js?aaaaaa"></script>' + old
+    rotated = old.replace(b"?aaaaaa", b"?bbbbbb")
+    registry = yaml.safe_load(bundle.sources_path.read_text(encoding="utf-8"))
+    registry["sources"][TC]["adapter"].update(
+        expected_sha256=digest(old), expected_bytes=len(old),
+        expected_content_sha256=tc_dashboard_content_sha256(old),
+    )
+    path.write_bytes(rotated if rotate_cache else old)
+    bundle = save_registry(bundle, registry)
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    result = updater.run_update(bundle, sources={TC}, apply=True,
+                                session=dashboard_session(bundle, rotated))
+    assert not result.errors and not result.applied
+    assert_preserved(bundle, original, caches)
+    candidate = json.loads(result.report_path.read_text(encoding="utf-8"))["candidates"][0]
+    assert candidate["status"] == "current" and not candidate["changes"]
+    assert candidate["evidence"]["presentation_tokens_only"]
+    assert candidate["evidence"]["registered_cache"]["status"] == "valid"
+
+
+@pytest.mark.parametrize("new_observations", [False, True])
+def test_tc_corrupt_non_utf8_historical_cache_can_be_repaired(isolated_bundle, new_observations):
+    bundle, path, original = pin_dashboard(isolated_bundle)
+    path.write_bytes(b"\xff\xfe damaged historical cache")
+    content = dashboard_html(bundle, ytd_share="2%") if new_observations else original
+    session = dashboard_session(bundle, content)
+    review = updater.run_update(bundle, sources={TC}, session=session)
+    assert not review.errors
+    row = json.loads(review.report_path.read_text(encoding="utf-8"))["candidates"][0]
+    assert row["evidence"]["registered_cache"]["status"] == "mismatch"
+    assert bool(row["review_required"]) == new_observations
+    session.calls.clear()
+    applied = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=review.report_path)
+    assert not applied.errors and applied.applied and not session.calls
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    target = resolve_input_path(current, "cache", current.sources.sources[TC].adapter["cache_path"])
+    assert target != path and target.read_bytes() == content
+    assert path.read_bytes() == b"\xff\xfe damaged historical cache"
 
 
 @pytest.mark.parametrize("changed_values", [False, True])
@@ -674,7 +749,9 @@ def test_tc_review_rejects_changed_context_and_untrusted_report(isolated_bundle,
     report_path = review.report_path
     selection = {TC}
     if changed == "candidate_bytes":
-        session = dashboard_session(bundle, content + b"<!-- changed after review -->")
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        captured = report_path.parent / report["acquisitions"][0]["file"]
+        captured.write_bytes(content + b"<!-- changed after review -->")
     elif changed == "registry":
         with bundle.sources_path.open("a", encoding="utf-8") as handle:
             handle.write("\n# Registry edited after review.\n")
@@ -705,6 +782,58 @@ def test_tc_review_rejects_changed_context_and_untrusted_report(isolated_bundle,
                                 review_report=report_path)
 
     assert result.errors and not result.applied
+    assert_preserved(bundle, original, caches)
+
+
+@pytest.mark.parametrize("rotation", [b"<!-- different asset token -->", b"different live data"])
+def test_reviewed_apply_revalidates_exact_captured_bytes_without_network(isolated_bundle, rotation):
+    bundle, original_path, original = pin_dashboard(isolated_bundle)
+    content = dashboard_html(bundle, ytd_share="2%")
+    session = dashboard_session(bundle, content)
+    review = updater.run_update(bundle, sources={TC}, session=session)
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    assert not review.errors and report["review_schema_version"] == 2
+    assert (review.report_path.parent / report["acquisitions"][0]["file"]).read_bytes() == content
+    assert original_path.read_bytes() == original
+    # Both presentation changes and new live observations are irrelevant to adoption
+    # of an already reviewed snapshot; this run must never query the publisher.
+    session.downloads = dashboard_session(bundle, content + rotation).downloads
+    session.calls.clear()
+    applied = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                 review_report=review.report_path)
+    assert not applied.errors and applied.applied
+    assert session.calls == []
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    source = current.sources.sources[TC]
+    target = resolve_input_path(current, "cache", source.adapter["cache_path"])
+    assert target.read_bytes() == content
+    assert source.adapter["expected_sha256"] == digest(content)
+    assert original_path.read_bytes() == original
+    applied_report = json.loads(applied.report_path.read_text(encoding="utf-8"))
+    assert (applied.report_path.parent / applied_report["acquisitions"][0]["file"]).read_bytes() == content
+
+
+@pytest.mark.parametrize("damage", ["missing_payload", "outside_path", "legacy_schema"])
+def test_reviewed_acquisition_damage_fails_without_network_or_publication(isolated_bundle, damage):
+    bundle, _target, _old = pin_dashboard(isolated_bundle)
+    session = dashboard_session(bundle, dashboard_html(bundle, ytd_share="2%"))
+    review = updater.run_update(bundle, sources={TC}, session=session)
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    if damage == "missing_payload":
+        (review.report_path.parent / report["acquisitions"][0]["file"]).unlink()
+    elif damage == "outside_path":
+        report["acquisitions"][0]["file"] = "../outside.bin"
+        report["review_fingerprint"] = updater._review_fingerprint(report)
+    else:
+        report["review_schema_version"] = 1
+        report["review_fingerprint"] = updater._review_fingerprint(report)
+    review.report_path.write_text(json.dumps(report), encoding="utf-8")
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    session.calls.clear()
+    result = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+                                review_report=review.report_path)
+    assert result.errors and not result.applied
+    assert not session.calls
     assert_preserved(bundle, original, caches)
 
 

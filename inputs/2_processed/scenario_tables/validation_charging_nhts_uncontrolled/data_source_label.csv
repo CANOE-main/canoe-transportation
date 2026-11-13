@@ -1,0 +1,27 @@
+source_id,notes
+T33,epa_omega_baseline: EPA OMEGA v2.5 LDV central baseline plug-in range/sales extract — legacy notebook market
+T24,dunsky_ev_charging_infrastructure: Electric Vehicle Charging Infrastructure for Canada
+T31,legacy_charging_profiles: Ontario RAMP-mobility LDV charging profiles — corrected survey/strategy runs
+T01,nrcan_ceud_transport_provincial: NRCan Comprehensive Energy Use Database Transportation Sector provincial tables
+T04,statcan_transport_tables: Statistics Canada transportation tables
+T39,epa_moves_heavy_truck_survival: Population and Activity of Onroad Vehicles in MOVES6
+T25,transport_canada_ev_dashboard: Transport Canada electric vehicle dashboard
+T03,ontario_ministry_transport_vehicle_population: Ontario Ministry of Transportation vehicle population data
+T19,canada_energy_policy_simulator: Canada Energy Policy Simulator
+T06,nlr_atb_transportation: 2024 Transportation Annual Technology Baseline
+T12,epri_us_regen_transportation: EPRI US-REGEN v2025 transportation assumptions
+T02,nrcan_ceud_transport_national: NRCan Comprehensive Energy Use Database Transportation Sector national tables
+T15,emrg_sfu_cims_model: CIMS Model—Canadian Integrated Modelling System
+T05,cer_canadas_energy_future: CER Canada's Energy Future
+T20,argonne_hdsam: Hydrogen Delivery Scenario Analysis Model
+T16,open_energy_outlook: Open Energy Outlook
+T08,nrcan_fuel_consumption_ratings: NRCan Fuel Consumption Ratings
+T17,argonne_rd_greet: R&D GREET 2025 Rev.1 Excel
+T21,fueleconomy_gov_vehicle_data: FuelEconomy.gov Find a Car vehicle data
+T40,transport_canada_izev: Transport Canada Incentives for Zero-Emission Vehicles (iZEV)
+T11,jgcri_gcam_motorcycle_inputs: JGCRI GCAM core UCD transportation data
+T13,faa_economic_values: FAA Economic Values for Investment and Regulatory Decisions
+T07,anl_autonomie_bean: ANL 2022 Autonomie and BEAN transportation analysis
+T26,pollution_probe_ev_charging_survey: 2024 Canadian EV Charging Experience Survey
+T27,nlr_alternative_fueling_infrastructure: Assessment of Alternative Fueling Infrastructure in the United States
+T30,iea_future_of_hydrogen: The Future of Hydrogen

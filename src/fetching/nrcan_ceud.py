@@ -485,8 +485,10 @@ def read_rating_csv(
 def normalize_rating_dataframe(
     raw: pd.DataFrame,
     request: FuelConsumptionRatingRequest,
+    *,
+    enforce_coverage: bool = True,
 ) -> pd.DataFrame:
-    """Validate and source-normalize one Fuel Consumption Ratings resource."""
+    """Validate ratings; only explicit updater review may discover new coverage."""
     if raw.empty:
         raise ValueError(f"{request.component_key} contains no data rows")
 
@@ -520,7 +522,7 @@ def normalize_rating_dataframe(
     actual_model_years = tuple(
         sorted(normalized["Model year"].drop_duplicates().tolist())
     )
-    if actual_model_years != request.expected_model_years:
+    if enforce_coverage and actual_model_years != request.expected_model_years:
         raise ValueError(
             f"{request.component_key} covers model years {actual_model_years}; "
             f"expected {request.expected_model_years}"

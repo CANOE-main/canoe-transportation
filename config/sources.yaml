@@ -2017,6 +2017,9 @@ sources:
       Provincial charger counts take precedence over national aggregates. Retain
       national inconsistencies in update notes and normalized warnings; preserve
       published L2/DCFC counts and use their normalized mix for provincial totals.
+        Registered presentation-token rotations preserve the HTML content identity
+        without re-pinning. Reviewed apply revalidates the report's retained downloads
+        offline; retain its complete audit directory until adoption.
     adapter:
       access:
         method: https
@@ -2024,6 +2027,10 @@ sources:
       cache_path: "assorted_sources/transport_canada_ev_dashboard_2026_q1-b100cabf366aab32.html"
       expected_sha256: "b100cabf366aab321e620ef74db548a89c65b0e1783419647b536ba7b99b1e48"
       expected_bytes: 96814
+      # Exact HTML excluding bare six-character CSS/JS cache tokens and the
+      # generated 64-hex DOM class fingerprint on the identified navigation div.
+      # Actual downloaded bytes and SHA-256 remain in acquisition provenance.
+      expected_content_sha256: "509c00ca0620993d0e88ad1d43c7fa4796d66c03cf0da277d60b2ea0e76e2387"
     components:
       medium_heavy_ev_market_share:
         database_note: "Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet."
@@ -2215,55 +2222,240 @@ sources:
 
   legacy_charging_profiles:
     source_id: T31
-    title: "Legacy Ontario RAMP-mobility LDV charging profiles — legacy, pending update"
+    title: Ontario RAMP-mobility LDV charging profiles — corrected survey/strategy runs
     status: active
     source_type: external_model
     file_type: csv
-    version: "Frozen Ontario 2018 v5 chargers AER-shares"
-    citation: "Legacy CANOE Ontario RAMP-mobility simulations with NHTS 2022 or TTS 2016 travel inputs, Ontario 2018 weather and inherited fleet/range composition; https://github.com/RAMP-project/RAMP-mobility"
-    units: "Aggregate charging power (kW), minute samples; hourly mean kW / annual hourly peak kW gives a dimensionless factor."
-    database_note: "Frozen Ontario RAMP-mobility charging simulations using 2018 weather and embedded fleet, range and charger composition; normalized load shapes, not measured charger utilization."
-    database_precedence: [capacity_factor_tech]
-    # dq_time: Frozen NHTS 2022 or TTS 2016 travel with 2018 weather proxies later vintages.
-    data_quality: {dq_cred: 3, dq_geog: 2, dq_struc: 3, dq_tech: 3, dq_time: 3}
-    validation_rule: "Verify immutable hashes/bytes, UTC minute index, nonnegative finite complete Toronto-year samples and hourly energy/peak conservation."
-    refresh_notes: "Legacy, pending update. Do not rerun simulations or rewrite registered files. Range composition is already embedded; never multiply by new range shares. Upstream post_process.py (blob 6669c3d6633f5938b50a463d8b0f7f385491cf8a) plots charging output in kW and resamples by hourly mean; the local plotting notebook's kWh label is inconsistent with power samples. Native integrals use kW*hours; no absolute fleet rescaling."
+    version: ontario-2018-corrected-soc-weather-v1
+    citation: CANOE Ontario RAMP-mobility simulations, paper-overnight batch (2026-11-13), seed 42; NHTS 2022
+      or TTS 2016 aggregate travel inputs and 2018 weather; https://github.com/RAMP-project/RAMP-mobility
+    units: Aggregate charging power (kW), minute samples; CANOE takes hourly means, peak-normalizes and rescales
+      the full-year mean to reviewed charger utilization.
+    database_note: Ontario RAMP-mobility BEV simulations (2018 Toronto calendar; seed 42), corrected for charging-loss/SOC
+      accounting and UTC weather alignment. Inputs combine survey driving patterns, Ontario driver/vehicle shares,
+      legacy sales-weighted battery capacities, population-weighted Renewables Ninja weather and inherited charger
+      access/power. Embedded fleet/range/charger composition proxies shared LDV charging across selected regions;
+      CANOE rescales hourly shapes to reviewed charger utilization.
+    database_precedence:
+    - capacity_factor_tech
+    data_quality:
+      dq_cred: 3
+      dq_geog: 2
+      dq_struc: 3
+      dq_tech: 3
+      dq_time: 3
+    validation_rule: Authenticate profile and run metadata hashes/bytes/model revision and successful diagnostics;
+      require complete finite nonnegative Toronto-year minute samples and conserved hourly energy. Catalogue
+      inputs/model hashes are retained in inputs_manifest.json.
+    refresh_notes: Production defaults use these six registered corrected outputs; do not rerun or rewrite them
+      during ETL. Aggregate input databases, run metadata, model source snapshot and hashes are catalogued under
+      inputs/0_external_models/ramp_mobility. Restricted raw TTS records are not included. Legacy v5 files remain
+      comparison evidence, not production inputs. No range-share reweighting, absolute fleet rescaling or hidden
+      network acquisition.
     components:
-      nhts:
-        database_note: "Ontario charging simulation with NHTS 2022 travel inputs and 2018 weather; inherited BEV fleet and charger mix also proxy other regions and shared LDV charging."
-        label: "Ontario NHTS 2022 travel / 2018 weather charging shape"
-        short_name: legacy_ldv_charging_nhts
-        inputs: [timestamp_utc, aggregate_charging_demand]
-        applies_to: [ldv_charging]
-        produces: [capacity_factor_tech]
-        parameter_modules: [ldv_charging_profiles]
-        notes: "BEV fleet shape; AER shares and charger mix embedded. Ontario shape proxies every selected region and both shared LDV chargers, including PHEV/motorcycle charging."
+      nhts_uncontrolled:
+        database_note: Unweighted filtered NHTS 2022 household-driver travel; midpoint trip-occurrence distributions
+          and mean distance among observed trip-taking persons (zero-trip people excluded). Uncontrolled charging
+          starts at parking arrival when SOC/access gates permit. Low SOC/insufficient next-trip energy permits
+          emergency charging outside preferred windows. Initial/target SOC 80%, charging efficiency 90%; 2,499
+          rounded drivers.
+        label: Ontario NHTS2022 / uncontrolled charging / 2018 weather
+        short_name: ramp_ldv_nhts_uncontrolled
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
         adapter:
-          registered_path: "legacy_backend/charging_profiles[deprecated]/ramp_mobility/results/ON-2022NHTS_2018_v5_chargers_AER-shares.csv"
-          expected_sha256: a5e4f924d72c409f38e29c0b84d20390b5b1a180ae63956bf4f902a59a78aac1
-          expected_bytes: 23771774
+          registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/uncontrolled/Charging Profiles.csv
+          expected_sha256: eb2042927963de09f9b46237d73a566e798472da503563eaa26ddf716340167f
+          expected_bytes: 23767149
           expected_rows: 527040
           native_interval_seconds: 60
           calendar_year: 2018
           calendar_timezone: America/Toronto
-      tts:
-        database_note: "Ontario charging simulation with TTS 2016 weekday travel and 2018 weather; no weekend reconstruction, and fleet and charger composition remain embedded."
-        data_quality: {dq_struc: 4}
-        label: "Ontario TTS 2016 weekday travel / 2018 weather charging shape"
-        short_name: legacy_ldv_charging_tts
-        inputs: [timestamp_utc, aggregate_charging_demand]
-        applies_to: [ldv_charging]
-        produces: [capacity_factor_tech]
-        parameter_modules: [ldv_charging_profiles]
-        notes: "Weekday-only TTS simulation; inherited AER shares and charger mix. No weekend reconstruction or new-market reweighting."
+          metadata_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/uncontrolled/run_metadata.json
+          metadata_sha256: 5e113328dacdb042113e3852bcd2337d80e1f5a0147264536c28c43ea353779e
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+      nhts_night:
+        database_note: Unweighted filtered NHTS 2022 household-driver travel; midpoint trip-occurrence distributions
+          and mean distance among observed trip-taking persons (zero-trip people excluded). Night charging preferentially
+          uses 22:00–07:00 Toronto time, spreading energy over eligible parked minutes. Low SOC/insufficient
+          next-trip energy permits emergency charging outside preferred windows. Initial/target SOC 80%, charging
+          efficiency 90%; 2,499 rounded drivers.
+        label: Ontario NHTS2022 / night charging / 2018 weather
+        short_name: ramp_ldv_nhts_night
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
         adapter:
-          registered_path: "legacy_backend/charging_profiles[deprecated]/ramp_mobility/results/ON-2016TTS_no-we_2018_v5_chargers_AER-shares.csv"
-          expected_sha256: 649175f04bc52af0c9920a08adc03934edc42aa6d876867d884dbd0575e3b32a
-          expected_bytes: 23829116
+          registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/night/Charging Profiles.csv
+          expected_sha256: dacb80807cf4b4b3ccf3c0b67f2010b0c7d0779486b828fb6e953e495f64d262
+          expected_bytes: 22105785
           expected_rows: 527040
           native_interval_seconds: 60
           calendar_year: 2018
           calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/night/run_metadata.json
+          metadata_sha256: 40014ea734f7f66468c5070d778c6f38759183007f1f1cd50793118480f66153
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+      nhts_day:
+        database_note: Unweighted filtered NHTS 2022 household-driver travel; midpoint trip-occurrence distributions
+          and mean distance among observed trip-taking persons (zero-trip people excluded). Day charging preferentially
+          uses 07:00–18:00 Toronto time, spreading energy over eligible parked minutes. Low SOC/insufficient
+          next-trip energy permits emergency charging outside preferred windows. Initial/target SOC 80%, charging
+          efficiency 90%; 2,499 rounded drivers.
+        label: Ontario NHTS2022 / day charging / 2018 weather
+        short_name: ramp_ldv_nhts_day
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
+        adapter:
+          registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/day/Charging Profiles.csv
+          expected_sha256: 1ead41446181abbcfcc30a6c3b3884097f42a17bc6a1b4e02f02c9c2841c999f
+          expected_bytes: 20639584
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/day/run_metadata.json
+          metadata_sha256: 7acd06c479bbee1ba154354bdaeb17fa2b162bb63d223938d71a0da1b41f3f8e
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+      tts_uncontrolled:
+        database_note: Ontario GGH TTS 2016 aggregate weekday travel, repeated on weekends because weekend observations
+          are unavailable; legacy weekend activity probabilities retained. Uncontrolled charging starts at parking
+          arrival when SOC/access gates permit. Low SOC/insufficient next-trip energy permits emergency charging
+          outside preferred windows. Initial/target SOC 80%, charging efficiency 90%; 2,499 rounded drivers.
+        label: Ontario TTS2016 / uncontrolled charging / 2018 weather
+        short_name: ramp_ldv_tts_uncontrolled
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
+        adapter:
+          registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/uncontrolled/Charging Profiles.csv
+          expected_sha256: b4b28c1953352059b49bf0b9d731fe31adefae03196b7bbaaf1e558803b6db50
+          expected_bytes: 23808100
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/TTS2016/uncontrolled/run_metadata.json
+          metadata_sha256: 45bf57cc77b0fc095f4ba05845dda83025f40a007eef66603534384b0e1fe7c5
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+        data_quality:
+          dq_struc: 4
+      tts_night:
+        database_note: Ontario GGH TTS 2016 aggregate weekday travel, repeated on weekends because weekend observations
+          are unavailable; legacy weekend activity probabilities retained. Night charging preferentially uses
+          22:00–07:00 Toronto time, spreading energy over eligible parked minutes. Low SOC/insufficient next-trip
+          energy permits emergency charging outside preferred windows. Initial/target SOC 80%, charging efficiency
+          90%; 2,499 rounded drivers.
+        label: Ontario TTS2016 / night charging / 2018 weather
+        short_name: ramp_ldv_tts_night
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
+        adapter:
+          registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/night/Charging Profiles.csv
+          expected_sha256: 292ac139ce8a90ab1b2a412e65fe249142c8b55690f6985bf20242cba16acf88
+          expected_bytes: 21162151
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/TTS2016/night/run_metadata.json
+          metadata_sha256: b19161ce81066d139672e9058cd2fc00594f175a7684668a5994f94e21c1b9d5
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+        data_quality:
+          dq_struc: 4
+      tts_day:
+        database_note: Ontario GGH TTS 2016 aggregate weekday travel, repeated on weekends because weekend observations
+          are unavailable; legacy weekend activity probabilities retained. Day charging preferentially uses 07:00–18:00
+          Toronto time, spreading energy over eligible parked minutes. Low SOC/insufficient next-trip energy
+          permits emergency charging outside preferred windows. Initial/target SOC 80%, charging efficiency 90%;
+          2,499 rounded drivers.
+        label: Ontario TTS2016 / day charging / 2018 weather
+        short_name: ramp_ldv_tts_day
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
+        adapter:
+          registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/day/Charging Profiles.csv
+          expected_sha256: 7e6bf13e8878cd6e89b77619e3807c4da0f56fd26d0dafa8dcf32eba2f08a4e7
+          expected_bytes: 20115188
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/TTS2016/day/run_metadata.json
+          metadata_sha256: b2de23ae7b172d5edea1f0dd2eedc135e24ff3cf001f4d09c2eed14c5dea4256
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+        data_quality:
+          dq_struc: 4
 
   epa_omega_baseline:
     source_id: T33

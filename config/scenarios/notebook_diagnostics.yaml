@@ -88,6 +88,7 @@ ev_chargers:
 
 charging_profiles:
   travel_behavior_source: none
+  charging_strategy: uncontrolled  # uncontrolled | night | day; Toronto local clock
   time_mapping: null
 
 BEV_PHEV_range_representation:

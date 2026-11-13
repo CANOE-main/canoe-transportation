@@ -389,6 +389,7 @@ class ScenarioEvChargers(MappingModel):
 
 class ScenarioChargingProfiles(MappingModel):
     travel_behavior_source: Literal["none", "nhts", "tts"]
+    charging_strategy: Literal["uncontrolled", "night", "day"] = "uncontrolled"
     # An explicit mapping can project physical hours onto inherited time slices.
     time_mapping: str | None = Field(min_length=1)
 

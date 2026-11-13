@@ -1,0 +1,98 @@
+# Matched Ontario charging experiment; same default settings except survey/strategy and geography.
+BEV_PHEV_range_representation:
+  mode: new_capacity_shares
+aggregation_sources:
+  heavy_truck_haul:
+    'ON': statcan_transport_tables
+    other: statcan_transport_tables
+  ldv:
+    'ON': ontario_ministry_transport_vehicle_population
+    other: ontario_ministry_transport_vehicle_population
+  medium_trucks:
+    'ON': ontario_ministry_transport_vehicle_population
+    other: wards_intelligence_sales_shares
+  stock_age:
+    'ON': ontario_ministry_transport_vehicle_population
+    other: ontario_ministry_transport_vehicle_population
+charging_profiles:
+  charging_strategy: uncontrolled
+  time_mapping: null
+  travel_behavior_source: nhts
+comparison:
+  absolute_tolerance: 1.0e-09
+  include_provenance: false
+  mode: none
+  reference_sqlite: null
+  relative_tolerance: 1.0e-06
+costs:
+  atb_trajectory: Mid
+demand:
+  cer_scenario: Current Measures
+  future_car_demand: GDP-indexed
+economics:
+  cer_scenario: Current Measures
+  cost_reference_currency: CAD
+  cost_reference_year: 2020
+  default_loan_rate: 0.03
+  global_discount_rate: 0.03
+efficiencies:
+  atb_trajectory: Mid
+  ceud_energy_calibration: false
+embodied_emissions: true
+embodied_materials: conventional
+ev_chargers:
+  ld_evs_per_port: 1.0
+  mhd_evs_per_port: 1.5
+existing_capacity:
+  cleanup_tolerance: 0.001
+  vehicle_population_year: 2025
+geography:
+  regions:
+  - 'ON'
+lifetimes:
+  road_lifetime_survival_source: moves
+  survival_curve_max_age: null
+  survival_curves: true
+  tail_derivation: constant_retirement
+  tail_survival_threshold: 0.005
+outputs:
+  setup_log: outputs/logs/setup_validation_charging_nhts_uncontrolled.json
+  sqlite_name: validation_charging_nhts_uncontrolled.sqlite
+  validation_report: outputs/validation/validation_charging_nhts_uncontrolled.json
+periods:
+  base_year: 2025
+  existing:
+  - 2000
+  - 2005
+  - 2010
+  - 2015
+  - 2020
+  model:
+  - 2025
+  - 2030
+  - 2035
+  - 2040
+  - 2045
+  period_mode: prospective
+  step: 5
+road_utilization:
+  vkt_schedules: false
+row_note_overrides:
+  technology: {}
+scenario:
+  description: Ontario corrected RAMP NHTS uncontrolled charging export / scenario
+    comparison
+  name: validation_charging_nhts_uncontrolled
+  purpose: validation
+sources:
+  nrcan_ceud_beyond_observed: constant
+  selections:
+    cer_canadas_energy_future:
+      edition: 2026
+    nrcan_ceud_transport_national:
+      year: 2023
+    nrcan_ceud_transport_provincial:
+      year: 2023
+    transport_canada_ev_dashboard:
+      year: 2026
+version: 3

@@ -1,4 +1,7 @@
-"""Validate and normalize registered legacy profiles without acquiring or simulating."""
+"""Validate and normalize registered RAMP profiles without acquiring or simulating.
+
+The established source key/T31 identity is retained across the corrected catalogue.
+"""
 
 from dataclasses import dataclass
 import json
@@ -23,6 +26,8 @@ from utils import (
 
 SOURCE = "legacy_charging_profiles"
 LOGGER = logging.getLogger(__name__)
+STRATEGY_LABELS = {"uncontrolled": "Uncontrolled", "night": "Night Charge", "day": "Day Charge"}
+SURVEY_LABELS = {"nhts": "NHTS2022", "tts": "TTS2016"}
 
 
 class LegacyProfileRequest(BaseModel):
@@ -34,11 +39,16 @@ class LegacyProfileRequest(BaseModel):
     native_interval_seconds: Literal[60]
     calendar_year: int = Field(ge=1900, le=2100)
     calendar_timezone: str
+    metadata_path: Path
+    metadata_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    expected_model_revision: str = Field(min_length=1)
+    survey: Literal["nhts", "tts"]
+    strategy: Literal["uncontrolled", "night", "day"]
 
     @model_validator(mode="after")
     def validate_location_and_calendar(self):
-        if not self.registered_path.is_absolute():
-            raise ValueError("Registered charging path must be absolute")
+        if not self.registered_path.is_absolute() or not self.metadata_path.is_absolute():
+            raise ValueError("Registered charging and metadata paths must be absolute")
         ZoneInfo(self.calendar_timezone)
         return self
 
@@ -50,22 +60,57 @@ class ProfileEvidence:
     source_digest: str
 
 
-def build_request(bundle: ConfigBundle, profile: str) -> LegacyProfileRequest:
+def profile_component(bundle: ConfigBundle, profile: str, strategy: str | None = None) -> str:
+    selected = strategy if strategy is not None else bundle.scenario.charging_profiles.charging_strategy
+    if profile not in SURVEY_LABELS or selected not in STRATEGY_LABELS:
+        raise ValueError("RAMP profile requires a registered survey and charging strategy")
+    return f"{profile}_{selected}"
+
+
+def build_request(bundle: ConfigBundle, profile: str, *, strategy: str | None = None) -> LegacyProfileRequest:
     source = bundle.sources.sources[SOURCE]
     if source.status != "active":
-        raise ValueError("Legacy charging profile source is inactive")
-    payload = dict(source.component(profile).adapter)
+        raise ValueError("RAMP charging profile source is inactive")
+    component = profile_component(bundle, profile, strategy)
+    payload = dict(source.component(component).adapter)
     payload["registered_path"] = resolve_repo_path(
         bundle.repo_root, payload["registered_path"]
     )
+    payload["metadata_path"] = resolve_repo_path(bundle.repo_root, payload["metadata_path"])
+    payload["survey"] = profile
+    payload["strategy"] = component.removeprefix(f"{profile}_")
     return LegacyProfileRequest.model_validate(payload)
+
+
+def validate_run_metadata(request: LegacyProfileRequest) -> dict:
+    """Require the reviewed run to identify the registered profile and selected case."""
+    if file_sha256(request.metadata_path) != request.metadata_sha256:
+        raise ValueError("Registered RAMP run metadata differs from its frozen snapshot")
+    metadata = json.loads(request.metadata_path.read_text(encoding="utf-8"))
+    preflight = metadata.get("preflight", {})
+    validation = metadata.get("output_validation", {})
+    if (
+        metadata.get("status") != "complete"
+        or metadata.get("quality_status") != "passed"
+        or metadata.get("diagnostics", {}).get("negative_soc_users") != 0
+        or metadata.get("model_revision") != request.expected_model_revision
+        or metadata.get("charging_profile_sha256") != request.expected_sha256
+        or preflight.get("survey") != SURVEY_LABELS[request.survey]
+        or preflight.get("mode") != STRATEGY_LABELS[request.strategy]
+        or preflight.get("year") != request.calendar_year
+        or validation.get("calendar_year") != request.calendar_year
+        or validation.get("calendar_timezone") != request.calendar_timezone
+    ):
+        raise ValueError("RAMP run metadata does not match the selected reviewed profile")
+    return metadata
 
 
 def required_inputs(bundle: ConfigBundle) -> list[Path]:
     selection = bundle.scenario.charging_profiles
     if selection.travel_behavior_source == "none":
         return []
-    paths = [build_request(bundle, selection.travel_behavior_source).registered_path]
+    request = build_request(bundle, selection.travel_behavior_source)
+    paths = [request.registered_path, request.metadata_path]
     if selection.time_mapping is not None:
         paths.append(resolve_repo_path(bundle.repo_root, selection.time_mapping))
     return paths
@@ -162,8 +207,8 @@ def transform_hourly(
         "market_share_reweighting": False,
         "clustered_legacy_parity": "not_comparable_without_the_existing_cluster_mapping",
         "limitations": [
-            "Frozen inherited range/fleet/charger composition; no new-market reweighting",
-            "TTS contains weekday-only travel behavior",
+            "Frozen run range/fleet/charger composition; no new-market reweighting",
+            "Survey-specific assumptions are retained in the registered run metadata",
         ],
     }
     return ProfileEvidence(output, audit, "")
@@ -180,6 +225,7 @@ def normalize_profile(bundle: ConfigBundle, profile: str) -> ProfileEvidence:
         raise ValueError(
             f"Registered {profile} charging file differs from its frozen snapshot"
         )
+    metadata = validate_run_metadata(request)
     raw = pd.read_csv(path, index_col=0)
     if len(raw) != request.expected_rows:
         raise ValueError("Charging source row count differs from registration")
@@ -202,16 +248,21 @@ def normalize_profile(bundle: ConfigBundle, profile: str) -> ProfileEvidence:
     audit = {
         **evidence.audit,
         "profile": profile,
+        "charging_strategy": request.strategy,
+        "source_component": profile_component(bundle, profile),
         "sha256": request.expected_sha256,
+        "metadata_sha256": request.metadata_sha256,
+        "model_revision": metadata["model_revision"],
+        "simulation_seed": metadata["preflight"]["seed"],
         "source_units": bundle.sources.sources[SOURCE].units,
     }
     directory = resolve_artifact_path(bundle, "charging_profiles_interim")
     write_dataframe_atomic(
-        evidence.hourly, directory / rules["hourly_file"].format(profile=profile)
+        evidence.hourly, directory / rules["hourly_file"].format(profile=profile, strategy=request.strategy)
     )
     write_text_atomic(
         json.dumps(audit, indent=2, sort_keys=True) + "\n",
-        directory / rules["manifest_file"].format(profile=profile),
+        directory / rules["manifest_file"].format(profile=profile, strategy=request.strategy),
     )
     LOGGER.info(
         "Normalized %s charging: %s minute rows -> %s hours; peak=%.2f integral=%.2f; excluded=%s (nulls=%s)",
@@ -224,6 +275,6 @@ def normalize_profile(bundle: ConfigBundle, profile: str) -> ProfileEvidence:
         audit["excluded_nulls_outside_local_year"],
     )
     LOGGER.warning(
-        "Legacy charging composition is already embedded; do not apply new range shares to this profile"
+        "RAMP charging composition is already embedded; do not apply new range shares to this profile"
     )
     return ProfileEvidence(evidence.hourly, audit, request.expected_sha256)

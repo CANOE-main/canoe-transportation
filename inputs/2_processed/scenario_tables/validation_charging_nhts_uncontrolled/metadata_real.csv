@@ -1,0 +1,3 @@
+element,value,notes
+global_discount_rate,0.03,Discount Rate for future costs
+default_loan_rate,0.03,Default Loan Rate if not specified in loan_rate table

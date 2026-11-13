@@ -1,0 +1,738 @@
+{
+  "batch": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\batches\\paper-overnight\\batch_metadata.json",
+  "batch_sha256": "2139d7b22956e015ff4733ac470da213b10379c9528cce2e9e8e7b28e8532624",
+  "batch_status": "complete",
+  "method": {
+    "timezone": "America/Toronto",
+    "year": 2018,
+    "minute_samples": 525600,
+    "peak_smoothing_minutes": 15,
+    "lag_search_minutes": [
+      -360,
+      360
+    ],
+    "lag_convention": "corr(new, roll(legacy, lag)); positive means new later",
+    "daytype": "calendar weekday/weekend, not the holiday-adjusted model day type",
+    "scope": "No simulations or profile mutations; no legacy day/night counterparts exist in supplied result folder"
+  },
+  "sources": {
+    "NHTS2022/uncontrolled": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\reruns\\NHTS2022\\uncontrolled\\2018\\seed-42-paper-overnight\\North America\\CA\\Charging Profiles.csv",
+      "sha256": "eb2042927963de09f9b46237d73a566e798472da503563eaa26ddf716340167f"
+    },
+    "NHTS2022/night": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\reruns\\NHTS2022\\night\\2018\\seed-42-paper-overnight\\North America\\CA\\Charging Profiles.csv",
+      "sha256": "dacb80807cf4b4b3ccf3c0b67f2010b0c7d0779486b828fb6e953e495f64d262"
+    },
+    "NHTS2022/day": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\reruns\\NHTS2022\\day\\2018\\seed-42-paper-overnight\\North America\\CA\\Charging Profiles.csv",
+      "sha256": "1ead41446181abbcfcc30a6c3b3884097f42a17bc6a1b4e02f02c9c2841c999f"
+    },
+    "TTS2016/uncontrolled": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\reruns\\TTS2016\\uncontrolled\\2018\\seed-42-paper-overnight\\North America\\CA\\Charging Profiles.csv",
+      "sha256": "b4b28c1953352059b49bf0b9d731fe31adefae03196b7bbaaf1e558803b6db50"
+    },
+    "TTS2016/night": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\reruns\\TTS2016\\night\\2018\\seed-42-paper-overnight\\North America\\CA\\Charging Profiles.csv",
+      "sha256": "292ac139ce8a90ab1b2a412e65fe249142c8b55690f6985bf20242cba16acf88"
+    },
+    "TTS2016/day": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\reruns\\TTS2016\\day\\2018\\seed-42-paper-overnight\\North America\\CA\\Charging Profiles.csv",
+      "sha256": "7e6bf13e8878cd6e89b77619e3807c4da0f56fd26d0dafa8dcf32eba2f08a4e7"
+    },
+    "NHTS2022/legacy": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\charging_profiles[deprecated]\\ramp_mobility\\results\\ON-2022NHTS_2018_v5_chargers_AER-shares.csv",
+      "sha256": "a5e4f924d72c409f38e29c0b84d20390b5b1a180ae63956bf4f902a59a78aac1"
+    },
+    "TTS2016/legacy": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\legacy_backend\\charging_profiles[deprecated]\\ramp_mobility\\results\\ON-2016TTS_no-we_2018_v5_chargers_AER-shares.csv",
+      "sha256": "649175f04bc52af0c9920a08adc03934edc42aa6d876867d884dbd0575e3b32a"
+    }
+  },
+  "quality": [
+    {
+      "survey": "NHTS2022",
+      "strategy": "uncontrolled",
+      "status": "complete",
+      "quality_status": "passed",
+      "returncode": 0,
+      "minute_samples": 525600,
+      "grid_energy_kwh": 5430342.011804913,
+      "minute_peak_kw": 1334.076290147172,
+      "negative_soc_users": 0,
+      "scratch_absent": true,
+      "runtime_minutes": 30.971100083333333,
+      "outside_window_energy_pct": null,
+      "battery_mobility_kwh": 4883948.111928668,
+      "grid_to_mobility_energy_ratio": 1.1118754514491505,
+      "mobility_sha256": "6516eec3e09197ceb1fe80bccc4c06756165cf2b41c53a244a48fcbca3870f53",
+      "usage_sha256": "4ace1387ca36eeb676489d6c0198918416e33845bb2036e4cdbd8454bb74cd2d"
+    },
+    {
+      "survey": "NHTS2022",
+      "strategy": "night",
+      "status": "complete",
+      "quality_status": "passed",
+      "returncode": 0,
+      "minute_samples": 525600,
+      "grid_energy_kwh": 5431605.743667949,
+      "minute_peak_kw": 2669.1122382671406,
+      "negative_soc_users": 0,
+      "scratch_absent": true,
+      "runtime_minutes": 43.5478224,
+      "outside_window_energy_pct": 2.9133743065607476,
+      "battery_mobility_kwh": 4883948.111928668,
+      "grid_to_mobility_energy_ratio": 1.1121342035558628,
+      "mobility_sha256": "6516eec3e09197ceb1fe80bccc4c06756165cf2b41c53a244a48fcbca3870f53",
+      "usage_sha256": "4ace1387ca36eeb676489d6c0198918416e33845bb2036e4cdbd8454bb74cd2d"
+    },
+    {
+      "survey": "NHTS2022",
+      "strategy": "day",
+      "status": "complete",
+      "quality_status": "passed",
+      "returncode": 0,
+      "minute_samples": 525600,
+      "grid_energy_kwh": 5431342.469830257,
+      "minute_peak_kw": 2635.526058639449,
+      "negative_soc_users": 0,
+      "scratch_absent": true,
+      "runtime_minutes": 55.65993515,
+      "outside_window_energy_pct": 0.24916637294422808,
+      "battery_mobility_kwh": 4883948.111928668,
+      "grid_to_mobility_energy_ratio": 1.1120802976109883,
+      "mobility_sha256": "6516eec3e09197ceb1fe80bccc4c06756165cf2b41c53a244a48fcbca3870f53",
+      "usage_sha256": "4ace1387ca36eeb676489d6c0198918416e33845bb2036e4cdbd8454bb74cd2d"
+    },
+    {
+      "survey": "TTS2016",
+      "strategy": "uncontrolled",
+      "status": "complete",
+      "quality_status": "passed",
+      "returncode": 0,
+      "minute_samples": 525600,
+      "grid_energy_kwh": 4515859.705165718,
+      "minute_peak_kw": 1298.2065257094994,
+      "negative_soc_users": 0,
+      "scratch_absent": true,
+      "runtime_minutes": 27.80757476666667,
+      "outside_window_energy_pct": null,
+      "battery_mobility_kwh": 4059384.1177225206,
+      "grid_to_mobility_energy_ratio": 1.1124494687384496,
+      "mobility_sha256": "e041eaf58de2da0302b725d556d49bb4014346e55c3f038869e8cd0a244bd995",
+      "usage_sha256": "99cae7c17915df7e06d42c3a72b1447d877f7ba24b1fed03622e15adfed573cf"
+    },
+    {
+      "survey": "TTS2016",
+      "strategy": "night",
+      "status": "complete",
+      "quality_status": "passed",
+      "returncode": 0,
+      "minute_samples": 525600,
+      "grid_energy_kwh": 4517739.525508547,
+      "minute_peak_kw": 2461.3096349487787,
+      "negative_soc_users": 0,
+      "scratch_absent": true,
+      "runtime_minutes": 40.391662933333336,
+      "outside_window_energy_pct": 1.4711298337731713,
+      "battery_mobility_kwh": 4059384.1177225206,
+      "grid_to_mobility_energy_ratio": 1.1129125489221214,
+      "mobility_sha256": "e041eaf58de2da0302b725d556d49bb4014346e55c3f038869e8cd0a244bd995",
+      "usage_sha256": "99cae7c17915df7e06d42c3a72b1447d877f7ba24b1fed03622e15adfed573cf"
+    },
+    {
+      "survey": "TTS2016",
+      "strategy": "day",
+      "status": "complete",
+      "quality_status": "passed",
+      "returncode": 0,
+      "minute_samples": 525600,
+      "grid_energy_kwh": 4515797.262436295,
+      "minute_peak_kw": 2396.392675285784,
+      "negative_soc_users": 0,
+      "scratch_absent": true,
+      "runtime_minutes": 51.83306376666667,
+      "outside_window_energy_pct": 0.11112954390887832,
+      "battery_mobility_kwh": 4059384.1177225206,
+      "grid_to_mobility_energy_ratio": 1.1124340864224105,
+      "mobility_sha256": "e041eaf58de2da0302b725d556d49bb4014346e55c3f038869e8cd0a244bd995",
+      "usage_sha256": "99cae7c17915df7e06d42c3a72b1447d877f7ba24b1fed03622e15adfed573cf"
+    }
+  ],
+  "paired_mobility": {
+    "NHTS2022": {
+      "same_mobility_bytes": true,
+      "same_usage_bytes": true,
+      "cross_strategy_energy_spread_pct": 0.023271680868140878
+    },
+    "TTS2016": {
+      "same_mobility_bytes": true,
+      "same_usage_bytes": true,
+      "cross_strategy_energy_spread_pct": 0.04300981870695646
+    }
+  },
+  "uncontrolled": {
+    "NHTS2022": {
+      "all": {
+        "observations": 525600,
+        "hourly_shape_correlation": 0.9985751162217847,
+        "minute_shape_correlation": 0.9985078549200903,
+        "smoothed_zero_lag_correlation": 0.9985418391104739,
+        "best_lag_minutes_new_later_positive": 0,
+        "best_lag_correlation": 0.9985418391104739,
+        "unit_mean_shape_rmse_pct": 2.037127266113971,
+        "unit_mean_shape_max_abs_difference_pct": 3.819872740542818,
+        "timezone_shift_correlations": {
+          "-300": -0.2810141478294619,
+          "-240": -0.03950695344185272,
+          "240": -0.07599239607740908,
+          "300": -0.33324172182534295
+        },
+        "morning_legacy": {
+          "minute": 574,
+          "time": "09:34",
+          "power_kw": 708.0782268100828,
+          "at_search_window_edge": false
+        },
+        "morning_new": {
+          "minute": 591,
+          "time": "09:51",
+          "power_kw": 796.2607744201142,
+          "at_search_window_edge": false
+        },
+        "evening_legacy": {
+          "minute": 1169,
+          "time": "19:29",
+          "power_kw": 786.5617298438307,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1167,
+          "time": "19:27",
+          "power_kw": 879.4430926289227,
+          "at_search_window_edge": false
+        },
+        "whole_day_legacy": {
+          "minute": 1169,
+          "time": "19:29",
+          "power_kw": 786.5617298438307,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1167,
+          "time": "19:27",
+          "power_kw": 879.4430926289227,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": 1.4117364597866526,
+        "evening_centroid_shift_minutes": -0.013653098602162572
+      },
+      "weekdays": {
+        "observations": 375840,
+        "hourly_shape_correlation": 0.9983902354459886,
+        "minute_shape_correlation": 0.9983264222514063,
+        "smoothed_zero_lag_correlation": 0.9983555884658553,
+        "best_lag_minutes_new_later_positive": 1,
+        "best_lag_correlation": 0.9984047823624291,
+        "unit_mean_shape_rmse_pct": 3.0728636107039478,
+        "unit_mean_shape_max_abs_difference_pct": 4.986113538475956,
+        "timezone_shift_correlations": {
+          "-300": -0.41192631725384043,
+          "-240": -0.2044324674868594,
+          "240": -0.2127815839447353,
+          "300": -0.43784115978915444
+        },
+        "morning_legacy": {
+          "minute": 570,
+          "time": "09:30",
+          "power_kw": 858.6256693701176,
+          "at_search_window_edge": false
+        },
+        "morning_new": {
+          "minute": 588,
+          "time": "09:48",
+          "power_kw": 965.9015221056103,
+          "at_search_window_edge": false
+        },
+        "evening_legacy": {
+          "minute": 1165,
+          "time": "19:25",
+          "power_kw": 840.8750568961926,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1164,
+          "time": "19:24",
+          "power_kw": 941.1800149660234,
+          "at_search_window_edge": false
+        },
+        "whole_day_legacy": {
+          "minute": 570,
+          "time": "09:30",
+          "power_kw": 858.6256693701176,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 588,
+          "time": "09:48",
+          "power_kw": 965.9015221056103,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": 1.8881571592916089,
+        "evening_centroid_shift_minutes": 0.033519944149020375
+      },
+      "weekends": {
+        "observations": 149760,
+        "hourly_shape_correlation": 0.9994519874551947,
+        "minute_shape_correlation": 0.9991051074341603,
+        "smoothed_zero_lag_correlation": 0.9992327034831043,
+        "best_lag_minutes_new_later_positive": 0,
+        "best_lag_correlation": 0.9992327034831043,
+        "unit_mean_shape_rmse_pct": 1.3471383141624742,
+        "unit_mean_shape_max_abs_difference_pct": 3.9431161184114716,
+        "timezone_shift_correlations": {
+          "-300": 0.10228156654618104,
+          "-240": 0.29691849108317436,
+          "240": 0.330170281547913,
+          "300": 0.13807261778023436
+        },
+        "morning_legacy": {
+          "minute": 719,
+          "time": "11:59",
+          "power_kw": 460.4265037603023,
+          "at_search_window_edge": true
+        },
+        "morning_new": {
+          "minute": 719,
+          "time": "11:59",
+          "power_kw": 512.4445930605464,
+          "at_search_window_edge": true
+        },
+        "evening_legacy": {
+          "minute": 1259,
+          "time": "20:59",
+          "power_kw": 732.7286779721873,
+          "at_search_window_edge": true
+        },
+        "evening_new": {
+          "minute": 1259,
+          "time": "20:59",
+          "power_kw": 809.3811269551593,
+          "at_search_window_edge": true
+        },
+        "whole_day_legacy": {
+          "minute": 1409,
+          "time": "23:29",
+          "power_kw": 785.0027144225896,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1367,
+          "time": "22:47",
+          "power_kw": 878.9669177754536,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": -0.9282870983530529,
+        "evening_centroid_shift_minutes": -0.11494468267051161
+      },
+      "winter": {
+        "observations": 129600,
+        "hourly_shape_correlation": 0.9978093932329852,
+        "minute_shape_correlation": 0.9973932146441606,
+        "smoothed_zero_lag_correlation": 0.9975418865774183,
+        "best_lag_minutes_new_later_positive": 2,
+        "best_lag_correlation": 0.997726960136606,
+        "unit_mean_shape_rmse_pct": 2.27635223021124,
+        "unit_mean_shape_max_abs_difference_pct": 4.960817920081906,
+        "timezone_shift_correlations": {
+          "-300": -0.2836871721398716,
+          "-240": -0.04427602223856362,
+          "240": -0.04135705570208038,
+          "300": -0.3072608989426748
+        },
+        "morning_legacy": {
+          "minute": 590,
+          "time": "09:50",
+          "power_kw": 735.1747744350448,
+          "at_search_window_edge": false
+        },
+        "morning_new": {
+          "minute": 596,
+          "time": "09:56",
+          "power_kw": 828.861153976781,
+          "at_search_window_edge": false
+        },
+        "evening_legacy": {
+          "minute": 1171,
+          "time": "19:31",
+          "power_kw": 835.6688261083907,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1171,
+          "time": "19:31",
+          "power_kw": 914.312473095843,
+          "at_search_window_edge": false
+        },
+        "whole_day_legacy": {
+          "minute": 1171,
+          "time": "19:31",
+          "power_kw": 835.6688261083907,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1171,
+          "time": "19:31",
+          "power_kw": 914.312473095843,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": 1.6956941776136318,
+        "evening_centroid_shift_minutes": 1.0336175607426412
+      },
+      "summer": {
+        "observations": 132480,
+        "hourly_shape_correlation": 0.9932940071010975,
+        "minute_shape_correlation": 0.9929668458636285,
+        "smoothed_zero_lag_correlation": 0.9930978100627522,
+        "best_lag_minutes_new_later_positive": -2,
+        "best_lag_correlation": 0.9932576849530359,
+        "unit_mean_shape_rmse_pct": 3.6487289705818626,
+        "unit_mean_shape_max_abs_difference_pct": 6.8498455843795325,
+        "timezone_shift_correlations": {
+          "-300": -0.2533573197406853,
+          "-240": -0.016688735476672666,
+          "240": -0.11747332460588296,
+          "300": -0.3816838973901526
+        },
+        "morning_legacy": {
+          "minute": 571,
+          "time": "09:31",
+          "power_kw": 690.5278995828535,
+          "at_search_window_edge": false
+        },
+        "morning_new": {
+          "minute": 591,
+          "time": "09:51",
+          "power_kw": 801.9360585671176,
+          "at_search_window_edge": false
+        },
+        "evening_legacy": {
+          "minute": 1167,
+          "time": "19:27",
+          "power_kw": 777.3437468387147,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1165,
+          "time": "19:25",
+          "power_kw": 886.9603600364802,
+          "at_search_window_edge": false
+        },
+        "whole_day_legacy": {
+          "minute": 1167,
+          "time": "19:27",
+          "power_kw": 777.3437468387147,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1165,
+          "time": "19:25",
+          "power_kw": 886.9603600364802,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": 3.1548910832387946,
+        "evening_centroid_shift_minutes": -1.8396678660071757
+      },
+      "totals": {
+        "legacy_grid_kwh": 4911640.616091287,
+        "new_grid_kwh": 5430342.011804913,
+        "energy_change_pct": 10.560654499319044,
+        "efficiency_adjusted_new_to_legacy_ratio": 0.9950458904938714,
+        "legacy_minute_peak_kw": 1320.8841127550063,
+        "new_minute_peak_kw": 1334.076290147172,
+        "full_hourly_sequence_correlation": 0.9054672900980762
+      }
+    },
+    "TTS2016": {
+      "all": {
+        "observations": 525600,
+        "hourly_shape_correlation": 0.9986591905128168,
+        "minute_shape_correlation": 0.9985662685244975,
+        "smoothed_zero_lag_correlation": 0.9986042180281806,
+        "best_lag_minutes_new_later_positive": -2,
+        "best_lag_correlation": 0.9988383301024233,
+        "unit_mean_shape_rmse_pct": 1.9417520360037208,
+        "unit_mean_shape_max_abs_difference_pct": 3.9183136370592564,
+        "timezone_shift_correlations": {
+          "-300": -0.4981322637839301,
+          "-240": -0.23587977983796127,
+          "240": -0.29442053342453106,
+          "300": -0.5473901958602805
+        },
+        "morning_legacy": {
+          "minute": 577,
+          "time": "09:37",
+          "power_kw": 619.2713966825008,
+          "at_search_window_edge": false
+        },
+        "morning_new": {
+          "minute": 578,
+          "time": "09:38",
+          "power_kw": 699.6382516097744,
+          "at_search_window_edge": false
+        },
+        "evening_legacy": {
+          "minute": 1167,
+          "time": "19:27",
+          "power_kw": 675.7254959202276,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1169,
+          "time": "19:29",
+          "power_kw": 764.9427774069875,
+          "at_search_window_edge": false
+        },
+        "whole_day_legacy": {
+          "minute": 1167,
+          "time": "19:27",
+          "power_kw": 675.7254959202276,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1169,
+          "time": "19:29",
+          "power_kw": 764.9427774069875,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": 0.035473146642743814,
+        "evening_centroid_shift_minutes": -0.12058641575822548
+      },
+      "weekdays": {
+        "observations": 375840,
+        "hourly_shape_correlation": 0.9986487243248594,
+        "minute_shape_correlation": 0.9985804540671492,
+        "smoothed_zero_lag_correlation": 0.9986096409190759,
+        "best_lag_minutes_new_later_positive": -1,
+        "best_lag_correlation": 0.9986750968250226,
+        "unit_mean_shape_rmse_pct": 2.7522367738453046,
+        "unit_mean_shape_max_abs_difference_pct": 5.017207997348205,
+        "timezone_shift_correlations": {
+          "-300": -0.560794412537067,
+          "-240": -0.3302654593081273,
+          "240": -0.36465360352967824,
+          "300": -0.5873097448708032
+        },
+        "morning_legacy": {
+          "minute": 576,
+          "time": "09:36",
+          "power_kw": 760.7415634415506,
+          "at_search_window_edge": false
+        },
+        "morning_new": {
+          "minute": 578,
+          "time": "09:38",
+          "power_kw": 859.6029706775519,
+          "at_search_window_edge": false
+        },
+        "evening_legacy": {
+          "minute": 1161,
+          "time": "19:21",
+          "power_kw": 760.5949077783737,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1161,
+          "time": "19:21",
+          "power_kw": 864.3320378104768,
+          "at_search_window_edge": false
+        },
+        "whole_day_legacy": {
+          "minute": 576,
+          "time": "09:36",
+          "power_kw": 760.7415634415506,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1161,
+          "time": "19:21",
+          "power_kw": 864.3320378104768,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": 0.3260334356112935,
+        "evening_centroid_shift_minutes": -0.17582478841791271
+      },
+      "weekends": {
+        "observations": 149760,
+        "hourly_shape_correlation": 0.999210747075888,
+        "minute_shape_correlation": 0.9988075564803041,
+        "smoothed_zero_lag_correlation": 0.9989893051919674,
+        "best_lag_minutes_new_later_positive": 1,
+        "best_lag_correlation": 0.9990262632263708,
+        "unit_mean_shape_rmse_pct": 1.4527133067688227,
+        "unit_mean_shape_max_abs_difference_pct": 3.5225232201028023,
+        "timezone_shift_correlations": {
+          "-300": 0.0019942879156960454,
+          "-240": 0.21138966613875718,
+          "240": 0.24162206200551636,
+          "300": 0.034612890953128035
+        },
+        "morning_legacy": {
+          "minute": 719,
+          "time": "11:59",
+          "power_kw": 341.9212595491906,
+          "at_search_window_edge": true
+        },
+        "morning_new": {
+          "minute": 719,
+          "time": "11:59",
+          "power_kw": 385.3315311101514,
+          "at_search_window_edge": true
+        },
+        "evening_legacy": {
+          "minute": 1253,
+          "time": "20:53",
+          "power_kw": 545.9198166903217,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1259,
+          "time": "20:59",
+          "power_kw": 613.990486281791,
+          "at_search_window_edge": true
+        },
+        "whole_day_legacy": {
+          "minute": 1419,
+          "time": "23:39",
+          "power_kw": 667.2572870493083,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1418,
+          "time": "23:38",
+          "power_kw": 754.8173783485668,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": -1.3190218090128383,
+        "evening_centroid_shift_minutes": 0.06638716387897148
+      },
+      "winter": {
+        "observations": 129600,
+        "hourly_shape_correlation": 0.9969409020809229,
+        "minute_shape_correlation": 0.9964605085000446,
+        "smoothed_zero_lag_correlation": 0.9966309205371268,
+        "best_lag_minutes_new_later_positive": -3,
+        "best_lag_correlation": 0.9969488110978537,
+        "unit_mean_shape_rmse_pct": 2.58072940720458,
+        "unit_mean_shape_max_abs_difference_pct": 6.477311027049626,
+        "timezone_shift_correlations": {
+          "-300": -0.48181209729261254,
+          "-240": -0.22238497715963698,
+          "240": -0.2823586804595445,
+          "300": -0.538019513880929
+        },
+        "morning_legacy": {
+          "minute": 577,
+          "time": "09:37",
+          "power_kw": 641.0991742059845,
+          "at_search_window_edge": false
+        },
+        "morning_new": {
+          "minute": 573,
+          "time": "09:33",
+          "power_kw": 736.680204353444,
+          "at_search_window_edge": false
+        },
+        "evening_legacy": {
+          "minute": 1168,
+          "time": "19:28",
+          "power_kw": 717.3119184326645,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1169,
+          "time": "19:29",
+          "power_kw": 790.4495602557886,
+          "at_search_window_edge": false
+        },
+        "whole_day_legacy": {
+          "minute": 1168,
+          "time": "19:28",
+          "power_kw": 717.3119184326645,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1169,
+          "time": "19:29",
+          "power_kw": 790.4495602557886,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": -0.8438589880181553,
+        "evening_centroid_shift_minutes": 0.8059304016205715
+      },
+      "summer": {
+        "observations": 132480,
+        "hourly_shape_correlation": 0.9967909636861468,
+        "minute_shape_correlation": 0.9965862619895994,
+        "smoothed_zero_lag_correlation": 0.9967000430470144,
+        "best_lag_minutes_new_later_positive": -4,
+        "best_lag_correlation": 0.9974182858050897,
+        "unit_mean_shape_rmse_pct": 2.4638791369082638,
+        "unit_mean_shape_max_abs_difference_pct": 6.289904864965878,
+        "timezone_shift_correlations": {
+          "-300": -0.49315972384252754,
+          "-240": -0.22508089409948706,
+          "240": -0.30777281912817317,
+          "300": -0.5561958059676062
+        },
+        "morning_legacy": {
+          "minute": 577,
+          "time": "09:37",
+          "power_kw": 616.6373154168713,
+          "at_search_window_edge": false
+        },
+        "morning_new": {
+          "minute": 584,
+          "time": "09:44",
+          "power_kw": 695.5802160134314,
+          "at_search_window_edge": false
+        },
+        "evening_legacy": {
+          "minute": 1168,
+          "time": "19:28",
+          "power_kw": 676.1886206213255,
+          "at_search_window_edge": false
+        },
+        "evening_new": {
+          "minute": 1167,
+          "time": "19:27",
+          "power_kw": 765.3573358674829,
+          "at_search_window_edge": false
+        },
+        "whole_day_legacy": {
+          "minute": 1168,
+          "time": "19:28",
+          "power_kw": 676.1886206213255,
+          "at_search_window_edge": false
+        },
+        "whole_day_new": {
+          "minute": 1167,
+          "time": "19:27",
+          "power_kw": 765.3573358674829,
+          "at_search_window_edge": false
+        },
+        "morning_centroid_shift_minutes": 0.2088492653058438,
+        "evening_centroid_shift_minutes": -2.696466533070179
+      },
+      "totals": {
+        "legacy_grid_kwh": 4051710.331486839,
+        "new_grid_kwh": 4515859.705165718,
+        "energy_change_pct": 11.45564059878268,
+        "efficiency_adjusted_new_to_legacy_ratio": 1.0031007653890442,
+        "legacy_minute_peak_kw": 1150.635255318381,
+        "new_minute_peak_kw": 1298.2065257094994,
+        "full_hourly_sequence_correlation": 0.9126001176807622
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 """Fetch, validate, and source-normalize small public transportation inputs."""
 
 import argparse
+import hashlib
 import io
 import json
 import logging
@@ -48,6 +49,114 @@ class AssortedSourcesError(ValueError):
     def __init__(self, message: str, *, evidence: dict[str, Any] | None = None) -> None:
         super().__init__(message)
         self.evidence = evidence
+
+
+class _TCDashboardPresentationTokens(HTMLParser):
+    """Locate the dashboard's bounded asset-query and navigation-render tokens."""
+
+    # HTMLParser otherwise treats markup-looking RCDATA/raw-text examples as tags.
+    CDATA_CONTENT_ELEMENTS = (
+        "script", "style", "textarea", "title", "xmp", "iframe", "noembed", "noframes", "noscript",
+    )
+    _attribute = re.compile(
+        r'''(?P<name>[^\s"'<>/=]+)(?:\s*=\s*(?:"(?P<double>[^"]*)"|'(?P<single>[^']*)'|(?P<bare>[^\s"'=<>`]+)))?'''
+    )
+
+    def __init__(self, html: str) -> None:
+        super().__init__(convert_charrefs=False)
+        self.line_starts = [0, *[match.end() for match in re.finditer("\n", html)]]
+        self.removals: list[tuple[int, int]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "script":
+            attribute, extension = "src", ".js"
+        elif tag == "link" and len([name for name, _ in attrs if name == "rel"]) == 1 and any(
+            name == "rel" and "stylesheet" in (value or "").casefold().split()
+            for name, value in attrs
+        ):
+            attribute, extension = "href", ".css"
+        elif tag == "div" and any(
+            name == "class" and {"view-navigation-buttons", "view-id-navigation_buttons"}
+            <= set(re.split(r"[\t\n\f\r ]+", value or ""))
+            for name, value in attrs
+        ):
+            attribute, extension = "class", None
+        else:
+            return
+        if len([name for name, _ in attrs if name == attribute]) != 1:
+            return
+        raw = self.get_starttag_text()
+        position = re.match(r"<[^\s/>]+", raw).end()
+        while position < len(raw):
+            while position < len(raw) and raw[position].isspace():
+                position += 1
+            if raw[position:] in {">", "/>"}:
+                return
+            match = self._attribute.match(raw, position)
+            if match is None:
+                return
+            position = match.end()
+            if match["name"].casefold() != attribute:
+                continue
+            group = next((name for name in ("double", "single", "bare") if match[name] is not None), None)
+            if group is None:
+                return
+            value = match[group]
+            if extension is None:
+                tokens = list(re.finditer(
+                    r"(?:^|[\t\n\f\r ])js-view-dom-id-(?P<token>[0-9a-f]{64})(?=$|[\t\n\f\r ])",
+                    value,
+                ))
+                if len(tokens) != 1:
+                    return
+                token = tokens[0]
+            else:
+                try:
+                    url = urlparse(value)
+                except ValueError:
+                    return
+                if (
+                    url.scheme.casefold() not in {"", "http", "https"}
+                    or not url.path.casefold().endswith(extension)
+                    or url.params or url.fragment
+                    or re.fullmatch(r"[A-Za-z0-9]{6}", url.query) is None
+                ):
+                    return
+                token = re.search(re.escape(extension) + r"(?P<token>\?[A-Za-z0-9]{6})$", value, re.IGNORECASE)
+                if token is None:
+                    return
+            line, column = self.getpos()
+            start = self.line_starts[line - 1] + column + match.start(group) + token.start("token")
+            self.removals.append((start, start + len(token["token"])))
+            return
+
+    handle_startendtag = handle_starttag
+
+
+def tc_dashboard_content_sha256(content: bytes | str) -> str:
+    """Hash exact UTF-8 HTML except two bounded dashboard presentation tokens.
+
+    Ignore bare six-character CSS/JS asset queries and the 64 lowercase-hex suffix
+    of a js-view-dom-id- class only on DIVs with both view-navigation-buttons and
+    view-id-navigation_buttons classes. HTMLParser identifies actual tags and edits
+    use original text offsets. Comments, inline code, data, labels, formatting and
+    every other byte remain in the identity. This source contract is not a general
+    HTML normalizer.
+    """
+    try:
+        html = content.decode("utf-8") if isinstance(content, bytes) else content
+    except UnicodeDecodeError as exc:
+        raise AssortedSourcesError("Transport Canada dashboard is not UTF-8 HTML") from exc
+    parser = _TCDashboardPresentationTokens(html)
+    parser.feed(html)
+    parser.close()
+    pieces = []
+    position = 0
+    for start, end in parser.removals:
+        pieces.append(html[position:start])
+        position = end
+    pieces.append(html[position:])
+    return hashlib.sha256("".join(pieces).encode("utf-8")).hexdigest()
 
 
 def normalize_tc_ev_dashboard_table(
@@ -279,6 +388,7 @@ class ArtifactRequest(BaseModel):
     file_type: Literal["zip", "xlsx", "csv", "html", "javascript", "pdf"]
     expected_sha256: str
     expected_bytes: int
+    expected_content_sha256: str | None = None
     request_headers: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -304,6 +414,11 @@ class ArtifactRequest(BaseModel):
             raise ValueError("Expected SHA-256 must contain 64 lowercase hex characters")
         if self.expected_bytes <= 0:
             raise ValueError("Expected byte count must be positive")
+        if self.expected_content_sha256 is not None:
+            if self.source_id != "transport_canada_ev_dashboard" or self.file_type != "html":
+                raise ValueError("Content SHA-256 is supported only for Transport Canada dashboard HTML")
+            if re.fullmatch(r"[0-9a-f]{64}", self.expected_content_sha256) is None:
+                raise ValueError("Expected content SHA-256 must contain 64 lowercase hex characters")
         return self
 
 
@@ -366,6 +481,7 @@ def _top_level_request(
         file_type=file_type,
         expected_sha256=str(adapter.get("expected_sha256", "")),
         expected_bytes=int(adapter.get("expected_bytes", 0)),
+        expected_content_sha256=adapter.get("expected_content_sha256"),
         request_headers=access.get("headers", {}),
     )
 
@@ -492,17 +608,40 @@ def ensure_cached(
 
 
 def _validate_artifact_path(request: ArtifactRequest, path: Path) -> str:
+    maintenance = (
+        " This source URL can change. Restore the registered snapshot for exact replay, "
+        "or review a new snapshot with uv run python src/fetching/source_updater.py "
+        "--scenario <scenario.yaml> --source transport_canada_ev_dashboard, then "
+        "adopt it with --apply --review-report <report.json>."
+        if request.source_id == "transport_canada_ev_dashboard" else ""
+    )
     actual_bytes = path.stat().st_size
-    if actual_bytes != request.expected_bytes:
+    actual_hash = file_sha256(path)
+    raw_matches = actual_bytes == request.expected_bytes and actual_hash == request.expected_sha256
+    content_matches = False
+    if request.expected_content_sha256 is not None:
+        content_digest = tc_dashboard_content_sha256(path.read_bytes())
+        content_matches = content_digest == request.expected_content_sha256
+        if not content_matches:
+            raise AssortedSourcesError(
+                f"{request.source_id}/{request.component_id} content SHA-256 changed: "
+                f"expected {request.expected_content_sha256}, got {content_digest}.{maintenance}"
+            )
+        if not raw_matches:
+            logging.getLogger(__name__).info(
+                "Authenticated %s/%s after dashboard presentation-token rotation; actual SHA-256=%s, bytes=%s; preferred SHA-256=%s, bytes=%s",
+                request.source_id, request.component_id, actual_hash, actual_bytes,
+                request.expected_sha256, request.expected_bytes,
+            )
+    if not raw_matches and not content_matches and actual_bytes != request.expected_bytes:
         raise AssortedSourcesError(
             f"{request.source_id}/{request.component_id} byte count changed: "
-            f"expected {request.expected_bytes}, got {actual_bytes}"
+            f"expected {request.expected_bytes}, got {actual_bytes}.{maintenance}"
         )
-    actual_hash = file_sha256(path)
-    if actual_hash != request.expected_sha256:
+    if not raw_matches and not content_matches:
         raise AssortedSourcesError(
             f"{request.source_id}/{request.component_id} SHA-256 changed: "
-            f"expected {request.expected_sha256}, got {actual_hash}"
+            f"expected {request.expected_sha256}, got {actual_hash}.{maintenance}"
         )
     with path.open("rb") as handle:
         prefix = handle.read(16)
@@ -544,8 +683,18 @@ def _numeric(
     return number
 
 
-def _provenance(request: ArtifactRequest, checksum: str) -> dict[str, Any]:
+def _tc_identity_evidence(request: ArtifactRequest, checksum: str) -> dict[str, Any]:
+    if request.expected_content_sha256 is None:
+        return {}
     return {
+        "preferred_raw_sha256": request.expected_sha256,
+        "expected_content_sha256": request.expected_content_sha256,
+        "identity_basis": "exact_raw" if checksum == request.expected_sha256 else "presentation_tokens_only",
+    }
+
+
+def _provenance(request: ArtifactRequest, checksum: str) -> dict[str, Any]:
+    provenance = {
         "source_id": request.source_id,
         "component_id": request.component_id,
         "source_version": request.source_version,
@@ -553,6 +702,12 @@ def _provenance(request: ArtifactRequest, checksum: str) -> dict[str, Any]:
         "cached_file": str(request.cache_path),
         "cache_sha256": checksum,
     }
+    if request.expected_content_sha256 is not None:
+        provenance.update({
+            **_tc_identity_evidence(request, checksum),
+            "cache_bytes": request.cache_path.stat().st_size,
+        })
+    return provenance
 
 
 def normalize_nhtsa(
@@ -1651,6 +1806,7 @@ def _manifest_row(
         "output_files": "|".join(output_files),
         "warning_count": warning_count,
         "status": status,
+        **_tc_identity_evidence(request, checksum),
     }
 
 
@@ -1689,7 +1845,11 @@ def write_outputs(
         outputs[filename].to_csv(
             output_dir / filename, index=False, lineterminator="\n"
         )
-    manifest = pd.DataFrame(manifest_rows, columns=MANIFEST_COLUMNS)
+    identity_columns = [
+        column for column in ("preferred_raw_sha256", "expected_content_sha256", "identity_basis")
+        if any(column in row for row in manifest_rows)
+    ]
+    manifest = pd.DataFrame(manifest_rows, columns=[*MANIFEST_COLUMNS, *identity_columns])
     manifest.to_csv(
         output_dir / str(rules["manifest_file"]), index=False, lineterminator="\n"
     )

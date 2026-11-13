@@ -140,17 +140,23 @@ def build_request(bundle: ConfigBundle, component_key: str = "vehicles") -> Fuel
 
 def validate_cache(request: FuelEconomyVehicleRequest) -> None:
     """Validate bytes, hash, CRC, and the exact configured archive member."""
+    recovery = (
+        "Restore the exact registered cache, or review the current publisher snapshot with "
+        "`uv run python src/fetching/source_updater.py --scenario <scenario.yaml> "
+        "--source fueleconomy_gov_vehicle_data`, then adopt the reviewed report with "
+        "`--apply --review-report <report.json>`. Builds retain pinned source identities."
+    )
     actual_bytes = request.cache_path.stat().st_size
     if actual_bytes != request.expected_bytes:
         raise ValueError(
             f"FuelEconomy.gov cache has {actual_bytes} bytes; "
-            f"expected {request.expected_bytes}"
+            f"expected {request.expected_bytes}. {recovery}"
         )
     actual_sha256 = file_sha256(request.cache_path)
     if actual_sha256 != request.expected_sha256:
         raise ValueError(
             f"FuelEconomy.gov cache SHA-256 is {actual_sha256}; "
-            f"expected {request.expected_sha256}"
+            f"expected {request.expected_sha256}. {recovery}"
         )
     with zipfile.ZipFile(request.cache_path) as archive:
         if archive.testzip() is not None:
@@ -198,8 +204,10 @@ def fetch_to_cache(
 
 def read_selected_vehicle_columns(
     request: FuelEconomyVehicleRequest,
+    *,
+    enforce_coverage: bool = True,
 ) -> pd.DataFrame:
-    """Read only the component's explicitly authorized columns from vehicles.csv."""
+    """Read authorized columns; updater review may explicitly discover coverage."""
     with zipfile.ZipFile(request.cache_path) as archive:
         with archive.open(request.archive_member) as source:
             frame = pd.read_csv(source, usecols=list(request.required_columns), low_memory=False)
@@ -218,13 +226,16 @@ def read_selected_vehicle_columns(
                 for column, count in invalid_nulls.items()
             )
         )
-    years = pd.to_numeric(frame["year"], errors="raise").astype(int)
+    years = pd.to_numeric(frame["year"], errors="raise")
+    if frame.empty or years.isna().any() or (years % 1 != 0).any():
+        raise ValueError("FuelEconomy.gov requires nonempty integer model-year coverage")
+    years = years.astype(int)
     actual_bounds = (int(years.min()), int(years.max()))
     expected_bounds = (
         request.expected_model_year_from,
         request.expected_model_year_to,
     )
-    if actual_bounds != expected_bounds:
+    if enforce_coverage and actual_bounds != expected_bounds:
         raise ValueError(
             f"FuelEconomy.gov model-year bounds are {actual_bounds}; "
             f"expected {expected_bounds}"

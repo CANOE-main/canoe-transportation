@@ -1,0 +1,129 @@
+{
+  "catalogue_version": "ontario-2018-corrected-soc-weather-v1",
+  "catalogued_on": "2026-11-13",
+  "database_directory": "database/TTS2016",
+  "database_input_sha256": {
+    "d_min.csv": "c0281f0a38b5e0c460970c96888c515c48a2d1efe2d568af52deaf2a7da037a2",
+    "d_tot.csv": "bee16f5e1ca2afefb285c673c61b202235c9b54438918ad7e0864feed1d17eef",
+    "pop_share.csv": "a08eb0de6d5c44d4cdacfbf8e880a9c19cb0068f7bf324bc4c599fd5374bded0",
+    "t_func.csv": "becc955bb4e1fde12750924ccf6b94109db20456591892f0ae0457dd55e41152",
+    "temp_ninja_pop_1980-2022.csv": "9c67ac965bf017eec41b6522bc78e7d0a97f67b7078b0dd7652d2ee1e4a89368",
+    "trips_by_time_saturday.csv": "7120a43f3365c6cdac8b8883a5c399cda81a08379dc9f8d2d6578ed227b5e3f3",
+    "trips_by_time_sunday.csv": "a8c686d4e9c6544f8dc2703e2bc16ce4d986753cc3e07756e5e63fbd3c026633",
+    "trips_by_time_weekday.csv": "8b074f6e92617b57d62f13faa534de93f8249107794749cd6814a394e1132163",
+    "vehicle_share.csv": "e73364c4df53269898e39fd40378354f7f82b290a6734b5fb185ad9b648302bd",
+    "windows.csv": "efef1681ed02c5a37e59b902dda125e11e8464e91f2de2183e951665d47d611c"
+  },
+  "key_inputs_and_assumptions": {
+    "calendar": {
+      "native_interval_seconds": 60,
+      "raw_padding": "300 leading null minute values and padded UTC dates lie outside the selected Toronto year",
+      "raw_rows": 527040,
+      "raw_timestamp_timezone": "UTC",
+      "selected_local_year_minute_rows": 525600,
+      "timezone": "America/Toronto",
+      "year": 2018
+    },
+    "charger_inputs": {
+      "access_basis": "Inherited Quebec home/work access proxies and TTS-derived timing, not a new Ontario destination-specific calibration.",
+      "basis": "Legacy rounding of 2025 Canada-wide high-home-access Dunsky port-count shares, used as per-parking charger-choice weights. L1 1.6 kW is inherited; DCFC 125 kW is effective average rather than nameplate power.",
+      "infrastructure_probability": {
+        "00:00-07:00": 0.85,
+        "07:00-19:00": 0.34,
+        "19:00-24:00": 0.85
+      },
+      "power_kw": [
+        1.6,
+        7.2,
+        125.0
+      ],
+      "sampling_probabilities": [
+        0.1279,
+        0.8639,
+        0.0082
+      ]
+    },
+    "charging_behavior": {
+      "charging_efficiency": 0.9,
+      "corrected_model_behavior": "Positive grid charging power is multiplied by 0.9 before battery SOC integration; battery-side mobility draw is unchanged. Corrected Sunday frequency lookup and Saturday day assignment; fixed UTC weather lookup.",
+      "emergency_rules": "Rounded SOC at or below 25% or insufficient energy for the next trip bypasses ordinary probability/time gates; outside-window charging can occur.",
+      "initial_soc": 0.8,
+      "logistic_enabled": true,
+      "logistic_slope": 15,
+      "logistic_soc_midpoint": 0.53,
+      "target_soc": 0.8
+    },
+    "driver_inputs": {
+      "basis": "Inherited Ontario Census occupation/student population proportions used as driver proxies, not survey-weighted counts of observed EV drivers.",
+      "classes": "Working, student and inactive cohorts crossed with small/medium/large vehicles; occupation/vehicle shares select CA entries in the supplied tables.",
+      "constructed_users": 2499,
+      "nominal_users": 2500,
+      "stochastic_variability": {
+        "distance": 0.3,
+        "power": 0.1,
+        "velocity": 0.3
+      }
+    },
+    "scope": "Ontario-shaped BEV fleet charging demand used as a proxy for shared LDV charging; not measured charger utilization, destination-resolved plug availability, a new market forecast or a direct input-energy requirement after CANOE utilization scaling.",
+    "travel_survey": {
+      "behavior": "User-accepted reuse of weekday behavior on weekends because survey observations exclude weekends; inherited weekend activity probabilities remain 0.6 Saturday and 0.5 Sunday.",
+      "daily_distance_km": {
+        "weekday": 39.0,
+        "weekend": 39.0
+      },
+      "rounding_note": "Prepared 39 km retains plausible integer rounding of the captured 38.65 km weekday mean.",
+      "source_access": "Restricted/nonpublic underlying travel records; only the already prepared aggregate RAMP tables are included.",
+      "source_directory": "TTS2016_no-we_database/database",
+      "source_edition": "Legacy notebook-derived aggregate 2016 weekday evidence.",
+      "survey": "2016 Transportation Tomorrow Survey, Ontario Greater Golden Horseshoe",
+      "timing": "Prepared aggregate trip occurrence/window parameters copied from the reviewed legacy derivation."
+    },
+    "vehicle_inputs": {
+      "basis": "Inherited weighted 2023 beginning-of-life capacities with 2022 US sales/range composition from the legacy workbook; equivalence to current backend OMEGA derivation is not established.",
+      "battery_capacity_kwh": {
+        "large": 115.399,
+        "medium": 88.048,
+        "small": 82.668
+      },
+      "vehicle_class_shares": "Prepared CA row in vehicle_share.csv; fleet/BEV range composition is embedded in the simulated output and must not be applied again."
+    },
+    "weather_inputs": {
+      "basis": "Inherited population-weighted Renewables Ninja/MERRA-2 CA temperature series; source timestamps are treated as UTC. The local simulation clock is America/Toronto.",
+      "file": "temp_ninja_pop_1980-2022.csv",
+      "processing": "Actual hourly UTC timestamps held constant over each hour; local simulation times converted to UTC for weather lookup. Spring nonexistent times shift forward; repeated fall times use standard time. No source-cache edits.",
+      "selected_year": 2018
+    }
+  },
+  "original_output_directory": "C:\\Users\\rashi\\ESM_databases\\RAMP-mobility\\results\\reruns\\TTS2016\\night\\2018\\seed-42-paper-overnight",
+  "original_run_metadata": {
+    "filename": "run_metadata.json",
+    "preserved_byte_for_byte": true,
+    "sha256": "b19161ce81066d139672e9058cd2fc00594f175a7684668a5994f94e21c1b9d5"
+  },
+  "output_validation": {
+    "aggregate_grid_energy_kwh": 4517739.525508547,
+    "calendar_timezone": "America/Toronto",
+    "calendar_year": 2018,
+    "mean_kw": 515.7236901265464,
+    "minute_samples": 525600,
+    "peak_kw": 2461.3096349487787
+  },
+  "production_parameterization": "Normalize complete Toronto-year minute power to hourly means, then use established CANOE temporal projection and annual-utilization scaling. Do not reapply embedded vehicle/range shares or treat nominal fleet energy as a measured utilization target.",
+  "profile": {
+    "bytes": 21162151,
+    "filename": "Charging Profiles.csv",
+    "raw_rows": 527040,
+    "sha256": "292ac139ce8a90ab1b2a412e65fe249142c8b55690f6985bf20242cba16acf88",
+    "units": "kW, aggregate charging power sampled each minute"
+  },
+  "random_seed": 42,
+  "strategy": {
+    "exceptions": "Rounded SOC at or below 25% or insufficient energy for the next trip bypasses ordinary probability/time gates; outside-window charging can occur.",
+    "label": "Night Charge",
+    "ordinary_window": "22:00 inclusive to 07:00 exclusive, Toronto local clock",
+    "schedule": "Spread requested energy across eligible parked minutes, capped by sampled charger power.",
+    "scope": "Fixed-window strategies are preferential schedules with emergency exceptions, not hard zero-outside-window availability masks.",
+    "unchanged_between_strategies": "Same selected survey, fleet, driver composition, weather, charger mix, infrastructure probabilities and seed."
+  },
+  "survey": "TTS2016"
+}

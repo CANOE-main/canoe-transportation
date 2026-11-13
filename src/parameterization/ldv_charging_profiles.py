@@ -7,7 +7,7 @@ import hashlib
 import json
 import logging
 
-from canoe_schema.v4_0 import CapacityFactorTech, TimeOfDay, TimeSeason
+from canoe_schema.v4_0 import CapacityFactorTech, DataSet, DataSource, DataSourceLabel, TimeOfDay, TimeSeason
 import numpy as np
 import pandas as pd
 
@@ -16,6 +16,7 @@ from fetching.legacy_charging_profiles import (
     SOURCE,
     build_request,
     normalize_profile,
+    profile_component,
 )
 from parameterization.ev_chargers import prepare_charger_utilization_targets
 from utils import (
@@ -29,7 +30,10 @@ from utils import (
     write_text_atomic,
 )
 from validation.insertion import validate_parameter_rows
-from validation.provenance import ResolvedProvenance, resolve_composite_provenance, resolve_provenance
+from validation.provenance import (
+    ResolvedProvenance, publish_data_ids, readable_data_id_mapping, registry_rows,
+    resolve_composite_provenance, resolve_provenance,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -283,7 +287,7 @@ def prepare_charging_profile_rows(
         sorted(region_map.get(r, r) for r in bundle.scenario.geography.regions)
     )
     if selection.travel_behavior_source == "none":
-        LOGGER.info("Legacy charging profiles disabled; no source evidence required")
+        LOGGER.info("RAMP charging profiles disabled; no source evidence required")
         result = ChargingPreparation(
             [],
             [],
@@ -312,9 +316,10 @@ def prepare_charging_profile_rows(
     if (
         evidence.source_digest != request.expected_sha256
         or evidence.audit.get("profile") != selection.travel_behavior_source
+        or evidence.audit.get("charging_strategy") != selection.charging_strategy
     ):
         raise ValueError(
-            "Supplied charging evidence must match the selected registered source digest/profile"
+            "Supplied charging evidence must match the selected registered source digest/survey/strategy"
         )
     if technologies is None:
         technologies = pd.read_csv(
@@ -372,11 +377,13 @@ def prepare_charging_profile_rows(
     profile_context = resolve_provenance(
         bundle.sources,
         source_key=SOURCE,
-        component_key=selection.travel_behavior_source,
-        transformation="Legacy hourly charging mean/peak and explicit temporal projection",
-        transformation_version="1",
+        component_key=profile_component(bundle, selection.travel_behavior_source),
+        transformation="Registered RAMP hourly charging mean/peak and explicit temporal projection",
+        transformation_version="2",
         value_variant={
             "source_sha256": evidence.source_digest,
+            "metadata_sha256": request.metadata_sha256,
+            "charging_strategy": selection.charging_strategy,
             "mapping_sha256": digest,
             "hourly_sha256": hashlib.sha256(
                 evidence.hourly.to_csv(index=False).encode()
@@ -398,8 +405,8 @@ def prepare_charging_profile_rows(
                     region, tech, scaling["normalized_profile_mean"], target, scaling["scale_factor"])
     context = resolve_composite_provenance(
         inputs=[profile_context, utilization_context],
-        dataset_key=f"ldv_charging_profiles.{selection.travel_behavior_source}",
-        transformation="Legacy charging shape scaled by native full-year hourly mean and projected to CANOE time slices",
+        dataset_key=f"ldv_charging_profiles.{profile_component(bundle, selection.travel_behavior_source)}",
+        transformation="Registered RAMP charging shape scaled by native full-year hourly mean and projected to CANOE time slices",
         transformation_version=rules["transformation_version"],
         governing_source_id=profile_context.source_id, data_quality=profile_context.data_quality,
         value_variant={"projection_sha256": digest, "utilization_targets": utilization_targets,
@@ -419,6 +426,8 @@ def prepare_charging_profile_rows(
         "regions": list(regions),
         "target_technologies": sorted(targets.tech),
         "travel_behavior_source": selection.travel_behavior_source,
+        "charging_strategy": selection.charging_strategy,
+        "source_component": profile_component(bundle, selection.travel_behavior_source),
         "applicability": rules["applicability"],
         "projection_sha256": digest,
         "conservation_tolerance": rules["conservation_tolerance"],
@@ -429,7 +438,7 @@ def prepare_charging_profile_rows(
         "native_normalized_hourly_evidence_preserved": True,
     }
     LOGGER.warning(
-        "Using legacy Ontario BEV charging shape for shared LDV chargers in all selected regions: %s",
+        "Using registered Ontario BEV charging shape for shared LDV chargers in all selected regions: %s",
         regions,
     )
     LOGGER.info("Prepared %s charging factors; no composition reweighting", len(rows))
@@ -453,23 +462,47 @@ def prepare_charging_profile_rows(
 def publish_charging(bundle: ConfigBundle, result: ChargingPreparation) -> None:
     rules = load_harmonization_rules(bundle, "ldv_charging_profiles")
     directory = resolve_artifact_path(bundle, "charging_profiles_processed")
+    selection = bundle.scenario.charging_profiles
+    names = {"profile": selection.travel_behavior_source, "strategy": selection.charging_strategy}
+    calendar_columns = ["hour_index", "timestamp_utc", "timestamp_local", "season", "tod"]
+    if not result.hourly.empty and not set(calendar_columns).issubset(result.hourly.columns):
+        raise ValueError("Charging CSV publication requires the native hourly timestamp calendar")
+    calendar = result.hourly.reindex(columns=calendar_columns)
+    labels, datasets, sources = registry_rows(result.provenance_contexts)
+    identifiers = readable_data_id_mapping(
+        datasets=datasets, contexts=result.provenance_contexts,
+        batches={"capacity_factor_tech": result.rows}, scenario_name=bundle.scenario.scenario.name,
+    )
+    factor_rows = publish_data_ids(result.rows, identifiers, scenario_name=bundle.scenario.scenario.name)
     for rows, key, columns in (
-        (result.rows, "factor_file", list(CapacityFactorTech.model_fields)),
+        (factor_rows, "factor_file", list(CapacityFactorTech.model_fields)),
         (result.seasons, "time_season_file", list(TimeSeason.model_fields)),
         (result.times_of_day, "time_of_day_file", list(TimeOfDay.model_fields)),
     ):
         write_dataframe_atomic(
             pd.DataFrame([r.model_dump(mode="json") for r in rows], columns=columns),
-            directory / rules[key],
+            directory / rules[key].format(**names),
+        )
+    for rows, key, model in (
+        (labels, "source_label_file", DataSourceLabel),
+        (datasets, "dataset_file", DataSet),
+        (sources, "source_file", DataSource),
+    ):
+        published = publish_data_ids(rows, identifiers, scenario_name=bundle.scenario.scenario.name)
+        write_dataframe_atomic(
+            pd.DataFrame([r.model_dump(mode="json") for r in published], columns=list(model.model_fields)),
+            directory / rules[key].format(**names),
         )
     write_dataframe_atomic(
         result.mapping.reindex(columns=["hour_index", "season", "tod"]),
-        directory / rules["mapping_file"],
+        directory / rules["mapping_file"].format(**names),
     )
+    # A lookup of the existing physical-hour evidence; no new temporal aggregation.
+    write_dataframe_atomic(calendar, directory / rules["calendar_file"].format(**names))
     write_text_atomic(
         json.dumps(result.audit, indent=2, sort_keys=True) + "\n",
         resolve_artifact_path(
-            bundle, "charging_profiles_validation", rules["validation_file"]
+            bundle, "charging_profiles_validation", rules["validation_file"].format(**names)
         ),
     )
 
